@@ -1,38 +1,47 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { leads, subscriptions, type InsertLead, type Lead, type InsertSubscription, type Subscription } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Leads
+  createLead(lead: InsertLead): Promise<Lead>;
+  getLeads(): Promise<Lead[]>;
+
+  // Subscriptions
+  getSubscription(userId: string): Promise<Subscription | undefined>;
+  upsertSubscription(sub: InsertSubscription): Promise<Subscription>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const [newLead] = await db.insert(leads).values(lead).returning();
+    return newLead;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getLeads(): Promise<Lead[]> {
+    return db.select().from(leads);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getSubscription(userId: string): Promise<Subscription | undefined> {
+    const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
+    return sub;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async upsertSubscription(sub: InsertSubscription): Promise<Subscription> {
+    // Check if exists
+    const existing = await this.getSubscription(sub.userId);
+    if (existing) {
+      const [updated] = await db
+        .update(subscriptions)
+        .set({ ...sub, updatedAt: new Date() })
+        .where(eq(subscriptions.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(subscriptions).values(sub).returning();
+      return created;
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
