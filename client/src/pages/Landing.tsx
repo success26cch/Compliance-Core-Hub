@@ -40,8 +40,7 @@ export default function Landing() {
       <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-12 w-auto" />
-            <span className="font-display font-bold text-xl text-primary tracking-tight">Core Compliance Hub</span>
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-16 w-auto" />
           </div>
           
           <div className="flex items-center gap-4">
@@ -69,11 +68,12 @@ export default function Landing() {
             transition={{ duration: 0.5 }}
             className="space-y-8"
           >
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-32 md:h-40 w-auto" />
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-medium text-sm">
               <Activity className="w-4 h-4" />
               OSHA & DOT Compliance Simplified
             </div>
-            <h1 className="text-5xl md:text-6xl font-display font-bold text-primary leading-tight">
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-primary leading-tight">
               Expert Occupational Health <span className="text-accent">Made Simple.</span>
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
@@ -186,8 +186,7 @@ export default function Landing() {
       <footer className="bg-primary text-primary-foreground py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-10 w-auto brightness-0 invert" />
-            <span className="font-bold font-display text-xl">Core Compliance Hub</span>
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-14 w-auto brightness-0 invert" />
           </div>
           <p className="text-primary-foreground/60 text-sm">
             © 2024 Core Compliance Hub. All rights reserved.
