@@ -4,6 +4,7 @@ import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity } from "lucide-react";
+import logoUrl from "@assets/1_1767636977932.png";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,10 +39,8 @@ export default function Landing() {
       {/* Navbar */}
       <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary p-2 rounded-lg">
-              <ShieldCheck className="w-6 h-6 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-12 w-auto" />
             <span className="font-display font-bold text-xl text-primary tracking-tight">Core Compliance Hub</span>
           </div>
           
@@ -186,8 +185,8 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-10 w-auto brightness-0 invert" />
             <span className="font-bold font-display text-xl">Core Compliance Hub</span>
           </div>
           <p className="text-primary-foreground/60 text-sm">
