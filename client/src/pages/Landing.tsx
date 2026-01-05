@@ -38,9 +38,9 @@ export default function Landing() {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Navbar */}
       <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-16 w-auto" />
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-20 w-auto" />
           </div>
           
           <div className="flex items-center gap-4">
@@ -68,7 +68,7 @@ export default function Landing() {
             transition={{ duration: 0.5 }}
             className="space-y-8"
           >
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-32 md:h-40 w-auto" />
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-48 md:h-64 w-auto" />
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-medium text-sm">
               <Activity className="w-4 h-4" />
               OSHA & DOT Compliance Simplified
@@ -186,7 +186,7 @@ export default function Landing() {
       <footer className="bg-primary text-primary-foreground py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-14 w-auto brightness-0 invert" />
+            <img src={logoUrl} alt="Core Compliance Hub" className="h-20 w-auto brightness-0 invert" />
           </div>
           <p className="text-primary-foreground/60 text-sm">
             © 2024 Core Compliance Hub. All rights reserved.
