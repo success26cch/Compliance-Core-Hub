@@ -106,17 +106,17 @@ export default function BotPage() {
 }
 
 function ChatInterface({ conversationId, onMessageSent }: { conversationId: number; onMessageSent?: () => void }) {
-  const { messages, sendMessage, isStreaming } = useChatStream(conversationId);
+  const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || limitReached) return;
     sendMessage(input);
     setInput("");
     // Refetch usage after sending message
     if (onMessageSent) {
-      setTimeout(() => onMessageSent(), 1000);
+      setTimeout(() => onMessageSent(), 500);
     }
   };
 
@@ -152,11 +152,11 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about OSHA 1904 regulations..."
+            placeholder={limitReached ? "Free limit reached - subscribe for more" : "Ask about OSHA 1904 regulations..."}
             className="flex-1"
-            disabled={isStreaming}
+            disabled={isStreaming || limitReached}
           />
-          <Button type="submit" size="icon" disabled={isStreaming || !input.trim()}>
+          <Button type="submit" size="icon" disabled={isStreaming || limitReached || !input.trim()}>
             <Send className="w-4 h-4" />
           </Button>
         </form>

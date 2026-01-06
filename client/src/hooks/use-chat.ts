@@ -45,9 +45,10 @@ export function useCreateConversation() {
   });
 }
 
-export function useChatStream(conversationId: number) {
+export function useChatStream(conversationId: number, onLimitReached?: () => void) {
   const [messages, setMessages] = useState<any[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -61,7 +62,7 @@ export function useChatStream(conversationId: number) {
   }, [conversationData]);
 
   const sendMessage = async (content: string) => {
-    if (!content.trim() || isStreaming) return;
+    if (!content.trim() || isStreaming || limitReached) return;
 
     const userMessage = { role: 'user', content, createdAt: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
@@ -75,7 +76,23 @@ export function useChatStream(conversationId: number) {
         credentials: 'include',
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) {
+        if (response.status === 403) {
+          const errorData = await response.json();
+          if (errorData.limitReached) {
+            setLimitReached(true);
+            setMessages((prev) => prev.slice(0, -1)); // Remove the user message we just added
+            toast({
+              title: "Free Limit Reached",
+              description: "You've used all 10 free questions. Subscribe for unlimited access.",
+              variant: "destructive",
+            });
+            if (onLimitReached) onLimitReached();
+            return;
+          }
+        }
+        throw new Error('Failed to send message');
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -120,5 +137,5 @@ export function useChatStream(conversationId: number) {
     }
   };
 
-  return { messages, sendMessage, isStreaming };
+  return { messages, sendMessage, isStreaming, limitReached };
 }
