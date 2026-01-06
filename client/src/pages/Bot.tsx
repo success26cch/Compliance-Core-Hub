@@ -75,17 +75,22 @@ export default function BotPage() {
           {/* Subscription Gate for Free Users after limit reached */}
           {usageData && !usageData.canAsk && (
             <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center p-6">
-              <Card className="max-w-md w-full p-6 text-center space-y-4 shadow-2xl border-accent/20">
+              <Card className="max-w-lg w-full p-6 text-center space-y-4 shadow-2xl border-accent/20">
                 <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
                   <Lock className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-primary">Unlock Unlimited Questions</h3>
+                <h3 className="text-xl font-bold text-primary">You've Reached Your Monthly Limit</h3>
                 <p className="text-muted-foreground">
-                  You've used all 10 free questions. Subscribe to the OccHealth Consultant for unlimited access at just $29/month.
+                  Upgrade to Pro for unlimited answers or contact us for a direct consultation.
                 </p>
-                <Link href="/settings">
-                  <Button className="w-full bg-accent hover:bg-accent/90">Subscribe Now - $29/mo</Button>
-                </Link>
+                <div className="space-y-3 pt-2">
+                  <Link href="/settings">
+                    <Button className="w-full bg-accent hover:bg-accent/90">Compliance Pro - $29/mo</Button>
+                  </Link>
+                  <Link href="/settings">
+                    <Button variant="outline" className="w-full">Unlimited Safety - $99/mo</Button>
+                  </Link>
+                </div>
               </Card>
             </div>
           )}

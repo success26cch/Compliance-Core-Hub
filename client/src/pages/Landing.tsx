@@ -74,10 +74,27 @@ export default function Landing() {
               Occupational Medicine Simplified
             </div>
             <h1 className="text-4xl md:text-5xl font-display font-bold text-primary leading-tight">
-              Expert Occupational Health <span className="text-accent">Made Simple.</span>
+              Stop Guessing. Start Complying. <span className="text-accent">Your 24/7 Occupational Health Expert.</span>
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed">
-              Learn what makes an injury recordable, what the DOT guidelines are for a physical and the difference between a 5 and 10 panel drug screen and so much more.
+            <p className="text-lg text-muted-foreground leading-relaxed mb-4">
+              One wrong OSHA entry can cost thousands. One missed DOT guideline can sideline your fleet. Core Compliance Hub gives your team instant, expert-level clarity on:
+            </p>
+            <ul className="space-y-2 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                <span><strong>OSHA Recordables:</strong> Know instantly if an injury is a 'Reportable' or just 'First Aid.'</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                <span><strong>DOT Compliance:</strong> Navigate physical requirements and 'Fit-for-Duty' status without the legal headache.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                <span><strong>Drug Screening:</strong> Decode the 5-panel vs. 10-panel maze to ensure you're testing for what actually matters.</span>
+              </li>
+            </ul>
+            <p className="text-lg text-muted-foreground font-medium mt-4">
+              Turn your safety manual into a conversation. Protect your people, protect your bottom line.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
@@ -182,6 +199,49 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 bg-muted/30 border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl font-display font-bold text-primary">Simple, Transparent Pricing</h2>
+            <p className="text-lg text-muted-foreground">
+              Choose the plan that fits your compliance needs.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <PricingCard 
+              tier="Safety Starter"
+              price="Free"
+              period=""
+              features={["3 Questions / month", "OSHA recordability guidance", "Basic DOT compliance help"]}
+              bestFor="Small teams or one-off 'Is this a recordable?' checks."
+              buttonText="Get Started"
+              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+            />
+            <PricingCard 
+              tier="Compliance Pro"
+              price="$29"
+              period="/mo"
+              features={["15 Questions / month", "PDF Compliance Checklists", "Priority response times", "DOT physical guidance"]}
+              bestFor="Growing companies needing regular DOT/OSHA guidance."
+              buttonText="Upgrade to Pro"
+              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+              highlighted
+            />
+            <PricingCard 
+              tier="Unlimited Safety"
+              price="$99"
+              period="/mo"
+              features={["Unlimited AI Questions", "Audit Prep Tools", "Custom compliance reports", "Dedicated support"]}
+              bestFor="Safety Managers handling high-risk environments or large fleets."
+              buttonText="Go Unlimited"
+              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -207,6 +267,43 @@ function FeatureCard({ icon: Icon, title, description }: any) {
       <p className="text-muted-foreground leading-relaxed">
         {description}
       </p>
+    </div>
+  );
+}
+
+function PricingCard({ tier, price, period, features, bestFor, buttonText, buttonHref, highlighted }: {
+  tier: string;
+  price: string;
+  period: string;
+  features: string[];
+  bestFor: string;
+  buttonText: string;
+  buttonHref: string;
+  highlighted?: boolean;
+}) {
+  return (
+    <div className={`p-8 rounded-2xl border ${highlighted ? 'border-accent bg-accent/5 ring-2 ring-accent' : 'border-border/50 bg-white'} flex flex-col`}>
+      <div className="mb-6">
+        <h3 className="text-xl font-bold text-primary mb-2">{tier}</h3>
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-bold text-primary">{price}</span>
+          <span className="text-muted-foreground">{period}</span>
+        </div>
+      </div>
+      <ul className="space-y-3 mb-6 flex-1">
+        {features.map((feature, i) => (
+          <li key={i} className="flex items-center gap-2 text-muted-foreground">
+            <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-sm text-muted-foreground mb-6 italic">{bestFor}</p>
+      <a href={buttonHref}>
+        <Button className={`w-full ${highlighted ? 'bg-accent hover:bg-accent/90' : ''}`} variant={highlighted ? 'default' : 'outline'}>
+          {buttonText}
+        </Button>
+      </a>
     </div>
   );
 }

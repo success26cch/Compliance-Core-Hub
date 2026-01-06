@@ -77,8 +77,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     
     res.json({
       questionCount: usage?.questionCount || 0,
-      freeLimit: 10,
-      canAsk: isPro || (usage?.questionCount || 0) < 10,
+      freeLimit: 3,
+      canAsk: isPro || (usage?.questionCount || 0) < 3,
       isPro,
     });
   });

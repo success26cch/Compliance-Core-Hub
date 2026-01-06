@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
   baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
 });
 
-const FREE_QUESTION_LIMIT = 10;
+const FREE_QUESTION_LIMIT = 3;
 
 export function registerChatRoutes(app: Express): void {
   // Get all conversations

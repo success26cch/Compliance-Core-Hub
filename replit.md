@@ -4,9 +4,16 @@
 Occupational health and compliance platform featuring an AI-powered OccHealth Consultant and OSHA 300 decision tool.
 
 ## Features
-- **OccHealth Consultant**: AI-powered chat for occupational health questions (10 free questions, then $29/month subscription)
+- **OccHealth Consultant**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert, referencing OSHA 29 CFR 1904 and DOT 49 CFR Part 40
 - **OSHA 300, Log it or Not**: Interactive decision tree for OSHA recordability
 - **Lead Capture**: Free recordability cheat sheet download
+
+## Pricing Structure (3-Tier)
+| Tier | Price | Included | Best For |
+|------|-------|----------|----------|
+| Safety Starter | Free | 3 Questions/month | Small teams, one-off checks |
+| Compliance Pro | $29/mo | 15 Questions/month + PDF Checklists | Growing companies |
+| Unlimited Safety | $99/mo | Unlimited Questions + Audit Prep Tools | Safety Managers, large fleets |
 
 ## Tech Stack
 - Frontend: React + Vite + TailwindCSS + shadcn/ui
@@ -16,14 +23,15 @@ Occupational health and compliance platform featuring an AI-powered OccHealth Co
 - Auth: Replit Auth
 
 ## Pending Setup
-- **Stripe Integration**: User dismissed Stripe setup. When ready to accept payments for the $29/month OccHealth Consultant subscription, set up Stripe via Replit integrations or provide Stripe API keys as secrets.
+- **Stripe Integration**: Required for payment processing for the $29/mo and $99/mo tiers. Set up Stripe via Replit integrations.
 
 ## Recent Changes
-- Renamed "AI Consultant" to "OccHealth Consultant"
-- Renamed "Decision Trees" to "OSHA 300, Log it or Not"
-- Implemented 10 free questions limit with paywall for OccHealth Consultant
-- Added question usage tracking in database
+- Updated hero messaging to new copy: "Stop Guessing. Start Complying."
+- Changed free tier from 10 to 3 questions/month
+- Added 3-tier pricing section on landing page
+- Updated paywall messaging to reflect new tiers
 
 ## User Preferences
 - Large logo display preferred
 - Focus on Occupational Medicine terminology
+- AI persona: Senior Occupational Health & Safety Compliance Expert

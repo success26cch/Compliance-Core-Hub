@@ -84,7 +84,7 @@ export function useChatStream(conversationId: number, onLimitReached?: () => voi
             setMessages((prev) => prev.slice(0, -1)); // Remove the user message we just added
             toast({
               title: "Free Limit Reached",
-              description: "You've used all 10 free questions. Subscribe for unlimited access.",
+              description: "You've reached your monthly limit. Upgrade to Pro for more answers or contact us for a direct consultation.",
               variant: "destructive",
             });
             if (onLimitReached) onLimitReached();
