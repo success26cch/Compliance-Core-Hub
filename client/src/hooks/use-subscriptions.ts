@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { api, type SubscriptionStatusResponse } from "@shared/routes";
+import { api } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 
 export function useSubscriptionStatus() {
