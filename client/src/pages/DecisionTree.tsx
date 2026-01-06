@@ -71,7 +71,7 @@ export default function DecisionTree() {
             </div>
             <h2 className="text-3xl font-bold text-primary mb-4">Pro Feature Locked</h2>
             <p className="text-muted-foreground mb-8 text-lg">
-              The Interactive Recordability Decision Tree is available exclusively for Pro subscribers. 
+              The Interactive OSHA 300, Log it or Not tool is available exclusively for Pro subscribers. 
               Ensure compliance with accurate, guided assessments.
             </p>
             <Link href="/settings">

@@ -21,7 +21,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   const links = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/bot", label: "OccHealth Consultant", icon: Bot },
-    { href: "/decision-tree", label: "Recordability Tree", icon: GitBranch },
+    { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
   ];
 
   const LinkItem = ({ href, label, icon: Icon }: any) => {

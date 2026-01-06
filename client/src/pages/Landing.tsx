@@ -170,7 +170,7 @@ export default function Landing() {
             />
             <FeatureCard 
               icon={FileText}
-              title="Decision Trees"
+              title="OSHA 300, Log it or Not"
               description="Interactive Yes/No workflows to determine recordability for any workplace injury or illness."
             />
             <FeatureCard 

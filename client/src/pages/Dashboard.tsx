@@ -76,7 +76,7 @@ export default function Dashboard() {
 
           <Card className="hover:shadow-lg transition-shadow border-primary/10">
             <CardHeader>
-              <CardTitle>Recordability Decision Tree</CardTitle>
+              <CardTitle>OSHA 300, Log it or Not</CardTitle>
               <CardDescription>
                 Determine if an injury is OSHA recordable in minutes.
               </CardDescription>

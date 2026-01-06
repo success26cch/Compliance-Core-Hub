@@ -64,7 +64,7 @@ export default function Settings() {
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500" />
-                <span>Full Access to Decision Tree Tool</span>
+                <span>Full Access to OSHA 300, Log it or Not Tool</span>
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-500" />
