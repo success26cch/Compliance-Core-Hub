@@ -23,7 +23,7 @@ Occupational health and compliance platform featuring an AI-powered OccHealth Co
 - Auth: Replit Auth
 
 ## Pending Setup
-- **Stripe Integration**: Required for payment processing for the $29/mo and $99/mo tiers. Set up Stripe via Replit integrations.
+- **Stripe Integration**: Required for payment processing for the $29/mo and $99/mo tiers. Set up Stripe via Replit integrations when ready to enable payments.
 
 ## Recent Changes
 - Updated hero messaging to new copy: "Stop Guessing. Start Complying."

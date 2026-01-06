@@ -1,0 +1,35 @@
+1. The Replit Command
+Copy and paste this into your Replit Agent prompt:
+
+"Add a 'Human Expert Retainer' section to the sidebar. In this section, include a card titled 'Safety Officer on Standby.'
+
+Content to include:
+
+Title: The $0-Liability Safety Retainer
+
+Subtitle: Your AI handles the questions; we handle the emergencies.
+
+Bullet points: > 1. Immediate Crisis Response: 4-hour callback for workplace accidents or OSHA inspections. 2. OSHA 300 Log Audit: We review your year-end records to ensure 100% accuracy before you submit. 3. Audit Defense: If you get a DOT or OSHA audit letter, we sit at the table with you.
+
+Call to Action: A button labeled 'Inquire About Retainer' that opens a contact form or sends an email to [Your Email].
+
+Logic: Make sure this section is visible to all users, even on the free tier, to show them there is a path to professional human support."
+
+2. The "Why" (The Pitch for Your Retainer)
+When you speak to a company about the retainer, use these 3 Big Reasons. They focus on the CEO's biggest fears: Fines, Lawsuits, and Audits.
+
+Reason 1: AI is for Guidance, Humans are for Liability
+The Pitch: "The app is great for knowing the difference between a 5-panel and 10-panel drug screen. But if an employee tests positive and you’re about to fire them, you need a human consultant to verify your 'Fit-for-Duty' policy. We take the liability off your shoulders."
+
+Reason 2: Avoid the 'Red Flag' Audit
+The Pitch: "Most OSHA fines happen because of simple paperwork errors on the 300 Log. By having us on retainer, we review your logs monthly. We find the 'red flags' before the government does. We aren't just an expense; we are an insurance policy against $15,000+ fines."
+
+Reason 3: The "Peace of Mind" Factor
+The Pitch: "Accidents don't happen during business hours. For a small monthly retainer, you have a professional safety officer's cell phone number. When a crisis happens at 2 AM on a job site, you aren't Googling—you're calling us."
+
+3. Suggested Retainer Pricing Structure
+Since you have the app tiers, you can position the retainer as an "Add-on":
+
+App Only ($29-$99/mo): For self-service safety managers.
+
+App + Retainer ($499/mo): For companies with 20–100 employees who can't afford a full-time $90k/year Safety Director but need the same level of protection.
