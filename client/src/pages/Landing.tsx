@@ -71,13 +71,13 @@ export default function Landing() {
             <img src={logoUrl} alt="Core Compliance Hub" className="h-48 md:h-64 w-auto" />
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-medium text-sm">
               <Activity className="w-4 h-4" />
-              OSHA & DOT Compliance Simplified
+              Occupational Medicine Simplified
             </div>
             <h1 className="text-4xl md:text-5xl font-display font-bold text-primary leading-tight">
               Expert Occupational Health <span className="text-accent">Made Simple.</span>
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Navigate OSHA recordability, DOT regulations, and drug screening compliance with our AI-powered consultant and decision tools.
+              Learn what makes an injury recordable, what the DOT guidelines are for a physical and the difference between a 5 and 10 panel drug screen and so much more.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
