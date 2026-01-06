@@ -20,7 +20,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   
   const links = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/bot", label: "Expert Consultant", icon: Bot },
+    { href: "/bot", label: "OccHealth Consultant", icon: Bot },
     { href: "/decision-tree", label: "Recordability Tree", icon: GitBranch },
   ];
 

@@ -44,3 +44,22 @@ export function useCreateCheckoutSession() {
     },
   });
 }
+
+export type QuestionUsageResponse = {
+  questionCount: number;
+  freeLimit: number;
+  canAsk: boolean;
+  isPro: boolean;
+};
+
+export function useQuestionUsage() {
+  return useQuery<QuestionUsageResponse>({
+    queryKey: ["/api/question-usage"],
+    queryFn: async () => {
+      const res = await fetch("/api/question-usage", { credentials: "include" });
+      if (res.status === 401) return { questionCount: 0, freeLimit: 10, canAsk: true, isPro: false };
+      if (!res.ok) throw new Error("Failed to fetch question usage");
+      return res.json();
+    },
+  });
+}

@@ -165,7 +165,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-8">
             <FeatureCard 
               icon={Bot}
-              title="AI Consultant"
+              title="OccHealth Consultant"
               description="Get instant answers to complex regulatory questions citing specific OSHA 1904 and DOT FMCSA codes."
             />
             <FeatureCard 

@@ -1,11 +1,14 @@
 import type { Express, Request, Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { chatStorage } from "./storage";
+import { storage } from "../../storage";
 
 const anthropic = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
 });
+
+const FREE_QUESTION_LIMIT = 10;
 
 export function registerChatRoutes(app: Express): void {
   // Get all conversations
@@ -64,6 +67,32 @@ export function registerChatRoutes(app: Express): void {
     try {
       const conversationId = parseInt(req.params.id);
       const { content } = req.body;
+
+      // Check authentication and usage limits
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const userId = (req.user as any).claims.sub;
+      const sub = await storage.getSubscription(userId);
+      const isPro = sub?.status === "active";
+      
+      if (!isPro) {
+        const usage = await storage.getQuestionUsage(userId);
+        if ((usage?.questionCount || 0) >= FREE_QUESTION_LIMIT) {
+          return res.status(403).json({ 
+            error: "Free question limit reached",
+            limitReached: true,
+            questionCount: usage?.questionCount || 0,
+            freeLimit: FREE_QUESTION_LIMIT 
+          });
+        }
+      }
+
+      // Increment question count for non-pro users
+      if (!isPro) {
+        await storage.incrementQuestionCount(userId);
+      }
 
       // Save user message
       await chatStorage.createMessage(conversationId, "user", content);

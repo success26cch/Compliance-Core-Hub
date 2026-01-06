@@ -38,6 +38,21 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 
+// Question usage tracking for freemium model
+export const questionUsage = pgTable("question_usage", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  questionCount: integer("question_count").notNull().default(0),
+  resetDate: timestamp("reset_date").defaultNow(),
+});
+
+export const insertQuestionUsageSchema = createInsertSchema(questionUsage).omit({
+  id: true,
+  resetDate: true,
+});
+export type QuestionUsage = typeof questionUsage.$inferSelect;
+export type InsertQuestionUsage = z.infer<typeof insertQuestionUsageSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

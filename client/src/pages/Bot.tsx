@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { ProtectedLayout } from "@/components/Layout";
 import { useChatStream, useConversations, useCreateConversation } from "@/hooks/use-chat";
-import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
+import { useQuestionUsage } from "@/hooks/use-subscriptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot as BotIcon, User, Plus, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 
 export default function BotPage() {
   const { data: conversations, isLoading: isLoadingConvos } = useConversations();
   const { mutate: createConversation } = useCreateConversation();
-  const { data: subStatus } = useSubscriptionStatus();
+  const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   
@@ -59,26 +60,38 @@ export default function BotPage() {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col bg-white rounded-xl border border-border/50 shadow-sm overflow-hidden relative">
-          {/* Subscription Gate for Free Users after X messages could go here */}
-          {!subStatus?.isPro && conversations && conversations.length > 3 && (
+          {/* Question Usage Counter */}
+          {usageData && !usageData.isPro && (
+            <div className="bg-muted/50 px-4 py-2 text-sm text-muted-foreground border-b flex justify-between items-center">
+              <span>Free questions: {usageData.questionCount} / {usageData.freeLimit} used</span>
+              {usageData.questionCount >= usageData.freeLimit && (
+                <Link href="/settings">
+                  <Button size="sm" variant="outline">Upgrade for $29/mo</Button>
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* Subscription Gate for Free Users after limit reached */}
+          {usageData && !usageData.canAsk && (
             <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center p-6">
               <Card className="max-w-md w-full p-6 text-center space-y-4 shadow-2xl border-accent/20">
                 <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent">
                   <Lock className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-primary">Unlock Unlimited Consultations</h3>
+                <h3 className="text-xl font-bold text-primary">Unlock Unlimited Questions</h3>
                 <p className="text-muted-foreground">
-                  Free plan is limited to 3 consultations. Upgrade to Pro for unlimited access to the Expert Bot.
+                  You've used all 10 free questions. Subscribe to the OccHealth Consultant for unlimited access at just $29/month.
                 </p>
                 <Link href="/settings">
-                  <Button className="w-full bg-accent hover:bg-accent/90">Upgrade Now</Button>
+                  <Button className="w-full bg-accent hover:bg-accent/90">Subscribe Now - $29/mo</Button>
                 </Link>
               </Card>
             </div>
           )}
 
           {activeConversationId ? (
-            <ChatInterface conversationId={activeConversationId} />
+            <ChatInterface conversationId={activeConversationId} onMessageSent={() => refetchUsage()} />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
               <BotIcon className="w-12 h-12 mb-4 opacity-20" />
@@ -92,16 +105,19 @@ export default function BotPage() {
   );
 }
 
-function ChatInterface({ conversationId }: { conversationId: number }) {
+function ChatInterface({ conversationId, onMessageSent }: { conversationId: number; onMessageSent?: () => void }) {
   const { messages, sendMessage, isStreaming } = useChatStream(conversationId);
   const [input, setInput] = useState("");
-  const scrollRef = useState<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
     sendMessage(input);
     setInput("");
+    // Refetch usage after sending message
+    if (onMessageSent) {
+      setTimeout(() => onMessageSent(), 1000);
+    }
   };
 
   return (

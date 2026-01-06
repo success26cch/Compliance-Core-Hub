@@ -65,5 +65,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ url: "#" }); 
   });
 
+  // Question usage
+  app.get("/api/question-usage", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const usage = await storage.getQuestionUsage(userId);
+    const sub = await storage.getSubscription(userId);
+    const isPro = sub?.status === "active";
+    
+    res.json({
+      questionCount: usage?.questionCount || 0,
+      freeLimit: 10,
+      canAsk: isPro || (usage?.questionCount || 0) < 10,
+      isPro,
+    });
+  });
+
   return httpServer;
 }
