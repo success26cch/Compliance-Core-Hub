@@ -26,6 +26,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   const links = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/bot", label: "OccHealth Consultant", icon: Bot },
+    { href: "/iso-manager", label: "ACSI ISO Manager", icon: FileCheck },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
   ];
 

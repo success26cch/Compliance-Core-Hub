@@ -179,11 +179,16 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <FeatureCard 
               icon={Bot}
               title="OccHealth Consultant"
               description="Get instant answers to complex regulatory questions citing specific OSHA 1904 and DOT FMCSA codes."
+            />
+            <FeatureCard 
+              icon={ShieldCheck}
+              title="ACSI ISO Manager"
+              description="Lead ISO Auditor for ISO 9001, 14001, 45001. Gap Analysis, Quality Manuals, and audit prep."
             />
             <FeatureCard 
               icon={FileText}
@@ -199,13 +204,13 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Occupational Health Pricing Section */}
       <section id="pricing" className="py-24 bg-muted/30 border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-3xl font-display font-bold text-primary">Simple, Transparent Pricing</h2>
+            <h2 className="text-3xl font-display font-bold text-primary">Occupational Health Plans</h2>
             <p className="text-lg text-muted-foreground">
-              Choose the plan that fits your compliance needs.
+              OSHA recordables, DOT compliance, and drug screening guidance.
             </p>
           </div>
 
@@ -236,6 +241,49 @@ export default function Landing() {
               features={["Unlimited AI Questions", "Audit Prep Tools", "Custom compliance reports", "Dedicated support"]}
               bestFor="Safety Managers handling high-risk environments or large fleets."
               buttonText="Go Unlimited"
+              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ISO Management Pricing Section */}
+      <section className="py-24 bg-white border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl font-display font-bold text-primary">ISO Management Plans</h2>
+            <p className="text-lg text-muted-foreground">
+              ISO 9001, 14001, and 45001 certification support. Management as a Service.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <PricingCard 
+              tier="ISO Essentials"
+              price="$49"
+              period="/mo"
+              features={["5 AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance"]}
+              bestFor="Startups preparing for first certification."
+              buttonText="Start ISO Journey"
+              buttonHref={isAuthenticated ? "/iso-manager" : "/api/login"}
+            />
+            <PricingCard 
+              tier="ISO Professional"
+              price="$149"
+              period="/mo"
+              features={["Unlimited ISO AI guidance", "Internal Audit Checklists", "'Write-Up Free' Guarantee tools", "Quality Manual drafting"]}
+              bestFor="Companies maintaining ISO 9001/14001/45001."
+              buttonText="Go Professional"
+              buttonHref={isAuthenticated ? "/iso-manager" : "/api/login"}
+              highlighted
+            />
+            <PricingCard 
+              tier="Integrated Enterprise"
+              price="$299"
+              period="/mo"
+              features={["CCH + ACSI Combined", "Full Health, Safety & ISO suite", "Audit Readiness Dashboard", "Priority expert support"]}
+              bestFor="Mid-sized firms with high compliance risk."
+              buttonText="Enterprise Bundle"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
             />
           </div>

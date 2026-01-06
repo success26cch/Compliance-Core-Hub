@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import BotPage from "@/pages/Bot";
+import ISOManager from "@/pages/ISOManager";
 import DecisionTree from "@/pages/DecisionTree";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/bot" component={BotPage} />
+      <Route path="/iso-manager" component={ISOManager} />
       <Route path="/decision-tree" component={DecisionTree} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
