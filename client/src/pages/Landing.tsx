@@ -104,9 +104,11 @@ export default function Landing() {
             <p className="text-lg text-muted-foreground font-medium mt-4">
               Turn your safety manual into a conversation. Protect your people, protect your bottom line.
             </p>
-            <p className="text-2xl md:text-3xl font-serif font-bold text-accent mt-6 text-center tracking-wide italic">
-              WELCOME TO CCH — CREATING WORKFORCE ECOSYSTEMS, ONE EMPLOYEE AT A TIME.
-            </p>
+            <div className="mt-6 text-center">
+              <span className="inline-block bg-black text-accent text-2xl md:text-3xl font-bold px-6 py-3 tracking-wide uppercase">
+                Welcome to the future of compliance. Welcome to Core Compliance Hub!
+              </span>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
                 <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg font-semibold shadow-lg shadow-primary/25">
