@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity } from "lucide-react";
 import logoUrl from "@assets/1_1767636977932.png";
+import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,7 +69,10 @@ export default function Landing() {
             transition={{ duration: 0.5 }}
             className="space-y-8"
           >
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-48 md:h-64 w-auto" />
+            <div className="flex items-center justify-between gap-6">
+              <img src={logoUrl} alt="Core Compliance Hub" className="h-48 md:h-64 w-auto" />
+              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="h-48 md:h-64 w-auto object-contain" />
+            </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-medium text-sm">
               <Activity className="w-4 h-4" />
               Occupational Medicine Simplified
