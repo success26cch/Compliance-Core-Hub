@@ -70,8 +70,8 @@ export default function Landing() {
             className="space-y-8"
           >
             <div className="flex flex-col items-center w-full">
-              <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 w-auto mx-auto" />
-              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-2xl h-auto object-contain mt-2" />
+              <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 w-auto mx-auto -mb-4" />
+              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-2xl h-auto object-contain" />
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-medium text-sm">
               <Activity className="w-4 h-4" />
