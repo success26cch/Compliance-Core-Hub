@@ -100,6 +100,9 @@ export default function Landing() {
             <p className="text-lg text-muted-foreground font-medium mt-4">
               Turn your safety manual into a conversation. Protect your people, protect your bottom line.
             </p>
+            <p className="text-2xl md:text-3xl font-display font-bold text-accent mt-6">
+              WELCOME TO CCH — BUILDING WORKFORCE WELLNESS, ONE EMPLOYEE AT A TIME.
+            </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
                 <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg font-semibold shadow-lg shadow-primary/25">
