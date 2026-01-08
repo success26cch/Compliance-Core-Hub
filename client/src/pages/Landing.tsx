@@ -100,7 +100,7 @@ export default function Landing() {
             <p className="text-lg text-muted-foreground font-medium mt-4">
               Turn your safety manual into a conversation. Protect your people, protect your bottom line.
             </p>
-            <p className="text-2xl md:text-3xl font-display font-bold text-accent mt-6">
+            <p className="text-2xl md:text-3xl font-serif font-bold text-accent mt-6 text-center tracking-wide italic">
               WELCOME TO CCH — CREATING WORKFORCE ECOSYSTEMS, ONE EMPLOYEE AT A TIME.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
