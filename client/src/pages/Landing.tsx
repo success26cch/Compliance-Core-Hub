@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity } from "lucide-react";
 import logoUrl from "@assets/1_1767636977932.png";
+import factoryImageUrl from "@assets/stock_images/employer_and_employe_b625e1e6.jpg";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -121,8 +122,17 @@ export default function Landing() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="relative"
+            className="relative space-y-6"
           >
+            {/* Factory Image */}
+            <div className="rounded-2xl overflow-hidden shadow-lg border border-border/50">
+              <img 
+                src={factoryImageUrl} 
+                alt="Employer and employee in factory setting" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
+
             {/* Lead Magnet Card */}
             <div className="bg-white rounded-2xl shadow-xl border border-border/50 p-8 md:p-10 relative z-10">
               <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl"></div>
