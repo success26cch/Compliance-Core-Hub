@@ -69,9 +69,9 @@ export default function Landing() {
             transition={{ duration: 0.5 }}
             className="space-y-8"
           >
-            <div className="flex items-center justify-between gap-6">
-              <img src={logoUrl} alt="Core Compliance Hub" className="h-48 md:h-64 w-auto" />
-              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="h-48 md:h-64 w-auto object-contain" />
+            <div className="flex flex-col items-center w-full">
+              <img src={logoUrl} alt="Core Compliance Hub" className="h-48 md:h-64 w-auto mx-auto" />
+              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-2xl h-auto object-contain mt-6" />
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-medium text-sm">
               <Activity className="w-4 h-4" />
