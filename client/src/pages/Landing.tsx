@@ -101,7 +101,7 @@ export default function Landing() {
               Turn your safety manual into a conversation. Protect your people, protect your bottom line.
             </p>
             <p className="text-2xl md:text-3xl font-display font-bold text-accent mt-6">
-              WELCOME TO CCH — BUILDING WORKFORCE WELLNESS, ONE EMPLOYEE AT A TIME.
+              WELCOME TO CCH — CREATING WORKFORCE ECOSYSTEMS, ONE EMPLOYEE AT A TIME.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
