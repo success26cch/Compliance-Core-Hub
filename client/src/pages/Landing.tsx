@@ -92,6 +92,10 @@ export default function Landing() {
                 <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
                 <span><strong>Drug Screening:</strong> Decode the 5-panel vs. 10-panel maze to ensure you're testing for what actually matters.</span>
               </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                <span><strong>Complete Coverage:</strong> From pre-employment physicals to exit exams, respirator fit tests to return-to-work clearances—CCH handles every touchpoint in your employee health lifecycle.</span>
+              </li>
             </ul>
             <p className="text-lg text-muted-foreground font-medium mt-4">
               Turn your safety manual into a conversation. Protect your people, protect your bottom line.
