@@ -8,6 +8,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey } from "./stripeClient";
+import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Auth Setup
@@ -170,6 +171,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error('Portal error:', error);
       res.status(500).json({ message: "Failed to create portal session" });
+    }
+  });
+
+  // Cheat Sheet Download
+  app.get("/api/cheat-sheet/download", async (req, res) => {
+    try {
+      const doc = generateRecordabilityCheatSheet();
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="OSHA-300-Recordability-Cheat-Sheet.pdf"');
+      
+      doc.pipe(res);
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generating cheat sheet:', error);
+      res.status(500).json({ message: "Failed to generate cheat sheet" });
     }
   });
 

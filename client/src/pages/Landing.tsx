@@ -37,7 +37,10 @@ export default function Landing() {
 
   const onSubmit = (data: z.infer<typeof leadFormSchema>) => {
     mutate(data, {
-      onSuccess: () => form.reset(),
+      onSuccess: () => {
+        form.reset();
+        window.open('/api/cheat-sheet/download', '_blank');
+      },
     });
   };
 
