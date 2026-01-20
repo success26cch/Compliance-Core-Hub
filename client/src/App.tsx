@@ -9,6 +9,7 @@ import BotPage from "@/pages/Bot";
 import ISOManager from "@/pages/ISOManager";
 import DecisionTree from "@/pages/DecisionTree";
 import Settings from "@/pages/Settings";
+import BrandNSwag from "@/pages/BrandNSwag";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/iso-manager" component={ISOManager} />
       <Route path="/decision-tree" component={DecisionTree} />
       <Route path="/settings" component={Settings} />
+      <Route path="/brandnswag" component={BrandNSwag} />
       <Route component={NotFound} />
     </Switch>
   );

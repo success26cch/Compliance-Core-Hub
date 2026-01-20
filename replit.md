@@ -1,7 +1,7 @@
 # Core Compliance Hub
 
 ## Overview
-Occupational health and compliance platform featuring an AI-powered OccHealth Consultant, ACSI ISO Manager, OSHA 300 decision tool, and professional training courses.
+**CCH: THE ONE STOP EMPLOYER SHOP** - Occupational health and compliance platform featuring an AI-powered OccHealth Consultant, ACSI ISO Manager, OSHA 300 decision tool, professional training courses, and **BrandNSwag** employee recognition division.
 
 ## Features
 - **OccHealth Consultant**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert, referencing OSHA 29 CFR 1904 and DOT 49 CFR Part 40
@@ -10,6 +10,29 @@ Occupational health and compliance platform featuring an AI-powered OccHealth Co
 - **Human Expert Retainer**: Professional human support for crisis response, OSHA 300 log audits, and audit defense
 - **Lead Capture**: Free recordability cheat sheet download
 - **Training Courses**: Self-paced compliance training with certificates
+- **BrandNSwag**: Smart Swag division for employee recognition and engagement
+
+## BrandNSwag Division
+Smart Swag makes safety fun and rewarding through QR-enabled company merchandise.
+
+### Key Features
+- **Custom Swag Stores**: Branded merchandise stores for each company
+- **QR-Code Recognition**: Every piece of swag has a unique QR code linked to employee and HR
+- **Points System**: Anyone can scan QR codes to award recognition points
+- **Reward Triggers**:
+  - Onboarding completion (welcome swag boxes)
+  - Safety class completion
+  - Perfect attendance bonuses
+  - Employee referrals
+  - Peer recognition
+
+### Swag Box Tiers
+- **Starter Box**: T-shirt + Cap + Welcome Card
+- **Professional Box**: Hoodie + T-shirt + Cap + Tumbler + Badge
+- **Executive Box**: Full wardrobe + Tech gear + Premium packaging
+
+### Merchandise Catalog
+Hoodies, T-Shirts, Hats & Caps, Jackets, Drinkware, Tech Gear
 
 ## Training Courses (One-Time Purchase)
 | Course | Price | Content |

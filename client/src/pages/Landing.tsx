@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import logoUrl from "@assets/1_1767636977932.png";
@@ -50,6 +51,7 @@ export default function Landing() {
             <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-features">Features</a>
             <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-pricing">Pricing</a>
             <a href="#courses" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-training">Training</a>
+            <a href="#brandnswag" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-faq">FAQ</a>
           </div>
           
@@ -139,7 +141,7 @@ export default function Landing() {
             className="relative"
           >
             {/* Lead Magnet Card */}
-            <div className="bg-white rounded-2xl shadow-xl border border-border/50 p-8 md:p-10 relative z-10">
+            <Card className="shadow-xl p-8 md:p-10 relative z-10" data-testid="card-lead-magnet">
               <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl"></div>
               
               <div className="space-y-6">
@@ -186,7 +188,7 @@ export default function Landing() {
                   Join 1,000+ safety professionals trusting Core Compliance.
                 </p>
               </div>
-            </div>
+            </Card>
           </motion.div>
         </div>
       </section>
@@ -555,6 +557,128 @@ export default function Landing() {
                 </Button>
               </a>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BrandNSwag Section */}
+      <section id="brandnswag" className="py-24 bg-gradient-to-br from-accent/5 via-background to-primary/5 border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm mx-auto">
+              <Sparkles className="w-5 h-5" />
+              NEW: BrandNSwag Division
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">
+              Make Safety <span className="text-accent">Fun & Rewarding</span>
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Introducing Smart Swag—QR-enabled company merchandise that turns workplace milestones into rewards. Every hoodie, hat, and shirt becomes a recognition engine.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+            <div className="space-y-8">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <QrCode className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-primary text-lg mb-2">QR-Enabled Recognition</h3>
+                  <p className="text-muted-foreground">Every piece of swag features a unique QR code linked to the employee and HR. Anyone can scan to award recognition points—managers, coworkers, or even customers.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-primary text-lg mb-2">Reward Every Milestone</h3>
+                  <p className="text-muted-foreground">Onboarding complete? Safety class passed? Perfect attendance? Friend referral? Turn every achievement into points toward premium company merchandise.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Package className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-primary text-lg mb-2">Custom Swag Stores</h3>
+                  <p className="text-muted-foreground">We set up branded swag stores for your company. New hires pick their welcome swag, top performers earn exclusive gear, and everyone feels part of the team.</p>
+                </div>
+              </div>
+            </div>
+
+            <Card className="p-8 shadow-lg" data-testid="card-smart-swag-ecosystem">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Gift className="w-8 h-8 text-accent" />
+                </div>
+                <h3 className="text-2xl font-bold text-primary mb-2">The Smart Swag Ecosystem</h3>
+                <p className="text-muted-foreground text-sm">From onboarding to ongoing recognition</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">1</div>
+                  <div>
+                    <div className="font-semibold text-primary">Onboarding Swag Box</div>
+                    <div className="text-sm text-muted-foreground">New hires receive branded welcome packages</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">2</div>
+                  <div>
+                    <div className="font-semibold text-primary">Earn Recognition Points</div>
+                    <div className="text-sm text-muted-foreground">QR scans from anyone = instant points</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">3</div>
+                  <div>
+                    <div className="font-semibold text-primary">Redeem at Your Store</div>
+                    <div className="text-sm text-muted-foreground">Points convert to premium company gear</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            <Card className="p-6 text-center" data-testid="swag-feature-onboarding">
+              <Shirt className="w-8 h-8 text-accent mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Onboarding Rewards</h4>
+              <p className="text-sm text-muted-foreground">Welcome kits with branded essentials</p>
+            </Card>
+            <Card className="p-6 text-center" data-testid="swag-feature-safety">
+              <Shield className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Safety Achievements</h4>
+              <p className="text-sm text-muted-foreground">Reward training completion</p>
+            </Card>
+            <Card className="p-6 text-center" data-testid="swag-feature-attendance">
+              <Star className="w-8 h-8 text-accent mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Attendance Bonuses</h4>
+              <p className="text-sm text-muted-foreground">Points for perfect attendance</p>
+            </Card>
+            <Card className="p-6 text-center" data-testid="swag-feature-referrals">
+              <Users className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Referral Rewards</h4>
+              <p className="text-sm text-muted-foreground">Earn when friends get hired</p>
+            </Card>
+          </div>
+
+          <div className="mt-12 text-center">
+            <div className="inline-block bg-black text-accent text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6">
+              CCH: The One Stop Employer Shop
+            </div>
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
+              Compliance. Training. Recognition. Everything your workforce needs, all in one platform.
+            </p>
+            <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+              <Button size="lg" data-testid="button-brandnswag-get-started">
+                Explore BrandNSwag
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </a>
           </div>
         </div>
       </section>
