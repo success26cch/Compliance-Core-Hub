@@ -9,6 +9,7 @@ import {
   Calendar, UserPlus, Shield, GraduationCap
 } from "lucide-react";
 import logoUrl from "@assets/1_1767636977932.png";
+import brandNSwagLogo from "@assets/2026_BNS_Logo_1768928815681.png";
 
 export default function BrandNSwag() {
   const { isAuthenticated } = useAuth();
@@ -97,9 +98,7 @@ export default function BrandNSwag() {
                 <Sparkles className="w-4 h-4 mr-2" />
                 A CCH Division
               </Badge>
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-primary">
-                Brand<span className="text-accent">N</span>Swag
-              </h1>
+              <img src={brandNSwagLogo} alt="BrandNSwag" className="h-24 md:h-32 w-auto mx-auto" data-testid="img-brandnswag-logo" />
               <p className="text-2xl text-muted-foreground">
                 Make Safety <span className="font-semibold text-accent">Fun & Rewarding</span>
               </p>

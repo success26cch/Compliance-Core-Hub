@@ -17,6 +17,7 @@ import {
   FileText,
   Shield
 } from "lucide-react";
+import acsiLogo from "@assets/Transp1_1768928785892.png";
 
 export default function ISOManager() {
   const { data: conversations, isLoading } = useConversations();
@@ -125,7 +126,7 @@ export default function ISOManager() {
             <ISOChatInterface conversationId={activeConversationId} onMessageSent={() => refetchUsage()} />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
-              <FileCheck className="w-12 h-12 mb-4 opacity-20" />
+              <img src={acsiLogo} alt="ACSI" className="h-20 w-auto mb-4" data-testid="img-acsi-logo" />
               <h3 className="text-lg font-semibold text-primary mb-2">ACSI ISO Manager</h3>
               <p className="max-w-md mb-4">
                 Your Lead ISO Auditor for ISO 9001, 14001, and 45001. Get help with Gap Analysis, 

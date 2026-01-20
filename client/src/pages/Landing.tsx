@@ -8,6 +8,9 @@ import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, Graduat
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import logoUrl from "@assets/1_1767636977932.png";
+import acsiLogo from "@assets/Transp1_1768928785892.png";
+import mentorshipLogo from "@assets/tree.transp_1768928785893.png";
+import brandNSwagLogo from "@assets/2026_BNS_Logo_1768928815681.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -341,9 +344,10 @@ export default function Landing() {
       </section>
 
       {/* ISO Management Pricing Section */}
-      <section className="py-24 bg-white border-t border-border/50">
+      <section className="py-24 bg-white dark:bg-background border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <img src={acsiLogo} alt="ACSI" className="h-16 w-auto mx-auto mb-4" data-testid="img-acsi-logo-landing" />
             <h2 className="text-3xl font-display font-bold text-primary">ISO Management Plans</h2>
             <p className="text-lg text-muted-foreground">
               ISO 9001, 14001, and 45001 certification support. Management as a Service.
@@ -387,6 +391,7 @@ export default function Landing() {
       <section id="courses" className="py-24 bg-muted/30 border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-6 space-y-4">
+            <img src={mentorshipLogo} alt="ACSI Mentorship" className="h-24 w-auto mx-auto mb-2" data-testid="img-mentorship-logo" />
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm mx-auto">
               <GraduationCap className="w-5 h-5" />
               Professional Training
@@ -569,6 +574,7 @@ export default function Landing() {
               <Sparkles className="w-5 h-5" />
               NEW: BrandNSwag Division
             </div>
+            <img src={brandNSwagLogo} alt="BrandNSwag" className="h-20 md:h-24 w-auto mx-auto" data-testid="img-brandnswag-logo-landing" />
             <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">
               Make Safety <span className="text-accent">Fun & Rewarding</span>
             </h2>
