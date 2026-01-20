@@ -89,8 +89,19 @@ ISO 9001, IATF 16949, ISO 14001, ISO 45001, and related standards
 - AI: Anthropic Claude via Replit AI integration
 - Auth: Replit Auth
 
-## Pending Setup
-- **Stripe Integration**: Required for payment processing. Set up Stripe via Replit integrations when ready.
+## Stripe Integration (Configured)
+Payment processing is set up with Stripe supporting:
+- Credit card payments
+- PayPal payments
+- Subscription billing for CCH and ACSI tiers
+- One-time purchases for training courses
+
+Products configured:
+- CCH: Safety Starter (Free), Compliance Pro ($29/mo), Unlimited Safety ($99/mo)
+- ACSI: ISO Essentials ($49/mo), ISO Professional ($149/mo)
+- Integrated Enterprise ($299/mo)
+- Human Expert Retainer ($499/mo)
+- Training courses: DOT Medical ($199), OSHA Medical ($249), Drug & Alcohol ($199), ISO Management ($349), OSHA Recordkeeping ($299), Complete Bundle ($899)
 
 ## User Preferences
 - Large logo display preferred
