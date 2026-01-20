@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList } from "lucide-react";
 import logoUrl from "@assets/1_1767636977932.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import { useForm } from "react-hook-form";
@@ -303,6 +303,68 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Training Courses Section */}
+      <section id="courses" className="py-24 bg-muted/30 border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-6 space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm mx-auto">
+              <GraduationCap className="w-5 h-5" />
+              Professional Training
+            </div>
+            <h2 className="text-3xl font-display font-bold text-primary">CCH Compliance Training Courses</h2>
+            <p className="text-lg text-muted-foreground">
+              Part of CCH's ongoing commitment to helping companies understand, comply, and stay compliant with federal and state regulations. Self-paced courses with certificates of completion.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mt-12">
+            <CourseCard 
+              icon={Stethoscope}
+              title="DOT Medical Certification"
+              description="Master DOT physical requirements, disqualifying conditions, medical holds, and the clearance process for CDL drivers."
+              price="$199"
+              modules="4 Chapters"
+            />
+            <CourseCard 
+              icon={Shield}
+              title="OSHA Medical Surveillance"
+              description="Respirator physicals, asbestos exams, HAZWOPER requirements, PFTs, and fit testing compliance."
+              price="$249"
+              modules="4 Chapters"
+            />
+            <CourseCard 
+              icon={Syringe}
+              title="Drug & Alcohol Testing"
+              description="DOT vs Non-DOT testing, MRO roles, Clearinghouse compliance, return-to-duty process, and 5 vs 10-panel testing."
+              price="$199"
+              modules="4 Chapters"
+            />
+            <CourseCard 
+              icon={ShieldCheck}
+              title="ISO Management Systems"
+              description="Complete ISO 9001, 14001, 45001 training. HLS structure, gap analysis, internal auditing, and CAPA mastery."
+              price="$349"
+              modules="12 Modules"
+              highlighted
+            />
+            <CourseCard 
+              icon={ClipboardList}
+              title="OSHA Recordkeeping Master"
+              description="Recordables Reimagined: Master OSHA 300 logs, reduce TRIR/EMR, avoid costly mistakes, and conduct internal audits."
+              price="$299"
+              modules="10 Modules"
+            />
+            <div className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center">
+              <GraduationCap className="w-12 h-12 mb-4 opacity-80" />
+              <h3 className="text-xl font-bold mb-2">Complete Training Bundle</h3>
+              <p className="text-primary-foreground/80 text-sm mb-4">All 5 courses + Corporate License</p>
+              <div className="text-3xl font-bold mb-4">$899</div>
+              <p className="text-xs text-primary-foreground/60">Save over $300</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -365,6 +427,37 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
           {buttonText}
         </Button>
       </a>
+    </div>
+  );
+}
+
+function CourseCard({ icon: Icon, title, description, price, modules, highlighted }: {
+  icon: any;
+  title: string;
+  description: string;
+  price: string;
+  modules: string;
+  highlighted?: boolean;
+}) {
+  return (
+    <div className={`p-6 rounded-2xl border ${highlighted ? 'border-accent bg-accent/5 ring-2 ring-accent' : 'border-border/50 bg-white'} flex flex-col`}>
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+          <Icon className="w-6 h-6" />
+        </div>
+        <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded">{modules}</span>
+      </div>
+      <h3 className="text-lg font-bold text-primary mb-2">{title}</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{description}</p>
+      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+        <div>
+          <span className="text-2xl font-bold text-primary">{price}</span>
+          <span className="text-sm text-muted-foreground ml-1">one-time</span>
+        </div>
+        <Button size="sm" variant={highlighted ? "default" : "outline"} className={highlighted ? "bg-accent hover:bg-accent/90" : ""}>
+          Enroll Now
+        </Button>
+      </div>
     </div>
   );
 }

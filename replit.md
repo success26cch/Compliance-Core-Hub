@@ -1,7 +1,7 @@
 # Core Compliance Hub
 
 ## Overview
-Occupational health and compliance platform featuring an AI-powered OccHealth Consultant, ACSI ISO Manager, and OSHA 300 decision tool.
+Occupational health and compliance platform featuring an AI-powered OccHealth Consultant, ACSI ISO Manager, OSHA 300 decision tool, and professional training courses.
 
 ## Features
 - **OccHealth Consultant**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert, referencing OSHA 29 CFR 1904 and DOT 49 CFR Part 40
@@ -9,6 +9,17 @@ Occupational health and compliance platform featuring an AI-powered OccHealth Co
 - **OSHA 300, Log it or Not**: Interactive decision tree for OSHA recordability
 - **Human Expert Retainer**: Professional human support for crisis response, OSHA 300 log audits, and audit defense
 - **Lead Capture**: Free recordability cheat sheet download
+- **Training Courses**: Self-paced compliance training with certificates
+
+## Training Courses (One-Time Purchase)
+| Course | Price | Content |
+|--------|-------|---------|
+| DOT Medical Certification | $199 | DOT physical requirements, disqualifying conditions, medical holds, clearance process |
+| OSHA Medical Surveillance | $249 | Respirator physicals, asbestos exams, HAZWOPER, PFTs, fit testing |
+| Drug & Alcohol Testing | $199 | DOT vs Non-DOT testing, MRO roles, Clearinghouse, return-to-duty |
+| ISO Management Systems | $349 | ISO 9001/14001/45001, HLS structure, gap analysis, internal auditing, CAPA |
+| OSHA Recordkeeping Master | $299 | OSHA 300 logs, TRIR/EMR reduction, internal audits |
+| Complete Training Bundle | $899 | All 5 courses + Corporate License (Save $300+) |
 
 ## Pricing Structure
 
