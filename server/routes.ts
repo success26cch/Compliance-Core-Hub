@@ -9,6 +9,9 @@ import { z } from "zod";
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey } from "./stripeClient";
 import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
+import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
+import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
+import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Auth Setup
@@ -174,18 +177,55 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Cheat Sheet Download
+  // Cheat Sheet Downloads
   app.get("/api/cheat-sheet/download", async (req, res) => {
     try {
       const doc = generateRecordabilityCheatSheet();
-      
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename="OSHA-300-Recordability-Cheat-Sheet.pdf"');
-      
       doc.pipe(res);
       doc.end();
     } catch (error: any) {
       console.error('Error generating cheat sheet:', error);
+      res.status(500).json({ message: "Failed to generate cheat sheet" });
+    }
+  });
+
+  app.get("/api/cheat-sheet/dot-testing", async (req, res) => {
+    try {
+      const doc = generateDOTDrugTestingCheatSheet();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="DOT-Drug-Alcohol-Testing-Guide.pdf"');
+      doc.pipe(res);
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generating DOT cheat sheet:', error);
+      res.status(500).json({ message: "Failed to generate cheat sheet" });
+    }
+  });
+
+  app.get("/api/cheat-sheet/iso-audit", async (req, res) => {
+    try {
+      const doc = generateISOAuditCheatSheet();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="ISO-Audit-Prep-Checklist.pdf"');
+      doc.pipe(res);
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generating ISO cheat sheet:', error);
+      res.status(500).json({ message: "Failed to generate cheat sheet" });
+    }
+  });
+
+  app.get("/api/cheat-sheet/safety-manager", async (req, res) => {
+    try {
+      const doc = generateSafetyManagerCheatSheet();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="New-Safety-Manager-First-30-Days.pdf"');
+      doc.pipe(res);
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generating Safety Manager cheat sheet:', error);
       res.status(500).json({ message: "Failed to generate cheat sheet" });
     }
   });

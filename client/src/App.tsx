@@ -11,6 +11,7 @@ import DecisionTree from "@/pages/DecisionTree";
 import Settings from "@/pages/Settings";
 import BrandNSwag from "@/pages/BrandNSwag";
 import Mentorship from "@/pages/Mentorship";
+import Resources from "@/pages/Resources";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/brandnswag" component={BrandNSwag} />
       <Route path="/mentorship" component={Mentorship} />
+      <Route path="/resources" component={Resources} />
       <Route component={NotFound} />
     </Switch>
   );

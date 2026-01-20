@@ -56,6 +56,7 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-features">Features</a>
             <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-pricing">Pricing</a>
+            <Link href="/resources" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-resources">Free Resources</Link>
             <a href="#courses" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-training">Training</a>
             <Link href="/mentorship" className="text-sm font-medium text-accent transition-colors" data-testid="nav-mentorship">Mentorship</Link>
             <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
