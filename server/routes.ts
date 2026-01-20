@@ -230,6 +230,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Admin users get unlimited access
+  const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim()).filter(Boolean);
+  function isAdmin(user: any): boolean {
+    if (!user?.claims) return false;
+    const userId = user.claims.sub;
+    const username = user.claims.name || user.claims.preferred_username;
+    return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(username);
+  }
+
   // Question usage
   app.get("/api/question-usage", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -239,12 +248,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const usage = await storage.getQuestionUsage(userId);
     const sub = await storage.getSubscription(userId);
     const isPro = sub?.status === "active";
+    const userIsAdmin = isAdmin(req.user);
     
     res.json({
       questionCount: usage?.questionCount || 0,
       freeLimit: 3,
-      canAsk: isPro || (usage?.questionCount || 0) < 3,
-      isPro,
+      canAsk: isPro || userIsAdmin || (usage?.questionCount || 0) < 3,
+      isPro: isPro || userIsAdmin,
     });
   });
 

@@ -10,6 +10,17 @@ const anthropic = new Anthropic({
 
 const FREE_QUESTION_LIMIT = 3;
 
+// Admin users get unlimited access (set via environment variable)
+// Format: comma-separated user IDs or usernames
+const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim()).filter(Boolean);
+
+function isAdmin(user: any): boolean {
+  if (!user?.claims) return false;
+  const userId = user.claims.sub;
+  const username = user.claims.name || user.claims.preferred_username;
+  return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(username);
+}
+
 export function registerChatRoutes(app: Express): void {
   // Get all conversations
   app.get("/api/conversations", async (req: Request, res: Response) => {
@@ -76,8 +87,10 @@ export function registerChatRoutes(app: Express): void {
       const userId = (req.user as any).claims.sub;
       const sub = await storage.getSubscription(userId);
       const isPro = sub?.status === "active";
+      const userIsAdmin = isAdmin(req.user);
       
-      if (!isPro) {
+      // Admins and Pro users bypass limits
+      if (!isPro && !userIsAdmin) {
         const usage = await storage.getQuestionUsage(userId);
         if ((usage?.questionCount || 0) >= FREE_QUESTION_LIMIT) {
           return res.status(403).json({ 
@@ -89,8 +102,8 @@ export function registerChatRoutes(app: Express): void {
         }
       }
 
-      // Increment question count for non-pro users
-      if (!isPro) {
+      // Increment question count for non-pro, non-admin users
+      if (!isPro && !userIsAdmin) {
         await storage.incrementQuestionCount(userId);
       }
 
