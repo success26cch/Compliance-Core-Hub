@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import logoUrl from "@assets/1_1767636977932.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import { useForm } from "react-hook-form";
@@ -324,6 +325,12 @@ export default function Landing() {
               description="Master DOT physical requirements, disqualifying conditions, medical holds, and the clearance process for CDL drivers."
               price="$199"
               modules="4 Chapters"
+              chapters={[
+                "Chapter 1: Introduction to DOT Physical Requirements",
+                "Chapter 2: Understanding Disqualifying Conditions",
+                "Chapter 3: Medical Holds & Waiting Periods",
+                "Chapter 4: The Medical Examiner Certification Process"
+              ]}
             />
             <CourseCard 
               icon={Shield}
@@ -331,6 +338,12 @@ export default function Landing() {
               description="Respirator physicals, asbestos exams, HAZWOPER requirements, PFTs, and fit testing compliance."
               price="$249"
               modules="4 Chapters"
+              chapters={[
+                "Chapter 1: Respirator Medical Evaluations",
+                "Chapter 2: Asbestos & Lead Medical Surveillance",
+                "Chapter 3: HAZWOPER Physical Requirements",
+                "Chapter 4: Pulmonary Function Testing & Fit Testing"
+              ]}
             />
             <CourseCard 
               icon={Syringe}
@@ -338,6 +351,12 @@ export default function Landing() {
               description="DOT vs Non-DOT testing, MRO roles, Clearinghouse compliance, return-to-duty process, and 5 vs 10-panel testing."
               price="$199"
               modules="4 Chapters"
+              chapters={[
+                "Chapter 1: DOT vs Non-DOT Testing Requirements",
+                "Chapter 2: Medical Review Officer (MRO) Process",
+                "Chapter 3: Clearinghouse Compliance & Queries",
+                "Chapter 4: Return-to-Duty & Follow-Up Testing"
+              ]}
             />
             <CourseCard 
               icon={ShieldCheck}
@@ -346,6 +365,20 @@ export default function Landing() {
               price="$349"
               modules="12 Modules"
               highlighted
+              chapters={[
+                "Module 1: Introduction to ISO Standards",
+                "Module 2: High-Level Structure (HLS) Overview",
+                "Module 3: ISO 9001 Quality Management",
+                "Module 4: ISO 14001 Environmental Management",
+                "Module 5: ISO 45001 Occupational Health & Safety",
+                "Module 6: Gap Analysis Methodology",
+                "Module 7: Documentation Requirements",
+                "Module 8: Internal Audit Planning",
+                "Module 9: Conducting Effective Audits",
+                "Module 10: Nonconformity & CAPA",
+                "Module 11: Management Review",
+                "Module 12: Certification Preparation"
+              ]}
             />
             <CourseCard 
               icon={ClipboardList}
@@ -353,6 +386,18 @@ export default function Landing() {
               description="Recordables Reimagined: Master OSHA 300 logs, reduce TRIR/EMR, avoid costly mistakes, and conduct internal audits."
               price="$299"
               modules="10 Modules"
+              chapters={[
+                "Module 1: OSHA Recordkeeping Overview",
+                "Module 2: General Recording Criteria",
+                "Module 3: Work-Relatedness Determination",
+                "Module 4: Days Away, Restricted, or Transfer",
+                "Module 5: First Aid vs. Medical Treatment",
+                "Module 6: Privacy Cases & Exemptions",
+                "Module 7: OSHA 300 Log Management",
+                "Module 8: TRIR & EMR Calculations",
+                "Module 9: Internal Audit Procedures",
+                "Module 10: Inspection Preparedness"
+              ]}
             />
             <div className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center">
               <GraduationCap className="w-12 h-12 mb-4 opacity-80" />
@@ -431,12 +476,13 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
   );
 }
 
-function CourseCard({ icon: Icon, title, description, price, modules, highlighted }: {
+function CourseCard({ icon: Icon, title, description, price, modules, chapters, highlighted }: {
   icon: any;
   title: string;
   description: string;
   price: string;
   modules: string;
+  chapters: string[];
   highlighted?: boolean;
 }) {
   return (
@@ -449,6 +495,47 @@ function CourseCard({ icon: Icon, title, description, price, modules, highlighte
       </div>
       <h3 className="text-lg font-bold text-primary mb-2">{title}</h3>
       <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{description}</p>
+      
+      <Dialog>
+        <DialogTrigger asChild>
+          <button 
+            className="flex items-center gap-1 text-sm text-accent font-medium mb-4 hover:underline cursor-pointer"
+            data-testid={`preview-${title.toLowerCase().replace(/\s+/g, '-')}`}
+          >
+            <ChevronDown className="w-4 h-4" />
+            Preview Course Content
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon className="w-5 h-5 text-primary" />
+              {title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <h4 className="text-sm font-semibold text-muted-foreground mb-3">Course Outline</h4>
+            <ul className="space-y-2">
+              {chapters.map((chapter, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                  <span>{chapter}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between">
+            <div>
+              <span className="text-2xl font-bold text-primary">{price}</span>
+              <span className="text-sm text-muted-foreground ml-1">one-time</span>
+            </div>
+            <Button size="sm" className="bg-accent hover:bg-accent/90">
+              Enroll Now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <div className="flex items-center justify-between pt-4 border-t border-border/50">
         <div>
           <span className="text-2xl font-bold text-primary">{price}</span>
