@@ -259,5 +259,71 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
 
+  // Contact Inquiries (retainer, consultation requests)
+  app.post("/api/contact-inquiries", async (req, res) => {
+    try {
+      const { name, email, company, phone, employeeCount, inquiryType, message } = req.body;
+      
+      if (!name || !email || !inquiryType || !message) {
+        return res.status(400).json({ message: "Name, email, inquiry type, and message are required" });
+      }
+      
+      const inquiry = await storage.createContactInquiry({
+        name,
+        email,
+        company: company || null,
+        phone: phone || null,
+        employeeCount: employeeCount || null,
+        inquiryType,
+        message,
+      });
+      
+      // TODO: Send email notification when email service is configured
+      // This is where you'd integrate GHL, SendGrid, or similar
+      
+      res.status(201).json(inquiry);
+    } catch (error: any) {
+      console.error('Error creating contact inquiry:', error);
+      res.status(500).json({ message: "Failed to submit inquiry" });
+    }
+  });
+
+  // Admin: Get all contact inquiries
+  app.get("/api/contact-inquiries", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    
+    const inquiries = await storage.getContactInquiries();
+    res.json(inquiries);
+  });
+
+  // Admin: Update inquiry status
+  app.patch("/api/contact-inquiries/:id/status", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    
+    if (!status || !['new', 'contacted', 'closed'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+    
+    const updated = await storage.updateInquiryStatus(id, status);
+    if (!updated) {
+      return res.status(404).json({ message: "Inquiry not found" });
+    }
+    
+    res.json(updated);
+  });
+
   return httpServer;
 }

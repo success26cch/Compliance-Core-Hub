@@ -1,6 +1,6 @@
-import { leads, subscriptions, questionUsage, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Leads
@@ -14,6 +14,11 @@ export interface IStorage {
   // Question Usage
   getQuestionUsage(userId: string): Promise<QuestionUsage | undefined>;
   incrementQuestionCount(userId: string): Promise<QuestionUsage>;
+
+  // Contact Inquiries
+  createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry>;
+  getContactInquiries(): Promise<ContactInquiry[]>;
+  updateInquiryStatus(id: number, status: string): Promise<ContactInquiry | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -65,6 +70,24 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(questionUsage).values({ userId, questionCount: 1 }).returning();
       return created;
     }
+  }
+
+  async createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry> {
+    const [newInquiry] = await db.insert(contactInquiries).values(inquiry).returning();
+    return newInquiry;
+  }
+
+  async getContactInquiries(): Promise<ContactInquiry[]> {
+    return db.select().from(contactInquiries).orderBy(desc(contactInquiries.createdAt));
+  }
+
+  async updateInquiryStatus(id: number, status: string): Promise<ContactInquiry | undefined> {
+    const [updated] = await db
+      .update(contactInquiries)
+      .set({ status })
+      .where(eq(contactInquiries.id, id))
+      .returning();
+    return updated;
   }
 }
 

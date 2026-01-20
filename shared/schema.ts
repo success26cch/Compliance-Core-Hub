@@ -53,6 +53,28 @@ export const insertQuestionUsageSchema = createInsertSchema(questionUsage).omit(
 export type QuestionUsage = typeof questionUsage.$inferSelect;
 export type InsertQuestionUsage = z.infer<typeof insertQuestionUsageSchema>;
 
+// Contact inquiries (retainer, general questions, etc.)
+export const contactInquiries = pgTable("contact_inquiries", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company"),
+  phone: text("phone"),
+  employeeCount: text("employee_count"),
+  inquiryType: text("inquiry_type").notNull(), // 'retainer', 'consultation', 'general'
+  message: text("message").notNull(),
+  status: text("status").notNull().default("new"), // 'new', 'contacted', 'closed'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertContactInquirySchema = createInsertSchema(contactInquiries).omit({ 
+  id: true, 
+  createdAt: true,
+  status: true 
+});
+export type ContactInquiry = typeof contactInquiries.$inferSelect;
+export type InsertContactInquiry = z.infer<typeof insertContactInquirySchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;
