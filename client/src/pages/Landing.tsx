@@ -47,20 +47,20 @@ export default function Landing() {
           </div>
           
           <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Features</a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Pricing</a>
-            <a href="#courses" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Training</a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">FAQ</a>
+            <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-features">Features</a>
+            <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-pricing">Pricing</a>
+            <a href="#courses" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-training">Training</a>
+            <a href="#faq" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-faq">FAQ</a>
           </div>
           
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <Link href="/dashboard">
-                <Button>Go to Dashboard</Button>
+                <Button data-testid="button-nav-dashboard">Go to Dashboard</Button>
               </Link>
             ) : (
               <a href="/api/login">
-                <Button variant="outline">Sign In</Button>
+                <Button variant="outline" data-testid="button-nav-signin">Sign In</Button>
               </a>
             )}
           </div>
@@ -120,12 +120,12 @@ export default function Landing() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
-                <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-lg font-semibold shadow-lg shadow-primary/25">
+                <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-hero-get-started">
                   Get Started Free
                 </Button>
               </a>
               <a href="#features">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 text-lg">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto" data-testid="button-hero-see-features">
                   See Features
                 </Button>
               </a>
@@ -158,7 +158,7 @@ export default function Landing() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input placeholder="Your Name" className="h-12 bg-muted/50" {...field} />
+                            <Input placeholder="Your Name" className="h-12 bg-muted/50" data-testid="input-lead-name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -170,13 +170,13 @@ export default function Landing() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input placeholder="Work Email" className="h-12 bg-muted/50" {...field} />
+                            <Input placeholder="Work Email" className="h-12 bg-muted/50" data-testid="input-lead-email" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full h-12 font-semibold bg-accent hover:bg-accent/90 text-white" disabled={isPending}>
+                    <Button type="submit" className="w-full font-semibold" disabled={isPending} data-testid="button-download-cheatsheet">
                       {isPending ? "Sending..." : "Download Now"}
                     </Button>
                   </form>
@@ -550,7 +550,7 @@ export default function Landing() {
                 </li>
               </ul>
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
-                <Button size="lg" className="w-full bg-accent hover:bg-accent/90">
+                <Button size="lg" className="w-full" data-testid="button-human-expert-access">
                   Get Human Expert Access
                 </Button>
               </a>
@@ -643,7 +643,7 @@ export default function Landing() {
 
           <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="item-1" className="bg-muted/30 rounded-lg border border-border/50 px-6">
-              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+              <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
                 Is the AI guidance legally binding?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
@@ -651,7 +651,7 @@ export default function Landing() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2" className="bg-muted/30 rounded-lg border border-border/50 px-6">
-              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+              <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
                 How accurate is the OSHA recordability guidance?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
@@ -659,7 +659,7 @@ export default function Landing() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-3" className="bg-muted/30 rounded-lg border border-border/50 px-6">
-              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+              <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
                 Can I upgrade or downgrade my plan anytime?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
@@ -667,7 +667,7 @@ export default function Landing() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-4" className="bg-muted/30 rounded-lg border border-border/50 px-6">
-              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+              <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
                 What's the difference between CCH and ACSI?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
@@ -675,7 +675,7 @@ export default function Landing() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-5" className="bg-muted/30 rounded-lg border border-border/50 px-6">
-              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+              <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
                 Do training courses include certificates?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
@@ -683,7 +683,7 @@ export default function Landing() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-6" className="bg-muted/30 rounded-lg border border-border/50 px-6">
-              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+              <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
                 How does the Human Expert Retainer work?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
@@ -706,13 +706,13 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
-              <Button size="lg" className="h-14 px-10 text-lg bg-white text-accent hover:bg-white/90 font-semibold">
+              <Button size="lg" variant="secondary" className="px-10 text-lg font-semibold" data-testid="button-cta-get-started">
                 Get Started Free
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </a>
             <a href="#pricing">
-              <Button size="lg" variant="outline" className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="px-10 text-lg" data-testid="button-cta-view-pricing">
                 View Pricing
               </Button>
             </a>
@@ -778,7 +778,7 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
       </ul>
       <p className="text-sm text-muted-foreground mb-6 italic">{bestFor}</p>
       <a href={buttonHref}>
-        <Button className={`w-full ${highlighted ? 'bg-accent hover:bg-accent/90' : ''}`} variant={highlighted ? 'default' : 'outline'}>
+        <Button className="w-full" variant={highlighted ? 'default' : 'outline'} data-testid={`button-pricing-${tier.toLowerCase().replace(/\s+/g, '-')}`}>
           {buttonText}
         </Button>
       </a>
@@ -839,7 +839,7 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
               <span className="text-2xl font-bold text-primary">{price}</span>
               <span className="text-sm text-muted-foreground ml-1">one-time</span>
             </div>
-            <Button size="sm" className="bg-accent hover:bg-accent/90">
+            <Button size="sm" data-testid={`button-enroll-dialog-${title.toLowerCase().replace(/\s+/g, '-')}`}>
               Enroll Now
             </Button>
           </div>
@@ -851,7 +851,7 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
           <span className="text-2xl font-bold text-primary">{price}</span>
           <span className="text-sm text-muted-foreground ml-1">one-time</span>
         </div>
-        <Button size="sm" variant={highlighted ? "default" : "outline"} className={highlighted ? "bg-accent hover:bg-accent/90" : ""}>
+        <Button size="sm" variant={highlighted ? "default" : "outline"} data-testid={`button-enroll-${title.toLowerCase().replace(/\s+/g, '-')}`}>
           Enroll Now
         </Button>
       </div>
