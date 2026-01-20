@@ -93,7 +93,7 @@ export default function Landing() {
               THE ONE STOP EMPLOYER SHOP
             </div>
             <h1 className="text-4xl md:text-6xl font-display font-black text-primary leading-[1.1]">
-              Set the Bar in Compliance. <span className="text-accent">Start Leading Your Industry.</span>
+              Compliance Isn't a Guessing Game—<span className="text-accent">It's Your Reputation.</span>
             </h1>
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
               <p className="text-lg text-primary leading-relaxed">
