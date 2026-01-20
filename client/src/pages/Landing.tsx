@@ -88,41 +88,59 @@ export default function Landing() {
               <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 w-auto mx-auto -mb-4" />
               <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-2xl h-auto object-contain" />
             </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-medium text-sm">
-              <Activity className="w-4 h-4" />
-              Occupational Medicine Simplified
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 text-accent font-semibold text-sm border border-accent/30">
+              <Activity className="w-4 h-4 animate-pulse" />
+              THE ONE STOP EMPLOYER SHOP
             </div>
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-primary leading-tight">
-              Stop Guessing. Start Complying. <span className="text-accent">Your 24/7 Occupational Health Expert.</span>
+            <h1 className="text-4xl md:text-6xl font-display font-black text-primary leading-[1.1]">
+              Your Competitors Are <span className="text-accent">Already Compliant.</span>
+              <br />
+              <span className="text-2xl md:text-3xl font-bold text-muted-foreground mt-2 block">Are You?</span>
             </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-              One wrong OSHA entry can cost thousands. One missed DOT guideline can sideline your fleet. Core Compliance Hub gives your team instant, expert-level clarity on:
-            </p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                <span><strong>OSHA Recordables:</strong> Know instantly if an injury is a 'Reportable' or just 'First Aid.'</span>
+            <div className="bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
+              <p className="text-xl font-semibold text-primary">
+                OSHA + DOT + ISO + Training + Recognition
+              </p>
+              <p className="text-lg text-muted-foreground">
+                One platform. Zero guesswork. Unlimited peace of mind.
+              </p>
+            </div>
+            <ul className="space-y-3 text-muted-foreground">
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">AI-Powered Compliance:</strong> Get instant, expert answers on OSHA 300 recordability, DOT physicals, and drug testing—24/7.</span>
               </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                <span><strong>DOT Compliance:</strong> Navigate physical requirements and 'Fit-for-Duty' status without the legal headache.</span>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">ISO Certification Ready:</strong> 9001, 14001, 45001—our Lead Auditor AI guides you from gap analysis to audit day.</span>
               </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                <span><strong>Drug Screening:</strong> Decode the 5-panel vs. 10-panel maze to ensure you're testing for what actually matters.</span>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">Professional Training:</strong> Self-paced courses with certificates your auditors actually respect.</span>
               </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                <span><strong>Complete Coverage:</strong> From pre-employment physicals to exit exams, respirator fit tests to return-to-work clearances—CCH handles every touchpoint in your employee health lifecycle.</span>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">Employee Recognition:</strong> BrandNSwag turns safety milestones into rewards your team actually wants.</span>
               </li>
             </ul>
-            <p className="text-lg text-muted-foreground font-medium mt-4">
-              Turn your safety manual into a conversation. Protect your people, protect your bottom line.
-            </p>
-            <div className="mt-6 text-center">
-              <span className="inline-block bg-black text-accent text-2xl md:text-3xl font-bold px-6 py-3 tracking-wide uppercase">
-                Welcome to the future of compliance. Welcome to Core Compliance Hub!
-              </span>
+            <div className="relative mt-6">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary rounded-lg blur-sm opacity-75"></div>
+              <div className="relative bg-black text-white text-center py-4 px-6 rounded-lg">
+                <p className="text-lg md:text-xl font-bold">
+                  Stop Paying Consultants. Start Owning Compliance.
+                </p>
+                <p className="text-accent font-semibold mt-1">
+                  Join 500+ companies who ditched the guesswork.
+                </p>
+              </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
