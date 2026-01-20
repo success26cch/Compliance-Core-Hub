@@ -16,7 +16,7 @@ export function generateRecordabilityCheatSheet(): typeof PDFDocument.prototype 
 
   doc.rect(0, 0, pageWidth, 80).fill(primaryColor);
   
-  const logoPath = path.join(process.cwd(), 'attached_assets', '1_1767636977932.png');
+  const logoPath = path.join(process.cwd(), 'attached_assets', '8_1768938387712.png');
   try {
     doc.image(logoPath, margin, 8, { height: 64 });
   } catch (e) {
