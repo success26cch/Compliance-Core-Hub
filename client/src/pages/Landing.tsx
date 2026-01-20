@@ -93,9 +93,9 @@ export default function Landing() {
               THE ONE STOP EMPLOYER SHOP
             </div>
             <h1 className="text-4xl md:text-6xl font-display font-black text-primary leading-[1.1]">
-              Your Competitors Are <span className="text-accent">Already Compliant.</span>
+              Compliance <span className="text-accent">Made Simple.</span>
               <br />
-              <span className="text-2xl md:text-3xl font-bold text-muted-foreground mt-2 block">Are You?</span>
+              <span className="text-2xl md:text-3xl font-bold text-muted-foreground mt-2 block">Safety Made Smart. Growth Made Possible.</span>
             </h1>
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
               <p className="text-xl font-semibold text-primary">
