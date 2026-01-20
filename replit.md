@@ -1,7 +1,7 @@
 # Core Compliance Hub
 
 ## Overview
-**CCH: THE ONE STOP EMPLOYER SHOP** - Occupational health and compliance platform featuring an AI-powered OccHealth Consultant, ACSI ISO Manager, OSHA 300 decision tool, professional training courses, and **BrandNSwag** employee recognition division.
+**CCH: THE ONE STOP EMPLOYER SHOP** - Occupational health and compliance platform featuring an AI-powered OccHealth Consultant, ACSI ISO Manager, OSHA 300 decision tool, professional training courses, **ACSI Mentorship Program** (CCH exclusive), and **BrandNSwag** employee recognition division.
 
 ## Features
 - **OccHealth Consultant**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert, referencing OSHA 29 CFR 1904 and DOT 49 CFR Part 40
@@ -10,6 +10,7 @@
 - **Human Expert Retainer**: Professional human support for crisis response, OSHA 300 log audits, and audit defense
 - **Lead Capture**: Free recordability cheat sheet download
 - **Training Courses**: Self-paced compliance training with certificates
+- **ACSI Mentorship Program**: CCH Exclusive - First ISO Mentorship Program. Ongoing guidance and competency development for internal system owners
 - **BrandNSwag**: Smart Swag division for employee recognition and engagement
 
 ## BrandNSwag Division
@@ -62,6 +63,24 @@ Hoodies, T-Shirts, Hats & Caps, Jackets, Drinkware, Tech Gear
 
 ### Human Expert Retainer (Add-on)
 - **App + Retainer**: $499/mo - For companies with 20-100 employees who need professional safety director level protection
+
+## ACSI Mentorship Program (CCH Exclusive)
+The first and only ISO Mentorship Program - exclusive to CCH. Developed from years of real-world audit experience.
+
+### Who It's For
+- Quality Managers (ISO 9001, IATF 16949)
+- EHS Coordinators (ISO 14001, ISO 45001)
+- Internal Auditors needing expert guidance
+
+### Key Benefits
+- Ongoing guidance and reinforcement (not just one-time training)
+- Practical application support for real-world challenges
+- Audit-facing confidence development
+- Reduced reactive consulting costs
+- Long-term system sustainability
+
+### Standards Covered
+ISO 9001, IATF 16949, ISO 14001, ISO 45001, and related standards
 
 ## Tech Stack
 - Frontend: React + Vite + TailwindCSS + shadcn/ui
