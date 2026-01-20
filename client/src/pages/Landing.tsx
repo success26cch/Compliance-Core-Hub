@@ -487,6 +487,239 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Human Expert Retainer Section */}
+      <section className="py-24 bg-white border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                <Phone className="w-4 h-4" />
+                Human Expert Support
+              </div>
+              <h2 className="text-3xl font-display font-bold text-primary">
+                Need a Real Safety Director?
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                AI is powerful, but some situations demand human expertise. Our Human Expert Retainer gives you direct access to seasoned occupational health professionals for:
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground"><strong>Crisis Response:</strong> Immediate guidance during workplace incidents</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground"><strong>OSHA 300 Log Audits:</strong> Professional review of your recordkeeping</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground"><strong>Audit Defense:</strong> Expert support during OSHA inspections</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground"><strong>Policy Review:</strong> Ensure your safety programs meet current standards</span>
+                </li>
+              </ul>
+            </div>
+            <div className="bg-muted/30 rounded-2xl border border-border/50 p-8 text-center">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
+                <Users className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-bold text-primary mb-2">App + Human Retainer</h3>
+              <p className="text-muted-foreground mb-6">For companies with 20-100 employees who need professional safety director level protection</p>
+              <div className="mb-6">
+                <span className="text-5xl font-bold text-primary">$499</span>
+                <span className="text-muted-foreground">/mo</span>
+              </div>
+              <ul className="space-y-2 text-left mb-8">
+                <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                  <span>All Unlimited Safety features included</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                  <span>Dedicated human compliance expert</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                  <span>Priority phone & email support</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                  <span>Quarterly compliance reviews</span>
+                </li>
+              </ul>
+              <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                <Button size="lg" className="w-full bg-accent hover:bg-accent/90">
+                  Get Human Expert Access
+                </Button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-24 bg-muted/30 border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl font-display font-bold text-primary">Trusted by Safety Professionals</h2>
+            <p className="text-lg text-muted-foreground">
+              See what compliance leaders say about Core Compliance Hub.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-2xl border border-border/50 p-8">
+              <div className="flex items-center gap-1 text-accent mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Award key={i} className="w-4 h-4 fill-accent" />
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-6 italic">
+                "CCH saved us from a $75,000 OSHA fine. We had been logging an injury incorrectly for months. The AI caught it immediately and showed us exactly how to fix it."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                  MR
+                </div>
+                <div>
+                  <div className="font-semibold text-primary">Michael Rodriguez</div>
+                  <div className="text-sm text-muted-foreground">Safety Manager, Industrial Manufacturing</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-border/50 p-8">
+              <div className="flex items-center gap-1 text-accent mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Award key={i} className="w-4 h-4 fill-accent" />
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-6 italic">
+                "As an HR director managing DOT compliance for 50+ drivers, CCH has become indispensable. The drug testing guidance alone has saved us countless hours of confusion."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                  ST
+                </div>
+                <div>
+                  <div className="font-semibold text-primary">Sarah Thompson</div>
+                  <div className="text-sm text-muted-foreground">HR Director, Regional Trucking Co.</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-border/50 p-8">
+              <div className="flex items-center gap-1 text-accent mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Award key={i} className="w-4 h-4 fill-accent" />
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-6 italic">
+                "We achieved ISO 45001 certification 3 months faster than expected thanks to the ACSI ISO Manager. The gap analysis feature alone was worth the investment."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                  JK
+                </div>
+                <div>
+                  <div className="font-semibold text-primary">James Kim</div>
+                  <div className="text-sm text-muted-foreground">Quality Manager, Precision Engineering</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="py-24 bg-white border-t border-border/50">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-3xl font-display font-bold text-primary">Frequently Asked Questions</h2>
+            <p className="text-lg text-muted-foreground">
+              Everything you need to know about CCH.
+            </p>
+          </div>
+
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-1" className="bg-muted/30 rounded-lg border border-border/50 px-6">
+              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+                Is the AI guidance legally binding?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                CCH provides educational guidance based on OSHA 29 CFR 1904, DOT 49 CFR Part 40, and ISO standards. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, we recommend our Human Expert Retainer service.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-2" className="bg-muted/30 rounded-lg border border-border/50 px-6">
+              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+                How accurate is the OSHA recordability guidance?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Our AI is trained on comprehensive OSHA recordkeeping requirements and has been tested against thousands of real-world scenarios. The "OSHA 300, Log it or Not" decision tree follows the exact criteria outlined in OSHA 1904 regulations, ensuring you get consistent, regulation-backed answers.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-3" className="bg-muted/30 rounded-lg border border-border/50 px-6">
+              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+                Can I upgrade or downgrade my plan anytime?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! You can upgrade, downgrade, or cancel your subscription at any time. Changes take effect at the start of your next billing cycle. Training courses are one-time purchases and remain accessible indefinitely.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-4" className="bg-muted/30 rounded-lg border border-border/50 px-6">
+              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+                What's the difference between CCH and ACSI?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                CCH (Core Compliance Hub) focuses on occupational health compliance including OSHA recordkeeping, DOT physicals, and drug testing. ACSI (ISO Manager) specializes in ISO management system standards (9001, 14001, 45001). The Enterprise Bundle combines both for comprehensive compliance coverage.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-5" className="bg-muted/30 rounded-lg border border-border/50 px-6">
+              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+                Do training courses include certificates?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Yes! All training courses include a certificate of completion upon finishing the curriculum. Certificates can be used to demonstrate continuing education in occupational health, safety, and compliance to employers and regulatory bodies.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-6" className="bg-muted/30 rounded-lg border border-border/50 px-6">
+              <AccordionTrigger className="text-left font-semibold text-primary hover:no-underline">
+                How does the Human Expert Retainer work?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                The Human Expert Retainer ($499/mo) provides direct access to experienced occupational health professionals. You get all Unlimited Safety features plus a dedicated expert for crisis response, OSHA 300 log audits, audit defense support, and quarterly compliance reviews. Ideal for companies with 20-100 employees.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </section>
+
+      {/* Final CTA Strip */}
+      <section className="py-20 bg-accent text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Building2 className="w-12 h-12 mx-auto mb-6 opacity-80" />
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+            Ready to Build Your Perfectly Safe Workplace?
+          </h2>
+          <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
+            Join hundreds of companies using Core Compliance Hub to protect their employees, reduce fines, and stay audit-ready. Start free today.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+              <Button size="lg" className="h-14 px-10 text-lg bg-white text-accent hover:bg-white/90 font-semibold">
+                Get Started Free
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </a>
+            <a href="#pricing">
+              <Button size="lg" variant="outline" className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/10">
+                View Pricing
+              </Button>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
