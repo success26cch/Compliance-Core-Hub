@@ -48,29 +48,25 @@ export default function Landing() {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Navbar */}
       <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-20 w-auto" />
-          </div>
-          
-          <div className="hidden md:flex items-center gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="hidden lg:flex items-center gap-4">
             <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-features">Features</a>
             <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-pricing">Pricing</a>
-            <Link href="/resources" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-resources">Free Resources</Link>
+            <Link href="/resources" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-resources">Resources</Link>
             <a href="#courses" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-training">Training</a>
             <Link href="/mentorship" className="text-sm font-medium text-accent transition-colors" data-testid="nav-mentorship">Mentorship</Link>
-            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">Swag</a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-faq">FAQ</a>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <Link href="/dashboard">
-                <Button data-testid="button-nav-dashboard">Go to Dashboard</Button>
+                <Button size="sm" data-testid="button-nav-dashboard">Dashboard</Button>
               </Link>
             ) : (
               <a href="/api/login">
-                <Button variant="outline" data-testid="button-nav-signin">Sign In</Button>
+                <Button size="sm" variant="outline" data-testid="button-nav-signin">Sign In</Button>
               </a>
             )}
           </div>
