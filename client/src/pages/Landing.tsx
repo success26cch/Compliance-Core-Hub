@@ -48,15 +48,15 @@ export default function Landing() {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Navbar */}
       <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="hidden lg:flex items-center gap-4">
-            <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-features">Features</a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-pricing">Pricing</a>
-            <Link href="/resources" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-resources">Resources</Link>
-            <a href="#courses" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-training">Training</a>
-            <Link href="/mentorship" className="text-sm font-medium text-accent transition-colors" data-testid="nav-mentorship">Mentorship</Link>
-            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">Swag</a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-faq">FAQ</a>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+          <div className="hidden md:flex items-center gap-5">
+            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-features">Features</a>
+            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-pricing">Pricing</a>
+            <Link href="/resources" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-resources">Free Resources</Link>
+            <a href="#courses" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-training">Training</a>
+            <Link href="/mentorship" className="text-sm font-medium text-accent hover:text-accent/80 transition-colors" data-testid="nav-mentorship">Mentorship</Link>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
+            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-faq">FAQ</a>
           </div>
           
           <div className="flex items-center gap-3">
