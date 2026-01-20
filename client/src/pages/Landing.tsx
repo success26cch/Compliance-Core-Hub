@@ -565,11 +565,11 @@ export default function Landing() {
                   <span>Quarterly compliance reviews</span>
                 </li>
               </ul>
-              <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+              <Link href="/contact">
                 <Button size="lg" className="w-full" data-testid="button-human-expert-access">
                   Get Human Expert Access
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

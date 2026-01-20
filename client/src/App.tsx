@@ -12,6 +12,8 @@ import Settings from "@/pages/Settings";
 import BrandNSwag from "@/pages/BrandNSwag";
 import Mentorship from "@/pages/Mentorship";
 import Resources from "@/pages/Resources";
+import Contact from "@/pages/Contact";
+import AdminInquiries from "@/pages/AdminInquiries";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/brandnswag" component={BrandNSwag} />
       <Route path="/mentorship" component={Mentorship} />
       <Route path="/resources" component={Resources} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/admin/inquiries" component={AdminInquiries} />
       <Route component={NotFound} />
     </Switch>
   );
