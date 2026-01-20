@@ -26,19 +26,30 @@ export function Sidebar({ className = "" }: { className?: string }) {
   const links = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/bot", label: "OccHealth Consultant", icon: Bot },
-    { href: "/iso-manager", label: "ACSI ISO Manager", icon: FileCheck },
+    { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
   ];
 
-  const LinkItem = ({ href, label, icon: Icon }: any) => {
+  const LinkItem = ({ href, label, icon: Icon, external }: any) => {
     const isActive = location === href;
+    const className = `
+      flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+      ${isActive 
+        ? "bg-primary/10 text-primary" 
+        : "text-muted-foreground hover:bg-muted hover:text-foreground"}
+    `;
+    
+    if (external) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+          <Icon className="w-5 h-5" />
+          {label}
+        </a>
+      );
+    }
+    
     return (
-      <Link href={href} className={`
-        flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-        ${isActive 
-          ? "bg-primary/10 text-primary" 
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"}
-      `}>
+      <Link href={href} className={className}>
         <Icon className="w-5 h-5" />
         {label}
       </Link>

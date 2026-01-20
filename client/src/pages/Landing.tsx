@@ -55,7 +55,7 @@ export default function Landing() {
             <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-pricing">Pricing</a>
             <a href="#courses" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-training">Training</a>
             <Link href="/mentorship" className="text-sm font-medium text-accent transition-colors" data-testid="nav-mentorship">Mentorship</Link>
-            <a href="#brandnswag" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-faq">FAQ</a>
           </div>
           
@@ -363,7 +363,8 @@ export default function Landing() {
               features={["5 AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance"]}
               bestFor="Startups preparing for first certification."
               buttonText="Start ISO Journey"
-              buttonHref={isAuthenticated ? "/iso-manager" : "/api/login"}
+              buttonHref="https://acsi-quality.com/"
+              external
             />
             <PricingCard 
               tier="ISO Professional"
@@ -372,7 +373,8 @@ export default function Landing() {
               features={["Unlimited ISO AI guidance", "Internal Audit Checklists", "'Write-Up Free' Guarantee tools", "Quality Manual drafting"]}
               bestFor="Companies maintaining ISO 9001/14001/45001."
               buttonText="Go Professional"
-              buttonHref={isAuthenticated ? "/iso-manager" : "/api/login"}
+              buttonHref="https://acsi-quality.com/"
+              external
               highlighted
             />
             <PricingCard 
@@ -680,7 +682,7 @@ export default function Landing() {
             <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
               Compliance. Training. Recognition. Everything your workforce needs, all in one platform.
             </p>
-            <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
               <Button size="lg" data-testid="button-brandnswag-get-started">
                 Explore BrandNSwag
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -880,7 +882,7 @@ function FeatureCard({ icon: Icon, title, description }: any) {
   );
 }
 
-function PricingCard({ tier, price, period, features, bestFor, buttonText, buttonHref, highlighted }: {
+function PricingCard({ tier, price, period, features, bestFor, buttonText, buttonHref, highlighted, external }: {
   tier: string;
   price: string;
   period: string;
@@ -889,6 +891,7 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
   buttonText: string;
   buttonHref: string;
   highlighted?: boolean;
+  external?: boolean;
 }) {
   return (
     <div className={`p-8 rounded-2xl border ${highlighted ? 'border-accent bg-accent/5 ring-2 ring-accent' : 'border-border/50 bg-white'} flex flex-col`}>
@@ -908,7 +911,7 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
         ))}
       </ul>
       <p className="text-sm text-muted-foreground mb-6 italic">{bestFor}</p>
-      <a href={buttonHref}>
+      <a href={buttonHref} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
         <Button className="w-full" variant={highlighted ? 'default' : 'outline'} data-testid={`button-pricing-${tier.toLowerCase().replace(/\s+/g, '-')}`}>
           {buttonText}
         </Button>

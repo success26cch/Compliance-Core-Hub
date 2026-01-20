@@ -87,8 +87,8 @@ export default function Mentorship() {
           
           <div className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-home">Home</Link>
-            <Link href="/iso-manager" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-iso">ISO Manager</Link>
-            <Link href="/brandnswag" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">BrandNSwag</Link>
+            <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-iso">ISO Manager</a>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
           </div>
           
           <div className="flex items-center gap-4">

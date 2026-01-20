@@ -107,7 +107,7 @@ export default function BrandNSwag() {
                 Every item comes with a QR code that connects to your recognition system.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
                   <Button size="lg" data-testid="button-brandnswag-setup-store">
                     Set Up Your Swag Store
                     <ShoppingBag className="w-5 h-5 ml-2" />
@@ -298,7 +298,7 @@ export default function BrandNSwag() {
               From compliance to engagement—CCH has everything your workforce needs.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+              <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="secondary" data-testid="button-brandnswag-cta-start">
                   Get Started with BrandNSwag
                   <ArrowRight className="w-5 h-5 ml-2" />
