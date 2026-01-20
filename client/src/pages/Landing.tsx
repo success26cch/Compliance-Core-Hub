@@ -97,7 +97,7 @@ export default function Landing() {
             </h1>
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
               <p className="text-lg text-primary leading-relaxed">
-                CCH is the only platform that handles your safety, your training, and your brand. Get the expert representation your company deserves today.
+                CCH is the all-in-one compliance command center for employers who are tired of expensive consultants, confusing regulations, and scattered safety programs.
               </p>
               <p className="text-xl font-bold text-accent mt-2">
                 Safety Made Smart. Growth Made Possible.
