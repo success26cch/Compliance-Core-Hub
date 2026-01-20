@@ -11,14 +11,15 @@ const anthropic = new Anthropic({
 const FREE_QUESTION_LIMIT = 3;
 
 // Admin users get unlimited access (set via environment variable)
-// Format: comma-separated user IDs or usernames
-const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim()).filter(Boolean);
+// Format: comma-separated user IDs, emails, or usernames
+const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
 function isAdmin(user: any): boolean {
   if (!user?.claims) return false;
   const userId = user.claims.sub;
-  const username = user.claims.name || user.claims.preferred_username;
-  return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(username);
+  const email = (user.claims.email || "").toLowerCase();
+  const username = (user.claims.name || user.claims.preferred_username || "").toLowerCase();
+  return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(email) || ADMIN_USERS.includes(username);
 }
 
 export function registerChatRoutes(app: Express): void {

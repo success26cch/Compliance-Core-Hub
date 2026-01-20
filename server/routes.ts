@@ -231,12 +231,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // Admin users get unlimited access
-  const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim()).filter(Boolean);
+  const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
   function isAdmin(user: any): boolean {
     if (!user?.claims) return false;
     const userId = user.claims.sub;
-    const username = user.claims.name || user.claims.preferred_username;
-    return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(username);
+    const email = (user.claims.email || "").toLowerCase();
+    const username = (user.claims.name || user.claims.preferred_username || "").toLowerCase();
+    return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(email) || ADMIN_USERS.includes(username);
   }
 
   // Question usage
