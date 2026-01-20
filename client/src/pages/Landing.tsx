@@ -348,7 +348,9 @@ export default function Landing() {
       <section className="py-24 bg-white dark:bg-background border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <img src={acsiLogo} alt="ACSI" className="h-16 w-auto mx-auto mb-4" data-testid="img-acsi-logo-landing" />
+            <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
+              <img src={acsiLogo} alt="ACSI" className="h-16 w-auto mx-auto mb-4 hover:opacity-80 transition-opacity" data-testid="img-acsi-logo-landing" />
+            </a>
             <h2 className="text-3xl font-display font-bold text-primary">ISO Management Plans</h2>
             <p className="text-lg text-muted-foreground">
               ISO 9001, 14001, and 45001 certification support. Management as a Service.
@@ -577,7 +579,9 @@ export default function Landing() {
               <Sparkles className="w-5 h-5" />
               NEW: BrandNSwag Division
             </div>
-            <img src={brandNSwagLogo} alt="BrandNSwag" className="h-20 md:h-24 w-auto mx-auto" data-testid="img-brandnswag-logo-landing" />
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
+              <img src={brandNSwagLogo} alt="BrandNSwag" className="h-20 md:h-24 w-auto mx-auto hover:opacity-80 transition-opacity" data-testid="img-brandnswag-logo-landing" />
+            </a>
             <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">
               Make Safety <span className="text-accent">Fun & Rewarding</span>
             </h2>

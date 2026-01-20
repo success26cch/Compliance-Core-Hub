@@ -98,7 +98,9 @@ export default function BrandNSwag() {
                 <Sparkles className="w-4 h-4 mr-2" />
                 A CCH Division
               </Badge>
-              <img src={brandNSwagLogo} alt="BrandNSwag" className="h-24 md:h-32 w-auto mx-auto" data-testid="img-brandnswag-logo" />
+              <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
+                <img src={brandNSwagLogo} alt="BrandNSwag" className="h-24 md:h-32 w-auto mx-auto hover:opacity-80 transition-opacity" data-testid="img-brandnswag-logo" />
+              </a>
               <p className="text-2xl text-muted-foreground">
                 Make Safety <span className="font-semibold text-accent">Fun & Rewarding</span>
               </p>

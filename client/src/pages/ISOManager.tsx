@@ -126,7 +126,9 @@ export default function ISOManager() {
             <ISOChatInterface conversationId={activeConversationId} onMessageSent={() => refetchUsage()} />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
-              <img src={acsiLogo} alt="ACSI" className="h-20 w-auto mb-4" data-testid="img-acsi-logo" />
+              <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
+                <img src={acsiLogo} alt="ACSI" className="h-20 w-auto mb-4 hover:opacity-80 transition-opacity" data-testid="img-acsi-logo" />
+              </a>
               <h3 className="text-lg font-semibold text-primary mb-2">ACSI ISO Manager</h3>
               <p className="max-w-md mb-4">
                 Your Lead ISO Auditor for ISO 9001, 14001, and 45001. Get help with Gap Analysis, 
