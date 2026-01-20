@@ -14,28 +14,22 @@ export function generateRecordabilityCheatSheet(): typeof PDFDocument.prototype 
   const margin = 40;
   const contentWidth = pageWidth - (margin * 2);
 
-  doc.rect(0, 0, pageWidth, 80).fill(primaryColor);
-  
-  const logoPath = path.join(process.cwd(), 'attached_assets', '8_1768938387712.png');
-  try {
-    doc.image(logoPath, margin, 8, { height: 64 });
-  } catch (e) {
-  }
+  doc.rect(0, 0, pageWidth, 70).fill(primaryColor);
   
   doc.fillColor('white')
-     .fontSize(18)
+     .fontSize(20)
      .font('Helvetica-Bold')
-     .text('OSHA 300 RECORDABILITY', 120, 20, { align: 'center', width: contentWidth - 80 });
+     .text('OSHA 300 RECORDABILITY', margin, 15, { align: 'center', width: contentWidth });
   
-  doc.fontSize(10)
+  doc.fontSize(11)
      .font('Helvetica')
-     .text('Quick Reference Cheat Sheet', 120, 42, { align: 'center', width: contentWidth - 80 });
+     .text('Quick Reference Cheat Sheet', margin, 40, { align: 'center', width: contentWidth });
   
-  doc.fontSize(7)
+  doc.fontSize(8)
      .font('Helvetica-Oblique')
-     .text('Distributed by Core Compliance Hub - Your Partner in Workplace Safety', 120, 58, { align: 'center', width: contentWidth - 80 });
+     .text('Distributed by Core Compliance Hub - Your Partner in Workplace Safety', margin, 54, { align: 'center', width: contentWidth });
 
-  let y = 92;
+  let y = 82;
 
   doc.fillColor(primaryColor)
      .fontSize(10)
@@ -180,29 +174,38 @@ export function generateRecordabilityCheatSheet(): typeof PDFDocument.prototype 
   });
 
   y += 8;
-  doc.rect(margin, y, contentWidth, 42).fill('#f0f4f8');
+  doc.rect(margin, y, contentWidth, 38).fill('#f0f4f8');
   
   doc.fillColor(primaryColor)
      .fontSize(9)
      .font('Helvetica-Bold')
-     .text('NEED HELP WITH A SPECIFIC CASE?', margin + 10, y + 8, { width: contentWidth - 20 });
+     .text('NEED HELP WITH A SPECIFIC CASE?', margin + 10, y + 6, { width: contentWidth - 20 });
   
   doc.fillColor(textColor)
      .fontSize(7)
      .font('Helvetica')
-     .text('Use the OccHealth Consultant AI at Core Compliance Hub for instant guidance on complex recordability questions. Our AI references OSHA 29 CFR 1904 to help you make the right call.', margin + 10, y + 20, { width: contentWidth - 20 });
+     .text('Use the OccHealth Consultant AI at Core Compliance Hub for instant guidance on complex recordability questions. Our AI references OSHA 29 CFR 1904 to help you make the right call.', margin + 10, y + 18, { width: contentWidth - 20 });
 
-  const footerY = pageHeight - 30;
-  doc.rect(0, footerY, pageWidth, 30).fill(primaryColor);
+  y += 48;
   
-  doc.fillColor('white')
+  const logoPath = path.join(process.cwd(), 'attached_assets', '4_1768938699860.png');
+  const logoWidth = 200;
+  const logoX = (pageWidth - logoWidth) / 2;
+  try {
+    doc.image(logoPath, logoX, y, { width: logoWidth });
+  } catch (e) {
+  }
+
+  const footerY = pageHeight - 22;
+  doc.fillColor(primaryColor)
      .fontSize(7)
      .font('Helvetica-Bold')
-     .text('Core Compliance Hub - THE ONE STOP EMPLOYER SHOP', margin, footerY + 6, { align: 'center', width: contentWidth });
+     .text('Core Compliance Hub - THE ONE STOP EMPLOYER SHOP', margin, footerY, { align: 'center', width: contentWidth });
   
   doc.fontSize(6)
      .font('Helvetica')
-     .text('www.corecompliancehub.com | For educational purposes. Consult official OSHA regulations for final determinations.', margin, footerY + 17, { align: 'center', width: contentWidth });
+     .fillColor(textColor)
+     .text('www.corecompliancehub.com | For educational purposes. Consult official OSHA regulations for final determinations.', margin, footerY + 10, { align: 'center', width: contentWidth });
 
   return doc;
 }
