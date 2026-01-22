@@ -430,6 +430,7 @@ export default function Landing() {
               description="Master DOT physical requirements, disqualifying conditions, medical holds, and the clearance process for CDL drivers."
               price="$199"
               modules="4 Chapters"
+              courseUrl="https://your-teachable-site.teachable.com/p/dot-medical-certification"
               chapters={[
                 "Chapter 1: Introduction to DOT Physical Requirements",
                 "Chapter 2: Understanding Disqualifying Conditions",
@@ -443,6 +444,7 @@ export default function Landing() {
               description="Respirator physicals, asbestos exams, HAZWOPER requirements, PFTs, and fit testing compliance."
               price="$249"
               modules="4 Chapters"
+              courseUrl="https://your-teachable-site.teachable.com/p/osha-medical-surveillance"
               chapters={[
                 "Chapter 1: Respirator Medical Evaluations",
                 "Chapter 2: Asbestos & Lead Medical Surveillance",
@@ -456,6 +458,7 @@ export default function Landing() {
               description="DOT vs Non-DOT testing, MRO roles, Clearinghouse compliance, return-to-duty process, and 5 vs 10-panel testing."
               price="$199"
               modules="4 Chapters"
+              courseUrl="https://your-teachable-site.teachable.com/p/drug-alcohol-testing"
               chapters={[
                 "Chapter 1: DOT vs Non-DOT Testing Requirements",
                 "Chapter 2: Medical Review Officer (MRO) Process",
@@ -470,6 +473,7 @@ export default function Landing() {
               price="$349"
               modules="12 Modules"
               highlighted
+              courseUrl="https://your-teachable-site.teachable.com/p/iso-management-systems"
               chapters={[
                 "Module 1: Introduction to ISO Standards",
                 "Module 2: High-Level Structure (HLS) Overview",
@@ -491,6 +495,7 @@ export default function Landing() {
               description="Recordables Reimagined: Master OSHA 300 logs, reduce TRIR/EMR, avoid costly mistakes, and conduct internal audits."
               price="$299"
               modules="10 Modules"
+              courseUrl="https://your-teachable-site.teachable.com/p/osha-recordkeeping-master"
               chapters={[
                 "Module 1: OSHA Recordkeeping Overview",
                 "Module 2: General Recording Criteria",
@@ -504,13 +509,19 @@ export default function Landing() {
                 "Module 10: Inspection Preparedness"
               ]}
             />
-            <div className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center">
+            <a 
+              href="https://your-teachable-site.teachable.com/p/complete-training-bundle" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center hover-elevate cursor-pointer"
+            >
               <GraduationCap className="w-12 h-12 mb-4 opacity-80" />
               <h3 className="text-xl font-bold mb-2">Complete Training Bundle</h3>
               <p className="text-primary-foreground/80 text-sm mb-4">All 5 courses + Corporate License</p>
               <div className="text-3xl font-bold mb-4">$899</div>
               <p className="text-xs text-primary-foreground/60">Save over $300</p>
-            </div>
+              <Button variant="secondary" size="sm" className="mt-4">Get the Bundle</Button>
+            </a>
           </div>
         </div>
       </section>
@@ -940,7 +951,7 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
   );
 }
 
-function CourseCard({ icon: Icon, title, description, price, modules, chapters, highlighted }: {
+function CourseCard({ icon: Icon, title, description, price, modules, chapters, highlighted, courseUrl }: {
   icon: any;
   title: string;
   description: string;
@@ -948,6 +959,7 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
   modules: string;
   chapters: string[];
   highlighted?: boolean;
+  courseUrl?: string;
 }) {
   return (
     <div className={`p-6 rounded-2xl border ${highlighted ? 'border-accent bg-accent/5 ring-2 ring-accent' : 'border-border/50 bg-white'} flex flex-col`}>
@@ -993,9 +1005,11 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
               <span className="text-2xl font-bold text-primary">{price}</span>
               <span className="text-sm text-muted-foreground ml-1">one-time</span>
             </div>
-            <Button size="sm" data-testid={`button-enroll-dialog-${title.toLowerCase().replace(/\s+/g, '-')}`}>
-              Enroll Now
-            </Button>
+            <a href={courseUrl || "#"} target="_blank" rel="noopener noreferrer">
+              <Button size="sm" data-testid={`button-enroll-dialog-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+                Enroll Now
+              </Button>
+            </a>
           </div>
         </DialogContent>
       </Dialog>
@@ -1005,9 +1019,11 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
           <span className="text-2xl font-bold text-primary">{price}</span>
           <span className="text-sm text-muted-foreground ml-1">one-time</span>
         </div>
-        <Button size="sm" variant={highlighted ? "default" : "outline"} data-testid={`button-enroll-${title.toLowerCase().replace(/\s+/g, '-')}`}>
-          Enroll Now
-        </Button>
+        <a href={courseUrl || "#"} target="_blank" rel="noopener noreferrer">
+          <Button size="sm" variant={highlighted ? "default" : "outline"} data-testid={`button-enroll-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+            Enroll Now
+          </Button>
+        </a>
       </div>
     </div>
   );
