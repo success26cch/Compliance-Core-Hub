@@ -14,6 +14,8 @@ import Mentorship from "@/pages/Mentorship";
 import Resources from "@/pages/Resources";
 import Contact from "@/pages/Contact";
 import AdminInquiries from "@/pages/AdminInquiries";
+import Employees from "@/pages/Employees";
+import Incidents from "@/pages/Incidents";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +32,8 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/contact" component={Contact} />
       <Route path="/admin/inquiries" component={AdminInquiries} />
+      <Route path="/employees" component={Employees} />
+      <Route path="/incidents" component={Incidents} />
       <Route component={NotFound} />
     </Switch>
   );

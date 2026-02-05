@@ -223,10 +223,7 @@ function RetainerSupportDialog() {
 
   const mutation = useMutation({
     mutationFn: async (data: { message: string; phone: string }) => {
-      return apiRequest('/api/retainer-support', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return apiRequest('POST', '/api/retainer-support', data);
     },
     onSuccess: () => {
       toast({
@@ -320,10 +317,7 @@ export default function Dashboard() {
 
   const completeAction = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/action-items/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'completed' }),
-      });
+      return apiRequest('PATCH', `/api/action-items/${id}/status`, { status: 'completed' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/action-items/pending'] });
@@ -350,7 +344,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-primary">Compliance Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back, {user?.claims?.first_name || 'Manager'}</p>
+              <p className="text-muted-foreground">Welcome back, {user?.firstName || 'Manager'}</p>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant={isPro ? "default" : "secondary"}>
@@ -532,9 +526,50 @@ export default function Dashboard() {
             </Card>
           </div>
 
+          {/* Data Management Row */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="hover:shadow-lg transition-shadow border-primary/20" data-testid="card-manage-employees">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Employee Management
+                </CardTitle>
+                <CardDescription>
+                  Add employees, track DOT physicals, drug tests, and medical surveillance.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/employees">
+                  <Button className="w-full sm:w-auto gap-2" data-testid="button-manage-employees">
+                    Manage Employees <ArrowUpRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow border-primary/20" data-testid="card-manage-incidents">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileWarning className="w-5 h-5 text-destructive" />
+                  Incident Log
+                </CardTitle>
+                <CardDescription>
+                  Record workplace incidents for OSHA 300 compliance tracking.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/incidents">
+                  <Button variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-manage-incidents">
+                    Log Incidents <ArrowUpRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Quick Actions Row */}
           <div className="grid md:grid-cols-2 gap-6">
-            <Card className="hover:shadow-lg transition-shadow border-primary/10 bg-gradient-to-br from-white to-primary/5">
+            <Card className="hover:shadow-lg transition-shadow border-primary/10 bg-gradient-to-br from-white to-primary/5 dark:from-background dark:to-primary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   Ask the Expert Bot
