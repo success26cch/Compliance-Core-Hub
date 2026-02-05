@@ -31,7 +31,7 @@ export interface IStorage {
   getIncidents(userId: string): Promise<Incident[]>;
   getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Incident[]>;
   createIncident(incident: InsertIncident): Promise<Incident>;
-  updateIncident(id: number, incident: Partial<InsertIncident>): Promise<Incident | undefined>;
+  updateIncident(id: number, userId: string, incident: Partial<InsertIncident>): Promise<Incident | undefined>;
 
   // Action Items
   getActionItems(userId: string): Promise<ActionItem[]>;
@@ -169,11 +169,11 @@ export class DatabaseStorage implements IStorage {
     return newIncident;
   }
 
-  async updateIncident(id: number, incident: Partial<InsertIncident>): Promise<Incident | undefined> {
+  async updateIncident(id: number, userId: string, incident: Partial<InsertIncident>): Promise<Incident | undefined> {
     const [updated] = await db
       .update(incidents)
       .set(incident)
-      .where(eq(incidents.id, id))
+      .where(and(eq(incidents.id, id), eq(incidents.userId, userId)))
       .returning();
     return updated;
   }
