@@ -162,7 +162,8 @@ export class DotNotificationService {
     channel: 'sms' | 'email' | 'push',
     message: string,
     recipientPhone?: string,
-    recipientEmail?: string
+    recipientEmail?: string,
+    status: string = 'pending'
   ) {
     await db.insert(dotNotifications).values({
       employeeId,
@@ -172,8 +173,8 @@ export class DotNotificationService {
       message,
       recipientPhone: recipientPhone || null,
       recipientEmail: recipientEmail || null,
-      status: 'pending',
-      sentAt: null,
+      status,
+      sentAt: status === 'sent' ? new Date() : null,
     });
   }
   

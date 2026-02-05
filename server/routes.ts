@@ -842,6 +842,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const { employeeId, notificationType, channel, message, recipientPhone, recipientEmail } = req.body;
       
       const { dotNotificationService } = await import('./dotNotificationService');
+      const { sendSMS, isTwilioConfigured } = await import('./twilioService');
+      
+      let deliveryStatus = 'logged';
+      let deliveryMessage = 'Notification logged.';
+      
+      // Try to send SMS if channel is sms and we have a phone number
+      if (channel === 'sms' && recipientPhone) {
+        const twilioReady = await isTwilioConfigured();
+        if (twilioReady) {
+          const smsResult = await sendSMS(recipientPhone, message);
+          if (smsResult.success) {
+            deliveryStatus = 'sent';
+            deliveryMessage = 'SMS sent successfully.';
+          } else {
+            deliveryStatus = 'failed';
+            deliveryMessage = `SMS failed: ${smsResult.error}`;
+          }
+        } else {
+          deliveryMessage = 'Notification logged. Twilio not configured for SMS delivery.';
+        }
+      }
+      
       await dotNotificationService.logNotification(
         employeeId,
         userId,
@@ -849,10 +871,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         channel,
         message,
         recipientPhone,
-        recipientEmail
+        recipientEmail,
+        deliveryStatus
       );
       
-      res.json({ success: true, message: "Notification logged. SMS delivery will be enabled when Twilio is configured." });
+      res.json({ success: true, status: deliveryStatus, message: deliveryMessage });
     } catch (error: any) {
       console.error('Error sending notification:', error);
       res.status(500).json({ message: "Failed to send notification" });
