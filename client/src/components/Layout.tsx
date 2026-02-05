@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
-import cchLogo from "@assets/1_1767636977932.png";
+import acsiLogo from "@assets/4_1770259806492.png";
 
 export function Sidebar({ className = "" }: { className?: string }) {
   const [location] = useLocation();
