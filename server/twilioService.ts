@@ -67,12 +67,15 @@ export async function sendSMS(toPhoneNumber: string, message: string): Promise<{
       }
     }
 
+    console.log(`Twilio SMS: Sending from ${fromNumber} to ${formattedTo}`);
+    
     const result = await client.messages.create({
       body: message,
       from: fromNumber,
       to: formattedTo
     });
 
+    console.log(`Twilio SMS: Message SID ${result.sid}, Status: ${result.status}`);
     return { success: true, sid: result.sid };
   } catch (error: any) {
     console.error('Twilio SMS error:', error.message);
