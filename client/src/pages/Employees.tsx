@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type Employee = {
@@ -123,26 +123,32 @@ function EmployeeFormDialog({
   onOpenChange: (open: boolean) => void;
   onSave: (data: EmployeeFormData) => void;
 }) {
-  const [formData, setFormData] = useState<EmployeeFormData>(
-    employee ? {
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      email: employee.email || '',
-      phoneNumber: employee.phoneNumber || '',
-      department: employee.department || '',
-      position: employee.position || '',
-      hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : '',
-      dotPhysicalDate: employee.dotPhysicalDate ? employee.dotPhysicalDate.split('T')[0] : '',
-      dotPhysicalExpiry: employee.dotPhysicalExpiry ? employee.dotPhysicalExpiry.split('T')[0] : '',
-      dotPhysicalStatus: employee.dotPhysicalStatus || 'pending',
-      respiratoryExamDate: employee.respiratoryExamDate ? employee.respiratoryExamDate.split('T')[0] : '',
-      respiratoryExamExpiry: employee.respiratoryExamExpiry ? employee.respiratoryExamExpiry.split('T')[0] : '',
-      respiratoryStatus: employee.respiratoryStatus || 'pending',
-      lastDrugTest: employee.lastDrugTest ? employee.lastDrugTest.split('T')[0] : '',
-      drugTestResult: employee.drugTestResult || 'pending',
-      randomPoolIncluded: employee.randomPoolIncluded || false,
-    } : defaultFormData
-  );
+  const [formData, setFormData] = useState<EmployeeFormData>(defaultFormData);
+
+  useEffect(() => {
+    if (employee) {
+      setFormData({
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        email: employee.email || '',
+        phoneNumber: employee.phoneNumber || '',
+        department: employee.department || '',
+        position: employee.position || '',
+        hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : '',
+        dotPhysicalDate: employee.dotPhysicalDate ? employee.dotPhysicalDate.split('T')[0] : '',
+        dotPhysicalExpiry: employee.dotPhysicalExpiry ? employee.dotPhysicalExpiry.split('T')[0] : '',
+        dotPhysicalStatus: employee.dotPhysicalStatus || 'pending',
+        respiratoryExamDate: employee.respiratoryExamDate ? employee.respiratoryExamDate.split('T')[0] : '',
+        respiratoryExamExpiry: employee.respiratoryExamExpiry ? employee.respiratoryExamExpiry.split('T')[0] : '',
+        respiratoryStatus: employee.respiratoryStatus || 'pending',
+        lastDrugTest: employee.lastDrugTest ? employee.lastDrugTest.split('T')[0] : '',
+        drugTestResult: employee.drugTestResult || 'pending',
+        randomPoolIncluded: employee.randomPoolIncluded || false,
+      });
+    } else {
+      setFormData(defaultFormData);
+    }
+  }, [employee]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
