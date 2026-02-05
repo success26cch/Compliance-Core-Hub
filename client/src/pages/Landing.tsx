@@ -205,7 +205,7 @@ export default function Landing() {
                 </Form>
                 
                 <p className="text-xs text-center text-muted-foreground">
-                  Join 1,000+ safety professionals trusting Core Compliance.
+                  Join other safety professionals trusting Core Compliance Hub - CCH.
                 </p>
               </div>
             </Card>
