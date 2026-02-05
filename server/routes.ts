@@ -12,6 +12,7 @@ import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
+import { insertEmployeeSchema, insertIncidentSchema, insertActionItemSchema, insertAuditReadinessSchema } from "@shared/schema";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Auth Setup
@@ -403,12 +404,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const userId = (req.user as any).claims.sub;
     
     try {
+      const validated = insertEmployeeSchema.omit({ userId: true }).parse(req.body);
       const employee = await storage.createEmployee({
-        ...req.body,
+        ...validated,
         userId,
       });
       res.status(201).json(employee);
     } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid employee data", errors: error.errors });
+      }
       console.error('Error creating employee:', error);
       res.status(500).json({ message: "Failed to create employee" });
     }
@@ -419,15 +424,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    const userId = (req.user as any).claims.sub;
     const id = parseInt(req.params.id);
     
     try {
-      const updated = await storage.updateEmployee(id, req.body);
+      const validated = insertEmployeeSchema.omit({ userId: true }).partial().parse(req.body);
+      const updated = await storage.updateEmployee(id, userId, validated);
       if (!updated) {
-        return res.status(404).json({ message: "Employee not found" });
+        return res.status(404).json({ message: "Employee not found or access denied" });
       }
       res.json(updated);
     } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid employee data", errors: error.errors });
+      }
       console.error('Error updating employee:', error);
       res.status(500).json({ message: "Failed to update employee" });
     }
@@ -438,10 +448,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    const userId = (req.user as any).claims.sub;
     const id = parseInt(req.params.id);
     
     try {
-      await storage.deleteEmployee(id);
+      const existing = await storage.getEmployeeById(id, userId);
+      if (!existing) {
+        return res.status(404).json({ message: "Employee not found or access denied" });
+      }
+      await storage.deleteEmployee(id, userId);
       res.json({ success: true });
     } catch (error: any) {
       console.error('Error deleting employee:', error);
@@ -505,13 +520,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const userId = (req.user as any).claims.sub;
     
     try {
-      const incident = await storage.createIncident({
+      const validated = insertIncidentSchema.omit({ userId: true }).parse({
         ...req.body,
-        userId,
         incidentDate: new Date(req.body.incidentDate),
+      });
+      const incident = await storage.createIncident({
+        ...validated,
+        userId,
       });
       res.status(201).json(incident);
     } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid incident data", errors: error.errors });
+      }
       console.error('Error creating incident:', error);
       res.status(500).json({ message: "Failed to create incident" });
     }
@@ -539,13 +560,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const userId = (req.user as any).claims.sub;
     
     try {
-      const item = await storage.createActionItem({
+      const validated = insertActionItemSchema.omit({ userId: true }).parse({
         ...req.body,
-        userId,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+      });
+      const item = await storage.createActionItem({
+        ...validated,
+        userId,
       });
       res.status(201).json(item);
     } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid action item data", errors: error.errors });
+      }
       console.error('Error creating action item:', error);
       res.status(500).json({ message: "Failed to create action item" });
     }
@@ -556,6 +583,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    const userId = (req.user as any).claims.sub;
     const id = parseInt(req.params.id);
     const { status } = req.body;
     
@@ -564,9 +592,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
     
     try {
-      const updated = await storage.updateActionItemStatus(id, status);
+      const updated = await storage.updateActionItemStatus(id, userId, status);
       if (!updated) {
-        return res.status(404).json({ message: "Action item not found" });
+        return res.status(404).json({ message: "Action item not found or access denied" });
       }
       res.json(updated);
     } catch (error: any) {
@@ -593,12 +621,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const userId = (req.user as any).claims.sub;
     
     try {
+      const validated = insertAuditReadinessSchema.omit({ userId: true }).parse(req.body);
       const readiness = await storage.upsertAuditReadiness({
-        ...req.body,
+        ...validated,
         userId,
       });
       res.json(readiness);
     } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid audit readiness data", errors: error.errors });
+      }
       console.error('Error updating audit readiness:', error);
       res.status(500).json({ message: "Failed to update audit readiness" });
     }

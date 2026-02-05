@@ -22,9 +22,10 @@ export interface IStorage {
 
   // Employees
   getEmployees(userId: string): Promise<Employee[]>;
+  getEmployeeById(id: number, userId: string): Promise<Employee | undefined>;
   createEmployee(employee: InsertEmployee): Promise<Employee>;
-  updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
-  deleteEmployee(id: number): Promise<boolean>;
+  updateEmployee(id: number, userId: string, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
+  deleteEmployee(id: number, userId: string): Promise<boolean>;
 
   // Incidents
   getIncidents(userId: string): Promise<Incident[]>;
@@ -35,8 +36,9 @@ export interface IStorage {
   // Action Items
   getActionItems(userId: string): Promise<ActionItem[]>;
   getPendingActionItems(userId: string): Promise<ActionItem[]>;
+  getActionItemById(id: number, userId: string): Promise<ActionItem | undefined>;
   createActionItem(actionItem: InsertActionItem): Promise<ActionItem>;
-  updateActionItemStatus(id: number, status: string): Promise<ActionItem | undefined>;
+  updateActionItemStatus(id: number, userId: string, status: string): Promise<ActionItem | undefined>;
 
   // Audit Readiness
   getAuditReadiness(userId: string): Promise<AuditReadiness[]>;
@@ -117,22 +119,29 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(employees).where(eq(employees.userId, userId)).orderBy(employees.lastName);
   }
 
+  async getEmployeeById(id: number, userId: string): Promise<Employee | undefined> {
+    const [employee] = await db.select().from(employees)
+      .where(and(eq(employees.id, id), eq(employees.userId, userId)));
+    return employee;
+  }
+
   async createEmployee(employee: InsertEmployee): Promise<Employee> {
     const [newEmployee] = await db.insert(employees).values(employee).returning();
     return newEmployee;
   }
 
-  async updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined> {
+  async updateEmployee(id: number, userId: string, employee: Partial<InsertEmployee>): Promise<Employee | undefined> {
     const [updated] = await db
       .update(employees)
       .set({ ...employee, updatedAt: new Date() })
-      .where(eq(employees.id, id))
+      .where(and(eq(employees.id, id), eq(employees.userId, userId)))
       .returning();
     return updated;
   }
 
-  async deleteEmployee(id: number): Promise<boolean> {
-    const result = await db.delete(employees).where(eq(employees.id, id));
+  async deleteEmployee(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(employees)
+      .where(and(eq(employees.id, id), eq(employees.userId, userId)));
     return true;
   }
 
@@ -179,12 +188,18 @@ export class DatabaseStorage implements IStorage {
       .orderBy(actionItems.dueDate);
   }
 
+  async getActionItemById(id: number, userId: string): Promise<ActionItem | undefined> {
+    const [item] = await db.select().from(actionItems)
+      .where(and(eq(actionItems.id, id), eq(actionItems.userId, userId)));
+    return item;
+  }
+
   async createActionItem(actionItem: InsertActionItem): Promise<ActionItem> {
     const [newAction] = await db.insert(actionItems).values(actionItem).returning();
     return newAction;
   }
 
-  async updateActionItemStatus(id: number, status: string): Promise<ActionItem | undefined> {
+  async updateActionItemStatus(id: number, userId: string, status: string): Promise<ActionItem | undefined> {
     const updates: any = { status };
     if (status === "completed") {
       updates.completedAt = new Date();
@@ -192,7 +207,7 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(actionItems)
       .set(updates)
-      .where(eq(actionItems.id, id))
+      .where(and(eq(actionItems.id, id), eq(actionItems.userId, userId)))
       .returning();
     return updated;
   }

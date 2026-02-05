@@ -249,7 +249,7 @@ function RetainerSupportDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full gap-2 bg-accent hover:bg-accent/90" data-testid="button-retainer-support">
+        <Button className="w-full gap-2 bg-accent" data-testid="button-retainer-support">
           <Phone className="w-4 h-4" />
           Request Priority Support
         </Button>
@@ -306,8 +306,12 @@ export default function Dashboard() {
   });
 
   const { data: actions = [], isLoading: actionsLoading } = useQuery<ActionItem[]>({
-    queryKey: ['/api/action-items', { pending: true }],
-    queryFn: () => fetch('/api/action-items?pending=true', { credentials: 'include' }).then(r => r.json()),
+    queryKey: ['/api/action-items/pending'],
+    queryFn: async () => {
+      const res = await fetch('/api/action-items?pending=true', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch action items');
+      return res.json();
+    },
   });
 
   const { data: chartData = [], isLoading: chartLoading } = useQuery<IncidentChartData[]>({
@@ -322,7 +326,7 @@ export default function Dashboard() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/action-items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/action-items/pending'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
       toast({
         title: "Action Completed",
