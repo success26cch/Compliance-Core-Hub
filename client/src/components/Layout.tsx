@@ -15,7 +15,9 @@ import {
   Shield,
   Mail,
   Building2,
-  Crown
+  Crown,
+  Bell,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -37,6 +39,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/bot", label: "OccHealth Consultant", icon: Bot },
     { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
+    { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
   ];
 
   const LinkItem = ({ href, label, icon: Icon, external }: any) => {
@@ -123,16 +126,28 @@ export function Sidebar({ className = "" }: { className?: string }) {
 
       <div className="p-4 border-t border-border/50 space-y-2">
         {superadminCheck?.isSuperadmin && (
-          <Link href="/superadmin" className={`
-            flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-            ${location === '/superadmin' 
-              ? "bg-red-100 text-red-700" 
-              : "text-red-600 hover:bg-red-50 hover:text-red-700"}
-            transition-colors
-          `} data-testid="link-superadmin">
-            <Crown className="w-5 h-5" />
-            Super Admin
-          </Link>
+          <>
+            <Link href="/superadmin" className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+              ${location === '/superadmin' 
+                ? "bg-red-100 text-red-700" 
+                : "text-red-600 hover:bg-red-50 hover:text-red-700"}
+              transition-colors
+            `} data-testid="link-superadmin">
+              <Crown className="w-5 h-5" />
+              Super Admin
+            </Link>
+            <Link href="/leads" className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+              ${location === '/leads' 
+                ? "bg-red-100 text-red-700" 
+                : "text-red-600 hover:bg-red-50 hover:text-red-700"}
+              transition-colors
+            `} data-testid="link-leads-admin">
+              <Users className="w-5 h-5" />
+              Leads Admin
+            </Link>
+          </>
         )}
         <Link href="/settings" className={`
           flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium

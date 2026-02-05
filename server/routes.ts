@@ -790,6 +790,134 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==================== DOT NOTIFICATION ROUTES ====================
+  
+  // Get DOT notification check - employees with expiring physicals
+  app.get("/api/dot-notifications/check", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { dotNotificationService } = await import('./dotNotificationService');
+      const expiringEmployees = await dotNotificationService.checkExpiringDotPhysicals();
+      
+      const notifications = expiringEmployees.map(emp => ({
+        ...emp,
+        message: dotNotificationService.generateMessage(emp),
+      }));
+      
+      res.json({ notifications });
+    } catch (error: any) {
+      console.error('Error checking DOT notifications:', error);
+      res.status(500).json({ message: "Failed to check notifications" });
+    }
+  });
+  
+  // Get notification history for current user's company
+  app.get("/api/dot-notifications/history", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { dotNotificationService } = await import('./dotNotificationService');
+      const history = await dotNotificationService.getNotificationHistory(userId);
+      res.json({ history });
+    } catch (error: any) {
+      console.error('Error getting notification history:', error);
+      res.status(500).json({ message: "Failed to get notification history" });
+    }
+  });
+  
+  // Send DOT notification (logs it, actual SMS/email sending when Twilio is set up)
+  app.post("/api/dot-notifications/send", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { employeeId, notificationType, channel, message, recipientPhone, recipientEmail } = req.body;
+      
+      const { dotNotificationService } = await import('./dotNotificationService');
+      await dotNotificationService.logNotification(
+        employeeId,
+        userId,
+        notificationType,
+        channel,
+        message,
+        recipientPhone,
+        recipientEmail
+      );
+      
+      res.json({ success: true, message: "Notification logged. SMS delivery will be enabled when Twilio is configured." });
+    } catch (error: any) {
+      console.error('Error sending notification:', error);
+      res.status(500).json({ message: "Failed to send notification" });
+    }
+  });
+  
+  // Get employees needing manager alert (7 days or less, no new card uploaded)
+  app.get("/api/dot-notifications/manager-alerts", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { dotNotificationService } = await import('./dotNotificationService');
+      const employees = await dotNotificationService.getEmployeesNeedingManagerAlert(userId);
+      
+      const alerts = employees
+        .filter(emp => !emp.dotCardUploadedAt || (emp.dotPhysicalExpiry && emp.dotCardUploadedAt < emp.dotPhysicalExpiry))
+        .map(emp => ({
+          employeeId: emp.id,
+          employeeName: `${emp.firstName} ${emp.lastName}`,
+          expiryDate: emp.dotPhysicalExpiry,
+          hasNewCard: !!emp.dotCardImageUrl && emp.dotCardUploadedAt && emp.dotPhysicalExpiry && emp.dotCardUploadedAt >= emp.dotPhysicalExpiry,
+        }));
+      
+      res.json({ alerts });
+    } catch (error: any) {
+      console.error('Error getting manager alerts:', error);
+      res.status(500).json({ message: "Failed to get manager alerts" });
+    }
+  });
+  
+  // Upload DOT card image for employee
+  app.post("/api/employees/:id/dot-card", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = (req.user as any).claims.sub;
+      const employeeId = parseInt(req.params.id);
+      const { imageData } = req.body;
+      
+      if (!imageData) {
+        return res.status(400).json({ message: "Image data is required" });
+      }
+      
+      const employee = await storage.getEmployeeById(employeeId, userId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+      
+      const updated = await storage.updateEmployee(employeeId, userId, {
+        dotCardImageUrl: imageData,
+        dotCardUploadedAt: new Date(),
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error uploading DOT card:', error);
+      res.status(500).json({ message: "Failed to upload DOT card" });
+    }
+  });
+
   // ==================== SUPERADMIN ROUTES ====================
   // Middleware to check superadmin status
   async function requireSuperadmin(req: any, res: any, next: any) {

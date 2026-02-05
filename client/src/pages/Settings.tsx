@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, Shield, Building2, Save, User, Upload, X } from "lucide-react";
+import { Check, Shield, Building2, Save, User, Upload, X, Stethoscope, Clock, Phone, MapPin } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,14 @@ export default function Settings() {
   const [derPhone, setDerPhone] = useState('');
   const [derEmail, setDerEmail] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  // Clinic Management
+  const [clinicName, setClinicName] = useState('');
+  const [clinicAddress, setClinicAddress] = useState('');
+  const [clinicCity, setClinicCity] = useState('');
+  const [clinicState, setClinicState] = useState('');
+  const [clinicZipCode, setClinicZipCode] = useState('');
+  const [clinicPhone, setClinicPhone] = useState('');
+  const [clinicHours, setClinicHours] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -62,6 +70,14 @@ export default function Settings() {
       setDerPhone(profile.derPhone || '');
       setDerEmail(profile.derEmail || '');
       setLogoUrl(profile.logoUrl || '');
+      // Clinic fields
+      setClinicName(profile.clinicName || '');
+      setClinicAddress(profile.clinicAddress || '');
+      setClinicCity(profile.clinicCity || '');
+      setClinicState(profile.clinicState || '');
+      setClinicZipCode(profile.clinicZipCode || '');
+      setClinicPhone(profile.clinicPhone || '');
+      setClinicHours(profile.clinicHours || '');
     }
   }, [profile]);
 
@@ -118,6 +134,13 @@ export default function Settings() {
         derPhone: derPhone || null,
         derEmail: derEmail || null,
         logoUrl: logoUrl || null,
+        clinicName: clinicName || null,
+        clinicAddress: clinicAddress || null,
+        clinicCity: clinicCity || null,
+        clinicState: clinicState || null,
+        clinicZipCode: clinicZipCode || null,
+        clinicPhone: clinicPhone || null,
+        clinicHours: clinicHours || null,
       });
     },
     onSuccess: () => {
@@ -353,6 +376,97 @@ export default function Settings() {
                         placeholder="der@company.com"
                         data-testid="input-der-email"
                       />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Stethoscope className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold">Primary Occupational Health Clinic</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Set your company's designated clinic for DOT physicals, drug testing, and medical surveillance. 
+                    This information will be included in DOT expiration notifications sent to employees.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="clinicName">Clinic Name</Label>
+                      <Input 
+                        id="clinicName" 
+                        value={clinicName}
+                        onChange={(e) => setClinicName(e.target.value)}
+                        placeholder="e.g., ABC Occupational Health Services"
+                        data-testid="input-clinic-name"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="clinicAddress">Address</Label>
+                      <Input 
+                        id="clinicAddress" 
+                        value={clinicAddress}
+                        onChange={(e) => setClinicAddress(e.target.value)}
+                        placeholder="e.g., 456 Medical Center Dr"
+                        data-testid="input-clinic-address"
+                      />
+                    </div>
+                    
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="clinicCity">City</Label>
+                        <Input 
+                          id="clinicCity" 
+                          value={clinicCity}
+                          onChange={(e) => setClinicCity(e.target.value)}
+                          placeholder="Houston"
+                          data-testid="input-clinic-city"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="clinicState">State</Label>
+                        <Input 
+                          id="clinicState" 
+                          value={clinicState}
+                          onChange={(e) => setClinicState(e.target.value)}
+                          placeholder="TX"
+                          data-testid="input-clinic-state"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="clinicZipCode">ZIP Code</Label>
+                        <Input 
+                          id="clinicZipCode" 
+                          value={clinicZipCode}
+                          onChange={(e) => setClinicZipCode(e.target.value)}
+                          placeholder="77001"
+                          data-testid="input-clinic-zip"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="clinicPhone">Phone</Label>
+                        <Input 
+                          id="clinicPhone" 
+                          value={clinicPhone}
+                          onChange={(e) => setClinicPhone(e.target.value)}
+                          placeholder="(555) 987-6543"
+                          data-testid="input-clinic-phone"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="clinicHours">Hours</Label>
+                        <Input 
+                          id="clinicHours" 
+                          value={clinicHours}
+                          onChange={(e) => setClinicHours(e.target.value)}
+                          placeholder="e.g., Mon-Fri 8am-5pm"
+                          data-testid="input-clinic-hours"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

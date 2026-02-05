@@ -97,6 +97,14 @@ export const employees = pgTable("employees", {
   lastDrugTest: timestamp("last_drug_test"),
   drugTestResult: text("drug_test_result"), // 'cleared', 'pending', 'failed', 'scheduled'
   randomPoolIncluded: boolean("random_pool_included").default(false),
+  // DOT Document upload
+  dotCardImageUrl: text("dot_card_image_url"),
+  dotCardUploadedAt: timestamp("dot_card_uploaded_at"),
+  // Phone number for SMS notifications
+  phoneNumber: text("phone_number"),
+  // Notification tracking
+  lastNotificationSent: timestamp("last_notification_sent"),
+  notificationsSent: integer("notifications_sent").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -114,6 +122,8 @@ export const insertEmployeeSchema = createInsertSchema(employees, {
   respiratoryExamDate: dateOrStringToDate,
   respiratoryExamExpiry: dateOrStringToDate,
   lastDrugTest: dateOrStringToDate,
+  dotCardUploadedAt: dateOrStringToDate,
+  lastNotificationSent: dateOrStringToDate,
 }).omit({ 
   id: true, 
   createdAt: true, 
@@ -265,6 +275,14 @@ export const companyProfiles = pgTable("company_profiles", {
   derEmail: text("der_email"),
   // Company logo (stored as base64 data URL or external URL)
   logoUrl: text("logo_url"),
+  // Primary Occupational Health Clinic
+  clinicName: text("clinic_name"),
+  clinicAddress: text("clinic_address"),
+  clinicCity: text("clinic_city"),
+  clinicState: text("clinic_state"),
+  clinicZipCode: text("clinic_zip_code"),
+  clinicPhone: text("clinic_phone"),
+  clinicHours: text("clinic_hours"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -276,6 +294,28 @@ export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).om
 });
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
+
+// DOT Notification Log - tracks all notifications sent
+export const dotNotifications = pgTable("dot_notifications", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  userId: text("user_id").notNull(), // Company that owns this employee
+  notificationType: text("notification_type").notNull(), // '60_day', '30_day', '15_day', '7_day', 'manager_alert'
+  channel: text("channel").notNull(), // 'sms', 'email', 'push'
+  recipientPhone: text("recipient_phone"),
+  recipientEmail: text("recipient_email"),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'sent', 'delivered', 'failed'
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDotNotificationSchema = createInsertSchema(dotNotifications).omit({
+  id: true,
+  createdAt: true,
+});
+export type DotNotification = typeof dotNotifications.$inferSelect;
+export type InsertDotNotification = z.infer<typeof insertDotNotificationSchema>;
 
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
