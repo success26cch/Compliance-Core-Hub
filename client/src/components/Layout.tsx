@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { 
   LayoutDashboard, 
   Bot, 
@@ -13,7 +14,8 @@ import {
   FileCheck,
   Shield,
   Mail,
-  Building2
+  Building2,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -24,6 +26,10 @@ import hubLogo from "@assets/6_1770259909295.png";
 export function Sidebar({ className = "" }: { className?: string }) {
   const [location] = useLocation();
   const { logout } = useAuth();
+  
+  const { data: superadminCheck } = useQuery<{ isSuperadmin: boolean }>({
+    queryKey: ['/api/superadmin/check'],
+  });
   
   const links = [
     { href: "/settings", label: "Company Profile", icon: Building2 },
@@ -116,6 +122,18 @@ export function Sidebar({ className = "" }: { className?: string }) {
       </div>
 
       <div className="p-4 border-t border-border/50 space-y-2">
+        {superadminCheck?.isSuperadmin && (
+          <Link href="/superadmin" className={`
+            flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+            ${location === '/superadmin' 
+              ? "bg-red-100 text-red-700" 
+              : "text-red-600 hover:bg-red-50 hover:text-red-700"}
+            transition-colors
+          `} data-testid="link-superadmin">
+            <Crown className="w-5 h-5" />
+            Super Admin
+          </Link>
+        )}
         <Link href="/settings" className={`
           flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
           text-muted-foreground hover:bg-muted hover:text-foreground transition-colors

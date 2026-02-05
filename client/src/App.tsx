@@ -16,6 +16,7 @@ import Contact from "@/pages/Contact";
 import AdminInquiries from "@/pages/AdminInquiries";
 import Employees from "@/pages/Employees";
 import Incidents from "@/pages/Incidents";
+import SuperAdmin from "@/pages/SuperAdmin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/admin/inquiries" component={AdminInquiries} />
       <Route path="/employees" component={Employees} />
       <Route path="/incidents" component={Incidents} />
+      <Route path="/superadmin" component={SuperAdmin} />
       <Route component={NotFound} />
     </Switch>
   );
