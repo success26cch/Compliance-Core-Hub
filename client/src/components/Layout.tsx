@@ -12,7 +12,8 @@ import {
   Phone,
   FileCheck,
   Shield,
-  Mail
+  Mail,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -24,6 +25,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   const { logout } = useAuth();
   
   const links = [
+    { href: "/settings", label: "Company Profile", icon: Building2 },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/bot", label: "OccHealth Consultant", icon: Bot },
     { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
