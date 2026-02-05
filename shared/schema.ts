@@ -101,7 +101,20 @@ export const employees = pgTable("employees", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertEmployeeSchema = createInsertSchema(employees).omit({ 
+// Helper to transform date strings to Date objects (for JSON parsing)
+const dateOrStringToDate = z.union([
+  z.date(),
+  z.string().transform((val) => val ? new Date(val) : undefined),
+]).optional().nullable();
+
+export const insertEmployeeSchema = createInsertSchema(employees, {
+  hireDate: dateOrStringToDate,
+  dotPhysicalDate: dateOrStringToDate,
+  dotPhysicalExpiry: dateOrStringToDate,
+  respiratoryExamDate: dateOrStringToDate,
+  respiratoryExamExpiry: dateOrStringToDate,
+  lastDrugTest: dateOrStringToDate,
+}).omit({ 
   id: true, 
   createdAt: true, 
   updatedAt: true 
@@ -124,7 +137,15 @@ export const incidents = pgTable("incidents", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertIncidentSchema = createInsertSchema(incidents).omit({ 
+// Incident date as string or Date
+const incidentDateTransform = z.union([
+  z.date(),
+  z.string().transform((val) => new Date(val)),
+]);
+
+export const insertIncidentSchema = createInsertSchema(incidents, {
+  incidentDate: incidentDateTransform,
+}).omit({ 
   id: true, 
   createdAt: true 
 });
@@ -147,7 +168,9 @@ export const actionItems = pgTable("action_items", {
   completedAt: timestamp("completed_at"),
 });
 
-export const insertActionItemSchema = createInsertSchema(actionItems).omit({ 
+export const insertActionItemSchema = createInsertSchema(actionItems, {
+  dueDate: dateOrStringToDate,
+}).omit({ 
   id: true, 
   createdAt: true,
   completedAt: true 
