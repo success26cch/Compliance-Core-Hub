@@ -637,7 +637,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const items = pending 
       ? await storage.getPendingActionItems(userId)
       : await storage.getActionItems(userId);
-    res.json(items);
+    
+    // Also add DOT expiration alerts as action items
+    if (pending) {
+      try {
+        const { dotNotificationService } = await import('./dotNotificationService');
+        const expiringEmployees = await dotNotificationService.checkExpiringDotPhysicals(userId);
+        
+        // Add urgent DOT expirations (15 days or less) to action queue
+        const dotActions = expiringEmployees
+          .filter(emp => emp.daysUntilExpiry <= 15)
+          .map((emp, index) => ({
+            id: -1000 - index, // Negative IDs to distinguish from regular action items
+            title: `DOT Physical Expiring: ${emp.employeeName}`,
+            description: `DOT medical card expires in ${emp.daysUntilExpiry} day${emp.daysUntilExpiry === 1 ? '' : 's'}. Contact driver immediately to avoid OOS violation.`,
+            priority: emp.daysUntilExpiry <= 7 ? 'urgent' : 'high',
+            status: 'pending',
+            dueDate: null,
+            createdAt: new Date().toISOString(),
+            userId,
+            type: 'dot_expiration',
+            employeeId: emp.employeeId,
+          }));
+        
+        res.json([...dotActions, ...items]);
+      } catch (error) {
+        console.error('Error fetching DOT expirations for action queue:', error);
+        res.json(items);
+      }
+    } else {
+      res.json(items);
+    }
   });
 
   // Create action item
@@ -799,8 +829,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
     
     try {
+      const userId = (req.user as any).claims.sub;
       const { dotNotificationService } = await import('./dotNotificationService');
-      const expiringEmployees = await dotNotificationService.checkExpiringDotPhysicals();
+      const expiringEmployees = await dotNotificationService.checkExpiringDotPhysicals(userId);
       
       const notifications = expiringEmployees.map(emp => ({
         ...emp,

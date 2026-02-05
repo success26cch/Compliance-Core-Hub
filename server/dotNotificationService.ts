@@ -17,7 +17,7 @@ interface NotificationResult {
 }
 
 export class DotNotificationService {
-  async checkExpiringDotPhysicals(): Promise<NotificationResult[]> {
+  async checkExpiringDotPhysicals(userId: string): Promise<NotificationResult[]> {
     const now = new Date();
     const results: NotificationResult[] = [];
     
@@ -36,6 +36,7 @@ export class DotNotificationService {
       .from(employees)
       .where(
         and(
+          eq(employees.userId, userId),
           isNotNull(employees.dotPhysicalExpiry),
           gte(employees.dotPhysicalExpiry, now)
         )

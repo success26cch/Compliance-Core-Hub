@@ -47,9 +47,11 @@ type ActionItem = {
   title: string;
   description: string | null;
   priority: string;
-  category: string;
+  category?: string;
   dueDate: string | null;
   status: string;
+  type?: string;
+  employeeId?: number;
 };
 
 type IncidentChartData = {
@@ -147,7 +149,8 @@ function ActionQueue({ actions, onComplete }: { actions: ActionItem[]; onComplet
     }
   };
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: string | undefined, type: string | undefined) => {
+    if (type === 'dot_expiration') return <Stethoscope className="w-4 h-4" />;
     switch (category) {
       case 'dot_expiry': return <Stethoscope className="w-4 h-4" />;
       case 'drug_test': return <TestTube className="w-4 h-4" />;
@@ -176,7 +179,7 @@ function ActionQueue({ actions, onComplete }: { actions: ActionItem[]; onComplet
           data-testid={`action-item-${action.id}`}
         >
           <div className="mt-0.5 text-muted-foreground">
-            {getCategoryIcon(action.category)}
+            {getCategoryIcon(action.category, action.type)}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -195,15 +198,29 @@ function ActionQueue({ actions, onComplete }: { actions: ActionItem[]; onComplet
               </div>
             )}
           </div>
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            className="shrink-0"
-            onClick={() => onComplete(action.id)}
-            data-testid={`complete-action-${action.id}`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-          </Button>
+          {action.type === 'dot_expiration' ? (
+            <Link href="/dot-notifications">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="shrink-0 gap-1"
+                data-testid={`action-dot-${action.employeeId}`}
+              >
+                <Stethoscope className="w-3 h-3" />
+                Notify
+              </Button>
+            </Link>
+          ) : (
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="shrink-0"
+              onClick={() => onComplete(action.id)}
+              data-testid={`complete-action-${action.id}`}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       ))}
       {actions.length > 5 && (
