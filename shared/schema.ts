@@ -122,17 +122,31 @@ export const insertEmployeeSchema = createInsertSchema(employees, {
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
-// Recordable Incidents
+// Recordable Incidents - OSHA 300 Log
 export const incidents = pgTable("incidents", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(), // Company/manager who owns this record
   employeeId: integer("employee_id"), // Optional link to employee
+  caseNumber: text("case_number"), // OSHA case number (auto-generated or manual)
   incidentDate: timestamp("incident_date").notNull(),
   description: text("description").notNull(),
   incidentType: text("incident_type").notNull(), // 'injury', 'illness', 'near_miss', 'property_damage'
+  // OSHA 300 Required Fields
+  employeeName: text("employee_name"), // Name of injured/ill employee
+  jobTitle: text("job_title"), // Job title at time of incident
+  department: text("department"), // Department/location where incident occurred
+  location: text("location"), // Specific location of event
+  bodyPart: text("body_part"), // Part of body affected
+  natureOfInjury: text("nature_of_injury"), // Nature of injury/illness
+  objectOrSubstance: text("object_or_substance"), // Object/substance that harmed employee
+  // Classification
   isRecordable: boolean("is_recordable").default(false),
+  resultedInDeath: boolean("resulted_in_death").default(false),
   daysAway: integer("days_away").default(0),
   daysRestricted: integer("days_restricted").default(0),
+  daysJobTransfer: integer("days_job_transfer").default(0),
+  isOtherRecordable: boolean("is_other_recordable").default(false), // Other recordable case
+  // Tracking
   status: text("status").notNull().default("pending_review"), // 'pending_review', 'reviewed', 'closed'
   createdAt: timestamp("created_at").defaultNow(),
 });
