@@ -133,10 +133,10 @@ export default function Landing() {
               <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary rounded-lg blur-sm opacity-75"></div>
               <div className="relative bg-black text-white text-center py-4 px-6 rounded-lg">
                 <p className="text-lg md:text-xl font-bold">
-                  Stop Paying Consultants. Start Owning Compliance.
+                  Start owning your compliance!
                 </p>
                 <p className="text-accent font-semibold mt-1">
-                  Join 500+ companies who ditched the guesswork.
+                  Join other companies who ditched the guesswork.
                 </p>
               </div>
             </div>
