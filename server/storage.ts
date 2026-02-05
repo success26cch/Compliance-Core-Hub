@@ -1,6 +1,6 @@
-import { leads, subscriptions, questionUsage, contactInquiries, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, actionItems, auditReadiness, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Leads
@@ -19,6 +19,28 @@ export interface IStorage {
   createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry>;
   getContactInquiries(): Promise<ContactInquiry[]>;
   updateInquiryStatus(id: number, status: string): Promise<ContactInquiry | undefined>;
+
+  // Employees
+  getEmployees(userId: string): Promise<Employee[]>;
+  createEmployee(employee: InsertEmployee): Promise<Employee>;
+  updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
+  deleteEmployee(id: number): Promise<boolean>;
+
+  // Incidents
+  getIncidents(userId: string): Promise<Incident[]>;
+  getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Incident[]>;
+  createIncident(incident: InsertIncident): Promise<Incident>;
+  updateIncident(id: number, incident: Partial<InsertIncident>): Promise<Incident | undefined>;
+
+  // Action Items
+  getActionItems(userId: string): Promise<ActionItem[]>;
+  getPendingActionItems(userId: string): Promise<ActionItem[]>;
+  createActionItem(actionItem: InsertActionItem): Promise<ActionItem>;
+  updateActionItemStatus(id: number, status: string): Promise<ActionItem | undefined>;
+
+  // Audit Readiness
+  getAuditReadiness(userId: string): Promise<AuditReadiness[]>;
+  upsertAuditReadiness(readiness: InsertAuditReadiness): Promise<AuditReadiness>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -88,6 +110,116 @@ export class DatabaseStorage implements IStorage {
       .where(eq(contactInquiries.id, id))
       .returning();
     return updated;
+  }
+
+  // Employees
+  async getEmployees(userId: string): Promise<Employee[]> {
+    return db.select().from(employees).where(eq(employees.userId, userId)).orderBy(employees.lastName);
+  }
+
+  async createEmployee(employee: InsertEmployee): Promise<Employee> {
+    const [newEmployee] = await db.insert(employees).values(employee).returning();
+    return newEmployee;
+  }
+
+  async updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined> {
+    const [updated] = await db
+      .update(employees)
+      .set({ ...employee, updatedAt: new Date() })
+      .where(eq(employees.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEmployee(id: number): Promise<boolean> {
+    const result = await db.delete(employees).where(eq(employees.id, id));
+    return true;
+  }
+
+  // Incidents
+  async getIncidents(userId: string): Promise<Incident[]> {
+    return db.select().from(incidents).where(eq(incidents.userId, userId)).orderBy(desc(incidents.incidentDate));
+  }
+
+  async getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Incident[]> {
+    return db.select().from(incidents)
+      .where(and(
+        eq(incidents.userId, userId),
+        gte(incidents.incidentDate, startDate),
+        lte(incidents.incidentDate, endDate)
+      ))
+      .orderBy(incidents.incidentDate);
+  }
+
+  async createIncident(incident: InsertIncident): Promise<Incident> {
+    const [newIncident] = await db.insert(incidents).values(incident).returning();
+    return newIncident;
+  }
+
+  async updateIncident(id: number, incident: Partial<InsertIncident>): Promise<Incident | undefined> {
+    const [updated] = await db
+      .update(incidents)
+      .set(incident)
+      .where(eq(incidents.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Action Items
+  async getActionItems(userId: string): Promise<ActionItem[]> {
+    return db.select().from(actionItems).where(eq(actionItems.userId, userId)).orderBy(desc(actionItems.createdAt));
+  }
+
+  async getPendingActionItems(userId: string): Promise<ActionItem[]> {
+    return db.select().from(actionItems)
+      .where(and(
+        eq(actionItems.userId, userId),
+        eq(actionItems.status, "pending")
+      ))
+      .orderBy(actionItems.dueDate);
+  }
+
+  async createActionItem(actionItem: InsertActionItem): Promise<ActionItem> {
+    const [newAction] = await db.insert(actionItems).values(actionItem).returning();
+    return newAction;
+  }
+
+  async updateActionItemStatus(id: number, status: string): Promise<ActionItem | undefined> {
+    const updates: any = { status };
+    if (status === "completed") {
+      updates.completedAt = new Date();
+    }
+    const [updated] = await db
+      .update(actionItems)
+      .set(updates)
+      .where(eq(actionItems.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Audit Readiness
+  async getAuditReadiness(userId: string): Promise<AuditReadiness[]> {
+    return db.select().from(auditReadiness).where(eq(auditReadiness.userId, userId));
+  }
+
+  async upsertAuditReadiness(readiness: InsertAuditReadiness): Promise<AuditReadiness> {
+    const [existing] = await db.select().from(auditReadiness)
+      .where(and(
+        eq(auditReadiness.userId, readiness.userId),
+        eq(auditReadiness.category, readiness.category)
+      ));
+    
+    if (existing) {
+      const [updated] = await db
+        .update(auditReadiness)
+        .set({ ...readiness, lastUpdated: new Date() })
+        .where(eq(auditReadiness.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(auditReadiness).values(readiness).returning();
+      return created;
+    }
   }
 }
 
