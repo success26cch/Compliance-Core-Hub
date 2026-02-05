@@ -29,6 +29,7 @@ type Employee = {
   firstName: string;
   lastName: string;
   email: string | null;
+  phoneNumber: string | null;
   department: string | null;
   position: string | null;
   hireDate: string | null;
@@ -47,6 +48,7 @@ type EmployeeFormData = {
   firstName: string;
   lastName: string;
   email: string;
+  phoneNumber: string;
   department: string;
   position: string;
   hireDate: string;
@@ -65,6 +67,7 @@ const defaultFormData: EmployeeFormData = {
   firstName: '',
   lastName: '',
   email: '',
+  phoneNumber: '',
   department: '',
   position: '',
   hireDate: '',
@@ -125,6 +128,7 @@ function EmployeeFormDialog({
       firstName: employee.firstName,
       lastName: employee.lastName,
       email: employee.email || '',
+      phoneNumber: employee.phoneNumber || '',
       department: employee.department || '',
       position: employee.position || '',
       hireDate: employee.hireDate ? employee.hireDate.split('T')[0] : '',
@@ -184,6 +188,17 @@ function EmployeeFormDialog({
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 data-testid="input-email"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phoneNumber">Phone Number (for SMS)</Label>
+              <Input 
+                id="phoneNumber"
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                data-testid="input-phone-number"
               />
             </div>
             <div>
