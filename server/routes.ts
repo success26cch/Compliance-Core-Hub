@@ -360,7 +360,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // Calculate ISO audit readiness (average of all categories)
       const isoReadiness = auditList.length > 0
-        ? Math.round(auditList.reduce((acc, a) => acc + (a.totalItems > 0 ? (a.completedItems / a.totalItems) * 100 : 0), 0) / auditList.length)
+        ? Math.round(auditList.reduce((acc, a) => acc + ((a.totalItems || 0) > 0 ? ((a.completedItems || 0) / (a.totalItems || 1)) * 100 : 0), 0) / auditList.length)
         : 0;
 
       // Get incidents for last 6 months
