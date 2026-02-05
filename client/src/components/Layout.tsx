@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
+import cchLogo from "@assets/1_1767636977932.png";
 
 export function Sidebar({ className = "" }: { className?: string }) {
   const [location] = useLocation();
@@ -62,9 +63,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     <div className={`flex flex-col h-full bg-white border-r border-border/50 ${className}`}>
       <div className="p-6 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
+          <img src={cchLogo} alt="CCH" className="h-10 w-auto" data-testid="img-sidebar-logo" />
           <span className="font-display font-bold text-lg text-primary tracking-tight">Core Compliance</span>
         </div>
       </div>
@@ -151,7 +150,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile Header */}
         <header className="md:hidden h-16 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-10">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-primary" />
+            <img src={cchLogo} alt="CCH" className="h-8 w-auto" />
             <span className="font-bold text-primary">Core Compliance</span>
           </div>
           <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
