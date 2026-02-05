@@ -99,13 +99,15 @@ export class DotNotificationService {
   }
   
   async hasNotificationBeenSent(employeeId: number, notificationType: string): Promise<boolean> {
+    // Only consider 'sent' notifications as blocking - failed/logged ones can be retried
     const existing = await db
       .select()
       .from(dotNotifications)
       .where(
         and(
           eq(dotNotifications.employeeId, employeeId),
-          eq(dotNotifications.notificationType, notificationType)
+          eq(dotNotifications.notificationType, notificationType),
+          eq(dotNotifications.status, 'sent')
         )
       )
       .limit(1);
