@@ -12,7 +12,7 @@ import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
-import { insertEmployeeSchema, insertIncidentSchema, insertActionItemSchema, insertAuditReadinessSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertIncidentSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Auth Setup
@@ -666,6 +666,39 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error('Error creating retainer support request:', error);
       res.status(500).json({ message: "Failed to create support request" });
+    }
+  });
+
+  // Company Profile - Get
+  app.get("/api/company-profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const profile = await storage.getCompanyProfile(userId);
+    res.json(profile || null);
+  });
+
+  // Company Profile - Upsert
+  app.post("/api/company-profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    
+    try {
+      const validated = insertCompanyProfileSchema.omit({ userId: true }).parse(req.body);
+      const profile = await storage.upsertCompanyProfile({
+        ...validated,
+        userId,
+      });
+      res.json(profile);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid company profile data", errors: error.errors });
+      }
+      console.error('Error updating company profile:', error);
+      res.status(500).json({ message: "Failed to update company profile" });
     }
   });
 

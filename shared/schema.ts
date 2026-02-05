@@ -195,6 +195,32 @@ export const insertAuditReadinessSchema = createInsertSchema(auditReadiness).omi
 export type AuditReadiness = typeof auditReadiness.$inferSelect;
 export type InsertAuditReadiness = z.infer<typeof insertAuditReadinessSchema>;
 
+// Company Profile
+export const companyProfiles = pgTable("company_profiles", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(), // One profile per user/company
+  companyName: text("company_name").notNull(),
+  industry: text("industry"),
+  employeeCount: text("employee_count"), // '1-10', '11-50', '51-100', '101-500', '500+'
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  phone: text("phone"),
+  naicsCode: text("naics_code"), // Industry classification for OSHA
+  dotNumber: text("dot_number"), // For trucking/transportation
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type CompanyProfile = typeof companyProfiles.$inferSelect;
+export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

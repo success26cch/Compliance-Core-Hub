@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, actionItems, auditReadiness, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, actionItems, auditReadiness, companyProfiles, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 
@@ -43,6 +43,10 @@ export interface IStorage {
   // Audit Readiness
   getAuditReadiness(userId: string): Promise<AuditReadiness[]>;
   upsertAuditReadiness(readiness: InsertAuditReadiness): Promise<AuditReadiness>;
+
+  // Company Profile
+  getCompanyProfile(userId: string): Promise<CompanyProfile | undefined>;
+  upsertCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -233,6 +237,27 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } else {
       const [created] = await db.insert(auditReadiness).values(readiness).returning();
+      return created;
+    }
+  }
+
+  // Company Profile
+  async getCompanyProfile(userId: string): Promise<CompanyProfile | undefined> {
+    const [profile] = await db.select().from(companyProfiles).where(eq(companyProfiles.userId, userId));
+    return profile;
+  }
+
+  async upsertCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
+    const existing = await this.getCompanyProfile(profile.userId);
+    if (existing) {
+      const [updated] = await db
+        .update(companyProfiles)
+        .set({ ...profile, updatedAt: new Date() })
+        .where(eq(companyProfiles.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(companyProfiles).values(profile).returning();
       return created;
     }
   }
