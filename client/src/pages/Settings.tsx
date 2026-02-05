@@ -152,34 +152,22 @@ export default function Settings() {
   return (
     <ProtectedLayout>
       <div className="max-w-3xl mx-auto space-y-8">
-        <h2 className="text-2xl font-bold font-display text-primary">Account & Settings</h2>
+        <div className="flex items-center gap-3">
+          <Building2 className="w-8 h-8 text-primary" />
+          <div>
+            <h2 className="text-2xl font-bold font-display text-primary">Company Profile</h2>
+            <p className="text-muted-foreground">Set up your company information for compliance documentation</p>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Name</label>
-                <div className="text-lg font-medium">{user?.firstName} {user?.lastName}</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <div className="text-lg font-medium">{user?.email}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-company-profile">
+        <Card data-testid="card-company-profile" className="border-2 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-primary" />
-              Company Profile
+              Company Information
             </CardTitle>
             <CardDescription>
-              Company information used for OSHA logs, DOT compliance, and audit documentation.
+              Used for OSHA logs, DOT compliance, and audit documentation.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -444,6 +432,24 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Name</label>
+                <div className="text-lg font-medium">{user?.firstName} {user?.lastName}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <div className="text-lg font-medium">{user?.email}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className={`border-2 ${subStatus?.isPro ? 'border-primary' : 'border-accent'}`}>
           <CardHeader>
             <div className="flex flex-wrap justify-between items-start gap-2">
@@ -484,7 +490,7 @@ export default function Settings() {
                 className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-12"
                 data-testid="button-upgrade"
               >
-                {isPending ? "Processing..." : "Upgrade to Pro - $29/mo"}
+                {isPending ? "Processing..." : "Upgrade to Pro - $99/mo"}
               </Button>
             )}
             {subStatus?.isPro && (
