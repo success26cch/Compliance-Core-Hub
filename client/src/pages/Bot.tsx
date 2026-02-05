@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ProtectedLayout } from "@/components/Layout";
 import { useChatStream, useConversations, useCreateConversation } from "@/hooks/use-chat";
 import { useQuestionUsage } from "@/hooks/use-subscriptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot as BotIcon, User, Plus, Lock } from "lucide-react";
+import { Send, Bot as BotIcon, User, Plus, Lock, Mic, MicOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BotPage() {
   const { data: conversations, isLoading: isLoadingConvos } = useConversations();
@@ -113,17 +114,87 @@ export default function BotPage() {
 function ChatInterface({ conversationId, onMessageSent }: { conversationId: number; onMessageSent?: () => void }) {
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const { toast } = useToast();
+
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0].transcript)
+          .join('');
+        setInput(transcript);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          toast({
+            title: "Microphone Access Denied",
+            description: "Please allow microphone access to use voice input.",
+            variant: "destructive",
+          });
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [toast]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Voice Input Not Supported",
+        description: "Your browser doesn't support voice input. Try Chrome or Edge.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setInput("");
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || limitReached) return;
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
     sendMessage(input);
     setInput("");
-    // Refetch usage after sending message
     if (onMessageSent) {
       setTimeout(() => onMessageSent(), 500);
     }
   };
+
+  const speechSupported = typeof window !== 'undefined' && 
+    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
   return (
     <>
@@ -154,17 +225,38 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
 
       <div className="p-4 bg-white border-t border-border/50">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3">
-          <Input 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={limitReached ? "Free limit reached - subscribe for more" : "Ask about OSHA 1904 regulations..."}
-            className="flex-1"
-            disabled={isStreaming || limitReached}
-          />
-          <Button type="submit" size="icon" disabled={isStreaming || limitReached || !input.trim()}>
+          <div className="relative flex-1">
+            <Input 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={limitReached ? "Free limit reached - subscribe for more" : isListening ? "Listening..." : "Ask about OSHA 1904 regulations..."}
+              className={`flex-1 pr-10 ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+              disabled={isStreaming || limitReached}
+              data-testid="input-chat-message"
+            />
+            {speechSupported && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={toggleListening}
+                disabled={isStreaming || limitReached}
+                className={`absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 ${isListening ? "text-accent" : "text-muted-foreground"}`}
+                data-testid="button-voice-input"
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+            )}
+          </div>
+          <Button type="submit" size="icon" disabled={isStreaming || limitReached || !input.trim()} data-testid="button-send-message">
             <Send className="w-4 h-4" />
           </Button>
         </form>
+        {isListening && (
+          <p className="text-xs text-accent text-center mt-2 animate-pulse">
+            Speak now... Click the mic again to stop.
+          </p>
+        )}
       </div>
     </>
   );
