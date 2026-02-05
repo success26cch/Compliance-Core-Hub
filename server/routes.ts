@@ -790,5 +790,190 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==================== SUPERADMIN ROUTES ====================
+  // Middleware to check superadmin status
+  async function requireSuperadmin(req: any, res: any, next: any) {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = await storage.isSuperadmin(userId);
+    if (!isSuperadmin) {
+      return res.status(403).json({ message: "Forbidden - Superadmin access required" });
+    }
+    next();
+  }
+
+  // Check if current user is superadmin
+  app.get("/api/superadmin/check", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = await storage.isSuperadmin(userId);
+    res.json({ isSuperadmin });
+  });
+
+  // Get dashboard stats
+  app.get("/api/superadmin/stats", requireSuperadmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const subscriptions = await storage.getAllSubscriptions();
+      const newSignups = await storage.getNewSignupsThisWeek();
+      
+      // Calculate MRR from active subscriptions
+      const planPrices: Record<string, number> = {
+        'cch_compliance_pro': 29,
+        'cch_unlimited_safety': 99,
+        'acsi_iso_essentials': 49,
+        'acsi_iso_professional': 149,
+        'integrated_enterprise': 299,
+        'human_expert_retainer': 499,
+      };
+      
+      let totalMRR = 0;
+      subscriptions.filter(s => s.status === 'active').forEach(sub => {
+        const price = planPrices[sub.plan || ''] || 0;
+        totalMRR += price;
+      });
+      
+      res.json({
+        totalMRR,
+        totalCompanies: users.length,
+        newSignupsThisWeek: newSignups,
+      });
+    } catch (error: any) {
+      console.error('Error fetching superadmin stats:', error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Get all companies/users with subscription info
+  app.get("/api/superadmin/companies", requireSuperadmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const subscriptions = await storage.getAllSubscriptions();
+      const companyProfiles = await Promise.all(
+        users.map(u => storage.getCompanyProfile(u.id))
+      );
+      
+      const planPrices: Record<string, number> = {
+        'cch_compliance_pro': 29,
+        'cch_unlimited_safety': 99,
+        'acsi_iso_essentials': 49,
+        'acsi_iso_professional': 149,
+        'integrated_enterprise': 299,
+        'human_expert_retainer': 499,
+      };
+      
+      const companies = users.map((user, index) => {
+        const sub = subscriptions.find(s => s.userId === user.id);
+        const profile = companyProfiles[index];
+        const monthlyPrice = planPrices[sub?.plan || ''] || 0;
+        
+        // Calculate LTV (months since subscription started * price)
+        let ltv = 0;
+        if (sub?.status === 'active' && sub.createdAt && monthlyPrice > 0) {
+          const monthsActive = Math.max(1, Math.ceil((Date.now() - new Date(sub.createdAt).getTime()) / (30 * 24 * 60 * 60 * 1000)));
+          ltv = monthsActive * monthlyPrice;
+        }
+        
+        return {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          companyName: profile?.companyName || 'No Company Set',
+          plan: sub?.plan || 'free',
+          planStatus: sub?.status || 'inactive',
+          monthlyPrice,
+          ltv,
+          createdAt: user.createdAt,
+        };
+      });
+      
+      res.json(companies);
+    } catch (error: any) {
+      console.error('Error fetching companies:', error);
+      res.status(500).json({ message: "Failed to fetch companies" });
+    }
+  });
+
+  // Get user growth over last 30 days
+  app.get("/api/superadmin/growth", requireSuperadmin, async (req, res) => {
+    try {
+      const growth = await storage.getUserGrowthLast30Days();
+      res.json(growth);
+    } catch (error: any) {
+      console.error('Error fetching growth data:', error);
+      res.status(500).json({ message: "Failed to fetch growth data" });
+    }
+  });
+
+  // Get pending retainer requests
+  app.get("/api/superadmin/retainer-requests", requireSuperadmin, async (req, res) => {
+    try {
+      const requests = await storage.getRetainerRequests();
+      res.json(requests);
+    } catch (error: any) {
+      console.error('Error fetching retainer requests:', error);
+      res.status(500).json({ message: "Failed to fetch retainer requests" });
+    }
+  });
+
+  // Get all leads
+  app.get("/api/superadmin/leads", requireSuperadmin, async (req, res) => {
+    try {
+      const allLeads = await storage.getLeads();
+      res.json(allLeads);
+    } catch (error: any) {
+      console.error('Error fetching leads:', error);
+      res.status(500).json({ message: "Failed to fetch leads" });
+    }
+  });
+
+  // Export leads as CSV
+  app.get("/api/superadmin/leads/export", requireSuperadmin, async (req, res) => {
+    try {
+      const allLeads = await storage.getLeads();
+      
+      // Generate CSV
+      const headers = ['ID', 'Name', 'Email', 'Created At'];
+      const rows = allLeads.map(lead => [
+        lead.id,
+        `"${(lead.name || '').replace(/"/g, '""')}"`,
+        `"${(lead.email || '').replace(/"/g, '""')}"`,
+        lead.createdAt ? new Date(lead.createdAt).toISOString() : ''
+      ].join(','));
+      
+      const csv = [headers.join(','), ...rows].join('\n');
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="leads-export.csv"');
+      res.send(csv);
+    } catch (error: any) {
+      console.error('Error exporting leads:', error);
+      res.status(500).json({ message: "Failed to export leads" });
+    }
+  });
+
+  // Update inquiry status (for retainer queue)
+  app.patch("/api/superadmin/inquiries/:id/status", requireSuperadmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status || !['new', 'contacted', 'closed'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const updated = await storage.updateInquiryStatus(id, status);
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating inquiry status:', error);
+      res.status(500).json({ message: "Failed to update inquiry status" });
+    }
+  });
+
   return httpServer;
 }

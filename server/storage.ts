@@ -1,6 +1,6 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Leads
@@ -54,6 +54,16 @@ export interface IStorage {
   // Company Profile
   getCompanyProfile(userId: string): Promise<CompanyProfile | undefined>;
   upsertCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile>;
+
+  // Superadmin functions
+  getUserById(userId: string): Promise<User | undefined>;
+  isSuperadmin(userId: string): Promise<boolean>;
+  getAllUsers(): Promise<User[]>;
+  getAllSubscriptions(): Promise<Subscription[]>;
+  getNewSignupsThisWeek(): Promise<number>;
+  getUserGrowthLast30Days(): Promise<{ date: string; count: number }[]>;
+  getRetainerRequests(): Promise<ContactInquiry[]>;
+  setSuperadmin(userId: string, isSuperadmin: boolean): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -300,6 +310,68 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(correctiveActions)
       .where(and(eq(correctiveActions.id, id), eq(correctiveActions.userId, userId)));
     return true;
+  }
+
+  // Superadmin functions
+  async getUserById(userId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user;
+  }
+
+  async isSuperadmin(userId: string): Promise<boolean> {
+    const user = await this.getUserById(userId);
+    return user?.isSuperadmin === true;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getAllSubscriptions(): Promise<Subscription[]> {
+    return db.select().from(subscriptions).orderBy(desc(subscriptions.createdAt));
+  }
+
+  async getNewSignupsThisWeek(): Promise<number> {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const result = await db.select({ count: count() }).from(users).where(gte(users.createdAt, oneWeekAgo));
+    return result[0]?.count || 0;
+  }
+
+  async getUserGrowthLast30Days(): Promise<{ date: string; count: number }[]> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const result = await db.execute(sql`
+      SELECT DATE(created_at) as date, COUNT(*)::int as count
+      FROM users
+      WHERE created_at >= ${thirtyDaysAgo}
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `);
+    
+    return (result.rows as any[]).map(row => ({
+      date: row.date,
+      count: row.count
+    }));
+  }
+
+  async getRetainerRequests(): Promise<ContactInquiry[]> {
+    return db.select().from(contactInquiries)
+      .where(and(
+        eq(contactInquiries.inquiryType, 'retainer'),
+        eq(contactInquiries.status, 'new')
+      ))
+      .orderBy(desc(contactInquiries.createdAt));
+  }
+
+  async setSuperadmin(userId: string, isSuperadminFlag: boolean): Promise<User | undefined> {
+    const [updated] = await db.update(users)
+      .set({ isSuperadmin: isSuperadminFlag, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
   }
 }
 
