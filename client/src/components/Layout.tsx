@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
-import acsiLogo from "@assets/4_1770259806492.png";
+import hubLogo from "@assets/6_1770259909295.png";
 
 export function Sidebar({ className = "" }: { className?: string }) {
   const [location] = useLocation();
@@ -62,9 +62,8 @@ export function Sidebar({ className = "" }: { className?: string }) {
   return (
     <div className={`flex flex-col h-full bg-white border-r border-border/50 ${className}`}>
       <div className="p-6 border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <img src={cchLogo} alt="CCH" className="h-10 w-auto" data-testid="img-sidebar-logo" />
-          <span className="font-display font-bold text-lg text-primary tracking-tight">Core Compliance</span>
+        <div className="flex items-center justify-center">
+          <img src={hubLogo} alt="Core Compliance Hub" className="h-14 w-auto" data-testid="img-sidebar-logo" />
         </div>
       </div>
 
@@ -149,9 +148,8 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
         {/* Mobile Header */}
         <header className="md:hidden h-16 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-10">
-          <div className="flex items-center gap-2">
-            <img src={cchLogo} alt="CCH" className="h-8 w-auto" />
-            <span className="font-bold text-primary">Core Compliance</span>
+          <div className="flex items-center">
+            <img src={hubLogo} alt="Core Compliance Hub" className="h-10 w-auto" />
           </div>
           <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
             <SheetTrigger asChild>
