@@ -25,12 +25,72 @@ import {
   Skull,
   BedDouble,
   Construction,
-  Stethoscope
+  Stethoscope,
+  ShieldCheck,
+  Target,
+  Users,
+  Search,
+  Trash2,
+  Edit,
+  Eye
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+
+type CorrectiveAction = {
+  id: number;
+  incidentId: number | null;
+  title: string;
+  problemStatement: string;
+  rootCause: string | null;
+  immediateActions: string | null;
+  correctiveActions: string | null;
+  preventiveActions: string | null;
+  responsiblePerson: string | null;
+  responsibleDepartment: string | null;
+  targetDate: string | null;
+  completionDate: string | null;
+  verificationMethod: string | null;
+  verificationDate: string | null;
+  verificationNotes: string | null;
+  priority: string;
+  status: string;
+  createdAt: string;
+};
+
+type CAPAFormData = {
+  incidentId: number | null;
+  title: string;
+  problemStatement: string;
+  rootCause: string;
+  immediateActions: string;
+  correctiveActions: string;
+  preventiveActions: string;
+  responsiblePerson: string;
+  responsibleDepartment: string;
+  targetDate: string;
+  verificationMethod: string;
+  priority: string;
+  status: string;
+};
+
+const defaultCAPAFormData: CAPAFormData = {
+  incidentId: null,
+  title: '',
+  problemStatement: '',
+  rootCause: '',
+  immediateActions: '',
+  correctiveActions: '',
+  preventiveActions: '',
+  responsiblePerson: '',
+  responsibleDepartment: '',
+  targetDate: '',
+  verificationMethod: '',
+  priority: 'medium',
+  status: 'open',
+};
 
 type Incident = {
   id: number;
@@ -650,6 +710,565 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
   );
 }
 
+function CAPAFormDialog({ 
+  open, 
+  onOpenChange, 
+  onSave,
+  incidents 
+}: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: CAPAFormData) => void;
+  incidents: Incident[];
+}) {
+  const [formData, setFormData] = useState<CAPAFormData>(defaultCAPAFormData);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+    setFormData(defaultCAPAFormData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5" />
+            Create Corrective Action Plan
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Link to Incident (Optional) */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Related Incident</h3>
+            <div>
+              <Label htmlFor="incidentId">Link to Incident (Optional)</Label>
+              <Select 
+                value={formData.incidentId?.toString() || "none"} 
+                onValueChange={(v) => setFormData({...formData, incidentId: v === "none" ? null : parseInt(v)})}
+              >
+                <SelectTrigger data-testid="select-incident-link">
+                  <SelectValue placeholder="Select related incident..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No linked incident</SelectItem>
+                  {incidents.map((inc) => (
+                    <SelectItem key={inc.id} value={inc.id.toString()}>
+                      {new Date(inc.incidentDate).toLocaleDateString()} - {inc.description.substring(0, 50)}...
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Problem Identification */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Problem Identification</h3>
+            <div>
+              <Label htmlFor="title">Action Plan Title *</Label>
+              <Input 
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                placeholder="e.g., Forklift Safety Enhancement Program"
+                required
+                data-testid="input-capa-title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="problemStatement">Problem Statement *</Label>
+              <Textarea 
+                id="problemStatement"
+                value={formData.problemStatement}
+                onChange={(e) => setFormData({...formData, problemStatement: e.target.value})}
+                placeholder="Describe the problem or incident that requires corrective action..."
+                rows={3}
+                required
+                data-testid="input-problem-statement"
+              />
+            </div>
+            <div>
+              <Label htmlFor="rootCause">Root Cause Analysis</Label>
+              <Textarea 
+                id="rootCause"
+                value={formData.rootCause}
+                onChange={(e) => setFormData({...formData, rootCause: e.target.value})}
+                placeholder="What is the underlying cause of this problem? (Use 5 Whys, Fishbone, etc.)"
+                rows={3}
+                data-testid="input-root-cause"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Actions</h3>
+            <div>
+              <Label htmlFor="immediateActions">Immediate Actions Taken</Label>
+              <Textarea 
+                id="immediateActions"
+                value={formData.immediateActions}
+                onChange={(e) => setFormData({...formData, immediateActions: e.target.value})}
+                placeholder="What actions were taken immediately to address the issue?"
+                rows={2}
+                data-testid="input-immediate-actions"
+              />
+            </div>
+            <div>
+              <Label htmlFor="correctiveActions">Corrective Actions (Long-term Fixes)</Label>
+              <Textarea 
+                id="correctiveActions"
+                value={formData.correctiveActions}
+                onChange={(e) => setFormData({...formData, correctiveActions: e.target.value})}
+                placeholder="What long-term changes will be implemented to fix the problem?"
+                rows={3}
+                data-testid="input-corrective-actions"
+              />
+            </div>
+            <div>
+              <Label htmlFor="preventiveActions">Preventive Actions (Avoid Recurrence)</Label>
+              <Textarea 
+                id="preventiveActions"
+                value={formData.preventiveActions}
+                onChange={(e) => setFormData({...formData, preventiveActions: e.target.value})}
+                placeholder="What measures will prevent this from happening again?"
+                rows={3}
+                data-testid="input-preventive-actions"
+              />
+            </div>
+          </div>
+
+          {/* Assignment */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Assignment & Timeline</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="responsiblePerson">Responsible Person</Label>
+                <Input 
+                  id="responsiblePerson"
+                  value={formData.responsiblePerson}
+                  onChange={(e) => setFormData({...formData, responsiblePerson: e.target.value})}
+                  placeholder="Name of person responsible"
+                  data-testid="input-responsible-person"
+                />
+              </div>
+              <div>
+                <Label htmlFor="responsibleDepartment">Department</Label>
+                <Input 
+                  id="responsibleDepartment"
+                  value={formData.responsibleDepartment}
+                  onChange={(e) => setFormData({...formData, responsibleDepartment: e.target.value})}
+                  placeholder="e.g., Operations, Safety"
+                  data-testid="input-responsible-dept"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="targetDate">Target Completion Date</Label>
+                <Input 
+                  id="targetDate"
+                  type="date"
+                  value={formData.targetDate}
+                  onChange={(e) => setFormData({...formData, targetDate: e.target.value})}
+                  data-testid="input-target-date"
+                />
+              </div>
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select 
+                  value={formData.priority} 
+                  onValueChange={(v) => setFormData({...formData, priority: v})}
+                >
+                  <SelectTrigger data-testid="select-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Verification */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Verification</h3>
+            <div>
+              <Label htmlFor="verificationMethod">How Will Effectiveness Be Verified?</Label>
+              <Textarea 
+                id="verificationMethod"
+                value={formData.verificationMethod}
+                onChange={(e) => setFormData({...formData, verificationMethod: e.target.value})}
+                placeholder="Describe how you will verify that the corrective actions are effective..."
+                rows={2}
+                data-testid="input-verification-method"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" data-testid="button-save-capa">
+              Create Action Plan
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function getPriorityBadge(priority: string) {
+  switch (priority) {
+    case 'critical':
+      return <Badge className="bg-destructive text-destructive-foreground">Critical</Badge>;
+    case 'high':
+      return <Badge className="bg-orange-500 text-white">High</Badge>;
+    case 'medium':
+      return <Badge className="bg-yellow-500 text-white">Medium</Badge>;
+    case 'low':
+      return <Badge variant="secondary">Low</Badge>;
+    default:
+      return <Badge variant="outline">{priority}</Badge>;
+  }
+}
+
+function getCAPAStatusBadge(status: string) {
+  switch (status) {
+    case 'open':
+      return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />Open</Badge>;
+    case 'in_progress':
+      return <Badge className="bg-blue-500 text-white"><Target className="w-3 h-3 mr-1" />In Progress</Badge>;
+    case 'completed':
+      return <Badge className="bg-green-500 text-white"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
+    case 'verified':
+      return <Badge className="bg-accent text-accent-foreground"><ShieldCheck className="w-3 h-3 mr-1" />Verified</Badge>;
+    case 'closed':
+      return <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" />Closed</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+}
+
+function CorrectiveActionPlans({ incidents }: { incidents: Incident[] }) {
+  const [capaDialogOpen, setCAPADialogOpen] = useState(false);
+  const [selectedCAPA, setSelectedCAPA] = useState<CorrectiveAction | null>(null);
+  const { toast } = useToast();
+
+  const { data: capaList = [], isLoading } = useQuery<CorrectiveAction[]>({
+    queryKey: ['/api/corrective-actions'],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: CAPAFormData) => {
+      return apiRequest('POST', '/api/corrective-actions', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+      setCAPADialogOpen(false);
+      toast({ title: "Action Plan Created", description: "Corrective action plan has been created successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create action plan.", variant: "destructive" });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      return apiRequest('PATCH', `/api/corrective-actions/${id}`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+      toast({ title: "Status Updated", description: "Action plan status has been updated." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest('DELETE', `/api/corrective-actions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+      toast({ title: "Deleted", description: "Action plan has been deleted." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete action plan.", variant: "destructive" });
+    },
+  });
+
+  const openCount = capaList.filter(c => c.status === 'open').length;
+  const inProgressCount = capaList.filter(c => c.status === 'in_progress').length;
+  const completedCount = capaList.filter(c => c.status === 'completed' || c.status === 'verified' || c.status === 'closed').length;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-accent" />
+            Corrective Action Plans (CAPA)
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Create policies and procedures to prevent future incidents
+          </p>
+        </div>
+        <Button onClick={() => setCAPADialogOpen(true)} className="gap-2" data-testid="button-create-capa">
+          <Plus className="w-4 h-4" />
+          New Action Plan
+        </Button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-orange-600">{openCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">Open</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-blue-600">{inProgressCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">In Progress</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-green-600">{completedCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">Completed</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* CAPA List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Corrective Action Plans</CardTitle>
+          <CardDescription>
+            Track and manage corrective and preventive actions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : capaList.length === 0 ? (
+            <div className="text-center py-12">
+              <ShieldCheck className="w-12 h-12 text-accent mx-auto mb-4 opacity-50" />
+              <h3 className="font-medium mb-2">No Corrective Action Plans</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first CAPA to establish policies and procedures.
+              </p>
+              <Button onClick={() => setCAPADialogOpen(true)} variant="outline" className="gap-2">
+                <Plus className="w-4 h-4" />
+                Create First Action Plan
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {capaList.map((capa) => (
+                <div 
+                  key={capa.id} 
+                  className="border rounded-lg p-4 bg-muted/20 hover:bg-muted/30 transition-colors"
+                  data-testid={`capa-item-${capa.id}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold truncate">{capa.title}</h4>
+                        {getPriorityBadge(capa.priority)}
+                        {getCAPAStatusBadge(capa.status)}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                        {capa.problemStatement}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {capa.responsiblePerson && (
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {capa.responsiblePerson}
+                          </span>
+                        )}
+                        {capa.targetDate && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Due: {new Date(capa.targetDate).toLocaleDateString()}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Created: {new Date(capa.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Select 
+                        value={capa.status} 
+                        onValueChange={(v) => updateStatusMutation.mutate({ id: capa.id, status: v })}
+                      >
+                        <SelectTrigger className="w-32 h-8" data-testid={`select-capa-status-${capa.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="verified">Verified</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        onClick={() => setSelectedCAPA(capa)}
+                        data-testid={`button-view-capa-${capa.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        size="icon" 
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this action plan?')) {
+                            deleteMutation.mutate(capa.id);
+                          }
+                        }}
+                        data-testid={`button-delete-capa-${capa.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* CAPA Detail Dialog */}
+      {selectedCAPA && (
+        <Dialog open={!!selectedCAPA} onOpenChange={() => setSelectedCAPA(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" />
+                {selectedCAPA.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                {getPriorityBadge(selectedCAPA.priority)}
+                {getCAPAStatusBadge(selectedCAPA.status)}
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-sm mb-1">Problem Statement</h4>
+                <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                  {selectedCAPA.problemStatement}
+                </p>
+              </div>
+
+              {selectedCAPA.rootCause && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Root Cause</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                    {selectedCAPA.rootCause}
+                  </p>
+                </div>
+              )}
+
+              {selectedCAPA.immediateActions && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Immediate Actions</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                    {selectedCAPA.immediateActions}
+                  </p>
+                </div>
+              )}
+
+              {selectedCAPA.correctiveActions && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Corrective Actions</h4>
+                  <p className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded border-l-4 border-blue-500">
+                    {selectedCAPA.correctiveActions}
+                  </p>
+                </div>
+              )}
+
+              {selectedCAPA.preventiveActions && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Preventive Actions</h4>
+                  <p className="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded border-l-4 border-green-500">
+                    {selectedCAPA.preventiveActions}
+                  </p>
+                </div>
+              )}
+
+              {selectedCAPA.verificationMethod && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Verification Method</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                    {selectedCAPA.verificationMethod}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <p className="text-xs text-muted-foreground">Responsible</p>
+                  <p className="font-medium">{selectedCAPA.responsiblePerson || '—'}</p>
+                  <p className="text-sm text-muted-foreground">{selectedCAPA.responsibleDepartment || ''}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Target Date</p>
+                  <p className="font-medium">
+                    {selectedCAPA.targetDate ? new Date(selectedCAPA.targetDate).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedCAPA(null)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <CAPAFormDialog
+        open={capaDialogOpen}
+        onOpenChange={setCAPADialogOpen}
+        onSave={(data) => createMutation.mutate(data)}
+        incidents={incidents}
+      />
+    </div>
+  );
+}
+
 export default function Incidents() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -737,7 +1356,7 @@ export default function Incidents() {
           </Card>
         </div>
 
-        {/* Tabs for Incident List and OSHA 300 Report */}
+        {/* Tabs for Incident List, OSHA 300 Report, and CAPA */}
         <Tabs defaultValue="incidents" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="incidents" className="gap-2" data-testid="tab-incidents">
@@ -747,6 +1366,10 @@ export default function Incidents() {
             <TabsTrigger value="osha300" className="gap-2" data-testid="tab-osha300">
               <FileText className="w-4 h-4" />
               OSHA 300 Report
+            </TabsTrigger>
+            <TabsTrigger value="capa" className="gap-2" data-testid="tab-capa">
+              <ShieldCheck className="w-4 h-4" />
+              Corrective Actions
             </TabsTrigger>
           </TabsList>
 
@@ -832,6 +1455,10 @@ export default function Incidents() {
 
           <TabsContent value="osha300">
             <OSHA300Report incidents={incidents} />
+          </TabsContent>
+
+          <TabsContent value="capa">
+            <CorrectiveActionPlans incidents={incidents} />
           </TabsContent>
         </Tabs>
 

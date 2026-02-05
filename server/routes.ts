@@ -12,7 +12,7 @@ import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
-import { insertEmployeeSchema, insertIncidentSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Auth Setup
@@ -536,6 +536,94 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       console.error('Error creating incident:', error);
       res.status(500).json({ message: "Failed to create incident" });
     }
+  });
+
+  // Corrective Action Plans (CAPA)
+  app.get("/api/corrective-actions", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const actions = await storage.getCorrectiveActions(userId);
+    res.json(actions);
+  });
+
+  app.get("/api/corrective-actions/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    const action = await storage.getCorrectiveActionById(id, userId);
+    if (!action) {
+      return res.status(404).json({ message: "Corrective action not found" });
+    }
+    res.json(action);
+  });
+
+  app.post("/api/corrective-actions", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    
+    try {
+      const validated = insertCorrectiveActionSchema.omit({ userId: true }).parse({
+        ...req.body,
+        targetDate: req.body.targetDate ? new Date(req.body.targetDate) : null,
+        completionDate: req.body.completionDate ? new Date(req.body.completionDate) : null,
+        verificationDate: req.body.verificationDate ? new Date(req.body.verificationDate) : null,
+      });
+      const action = await storage.createCorrectiveAction({
+        ...validated,
+        userId,
+      });
+      res.status(201).json(action);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid corrective action data", errors: error.errors });
+      }
+      console.error('Error creating corrective action:', error);
+      res.status(500).json({ message: "Failed to create corrective action" });
+    }
+  });
+
+  app.patch("/api/corrective-actions/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    
+    try {
+      const updates: any = { ...req.body };
+      if (updates.targetDate) updates.targetDate = new Date(updates.targetDate);
+      if (updates.completionDate) updates.completionDate = new Date(updates.completionDate);
+      if (updates.verificationDate) updates.verificationDate = new Date(updates.verificationDate);
+      
+      const updated = await storage.updateCorrectiveAction(id, userId, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "Corrective action not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating corrective action:', error);
+      res.status(500).json({ message: "Failed to update corrective action" });
+    }
+  });
+
+  app.delete("/api/corrective-actions/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    
+    const deleted = await storage.deleteCorrectiveAction(id, userId);
+    if (!deleted) {
+      return res.status(404).json({ message: "Corrective action not found" });
+    }
+    res.json({ success: true });
   });
 
   // Get action items

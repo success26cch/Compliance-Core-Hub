@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, actionItems, auditReadiness, companyProfiles, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 
@@ -32,6 +32,13 @@ export interface IStorage {
   getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Incident[]>;
   createIncident(incident: InsertIncident): Promise<Incident>;
   updateIncident(id: number, userId: string, incident: Partial<InsertIncident>): Promise<Incident | undefined>;
+
+  // Corrective Actions
+  getCorrectiveActions(userId: string): Promise<CorrectiveAction[]>;
+  getCorrectiveActionById(id: number, userId: string): Promise<CorrectiveAction | undefined>;
+  createCorrectiveAction(action: InsertCorrectiveAction): Promise<CorrectiveAction>;
+  updateCorrectiveAction(id: number, userId: string, action: Partial<InsertCorrectiveAction>): Promise<CorrectiveAction | undefined>;
+  deleteCorrectiveAction(id: number, userId: string): Promise<boolean>;
 
   // Action Items
   getActionItems(userId: string): Promise<ActionItem[]>;
@@ -260,6 +267,39 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(companyProfiles).values(profile).returning();
       return created;
     }
+  }
+
+  // Corrective Actions
+  async getCorrectiveActions(userId: string): Promise<CorrectiveAction[]> {
+    return db.select().from(correctiveActions)
+      .where(eq(correctiveActions.userId, userId))
+      .orderBy(desc(correctiveActions.createdAt));
+  }
+
+  async getCorrectiveActionById(id: number, userId: string): Promise<CorrectiveAction | undefined> {
+    const [action] = await db.select().from(correctiveActions)
+      .where(and(eq(correctiveActions.id, id), eq(correctiveActions.userId, userId)));
+    return action;
+  }
+
+  async createCorrectiveAction(action: InsertCorrectiveAction): Promise<CorrectiveAction> {
+    const [created] = await db.insert(correctiveActions).values(action).returning();
+    return created;
+  }
+
+  async updateCorrectiveAction(id: number, userId: string, action: Partial<InsertCorrectiveAction>): Promise<CorrectiveAction | undefined> {
+    const [updated] = await db
+      .update(correctiveActions)
+      .set({ ...action, updatedAt: new Date() })
+      .where(and(eq(correctiveActions.id, id), eq(correctiveActions.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteCorrectiveAction(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(correctiveActions)
+      .where(and(eq(correctiveActions.id, id), eq(correctiveActions.userId, userId)));
+    return true;
   }
 }
 

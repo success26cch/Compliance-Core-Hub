@@ -9,7 +9,8 @@
 - **OSHA 300, Log it or Not**: Interactive decision tree for OSHA recordability
 - **Client Compliance Dashboard**: Real-time metrics for ISO audit readiness, medical surveillance, drug screen status, with incident heatmap and action queue
 - **Employee Management**: Track employees with DOT physical dates, respiratory exams, drug test results, and random pool inclusion (/employees)
-- **Incident Log**: Record workplace incidents for OSHA 300 compliance with recordability tracking, days away/restricted (/incidents)
+- **Incident Log & OSHA 300**: Full OSHA 300 log with employee name, job title, location, body part, nature of injury, classification, and printable report (/incidents)
+- **Corrective Action Plans (CAPA)**: Create policies and procedures to prevent future incidents. Includes root cause analysis, corrective/preventive actions, responsible person assignment, and verification tracking
 - **Company Profile**: Set company information (NAICS code, DOT number, address, DER contact info, company logo) for compliance documentation (/settings)
 - **Human Expert Retainer**: Professional human support for crisis response, OSHA 300 log audits, and audit defense
 - **Lead Capture**: Free recordability cheat sheet download
@@ -20,7 +21,7 @@
 ## Data Management Routes
 - **/dashboard**: Client Compliance Dashboard with metrics, incident heatmap, action queue
 - **/employees**: Employee Management - add/edit/delete employees, track DOT physicals, drug tests, respiratory exams
-- **/incidents**: Incident Log - record workplace incidents, track OSHA recordability
+- **/incidents**: Incident Log - record workplace incidents, track OSHA recordability, OSHA 300 report with print feature, Corrective Action Plans (CAPA)
 - **/settings**: Company Profile (with DER contact info and logo upload) and subscription management
 
 ## BrandNSwag Division

@@ -166,6 +166,42 @@ export const insertIncidentSchema = createInsertSchema(incidents, {
 export type Incident = typeof incidents.$inferSelect;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 
+// Corrective Action Plans (CAPA)
+export const correctiveActions = pgTable("corrective_actions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  incidentId: integer("incident_id"), // Optional link to related incident
+  title: text("title").notNull(),
+  problemStatement: text("problem_statement").notNull(), // What happened
+  rootCause: text("root_cause"), // Why it happened
+  immediateActions: text("immediate_actions"), // Actions taken immediately
+  correctiveActions: text("corrective_actions"), // Long-term fixes
+  preventiveActions: text("preventive_actions"), // Prevent recurrence
+  responsiblePerson: text("responsible_person"),
+  responsibleDepartment: text("responsible_department"),
+  targetDate: timestamp("target_date"),
+  completionDate: timestamp("completion_date"),
+  verificationMethod: text("verification_method"), // How to verify effectiveness
+  verificationDate: timestamp("verification_date"),
+  verificationNotes: text("verification_notes"),
+  priority: text("priority").notNull().default("medium"), // 'critical', 'high', 'medium', 'low'
+  status: text("status").notNull().default("open"), // 'open', 'in_progress', 'completed', 'verified', 'closed'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCorrectiveActionSchema = createInsertSchema(correctiveActions, {
+  targetDate: dateOrStringToDate,
+  completionDate: dateOrStringToDate,
+  verificationDate: dateOrStringToDate,
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type CorrectiveAction = typeof correctiveActions.$inferSelect;
+export type InsertCorrectiveAction = z.infer<typeof insertCorrectiveActionSchema>;
+
 // Action Items (urgent tasks for managers)
 export const actionItems = pgTable("action_items", {
   id: serial("id").primaryKey(),
