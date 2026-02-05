@@ -88,6 +88,25 @@ export default function Landing() {
               <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 w-auto mx-auto -mb-4" />
               <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-2xl h-auto object-contain" />
             </div>
+            
+            {/* Division Icons */}
+            <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
+              <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <ShieldCheck className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                </div>
+                <span className="text-xs md:text-sm font-semibold text-primary">CCH</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                <img src={acsiLogo} alt="ACSI" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:opacity-80 transition-opacity" />
+                <span className="text-xs md:text-sm font-semibold text-primary">ACSI</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                <img src={brandNSwagLogo} alt="BrandNSwag" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:opacity-80 transition-opacity" />
+                <span className="text-xs md:text-sm font-semibold text-primary">BrandNSwag</span>
+              </div>
+            </div>
+            
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 text-accent font-semibold text-sm border border-accent/30">
               <Activity className="w-4 h-4 animate-pulse" />
               THE ONE STOP EMPLOYER SHOP
