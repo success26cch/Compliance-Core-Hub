@@ -63,7 +63,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     <div className={`flex flex-col h-full bg-white border-r border-border/50 ${className}`}>
       <div className="px-4 py-2 border-b border-border/50">
         <div className="flex items-center justify-center overflow-hidden h-16">
-          <img src={hubLogo} alt="Core Compliance Hub" className="w-full max-w-[220px] h-auto scale-105" data-testid="img-sidebar-logo" />
+          <img src={hubLogo} alt="Core Compliance Hub" className="w-full max-w-[220px] h-auto scale-[0.85]" data-testid="img-sidebar-logo" />
         </div>
       </div>
 
