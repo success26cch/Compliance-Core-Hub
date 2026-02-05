@@ -10,7 +10,7 @@
 - **Client Compliance Dashboard**: Real-time metrics for ISO audit readiness, medical surveillance, drug screen status, with incident heatmap and action queue
 - **Employee Management**: Track employees with DOT physical dates, respiratory exams, drug test results, and random pool inclusion (/employees)
 - **Incident Log**: Record workplace incidents for OSHA 300 compliance with recordability tracking, days away/restricted (/incidents)
-- **Company Profile**: Set company information (NAICS code, DOT number, address) for compliance documentation (/settings)
+- **Company Profile**: Set company information (NAICS code, DOT number, address, DER contact info, company logo) for compliance documentation (/settings)
 - **Human Expert Retainer**: Professional human support for crisis response, OSHA 300 log audits, and audit defense
 - **Lead Capture**: Free recordability cheat sheet download
 - **Training Courses**: Self-paced compliance training with certificates
@@ -21,7 +21,7 @@
 - **/dashboard**: Client Compliance Dashboard with metrics, incident heatmap, action queue
 - **/employees**: Employee Management - add/edit/delete employees, track DOT physicals, drug tests, respiratory exams
 - **/incidents**: Incident Log - record workplace incidents, track OSHA recordability
-- **/settings**: Company Profile and subscription management
+- **/settings**: Company Profile (with DER contact info and logo upload) and subscription management
 
 ## BrandNSwag Division
 Smart Swag makes safety fun and rewarding through QR-enabled company merchandise.

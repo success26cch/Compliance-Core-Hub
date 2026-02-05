@@ -209,6 +209,12 @@ export const companyProfiles = pgTable("company_profiles", {
   phone: text("phone"),
   naicsCode: text("naics_code"), // Industry classification for OSHA
   dotNumber: text("dot_number"), // For trucking/transportation
+  // DER (Designated Employer Representative) contact info
+  derName: text("der_name"),
+  derPhone: text("der_phone"),
+  derEmail: text("der_email"),
+  // Company logo (stored as base64 data URL or external URL)
+  logoUrl: text("logo_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
