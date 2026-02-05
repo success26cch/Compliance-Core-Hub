@@ -325,5 +325,317 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(updated);
   });
 
+  // ==========================================
+  // DASHBOARD API ROUTES
+  // ==========================================
+
+  // Get dashboard metrics summary
+  app.get("/api/dashboard/metrics", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+
+    try {
+      const [employeeList, incidentList, actionList, auditList] = await Promise.all([
+        storage.getEmployees(userId),
+        storage.getIncidents(userId),
+        storage.getPendingActionItems(userId),
+        storage.getAuditReadiness(userId),
+      ]);
+
+      // Calculate medical surveillance percentage
+      const employeesWithDOT = employeeList.filter(e => e.dotPhysicalStatus === 'current').length;
+      const employeesWithRespiratory = employeeList.filter(e => e.respiratoryStatus === 'current').length;
+      const totalWithDOTRequired = employeeList.filter(e => e.dotPhysicalStatus !== 'na').length;
+      const totalWithRespiratoryRequired = employeeList.filter(e => e.respiratoryStatus !== 'na').length;
+      
+      const medicalSurveillancePercent = totalWithDOTRequired + totalWithRespiratoryRequired > 0
+        ? Math.round(((employeesWithDOT + employeesWithRespiratory) / (totalWithDOTRequired + totalWithRespiratoryRequired)) * 100)
+        : 100;
+
+      // Calculate drug screen status
+      const clearedDrugTests = employeeList.filter(e => e.drugTestResult === 'cleared').length;
+      const pendingDrugTests = employeeList.filter(e => e.drugTestResult === 'pending' || e.drugTestResult === 'scheduled').length;
+
+      // Calculate ISO audit readiness (average of all categories)
+      const isoReadiness = auditList.length > 0
+        ? Math.round(auditList.reduce((acc, a) => acc + (a.totalItems > 0 ? (a.completedItems / a.totalItems) * 100 : 0), 0) / auditList.length)
+        : 0;
+
+      // Get incidents for last 6 months
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const recentIncidents = incidentList.filter(i => new Date(i.incidentDate) >= sixMonthsAgo);
+      const recordableIncidents = recentIncidents.filter(i => i.isRecordable).length;
+
+      res.json({
+        employeeCount: employeeList.length,
+        isoAuditReadiness: isoReadiness,
+        medicalSurveillance: medicalSurveillancePercent,
+        drugScreenCleared: clearedDrugTests,
+        drugScreenPending: pendingDrugTests,
+        pendingActions: actionList.length,
+        recordableIncidents6Mo: recordableIncidents,
+        totalIncidents6Mo: recentIncidents.length,
+      });
+    } catch (error: any) {
+      console.error('Error fetching dashboard metrics:', error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
+  // Get employees
+  app.get("/api/employees", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const employeeList = await storage.getEmployees(userId);
+    res.json(employeeList);
+  });
+
+  // Create employee
+  app.post("/api/employees", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    
+    try {
+      const employee = await storage.createEmployee({
+        ...req.body,
+        userId,
+      });
+      res.status(201).json(employee);
+    } catch (error: any) {
+      console.error('Error creating employee:', error);
+      res.status(500).json({ message: "Failed to create employee" });
+    }
+  });
+
+  // Update employee
+  app.patch("/api/employees/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const id = parseInt(req.params.id);
+    
+    try {
+      const updated = await storage.updateEmployee(id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating employee:', error);
+      res.status(500).json({ message: "Failed to update employee" });
+    }
+  });
+
+  // Delete employee
+  app.delete("/api/employees/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const id = parseInt(req.params.id);
+    
+    try {
+      await storage.deleteEmployee(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting employee:', error);
+      res.status(500).json({ message: "Failed to delete employee" });
+    }
+  });
+
+  // Get incidents
+  app.get("/api/incidents", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const incidentList = await storage.getIncidents(userId);
+    res.json(incidentList);
+  });
+
+  // Get incidents for chart (last 6 months)
+  app.get("/api/incidents/chart", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 6);
+    
+    const incidentList = await storage.getIncidentsByDateRange(userId, startDate, endDate);
+    
+    // Group by month
+    const monthlyData: Record<string, { total: number; recordable: number }> = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = d.toISOString().slice(0, 7); // YYYY-MM
+      monthlyData[key] = { total: 0, recordable: 0 };
+    }
+    
+    incidentList.forEach(incident => {
+      const key = new Date(incident.incidentDate).toISOString().slice(0, 7);
+      if (monthlyData[key]) {
+        monthlyData[key].total++;
+        if (incident.isRecordable) {
+          monthlyData[key].recordable++;
+        }
+      }
+    });
+    
+    res.json(Object.entries(monthlyData).map(([month, data]) => ({
+      month,
+      ...data,
+    })));
+  });
+
+  // Create incident
+  app.post("/api/incidents", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    
+    try {
+      const incident = await storage.createIncident({
+        ...req.body,
+        userId,
+        incidentDate: new Date(req.body.incidentDate),
+      });
+      res.status(201).json(incident);
+    } catch (error: any) {
+      console.error('Error creating incident:', error);
+      res.status(500).json({ message: "Failed to create incident" });
+    }
+  });
+
+  // Get action items
+  app.get("/api/action-items", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const pending = req.query.pending === 'true';
+    
+    const items = pending 
+      ? await storage.getPendingActionItems(userId)
+      : await storage.getActionItems(userId);
+    res.json(items);
+  });
+
+  // Create action item
+  app.post("/api/action-items", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    
+    try {
+      const item = await storage.createActionItem({
+        ...req.body,
+        userId,
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+      });
+      res.status(201).json(item);
+    } catch (error: any) {
+      console.error('Error creating action item:', error);
+      res.status(500).json({ message: "Failed to create action item" });
+    }
+  });
+
+  // Update action item status
+  app.patch("/api/action-items/:id/status", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    
+    if (!status || !['pending', 'in_progress', 'completed', 'dismissed'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+    
+    try {
+      const updated = await storage.updateActionItemStatus(id, status);
+      if (!updated) {
+        return res.status(404).json({ message: "Action item not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating action item:', error);
+      res.status(500).json({ message: "Failed to update action item" });
+    }
+  });
+
+  // Get audit readiness
+  app.get("/api/audit-readiness", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const readiness = await storage.getAuditReadiness(userId);
+    res.json(readiness);
+  });
+
+  // Update audit readiness
+  app.post("/api/audit-readiness", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    
+    try {
+      const readiness = await storage.upsertAuditReadiness({
+        ...req.body,
+        userId,
+      });
+      res.json(readiness);
+    } catch (error: any) {
+      console.error('Error updating audit readiness:', error);
+      res.status(500).json({ message: "Failed to update audit readiness" });
+    }
+  });
+
+  // Request retainer support (for $99 plan users)
+  app.post("/api/retainer-support", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const user = req.user as any;
+    
+    // Check if user has $99 plan
+    const sub = await storage.getSubscription(userId);
+    if (!sub || sub.plan !== 'unlimited_monthly') {
+      return res.status(403).json({ message: "Retainer support requires Unlimited Safety plan" });
+    }
+    
+    try {
+      // Create a priority action item for admin to see
+      const inquiry = await storage.createContactInquiry({
+        name: user.claims.first_name + ' ' + (user.claims.last_name || ''),
+        email: user.claims.email || '',
+        company: req.body.company || null,
+        phone: req.body.phone || null,
+        employeeCount: null,
+        inquiryType: 'priority_retainer',
+        message: req.body.message || 'Priority support request from Unlimited Safety subscriber',
+      });
+      
+      res.status(201).json({ success: true, ticketId: inquiry.id });
+    } catch (error: any) {
+      console.error('Error creating retainer support request:', error);
+      res.status(500).json({ message: "Failed to create support request" });
+    }
+  });
+
   return httpServer;
 }
