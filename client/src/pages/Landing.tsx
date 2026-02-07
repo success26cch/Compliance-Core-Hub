@@ -49,51 +49,51 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Navbar */}
-      <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-[9999]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
-          <img src={logoUrl} alt="CCH" className="h-8 w-auto" />
-          
-          <div className="hidden md:flex items-center gap-5 flex-wrap">
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-features">Features</a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-pricing">Pricing</a>
-            <Link href="/resources" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-resources">Free Resources</Link>
-            <a href="#courses" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-training">Training</a>
-            <Link href="/mentorship" className="text-sm font-medium text-accent hover:text-accent/80 transition-colors" data-testid="nav-mentorship">Mentorship</Link>
-            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-faq">FAQ</a>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <Link href="/dashboard">
-                <Button size="sm" data-testid="button-nav-dashboard">Dashboard</Button>
-              </Link>
-            ) : (
-              <a href="/api/login">
-                <Button size="sm" variant="outline" data-testid="button-nav-signin">Sign In</Button>
-              </a>
-            )}
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              className="md:hidden" 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              data-testid="button-mobile-menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
+      <nav className="bg-primary sticky top-0 z-[9999]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-12">
+            <div className="hidden md:flex items-center gap-1 flex-wrap">
+              <a href="#features" className="px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-features">Features</a>
+              <a href="#pricing" className="px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-pricing">Pricing</a>
+              <Link href="/resources" className="px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-resources">Free Resources</Link>
+              <a href="#courses" className="px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-training">Training</a>
+              <Link href="/mentorship" className="px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mentorship">Mentorship</Link>
+              <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-brandnswag">BrandNSwag</a>
+              <a href="#faq" className="px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-faq">FAQ</a>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <Button size="sm" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-white/10" data-testid="button-nav-dashboard">Dashboard</Button>
+                </Link>
+              ) : (
+                <a href="/api/login">
+                  <Button size="sm" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-white/10" data-testid="button-nav-signin">Sign In</Button>
+                </a>
+              )}
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="md:hidden text-primary-foreground hover:bg-white/10" 
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                data-testid="button-mobile-menu"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </Button>
+            </div>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-white/95 backdrop-blur-md px-4 py-3 space-y-1">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-features">Features</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-pricing">Pricing</a>
-            <Link href="/resources" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-resources">Free Resources</Link>
-            <a href="#courses" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-training">Training</a>
-            <Link href="/mentorship" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors" data-testid="nav-mobile-mentorship">Mentorship</Link>
-            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-brandnswag">BrandNSwag</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-faq">FAQ</a>
+          <div className="md:hidden border-t border-primary-foreground/20 bg-primary px-4 py-2 space-y-1">
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mobile-features">Features</a>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mobile-pricing">Pricing</a>
+            <Link href="/resources" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mobile-resources">Free Resources</Link>
+            <a href="#courses" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mobile-training">Training</a>
+            <Link href="/mentorship" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mobile-mentorship">Mentorship</Link>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mobile-brandnswag">BrandNSwag</a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 rounded-md transition-colors" data-testid="nav-mobile-faq">FAQ</a>
           </div>
         )}
       </nav>
