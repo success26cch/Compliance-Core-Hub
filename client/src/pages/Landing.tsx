@@ -4,7 +4,8 @@ import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X } from "lucide-react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import logoUrl from "@assets/1_1767636977932.png";
@@ -26,6 +27,7 @@ const leadFormSchema = z.object({
 export default function Landing() {
   const { user, isAuthenticated } = useAuth();
   const { mutate, isPending } = useCreateLead();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const form = useForm<z.infer<typeof leadFormSchema>>({
     resolver: zodResolver(leadFormSchema),
@@ -47,9 +49,11 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Navbar */}
-      <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-          <div className="hidden md:flex items-center gap-5">
+      <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-[9999]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
+          <img src={logoUrl} alt="CCH" className="h-8 w-auto" />
+          
+          <div className="hidden md:flex items-center gap-5 flex-wrap">
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-features">Features</a>
             <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-pricing">Pricing</a>
             <Link href="/resources" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-resources">Free Resources</Link>
@@ -69,8 +73,29 @@ export default function Landing() {
                 <Button size="sm" variant="outline" data-testid="button-nav-signin">Sign In</Button>
               </a>
             )}
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="md:hidden" 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              data-testid="button-mobile-menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
           </div>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t bg-white/95 backdrop-blur-md px-4 py-3 space-y-1">
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-features">Features</a>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-pricing">Pricing</a>
+            <Link href="/resources" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-resources">Free Resources</Link>
+            <a href="#courses" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-training">Training</a>
+            <Link href="/mentorship" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors" data-testid="nav-mobile-mentorship">Mentorship</Link>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-brandnswag">BrandNSwag</a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors" data-testid="nav-mobile-faq">FAQ</a>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
