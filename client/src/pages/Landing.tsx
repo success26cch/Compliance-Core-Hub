@@ -64,11 +64,11 @@ export default function Landing() {
           <div className="flex items-center shrink-0">
             {isAuthenticated ? (
               <Link href="/dashboard">
-                <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10" data-testid="button-nav-dashboard">Dashboard</Button>
+                <Button size="sm" className="bg-white text-[hsl(222,47%,11%)] hover:bg-gray-100 font-semibold" data-testid="button-nav-dashboard">Dashboard</Button>
               </Link>
             ) : (
               <a href="/api/login">
-                <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10" data-testid="button-nav-signin">Sign In</Button>
+                <Button size="sm" className="bg-white text-[hsl(222,47%,11%)] hover:bg-gray-100 font-semibold" data-testid="button-nav-signin">Sign In</Button>
               </a>
             )}
           </div>
