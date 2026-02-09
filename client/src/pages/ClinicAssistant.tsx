@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import BilingualAssistant from "@/components/BilingualAssistant";
+import PrintableAuthForm from "@/components/PrintableAuthForm";
 import {
   Shield,
   User,
@@ -19,6 +20,8 @@ import {
   Stethoscope,
   Calendar,
   QrCode,
+  FileText,
+  Printer,
 } from "lucide-react";
 
 interface PassportData {
@@ -28,6 +31,14 @@ interface PassportData {
     status: string;
     employerNotified: boolean;
     checkedInAt: string;
+    billingPreference: string | null;
+    specialInstructions: string | null;
+    additionalServices: string[] | null;
+    ssnLast4: string | null;
+    employeeDob: string | null;
+    employeeAddress: string | null;
+    employeeLocation: string | null;
+    staffingAgency: string | null;
   };
   employee: {
     id: number;
@@ -35,18 +46,28 @@ interface PassportData {
     lastName: string;
     position: string | null;
     department: string | null;
+    email: string | null;
   };
   company: {
     companyName: string;
     industry: string | null;
     dotNumber: string | null;
     derName: string | null;
+    derPhone: string | null;
+    derEmail: string | null;
     clinicName: string | null;
+    phone: string | null;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+    zipCode: string | null;
   } | null;
   authorization: {
     name: string;
     title: string | null;
+    phone: string | null;
     timestamp: string;
+    signatureDataUrl: string | null;
   } | null;
   authorizationForm: {
     formName: string;
@@ -76,6 +97,7 @@ export default function ClinicAssistant() {
   const [notified, setNotified] = useState(false);
   const [clinicNameInput, setClinicNameInput] = useState("");
   const [showAssistant, setShowAssistant] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
   const [downloadingForm, setDownloadingForm] = useState(false);
 
   useEffect(() => {
@@ -181,6 +203,33 @@ export default function ClinicAssistant() {
 
   const { visit, employee, company, authorization } = passportData;
   const visitLabel = VISIT_TYPE_LABELS[visit.visitType] || visit.visitType;
+  const hasDigitalAuthForm = authorization && authorization.signatureDataUrl;
+
+  if (showAuthForm && authorization) {
+    return (
+      <div className="min-h-screen bg-white print:bg-white p-4 print:p-0">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-4 print:hidden">
+            <Button
+              variant="outline"
+              onClick={() => setShowAuthForm(false)}
+              data-testid="btn-back-from-form"
+            >
+              Back to Passport
+            </Button>
+          </div>
+          <PrintableAuthForm
+            data={{
+              visit,
+              employee,
+              company,
+              authorization,
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (showAssistant) {
     return (
@@ -250,13 +299,18 @@ export default function ClinicAssistant() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">
               <Stethoscope className="w-3 h-3 mr-1" /> {visitLabel}
             </Badge>
             <Badge className="bg-green-500/20 text-green-400 no-default-hover-elevate no-default-active-elevate">
               <CheckCircle2 className="w-3 h-3 mr-1" /> Verified
             </Badge>
+            {visit.billingPreference && (
+              <Badge variant="outline" className="text-xs text-gray-300 border-gray-600">
+                {visit.billingPreference === "company_pay" ? "Company Pay" : "Employee Pay"}
+              </Badge>
+            )}
           </div>
         </Card>
 
@@ -283,11 +337,18 @@ export default function ClinicAssistant() {
                   <span className="text-white">{company.dotNumber}</span>
                 </div>
               )}
+              {company.phone && (
+                <div>
+                  <span className="text-xs text-gray-400 block">Phone</span>
+                  <span className="text-white">{company.phone}</span>
+                </div>
+              )}
             </div>
             {company.derName && (
               <div className="border-t border-gray-700 pt-3 mt-2">
                 <span className="text-xs text-gray-400 block mb-1">DER Contact (Designated Employer Rep)</span>
                 <p className="text-sm text-white font-medium">{company.derName}</p>
+                {company.derPhone && <p className="text-xs text-gray-400">{company.derPhone}</p>}
               </div>
             )}
           </Card>
@@ -303,13 +364,45 @@ export default function ClinicAssistant() {
               <span className="font-semibold">{authorization.name}</span>
               {authorization.title && <span className="text-gray-400"> - {authorization.title}</span>}
             </p>
+            {authorization.phone && (
+              <p className="text-xs text-gray-400">Phone: {authorization.phone}</p>
+            )}
             <div className="flex items-center gap-1 text-xs text-gray-400">
               <Calendar className="w-3 h-3" />
               Authorized: {new Date(authorization.timestamp).toLocaleString()}
             </div>
+            {authorization.signatureDataUrl && (
+              <div className="bg-white rounded p-2 inline-block mt-1">
+                <img
+                  src={authorization.signatureDataUrl}
+                  alt="Digital Signature"
+                  className="h-10 max-w-[180px] object-contain"
+                  data-testid="img-signature-preview"
+                />
+              </div>
+            )}
             <p className="text-xs text-green-400/70 mt-1">
               This employee is authorized for the visit. No phone call to the employer is needed.
             </p>
+          </Card>
+        )}
+
+        {hasDigitalAuthForm && (
+          <Card className="bg-gray-800/80 border-[#FFC107]/30 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-[#FFC107]" />
+              <h3 className="text-sm font-bold text-white">Signed Authorization Form</h3>
+            </div>
+            <p className="text-xs text-gray-400">
+              View and print the complete, digitally signed authorization form with all services and patient information.
+            </p>
+            <Button
+              className="w-full bg-[#FFC107] text-black font-bold"
+              onClick={() => setShowAuthForm(true)}
+              data-testid="btn-view-auth-form"
+            >
+              <Printer className="w-4 h-4 mr-2" /> View & Print Authorization Form
+            </Button>
           </Card>
         )}
 
@@ -317,10 +410,14 @@ export default function ClinicAssistant() {
           <Card className="bg-gray-800/80 border-blue-500/30 p-5 space-y-3">
             <div className="flex items-center gap-2">
               <FileDown className="w-5 h-5 text-blue-400" />
-              <h3 className="text-sm font-bold text-white">Clinic Authorization Form</h3>
+              <h3 className="text-sm font-bold text-white">
+                {hasDigitalAuthForm ? "Additional Clinic Form" : "Clinic Authorization Form"}
+              </h3>
             </div>
             <p className="text-xs text-gray-400">
-              The employer has uploaded an authorization form for this visit type. Download or print it for your records.
+              {hasDigitalAuthForm
+                ? "The employer has also uploaded an additional form for this visit type."
+                : "The employer has uploaded an authorization form for this visit type. Download or print it for your records."}
             </p>
             <Button
               className="w-full bg-blue-600 text-white font-semibold"

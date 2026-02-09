@@ -1201,9 +1201,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const userId = (req.user as any).claims.sub;
 
     try {
-      const { employeeId, visitType, authorizationName, authorizationTitle } = req.body;
+      const { employeeId, visitType, authorizationName, authorizationTitle, authorizationPhone,
+        billingPreference, specialInstructions, additionalServices, ssnLast4, employeeDob,
+        employeeAddress, employeeLocation, staffingAgency, signatureDataUrl } = req.body;
       if (!employeeId || !visitType) {
         return res.status(400).json({ message: "Employee ID and visit type required" });
+      }
+
+      if (ssnLast4 && (!/^\d{4}$/.test(ssnLast4))) {
+        return res.status(400).json({ message: "SSN last 4 must be exactly 4 digits" });
+      }
+
+      if (signatureDataUrl && signatureDataUrl.length > 500000) {
+        return res.status(400).json({ message: "Signature image too large" });
       }
 
       const employee = await storage.getEmployeeById(parseInt(employeeId), userId);
@@ -1221,10 +1231,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         visitType,
         authorizationName: authorizationName || null,
         authorizationTitle: authorizationTitle || null,
+        authorizationPhone: authorizationPhone || null,
         status: "checked_in",
         employerNotified: false,
         clinicName: null,
         notes: null,
+        billingPreference: billingPreference || "company_pay",
+        specialInstructions: specialInstructions || null,
+        additionalServices: additionalServices || null,
+        ssnLast4: ssnLast4 || null,
+        employeeDob: employeeDob || null,
+        employeeAddress: employeeAddress || null,
+        employeeLocation: employeeLocation || null,
+        staffingAgency: staffingAgency || null,
+        signatureDataUrl: signatureDataUrl || null,
       });
 
       const protocol = req.headers['x-forwarded-proto'] || 'https';
@@ -1282,6 +1302,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           status: visit.status,
           employerNotified: visit.employerNotified,
           checkedInAt: visit.checkedInAt,
+          billingPreference: visit.billingPreference,
+          specialInstructions: visit.specialInstructions,
+          additionalServices: visit.additionalServices,
+          ssnLast4: visit.ssnLast4,
+          employeeDob: visit.employeeDob,
+          employeeAddress: visit.employeeAddress,
+          employeeLocation: visit.employeeLocation,
+          staffingAgency: visit.staffingAgency,
         },
         employee: {
           id: employee.id,
@@ -1289,18 +1317,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           lastName: employee.lastName,
           position: employee.position,
           department: employee.department,
+          email: employee.email,
         },
         company: companyProfile ? {
           companyName: companyProfile.companyName,
           industry: companyProfile.industry,
           dotNumber: companyProfile.dotNumber,
           derName: companyProfile.derName,
+          derPhone: companyProfile.derPhone,
+          derEmail: companyProfile.derEmail,
           clinicName: companyProfile.clinicName,
+          phone: companyProfile.phone,
+          address: companyProfile.address,
+          city: companyProfile.city,
+          state: companyProfile.state,
+          zipCode: companyProfile.zipCode,
         } : null,
         authorization: visit.authorizationName ? {
           name: visit.authorizationName,
           title: visit.authorizationTitle,
+          phone: visit.authorizationPhone,
           timestamp: visit.checkedInAt,
+          signatureDataUrl: visit.signatureDataUrl,
         } : null,
         authorizationForm: matchedForm ? {
           formName: matchedForm.formName,

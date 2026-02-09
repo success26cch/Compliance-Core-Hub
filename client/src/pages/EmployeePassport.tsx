@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRCodeSVG } from "qrcode.react";
+import SignaturePad from "@/components/SignaturePad";
 import {
   QrCode,
   Smartphone,
@@ -23,6 +26,10 @@ import {
   Scan,
   Send,
   History,
+  PenLine,
+  DollarSign,
+  FileText,
+  Stethoscope,
 } from "lucide-react";
 import type { Employee, ClinicVisit } from "@shared/schema";
 
@@ -35,12 +42,85 @@ const VISIT_TYPES = [
   { value: "other", label: "Other Medical Visit" },
 ];
 
+const ALL_SERVICES = [
+  { category: "Work Related", items: [
+    { code: "injury", label: "Injury" },
+    { code: "illness", label: "Illness" },
+  ]},
+  { category: "Physical Examination", items: [
+    { code: "pre_placement", label: "Pre-Placement" },
+    { code: "baseline", label: "Baseline" },
+    { code: "annual", label: "Annual" },
+    { code: "exit", label: "Exit" },
+  ]},
+  { category: "DOT Exams", items: [
+    { code: "dot_drug_test", label: "DOT Drug Test" },
+    { code: "dot_breath_alcohol", label: "DOT Breath Alcohol" },
+    { code: "dot_new_hire", label: "New Hire" },
+    { code: "dot_recertification", label: "Recertification" },
+  ]},
+  { category: "Substance Abuse Testing", items: [
+    { code: "non_dot_breath_alcohol", label: "Non-DOT Breath Alcohol" },
+    { code: "hair_collect", label: "Hair Collect" },
+    { code: "non_dot_drug_instant", label: "Non-DOT Drug Screen (Instant)" },
+    { code: "non_dot_drug_lab", label: "Non-DOT Drug Screen (Lab)" },
+    { code: "panel_5", label: "5 Panel" },
+    { code: "panel_10", label: "10 Panel" },
+    { code: "panel_4", label: "4 Panel" },
+    { code: "panel_9", label: "9 Panel" },
+  ]},
+  { category: "Special Examinations", items: [
+    { code: "asbestos", label: "Asbestos" },
+    { code: "respiratory", label: "Respiratory" },
+    { code: "hazmat", label: "Hazmat" },
+    { code: "firefighter", label: "Firefighter" },
+    { code: "mcoles", label: "MCOLES" },
+    { code: "fit_for_duty", label: "Fit for Duty" },
+    { code: "audiogram", label: "Audiogram" },
+    { code: "return_to_work", label: "Return to Work" },
+  ]},
+  { category: "Reason for Test", items: [
+    { code: "reason_pre_placement", label: "Pre-Placement" },
+    { code: "reason_reasonable_suspicion", label: "Reasonable Suspicion" },
+    { code: "reason_post_accident", label: "Post Accident" },
+    { code: "reason_random", label: "Random" },
+    { code: "reason_follow_up", label: "Follow Up" },
+  ]},
+];
+
+function getAutoServices(visitType: string): string[] {
+  switch (visitType) {
+    case "dot_physical":
+      return ["dot_recertification"];
+    case "drug_screen":
+      return ["non_dot_drug_lab", "panel_10", "reason_pre_placement"];
+    case "respiratory_exam":
+      return ["respiratory"];
+    case "injury":
+      return ["injury", "reason_post_accident"];
+    case "new_hire":
+      return ["pre_placement", "reason_pre_placement"];
+    default:
+      return [];
+  }
+}
+
 function EmployeePassportContent() {
   const { toast } = useToast();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [visitType, setVisitType] = useState("");
   const [authName, setAuthName] = useState("");
   const [authTitle, setAuthTitle] = useState("");
+  const [authPhone, setAuthPhone] = useState("");
+  const [billingPreference, setBillingPreference] = useState("company_pay");
+  const [specialInstructions, setSpecialInstructions] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [ssnLast4, setSsnLast4] = useState("");
+  const [employeeDob, setEmployeeDob] = useState("");
+  const [employeeAddress, setEmployeeAddress] = useState("");
+  const [employeeLocation, setEmployeeLocation] = useState("");
+  const [staffingAgency, setStaffingAgency] = useState("");
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [generatedQR, setGeneratedQR] = useState<{
     qrUrl: string;
     token: string;
@@ -56,12 +136,7 @@ function EmployeePassportContent() {
   });
 
   const generateMutation = useMutation({
-    mutationFn: async (data: {
-      employeeId: number;
-      visitType: string;
-      authorizationName: string;
-      authorizationTitle: string;
-    }) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest("POST", "/api/passport/generate", data);
       return res.json();
     },
@@ -74,7 +149,7 @@ function EmployeePassportContent() {
       queryClient.invalidateQueries({ queryKey: ["/api/passport/visits"] });
       toast({
         title: "Medical Passport Generated",
-        description: "QR code is ready for the employee to present at the clinic.",
+        description: "QR code is ready with your signed digital authorization form.",
       });
     },
     onError: () => {
@@ -86,6 +161,21 @@ function EmployeePassportContent() {
     },
   });
 
+  const handleVisitTypeChange = (val: string) => {
+    setVisitType(val);
+    const autoServices = getAutoServices(val);
+    setSelectedServices((prev) => {
+      const combined = new Set([...prev, ...autoServices]);
+      return Array.from(combined);
+    });
+  };
+
+  const toggleService = (code: string) => {
+    setSelectedServices((prev) =>
+      prev.includes(code) ? prev.filter((s) => s !== code) : [...prev, code]
+    );
+  };
+
   const handleGenerate = () => {
     if (!selectedEmployee || !visitType) {
       toast({
@@ -96,11 +186,39 @@ function EmployeePassportContent() {
       return;
     }
 
+    if (!authName) {
+      toast({
+        title: "Missing Authorization",
+        description: "Please enter your name as the authorizer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!signatureDataUrl) {
+      toast({
+        title: "Signature Required",
+        description: "Please sign the authorization with your digital signature.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     generateMutation.mutate({
       employeeId: selectedEmployee.id,
       visitType,
       authorizationName: authName,
       authorizationTitle: authTitle,
+      authorizationPhone: authPhone,
+      billingPreference,
+      specialInstructions: specialInstructions || null,
+      additionalServices: selectedServices.length > 0 ? selectedServices : null,
+      ssnLast4: ssnLast4 || null,
+      employeeDob: employeeDob || null,
+      employeeAddress: employeeAddress || null,
+      employeeLocation: employeeLocation || null,
+      staffingAgency: staffingAgency || null,
+      signatureDataUrl,
     });
   };
 
@@ -128,18 +246,33 @@ function EmployeePassportContent() {
 
           <div className="space-y-2">
             <p className="text-xs text-gray-400">
-              Present this QR code at the clinic front desk. The medical assistant will scan it to access your visit information.
+              Present this QR code at the clinic front desk. The clinic will receive a complete, signed authorization form digitally.
             </p>
-            <Badge className="bg-green-500/20 text-green-400 no-default-hover-elevate no-default-active-elevate">
-              <CheckCircle2 className="w-3 h-3 mr-1" /> Authorization Included
-            </Badge>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <Badge className="bg-green-500/20 text-green-400 no-default-hover-elevate no-default-active-elevate">
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Digitally Signed
+              </Badge>
+              <Badge className="bg-blue-500/20 text-blue-400 no-default-hover-elevate no-default-active-elevate">
+                <FileText className="w-3 h-3 mr-1" /> Auth Form Included
+              </Badge>
+            </div>
           </div>
 
           <div className="pt-2 space-y-2">
             <Button
               variant="outline"
               className="w-full border-gray-600 text-gray-300"
-              onClick={() => setGeneratedQR(null)}
+              onClick={() => {
+                setGeneratedQR(null);
+                setSignatureDataUrl(null);
+                setSelectedServices([]);
+                setSpecialInstructions("");
+                setSsnLast4("");
+                setEmployeeDob("");
+                setEmployeeAddress("");
+                setEmployeeLocation("");
+                setStaffingAgency("");
+              }}
               data-testid="btn-generate-another"
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> Generate Another
@@ -151,58 +284,118 @@ function EmployeePassportContent() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8">
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-[#FFC107]/10">
           <QrCode className="w-6 h-6 text-[#FFC107]" />
         </div>
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-passport-title">Digital Medical Passport</h1>
-          <p className="text-sm text-muted-foreground">The CCH Handshake - Send employees to the clinic with a single QR scan</p>
+          <p className="text-sm text-muted-foreground">The CCH Handshake - Complete digital authorization with signature</p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="p-6 space-y-5">
-          <div className="flex items-center gap-2">
-            <Smartphone className="w-5 h-5 text-[#FFC107]" />
-            <h2 className="text-lg font-bold">Generate Clinic QR</h2>
-          </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <User className="w-5 h-5 text-[#FFC107]" />
+              <h2 className="text-lg font-bold">Patient Information</h2>
+            </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Select Employee</Label>
-              {loadingEmployees ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading employees...
-                </div>
-              ) : employees.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No employees found. Add employees in the Employee Management section first.</p>
-              ) : (
-                <Select
-                  onValueChange={(val) => {
-                    const emp = employees.find((e) => e.id === parseInt(val));
-                    setSelectedEmployee(emp || null);
-                  }}
-                  data-testid="select-employee"
-                >
-                  <SelectTrigger data-testid="select-employee-trigger">
-                    <SelectValue placeholder="Choose an employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={String(emp.id)} data-testid={`select-employee-${emp.id}`}>
-                        {emp.firstName} {emp.lastName} {emp.position ? `- ${emp.position}` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Select Employee</Label>
+                {loadingEmployees ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading employees...
+                  </div>
+                ) : employees.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No employees found. Add employees in the Employee Management section first.</p>
+                ) : (
+                  <Select
+                    onValueChange={(val) => {
+                      const emp = employees.find((e) => e.id === parseInt(val));
+                      setSelectedEmployee(emp || null);
+                    }}
+                    data-testid="select-employee"
+                  >
+                    <SelectTrigger data-testid="select-employee-trigger">
+                      <SelectValue placeholder="Choose an employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.id} value={String(emp.id)} data-testid={`select-employee-${emp.id}`}>
+                          {emp.firstName} {emp.lastName} {emp.position ? `- ${emp.position}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">SSN (Last 4 Digits)</Label>
+                <Input
+                  placeholder="1234"
+                  maxLength={4}
+                  value={ssnLast4}
+                  onChange={(e) => setSsnLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  data-testid="input-ssn-last4"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={employeeDob}
+                  onChange={(e) => setEmployeeDob(e.target.value)}
+                  data-testid="input-employee-dob"
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label className="text-xs">Street Address</Label>
+                <Input
+                  placeholder="123 Main St, Apt 4"
+                  value={employeeAddress}
+                  onChange={(e) => setEmployeeAddress(e.target.value)}
+                  data-testid="input-employee-address"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Work Location</Label>
+                <Input
+                  placeholder="Main Plant, Building A"
+                  value={employeeLocation}
+                  onChange={(e) => setEmployeeLocation(e.target.value)}
+                  data-testid="input-employee-location"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Staffing Agency (if applicable)</Label>
+                <Input
+                  placeholder="Agency name"
+                  value={staffingAgency}
+                  onChange={(e) => setStaffingAgency(e.target.value)}
+                  data-testid="input-staffing-agency"
+                />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 text-[#FFC107]" />
+              <h2 className="text-lg font-bold">Services Requested</h2>
             </div>
 
             <div className="space-y-2">
-              <Label>Visit Type</Label>
-              <Select onValueChange={setVisitType} data-testid="select-visit-type">
+              <Label>Primary Visit Type</Label>
+              <Select onValueChange={handleVisitTypeChange} value={visitType} data-testid="select-visit-type">
                 <SelectTrigger data-testid="select-visit-type-trigger">
                   <SelectValue placeholder="What is this visit for?" />
                 </SelectTrigger>
@@ -216,51 +409,135 @@ function EmployeePassportContent() {
               </Select>
             </div>
 
-            <div className="border-t border-border/50 pt-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Shield className="w-4 h-4 text-[#FFC107]" />
-                <span className="text-sm font-semibold">Digital Authorization</span>
-              </div>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Authorizer Name</Label>
-                  <Input
-                    placeholder="e.g. Maria Rodriguez"
-                    value={authName}
-                    onChange={(e) => setAuthName(e.target.value)}
-                    data-testid="input-auth-name"
-                  />
+            <div className="space-y-4">
+              {ALL_SERVICES.map((cat) => (
+                <div key={cat.category}>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{cat.category}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {cat.items.map((svc) => (
+                      <label
+                        key={svc.code}
+                        className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded-md hover-elevate"
+                        data-testid={`checkbox-service-${svc.code}`}
+                      >
+                        <Checkbox
+                          checked={selectedServices.includes(svc.code)}
+                          onCheckedChange={() => toggleService(svc.code)}
+                        />
+                        <span>{svc.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Title</Label>
-                  <Input
-                    placeholder="e.g. Safety Director"
-                    value={authTitle}
-                    onChange={(e) => setAuthTitle(e.target.value)}
-                    data-testid="input-auth-title"
-                  />
-                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-[#FFC107]" />
+              <h2 className="text-lg font-bold">Billing & Instructions</h2>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Billing</Label>
+                <Select value={billingPreference} onValueChange={setBillingPreference} data-testid="select-billing">
+                  <SelectTrigger data-testid="select-billing-trigger">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="company_pay">Company Pay</SelectItem>
+                    <SelectItem value="employee_pay">Employee Pay</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Special Instructions / Comments</Label>
+              <Textarea
+                placeholder="Any special instructions for the clinic..."
+                value={specialInstructions}
+                onChange={(e) => setSpecialInstructions(e.target.value)}
+                rows={3}
+                data-testid="input-special-instructions"
+              />
+            </div>
+          </Card>
+
+          <Card className="p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <PenLine className="w-5 h-5 text-[#FFC107]" />
+              <h2 className="text-lg font-bold">Digital Authorization & Signature</h2>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-xs">Authorized By (Your Name)</Label>
+                <Input
+                  placeholder="e.g. Maria Rodriguez"
+                  value={authName}
+                  onChange={(e) => setAuthName(e.target.value)}
+                  data-testid="input-auth-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Title</Label>
+                <Input
+                  placeholder="e.g. Safety Director"
+                  value={authTitle}
+                  onChange={(e) => setAuthTitle(e.target.value)}
+                  data-testid="input-auth-title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Phone</Label>
+                <Input
+                  placeholder="e.g. (313) 555-1234"
+                  value={authPhone}
+                  onChange={(e) => setAuthPhone(e.target.value)}
+                  data-testid="input-auth-phone"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Date</Label>
+                <Input
+                  type="text"
+                  value={new Date().toLocaleDateString()}
+                  disabled
+                  data-testid="input-auth-date"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Digital Signature</Label>
+              <SignaturePad
+                onSignatureChange={setSignatureDataUrl}
+                width={380}
+                height={120}
+              />
             </div>
 
             <Button
               className="w-full bg-[#FFC107] text-black font-bold"
               onClick={handleGenerate}
-              disabled={!selectedEmployee || !visitType || generateMutation.isPending}
+              disabled={!selectedEmployee || !visitType || !authName || !signatureDataUrl || generateMutation.isPending}
               data-testid="btn-generate-qr"
             >
               {generateMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating Signed Passport...
                 </>
               ) : (
                 <>
-                  <QrCode className="w-4 h-4 mr-2" /> Generate Clinic QR Code
+                  <QrCode className="w-4 h-4 mr-2" /> Generate Signed QR Code
                 </>
               )}
             </Button>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         <div className="space-y-6">
           <Card className="p-6">
@@ -270,10 +547,12 @@ function EmployeePassportContent() {
             </div>
             <div className="space-y-4">
               {[
-                { icon: QrCode, title: "Generate QR", desc: "Select the employee and visit type, add your digital authorization" },
-                { icon: Smartphone, title: "Employee Shows QR", desc: "Employee presents the QR code on their phone at the clinic" },
-                { icon: Scan, title: "Clinic Scans", desc: "Medical assistant scans and gets bilingual tools with employee data pre-loaded" },
-                { icon: Send, title: "Employer Notified", desc: "You get an instant 'I'm Here' SMS notification" },
+                { icon: FileText, title: "Fill the Form", desc: "Complete the digital authorization form with patient info and services" },
+                { icon: PenLine, title: "Sign It", desc: "Add your digital signature to authorize treatment or services" },
+                { icon: QrCode, title: "Generate QR", desc: "A QR code is created containing the complete signed authorization" },
+                { icon: Smartphone, title: "Employee Shows QR", desc: "Employee presents the QR code at the clinic front desk" },
+                { icon: Scan, title: "Clinic Scans", desc: "Clinic gets the signed form instantly - no phone call needed" },
+                { icon: Send, title: "You're Notified", desc: "Get an instant 'I'm Here' SMS when they arrive" },
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#FFC107]/10 flex items-center justify-center shrink-0 mt-0.5">
