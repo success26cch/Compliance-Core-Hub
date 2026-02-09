@@ -493,12 +493,25 @@ function InjuryReportingMode() {
       </div>
 
       <div>
-        <label className="text-xs text-gray-400 mb-1 block">
-          Description / Descripción
-          <span className="ml-2 text-[#FFC107]/70 text-[10px] font-normal">
-            Auto-translates Spanish to English
-          </span>
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs text-gray-400 block">
+            Description / Descripción
+            <span className="ml-2 text-[#FFC107]/70 text-[10px] font-normal">
+              Auto-translates Spanish to English
+            </span>
+          </label>
+          {data.description.trim() && (
+            <button
+              type="button"
+              onClick={() => speakSpanish(data.description)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FFC107]/15 border border-[#FFC107]/30 transition-colors"
+              data-testid="btn-tts-description"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-[#FFC107]" />
+              <span className="text-[11px] font-bold text-[#FFC107] tracking-wide">Text-to-Speech</span>
+            </button>
+          )}
+        </div>
         <Textarea
           className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 min-h-[80px]"
           placeholder="Escriba en español... / Type in Spanish or English..."
