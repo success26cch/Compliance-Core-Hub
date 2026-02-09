@@ -13,6 +13,7 @@ import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
+import Anthropic from "@anthropic-ai/sdk";
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Auth Setup
@@ -21,6 +22,39 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   
   // Chat Integration
   registerChatRoutes(app);
+
+  // Spanish to English Translation (Bilingual Medical Assistant)
+  const translationAnthropic = new Anthropic({
+    apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+    baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+  });
+
+  app.post("/api/translate", async (req, res) => {
+    try {
+      const { text } = req.body;
+      if (!text || typeof text !== "string" || text.trim().length === 0) {
+        return res.json({ translation: "" });
+      }
+      if (text.length > 2000) {
+        return res.status(400).json({ error: "Text too long. Maximum 2000 characters." });
+      }
+      const response = await translationAnthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 512,
+        messages: [
+          {
+            role: "user",
+            content: `You are a medical translator for occupational health injury reports. Translate the following text from Spanish to English. If the text is already in English, return it as-is. If it's a mix, translate only the Spanish parts. Return ONLY the English translation, nothing else - no quotes, no explanation.\n\n${text.trim()}`,
+          },
+        ],
+      });
+      const translation = response.content[0].type === "text" ? response.content[0].text : "";
+      res.json({ translation });
+    } catch (error) {
+      console.error("Translation error:", error);
+      res.status(500).json({ error: "Translation failed" });
+    }
+  });
 
   // Leads
   app.post(api.leads.create.path, async (req, res) => {
