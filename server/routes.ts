@@ -1271,6 +1271,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const companyProfile = await storage.getCompanyProfile(visit.userId);
 
+      const authForm = await storage.getAuthorizationFormByVisitType(visit.userId, visit.visitType);
+      const generalForm = authForm ? null : await storage.getAuthorizationFormByVisitType(visit.userId, "general");
+      const matchedForm = authForm || generalForm;
+
       res.json({
         visit: {
           id: visit.id,
@@ -1297,6 +1301,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           name: visit.authorizationName,
           title: visit.authorizationTitle,
           timestamp: visit.checkedInAt,
+        } : null,
+        authorizationForm: matchedForm ? {
+          formName: matchedForm.formName,
+          visitType: matchedForm.visitType,
         } : null,
       });
     } catch (error: any) {
@@ -1392,6 +1400,113 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error("Error fetching visits:", error);
       res.status(500).json({ message: "Failed to fetch visits" });
+    }
+  });
+
+  // AUTHORIZATION FORMS
+  // ==========================================
+
+  app.get("/api/authorization-forms", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const forms = await storage.getAuthorizationForms(userId);
+      const formsWithoutData = forms.map(f => ({
+        id: f.id,
+        visitType: f.visitType,
+        formName: f.formName,
+        fileSize: f.fileSize,
+        uploadedAt: f.uploadedAt,
+      }));
+      res.json(formsWithoutData);
+    } catch (error: any) {
+      console.error("Error fetching authorization forms:", error);
+      res.status(500).json({ message: "Failed to fetch forms" });
+    }
+  });
+
+  app.post("/api/authorization-forms", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { visitType, formName, fileData, fileSize } = req.body;
+      if (!visitType || !formName || !fileData) {
+        return res.status(400).json({ message: "Visit type, form name, and file data are required" });
+      }
+      const allowedVisitTypes = ["general", "dot_physical", "drug_screen", "respiratory_exam", "injury", "new_hire", "other"];
+      if (!allowedVisitTypes.includes(visitType)) {
+        return res.status(400).json({ message: "Invalid visit type" });
+      }
+      if (!fileData.startsWith("data:application/pdf;base64,")) {
+        return res.status(400).json({ message: "Only PDF files are supported" });
+      }
+      const base64Part = fileData.split(",")[1] || "";
+      const decodedSize = Math.ceil(base64Part.length * 0.75);
+      const maxSize = 5 * 1024 * 1024;
+      if (decodedSize > maxSize) {
+        return res.status(400).json({ message: "File too large. Maximum 5MB." });
+      }
+      const form = await storage.upsertAuthorizationForm({
+        userId,
+        visitType,
+        formName,
+        fileData,
+        fileSize: fileSize || null,
+      });
+      res.json({
+        id: form.id,
+        visitType: form.visitType,
+        formName: form.formName,
+        fileSize: form.fileSize,
+        uploadedAt: form.uploadedAt,
+      });
+    } catch (error: any) {
+      console.error("Error uploading authorization form:", error);
+      res.status(500).json({ message: "Failed to upload form" });
+    }
+  });
+
+  app.delete("/api/authorization-forms/:id", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      await storage.deleteAuthorizationForm(parseInt(req.params.id), userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting authorization form:", error);
+      res.status(500).json({ message: "Failed to delete form" });
+    }
+  });
+
+  // Public endpoint for clinic to download the form (uses visit token for security)
+  app.get("/api/passport/form/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const visit = await storage.getClinicVisitByToken(token);
+      if (!visit) {
+        return res.status(404).json({ message: "Passport not found" });
+      }
+      const checkedInTime = visit.checkedInAt ? new Date(visit.checkedInAt).getTime() : 0;
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      if (Date.now() - checkedInTime > twentyFourHours) {
+        return res.status(410).json({ message: "Passport expired" });
+      }
+      const form = await storage.getAuthorizationFormByVisitType(visit.userId, visit.visitType);
+      const generalForm = form ? null : await storage.getAuthorizationFormByVisitType(visit.userId, "general");
+      const matchedForm = form || generalForm;
+      if (!matchedForm) {
+        return res.status(404).json({ message: "No authorization form on file for this visit type" });
+      }
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+      res.set("Pragma", "no-cache");
+      res.json({
+        formName: matchedForm.formName,
+        fileData: matchedForm.fileData,
+        visitType: matchedForm.visitType,
+      });
+    } catch (error: any) {
+      console.error("Error fetching passport form:", error);
+      res.status(500).json({ message: "Failed to fetch form" });
     }
   });
 

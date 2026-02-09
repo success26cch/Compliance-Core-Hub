@@ -15,6 +15,7 @@ import {
   Loader2,
   Send,
   FileCheck,
+  FileDown,
   Stethoscope,
   Calendar,
   QrCode,
@@ -47,6 +48,10 @@ interface PassportData {
     title: string | null;
     timestamp: string;
   } | null;
+  authorizationForm: {
+    formName: string;
+    visitType: string;
+  } | null;
 }
 
 const VISIT_TYPE_LABELS: Record<string, string> = {
@@ -71,6 +76,7 @@ export default function ClinicAssistant() {
   const [notified, setNotified] = useState(false);
   const [clinicNameInput, setClinicNameInput] = useState("");
   const [showAssistant, setShowAssistant] = useState(false);
+  const [downloadingForm, setDownloadingForm] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -120,6 +126,30 @@ export default function ClinicAssistant() {
       });
     } finally {
       setNotifying(false);
+    }
+  };
+
+  const handleDownloadForm = async () => {
+    if (!token) return;
+    setDownloadingForm(true);
+    try {
+      const res = await fetch(`/api/passport/form/${token}`);
+      if (!res.ok) throw new Error("Form not available");
+      const data = await res.json();
+      const link = document.createElement("a");
+      link.href = data.fileData;
+      link.download = data.formName || "authorization-form.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      toast({
+        title: "Download Failed",
+        description: "Could not download the authorization form.",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingForm(false);
     }
   };
 
@@ -280,6 +310,34 @@ export default function ClinicAssistant() {
             <p className="text-xs text-green-400/70 mt-1">
               This employee is authorized for the visit. No phone call to the employer is needed.
             </p>
+          </Card>
+        )}
+
+        {passportData.authorizationForm && (
+          <Card className="bg-gray-800/80 border-blue-500/30 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileDown className="w-5 h-5 text-blue-400" />
+              <h3 className="text-sm font-bold text-white">Clinic Authorization Form</h3>
+            </div>
+            <p className="text-xs text-gray-400">
+              The employer has uploaded an authorization form for this visit type. Download or print it for your records.
+            </p>
+            <Button
+              className="w-full bg-blue-600 text-white font-semibold"
+              onClick={handleDownloadForm}
+              disabled={downloadingForm}
+              data-testid="btn-download-form"
+            >
+              {downloadingForm ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Downloading...
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4 mr-2" /> Download: {passportData.authorizationForm.formName}
+                </>
+              )}
+            </Button>
           </Card>
         )}
 

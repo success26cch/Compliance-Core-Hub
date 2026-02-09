@@ -342,6 +342,24 @@ export const insertClinicVisitSchema = createInsertSchema(clinicVisits).omit({
 export type ClinicVisit = typeof clinicVisits.$inferSelect;
 export type InsertClinicVisit = z.infer<typeof insertClinicVisitSchema>;
 
+// Authorization Forms - clinic forms uploaded by company per visit type
+export const authorizationForms = pgTable("authorization_forms", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  visitType: text("visit_type").notNull(), // 'dot_physical', 'drug_screen', 'respiratory_exam', 'injury', 'new_hire', 'other', 'general'
+  formName: text("form_name").notNull(),
+  fileData: text("file_data").notNull(), // base64 data URL of the PDF
+  fileSize: integer("file_size"), // bytes
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+export const insertAuthorizationFormSchema = createInsertSchema(authorizationForms).omit({
+  id: true,
+  uploadedAt: true,
+});
+export type AuthorizationForm = typeof authorizationForms.$inferSelect;
+export type InsertAuthorizationForm = z.infer<typeof insertAuthorizationFormSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

@@ -24,7 +24,7 @@
 - **/dashboard**: Client Compliance Dashboard with metrics, incident heatmap, action queue
 - **/employees**: Employee Management - add/edit/delete employees, track DOT physicals, drug tests, respiratory exams
 - **/incidents**: Incident Log - record workplace incidents, track OSHA recordability, OSHA 300 report with print feature, Corrective Action Plans (CAPA)
-- **/settings**: Company Profile (with DER contact info and logo upload) and subscription management
+- **/settings**: Company Profile (with DER contact info, logo upload, and clinic authorization form uploads per visit type) and subscription management
 - **/employee-passport**: Digital Medical Passport - generate QR codes for employee clinic check-ins with digital authorization
 - **/clinic-assistant**: Public clinic-facing page (opened by QR scan) with employee info, authorization verification, employer notification, and bilingual tools
 

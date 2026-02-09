@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -62,6 +62,12 @@ export interface IStorage {
   getClinicVisitsByUser(userId: string): Promise<ClinicVisit[]>;
   updateClinicVisit(id: number, updates: Partial<InsertClinicVisit>): Promise<ClinicVisit | undefined>;
   getEmployeeByIdPublic(id: number): Promise<Employee | undefined>;
+
+  // Authorization Forms
+  getAuthorizationForms(userId: string): Promise<AuthorizationForm[]>;
+  getAuthorizationFormByVisitType(userId: string, visitType: string): Promise<AuthorizationForm | undefined>;
+  upsertAuthorizationForm(form: InsertAuthorizationForm): Promise<AuthorizationForm>;
+  deleteAuthorizationForm(id: number, userId: string): Promise<boolean>;
 
   // Superadmin functions
   getUserById(userId: string): Promise<User | undefined>;
@@ -405,6 +411,43 @@ export class DatabaseStorage implements IStorage {
         eq(contactInquiries.status, 'new')
       ))
       .orderBy(desc(contactInquiries.createdAt));
+  }
+
+  async getAuthorizationForms(userId: string): Promise<AuthorizationForm[]> {
+    return db.select().from(authorizationForms)
+      .where(eq(authorizationForms.userId, userId))
+      .orderBy(authorizationForms.visitType);
+  }
+
+  async getAuthorizationFormByVisitType(userId: string, visitType: string): Promise<AuthorizationForm | undefined> {
+    const [form] = await db.select().from(authorizationForms)
+      .where(and(
+        eq(authorizationForms.userId, userId),
+        eq(authorizationForms.visitType, visitType)
+      ));
+    return form;
+  }
+
+  async upsertAuthorizationForm(form: InsertAuthorizationForm): Promise<AuthorizationForm> {
+    const existing = await this.getAuthorizationFormByVisitType(form.userId, form.visitType);
+    if (existing) {
+      const [updated] = await db.update(authorizationForms)
+        .set({ formName: form.formName, fileData: form.fileData, fileSize: form.fileSize, uploadedAt: new Date() })
+        .where(eq(authorizationForms.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(authorizationForms).values(form).returning();
+    return created;
+  }
+
+  async deleteAuthorizationForm(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(authorizationForms)
+      .where(and(
+        eq(authorizationForms.id, id),
+        eq(authorizationForms.userId, userId)
+      ));
+    return true;
   }
 
   async setSuperadmin(userId: string, isSuperadminFlag: boolean): Promise<User | undefined> {

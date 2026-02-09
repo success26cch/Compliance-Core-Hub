@@ -6,13 +6,217 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, Shield, Building2, Save, User, Upload, X, Stethoscope, Clock, Phone, MapPin } from "lucide-react";
+import { Check, Shield, Building2, Save, User, Upload, X, Stethoscope, Clock, Phone, MapPin, FileText, Trash2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import type { CompanyProfile } from "@shared/schema";
+
+interface AuthFormMeta {
+  id: number;
+  visitType: string;
+  formName: string;
+  fileSize: number | null;
+  uploadedAt: string;
+}
+
+const FORM_VISIT_TYPES = [
+  { value: "general", label: "General / All Visits" },
+  { value: "dot_physical", label: "DOT Physical" },
+  { value: "drug_screen", label: "Drug Screen" },
+  { value: "respiratory_exam", label: "Respiratory Exam" },
+  { value: "injury", label: "Injury Evaluation" },
+  { value: "new_hire", label: "New Hire Intake" },
+  { value: "other", label: "Other Medical Visit" },
+];
+
+function AuthorizationFormsSection() {
+  const { toast } = useToast();
+  const formFileRef = useRef<HTMLInputElement>(null);
+  const [selectedVisitType, setSelectedVisitType] = useState('');
+
+  const { data: forms = [], isLoading } = useQuery<AuthFormMeta[]>({
+    queryKey: ['/api/authorization-forms'],
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (data: { visitType: string; formName: string; fileData: string; fileSize: number }) => {
+      const res = await apiRequest('POST', '/api/authorization-forms', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/authorization-forms'] });
+      setSelectedVisitType('');
+      if (formFileRef.current) formFileRef.current.value = '';
+      toast({ title: "Form Uploaded", description: "Clinic authorization form has been saved." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Upload Failed", description: err.message || "Failed to upload form.", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/authorization-forms/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/authorization-forms'] });
+      toast({ title: "Form Removed", description: "Authorization form has been deleted." });
+    },
+  });
+
+  const handleFormUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!selectedVisitType) {
+      toast({ title: "Select Visit Type", description: "Please select a visit type before uploading.", variant: "destructive" });
+      if (formFileRef.current) formFileRef.current.value = '';
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      toast({ title: "PDF Only", description: "Please upload a PDF file.", variant: "destructive" });
+      if (formFileRef.current) formFileRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File Too Large", description: "Maximum file size is 5MB.", variant: "destructive" });
+      if (formFileRef.current) formFileRef.current.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      uploadMutation.mutate({
+        visitType: selectedVisitType,
+        formName: file.name,
+        fileData: reader.result as string,
+        fileSize: file.size,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getVisitTypeLabel = (value: string) => FORM_VISIT_TYPES.find(t => t.value === value)?.label || value;
+
+  return (
+    <Card data-testid="card-authorization-forms" className="border-2 border-primary/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-primary" />
+          Clinic Authorization Forms
+        </CardTitle>
+        <CardDescription>
+          Upload your clinic's authorization forms (PDF). When an employee's QR code is scanned at the clinic, the matching form will be available for download. Upload a "General" form as a default, or specific forms per visit type.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-3">
+          <div className="grid md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Visit Type</Label>
+              <Select value={selectedVisitType} onValueChange={setSelectedVisitType}>
+                <SelectTrigger data-testid="select-form-visit-type">
+                  <SelectValue placeholder="Select visit type for this form" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORM_VISIT_TYPES.map((vt) => (
+                    <SelectItem key={vt.value} value={vt.value}>
+                      {vt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Upload PDF</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={formFileRef}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFormUpload}
+                  className="hidden"
+                  id="form-upload"
+                  data-testid="input-form-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => formFileRef.current?.click()}
+                  disabled={!selectedVisitType || uploadMutation.isPending}
+                  className="gap-2 w-full"
+                  data-testid="button-upload-form"
+                >
+                  <Upload className="w-4 h-4" />
+                  {uploadMutation.isPending ? "Uploading..." : "Choose PDF File"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">PDF files up to 5MB</p>
+            </div>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : forms.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground text-sm">
+            <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            No authorization forms uploaded yet. Upload a form above so clinics can access it when scanning employee QR codes.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Uploaded Forms</Label>
+            {forms.map((form) => (
+              <div
+                key={form.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-md bg-muted/50"
+                data-testid={`form-row-${form.id}`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileText className="w-5 h-5 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{form.formName}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-xs">{getVisitTypeLabel(form.visitType)}</Badge>
+                      {form.fileSize && (
+                        <span className="text-xs text-muted-foreground">{formatFileSize(form.fileSize)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => deleteMutation.mutate(form.id)}
+                  disabled={deleteMutation.isPending}
+                  data-testid={`button-delete-form-${form.id}`}
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -545,6 +749,8 @@ export default function Settings() {
             )}
           </CardContent>
         </Card>
+
+        <AuthorizationFormsSection />
 
         <Card>
           <CardHeader>
