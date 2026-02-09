@@ -344,6 +344,7 @@ export const clinicVisits = pgTable("clinic_visits", {
   signatureDataUrl: text("signature_data_url"), // base64 digital signature image
   checkedInAt: timestamp("checked_in_at").defaultNow(),
   notifiedAt: timestamp("notified_at"),
+  returnedAt: timestamp("returned_at"),
   completedAt: timestamp("completed_at"),
 });
 
@@ -351,6 +352,7 @@ export const insertClinicVisitSchema = createInsertSchema(clinicVisits).omit({
   id: true,
   checkedInAt: true,
   notifiedAt: true,
+  returnedAt: true,
   completedAt: true,
 });
 export type ClinicVisit = typeof clinicVisits.$inferSelect;

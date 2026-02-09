@@ -33,6 +33,7 @@ import {
   MessageSquare,
   Copy,
   Link,
+  ArrowLeftRight,
 } from "lucide-react";
 import type { Employee, ClinicVisit, ClinicLocation } from "@shared/schema";
 
@@ -697,13 +698,35 @@ function EmployeePassportContent() {
                                 &middot; Arrived {new Date(visit.notifiedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                               </span>
                             )}
+                            {visit.returnedAt && (
+                              <span className="ml-1">
+                                &middot; Returned {new Date(visit.returnedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                              </span>
+                            )}
+                            {visit.notifiedAt && visit.returnedAt && (() => {
+                              const dur = Math.max(0, Math.round((new Date(visit.returnedAt).getTime() - new Date(visit.notifiedAt).getTime()) / 60000));
+                              const h = Math.floor(dur / 60);
+                              const m = dur % 60;
+                              return <span className="ml-1 text-[#FFC107]">&middot; {h > 0 ? `${h}h ${m}m` : `${m}m`} away</span>;
+                            })()}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {visit.employerNotified && (
+                      <div className="flex items-center gap-1 shrink-0 flex-wrap">
+                        {visit.employerNotified && !visit.returnedAt && (
                           <Badge variant="outline" className="text-xs">
                             <Send className="w-3 h-3 mr-1" /> Arrived{visit.notifiedAt ? ` ${new Date(visit.notifiedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
+                          </Badge>
+                        )}
+                        {visit.returnedAt && (
+                          <Badge variant="outline" className="text-xs border-blue-400/40 text-blue-500" data-testid={`badge-returned-${visit.id}`}>
+                            <ArrowLeftRight className="w-3 h-3 mr-1" />
+                            {visit.notifiedAt ? (() => {
+                              const dur = Math.max(0, Math.round((new Date(visit.returnedAt).getTime() - new Date(visit.notifiedAt).getTime()) / 60000));
+                              const h = Math.floor(dur / 60);
+                              const m = dur % 60;
+                              return h > 0 ? `${h}h ${m}m` : `${m}m`;
+                            })() : "Returned"}
                           </Badge>
                         )}
                         <Badge

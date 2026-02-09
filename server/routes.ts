@@ -1318,6 +1318,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           employeeLocation: visit.employeeLocation,
           staffingAgency: visit.staffingAgency,
           clinicLocationId: visit.clinicLocationId,
+          notifiedAt: visit.notifiedAt,
+          returnedAt: visit.returnedAt,
         },
         employee: {
           id: employee.id,
@@ -1470,6 +1472,86 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error("Error notifying employer:", error);
       res.status(500).json({ message: "Failed to notify employer" });
+    }
+  });
+
+  // "I'm Back" notification - employee notifies employer they've returned (PUBLIC)
+  app.post("/api/passport/employee-returned/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      const visit = await storage.getClinicVisitByToken(token);
+      if (!visit) {
+        return res.status(404).json({ message: "Passport not found" });
+      }
+
+      if (visit.returnedAt) {
+        return res.json({ message: "Return already recorded", alreadyReturned: true, returnedAt: visit.returnedAt });
+      }
+
+      if (!visit.notifiedAt) {
+        return res.status(400).json({ message: "Employee has not checked in yet" });
+      }
+
+      const employee = await storage.getEmployeeByIdPublic(visit.employeeId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      const companyProfile = await storage.getCompanyProfile(visit.userId);
+      const derPhone = companyProfile?.derPhone;
+
+      const returnTime = new Date();
+      const arrivalTime = new Date(visit.notifiedAt);
+      const durationMs = returnTime.getTime() - arrivalTime.getTime();
+      const durationMinutes = Math.round(durationMs / 60000);
+      const hours = Math.floor(durationMinutes / 60);
+      const mins = durationMinutes % 60;
+      const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+      let smsResult = { sent: false, message: "No DER phone number configured" };
+
+      if (derPhone) {
+        try {
+          const { getTwilioClient, getTwilioFromPhoneNumber } = await import("./twilioService");
+          const client = await getTwilioClient();
+          const fromNumber = await getTwilioFromPhoneNumber();
+
+          const employeeName = `${employee.firstName} ${employee.lastName}`;
+          const returnTimeStr = returnTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Chicago" });
+
+          const message = `CCH Alert: Employee ${employeeName} is back from their clinic visit at ${returnTimeStr}. Total time away: ${durationStr}.`;
+
+          await client.messages.create({
+            body: message,
+            from: fromNumber,
+            to: derPhone,
+          });
+
+          smsResult = { sent: true, message: "Employer notified via SMS" };
+        } catch (smsError: any) {
+          console.error("SMS return notification failed:", smsError);
+          smsResult = { sent: false, message: `SMS failed: ${smsError.message}` };
+        }
+      }
+
+      await storage.updateClinicVisit(visit.id, {
+        returnedAt: returnTime,
+        status: "completed",
+      });
+
+      res.json({
+        returned: true,
+        smsResult,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
+        returnedAt: returnTime.toISOString(),
+        arrivedAt: visit.notifiedAt,
+        durationMinutes,
+        durationStr,
+      });
+    } catch (error: any) {
+      console.error("Error recording return:", error);
+      res.status(500).json({ message: "Failed to record return" });
     }
   });
 

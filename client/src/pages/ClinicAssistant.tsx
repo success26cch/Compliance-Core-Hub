@@ -22,6 +22,8 @@ import {
   QrCode,
   FileText,
   Printer,
+  ArrowLeftRight,
+  Timer,
 } from "lucide-react";
 
 interface ClinicLocationInfo {
@@ -52,6 +54,8 @@ interface PassportData {
     employeeLocation: string | null;
     staffingAgency: string | null;
     clinicLocationId: number | null;
+    notifiedAt: string | null;
+    returnedAt: string | null;
   };
   employee: {
     id: number;
@@ -111,6 +115,10 @@ export default function ClinicAssistant() {
   const [notifying, setNotifying] = useState(false);
   const [notified, setNotified] = useState(false);
   const [arrivalTimeStr, setArrivalTimeStr] = useState<string | null>(null);
+  const [returned, setReturned] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const [returnTimeStr, setReturnTimeStr] = useState<string | null>(null);
+  const [durationStr, setDurationStr] = useState<string | null>(null);
   const [clinicNameInput, setClinicNameInput] = useState("");
   const [detectedClinicId, setDetectedClinicId] = useState<number | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "detecting" | "detected" | "failed" | "manual">("idle");
@@ -133,6 +141,19 @@ export default function ClinicAssistant() {
       .then((data: PassportData) => {
         setPassportData(data);
         setNotified(data.visit.employerNotified);
+        if (data.visit.notifiedAt) {
+          setArrivalTimeStr(new Date(data.visit.notifiedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+        }
+        if (data.visit.returnedAt) {
+          setReturned(true);
+          setReturnTimeStr(new Date(data.visit.returnedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+          if (data.visit.notifiedAt) {
+            const dur = Math.round((new Date(data.visit.returnedAt).getTime() - new Date(data.visit.notifiedAt).getTime()) / 60000);
+            const h = Math.floor(dur / 60);
+            const m = dur % 60;
+            setDurationStr(h > 0 ? `${h}h ${m}m` : `${m}m`);
+          }
+        }
         if (data.clinicLocation) {
           setClinicNameInput(`${data.clinicLocation.name} - ${data.clinicLocation.city}, ${data.clinicLocation.state}`);
           setDetectedClinicId(data.clinicLocation.id);
@@ -226,6 +247,39 @@ export default function ClinicAssistant() {
       });
     } finally {
       setNotifying(false);
+    }
+  };
+
+  const handleEmployeeReturned = async () => {
+    if (!token) return;
+    setReturning(true);
+    try {
+      const res = await fetch(`/api/passport/employee-returned/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      setReturned(true);
+      if (data.returnedAt) {
+        setReturnTimeStr(new Date(data.returnedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+      }
+      if (data.durationStr) {
+        setDurationStr(data.durationStr);
+      }
+      toast({
+        title: "Return Recorded",
+        description: data.smsResult?.sent
+          ? `Employer notified - total time away: ${data.durationStr}`
+          : `Return logged. Total time away: ${data.durationStr}. ${data.smsResult?.message || ""}`,
+      });
+    } catch {
+      toast({
+        title: "Return Notification Failed",
+        description: "Could not record return. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setReturning(false);
     }
   };
 
@@ -616,6 +670,68 @@ export default function ClinicAssistant() {
             </div>
           )}
         </Card>
+
+        {notified && (
+          <Card className="bg-gray-800/80 border-blue-400/30 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <ArrowLeftRight className="w-5 h-5 text-blue-400" />
+              <h3 className="text-sm font-bold text-white">"I'm Back" Notification</h3>
+            </div>
+
+            {returned ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-green-400 text-sm">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Return has been recorded.
+                </div>
+                <div className="bg-gray-900/60 border border-gray-700 rounded-md p-3 space-y-1">
+                  {arrivalTimeStr && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Arrived</span>
+                      <span className="text-white font-medium" data-testid="text-return-arrival">{arrivalTimeStr}</span>
+                    </div>
+                  )}
+                  {returnTimeStr && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Returned</span>
+                      <span className="text-white font-medium" data-testid="text-return-time">{returnTimeStr}</span>
+                    </div>
+                  )}
+                  {durationStr && (
+                    <div className="flex items-center justify-between text-xs border-t border-gray-700 pt-1 mt-1">
+                      <span className="text-gray-400 flex items-center gap-1">
+                        <Timer className="w-3 h-3" /> Total Time Away
+                      </span>
+                      <span className="text-[#FFC107] font-bold" data-testid="text-duration">{durationStr}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-400">
+                  When the employee returns from the clinic, tap below to let their employer know they're back and log how long they were away.
+                </p>
+                <Button
+                  className="w-full bg-blue-500 text-white font-bold"
+                  onClick={handleEmployeeReturned}
+                  disabled={returning}
+                  data-testid="btn-employee-returned"
+                >
+                  {returning ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Recording...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowLeftRight className="w-4 h-4 mr-2" /> Notify Employer - "I'm Back"
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </Card>
+        )}
 
         <Button
           className="w-full bg-[#FFC107] text-black font-bold text-base py-6"
