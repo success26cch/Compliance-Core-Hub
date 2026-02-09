@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import {
   Volume2,
+  Mic,
+  MicOff,
   ClipboardCheck,
   UserPlus,
   FlaskConical,
@@ -254,6 +256,8 @@ function InjuryReportingMode() {
   const [translatedDescription, setTranslatedDescription] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
   const translateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const translateText = useCallback(async (text: string) => {
     if (!text.trim()) {
@@ -284,9 +288,58 @@ function InjuryReportingMode() {
     translateTimerRef.current = setTimeout(() => translateText(value), 800);
   }, [translateText]);
 
+  const toggleSpeechToText = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-MX";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    let finalTranscript = data.description;
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? " " : "") + transcript;
+          handleDescriptionChange(finalTranscript);
+        } else {
+          interim = transcript;
+        }
+      }
+      if (interim) {
+        setData((prev) => ({ ...prev, description: finalTranscript + (finalTranscript ? " " : "") + interim }));
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+    setIsListening(true);
+  }, [isListening, data.description, handleDescriptionChange]);
+
   useEffect(() => {
     return () => {
       if (translateTimerRef.current) clearTimeout(translateTimerRef.current);
+      if (recognitionRef.current) recognitionRef.current.stop();
     };
   }, []);
 
@@ -500,21 +553,45 @@ function InjuryReportingMode() {
               Auto-translates Spanish to English
             </span>
           </label>
-          <button
-            type="button"
-            onClick={() => {
-              if (data.description.trim()) speakSpanish(data.description);
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-colors ${
-              data.description.trim()
-                ? "bg-[#FFC107]/20 border-[#FFC107]/50 cursor-pointer"
-                : "bg-gray-800/40 border-gray-700/50 cursor-not-allowed opacity-50"
-            }`}
-            data-testid="btn-tts-description"
-          >
-            <Volume2 className="w-4 h-4 text-[#FFC107]" />
-            <span className="text-xs font-bold text-[#FFC107] tracking-wide">Text-to-Speech</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleSpeechToText}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-colors ${
+                isListening
+                  ? "bg-red-500/20 border-red-500/50 animate-pulse"
+                  : "bg-[#FFC107]/20 border-[#FFC107]/50"
+              }`}
+              data-testid="btn-stt-description"
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="w-4 h-4 text-red-400" />
+                  <span className="text-xs font-bold text-red-400 tracking-wide">Stop</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4 text-[#FFC107]" />
+                  <span className="text-xs font-bold text-[#FFC107] tracking-wide">Speech-to-Text</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (data.description.trim()) speakSpanish(data.description);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-colors ${
+                data.description.trim()
+                  ? "bg-[#FFC107]/20 border-[#FFC107]/50 cursor-pointer"
+                  : "bg-gray-800/40 border-gray-700/50 cursor-not-allowed opacity-50"
+              }`}
+              data-testid="btn-tts-description"
+            >
+              <Volume2 className="w-4 h-4 text-[#FFC107]" />
+              <span className="text-xs font-bold text-[#FFC107] tracking-wide">Text-to-Speech</span>
+            </button>
+          </div>
         </div>
         <Textarea
           className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 min-h-[80px]"
