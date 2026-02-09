@@ -1180,7 +1180,12 @@ function DrugScreenMode() {
   );
 }
 
-export default function BilingualAssistant() {
+interface BilingualAssistantProps {
+  prefilledName?: string;
+  prefilledCompany?: string;
+}
+
+export default function BilingualAssistant({ prefilledName, prefilledCompany }: BilingualAssistantProps = {}) {
   const [mode, setMode] = useState<Mode>("intake");
 
   const modes = [
@@ -1192,6 +1197,14 @@ export default function BilingualAssistant() {
   return (
     <section className="py-20 bg-[hsl(222,47%,11%)]" id="bilingual-assistant" data-testid="section-bilingual-assistant">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {prefilledName && (
+          <div className="mb-4 p-3 rounded-md bg-green-500/10 border border-green-500/30 text-center">
+            <p className="text-sm text-green-400">
+              <span className="font-bold">Passport Active:</span> {prefilledName}
+              {prefilledCompany && <span className="text-green-400/70"> | {prefilledCompany}</span>}
+            </p>
+          </div>
+        )}
         <div className="text-center mb-8">
           <Badge className="bg-[#FFC107]/20 text-[#FFC107] mb-4 no-default-hover-elevate no-default-active-elevate">
             <Languages className="w-3 h-3 mr-1" /> CCH Exclusive

@@ -17,7 +17,8 @@ import {
   Building2,
   Crown,
   Bell,
-  Users
+  Users,
+  QrCode
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -40,6 +41,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
+    { href: "/employee-passport", label: "Medical Passport", icon: QrCode },
   ];
 
   const LinkItem = ({ href, label, icon: Icon, external }: any) => {

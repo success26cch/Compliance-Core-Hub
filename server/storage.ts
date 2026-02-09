@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -54,6 +54,14 @@ export interface IStorage {
   // Company Profile
   getCompanyProfile(userId: string): Promise<CompanyProfile | undefined>;
   upsertCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile>;
+
+  // Clinic Visits (Digital Medical Passport)
+  createClinicVisit(visit: InsertClinicVisit): Promise<ClinicVisit>;
+  getClinicVisitByToken(token: string): Promise<ClinicVisit | undefined>;
+  getClinicVisitsByEmployee(employeeId: number, userId: string): Promise<ClinicVisit[]>;
+  getClinicVisitsByUser(userId: string): Promise<ClinicVisit[]>;
+  updateClinicVisit(id: number, updates: Partial<InsertClinicVisit>): Promise<ClinicVisit | undefined>;
+  getEmployeeByIdPublic(id: number): Promise<Employee | undefined>;
 
   // Superadmin functions
   getUserById(userId: string): Promise<User | undefined>;
@@ -310,6 +318,39 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(correctiveActions)
       .where(and(eq(correctiveActions.id, id), eq(correctiveActions.userId, userId)));
     return true;
+  }
+
+  // Clinic Visits (Digital Medical Passport)
+  async createClinicVisit(visit: InsertClinicVisit): Promise<ClinicVisit> {
+    const [created] = await db.insert(clinicVisits).values(visit).returning();
+    return created;
+  }
+
+  async getClinicVisitByToken(token: string): Promise<ClinicVisit | undefined> {
+    const [visit] = await db.select().from(clinicVisits).where(eq(clinicVisits.passportToken, token));
+    return visit;
+  }
+
+  async getClinicVisitsByEmployee(employeeId: number, userId: string): Promise<ClinicVisit[]> {
+    return db.select().from(clinicVisits)
+      .where(and(eq(clinicVisits.employeeId, employeeId), eq(clinicVisits.userId, userId)))
+      .orderBy(desc(clinicVisits.checkedInAt));
+  }
+
+  async getClinicVisitsByUser(userId: string): Promise<ClinicVisit[]> {
+    return db.select().from(clinicVisits)
+      .where(eq(clinicVisits.userId, userId))
+      .orderBy(desc(clinicVisits.checkedInAt));
+  }
+
+  async updateClinicVisit(id: number, updates: Partial<InsertClinicVisit>): Promise<ClinicVisit | undefined> {
+    const [updated] = await db.update(clinicVisits).set(updates).where(eq(clinicVisits.id, id)).returning();
+    return updated;
+  }
+
+  async getEmployeeByIdPublic(id: number): Promise<Employee | undefined> {
+    const [employee] = await db.select().from(employees).where(eq(employees.id, id));
+    return employee;
   }
 
   // Superadmin functions

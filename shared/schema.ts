@@ -317,6 +317,31 @@ export const insertDotNotificationSchema = createInsertSchema(dotNotifications).
 export type DotNotification = typeof dotNotifications.$inferSelect;
 export type InsertDotNotification = z.infer<typeof insertDotNotificationSchema>;
 
+// Clinic Visits - tracks QR-based clinic check-ins (Digital Medical Passport)
+export const clinicVisits = pgTable("clinic_visits", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  userId: text("user_id").notNull(),
+  passportToken: text("passport_token").notNull(),
+  visitType: text("visit_type").notNull(), // 'dot_physical', 'drug_screen', 'respiratory_exam', 'injury', 'new_hire', 'other'
+  clinicName: text("clinic_name"),
+  status: text("status").notNull().default("checked_in"), // 'checked_in', 'in_progress', 'completed'
+  employerNotified: boolean("employer_notified").default(false),
+  authorizationName: text("authorization_name"),
+  authorizationTitle: text("authorization_title"),
+  notes: text("notes"),
+  checkedInAt: timestamp("checked_in_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertClinicVisitSchema = createInsertSchema(clinicVisits).omit({
+  id: true,
+  checkedInAt: true,
+  completedAt: true,
+});
+export type ClinicVisit = typeof clinicVisits.$inferSelect;
+export type InsertClinicVisit = z.infer<typeof insertClinicVisitSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

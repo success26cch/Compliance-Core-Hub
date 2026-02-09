@@ -1191,5 +1191,209 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==========================================
+  // DIGITAL MEDICAL PASSPORT (CCH Handshake)
+  // ==========================================
+
+  // Generate a passport token for an employee (requires auth)
+  app.post("/api/passport/generate", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+
+    try {
+      const { employeeId, visitType, authorizationName, authorizationTitle } = req.body;
+      if (!employeeId || !visitType) {
+        return res.status(400).json({ message: "Employee ID and visit type required" });
+      }
+
+      const employee = await storage.getEmployeeById(parseInt(employeeId), userId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      const { nanoid } = await import("nanoid");
+      const passportToken = nanoid(16);
+
+      const visit = await storage.createClinicVisit({
+        employeeId: employee.id,
+        userId,
+        passportToken,
+        visitType,
+        authorizationName: authorizationName || null,
+        authorizationTitle: authorizationTitle || null,
+        status: "checked_in",
+        employerNotified: false,
+        clinicName: null,
+        notes: null,
+      });
+
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const host = req.headers['host'] || req.hostname;
+      const qrUrl = `${protocol}://${host}/clinic-assistant?token=${passportToken}`;
+
+      res.json({
+        token: passportToken,
+        qrUrl,
+        visit,
+        employee: {
+          id: employee.id,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          position: employee.position,
+          department: employee.department,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error generating passport:", error);
+      res.status(500).json({ message: "Failed to generate passport" });
+    }
+  });
+
+  // Look up passport by token (PUBLIC - no auth needed, this is for clinic scanning)
+  app.get("/api/passport/lookup/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const visit = await storage.getClinicVisitByToken(token);
+      if (!visit) {
+        return res.status(404).json({ message: "Passport not found or expired" });
+      }
+
+      const checkedInTime = visit.checkedInAt ? new Date(visit.checkedInAt).getTime() : 0;
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      if (Date.now() - checkedInTime > twentyFourHours) {
+        return res.status(410).json({ message: "This passport has expired. Please generate a new one." });
+      }
+
+      const employee = await storage.getEmployeeByIdPublic(visit.employeeId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      const companyProfile = await storage.getCompanyProfile(visit.userId);
+
+      res.json({
+        visit: {
+          id: visit.id,
+          visitType: visit.visitType,
+          status: visit.status,
+          employerNotified: visit.employerNotified,
+          checkedInAt: visit.checkedInAt,
+        },
+        employee: {
+          id: employee.id,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          position: employee.position,
+          department: employee.department,
+        },
+        company: companyProfile ? {
+          companyName: companyProfile.companyName,
+          industry: companyProfile.industry,
+          dotNumber: companyProfile.dotNumber,
+          derName: companyProfile.derName,
+          clinicName: companyProfile.clinicName,
+        } : null,
+        authorization: visit.authorizationName ? {
+          name: visit.authorizationName,
+          title: visit.authorizationTitle,
+          timestamp: visit.checkedInAt,
+        } : null,
+      });
+    } catch (error: any) {
+      console.error("Error looking up passport:", error);
+      res.status(500).json({ message: "Failed to look up passport" });
+    }
+  });
+
+  // "I'm Here" notification - notify employer when clinic scans QR (PUBLIC)
+  app.post("/api/passport/notify-employer/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { clinicName } = req.body;
+
+      const visit = await storage.getClinicVisitByToken(token);
+      if (!visit) {
+        return res.status(404).json({ message: "Passport not found" });
+      }
+
+      if (visit.employerNotified) {
+        return res.json({ message: "Employer already notified", alreadyNotified: true });
+      }
+
+      const employee = await storage.getEmployeeByIdPublic(visit.employeeId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      const companyProfile = await storage.getCompanyProfile(visit.userId);
+      const derPhone = companyProfile?.derPhone;
+
+      let smsResult = { sent: false, message: "No DER phone number configured" };
+
+      if (derPhone) {
+        try {
+          const { getTwilioClient, getTwilioFromPhoneNumber } = await import("./twilioService");
+          const client = await getTwilioClient();
+          const fromNumber = await getTwilioFromPhoneNumber();
+
+          const visitTypeLabels: Record<string, string> = {
+            dot_physical: "DOT Physical",
+            drug_screen: "Drug Screen",
+            respiratory_exam: "Respiratory Exam",
+            injury: "Injury Evaluation",
+            new_hire: "New Hire Intake",
+            other: "Medical Visit",
+          };
+
+          const visitLabel = visitTypeLabels[visit.visitType] || visit.visitType;
+          const employeeName = `${employee.firstName} ${employee.lastName}`;
+          const clinicInfo = clinicName ? ` at ${clinicName}` : "";
+
+          const message = `CCH Alert: Employee ${employeeName} has checked in${clinicInfo} for their ${visitLabel}. Authorization was provided digitally via CCH Medical Passport.`;
+
+          await client.messages.create({
+            body: message,
+            from: fromNumber,
+            to: derPhone,
+          });
+
+          smsResult = { sent: true, message: "Employer notified via SMS" };
+        } catch (smsError: any) {
+          console.error("SMS notification failed:", smsError);
+          smsResult = { sent: false, message: `SMS failed: ${smsError.message}` };
+        }
+      }
+
+      const wasNotified = smsResult.sent || !derPhone;
+      await storage.updateClinicVisit(visit.id, {
+        employerNotified: wasNotified,
+        clinicName: clinicName || visit.clinicName,
+      } as any);
+
+      res.json({
+        notified: wasNotified,
+        smsResult,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
+      });
+    } catch (error: any) {
+      console.error("Error notifying employer:", error);
+      res.status(500).json({ message: "Failed to notify employer" });
+    }
+  });
+
+  // Get clinic visit history for a user (requires auth)
+  app.get("/api/passport/visits", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+
+    try {
+      const visits = await storage.getClinicVisitsByUser(userId);
+      res.json(visits);
+    } catch (error: any) {
+      console.error("Error fetching visits:", error);
+      res.status(500).json({ message: "Failed to fetch visits" });
+    }
+  });
+
   return httpServer;
 }

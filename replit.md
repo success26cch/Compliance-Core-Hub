@@ -17,13 +17,16 @@
 - **Training Courses**: Self-paced compliance training with certificates
 - **ACSI Mentorship Program**: CCH Exclusive - First ISO Mentorship Program. Ongoing guidance and competency development for internal system owners
 - **BrandNSwag**: Smart Swag division for employee recognition and engagement
-- **Bilingual Medical Assistant**: Landing page tool with three modes (Injury Reporting, New Hire Intake, Drug Screen Instructions). Features Spanish text-to-speech via Web Speech API, interactive body map, multi-step bilingual forms, Staff Command Center with clinic instructions, and printable clinical summaries. Component at `client/src/components/BilingualAssistant.tsx`
+- **Bilingual Medical Assistant**: Landing page tool with three modes (Injury Reporting, New Hire Intake, Drug Screen Instructions). Features Spanish text-to-speech via Web Speech API, bidirectional speech-to-text (patient speaks Spanish, auto-translates to English), interactive body map, multi-step bilingual forms, Staff Command Center with clinic instructions, and printable clinical summaries. Component at `client/src/components/BilingualAssistant.tsx`
+- **Digital Medical Passport (CCH Handshake)**: QR-based clinic check-in system. Employers generate QR codes for employees visiting clinics. When scanned, the QR opens the Bilingual Clinical Assistant with employee data pre-loaded. Includes digital authorization (no phone call to employer needed), "I'm Here" SMS notification to employer via Twilio, and 24-hour token expiry for security. Pages: `/employee-passport` (generate QR), `/clinic-assistant?token=xxx` (public clinic-facing page)
 
 ## Data Management Routes
 - **/dashboard**: Client Compliance Dashboard with metrics, incident heatmap, action queue
 - **/employees**: Employee Management - add/edit/delete employees, track DOT physicals, drug tests, respiratory exams
 - **/incidents**: Incident Log - record workplace incidents, track OSHA recordability, OSHA 300 report with print feature, Corrective Action Plans (CAPA)
 - **/settings**: Company Profile (with DER contact info and logo upload) and subscription management
+- **/employee-passport**: Digital Medical Passport - generate QR codes for employee clinic check-ins with digital authorization
+- **/clinic-assistant**: Public clinic-facing page (opened by QR scan) with employee info, authorization verification, employer notification, and bilingual tools
 
 ## BrandNSwag Division
 Smart Swag makes safety fun and rewarding through QR-enabled company merchandise.

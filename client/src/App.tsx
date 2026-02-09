@@ -19,6 +19,8 @@ import Incidents from "@/pages/Incidents";
 import SuperAdmin from "@/pages/SuperAdmin";
 import LeadsAdmin from "@/pages/LeadsAdmin";
 import DOTNotifications from "@/pages/DOTNotifications";
+import EmployeePassport from "@/pages/EmployeePassport";
+import ClinicAssistant from "@/pages/ClinicAssistant";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/superadmin" component={SuperAdmin} />
       <Route path="/leads" component={LeadsAdmin} />
       <Route path="/dot-notifications" component={DOTNotifications} />
+      <Route path="/employee-passport" component={EmployeePassport} />
+      <Route path="/clinic-assistant" component={ClinicAssistant} />
       <Route component={NotFound} />
     </Switch>
   );
