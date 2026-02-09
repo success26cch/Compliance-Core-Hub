@@ -500,17 +500,21 @@ function InjuryReportingMode() {
               Auto-translates Spanish to English
             </span>
           </label>
-          {data.description.trim() && (
-            <button
-              type="button"
-              onClick={() => speakSpanish(data.description)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FFC107]/15 border border-[#FFC107]/30 transition-colors"
-              data-testid="btn-tts-description"
-            >
-              <Volume2 className="w-3.5 h-3.5 text-[#FFC107]" />
-              <span className="text-[11px] font-bold text-[#FFC107] tracking-wide">Text-to-Speech</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (data.description.trim()) speakSpanish(data.description);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-colors ${
+              data.description.trim()
+                ? "bg-[#FFC107]/20 border-[#FFC107]/50 cursor-pointer"
+                : "bg-gray-800/40 border-gray-700/50 cursor-not-allowed opacity-50"
+            }`}
+            data-testid="btn-tts-description"
+          >
+            <Volume2 className="w-4 h-4 text-[#FFC107]" />
+            <span className="text-xs font-bold text-[#FFC107] tracking-wide">Text-to-Speech</span>
+          </button>
         </div>
         <Textarea
           className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 min-h-[80px]"
