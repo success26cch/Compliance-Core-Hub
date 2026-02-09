@@ -329,7 +329,18 @@ export const clinicVisits = pgTable("clinic_visits", {
   employerNotified: boolean("employer_notified").default(false),
   authorizationName: text("authorization_name"),
   authorizationTitle: text("authorization_title"),
+  authorizationPhone: text("authorization_phone"),
   notes: text("notes"),
+  // Smart Authorization Form fields
+  billingPreference: text("billing_preference"), // 'company_pay', 'employee_pay'
+  specialInstructions: text("special_instructions"),
+  additionalServices: text("additional_services").array(), // array of service codes
+  ssnLast4: text("ssn_last4"), // last 4 digits of SSN
+  employeeDob: text("employee_dob"), // date of birth as string
+  employeeAddress: text("employee_address"),
+  employeeLocation: text("employee_location"), // work location
+  staffingAgency: text("staffing_agency"),
+  signatureDataUrl: text("signature_data_url"), // base64 digital signature image
   checkedInAt: timestamp("checked_in_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
