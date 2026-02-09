@@ -18,6 +18,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { motion } from "framer-motion";
+import BilingualAssistant from "@/components/BilingualAssistant";
 
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -58,6 +59,7 @@ export default function Landing() {
             <a href="#courses" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-training">Training</a>
             <Link href="/mentorship" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-mentorship">Mentorship</Link>
             <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-brandnswag">BrandNSwag</a>
+            <a href="#bilingual-assistant" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Med Assistant</a>
             <a href="#faq" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
           </div>
           
@@ -257,6 +259,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Bilingual Medical Assistant */}
+      <BilingualAssistant />
 
       {/* How It Works */}
       <section className="py-24 bg-white border-t border-border/50">

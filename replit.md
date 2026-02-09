@@ -17,6 +17,7 @@
 - **Training Courses**: Self-paced compliance training with certificates
 - **ACSI Mentorship Program**: CCH Exclusive - First ISO Mentorship Program. Ongoing guidance and competency development for internal system owners
 - **BrandNSwag**: Smart Swag division for employee recognition and engagement
+- **Bilingual Medical Assistant**: Landing page tool with three modes (Injury Reporting, New Hire Intake, Drug Screen Instructions). Features Spanish text-to-speech via Web Speech API, interactive body map, multi-step bilingual forms, Staff Command Center with clinic instructions, and printable clinical summaries. Component at `client/src/components/BilingualAssistant.tsx`
 
 ## Data Management Routes
 - **/dashboard**: Client Compliance Dashboard with metrics, incident heatmap, action queue
