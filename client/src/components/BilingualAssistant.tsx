@@ -188,6 +188,92 @@ function speakSpanish(text: string) {
 
 function CommandCenterMode() {
   const [activeCategory, setActiveCategory] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const [spokenText, setSpokenText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const translateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const translateText = useCallback(async (text: string) => {
+    if (!text.trim()) {
+      setTranslatedText("");
+      return;
+    }
+    setIsTranslating(true);
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        const { translation } = await res.json();
+        setTranslatedText(translation);
+      }
+    } catch {
+      setTranslatedText("");
+    } finally {
+      setIsTranslating(false);
+    }
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-MX";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    let finalTranscript = spokenText;
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? " " : "") + transcript;
+          setSpokenText(finalTranscript);
+          if (translateTimerRef.current) clearTimeout(translateTimerRef.current);
+          translateTimerRef.current = setTimeout(() => translateText(finalTranscript), 800);
+        } else {
+          interim = transcript;
+        }
+      }
+      if (interim) {
+        setSpokenText(finalTranscript + (finalTranscript ? " " : "") + interim);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+    setIsListening(true);
+  }, [isListening, spokenText, translateText]);
+
+  useEffect(() => {
+    return () => {
+      if (translateTimerRef.current) clearTimeout(translateTimerRef.current);
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -197,8 +283,70 @@ function CommandCenterMode() {
         <Badge className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">
           <Volume2 className="w-3 h-3 mr-1" /> Text-to-Speech
         </Badge>
+        <Badge className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">
+          <Mic className="w-3 h-3 mr-1" /> Speech-to-Text
+        </Badge>
       </div>
-      <p className="text-sm text-gray-400">Click any button to speak the instruction in Spanish to the patient.</p>
+      <p className="text-sm text-gray-400">Click any button to speak the instruction in Spanish to the patient, or use the microphone to listen to the patient and see the English translation.</p>
+
+      <div className="rounded-md bg-gray-800/40 border border-gray-700/50 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Mic className="w-4 h-4 text-[#FFC107]" />
+            <span className="text-sm font-bold text-[#FFC107]">Patient Speech-to-Text</span>
+            <span className="text-xs text-gray-400">/ Escuchar al paciente</span>
+          </div>
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-colors ${
+              isListening
+                ? "bg-red-500/20 border-red-500/50 animate-pulse"
+                : "bg-[#FFC107]/20 border-[#FFC107]/50"
+            }`}
+            data-testid="btn-stt-command-center"
+          >
+            {isListening ? (
+              <>
+                <MicOff className="w-4 h-4 text-red-400" />
+                <span className="text-xs font-bold text-red-400 tracking-wide">Stop Listening</span>
+              </>
+            ) : (
+              <>
+                <Mic className="w-4 h-4 text-[#FFC107]" />
+                <span className="text-xs font-bold text-[#FFC107] tracking-wide">Start Listening</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {(spokenText || isListening) && (
+          <div className="space-y-2">
+            <div className="rounded-md bg-gray-900/60 border border-gray-700/50 p-3">
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block mb-1">Spanish (what the patient said)</span>
+              <p className="text-white text-sm" data-testid="stt-spanish-text">
+                {spokenText || (isListening ? "Listening..." : "")}
+              </p>
+            </div>
+            {(isTranslating || translatedText) && (
+              <div className="rounded-md bg-gray-900/60 border border-[#FFC107]/20 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Languages className="w-3.5 h-3.5 text-[#FFC107]" />
+                  <span className="text-[10px] uppercase tracking-wider text-[#FFC107] font-semibold">English Translation</span>
+                  {isTranslating && <Loader2 className="w-3 h-3 animate-spin text-[#FFC107]" />}
+                </div>
+                <p className="text-white text-sm" data-testid="stt-english-text">
+                  {isTranslating ? "Translating..." : translatedText}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!spokenText && !isListening && (
+          <p className="text-xs text-gray-500 italic">Click "Start Listening" and let the patient speak in Spanish. Their words will appear here with an English translation.</p>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
         {CLINIC_INSTRUCTIONS.map((cat, i) => (
