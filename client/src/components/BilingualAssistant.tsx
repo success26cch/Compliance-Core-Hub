@@ -23,6 +23,11 @@ import {
   Droplets,
   HandMetal,
   AlertTriangle,
+  Timer,
+  Thermometer,
+  EyeOff,
+  Wine,
+  ShieldAlert,
 } from "lucide-react";
 
 type Mode = "injury" | "intake" | "drugscreen";
@@ -143,8 +148,8 @@ const DRUG_SCREEN_STEPS = [
     stepNum: 4,
     title: "Temperature Check",
     titleEs: "Verificación de temperatura",
-    en: "The collector will check the specimen temperature within 4 minutes. The temperature must be between 90°F and 100°F (32°C–38°C).",
-    es: "El recolector verificará la temperatura de la muestra dentro de 4 minutos. La temperatura debe estar entre 90°F y 100°F (32°C–38°C).",
+    en: "The collector will check the specimen temperature within 4 minutes. The temperature must be between 90°F and 100°F (32°C-38°C).",
+    es: "El recolector verificará la temperatura de la muestra dentro de 4 minutos. La temperatura debe estar entre 90°F y 100°F (32°C-38°C).",
   },
   {
     stepNum: 5,
@@ -154,6 +159,174 @@ const DRUG_SCREEN_STEPS = [
     es: "Usted observará al recolector sellar la muestra con cinta a prueba de manipulaciones. Firme el sello y verifique toda la información en el formulario de Cadena de Custodia (CCF).",
   },
 ];
+
+const SHY_BLADDER_STEPS = [
+  {
+    stepNum: 1,
+    title: "Insufficient Specimen",
+    titleEs: "Muestra insuficiente",
+    en: "If the donor cannot provide 45mL of urine, the collector discards the insufficient specimen and documents it on the CCF.",
+    es: "Si el donante no puede proporcionar 45mL de orina, el recolector descarta la muestra insuficiente y lo documenta en el formulario CCF.",
+  },
+  {
+    stepNum: 2,
+    title: "Hydration Period Begins",
+    titleEs: "Comienza el período de hidratación",
+    en: "The donor is given up to 40 ounces (1.18 liters) of fluid to drink over a 3-hour waiting period. The donor must remain at the collection site under observation.",
+    es: "Se le da al donante hasta 40 onzas (1.18 litros) de líquido para beber durante un período de espera de 3 horas. El donante debe permanecer en el sitio de recolección bajo observación.",
+  },
+  {
+    stepNum: 3,
+    title: "Second Attempt",
+    titleEs: "Segundo intento",
+    en: "The donor may attempt to provide a specimen at any time during the 3-hour period. If successful (45mL+), normal collection procedures resume.",
+    es: "El donante puede intentar proporcionar una muestra en cualquier momento durante el período de 3 horas. Si tiene éxito (45mL+), se reanudan los procedimientos normales de recolección.",
+  },
+  {
+    stepNum: 4,
+    title: "Failure After 3 Hours",
+    titleEs: "Fallo después de 3 horas",
+    en: "If the donor still cannot provide 45mL after 3 hours, the collection is stopped. The collector reports the 'shy bladder' situation to the DER (Designated Employer Representative).",
+    es: "Si el donante aún no puede proporcionar 45mL después de 3 horas, se detiene la recolección. El recolector informa la situación de 'vejiga tímida' al DER (Representante Designado del Empleador).",
+  },
+  {
+    stepNum: 5,
+    title: "Medical Evaluation Required",
+    titleEs: "Evaluación médica requerida",
+    en: "The employer must refer the donor to a licensed physician (not the MRO) within 5 business days for a medical evaluation to determine if there is a legitimate medical reason for the inability to provide a specimen.",
+    es: "El empleador debe referir al donante a un médico licenciado (no el MRO) dentro de 5 días hábiles para una evaluación médica que determine si hay una razón médica legítima para la incapacidad de proporcionar una muestra.",
+  },
+  {
+    stepNum: 6,
+    title: "Determination",
+    titleEs: "Determinación",
+    en: "If no legitimate medical explanation is found, the MRO reports the result as a 'Refusal to Test' - which carries the same consequences as a positive test result under DOT regulations.",
+    es: "Si no se encuentra una explicación médica legítima, el MRO reporta el resultado como 'Negativa a la Prueba', lo cual conlleva las mismas consecuencias que un resultado positivo bajo las regulaciones del DOT.",
+  },
+];
+
+const OUT_OF_TEMP_STEPS = [
+  {
+    stepNum: 1,
+    title: "Temperature Check",
+    titleEs: "Verificación de temperatura",
+    en: "The collector must check the specimen temperature within 4 minutes of collection. The acceptable range is 90°F to 100°F (32°C to 38°C).",
+    es: "El recolector debe verificar la temperatura de la muestra dentro de 4 minutos de la recolección. El rango aceptable es de 90°F a 100°F (32°C a 38°C).",
+  },
+  {
+    stepNum: 2,
+    title: "Out of Range Detected",
+    titleEs: "Fuera de rango detectado",
+    en: "If the specimen temperature is outside 90-100°F, this is a suspected tampering or substitution. The collector must document the out-of-range temperature on the CCF Remarks line.",
+    es: "Si la temperatura de la muestra está fuera de 90-100°F, se sospecha manipulación o sustitución. El recolector debe documentar la temperatura fuera de rango en la línea de Observaciones del CCF.",
+  },
+  {
+    stepNum: 3,
+    title: "Immediate Observed Collection",
+    titleEs: "Recolección observada inmediata",
+    en: "The collector must immediately conduct a new, directly observed collection. The donor must provide a new specimen under direct observation by a same-gender collector.",
+    es: "El recolector debe realizar inmediatamente una nueva recolección directamente observada. El donante debe proporcionar una nueva muestra bajo observación directa de un recolector del mismo género.",
+  },
+  {
+    stepNum: 4,
+    title: "Both Specimens Sent",
+    titleEs: "Ambas muestras enviadas",
+    en: "Both the original out-of-temperature specimen AND the new observed specimen are sent to the laboratory for testing. The lab will test both specimens.",
+    es: "Tanto la muestra original fuera de temperatura COMO la nueva muestra observada se envían al laboratorio para análisis. El laboratorio analizará ambas muestras.",
+  },
+  {
+    stepNum: 5,
+    title: "Do NOT Discard",
+    titleEs: "NO descarte",
+    en: "CRITICAL: The original out-of-temperature specimen must NOT be discarded. It is evidence and must be sent to the lab with the CCF documenting the temperature issue.",
+    es: "CRÍTICO: La muestra original fuera de temperatura NO debe descartarse. Es evidencia y debe enviarse al laboratorio con el CCF documentando el problema de temperatura.",
+  },
+];
+
+const OBSERVED_COLLECTION_STEPS = [
+  {
+    stepNum: 1,
+    title: "When Observation is Required",
+    titleEs: "Cuándo se requiere observación",
+    en: "Direct observation is mandatory for: Return-to-Duty (RTD) tests, Follow-Up tests, out-of-temperature specimens, suspected tampering/adulteration, and when the MRO reports an invalid result and orders a retest.",
+    es: "La observación directa es obligatoria para: pruebas de Regreso al Servicio (RTD), pruebas de Seguimiento, muestras fuera de temperatura, sospecha de manipulación/adulteración, y cuando el MRO reporta un resultado inválido y ordena una nueva prueba.",
+  },
+  {
+    stepNum: 2,
+    title: "Same-Gender Observer",
+    titleEs: "Observador del mismo género",
+    en: "The observer MUST be the same gender as the donor. The observer can be the collector or another trained person designated by the collector.",
+    es: "El observador DEBE ser del mismo género que el donante. El observador puede ser el recolector u otra persona capacitada designada por el recolector.",
+  },
+  {
+    stepNum: 3,
+    title: "Explain to the Donor",
+    titleEs: "Explicar al donante",
+    en: "The collector must explain the reason for the observed collection to the donor BEFORE beginning the process. The donor must be informed this is a federal requirement.",
+    es: "El recolector debe explicar la razón de la recolección observada al donante ANTES de comenzar el proceso. El donante debe ser informado de que es un requisito federal.",
+  },
+  {
+    stepNum: 4,
+    title: "Observation Procedure",
+    titleEs: "Procedimiento de observación",
+    en: "The observer watches the donor urinate directly into the collection container. The observer must have an unobstructed view to ensure the specimen is provided by the donor and is not tampered with.",
+    es: "El observador observa al donante orinar directamente en el recipiente de recolección. El observador debe tener una vista sin obstrucciones para asegurar que la muestra es proporcionada por el donante y no es manipulada.",
+  },
+  {
+    stepNum: 5,
+    title: "Refusal = Positive",
+    titleEs: "Negativa = Positivo",
+    en: "If the donor refuses an observed collection when it is required, this is treated as a REFUSAL TO TEST - equivalent to a positive test result with the same DOT consequences (immediate removal, SAP referral, Clearinghouse reporting).",
+    es: "Si el donante se niega a una recolección observada cuando es requerida, se trata como una NEGATIVA A LA PRUEBA, equivalente a un resultado positivo con las mismas consecuencias DOT (remoción inmediata, referencia al SAP, reporte al Clearinghouse).",
+  },
+];
+
+const BAT_STEPS = [
+  {
+    stepNum: 1,
+    title: "When BAT is Required",
+    titleEs: "Cuándo se requiere BAT",
+    en: "Breath Alcohol Testing (BAT) is required for: Random selection, Post-Accident (within 8 hours), Reasonable Suspicion, Return-to-Duty, and Follow-Up testing. BAT uses an Evidential Breath Testing (EBT) device operated by a trained Breath Alcohol Technician.",
+    es: "La Prueba de Alcohol en Aliento (BAT) es requerida para: Selección aleatoria, Post-accidente (dentro de 8 horas), Sospecha razonable, Regreso al servicio, y pruebas de Seguimiento. BAT usa un dispositivo de Prueba de Aliento Evidencial (EBT) operado por un Técnico de Alcohol en Aliento capacitado.",
+  },
+  {
+    stepNum: 2,
+    title: "Screening Test",
+    titleEs: "Prueba de detección",
+    en: "The first test is the Screening Test. The technician will instruct the donor to blow steadily into the mouthpiece for at least 6 seconds. If the result is less than 0.02% BAC, the test is NEGATIVE and the process is complete.",
+    es: "La primera prueba es la Prueba de Detección. El técnico indicará al donante que sople de manera constante en la boquilla durante al menos 6 segundos. Si el resultado es menor de 0.02% BAC, la prueba es NEGATIVA y el proceso se completa.",
+  },
+  {
+    stepNum: 3,
+    title: "Confirmation Test",
+    titleEs: "Prueba confirmatoria",
+    en: "If the Screening Test result is 0.02% BAC or higher, a Confirmation Test is required. There must be a mandatory 15-minute waiting period (but no longer than 30 minutes) before the confirmation test. During this time, the donor must not eat, drink, smoke, or put anything in their mouth.",
+    es: "Si el resultado de la Prueba de Detección es 0.02% BAC o mayor, se requiere una Prueba Confirmatoria. Debe haber un período de espera obligatorio de 15 minutos (pero no más de 30 minutos) antes de la prueba confirmatoria. Durante este tiempo, el donante no debe comer, beber, fumar, ni poner nada en su boca.",
+  },
+  {
+    stepNum: 4,
+    title: "Result: 0.02% - 0.039%",
+    titleEs: "Resultado: 0.02% - 0.039%",
+    en: "A confirmed result between 0.02% and 0.039% BAC is NOT a DOT violation, but the employee MUST be removed from safety-sensitive duties for a minimum of 24 hours. They cannot drive or perform safety-sensitive functions until their next scheduled shift (at least 24 hours later) or until a retest shows below 0.02%.",
+    es: "Un resultado confirmado entre 0.02% y 0.039% BAC NO es una violación DOT, pero el empleado DEBE ser removido de funciones de seguridad por un mínimo de 24 horas. No puede conducir ni realizar funciones de seguridad hasta su próximo turno programado (al menos 24 horas después) o hasta que una nueva prueba muestre menos de 0.02%.",
+  },
+  {
+    stepNum: 5,
+    title: "Result: 0.04% or Higher",
+    titleEs: "Resultado: 0.04% o mayor",
+    en: "A confirmed result of 0.04% BAC or higher IS a DOT violation. The employee must be IMMEDIATELY removed from all safety-sensitive duties. The employer must report the violation to the FMCSA Clearinghouse within 3 business days. The employee must be referred to a Substance Abuse Professional (SAP) and complete the full Return-to-Duty process.",
+    es: "Un resultado confirmado de 0.04% BAC o mayor ES una violación DOT. El empleado debe ser INMEDIATAMENTE removido de todas las funciones de seguridad. El empleador debe reportar la violación al Clearinghouse de FMCSA dentro de 3 días hábiles. El empleado debe ser referido a un Profesional en Abuso de Sustancias (SAP) y completar el proceso completo de Regreso al Servicio.",
+  },
+  {
+    stepNum: 6,
+    title: "BAT Quick Commands",
+    titleEs: "Comandos rápidos BAT",
+    en: "Do not eat, drink, or smoke for 15 minutes before the test. Blow steadily into the mouthpiece. Keep blowing until I tell you to stop. Do not burp or belch during the waiting period.",
+    es: "No coma, beba ni fume durante 15 minutos antes de la prueba. Sople de manera constante en la boquilla. Siga soplando hasta que le diga que pare. No eructe durante el período de espera.",
+  },
+];
+
+type DrugScreenTab = "collection" | "shybladder" | "outoftemp" | "observed" | "bat";
 
 interface IntakeData {
   firstName: string;
@@ -1104,48 +1277,144 @@ function NewHireIntakeMode() {
   );
 }
 
+function StepList({ steps, tabKey }: { steps: typeof DRUG_SCREEN_STEPS; tabKey: string }) {
+  return (
+    <div className="space-y-3">
+      {steps.map((s) => (
+        <div key={s.stepNum} className="p-3 rounded-md bg-gray-800/60 border border-gray-700">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#FFC107]/20 flex items-center justify-center shrink-0 text-[#FFC107] font-bold text-sm">
+              {s.stepNum}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="font-semibold text-white text-sm">{s.title}</span>
+                <span className="text-xs text-gray-500">/ {s.titleEs}</span>
+              </div>
+              <p className="text-sm text-gray-300 mb-1">{s.en}</p>
+              <p className="text-xs text-[#FFC107]/80 italic">{s.es}</p>
+              <button
+                onClick={() => speakSpanish(s.es)}
+                className="flex items-center gap-1 mt-2 text-xs text-[#FFC107] hover:text-[#FFC107]/80 transition-colors"
+                data-testid={`btn-speak-${tabKey}-step-${s.stepNum}`}
+              >
+                <Volume2 className="w-3 h-3" /> Read in Spanish
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DrugScreenMode() {
+  const [activeTab, setActiveTab] = useState<DrugScreenTab>("collection");
+
+  const tabs: { key: DrugScreenTab; label: string; labelShort: string; icon: typeof FlaskConical; color: string }[] = [
+    { key: "collection", label: "Standard Collection", labelShort: "Collection", icon: FlaskConical, color: "text-[#FFC107]" },
+    { key: "shybladder", label: "Shy Bladder Process", labelShort: "Shy Bladder", icon: Timer, color: "text-orange-400" },
+    { key: "outoftemp", label: "Out of Temp Range", labelShort: "Temp Range", icon: Thermometer, color: "text-red-400" },
+    { key: "observed", label: "Observed Collection", labelShort: "Observed", icon: EyeOff, color: "text-purple-400" },
+    { key: "bat", label: "Breath Alcohol (BAT)", labelShort: "BAT", icon: Wine, color: "text-blue-400" },
+  ];
+
+  const quickCommandsByTab: Record<DrugScreenTab, { en: string; es: string }[]> = {
+    collection: [
+      { en: "Empty your pockets", es: "Vacíe sus bolsillos" },
+      { en: "Do not flush", es: "No le baje al agua" },
+      { en: "Remove your jacket", es: "Quítese la chaqueta" },
+      { en: "Sign here please", es: "Firme aquí, por favor" },
+      { en: "Wait here", es: "Espere aquí" },
+      { en: "Follow me please", es: "Sígame, por favor" },
+    ],
+    shybladder: [
+      { en: "You need to drink more water", es: "Necesita tomar más agua" },
+      { en: "You have 3 hours to provide a specimen", es: "Tiene 3 horas para proporcionar una muestra" },
+      { en: "You cannot leave the collection site", es: "No puede salir del sitio de recolección" },
+      { en: "Try again when you are ready", es: "Intente de nuevo cuando esté listo" },
+      { en: "Drink slowly, up to 40 ounces", es: "Beba lentamente, hasta 40 onzas" },
+      { en: "The time has expired", es: "El tiempo ha expirado" },
+    ],
+    outoftemp: [
+      { en: "The specimen temperature is out of range", es: "La temperatura de la muestra está fuera de rango" },
+      { en: "We need to collect a new specimen", es: "Necesitamos recolectar una nueva muestra" },
+      { en: "This collection will be observed", es: "Esta recolección será observada" },
+      { en: "This is a federal requirement", es: "Este es un requisito federal" },
+      { en: "Both specimens will be sent to the lab", es: "Ambas muestras serán enviadas al laboratorio" },
+      { en: "Do not discard the original specimen", es: "No descarte la muestra original" },
+    ],
+    observed: [
+      { en: "This collection must be observed", es: "Esta recolección debe ser observada" },
+      { en: "This is a federal requirement", es: "Este es un requisito federal" },
+      { en: "A same-gender observer will be present", es: "Un observador del mismo género estará presente" },
+      { en: "Refusing is the same as a positive test", es: "Negarse es lo mismo que un resultado positivo" },
+      { en: "Do you understand the procedure?", es: "¿Entiende el procedimiento?" },
+      { en: "We are ready to begin", es: "Estamos listos para comenzar" },
+    ],
+    bat: [
+      { en: "Do not eat, drink, or smoke", es: "No coma, beba ni fume" },
+      { en: "Blow steadily into the mouthpiece", es: "Sople de manera constante en la boquilla" },
+      { en: "Keep blowing until I say stop", es: "Siga soplando hasta que le diga que pare" },
+      { en: "Do not burp during the waiting period", es: "No eructe durante el período de espera" },
+      { en: "We must wait 15 minutes", es: "Debemos esperar 15 minutos" },
+      { en: "The test is complete", es: "La prueba está completa" },
+    ],
+  };
+
+  const alertByTab: Record<DrugScreenTab, { title: string; desc: string }> = {
+    collection: { title: "DOT / 49 CFR Part 40 Compliant", desc: "Standard urine drug screen collection procedures per federal regulations." },
+    shybladder: { title: "Shy Bladder Protocol / 49 CFR 40.193", desc: "When a donor cannot provide 45mL within the initial collection attempt. 3-hour hydration window applies." },
+    outoftemp: { title: "Out of Temperature Range / 49 CFR 40.65", desc: "Specimen outside 90-100°F triggers an immediate observed recollection. Both specimens go to the lab." },
+    observed: { title: "Directly Observed Collection / 49 CFR 40.67", desc: "Required for RTD, Follow-Up, out-of-temp, and suspected tampering. Refusal = Positive test." },
+    bat: { title: "Breath Alcohol Testing (BAT) / 49 CFR Part 40", desc: "Two-step process: Screening Test then Confirmation Test if 0.02%+ BAC. Uses Evidential Breath Testing (EBT) device." },
+  };
+
+  const stepsMap: Record<DrugScreenTab, typeof DRUG_SCREEN_STEPS> = {
+    collection: DRUG_SCREEN_STEPS,
+    shybladder: SHY_BLADDER_STEPS,
+    outoftemp: OUT_OF_TEMP_STEPS,
+    observed: OBSERVED_COLLECTION_STEPS,
+    bat: BAT_STEPS,
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
         <FlaskConical className="w-5 h-5 text-[#FFC107]" />
-        <h3 className="text-lg font-bold text-white">Drug Screen Instructions</h3>
-        <span className="text-sm text-gray-400">/ Instrucciones de prueba de drogas</span>
+        <h3 className="text-lg font-bold text-white">Drug & Alcohol Testing</h3>
+        <span className="text-sm text-gray-400">/ Pruebas de Drogas y Alcohol</span>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {tabs.map((t) => (
+          <Button
+            key={t.key}
+            size="sm"
+            variant={activeTab === t.key ? "default" : "outline"}
+            className={activeTab === t.key
+              ? "bg-[#FFC107] text-black"
+              : "border-gray-600 text-gray-300"
+            }
+            onClick={() => setActiveTab(t.key)}
+            data-testid={`btn-drug-tab-${t.key}`}
+          >
+            <t.icon className={`w-4 h-4 mr-1 ${activeTab === t.key ? "text-black" : t.color}`} />
+            <span className="hidden sm:inline">{t.label}</span>
+            <span className="sm:hidden">{t.labelShort}</span>
+          </Button>
+        ))}
       </div>
 
       <div className="flex items-center gap-2 p-3 rounded-md bg-[#FFC107]/10 border border-[#FFC107]/30">
-        <AlertTriangle className="w-5 h-5 text-[#FFC107] shrink-0" />
-        <p className="text-sm text-gray-300">
-          <span className="text-[#FFC107] font-semibold">DOT / 49 CFR Part 40 Compliant</span> - These instructions follow federal drug testing procedures.
-        </p>
+        <ShieldAlert className="w-5 h-5 text-[#FFC107] shrink-0" />
+        <div className="min-w-0">
+          <p className="text-sm text-[#FFC107] font-semibold">{alertByTab[activeTab].title}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{alertByTab[activeTab].desc}</p>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {DRUG_SCREEN_STEPS.map((s) => (
-          <div key={s.stepNum} className="p-3 rounded-md bg-gray-800/60 border border-gray-700">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#FFC107]/20 flex items-center justify-center shrink-0 text-[#FFC107] font-bold text-sm">
-                {s.stepNum}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-white text-sm">{s.title}</span>
-                  <span className="text-xs text-gray-500">/ {s.titleEs}</span>
-                </div>
-                <p className="text-sm text-gray-300 mb-1">{s.en}</p>
-                <p className="text-xs text-[#FFC107]/80 italic">{s.es}</p>
-                <button
-                  onClick={() => speakSpanish(s.es)}
-                  className="flex items-center gap-1 mt-2 text-xs text-[#FFC107] hover:text-[#FFC107]/80 transition-colors"
-                  data-testid={`btn-speak-drug-step-${s.stepNum}`}
-                >
-                  <Volume2 className="w-3 h-3" /> Read in Spanish
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StepList steps={stepsMap[activeTab]} tabKey={activeTab} />
 
       <Card className="bg-gray-800/60 border-gray-700 p-4">
         <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
@@ -1153,19 +1422,12 @@ function DrugScreenMode() {
           Quick Commands / Comandos rápidos
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {[
-            { en: "Empty your pockets", es: "Vacíe sus bolsillos" },
-            { en: "Do not flush", es: "No le baje al agua" },
-            { en: "Remove your jacket", es: "Quítese la chaqueta" },
-            { en: "Sign here please", es: "Firme aquí, por favor" },
-            { en: "Wait here", es: "Espere aquí" },
-            { en: "Follow me please", es: "Sígame, por favor" },
-          ].map((cmd, i) => (
+          {quickCommandsByTab[activeTab].map((cmd, i) => (
             <button
               key={i}
               onClick={() => speakSpanish(cmd.es)}
               className="flex items-center gap-2 p-2 rounded-md bg-gray-900/50 border border-gray-700 hover:border-[#FFC107]/40 transition-all text-left"
-              data-testid={`btn-quick-cmd-${i}`}
+              data-testid={`btn-quick-cmd-${activeTab}-${i}`}
             >
               <Volume2 className="w-3.5 h-3.5 text-[#FFC107] shrink-0" />
               <div>
