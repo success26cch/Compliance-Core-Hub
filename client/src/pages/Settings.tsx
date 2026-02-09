@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, Shield, Building2, Save, User, Upload, X, Stethoscope, Clock, Phone, MapPin, FileText, Trash2 } from "lucide-react";
+import { Check, Shield, Building2, Save, User, Upload, X, Stethoscope, Clock, Phone, MapPin, FileText, Trash2, Plus, Loader2, Navigation } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import type { CompanyProfile } from "@shared/schema";
+import type { CompanyProfile, ClinicLocation } from "@shared/schema";
 
 interface AuthFormMeta {
   id: number;
@@ -209,6 +209,282 @@ function AuthorizationFormsSection() {
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ClinicLocationsSection() {
+  const { toast } = useToast();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formName, setFormName] = useState('');
+  const [formAddress, setFormAddress] = useState('');
+  const [formCity, setFormCity] = useState('');
+  const [formState, setFormState] = useState('');
+  const [formZip, setFormZip] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formHours, setFormHours] = useState('');
+  const [formLat, setFormLat] = useState('');
+  const [formLng, setFormLng] = useState('');
+  const [geolocating, setGeolocating] = useState(false);
+
+  const { data: locations = [], isLoading } = useQuery<ClinicLocation[]>({
+    queryKey: ['/api/clinic-locations'],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const res = await apiRequest('POST', '/api/clinic-locations', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clinic-locations'] });
+      resetForm();
+      toast({ title: "Clinic Added", description: "New clinic location has been saved." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add clinic location.", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Record<string, unknown> }) => {
+      const res = await apiRequest('PATCH', `/api/clinic-locations/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clinic-locations'] });
+      resetForm();
+      toast({ title: "Clinic Updated", description: "Clinic location has been updated." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update clinic location.", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/clinic-locations/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clinic-locations'] });
+      toast({ title: "Clinic Removed", description: "Clinic location has been deleted." });
+    },
+  });
+
+  const resetForm = () => {
+    setShowAddForm(false);
+    setEditingId(null);
+    setFormName('');
+    setFormAddress('');
+    setFormCity('');
+    setFormState('');
+    setFormZip('');
+    setFormPhone('');
+    setFormHours('');
+    setFormLat('');
+    setFormLng('');
+  };
+
+  const startEdit = (loc: ClinicLocation) => {
+    setEditingId(loc.id);
+    setShowAddForm(true);
+    setFormName(loc.name);
+    setFormAddress(loc.address);
+    setFormCity(loc.city);
+    setFormState(loc.state);
+    setFormZip(loc.zipCode);
+    setFormPhone(loc.phone || '');
+    setFormHours(loc.hours || '');
+    setFormLat(loc.latitude || '');
+    setFormLng(loc.longitude || '');
+  };
+
+  const handleAutoLocate = () => {
+    if (!formAddress || !formCity || !formState) {
+      toast({ title: "Address Required", description: "Enter the address, city, and state first to auto-detect coordinates.", variant: "destructive" });
+      return;
+    }
+    setGeolocating(true);
+    const fullAddress = `${formAddress}, ${formCity}, ${formState} ${formZip}`;
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`)
+      .then(r => r.json())
+      .then((results: Array<{ lat: string; lon: string }>) => {
+        if (results.length > 0) {
+          setFormLat(results[0].lat);
+          setFormLng(results[0].lon);
+          toast({ title: "Coordinates Found", description: "GPS coordinates have been auto-detected from the address." });
+        } else {
+          toast({ title: "Not Found", description: "Could not find coordinates for this address. You can enter them manually.", variant: "destructive" });
+        }
+      })
+      .catch(() => {
+        toast({ title: "Error", description: "Failed to look up coordinates.", variant: "destructive" });
+      })
+      .finally(() => setGeolocating(false));
+  };
+
+  const handleSave = () => {
+    if (!formName || !formAddress || !formCity || !formState || !formZip) {
+      toast({ title: "Missing Fields", description: "Please fill in name, address, city, state, and ZIP.", variant: "destructive" });
+      return;
+    }
+    const data = {
+      name: formName,
+      address: formAddress,
+      city: formCity,
+      state: formState,
+      zipCode: formZip,
+      phone: formPhone || null,
+      hours: formHours || null,
+      latitude: formLat || null,
+      longitude: formLng || null,
+    };
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            Clinic Locations
+          </CardTitle>
+          <CardDescription>
+            Add clinic locations your company sends employees to. When generating a Medical Passport, you can select the specific clinic. The clinic-side page will auto-detect which location the employee is at using GPS.
+          </CardDescription>
+        </div>
+        {!showAddForm && (
+          <Button onClick={() => setShowAddForm(true)} data-testid="button-add-clinic-location">
+            <Plus className="w-4 h-4 mr-2" /> Add Clinic
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {showAddForm && (
+          <div className="border rounded-md p-4 space-y-4 bg-muted/30">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h4 className="font-medium">{editingId ? "Edit Clinic Location" : "Add Clinic Location"}</h4>
+              <Button variant="ghost" size="icon" onClick={resetForm} data-testid="button-cancel-clinic-form">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Clinic Name</Label>
+              <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="e.g., OccMed Connect - Southfield" data-testid="input-loc-name" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Street Address</Label>
+              <Input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="e.g., 29255 Northwestern Hwy" data-testid="input-loc-address" />
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input value={formCity} onChange={e => setFormCity(e.target.value)} placeholder="Southfield" data-testid="input-loc-city" />
+              </div>
+              <div className="space-y-2">
+                <Label>State</Label>
+                <Input value={formState} onChange={e => setFormState(e.target.value)} placeholder="MI" data-testid="input-loc-state" />
+              </div>
+              <div className="space-y-2">
+                <Label>ZIP Code</Label>
+                <Input value={formZip} onChange={e => setFormZip(e.target.value)} placeholder="48034" data-testid="input-loc-zip" />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="(248) 555-1234" data-testid="input-loc-phone" />
+              </div>
+              <div className="space-y-2">
+                <Label>Hours</Label>
+                <Input value={formHours} onChange={e => setFormHours(e.target.value)} placeholder="Mon-Fri 7am-5pm" data-testid="input-loc-hours" />
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Navigation className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm text-muted-foreground">GPS Coordinates (for auto-detection at clinic)</Label>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Latitude</Label>
+                  <Input value={formLat} onChange={e => setFormLat(e.target.value)} placeholder="42.4734" data-testid="input-loc-lat" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Longitude</Label>
+                  <Input value={formLng} onChange={e => setFormLng(e.target.value)} placeholder="-83.2220" data-testid="input-loc-lng" />
+                </div>
+                <div className="flex items-end">
+                  <Button variant="outline" className="w-full" onClick={handleAutoLocate} disabled={geolocating} data-testid="button-auto-locate">
+                    {geolocating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <MapPin className="w-4 h-4 mr-2" />}
+                    Auto-Detect from Address
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end flex-wrap">
+              <Button variant="outline" onClick={resetForm}>Cancel</Button>
+              <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-save-clinic-location">
+                {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                {editingId ? "Update" : "Save"} Clinic
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        ) : locations.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            No clinic locations added yet. Add your company's clinic locations so employees can be directed to the right place and the system can auto-detect which clinic they arrive at.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {locations.map((loc) => (
+              <div
+                key={loc.id}
+                className="flex items-center justify-between gap-3 p-3 border rounded-md"
+                data-testid={`clinic-location-${loc.id}`}
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">{loc.name}</p>
+                  <p className="text-xs text-muted-foreground">{loc.address}, {loc.city}, {loc.state} {loc.zipCode}</p>
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    {loc.phone && <span className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{loc.phone}</span>}
+                    {loc.hours && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{loc.hours}</span>}
+                    {loc.latitude && loc.longitude && (
+                      <Badge variant="outline" className="text-xs">GPS Ready</Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => startEdit(loc)} data-testid={`button-edit-clinic-${loc.id}`}>
+                    <FileText className="w-4 h-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => deleteMutation.mutate(loc.id)} disabled={deleteMutation.isPending} data-testid={`button-delete-clinic-${loc.id}`}>
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -751,6 +1027,8 @@ export default function Settings() {
         </Card>
 
         <AuthorizationFormsSection />
+
+        <ClinicLocationsSection />
 
         <Card>
           <CardHeader>

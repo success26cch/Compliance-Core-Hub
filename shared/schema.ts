@@ -325,6 +325,7 @@ export const clinicVisits = pgTable("clinic_visits", {
   passportToken: text("passport_token").notNull(),
   visitType: text("visit_type").notNull(), // 'dot_physical', 'drug_screen', 'respiratory_exam', 'injury', 'new_hire', 'other'
   clinicName: text("clinic_name"),
+  clinicLocationId: integer("clinic_location_id"),
   status: text("status").notNull().default("checked_in"), // 'checked_in', 'in_progress', 'completed'
   employerNotified: boolean("employer_notified").default(false),
   authorizationName: text("authorization_name"),
@@ -352,6 +353,30 @@ export const insertClinicVisitSchema = createInsertSchema(clinicVisits).omit({
 });
 export type ClinicVisit = typeof clinicVisits.$inferSelect;
 export type InsertClinicVisit = z.infer<typeof insertClinicVisitSchema>;
+
+// Clinic Locations - multiple clinic locations per company
+export const clinicLocations = pgTable("clinic_locations", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code").notNull(),
+  phone: text("phone"),
+  hours: text("hours"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertClinicLocationSchema = createInsertSchema(clinicLocations).omit({
+  id: true,
+  createdAt: true,
+});
+export type ClinicLocation = typeof clinicLocations.$inferSelect;
+export type InsertClinicLocation = z.infer<typeof insertClinicLocationSchema>;
 
 // Authorization Forms - clinic forms uploaded by company per visit type
 export const authorizationForms = pgTable("authorization_forms", {

@@ -31,7 +31,7 @@ import {
   FileText,
   Stethoscope,
 } from "lucide-react";
-import type { Employee, ClinicVisit } from "@shared/schema";
+import type { Employee, ClinicVisit, ClinicLocation } from "@shared/schema";
 
 const VISIT_TYPES = [
   { value: "dot_physical", label: "DOT Physical" },
@@ -121,6 +121,7 @@ function EmployeePassportContent() {
   const [employeeLocation, setEmployeeLocation] = useState("");
   const [staffingAgency, setStaffingAgency] = useState("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [selectedClinicLocationId, setSelectedClinicLocationId] = useState<string>("");
   const [generatedQR, setGeneratedQR] = useState<{
     qrUrl: string;
     token: string;
@@ -129,6 +130,10 @@ function EmployeePassportContent() {
 
   const { data: employees = [], isLoading: loadingEmployees } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
+  });
+
+  const { data: clinicLocations = [] } = useQuery<ClinicLocation[]>({
+    queryKey: ["/api/clinic-locations"],
   });
 
   const { data: visits = [], isLoading: loadingVisits } = useQuery<ClinicVisit[]>({
@@ -204,6 +209,8 @@ function EmployeePassportContent() {
       return;
     }
 
+    const selectedClinic = selectedClinicLocationId ? clinicLocations.find(c => c.id === parseInt(selectedClinicLocationId)) : null;
+
     generateMutation.mutate({
       employeeId: selectedEmployee.id,
       visitType,
@@ -219,6 +226,8 @@ function EmployeePassportContent() {
       employeeLocation: employeeLocation || null,
       staffingAgency: staffingAgency || null,
       signatureDataUrl,
+      clinicLocationId: selectedClinic ? selectedClinic.id : null,
+      clinicName: selectedClinic ? `${selectedClinic.name} - ${selectedClinic.city}, ${selectedClinic.state}` : null,
     });
   };
 
@@ -272,6 +281,7 @@ function EmployeePassportContent() {
                 setEmployeeAddress("");
                 setEmployeeLocation("");
                 setStaffingAgency("");
+                setSelectedClinicLocationId("");
               }}
               data-testid="btn-generate-another"
             >
@@ -408,6 +418,27 @@ function EmployeePassportContent() {
                 </SelectContent>
               </Select>
             </div>
+
+            {clinicLocations.length > 0 && (
+              <div className="space-y-2">
+                <Label>Sending Employee To</Label>
+                <Select value={selectedClinicLocationId} onValueChange={setSelectedClinicLocationId}>
+                  <SelectTrigger data-testid="select-clinic-location-trigger">
+                    <SelectValue placeholder="Select clinic location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clinicLocations.map((loc) => (
+                      <SelectItem key={loc.id} value={String(loc.id)} data-testid={`select-clinic-${loc.id}`}>
+                        {loc.name} - {loc.city}, {loc.state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  The selected clinic will receive this info and the notification will include the clinic name.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-4">
               {ALL_SERVICES.map((cat) => (

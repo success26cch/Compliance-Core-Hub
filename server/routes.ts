@@ -1295,6 +1295,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const generalForm = authForm ? null : await storage.getAuthorizationFormByVisitType(visit.userId, "general");
       const matchedForm = authForm || generalForm;
 
+      let clinicLocation = null;
+      if (visit.clinicLocationId) {
+        clinicLocation = await storage.getClinicLocationById(visit.clinicLocationId);
+      }
+
+      const allClinicLocations = await storage.getClinicLocations(visit.userId);
+
       res.json({
         visit: {
           id: visit.id,
@@ -1310,6 +1317,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           employeeAddress: visit.employeeAddress,
           employeeLocation: visit.employeeLocation,
           staffingAgency: visit.staffingAgency,
+          clinicLocationId: visit.clinicLocationId,
         },
         employee: {
           id: employee.id,
@@ -1344,6 +1352,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           formName: matchedForm.formName,
           visitType: matchedForm.visitType,
         } : null,
+        clinicLocation: clinicLocation ? {
+          id: clinicLocation.id,
+          name: clinicLocation.name,
+          address: clinicLocation.address,
+          city: clinicLocation.city,
+          state: clinicLocation.state,
+          zipCode: clinicLocation.zipCode,
+          phone: clinicLocation.phone,
+          hours: clinicLocation.hours,
+          latitude: clinicLocation.latitude,
+          longitude: clinicLocation.longitude,
+        } : null,
+        allClinicLocations: allClinicLocations.map(loc => ({
+          id: loc.id,
+          name: loc.name,
+          address: loc.address,
+          city: loc.city,
+          state: loc.state,
+          zipCode: loc.zipCode,
+          phone: loc.phone,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+        })),
       });
     } catch (error: any) {
       console.error("Error looking up passport:", error);
@@ -1355,7 +1386,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/passport/notify-employer/:token", async (req, res) => {
     try {
       const { token } = req.params;
-      const { clinicName } = req.body;
+      const { clinicName, clinicLocationId } = req.body;
 
       const visit = await storage.getClinicVisitByToken(token);
       if (!visit) {
@@ -1373,6 +1404,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const companyProfile = await storage.getCompanyProfile(visit.userId);
       const derPhone = companyProfile?.derPhone;
+
+      let resolvedClinicName = clinicName || visit.clinicName;
+      const resolvedLocationId = clinicLocationId || visit.clinicLocationId;
+      if (resolvedLocationId && !resolvedClinicName) {
+        const loc = await storage.getClinicLocationById(resolvedLocationId);
+        if (loc) {
+          resolvedClinicName = `${loc.name} - ${loc.city}, ${loc.state}`;
+        }
+      }
 
       let smsResult = { sent: false, message: "No DER phone number configured" };
 
@@ -1393,7 +1433,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
           const visitLabel = visitTypeLabels[visit.visitType] || visit.visitType;
           const employeeName = `${employee.firstName} ${employee.lastName}`;
-          const clinicInfo = clinicName ? ` at ${clinicName}` : "";
+          const clinicInfo = resolvedClinicName ? ` at ${resolvedClinicName}` : "";
 
           const message = `CCH Alert: Employee ${employeeName} has checked in${clinicInfo} for their ${visitLabel}. Authorization was provided digitally via CCH Medical Passport.`;
 
@@ -1413,7 +1453,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const wasNotified = smsResult.sent || !derPhone;
       await storage.updateClinicVisit(visit.id, {
         employerNotified: wasNotified,
-        clinicName: clinicName || visit.clinicName,
+        clinicName: resolvedClinicName || visit.clinicName,
+        clinicLocationId: resolvedLocationId || visit.clinicLocationId,
       } as any);
 
       res.json({
@@ -1438,6 +1479,83 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error("Error fetching visits:", error);
       res.status(500).json({ message: "Failed to fetch visits" });
+    }
+  });
+
+  // CLINIC LOCATIONS
+  // ==========================================
+
+  app.get("/api/clinic-locations", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const locations = await storage.getClinicLocations(userId);
+      res.json(locations);
+    } catch (error: any) {
+      console.error("Error fetching clinic locations:", error);
+      res.status(500).json({ message: "Failed to fetch clinic locations" });
+    }
+  });
+
+  app.get("/api/clinic-locations/by-user/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const locations = await storage.getClinicLocations(userId);
+      res.json(locations.map(loc => ({
+        id: loc.id,
+        name: loc.name,
+        address: loc.address,
+        city: loc.city,
+        state: loc.state,
+        zipCode: loc.zipCode,
+        phone: loc.phone,
+        hours: loc.hours,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+      })));
+    } catch (error: any) {
+      console.error("Error fetching clinic locations:", error);
+      res.status(500).json({ message: "Failed to fetch clinic locations" });
+    }
+  });
+
+  app.post("/api/clinic-locations", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const location = await storage.createClinicLocation({ ...req.body, userId });
+      res.json(location);
+    } catch (error: any) {
+      console.error("Error creating clinic location:", error);
+      res.status(500).json({ message: "Failed to create clinic location" });
+    }
+  });
+
+  app.patch("/api/clinic-locations/:id", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateClinicLocation(id, userId, req.body);
+      if (!updated) return res.status(404).json({ message: "Clinic location not found" });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating clinic location:", error);
+      res.status(500).json({ message: "Failed to update clinic location" });
+    }
+  });
+
+  app.delete("/api/clinic-locations/:id", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteClinicLocation(id, userId);
+      if (!deleted) return res.status(404).json({ message: "Clinic location not found" });
+      res.json({ message: "Clinic location deleted" });
+    } catch (error: any) {
+      console.error("Error deleting clinic location:", error);
+      res.status(500).json({ message: "Failed to delete clinic location" });
     }
   });
 

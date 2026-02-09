@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -62,6 +62,13 @@ export interface IStorage {
   getClinicVisitsByUser(userId: string): Promise<ClinicVisit[]>;
   updateClinicVisit(id: number, updates: Partial<InsertClinicVisit>): Promise<ClinicVisit | undefined>;
   getEmployeeByIdPublic(id: number): Promise<Employee | undefined>;
+
+  // Clinic Locations
+  getClinicLocations(userId: string): Promise<ClinicLocation[]>;
+  getClinicLocationById(id: number): Promise<ClinicLocation | undefined>;
+  createClinicLocation(location: InsertClinicLocation): Promise<ClinicLocation>;
+  updateClinicLocation(id: number, userId: string, updates: Partial<InsertClinicLocation>): Promise<ClinicLocation | undefined>;
+  deleteClinicLocation(id: number, userId: string): Promise<boolean>;
 
   // Authorization Forms
   getAuthorizationForms(userId: string): Promise<AuthorizationForm[]>;
@@ -411,6 +418,37 @@ export class DatabaseStorage implements IStorage {
         eq(contactInquiries.status, 'new')
       ))
       .orderBy(desc(contactInquiries.createdAt));
+  }
+
+  async getClinicLocations(userId: string): Promise<ClinicLocation[]> {
+    return db.select().from(clinicLocations).where(eq(clinicLocations.userId, userId)).orderBy(clinicLocations.name);
+  }
+
+  async getClinicLocationById(id: number): Promise<ClinicLocation | undefined> {
+    const [location] = await db.select().from(clinicLocations).where(eq(clinicLocations.id, id));
+    return location;
+  }
+
+  async createClinicLocation(location: InsertClinicLocation): Promise<ClinicLocation> {
+    const [created] = await db.insert(clinicLocations).values(location).returning();
+    return created;
+  }
+
+  async updateClinicLocation(id: number, userId: string, updates: Partial<InsertClinicLocation>): Promise<ClinicLocation | undefined> {
+    const [updated] = await db
+      .update(clinicLocations)
+      .set(updates)
+      .where(and(eq(clinicLocations.id, id), eq(clinicLocations.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteClinicLocation(id: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(clinicLocations)
+      .where(and(eq(clinicLocations.id, id), eq(clinicLocations.userId, userId)))
+      .returning();
+    return result.length > 0;
   }
 
   async getAuthorizationForms(userId: string): Promise<AuthorizationForm[]> {

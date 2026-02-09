@@ -24,6 +24,18 @@ import {
   Printer,
 } from "lucide-react";
 
+interface ClinicLocationInfo {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string | null;
+  latitude: string | null;
+  longitude: string | null;
+}
+
 interface PassportData {
   visit: {
     id: number;
@@ -39,6 +51,7 @@ interface PassportData {
     employeeAddress: string | null;
     employeeLocation: string | null;
     staffingAgency: string | null;
+    clinicLocationId: number | null;
   };
   employee: {
     id: number;
@@ -73,6 +86,8 @@ interface PassportData {
     formName: string;
     visitType: string;
   } | null;
+  clinicLocation: ClinicLocationInfo | null;
+  allClinicLocations: ClinicLocationInfo[];
 }
 
 const VISIT_TYPE_LABELS: Record<string, string> = {
@@ -96,6 +111,8 @@ export default function ClinicAssistant() {
   const [notifying, setNotifying] = useState(false);
   const [notified, setNotified] = useState(false);
   const [clinicNameInput, setClinicNameInput] = useState("");
+  const [detectedClinicId, setDetectedClinicId] = useState<number | null>(null);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "detecting" | "detected" | "failed" | "manual">("idle");
   const [showAssistant, setShowAssistant] = useState(false);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [downloadingForm, setDownloadingForm] = useState(false);
@@ -115,6 +132,11 @@ export default function ClinicAssistant() {
       .then((data: PassportData) => {
         setPassportData(data);
         setNotified(data.visit.employerNotified);
+        if (data.clinicLocation) {
+          setClinicNameInput(`${data.clinicLocation.name} - ${data.clinicLocation.city}, ${data.clinicLocation.state}`);
+          setDetectedClinicId(data.clinicLocation.id);
+          setGeoStatus("detected");
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -123,6 +145,55 @@ export default function ClinicAssistant() {
       });
   }, [token]);
 
+  useEffect(() => {
+    if (!passportData || passportData.clinicLocation || geoStatus !== "idle") return;
+    const locations = passportData.allClinicLocations || [];
+    const geoLocations = locations.filter(l => l.latitude && l.longitude);
+    if (geoLocations.length === 0) {
+      setGeoStatus("manual");
+      return;
+    }
+
+    setGeoStatus("detecting");
+    if (!navigator.geolocation) {
+      setGeoStatus("manual");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        let nearest: ClinicLocationInfo | null = null;
+        let nearestDist = Infinity;
+
+        for (const loc of geoLocations) {
+          const lat = parseFloat(loc.latitude!);
+          const lng = parseFloat(loc.longitude!);
+          const dist = Math.sqrt(Math.pow(userLat - lat, 2) + Math.pow(userLng - lng, 2));
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearest = loc;
+          }
+        }
+
+        const MAX_DISTANCE_DEG = 0.5;
+        if (nearest && nearestDist < MAX_DISTANCE_DEG) {
+          setClinicNameInput(`${nearest.name} - ${nearest.city}, ${nearest.state}`);
+          setDetectedClinicId(nearest.id);
+          setGeoStatus("detected");
+        } else {
+          setGeoStatus("manual");
+        }
+      },
+      () => {
+        setGeoStatus("manual");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }, [passportData, geoStatus]);
+
   const handleNotifyEmployer = async () => {
     if (!token) return;
     setNotifying(true);
@@ -130,7 +201,10 @@ export default function ClinicAssistant() {
       const res = await fetch(`/api/passport/notify-employer/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clinicName: clinicNameInput }),
+        body: JSON.stringify({
+          clinicName: clinicNameInput || undefined,
+          clinicLocationId: detectedClinicId || undefined,
+        }),
       });
       const data = await res.json();
       setNotified(true);
@@ -451,20 +525,71 @@ export default function ClinicAssistant() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs text-gray-400">Clinic Name (optional)</label>
-                <Input
-                  placeholder="e.g. HealthFirst Occupational Clinic"
-                  className="bg-gray-900/60 border-gray-700 text-white"
-                  value={clinicNameInput}
-                  onChange={(e) => setClinicNameInput(e.target.value)}
-                  data-testid="input-clinic-name"
-                />
-              </div>
+              {geoStatus === "detecting" && (
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Detecting your clinic location...
+                </div>
+              )}
+
+              {geoStatus === "detected" && clinicNameInput && (
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-400">Clinic Location</label>
+                  <div className="flex items-center gap-2 bg-gray-900/60 border border-green-500/40 rounded-md p-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                    <span className="text-sm text-white">{clinicNameInput}</span>
+                  </div>
+                  <p className="text-xs text-green-400/70">
+                    {passportData?.clinicLocation ? "Clinic pre-selected by employer" : "Location auto-detected"}
+                  </p>
+                </div>
+              )}
+
+              {(geoStatus === "manual" || geoStatus === "failed") && (
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-400">
+                    {(passportData?.allClinicLocations?.length ?? 0) > 0 ? "Select or enter clinic" : "Clinic Name (optional)"}
+                  </label>
+                  {(passportData?.allClinicLocations?.length ?? 0) > 0 ? (
+                    <div className="space-y-2">
+                      {passportData!.allClinicLocations.map((loc) => (
+                        <button
+                          key={loc.id}
+                          type="button"
+                          onClick={() => {
+                            setClinicNameInput(`${loc.name} - ${loc.city}, ${loc.state}`);
+                            setDetectedClinicId(loc.id);
+                            setGeoStatus("detected");
+                          }}
+                          className="w-full text-left p-2.5 rounded-md bg-gray-900/60 border border-gray-700 hover-elevate"
+                          data-testid={`btn-select-clinic-${loc.id}`}
+                        >
+                          <p className="text-sm text-white font-medium">{loc.name}</p>
+                          <p className="text-xs text-gray-400">{loc.address}, {loc.city}, {loc.state} {loc.zipCode}</p>
+                        </button>
+                      ))}
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 py-1">or type manually:</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  <Input
+                    placeholder="e.g. HealthFirst Occupational Clinic"
+                    className="bg-gray-900/60 border-gray-700 text-white"
+                    value={clinicNameInput}
+                    onChange={(e) => {
+                      setClinicNameInput(e.target.value);
+                      setDetectedClinicId(null);
+                    }}
+                    data-testid="input-clinic-name"
+                  />
+                </div>
+              )}
+
               <Button
                 className="w-full bg-[#FFC107] text-black font-bold"
                 onClick={handleNotifyEmployer}
-                disabled={notifying}
+                disabled={notifying || geoStatus === "detecting"}
                 data-testid="btn-notify-employer"
               >
                 {notifying ? (
