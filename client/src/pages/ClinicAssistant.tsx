@@ -110,6 +110,7 @@ export default function ClinicAssistant() {
   const [error, setError] = useState("");
   const [notifying, setNotifying] = useState(false);
   const [notified, setNotified] = useState(false);
+  const [arrivalTimeStr, setArrivalTimeStr] = useState<string | null>(null);
   const [clinicNameInput, setClinicNameInput] = useState("");
   const [detectedClinicId, setDetectedClinicId] = useState<number | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "detecting" | "detected" | "failed" | "manual">("idle");
@@ -208,6 +209,9 @@ export default function ClinicAssistant() {
       });
       const data = await res.json();
       setNotified(true);
+      if (data.arrivedAt) {
+        setArrivalTimeStr(new Date(data.arrivedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+      }
       toast({
         title: "Employer Notified",
         description: data.smsResult?.sent
@@ -519,9 +523,16 @@ export default function ClinicAssistant() {
           </div>
 
           {notified ? (
-            <div className="flex items-center gap-2 text-green-400 text-sm">
-              <CheckCircle2 className="w-4 h-4" />
-              Employer has been notified of this visit.
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-green-400 text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                Employer has been notified of this visit.
+              </div>
+              {arrivalTimeStr && (
+                <p className="text-xs text-gray-400 ml-6" data-testid="text-arrival-time">
+                  Arrival recorded at {arrivalTimeStr}
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">

@@ -25,8 +25,8 @@
 - **/employees**: Employee Management - add/edit/delete employees, track DOT physicals, drug tests, respiratory exams
 - **/incidents**: Incident Log - record workplace incidents, track OSHA recordability, OSHA 300 report with print feature, Corrective Action Plans (CAPA)
 - **/settings**: Company Profile (with DER contact info, logo upload, and clinic authorization form uploads per visit type) and subscription management
-- **/employee-passport**: Digital Medical Passport - generate QR codes for employee clinic check-ins with complete digital authorization form (patient info, services, signature)
-- **/clinic-assistant**: Public clinic-facing page (opened by QR scan) with employee info, printable signed authorization form, PDF fallback, employer notification, and bilingual tools
+- **/employee-passport**: Digital Medical Passport - generate QR codes for employee clinic check-ins with complete digital authorization form (patient info, services, signature). Includes "Text Passport to Employee" (SMS via Twilio) and "Copy Link" buttons for delivering the passport to employees. Arrival time tracking shows when employee arrived at clinic.
+- **/clinic-assistant**: Public clinic-facing page (opened by QR scan) with employee info, printable signed authorization form, PDF fallback, employer notification with arrival timestamp, and bilingual tools
 
 ## BrandNSwag Division
 Smart Swag makes safety fun and rewarding through QR-enabled company merchandise.

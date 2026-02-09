@@ -1434,8 +1434,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           const visitLabel = visitTypeLabels[visit.visitType] || visit.visitType;
           const employeeName = `${employee.firstName} ${employee.lastName}`;
           const clinicInfo = resolvedClinicName ? ` at ${resolvedClinicName}` : "";
+          const now = new Date();
+          const arrivalTimeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Chicago" });
 
-          const message = `CCH Alert: Employee ${employeeName} has checked in${clinicInfo} for their ${visitLabel}. Authorization was provided digitally via CCH Medical Passport.`;
+          const message = `CCH Alert: Employee ${employeeName} has checked in${clinicInfo} for their ${visitLabel} at ${arrivalTimeStr}. Authorization was provided digitally via CCH Medical Passport.`;
 
           await client.messages.create({
             body: message,
@@ -1451,20 +1453,89 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       const wasNotified = smsResult.sent || !derPhone;
+      const arrivalTime = new Date();
       await storage.updateClinicVisit(visit.id, {
         employerNotified: wasNotified,
+        notifiedAt: arrivalTime,
         clinicName: resolvedClinicName || visit.clinicName,
         clinicLocationId: resolvedLocationId || visit.clinicLocationId,
-      } as any);
+      });
 
       res.json({
         notified: wasNotified,
         smsResult,
         employeeName: `${employee.firstName} ${employee.lastName}`,
+        arrivedAt: arrivalTime.toISOString(),
       });
     } catch (error: any) {
       console.error("Error notifying employer:", error);
       res.status(500).json({ message: "Failed to notify employer" });
+    }
+  });
+
+  // Send passport link to employee via SMS
+  app.post("/api/passport/send-to-employee", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+
+    try {
+      const { token, qrUrl, employeePhone } = req.body;
+
+      if (!token || typeof token !== "string" || !qrUrl || typeof qrUrl !== "string") {
+        return res.status(400).json({ message: "Token and QR URL are required" });
+      }
+
+      const visit = await storage.getClinicVisitByToken(token);
+      if (!visit || visit.userId !== userId) {
+        return res.status(404).json({ message: "Passport not found" });
+      }
+
+      const employee = await storage.getEmployeeById(visit.employeeId, userId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      const results: { sms?: { sent: boolean; message: string }; email?: { sent: boolean; message: string } } = {};
+
+      const phoneToUse = employeePhone || employee.phoneNumber;
+      if (phoneToUse) {
+        try {
+          const { getTwilioClient, getTwilioFromPhoneNumber } = await import("./twilioService");
+          const client = await getTwilioClient();
+          const fromNumber = await getTwilioFromPhoneNumber();
+
+          const visitTypeLabels: Record<string, string> = {
+            dot_physical: "DOT Physical",
+            drug_screen: "Drug Screen",
+            respiratory_exam: "Respiratory Exam",
+            injury: "Injury Evaluation",
+            new_hire: "New Hire Intake",
+            other: "Medical Visit",
+          };
+          const visitLabel = visitTypeLabels[visit.visitType] || visit.visitType;
+
+          const companyProfile = await storage.getCompanyProfile(userId);
+          const companyName = companyProfile?.companyName || "your employer";
+
+          const smsBody = `${companyName} - Medical Passport: You have a ${visitLabel} appointment. Show this link at the clinic front desk: ${qrUrl} - Powered by CCH`;
+
+          await client.messages.create({
+            body: smsBody,
+            from: fromNumber,
+            to: phoneToUse,
+          });
+
+          results.sms = { sent: true, message: "SMS sent to employee" };
+        } catch (smsError: any) {
+          console.error("Employee SMS failed:", smsError);
+          results.sms = { sent: false, message: `SMS failed: ${smsError.message}` };
+        }
+      }
+
+      res.json({ success: true, results, phoneUsed: !!phoneToUse, emailUsed: false });
+    } catch (error: any) {
+      console.error("Error sending passport to employee:", error);
+      res.status(500).json({ message: "Failed to send passport to employee" });
     }
   });
 

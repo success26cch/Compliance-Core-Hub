@@ -343,12 +343,14 @@ export const clinicVisits = pgTable("clinic_visits", {
   staffingAgency: text("staffing_agency"),
   signatureDataUrl: text("signature_data_url"), // base64 digital signature image
   checkedInAt: timestamp("checked_in_at").defaultNow(),
+  notifiedAt: timestamp("notified_at"),
   completedAt: timestamp("completed_at"),
 });
 
 export const insertClinicVisitSchema = createInsertSchema(clinicVisits).omit({
   id: true,
   checkedInAt: true,
+  notifiedAt: true,
   completedAt: true,
 });
 export type ClinicVisit = typeof clinicVisits.$inferSelect;

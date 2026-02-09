@@ -30,6 +30,9 @@ import {
   DollarSign,
   FileText,
   Stethoscope,
+  MessageSquare,
+  Copy,
+  Link,
 } from "lucide-react";
 import type { Employee, ClinicVisit, ClinicLocation } from "@shared/schema";
 
@@ -166,6 +169,40 @@ function EmployeePassportContent() {
     },
   });
 
+  const sendToEmployeeMutation = useMutation({
+    mutationFn: async (data: { token: string; qrUrl: string; employeePhone?: string }) => {
+      const res = await apiRequest("POST", "/api/passport/send-to-employee", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.results?.sms?.sent) {
+        toast({
+          title: "Passport Sent",
+          description: "The passport link has been texted to the employee.",
+        });
+      } else if (!data.phoneUsed) {
+        toast({
+          title: "No Phone Number",
+          description: "This employee doesn't have a phone number on file. Use 'Copy Link' to send it manually.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "SMS Failed",
+          description: data.results?.sms?.message || "Could not send SMS. Use 'Copy Link' to send manually.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send passport. Use 'Copy Link' to send it manually.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleVisitTypeChange = (val: string) => {
     setVisitType(val);
     const autoServices = getAutoServices(val);
@@ -255,7 +292,7 @@ function EmployeePassportContent() {
 
           <div className="space-y-2">
             <p className="text-xs text-gray-400">
-              Present this QR code at the clinic front desk. The clinic will receive a complete, signed authorization form digitally.
+              Send this passport to the employee via text or copy the link. The employee shows it at the clinic front desk.
             </p>
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <Badge className="bg-green-500/20 text-green-400 no-default-hover-elevate no-default-active-elevate">
@@ -268,6 +305,36 @@ function EmployeePassportContent() {
           </div>
 
           <div className="pt-2 space-y-2">
+            <Button
+              className="w-full bg-[#FFC107] text-black font-bold"
+              onClick={() => {
+                sendToEmployeeMutation.mutate({
+                  token: generatedQR.token,
+                  qrUrl: generatedQR.qrUrl,
+                });
+              }}
+              disabled={sendToEmployeeMutation.isPending}
+              data-testid="btn-send-to-employee-sms"
+            >
+              {sendToEmployeeMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+              ) : (
+                <><MessageSquare className="w-4 h-4 mr-2" /> Text Passport to Employee</>
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full border-gray-600 text-gray-300"
+              onClick={() => {
+                navigator.clipboard.writeText(generatedQR.qrUrl);
+                toast({ title: "Link Copied", description: "Passport link copied to clipboard. You can text or email it to the employee." });
+              }}
+              data-testid="btn-copy-link"
+            >
+              <Copy className="w-4 h-4 mr-2" /> Copy Link
+            </Button>
+
             <Button
               variant="outline"
               className="w-full border-gray-600 text-gray-300"
@@ -581,7 +648,7 @@ function EmployeePassportContent() {
                 { icon: FileText, title: "Fill the Form", desc: "Complete the digital authorization form with patient info and services" },
                 { icon: PenLine, title: "Sign It", desc: "Add your digital signature to authorize treatment or services" },
                 { icon: QrCode, title: "Generate QR", desc: "A QR code is created containing the complete signed authorization" },
-                { icon: Smartphone, title: "Employee Shows QR", desc: "Employee presents the QR code at the clinic front desk" },
+                { icon: Smartphone, title: "Send to Employee", desc: "Text the passport link to the employee or copy it to share" },
                 { icon: Scan, title: "Clinic Scans", desc: "Clinic gets the signed form instantly - no phone call needed" },
                 { icon: Send, title: "You're Notified", desc: "Get an instant 'I'm Here' SMS when they arrive" },
               ].map((step, i) => (
@@ -625,13 +692,18 @@ function EmployeePassportContent() {
                           <p className="text-sm font-medium truncate">{typeLabel}</p>
                           <p className="text-xs text-muted-foreground">
                             {visit.checkedInAt ? new Date(visit.checkedInAt).toLocaleDateString() : ""}
+                            {visit.notifiedAt && (
+                              <span className="ml-1">
+                                &middot; Arrived {new Date(visit.notifiedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {visit.employerNotified && (
                           <Badge variant="outline" className="text-xs">
-                            <Send className="w-3 h-3 mr-1" /> Notified
+                            <Send className="w-3 h-3 mr-1" /> Arrived{visit.notifiedAt ? ` ${new Date(visit.notifiedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
                           </Badge>
                         )}
                         <Badge
