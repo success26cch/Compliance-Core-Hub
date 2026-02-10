@@ -122,10 +122,10 @@ export default function Landing() {
             </p>
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
               <p className="text-lg text-primary leading-relaxed">
-                CCH is the all-in-one compliance command center for employers who are tired of expensive consultants, confusing regulations, and scattered safety programs.
+                CCH is the all-in-one compliance Eco-System command center for employers who are tired of the confusing regulations, the OSHA 300 recordables and scattered safety programs.
               </p>
               <p className="text-xl font-bold text-accent mt-2">
-                Safety Made Smart. Growth Made Possible.
+                Safety Made Smart. Growth Made Possible. The First Ever AI Designed just for Occupational Health.
               </p>
             </div>
             <ul className="space-y-3 text-muted-foreground">
