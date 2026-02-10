@@ -324,9 +324,9 @@ export default function Landing() {
               description="Get instant answers to complex regulatory questions citing specific OSHA 1904 and DOT FMCSA codes."
             />
             <FeatureCard 
-              icon={ShieldCheck}
+              imageSrc={acsiLogo}
               title="ACSI ISO Manager"
-              description="Lead ISO Auditor for ISO 9001, 14001, 45001. Gap Analysis, Quality Manuals, and audit prep."
+              description="Powered by ACSI Services Intl. — your expert partner for ISO 9001, 14001, 45001, IATF 16949 and more. From gap analysis to audit prep, ACSI brings 25+ years of real-world consulting, training, and auditing experience to help you get certified, stay certified, and build systems that actually work."
             />
             <FeatureCard 
               icon={FileText}
@@ -338,6 +338,57 @@ export default function Landing() {
               title="Audit Ready"
               description="Keep your logs and decisions documented and ready for any surprise inspection."
             />
+          </div>
+
+          {/* ACSI Self-Assessment Questions Box */}
+          <div className="mt-16 max-w-4xl mx-auto" data-testid="acsi-assessment-box">
+            <div className="rounded-2xl border-2 border-[#F57C00] bg-gradient-to-br from-[#F57C00]/10 via-[#FF9800]/5 to-[#FFC107]/10 p-8 md:p-10 space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" />
+                <h3 className="text-2xl font-display font-bold text-foreground">Is Your Management System Really Ready?</h3>
+              </div>
+              <p className="text-muted-foreground">
+                Before your next audit, ask yourself these three critical questions:
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 rounded-md bg-[#F57C00]/10 border border-[#F57C00]/20">
+                  <span className="text-[#F57C00] font-bold text-lg shrink-0 mt-0.5">1.</span>
+                  <p className="text-foreground font-medium">
+                    Are you confident your company could pass a certification audit <span className="italic">right now</span> — without scrambling to get documents in order?
+                  </p>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-md bg-[#F57C00]/10 border border-[#F57C00]/20">
+                  <span className="text-[#F57C00] font-bold text-lg shrink-0 mt-0.5">2.</span>
+                  <p className="text-foreground font-medium">
+                    Can you honestly say your system is strong enough to avoid a major nonconformance — one that could cost you your certification?
+                  </p>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-md bg-[#F57C00]/10 border border-[#F57C00]/20">
+                  <span className="text-[#F57C00] font-bold text-lg shrink-0 mt-0.5">3.</span>
+                  <p className="text-foreground font-medium">
+                    Could you use some expert guidance just to make sure you're on the right track — before it's too late?
+                  </p>
+                </div>
+              </div>
+              <div className="pt-4 border-t border-[#F57C00]/20 space-y-4">
+                <p className="text-foreground">
+                  If you answered <span className="font-bold text-[#F57C00]">"no"</span> — or even <span className="font-bold text-[#F57C00]">"maybe not"</span> — to any of these questions, you're not alone. That's exactly why ACSI exists.
+                </p>
+                <p className="text-muted-foreground">
+                  With 25+ years of hands-on experience in ISO 9001, ISO 14001, ISO 45001, and IATF 16949, ACSI Services International helps companies close compliance gaps, build audit-ready systems, and develop internal teams that own the process — not just survive it. <span className="font-semibold text-foreground">This is what CCH is all about: bridging the gap between where you are and where you need to be.</span>
+                </p>
+                <a
+                  href="https://acsi-quality.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="link-acsi-contact"
+                >
+                  <Button className="bg-[#F57C00] text-white border-[#F57C00] mt-2">
+                    Visit ACSI &amp; Send a Message
+                  </Button>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -924,12 +975,18 @@ export default function Landing() {
   );
 }
 
-function FeatureCard({ icon: Icon, title, description }: any) {
+function FeatureCard({ icon: Icon, imageSrc, title, description }: any) {
   return (
     <div className="p-8 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
-      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-6">
-        <Icon className="w-6 h-6" />
-      </div>
+      {imageSrc ? (
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6">
+          <img src={imageSrc} alt={title} className="w-12 h-12 object-contain" data-testid={`img-feature-${title?.toLowerCase().replace(/\s+/g, '-')}`} />
+        </div>
+      ) : (
+        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-6">
+          <Icon className="w-6 h-6" />
+        </div>
+      )}
       <h3 className="text-xl font-bold text-primary mb-3">{title}</h3>
       <p className="text-muted-foreground leading-relaxed">
         {description}
