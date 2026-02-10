@@ -73,9 +73,11 @@ export function Sidebar({ className = "" }: { className?: string }) {
   return (
     <div className={`flex flex-col h-full bg-white border-r border-border/50 ${className}`}>
       <div className="px-4 py-2 border-b border-border/50">
-        <div className="flex items-center justify-center overflow-hidden h-16">
-          <img src={hubLogo} alt="Core Compliance Hub" className="w-full max-w-[220px] h-auto scale-[0.85]" data-testid="img-sidebar-logo" />
-        </div>
+        <Link href="/">
+          <div className="flex items-center justify-center overflow-hidden h-16 cursor-pointer" data-testid="link-home-logo">
+            <img src={hubLogo} alt="Core Compliance Hub" className="w-full max-w-[220px] h-auto scale-[0.85]" data-testid="img-sidebar-logo" />
+          </div>
+        </Link>
       </div>
 
       <div className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
@@ -183,9 +185,11 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
         {/* Mobile Header */}
         <header className="md:hidden h-16 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-10">
-          <div className="flex items-center">
-            <img src={hubLogo} alt="Core Compliance Hub" className="h-10 w-auto" />
-          </div>
+          <Link href="/">
+            <div className="flex items-center cursor-pointer" data-testid="link-mobile-home-logo">
+              <img src={hubLogo} alt="Core Compliance Hub" className="h-10 w-auto" />
+            </div>
+          </Link>
           <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
