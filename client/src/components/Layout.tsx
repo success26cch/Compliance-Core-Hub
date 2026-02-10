@@ -18,7 +18,8 @@ import {
   Crown,
   Bell,
   Users,
-  QrCode
+  QrCode,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -42,10 +43,12 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
     { href: "/employee-passport", label: "Medical Passport", icon: QrCode },
+    { href: "/contact", label: "Contact Us", icon: MessageSquare },
   ];
 
   const LinkItem = ({ href, label, icon: Icon, external }: any) => {
     const isActive = location === href;
+    const testId = `link-sidebar-${label.toLowerCase().replace(/[\s,&]+/g, '-')}`;
     const className = `
       flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
       ${isActive 
@@ -55,7 +58,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     
     if (external) {
       return (
-        <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        <a href={href} target="_blank" rel="noopener noreferrer" className={className} data-testid={testId}>
           <Icon className="w-5 h-5" />
           {label}
         </a>
@@ -63,7 +66,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     }
     
     return (
-      <Link href={href} className={className}>
+      <Link href={href} className={className} data-testid={testId}>
         <Icon className="w-5 h-5" />
         {label}
       </Link>

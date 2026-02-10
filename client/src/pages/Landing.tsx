@@ -424,6 +424,15 @@ export default function Landing() {
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
             />
           </div>
+          <div className="text-center mt-10">
+            <p className="text-muted-foreground mb-3">Not sure which plan is right for you?</p>
+            <Link href="/contact">
+              <Button variant="outline" data-testid="button-contact-occ-pricing">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Contact Us — We'll Help You Decide
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -471,6 +480,15 @@ export default function Landing() {
               buttonText="Enterprise Bundle"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
             />
+          </div>
+          <div className="text-center mt-10">
+            <p className="text-muted-foreground mb-3">Questions about ISO certification or audit readiness?</p>
+            <Link href="/contact">
+              <Button variant="outline" data-testid="button-contact-iso-pricing">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Contact Us — Let's Talk
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -590,6 +608,15 @@ export default function Landing() {
               <Button variant="secondary" size="sm" className="mt-4">Get the Bundle</Button>
             </a>
           </div>
+          <div className="text-center mt-10">
+            <p className="text-muted-foreground mb-3">Need help choosing the right training for your team?</p>
+            <Link href="/contact">
+              <Button variant="outline" data-testid="button-contact-training">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Contact Us
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -626,6 +653,14 @@ export default function Landing() {
                   <span className="text-muted-foreground"><strong>Policy Review:</strong> Ensure your safety programs meet current standards</span>
                 </li>
               </ul>
+              <div className="pt-4">
+                <Link href="/contact">
+                  <Button variant="outline" data-testid="button-contact-retainer">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Contact Us
+                  </Button>
+                </Link>
+              </div>
             </div>
             <div className="bg-muted/30 rounded-2xl border border-border/50 p-8 text-center">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
@@ -942,11 +977,12 @@ export default function Landing() {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </a>
-            <a href="#pricing">
-              <Button size="lg" variant="outline" className="px-10 text-lg" data-testid="button-cta-view-pricing">
-                View Pricing
+            <Link href="/contact">
+              <Button size="lg" variant="outline" className="px-10 text-lg" data-testid="button-cta-contact-us">
+                <MessageSquare className="w-5 h-5 mr-2" />
+                Contact Us
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </section>

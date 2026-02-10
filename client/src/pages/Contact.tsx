@@ -115,10 +115,10 @@ export default function Contact() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12 space-y-4">
           <h1 className="text-3xl md:text-4xl font-display font-bold text-primary">
-            Get in Touch
+            How Can We Help?
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Interested in our Human Expert Retainer or need a consultation? Fill out the form below and our team will reach out within 24 hours.
+            Whether you need compliance guidance, training, ISO support, or just have a question — we're here. Let's work on solutions together. Fill out the form and our team will reach out within 24 hours.
           </p>
         </div>
 
@@ -230,11 +230,14 @@ export default function Contact() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
+                                <SelectItem value="general">General Question</SelectItem>
+                                <SelectItem value="compliance">OSHA / DOT Compliance Help</SelectItem>
+                                <SelectItem value="iso">ISO Certification &amp; Audits</SelectItem>
+                                <SelectItem value="training">Training Courses</SelectItem>
+                                <SelectItem value="mentorship">ACSI Mentorship Program</SelectItem>
                                 <SelectItem value="retainer">Human Expert Retainer ($499/mo)</SelectItem>
                                 <SelectItem value="consultation">One-Time Consultation</SelectItem>
-                                <SelectItem value="training">Training Inquiry</SelectItem>
-                                <SelectItem value="mentorship">ACSI Mentorship Program</SelectItem>
-                                <SelectItem value="general">General Question</SelectItem>
+                                <SelectItem value="demo">Request a Demo</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -288,30 +291,29 @@ export default function Contact() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-accent" />
-                  Human Expert Retainer
+                  We're Here For You
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  For companies with 20-100 employees who need professional safety director level protection.
+                  No matter where you are in your compliance journey, we can help you take the next step.
                 </p>
-                <div className="text-2xl font-bold text-primary">$499<span className="text-sm font-normal text-muted-foreground">/month</span></div>
                 <ul className="text-sm space-y-2">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    <span>All Unlimited Safety features</span>
+                    <span>OSHA &amp; DOT compliance guidance</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    <span>Dedicated human compliance expert</span>
+                    <span>ISO certification &amp; audit readiness</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    <span>Crisis response support</span>
+                    <span>Training &amp; mentorship programs</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    <span>Quarterly compliance reviews</span>
+                    <span>Human Expert Retainer ($499/mo)</span>
                   </li>
                 </ul>
               </CardContent>
