@@ -321,7 +321,7 @@ export default function Landing() {
             <FeatureCard 
               icon={Bot}
               title="OccHealth Consultant"
-              description="Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
+              description="OSHA recordables, DOT compliance, and drug screening guidance. Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
             />
             <FeatureCard 
               imageSrc={acsiLogo}
@@ -388,10 +388,6 @@ export default function Landing() {
       <section id="pricing" className="py-24 bg-muted/30 border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-3xl font-display font-bold text-primary">Occupational Health Plans</h2>
-            <p className="text-lg text-muted-foreground">
-              OSHA recordables, DOT compliance, and drug screening guidance.
-            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
