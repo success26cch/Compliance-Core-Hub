@@ -321,7 +321,7 @@ export default function Landing() {
             <FeatureCard 
               icon={Bot}
               title="OccHealth Consultant"
-              description="Get instant answers to complex regulatory questions citing specific OSHA 1904 and DOT FMCSA codes."
+              description="Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
             />
             <FeatureCard 
               imageSrc={acsiLogo}
@@ -382,11 +382,6 @@ export default function Landing() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mt-8">
-            <FeatureCard 
-              icon={FileText}
-              title="OSHA 300, Log it or Not"
-              description="Interactive Yes/No workflows to determine recordability for any workplace injury or illness."
-            />
             <FeatureCard 
               icon={CheckCircle2}
               title="Audit Ready"
