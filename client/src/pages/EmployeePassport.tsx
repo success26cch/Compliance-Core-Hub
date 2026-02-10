@@ -143,6 +143,7 @@ function EmployeePassportContent() {
 
   const { data: visits = [], isLoading: loadingVisits } = useQuery<ClinicVisit[]>({
     queryKey: ["/api/passport/visits"],
+    refetchInterval: 15000,
   });
 
   const generateMutation = useMutation({
@@ -709,67 +710,82 @@ function EmployeePassportContent() {
             ) : visits.length === 0 ? (
               <p className="text-sm text-muted-foreground">No clinic visits yet. Generate your first passport above.</p>
             ) : (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {visits.slice(0, 10).map((visit) => {
                   const typeLabel = VISIT_TYPES.find((vt) => vt.value === visit.visitType)?.label || visit.visitType;
+                  const hasArrival = !!visit.notifiedAt;
+                  const hasReturn = !!visit.returnedAt;
+                  const duration = hasArrival && hasReturn
+                    ? Math.max(0, Math.round((new Date(visit.returnedAt!).getTime() - new Date(visit.notifiedAt!).getTime()) / 60000))
+                    : null;
+                  const durationLabel = duration !== null
+                    ? (Math.floor(duration / 60) > 0 ? `${Math.floor(duration / 60)}h ${duration % 60}m` : `${duration}m`)
+                    : null;
                   return (
                     <div
                       key={visit.id}
-                      className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50"
+                      className="p-3 rounded-md bg-muted/50 space-y-2"
                       data-testid={`visit-row-${visit.id}`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                        <div className="min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
                           <p className="text-sm font-medium truncate">{typeLabel}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {visit.checkedInAt ? new Date(visit.checkedInAt).toLocaleDateString() : ""}
-                            {visit.notifiedAt && (
-                              <span className="ml-1">
-                                &middot; Arrived {new Date(visit.notifiedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                              </span>
-                            )}
-                            {visit.returnedAt && (
-                              <span className="ml-1">
-                                &middot; Returned {new Date(visit.returnedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                              </span>
-                            )}
-                            {visit.notifiedAt && visit.returnedAt && (() => {
-                              const dur = Math.max(0, Math.round((new Date(visit.returnedAt).getTime() - new Date(visit.notifiedAt).getTime()) / 60000));
-                              const h = Math.floor(dur / 60);
-                              const m = dur % 60;
-                              return <span className="ml-1 text-[#FFC107]">&middot; {h > 0 ? `${h}h ${m}m` : `${m}m`} away</span>;
-                            })()}
-                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 flex-wrap">
+                          <Badge
+                            className={
+                              visit.status === "completed"
+                                ? "bg-green-500/20 text-green-600 no-default-hover-elevate"
+                                : "bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate"
+                            }
+                          >
+                            {visit.status === "completed" ? "Complete" : "Active"}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0 flex-wrap">
-                        {visit.employerNotified && !visit.returnedAt && (
-                          <Badge variant="outline" className="text-xs">
-                            <Send className="w-3 h-3 mr-1" /> Arrived{visit.notifiedAt ? ` ${new Date(visit.notifiedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
-                          </Badge>
-                        )}
-                        {visit.returnedAt && (
-                          <Badge variant="outline" className="text-xs border-blue-400/40 text-blue-500" data-testid={`badge-returned-${visit.id}`}>
-                            <ArrowLeftRight className="w-3 h-3 mr-1" />
-                            {visit.notifiedAt ? (() => {
-                              const dur = Math.max(0, Math.round((new Date(visit.returnedAt).getTime() - new Date(visit.notifiedAt).getTime()) / 60000));
-                              const h = Math.floor(dur / 60);
-                              const m = dur % 60;
-                              return h > 0 ? `${h}h ${m}m` : `${m}m`;
-                            })() : "Returned"}
-                          </Badge>
-                        )}
-                        <Badge
-                          className={
-                            visit.status === "completed"
-                              ? "bg-green-500/20 text-green-600 no-default-hover-elevate"
-                              : "bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate"
-                          }
-                        >
-                          {visit.status === "completed" ? "Complete" : "Active"}
-                        </Badge>
-                      </div>
+
+                      <p className="text-xs text-muted-foreground">
+                        {visit.checkedInAt ? new Date(visit.checkedInAt).toLocaleDateString() : ""}
+                      </p>
+
+                      {(hasArrival || hasReturn) && (
+                        <div className="rounded-md bg-background p-2 space-y-1.5" data-testid={`visit-times-${visit.id}`}>
+                          {hasArrival && (
+                            <div className="flex items-center gap-2" data-testid={`visit-arrival-${visit.id}`}>
+                              <Send className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              <span className="text-sm font-medium">
+                                Arrived: {new Date(visit.notifiedAt!).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          )}
+                          {hasReturn && (
+                            <div className="flex items-center gap-2" data-testid={`visit-return-${visit.id}`}>
+                              <ArrowLeftRight className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                              <span className="text-sm font-medium">
+                                Returned: {new Date(visit.returnedAt!).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          )}
+                          {durationLabel && (
+                            <div className="flex items-center gap-2 pt-1 border-t border-border/50" data-testid={`visit-duration-${visit.id}`}>
+                              <Clock className="w-3.5 h-3.5 text-[#FFC107] shrink-0" />
+                              <span className="text-sm font-bold text-[#FFC107]">
+                                Total time away: {durationLabel}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {hasArrival && !hasReturn && (
+                        <div className="flex items-center gap-2 rounded-md bg-green-500/10 p-2" data-testid={`visit-waiting-${visit.id}`}>
+                          <Loader2 className="w-3.5 h-3.5 text-green-500 animate-spin shrink-0" />
+                          <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                            Employee at clinic &mdash; waiting for return
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
