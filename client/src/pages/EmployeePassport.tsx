@@ -126,6 +126,7 @@ function EmployeePassportContent() {
   const [staffingAgency, setStaffingAgency] = useState("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [selectedClinicLocationId, setSelectedClinicLocationId] = useState<string>("");
+  const [smsPhone, setSmsPhone] = useState("");
   const [generatedQR, setGeneratedQR] = useState<{
     qrUrl: string;
     token: string;
@@ -155,6 +156,7 @@ function EmployeePassportContent() {
         token: data.token,
         employee: data.employee,
       });
+      setSmsPhone(selectedEmployee?.phoneNumber || "");
       queryClient.invalidateQueries({ queryKey: ["/api/passport/visits"] });
       toast({
         title: "Medical Passport Generated",
@@ -306,15 +308,43 @@ function EmployeePassportContent() {
           </div>
 
           <div className="pt-2 space-y-2">
+            <div className="space-y-1.5 text-left">
+              <Label className="text-xs text-gray-400">Employee Phone Number</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="tel"
+                  placeholder="Enter employee phone number"
+                  value={smsPhone}
+                  onChange={(e) => setSmsPhone(e.target.value)}
+                  className="bg-gray-700/50 border-gray-600 text-white placeholder:text-gray-500 text-sm"
+                  data-testid="input-sms-phone"
+                />
+              </div>
+              {!smsPhone && (
+                <p className="text-xs text-amber-400/80">
+                  Enter a phone number to text the passport to the employee
+                </p>
+              )}
+            </div>
+
             <Button
               className="w-full bg-[#FFC107] text-black font-bold"
               onClick={() => {
+                if (!smsPhone.trim()) {
+                  toast({
+                    title: "Phone Number Required",
+                    description: "Please enter the employee's phone number to send the passport via text.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
                 sendToEmployeeMutation.mutate({
                   token: generatedQR.token,
                   qrUrl: generatedQR.qrUrl,
+                  employeePhone: smsPhone.trim(),
                 });
               }}
-              disabled={sendToEmployeeMutation.isPending}
+              disabled={sendToEmployeeMutation.isPending || !smsPhone.trim()}
               data-testid="btn-send-to-employee-sms"
             >
               {sendToEmployeeMutation.isPending ? (
@@ -350,6 +380,7 @@ function EmployeePassportContent() {
                 setEmployeeLocation("");
                 setStaffingAgency("");
                 setSelectedClinicLocationId("");
+                setSmsPhone("");
               }}
               data-testid="btn-generate-another"
             >
@@ -649,7 +680,7 @@ function EmployeePassportContent() {
                 { icon: FileText, title: "Fill the Form", desc: "Complete the digital authorization form with patient info and services" },
                 { icon: PenLine, title: "Sign It", desc: "Add your digital signature to authorize treatment or services" },
                 { icon: QrCode, title: "Generate QR", desc: "A QR code is created containing the complete signed authorization" },
-                { icon: Smartphone, title: "Send to Employee", desc: "Text the passport link to the employee or copy it to share" },
+                { icon: Smartphone, title: "Send to Employee", desc: "Enter the employee's phone number and text the passport link directly - works from any device" },
                 { icon: Scan, title: "Clinic Scans", desc: "Clinic gets the signed form instantly - no phone call needed" },
                 { icon: Send, title: "You're Notified", desc: "Get an instant 'I'm Here' SMS when they arrive" },
               ].map((step, i) => (
