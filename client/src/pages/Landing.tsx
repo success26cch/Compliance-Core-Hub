@@ -117,7 +117,7 @@ export default function Landing() {
             <h1 className="text-4xl md:text-6xl font-display font-black text-primary leading-[1.1] text-center">
               Compliance Isn't a Guessing Game—<span className="text-accent">It's Your Reputation.</span>
             </h1>
-            <p className="text-2xl md:text-3xl font-display font-bold text-primary leading-snug text-center">
+            <p className="text-4xl md:text-6xl font-display font-black text-primary leading-[1.1] text-center">
               Welcome to the future of compliance, welcome, to <span className="text-accent">Core Compliance Hub.</span>
             </p>
             <div className="bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
