@@ -4,8 +4,8 @@ import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2 } from "lucide-react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import logoUrl from "@assets/1_1767636977932.png";
@@ -30,6 +30,58 @@ export default function Landing() {
   const { user, isAuthenticated } = useAuth();
   const { mutate, isPending } = useCreateLead();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [trialQuestion, setTrialQuestion] = useState("");
+  const [trialAnswer, setTrialAnswer] = useState("");
+  const [trialUsed, setTrialUsed] = useState(false);
+  const [trialLoading, setTrialLoading] = useState(false);
+  const [trialOpen, setTrialOpen] = useState(false);
+  const trialAnswerRef = useRef<HTMLDivElement>(null);
+
+  const handleTrialSubmit = async () => {
+    if (!trialQuestion.trim() || trialLoading || trialUsed) return;
+    setTrialLoading(true);
+    setTrialAnswer("");
+    try {
+      const response = await fetch("/api/trial-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: trialQuestion.trim() }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        if (err.limitReached) {
+          setTrialUsed(true);
+          setTrialAnswer("You've already used your free trial question. Sign up to keep asking!");
+          return;
+        }
+        throw new Error(err.error);
+      }
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("No reader");
+      let fullText = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = JSON.parse(line.slice(6));
+            if (data.content) {
+              fullText += data.content;
+              setTrialAnswer(fullText);
+            }
+            if (data.done) setTrialUsed(true);
+          }
+        }
+      }
+    } catch {
+      setTrialAnswer("Something went wrong. Please try again.");
+    } finally {
+      setTrialLoading(false);
+    }
+  };
 
   const form = useForm<z.infer<typeof leadFormSchema>>({
     resolver: zodResolver(leadFormSchema),
@@ -235,6 +287,90 @@ export default function Landing() {
               </div>
             </Card>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Try Me Banner */}
+      <section className="relative bg-accent overflow-hidden" data-testid="section-try-me">
+        <div className="absolute inset-0 opacity-10">
+          <div className="animate-marquee whitespace-nowrap flex items-center h-full">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <span key={i} className="text-6xl font-black mx-8 text-white">TRY ME</span>
+            ))}
+          </div>
+        </div>
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {!trialOpen ? (
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                <Bot className="w-8 h-8 text-white" />
+                <h3 className="text-2xl md:text-3xl font-display font-black text-white">
+                  Try Our AI OccHealth Consultant
+                </h3>
+              </div>
+              <p className="text-white/90 text-lg">
+                Ask one compliance question for free. See the power of AI-driven occupational health guidance.
+              </p>
+              <Button
+                onClick={() => setTrialOpen(true)}
+                variant="outline"
+                className="bg-white text-accent border-white font-bold text-lg px-8"
+                data-testid="button-try-me"
+              >
+                Ask Your Free Question
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <Bot className="w-6 h-6 text-white" />
+                <h3 className="text-xl font-display font-bold text-white">
+                  Ask Your Free Compliance Question
+                </h3>
+              </div>
+              <Card className="p-4 space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    value={trialQuestion}
+                    onChange={(e) => setTrialQuestion(e.target.value)}
+                    placeholder="e.g., Is a workplace laceration requiring stitches OSHA recordable?"
+                    disabled={trialUsed || trialLoading}
+                    onKeyDown={(e) => e.key === "Enter" && handleTrialSubmit()}
+                    data-testid="input-trial-question"
+                  />
+                  <Button
+                    onClick={handleTrialSubmit}
+                    disabled={!trialQuestion.trim() || trialLoading || trialUsed}
+                    data-testid="button-trial-submit"
+                  >
+                    {trialLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                </div>
+                {trialAnswer && (
+                  <div ref={trialAnswerRef} className="bg-muted/50 rounded-lg p-4 text-sm text-foreground whitespace-pre-wrap max-h-64 overflow-y-auto" data-testid="text-trial-answer">
+                    {trialAnswer}
+                  </div>
+                )}
+                {trialUsed && (
+                  <div className="text-center space-y-3 pt-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Want more expert compliance answers? Sign up or view our plans.
+                    </p>
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                      <Link href="/api/login">
+                        <Button data-testid="button-trial-signup">
+                          Sign Up Free <ArrowRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </Link>
+                      <a href="#pricing">
+                        <Button variant="outline" data-testid="button-trial-pricing">View Plans</Button>
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
         </div>
       </section>
 

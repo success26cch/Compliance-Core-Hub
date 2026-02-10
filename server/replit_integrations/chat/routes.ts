@@ -9,6 +9,7 @@ const anthropic = new Anthropic({
 });
 
 const FREE_QUESTION_LIMIT = 3;
+const trialUsage = new Map<string, boolean>();
 
 // Admin users get unlimited access (set via environment variable)
 // Format: comma-separated user IDs, emails, or usernames
@@ -71,6 +72,57 @@ export function registerChatRoutes(app: Express): void {
     } catch (error) {
       console.error("Error deleting conversation:", error);
       res.status(500).json({ error: "Failed to delete conversation" });
+    }
+  });
+
+  // Trial question - 1 free question without login (rate limited by session)
+  app.post("/api/trial-question", async (req: Request, res: Response) => {
+    try {
+      const { content } = req.body;
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        return res.status(400).json({ error: "Question is required" });
+      }
+
+      // Rate limit by IP - store in memory
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+      if (trialUsage.has(clientIp)) {
+        return res.status(403).json({ 
+          error: "You've used your free trial question. Sign up to keep asking!",
+          limitReached: true 
+        });
+      }
+      trialUsage.set(clientIp, true);
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = anthropic.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: "You are a Senior Occupational Health & Safety Compliance Expert. You specialize in OSHA 29 CFR 1904 recordkeeping, DOT FMCSA 49 CFR Part 40 drug & alcohol testing, and workplace safety compliance. Provide clear, concise, and helpful answers. This is a free trial question, so keep the answer focused but demonstrate your expertise. End your response by encouraging them to sign up for more detailed consultations.",
+        messages: [{ role: "user", content: content.trim() }],
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) {
+            res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          }
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Error in trial question:", error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed to process question" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: "Failed to process question" });
+      }
     }
   });
 
