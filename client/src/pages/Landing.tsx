@@ -326,7 +326,7 @@ export default function Landing() {
             <FeatureCard 
               imageSrc={acsiLogo}
               title="ACSI ISO Manager"
-              description="Powered by ACSI Services Intl. — your expert partner for ISO 9001, 14001, 45001, IATF 16949 and more. From gap analysis to audit prep, ACSI brings 25+ years of real-world consulting, training, and auditing experience to help you get certified, stay certified, and build systems that actually work."
+              description="Powered by ACSI Services Intl. — your expert partner for ISO 9001, 14001, 45001, IATF 16949 and more. From gap analysis to audit-ready preparation, ACSI brings 25+ years of real-world consulting, training, and auditing experience to help you get certified, stay certified, and keep your logs and decisions documented for any surprise inspection."
             />
           </div>
 
@@ -381,13 +381,6 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 mt-8">
-            <FeatureCard 
-              icon={CheckCircle2}
-              title="Audit Ready"
-              description="Keep your logs and decisions documented and ready for any surprise inspection."
-            />
-          </div>
         </div>
       </section>
 
