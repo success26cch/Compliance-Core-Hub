@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import BilingualAssistant from "@/components/BilingualAssistant";
 import PrintableAuthForm from "@/components/PrintableAuthForm";
+import cchLogo from "@assets/1_1770683748423.png";
 import {
-  Shield,
   User,
   Building2,
   CheckCircle2,
@@ -369,7 +369,7 @@ export default function ClinicAssistant() {
         <div className="bg-gray-800/80 border-b border-gray-700 p-3">
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#FFC107]" />
+              <img src={cchLogo} alt="CCH" className="w-5 h-5 object-contain" />
               <span className="text-sm font-bold text-white">
                 {employee.firstName} {employee.lastName}
               </span>
@@ -407,7 +407,7 @@ export default function ClinicAssistant() {
       <div className="max-w-lg mx-auto space-y-4">
         <div className="text-center py-4">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Shield className="w-8 h-8 text-[#FFC107]" />
+            <img src={cchLogo} alt="CCH" className="w-8 h-8 object-contain" />
             <h1 className="text-2xl font-bold text-white" data-testid="text-clinic-title">CCH Medical Passport</h1>
           </div>
           <p className="text-sm text-gray-400">Verified Employee Check-In</p>

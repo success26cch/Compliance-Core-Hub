@@ -13,10 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { QRCodeSVG } from "qrcode.react";
 import SignaturePad from "@/components/SignaturePad";
+import cchLogo from "@assets/1_1770683748423.png";
 import {
   QrCode,
   Smartphone,
-  Shield,
   Clock,
   CheckCircle2,
   User,
@@ -274,7 +274,7 @@ function EmployeePassportContent() {
       <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black p-4 flex flex-col items-center justify-center">
         <Card className="w-full max-w-sm bg-gray-800/80 border-gray-700 p-6 text-center space-y-4">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Shield className="w-6 h-6 text-[#FFC107]" />
+            <img src={cchLogo} alt="CCH" className="w-6 h-6 object-contain" />
             <h2 className="text-xl font-bold text-white">CCH Medical Passport</h2>
           </div>
 

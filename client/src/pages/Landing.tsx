@@ -12,6 +12,7 @@ import logoUrl from "@assets/1_1767636977932.png";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import mentorshipLogo from "@assets/tree.transp_1768928785893.png";
 import brandNSwagLogo from "@assets/2026_BNS_Logo_1768928815681.png";
+import cchLogo from "@assets/1_1770683748423.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -95,20 +96,18 @@ export default function Landing() {
             
             {/* Division Icons */}
             <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
-              <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <ShieldCheck className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-                </div>
+              <div className="flex flex-col items-center gap-2 group" data-testid="logo-cch">
+                <img src={cchLogo} alt="CCH" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
                 <span className="text-xs md:text-sm font-semibold text-primary">CCH</span>
               </div>
-              <div className="flex flex-col items-center gap-2 group cursor-pointer">
+              <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 group cursor-pointer" data-testid="logo-acsi-link">
                 <img src={acsiLogo} alt="ACSI" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:opacity-80 transition-opacity" />
-                <span className="text-xs md:text-sm font-semibold text-primary">ACSI</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                <span className="text-xs md:text-sm font-semibold text-primary group-hover:underline">ACSI</span>
+              </a>
+              <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 group cursor-pointer" data-testid="logo-brandnswag-link">
                 <img src={brandNSwagLogo} alt="BrandNSwag" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:opacity-80 transition-opacity" />
-                <span className="text-xs md:text-sm font-semibold text-primary">BrandNSwag</span>
-              </div>
+                <span className="text-xs md:text-sm font-semibold text-primary group-hover:underline">BrandNSwag</span>
+              </a>
             </div>
             
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 text-accent font-semibold text-sm border border-accent/30">
