@@ -115,7 +115,7 @@ export default function Landing() {
               THE ONE STOP EMPLOYER SHOP
             </div>
             <h1 className="text-2xl md:text-3xl font-display font-black text-primary leading-[1.1] text-center">
-              Compliance Isn't a Guessing Game—<span className="text-accent">It's Your Reputation.</span>
+              Compliance Isn't a Guessing Game—<br /><span className="text-accent">It's Your Reputation.</span>
             </h1>
             <p className="text-2xl md:text-3xl font-display font-black text-primary leading-[1.1] text-center">
               Welcome to the future of compliance, welcome, to<br /><span className="text-accent">Core Compliance Hub.</span>
