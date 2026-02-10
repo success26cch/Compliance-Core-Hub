@@ -1621,17 +1621,44 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Get clinic visit history for a user (requires auth)
+  // Get clinic visit history for a user (requires auth) - includes employee names
   app.get("/api/passport/visits", async (req, res) => {
     if (!req.user) return res.status(401).json({ message: "Not authenticated" });
     const userId = (req.user as any).claims.sub;
 
     try {
       const visits = await storage.getClinicVisitsByUser(userId);
-      res.json(visits);
+      const visitsWithNames = await Promise.all(
+        visits.map(async (visit) => {
+          const employee = await storage.getEmployeeByIdPublic(visit.employeeId);
+          return {
+            ...visit,
+            employeeName: employee ? `${employee.firstName} ${employee.lastName}` : "Unknown Employee",
+          };
+        })
+      );
+      res.json(visitsWithNames);
     } catch (error: any) {
       console.error("Error fetching visits:", error);
       res.status(500).json({ message: "Failed to fetch visits" });
+    }
+  });
+
+  // Delete a clinic visit (requires auth, must own the visit)
+  app.delete("/api/passport/visits/:id", async (req, res) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    const userId = (req.user as any).claims.sub;
+    const visitId = parseInt(req.params.id);
+
+    if (isNaN(visitId)) return res.status(400).json({ message: "Invalid visit ID" });
+
+    try {
+      const deleted = await storage.deleteClinicVisit(visitId, userId);
+      if (!deleted) return res.status(404).json({ message: "Visit not found" });
+      res.json({ message: "Visit deleted" });
+    } catch (error: any) {
+      console.error("Error deleting visit:", error);
+      res.status(500).json({ message: "Failed to delete visit" });
     }
   });
 

@@ -61,6 +61,7 @@ export interface IStorage {
   getClinicVisitsByEmployee(employeeId: number, userId: string): Promise<ClinicVisit[]>;
   getClinicVisitsByUser(userId: string): Promise<ClinicVisit[]>;
   updateClinicVisit(id: number, updates: Partial<InsertClinicVisit> & { notifiedAt?: Date; returnedAt?: Date }): Promise<ClinicVisit | undefined>;
+  deleteClinicVisit(id: number, userId: string): Promise<boolean>;
   getEmployeeByIdPublic(id: number): Promise<Employee | undefined>;
 
   // Clinic Locations
@@ -359,6 +360,11 @@ export class DatabaseStorage implements IStorage {
   async updateClinicVisit(id: number, updates: Partial<InsertClinicVisit> & { notifiedAt?: Date; returnedAt?: Date }): Promise<ClinicVisit | undefined> {
     const [updated] = await db.update(clinicVisits).set(updates).where(eq(clinicVisits.id, id)).returning();
     return updated;
+  }
+
+  async deleteClinicVisit(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(clinicVisits).where(and(eq(clinicVisits.id, id), eq(clinicVisits.userId, userId))).returning();
+    return result.length > 0;
   }
 
   async getEmployeeByIdPublic(id: number): Promise<Employee | undefined> {
