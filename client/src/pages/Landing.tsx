@@ -317,7 +317,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <FeatureCard 
               icon={Bot}
               title="OccHealth Consultant"
@@ -328,23 +328,13 @@ export default function Landing() {
               title="ACSI ISO Manager"
               description="Powered by ACSI Services Intl. — your expert partner for ISO 9001, 14001, 45001, IATF 16949 and more. From gap analysis to audit prep, ACSI brings 25+ years of real-world consulting, training, and auditing experience to help you get certified, stay certified, and build systems that actually work."
             />
-            <FeatureCard 
-              icon={FileText}
-              title="OSHA 300, Log it or Not"
-              description="Interactive Yes/No workflows to determine recordability for any workplace injury or illness."
-            />
-            <FeatureCard 
-              icon={CheckCircle2}
-              title="Audit Ready"
-              description="Keep your logs and decisions documented and ready for any surprise inspection."
-            />
           </div>
 
           {/* ACSI Self-Assessment Questions Box */}
-          <div className="mt-16 max-w-4xl mx-auto" data-testid="acsi-assessment-box">
+          <div className="mt-8 max-w-4xl mx-auto" data-testid="acsi-assessment-box">
             <div className="rounded-2xl border-2 border-[#F57C00] bg-gradient-to-br from-[#F57C00]/10 via-[#FF9800]/5 to-[#FFC107]/10 p-8 md:p-10 space-y-6">
               <div className="flex items-center gap-3 mb-2">
-                <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" />
+                <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" data-testid="img-acsi-assessment-logo" />
                 <h3 className="text-2xl font-display font-bold text-foreground">Is Your Management System Really Ready?</h3>
               </div>
               <p className="text-muted-foreground">
@@ -389,6 +379,19 @@ export default function Landing() {
                 </a>
               </div>
             </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mt-8">
+            <FeatureCard 
+              icon={FileText}
+              title="OSHA 300, Log it or Not"
+              description="Interactive Yes/No workflows to determine recordability for any workplace injury or illness."
+            />
+            <FeatureCard 
+              icon={CheckCircle2}
+              title="Audit Ready"
+              description="Keep your logs and decisions documented and ready for any surprise inspection."
+            />
           </div>
         </div>
       </section>
