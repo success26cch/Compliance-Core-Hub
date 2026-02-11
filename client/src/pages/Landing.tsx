@@ -399,7 +399,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Bilingual Medical Assistant */}
+      {/* Spanish Bilingual Medical Assistant */}
       <BilingualAssistant />
 
       {/* How It Works */}
@@ -642,13 +642,13 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             <Card className="p-6 flex flex-col" data-testid="card-landing-bma-pricing">
               <Badge variant="secondary" className="self-start mb-3">Clinic Tool</Badge>
-              <h3 className="text-lg font-bold text-primary mb-1">Bilingual Medical Assistant</h3>
+              <h3 className="text-lg font-bold text-primary mb-1">Spanish Bilingual Medical Assistant</h3>
               <div className="flex items-baseline gap-1 mb-3">
                 <span className="text-3xl font-bold text-primary">$149</span>
                 <span className="text-muted-foreground text-sm">/mo per location</span>
               </div>
               <ul className="space-y-2 mb-6 flex-1">
-                {["Unlimited bilingual translations", "Clinical commands in Spanish", "Body map injury reporting", "Printable clinical summaries"].map((f, i) => (
+                {["Unlimited Spanish bilingual translations", "Clinical commands in Spanish", "Body map injury reporting", "Printable clinical summaries"].map((f, i) => (
                   <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
                     <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
                     <span>{f}</span>

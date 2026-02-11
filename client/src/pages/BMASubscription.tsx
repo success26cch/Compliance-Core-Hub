@@ -47,12 +47,12 @@ export default function BMASubscription() {
     {
       icon: Stethoscope,
       title: "Three Clinical Modes",
-      description: "Injury Reporting, New Hire Intake, and Drug Screen Instructions — all bilingual."
+      description: "Injury Reporting, New Hire Intake, and Drug Screen Instructions — all in Spanish and English."
     },
     {
       icon: FileText,
       title: "Printable Clinical Summaries",
-      description: "Generate bilingual visit summaries for medical records and compliance documentation."
+      description: "Generate Spanish-English bilingual visit summaries for medical records and compliance documentation."
     },
     {
       icon: Printer,
@@ -65,7 +65,7 @@ export default function BMASubscription() {
     { service: "Human Interpreter (in-person)", cost: "$45–$150/hour", note: "Scheduling delays, limited availability" },
     { service: "Video Remote Interpreter", cost: "$1.95–$3.49/min", note: "Per-minute charges add up fast" },
     { service: "Phone Interpreter", cost: "$1.50–$2.75/min", note: "No visual context for medical procedures" },
-    { service: "CCH Bilingual Assistant", cost: "$149/month", note: "Unlimited use, instant access, medical-specific" },
+    { service: "CCH Spanish Bilingual Assistant", cost: "$149/month", note: "Unlimited use, instant access, medical-specific" },
   ];
 
   return (
@@ -104,11 +104,11 @@ export default function BMASubscription() {
               </Badge>
               <img src={cchLogo} alt="CCH" className="h-24 md:h-28 w-auto mx-auto" data-testid="img-bma-hero-logo" />
               <h1 className="text-4xl md:text-5xl font-display font-bold text-primary">
-                CCH Bilingual Medical Assistant
+                CCH Spanish Bilingual Medical Assistant
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Eliminate language barriers in your clinic. Instant Spanish translation, clinical commands, and
-                bilingual documentation — all for one flat monthly fee.
+                Eliminate Spanish language barriers in your clinic. Instant Spanish translation, clinical commands, and
+                Spanish bilingual documentation — all for one flat monthly fee.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
@@ -354,7 +354,7 @@ export default function BMASubscription() {
                   "Bidirectional speech recognition",
                   "One-tap clinical commands (MA & Provider)",
                   "Interactive body map for injury reporting",
-                  "Printable bilingual clinical summaries",
+                  "Printable Spanish bilingual clinical summaries",
                   "Three clinical modes (Injury, New Hire, Drug Screen)",
                   "Staff Command Center dashboard",
                   "Clinic engagement analytics",

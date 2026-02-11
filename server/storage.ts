@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -86,6 +86,10 @@ export interface IStorage {
   getUserGrowthLast30Days(): Promise<{ date: string; count: number }[]>;
   getRetainerRequests(): Promise<ContactInquiry[]>;
   setSuperadmin(userId: string, isSuperadmin: boolean): Promise<User | undefined>;
+
+  // Clinic Agreements
+  createClinicAgreement(agreement: InsertClinicAgreement): Promise<ClinicAgreement>;
+  getClinicAgreements(): Promise<ClinicAgreement[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -517,6 +521,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updated;
+  }
+
+  async createClinicAgreement(agreement: InsertClinicAgreement): Promise<ClinicAgreement> {
+    const [created] = await db.insert(clinicAgreements).values(agreement).returning();
+    return created;
+  }
+
+  async getClinicAgreements(): Promise<ClinicAgreement[]> {
+    return db.select().from(clinicAgreements).orderBy(desc(clinicAgreements.createdAt));
   }
 }
 

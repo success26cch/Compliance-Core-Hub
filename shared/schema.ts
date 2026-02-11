@@ -420,6 +420,26 @@ export const insertClinicEngagementSchema = createInsertSchema(clinicEngagement)
 export type ClinicEngagement = typeof clinicEngagement.$inferSelect;
 export type InsertClinicEngagement = z.infer<typeof insertClinicEngagementSchema>;
 
+// Clinic Partnership Agreements
+export const clinicAgreements = pgTable("clinic_agreements", {
+  id: serial("id").primaryKey(),
+  clinicName: text("clinic_name").notNull(),
+  contactName: text("contact_name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  signatureData: text("signature_data").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  status: text("status").default("pending"),
+  agreedAt: timestamp("agreed_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertClinicAgreementSchema = createInsertSchema(clinicAgreements).omit({
+  id: true,
+  createdAt: true,
+});
+export type ClinicAgreement = typeof clinicAgreements.$inferSelect;
+export type InsertClinicAgreement = z.infer<typeof insertClinicAgreementSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

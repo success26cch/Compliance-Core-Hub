@@ -22,6 +22,7 @@ import DOTNotifications from "@/pages/DOTNotifications";
 import EmployeePassport from "@/pages/EmployeePassport";
 import ClinicAssistant from "@/pages/ClinicAssistant";
 import BMASubscription from "@/pages/BMASubscription";
+import ClinicAgreement from "@/pages/ClinicAgreement";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/employee-passport" component={EmployeePassport} />
       <Route path="/clinic-assistant" component={ClinicAssistant} />
       <Route path="/bma-subscription" component={BMASubscription} />
+      <Route path="/clinic-agreement" component={ClinicAgreement} />
       <Route component={NotFound} />
     </Switch>
   );

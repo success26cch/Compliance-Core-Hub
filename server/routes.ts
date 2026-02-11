@@ -23,7 +23,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Chat Integration
   registerChatRoutes(app);
 
-  // Spanish to English Translation (Bilingual Medical Assistant)
+  // Spanish to English Translation (Spanish Bilingual Medical Assistant)
   const translationAnthropic = new Anthropic({
     apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
     baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
@@ -183,6 +183,72 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error: any) {
       console.error('Error listing products:', error);
       res.status(500).json({ message: "Failed to list products" });
+    }
+  });
+
+  app.post("/api/clinic-agreement", async (req, res) => {
+    try {
+      const { clinicName, contactName, contactEmail, signature, agreedAt } = req.body;
+      
+      if (!clinicName || !contactName || !contactEmail || !signature) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      let stripeCustomerId: string | null = null;
+      
+      try {
+        const customer = await stripeService.createCustomer(contactEmail, `clinic-${clinicName.replace(/\s+/g, '-').toLowerCase()}`);
+        stripeCustomerId = customer.id;
+        
+        const products = await stripeService.listProductsWithPrices();
+        const bmaProduct = (products as any[]).find((p: any) => 
+          p.product_name?.toLowerCase().includes('bilingual') || 
+          p.product_name?.toLowerCase().includes('bma') ||
+          (p.unit_amount === 14900 && p.recurring?.interval === 'month')
+        );
+        
+        await storage.createClinicAgreement({
+          clinicName,
+          contactName,
+          contactEmail,
+          signatureData: signature,
+          stripeCustomerId,
+          status: "pending_payment",
+          agreedAt: new Date(agreedAt),
+        });
+        
+        if (bmaProduct?.price_id) {
+          const session = await stripeService.createCheckoutSession(
+            customer.id,
+            bmaProduct.price_id,
+            `${baseUrl}/clinic-agreement?checkout=success`,
+            `${baseUrl}/clinic-agreement?checkout=cancel`,
+            'subscription'
+          );
+          
+          return res.json({ checkoutUrl: session.url });
+        }
+
+        return res.json({ success: true, message: "Agreement recorded. Our team will follow up with payment details." });
+      } catch (stripeErr: any) {
+        console.log('Stripe not available for clinic agreement, recording agreement only:', stripeErr.message);
+      }
+
+      await storage.createClinicAgreement({
+        clinicName,
+        contactName,
+        contactEmail,
+        signatureData: signature,
+        stripeCustomerId,
+        status: "recorded",
+        agreedAt: agreedAt ? new Date(agreedAt) : new Date(),
+      });
+
+      res.json({ success: true, message: "Agreement recorded successfully" });
+    } catch (error: any) {
+      console.error('Clinic agreement error:', error);
+      res.status(500).json({ message: error.message || "Failed to process agreement" });
     }
   });
 

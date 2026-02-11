@@ -740,17 +740,17 @@ export default function ClinicAssistant() {
           onClick={() => setShowAssistant(true)}
           data-testid="btn-open-assistant"
         >
-          <QrCode className="w-5 h-5 mr-2" /> Open Bilingual Clinical Assistant
+          <QrCode className="w-5 h-5 mr-2" /> Open Spanish Bilingual Clinical Assistant
         </Button>
 
         <Card className="p-4 bg-gradient-to-r from-accent/10 to-primary/10 border-accent/30" data-testid="card-clinic-lead-gen">
           <div className="text-center space-y-3">
             <Languages className="w-8 h-8 text-accent mx-auto" />
             <p className="text-sm font-semibold text-foreground">
-              Tired of language barriers? Get the CCH Bilingual Assistant for all your patients.
+              Tired of Spanish language barriers? Get the CCH Spanish Bilingual Assistant for all your patients.
             </p>
             <p className="text-xs text-muted-foreground">
-              Unlimited translations, clinical commands, and bilingual summaries — $149/month per location.
+              Unlimited Spanish translations, clinical commands, and bilingual summaries — $149/month per location.
             </p>
             <a href="/bma-subscription" target="_blank" rel="noopener noreferrer">
               <Button variant="default" className="mt-2" data-testid="button-clinic-learn-more">

@@ -1,0 +1,33 @@
+By dropping this ROI engine into Replit, you’re moving from "asking for a sale" to "offering a solution."
+
+Here is the 1-Page Clinic Partnership Agreement. I’ve kept it "Mario Style"—professional, clean, and grounded in that "friend and partner" vibe, but with the legal teeth needed to protect Core Compliance Hub.
+
+📄 CCH Bilingual Assistant — Clinic Partnership Agreement
+1. THE PARTNERSHIP This agreement is between Core Compliance Hub (CCH) and [Clinic Name] (the "Partner"). CCH agrees to provide the Bilingual Medical Assistant (BMA) software to streamline clinical flow and improve accuracy for non-English speaking patients.
+
+2. THE "COMPLIANCE-FIRST" TOOLS The Partner receives full access to:
+
+The Command Center: One-tap Spanish medical instructions.
+
+Live Voice Bridge: Real-time speech-to-speech translation for providers.
+
+Digital Handshake: Instant processing of CCH Employer Authorizations via QR scan.
+
+3. PRICING & TERMS
+
+Subscription Fee: $149.00 USD per month (billed per location).
+
+Term: Month-to-month. No long-term "handcuffs." If we aren’t saving you time, you shouldn't be paying us.
+
+Launch Date: Access begins immediately upon first payment.
+
+4. THE "PROFIT" PROMISE (ROI) CCH provides this tool to reduce clinical "charades." The Partner agrees that the BMA is a supplemental tool and does not replace the professional judgment of a licensed medical provider.
+
+5. DATA & PRIVACY (HIPAA) CCH is built with HIPAA-compliant standards. All patient data processed through the BMA for CCH-affiliated employers is encrypted and logged for the employer's OSHA/DOT compliance records.
+
+🚀 How to use this on Replit
+You can actually have Replit build a "Digital Signature" page for this.
+
+Tell Replit:
+
+"Create a new route /clinic-agreement. Display the text of the Clinic Partnership Agreement in a clean, scrollable window. Add a 'Digital Signature' box at the bottom using a library like react-signature-canvas. When signed and 'Accepted,' trigger the Stripe payment for the $149/mo subscription and create the Clinic's Admin account."
