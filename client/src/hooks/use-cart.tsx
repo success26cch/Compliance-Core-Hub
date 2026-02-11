@@ -3,7 +3,6 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 export interface CartItem {
   id: string;
   name: string;
-  priceId?: string;
   unitAmount: number;
   currency: string;
   interval?: "month" | "year" | null;

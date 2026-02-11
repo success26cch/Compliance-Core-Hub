@@ -29,7 +29,10 @@ export function CartDrawer() {
     setCheckingOut(true);
     try {
       const cartItems = items.map(item => ({
-        priceId: item.priceId,
+        name: item.name,
+        unitAmount: item.unitAmount,
+        currency: item.currency,
+        interval: item.interval || null,
         quantity: item.quantity,
         mode: item.interval ? "subscription" : "payment",
       }));

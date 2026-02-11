@@ -47,6 +47,24 @@ export class StripeService {
     });
   }
 
+  async createCartCheckoutSession(
+    customerId: string,
+    lineItems: any[],
+    successUrl: string,
+    cancelUrl: string,
+    mode: 'subscription' | 'payment' = 'subscription'
+  ) {
+    const stripe = await getUncachableStripeClient();
+    return await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
+  }
+
   async createCustomerPortalSession(customerId: string, returnUrl: string) {
     const stripe = await getUncachableStripeClient();
     return await stripe.billingPortal.sessions.create({

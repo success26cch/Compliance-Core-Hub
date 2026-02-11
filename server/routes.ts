@@ -267,8 +267,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       for (const item of items) {
-        if (!item.priceId || !item.quantity || item.quantity < 1) {
-          return res.status(400).json({ message: "Each item must have a priceId and quantity >= 1" });
+        if (!item.name || !item.unitAmount || !item.quantity || item.quantity < 1) {
+          return res.status(400).json({ message: "Each item must have name, unitAmount, and quantity >= 1" });
         }
       }
 
@@ -292,20 +292,35 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const successUrl = `${baseUrl}/settings?checkout=success`;
       const cancelUrl = `${baseUrl}/settings?checkout=cancel`;
 
+      const buildLineItems = (cartItems: any[]) => cartItems.map((item: any) => {
+        const lineItem: any = {
+          price_data: {
+            currency: item.currency || "usd",
+            product_data: { name: item.name },
+            unit_amount: item.unitAmount,
+          },
+          quantity: item.quantity,
+        };
+        if (item.interval) {
+          lineItem.price_data.recurring = { interval: item.interval };
+        }
+        return lineItem;
+      });
+
       if (hasSubscription && hasOneTime) {
         const subItems = items.filter((i: any) => i.mode === "subscription");
-        const session = await stripeService.createMultiItemCheckoutSession(
+        const session = await stripeService.createCartCheckoutSession(
           customerId,
-          subItems.map((i: any) => ({ priceId: i.priceId, quantity: i.quantity })),
+          buildLineItems(subItems),
           successUrl,
           cancelUrl,
           'subscription'
         );
 
         const oneTimeItems = items.filter((i: any) => i.mode === "payment");
-        const oneTimeSession = await stripeService.createMultiItemCheckoutSession(
+        const oneTimeSession = await stripeService.createCartCheckoutSession(
           customerId,
-          oneTimeItems.map((i: any) => ({ priceId: i.priceId, quantity: i.quantity })),
+          buildLineItems(oneTimeItems),
           session.url || successUrl,
           cancelUrl,
           'payment'
@@ -315,11 +330,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       const mode = hasSubscription ? 'subscription' : 'payment';
-      const lineItems = items.map((i: any) => ({ priceId: i.priceId, quantity: i.quantity }));
-      
-      const session = await stripeService.createMultiItemCheckoutSession(
+      const session = await stripeService.createCartCheckoutSession(
         customerId,
-        lineItems,
+        buildLineItems(items),
         successUrl,
         cancelUrl,
         mode as 'subscription' | 'payment'
