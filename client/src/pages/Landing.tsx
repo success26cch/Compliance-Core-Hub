@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import logoUrl from "@assets/1_1767636977932.png";
@@ -50,28 +50,40 @@ export default function Landing() {
   };
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [trialQuestion, setTrialQuestion] = useState("");
-  const [trialAnswer, setTrialAnswer] = useState("");
-  const [trialUsed, setTrialUsed] = useState(false);
-  const [trialLoading, setTrialLoading] = useState(false);
-  const [trialOpen, setTrialOpen] = useState(false);
-  const trialAnswerRef = useRef<HTMLDivElement>(null);
 
-  const handleTrialSubmit = async () => {
-    if (!trialQuestion.trim() || trialLoading || trialUsed) return;
-    setTrialLoading(true);
-    setTrialAnswer("");
+  interface BotMessage { role: "user" | "assistant"; content: string }
+  const [botMessages, setBotMessages] = useState<BotMessage[]>([]);
+  const [botInput, setBotInput] = useState("");
+  const [botLoading, setBotLoading] = useState(false);
+  const [botLimitReached, setBotLimitReached] = useState(false);
+  const [botRemaining, setBotRemaining] = useState(3);
+  const botScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (botScrollRef.current) {
+      botScrollRef.current.scrollTop = botScrollRef.current.scrollHeight;
+    }
+  }, [botMessages]);
+
+  const handleBotSubmit = useCallback(async () => {
+    if (!botInput.trim() || botLoading || botLimitReached) return;
+    const userMsg = botInput.trim();
+    setBotInput("");
+    const newMessages: BotMessage[] = [...botMessages, { role: "user", content: userMsg }];
+    setBotMessages(newMessages);
+    setBotLoading(true);
+
     try {
-      const response = await fetch("/api/trial-question", {
+      const response = await fetch("/api/landing-bot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: trialQuestion.trim() }),
+        body: JSON.stringify({ content: userMsg, history: newMessages }),
       });
       if (!response.ok) {
         const err = await response.json();
         if (err.limitReached) {
-          setTrialUsed(true);
-          setTrialAnswer("You've already used your free trial question. Sign up to keep asking!");
+          setBotLimitReached(true);
+          setBotRemaining(0);
           return;
         }
         throw new Error(err.error);
@@ -80,6 +92,7 @@ export default function Landing() {
       const decoder = new TextDecoder();
       if (!reader) throw new Error("No reader");
       let fullText = "";
+      setBotMessages(prev => [...prev, { role: "assistant", content: "" }]);
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -87,21 +100,32 @@ export default function Landing() {
         const lines = chunk.split("\n\n");
         for (const line of lines) {
           if (line.startsWith("data: ")) {
-            const data = JSON.parse(line.slice(6));
-            if (data.content) {
-              fullText += data.content;
-              setTrialAnswer(fullText);
-            }
-            if (data.done) setTrialUsed(true);
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) {
+                fullText += data.content;
+                setBotMessages(prev => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { role: "assistant", content: fullText };
+                  return updated;
+                });
+              }
+              if (data.remaining !== undefined) {
+                setBotRemaining(data.remaining);
+              }
+              if (data.done && data.remaining === 0) {
+                setBotLimitReached(true);
+              }
+            } catch {}
           }
         }
       }
     } catch {
-      setTrialAnswer("Something went wrong. Please try again.");
+      setBotMessages(prev => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }]);
     } finally {
-      setTrialLoading(false);
+      setBotLoading(false);
     }
-  };
+  }, [botInput, botLoading, botLimitReached, botMessages]);
 
   const form = useForm<z.infer<typeof leadFormSchema>>({
     resolver: zodResolver(leadFormSchema),
@@ -311,87 +335,124 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Try Me Banner */}
-      <section className="relative bg-accent overflow-hidden" data-testid="section-try-me">
-        <div className="absolute inset-0 opacity-10">
+      {/* CCH Expert Bot */}
+      <section className="relative bg-[hsl(222,47%,11%)] overflow-hidden py-12" id="cch-bot" data-testid="section-cch-bot">
+        <div className="absolute inset-0 opacity-5">
           <div className="animate-marquee whitespace-nowrap flex items-center h-full">
             {Array.from({ length: 20 }).map((_, i) => (
-              <span key={i} className="text-6xl font-black mx-8 text-white">TRY ME</span>
+              <span key={i} className="text-6xl font-black mx-8 text-white">CCH BOT</span>
             ))}
           </div>
         </div>
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {!trialOpen ? (
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center gap-3">
-                <Bot className="w-8 h-8 text-white" />
-                <h3 className="text-2xl md:text-3xl font-display font-black text-white">
-                  Try Our AI OccHealth Consultant
-                </h3>
-              </div>
-              <p className="text-white/90 text-lg">
-                Ask one compliance question for free. See the power of AI-driven occupational health guidance.
-              </p>
-              <Button
-                onClick={() => setTrialOpen(true)}
-                variant="outline"
-                className="bg-white text-accent border-white font-bold text-lg px-8"
-                data-testid="button-try-me"
-              >
-                Ask Your Free Question
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-center gap-3 mb-2">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-3 mb-6">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
                 <Bot className="w-6 h-6 text-white" />
-                <h3 className="text-xl font-display font-bold text-white">
-                  Ask Your Free Compliance Question
-                </h3>
               </div>
-              <Card className="p-4 space-y-4">
+              <h3 className="text-2xl md:text-3xl font-display font-black text-white" data-testid="text-cch-bot-title">
+                CCH Expert Bot
+              </h3>
+            </div>
+            <p className="text-white/70 text-sm">
+              Powered by CCH AI &middot; {botRemaining} free question{botRemaining !== 1 ? "s" : ""} remaining
+            </p>
+          </div>
+
+          <Card className="overflow-hidden border-0 shadow-2xl" data-testid="card-cch-bot">
+            <div
+              ref={botScrollRef}
+              className="h-80 overflow-y-auto p-4 space-y-4 bg-muted/30"
+              data-testid="bot-messages"
+            >
+              {botMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 text-muted-foreground">
+                  <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+                    <Bot className="w-8 h-8 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Ask the CCH Expert Bot</p>
+                    <p className="text-sm mt-1">Ask about OSHA recordability, DOT physicals, drug testing, ISO audits, or any compliance question.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {["Is a laceration needing stitches OSHA recordable?", "What's required for a DOT physical?", "Explain ISO 45001 basics"].map((q) => (
+                      <button
+                        key={q}
+                        onClick={() => { setBotInput(q); }}
+                        className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:bg-muted transition-colors"
+                        data-testid={`button-suggestion-${q.slice(0, 15).replace(/\s/g, "-").toLowerCase()}`}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {botMessages.map((msg, i) => (
+                <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`} data-testid={`bot-message-${i}`}>
+                  {msg.role === "assistant" && (
+                    <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-1">
+                      <Bot className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                  <div className={`max-w-[80%] rounded-lg px-4 py-3 text-sm whitespace-pre-wrap ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card border border-border text-card-foreground"
+                  }`}>
+                    {msg.content || (botLoading && i === botMessages.length - 1 ? (
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
+                      </span>
+                    ) : null)}
+                  </div>
+                  {msg.role === "user" && (
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-border p-3 bg-card">
+              {botLimitReached ? (
+                <div className="text-center space-y-3 py-2">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    You've used your free questions. Sign up to unlock unlimited access!
+                  </p>
+                  <div className="flex items-center justify-center gap-3 flex-wrap">
+                    <a href="/api/login">
+                      <Button data-testid="button-bot-signup">
+                        Sign Up Free <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </a>
+                    <a href="#pricing">
+                      <Button variant="outline" data-testid="button-bot-pricing">View Plans</Button>
+                    </a>
+                  </div>
+                </div>
+              ) : (
                 <div className="flex gap-2">
                   <Input
-                    value={trialQuestion}
-                    onChange={(e) => setTrialQuestion(e.target.value)}
-                    placeholder="e.g., Is a workplace laceration requiring stitches OSHA recordable?"
-                    disabled={trialUsed || trialLoading}
-                    onKeyDown={(e) => e.key === "Enter" && handleTrialSubmit()}
-                    data-testid="input-trial-question"
+                    value={botInput}
+                    onChange={(e) => setBotInput(e.target.value)}
+                    placeholder="Ask a compliance question..."
+                    disabled={botLoading}
+                    onKeyDown={(e) => e.key === "Enter" && handleBotSubmit()}
+                    data-testid="input-bot-question"
                   />
                   <Button
-                    onClick={handleTrialSubmit}
-                    disabled={!trialQuestion.trim() || trialLoading || trialUsed}
-                    data-testid="button-trial-submit"
+                    onClick={handleBotSubmit}
+                    disabled={!botInput.trim() || botLoading}
+                    data-testid="button-bot-submit"
                   >
-                    {trialLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>
                 </div>
-                {trialAnswer && (
-                  <div ref={trialAnswerRef} className="bg-muted/50 rounded-lg p-4 text-sm text-foreground whitespace-pre-wrap max-h-64 overflow-y-auto" data-testid="text-trial-answer">
-                    {trialAnswer}
-                  </div>
-                )}
-                {trialUsed && (
-                  <div className="text-center space-y-3 pt-2">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Want more expert compliance answers? Sign up or view our plans.
-                    </p>
-                    <div className="flex items-center justify-center gap-3 flex-wrap">
-                      <Link href="/api/login">
-                        <Button data-testid="button-trial-signup">
-                          Sign Up Free <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </Link>
-                      <a href="#pricing">
-                        <Button variant="outline" data-testid="button-trial-pricing">View Plans</Button>
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </Card>
+              )}
             </div>
-          )}
+          </Card>
         </div>
       </section>
 

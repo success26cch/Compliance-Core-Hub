@@ -9,7 +9,9 @@ const anthropic = new Anthropic({
 });
 
 const FREE_QUESTION_LIMIT = 3;
+const LANDING_BOT_LIMIT = 3;
 const trialUsage = new Map<string, boolean>();
+const landingBotUsage = new Map<string, { count: number; messages: Array<{ role: string; content: string }> }>();
 
 // Admin users get unlimited access (set via environment variable)
 // Format: comma-separated user IDs, emails, or usernames
@@ -117,6 +119,80 @@ export function registerChatRoutes(app: Express): void {
       res.end();
     } catch (error) {
       console.error("Error in trial question:", error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed to process question" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: "Failed to process question" });
+      }
+    }
+  });
+
+  app.post("/api/landing-bot", async (req: Request, res: Response) => {
+    try {
+      const { content, history } = req.body;
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        return res.status(400).json({ error: "Question is required" });
+      }
+
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+      let session = landingBotUsage.get(clientIp);
+      if (!session) {
+        session = { count: 0, messages: [] };
+        landingBotUsage.set(clientIp, session);
+      }
+
+      if (session.count >= LANDING_BOT_LIMIT) {
+        return res.status(403).json({
+          error: "You've reached the free question limit. Sign up to keep the conversation going!",
+          limitReached: true,
+          count: session.count,
+          limit: LANDING_BOT_LIMIT,
+        });
+      }
+
+      session.count++;
+      session.messages.push({ role: "user", content: content.trim() });
+
+      const conversationMessages = (history && Array.isArray(history) ? history : session.messages).map((m: any) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      res.write(`data: ${JSON.stringify({ remaining: LANDING_BOT_LIMIT - session.count })}\n\n`);
+
+      const stream = anthropic.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: `You are the CCH Expert Bot — a Senior Occupational Health & Safety Compliance Expert powered by Core Compliance Hub. You specialize in OSHA 29 CFR 1904 recordkeeping, DOT FMCSA 49 CFR Part 40 drug & alcohol testing, and workplace safety compliance. You also have knowledge of ISO 9001, 14001, and 45001 management systems.
+
+Be friendly, professional, and concise. Demonstrate deep expertise while keeping answers accessible. When appropriate, mention that CCH offers full AI-powered compliance tools, training courses, and ISO audit preparation.
+
+This visitor is trying the free bot — give genuinely helpful answers to build trust.`,
+        messages: conversationMessages,
+      });
+
+      let assistantText = "";
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) {
+            assistantText += text;
+            res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          }
+        }
+      }
+
+      session.messages.push({ role: "assistant", content: assistantText });
+
+      res.write(`data: ${JSON.stringify({ done: true, remaining: LANDING_BOT_LIMIT - session.count })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Error in landing bot:", error);
       if (res.headersSent) {
         res.write(`data: ${JSON.stringify({ error: "Failed to process question" })}\n\n`);
         res.end();
