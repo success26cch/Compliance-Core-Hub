@@ -152,10 +152,10 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden">
+      <section className="relative pt-12 pb-20 overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-background to-background"></div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,11 +163,10 @@ export default function Landing() {
             className="space-y-8"
           >
             <div className="flex flex-col items-center w-full">
-              <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 w-auto mx-auto -mb-4" />
-              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-2xl h-auto object-contain" />
+              <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 lg:h-96 w-auto mx-auto -mb-4" />
+              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-5xl h-auto object-contain mx-auto" />
             </div>
             
-            {/* Division Icons */}
             <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
               <div className="flex flex-col items-center gap-2 group" data-testid="logo-cch">
                 <img src={cchLogo} alt="CCH" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
@@ -183,17 +182,19 @@ export default function Landing() {
               </a>
             </div>
             
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 text-accent font-semibold text-sm border border-accent/30">
-              <Activity className="w-4 h-4 animate-pulse" />
-              THE ONE STOP EMPLOYER SHOP
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 text-accent font-semibold text-sm border border-accent/30">
+                <Activity className="w-4 h-4 animate-pulse" />
+                THE ONE STOP EMPLOYER SHOP
+              </div>
             </div>
-            <h1 className="text-2xl md:text-3xl font-display font-black text-primary leading-[1.1] text-center">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
               Compliance Isn't a Guessing Game,<br /><span className="text-accent">It's Your Reputation.</span>
             </h1>
-            <p className="text-2xl md:text-3xl font-display font-black text-primary leading-[1.1] text-center">
+            <p className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
               Welcome to the future of compliance, welcome, to<br /><span className="text-accent">Core Compliance Hub.</span>
             </p>
-            <div className="bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
+            <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
               <p className="text-lg text-primary leading-relaxed">
                 CCH is the all-in-one compliance Eco-System command center for employers who are tired of the confusing regulations, the OSHA 300 recordables and scattered safety programs.
               </p>
@@ -201,33 +202,89 @@ export default function Landing() {
                 The First Ever AI Designed just for Occupational Health. Safety Made Smart. Growth Made Possible.
               </p>
             </div>
-            <ul className="space-y-3 text-muted-foreground">
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                </div>
-                <span><strong className="text-primary">AI-Powered Compliance:</strong> Get instant, expert answers on OSHA 300 recordability, DOT physicals, and drug testing—24/7.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                </div>
-                <span><strong className="text-primary">ISO Certification Ready:</strong> 9001, 14001, 45001—our Lead Auditor AI guides you from gap analysis to audit day.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                </div>
-                <span><strong className="text-primary">Professional Training:</strong> Self-paced courses with certificates your auditors actually respect.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                </div>
-                <span><strong className="text-primary">Employee Recognition:</strong> BrandNSwag turns safety milestones into rewards your team actually wants.</span>
-              </li>
-            </ul>
-            <div className="relative mt-6">
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-start">
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                  </div>
+                  <span><strong className="text-primary">AI-Powered Compliance:</strong> Get instant, expert answers on OSHA 300 recordability, DOT physicals, and drug testing—24/7.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                  </div>
+                  <span><strong className="text-primary">ISO Certification Ready:</strong> 9001, 14001, 45001—our Lead Auditor AI guides you from gap analysis to audit day.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                  </div>
+                  <span><strong className="text-primary">Professional Training:</strong> Self-paced courses with certificates your auditors actually respect.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                  </div>
+                  <span><strong className="text-primary">Employee Recognition:</strong> BrandNSwag turns safety milestones into rewards your team actually wants.</span>
+                </li>
+              </ul>
+
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card className="shadow-xl p-8 relative z-10" data-testid="card-lead-magnet">
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl"></div>
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-bold font-display text-primary">Free Recordability Cheat Sheet</h3>
+                      <p className="text-muted-foreground">
+                        Stop guessing. Download our comprehensive guide to OSHA 1904 recordability criteria.
+                      </p>
+                    </div>
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input placeholder="Your Name" className="h-12 bg-muted/50" data-testid="input-lead-name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input placeholder="Work Email" className="h-12 bg-muted/50" data-testid="input-lead-email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="submit" className="w-full font-semibold" disabled={isPending} data-testid="button-download-cheatsheet">
+                          {isPending ? "Sending..." : "Download Now"}
+                        </Button>
+                      </form>
+                    </Form>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Join other safety professionals trusting Core Compliance Hub - CCH.
+                    </p>
+                  </div>
+                </Card>
+              </motion.div>
+            </div>
+
+            <div className="relative mt-6 max-w-4xl mx-auto">
               <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary rounded-lg blur-sm opacity-75"></div>
               <div className="relative bg-black text-white text-center py-4 px-6 rounded-lg">
                 <p className="text-lg md:text-xl font-bold">
@@ -238,7 +295,7 @@ export default function Landing() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
                 <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-hero-get-started">
                   Get Started Free
@@ -250,63 +307,6 @@ export default function Landing() {
                 </Button>
               </a>
             </div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="relative"
-          >
-            {/* Lead Magnet Card */}
-            <Card className="shadow-xl p-8 md:p-10 relative z-10" data-testid="card-lead-magnet">
-              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl"></div>
-              
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold font-display text-primary">Free Recordability Cheat Sheet</h3>
-                  <p className="text-muted-foreground">
-                    Stop guessing. Download our comprehensive guide to OSHA 1904 recordability criteria.
-                  </p>
-                </div>
-
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input placeholder="Your Name" className="h-12 bg-muted/50" data-testid="input-lead-name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input placeholder="Work Email" className="h-12 bg-muted/50" data-testid="input-lead-email" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full font-semibold" disabled={isPending} data-testid="button-download-cheatsheet">
-                      {isPending ? "Sending..." : "Download Now"}
-                    </Button>
-                  </form>
-                </Form>
-                
-                <p className="text-xs text-center text-muted-foreground">
-                  Join other safety professionals trusting Core Compliance Hub - CCH.
-                </p>
-              </div>
-            </Card>
           </motion.div>
         </div>
       </section>
