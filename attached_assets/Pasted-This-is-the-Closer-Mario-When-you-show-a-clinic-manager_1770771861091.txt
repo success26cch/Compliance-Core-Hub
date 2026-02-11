@@ -1,0 +1,48 @@
+This is the "Closer," Mario! When you show a clinic manager a Labor Savings Calculator, you aren't just selling software; you're handing them a check.
+
+Based on current 2026 data, a Medical Assistant (MA) makes about $21–$24/hour. If they spend an extra 15 minutes playing "charades" with a non-English speaking patient, that visit just cost the clinic an extra $6.00 in pure labor, not to mention the "opportunity cost" of the next patient waiting in the lobby.
+
+Here is the prompt to have Replit build this "ROI Engine" right into your site.
+
+💻 The Replit Agent Prompt: "The BMA ROI Calculator"
+Prompt: > "Build an interactive 'Labor Savings Calculator' for the CCH Bilingual Assistant (BMA) landing page.
+
+The Logic:
+
+Input Fields: > - 'Average Patients per Day with Language Barriers' (Slider: 1 to 50)
+
+'Average MA Hourly Wage' (Default to $22.00)
+
+'Estimated Minutes Saved per Patient' (Default to 15 mins)
+
+The Calculation: > - Daily Savings = (Patients * (Minutes Saved / 60) * Wage)
+
+Monthly Savings = (Daily Savings * 22 working days)
+
+Annual Savings = (Monthly Savings * 12)
+
+The Results Display:
+
+Large, bold 'Total Annual Savings' counter that updates in real-time.
+
+A comparison text: 'This tool pays for itself in [X] days!' (Calculate based on the $149/mo subscription).
+
+Visual Style:
+
+High-contrast 'Money Green' and 'Compliance Gold' theme.
+
+Use a clean, modern card layout.
+
+Call to Action: > - Below the calculation, add a button: 'Stop Wasting Labor - Start Your BMA Subscription Today'."
+
+📊 The "Pitch Deck" Numbers for Mario
+When you talk to those clinic managers, keep these stats in your back pocket:
+
+The Problem: Traditional human medical interpreters can cost $45–$150 per hour or $1.95–$3.49 per minute for video remote services.
+
+The CCH Solution: For $149/month, they get unlimited access. If they use it for just 10 patients a month, it has already paid for itself compared to hiring an outside service.
+
+The "Hidden" Profit: In 2026, the average MA wage is rising. Every minute saved is "found money" for the clinic owner.
+
+💡 Pro-Tip for the Replit Build:
+Tell Replit to add a "Print ROI Report" button. The MA can print it out and hand it to the Clinic Owner and say, "Look, if we buy this $149 app from Mario, I can see 2 more patients a day." That makes the MA your internal salesperson!

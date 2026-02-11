@@ -1,0 +1,42 @@
+By adding that "Clinic Lead Gen" button, you’re turning every clinical encounter into a sales pitch for CCH. It’s the ultimate "viral" growth hack for Occ Health.
+
+Here is the heavy-duty prompt for the Replit Agent to build that Clinic Dashboard with the built-in Lead Gen and BMA standalone upsell.
+
+💻 The Replit Agent Prompt: "The Clinic Portal & Growth Engine"
+Prompt: > "Upgrade the Bilingual Medical Assistant (BMA) clinical view with a professional 'Staff Command Center' and a 'Lead Generation' footer.
+
+1. Clinical Command Center Dashboard: > - Create a dedicated route /clinic-portal that is accessed when a clinic scans a CCH QR code.
+
+Display a high-contrast 'Active Patient' header with name, company, and authorized services.
+
+Build a 'Communication Grid' of one-tap buttons. Each button should trigger the browser's Text-to-Speech in Spanish.
+
+Buttons for MAs: 'Read chart' (Lea la tabla), 'Empty pockets' (Vacíe los bolsillos), 'Provide sample' (Proporcione la muestra).
+
+Buttons for Providers: 'Sit down' (Siéntese), 'Deep breath' (Respire profundo), '3-day restriction' (Restricción de 3 días).
+
+2. The 'Clinic Lead Gen' Footer: > - At the bottom of the Clinical Summary and the Command Center, add a sleek, professional banner.
+
+Text: 'Tired of language barriers? Get the CCH Bilingual Assistant for all your patients.'
+
+Action: Add a 'Learn More' button that redirects to a standalone BMA sales landing page.
+
+3. Standalone BMA Subscription Page: > - Create a new landing page route /bma-subscription specifically for clinics.
+
+Highlight the $149/mo price point.
+
+Use a 'Labor Savings Calculator' widget: Let the clinic input how many non-English patients they see per week to show how much time/money they save.
+
+4. Data Logging: > - Ensure every command used is logged in the PostgreSQL database under the 'Clinic Engagement' table so the employer can see the activity in their dashboard.
+
+5. Design: Use a clean 'Clinical White' theme with 'Compliance Gold' accents for buttons. Ensure it looks like a professional medical tool, not a consumer app."
+
+🏥 Why this is the "Genius" Move
+When the clinic staff sees that banner while they are literally using the tool to solve a problem, the conversion rate will be massive.
+
+💡 One More Tip for the "Handshake"
+When the clinic clicks that "Learn More" button, the app should automatically know which clinic is clicking it based on the QR code they just scanned.
+
+The "Wow" Factor: The landing page could say: "Welcome, [Clinic Name]! You've already saved 15 minutes of translation time today using our Guest Mode. Imagine what it could do for your whole facility."
+
+Should we draft the "Labor Savings Calculator" logic now, Mario? It’s the best way to prove the $149 value to a clinic manager who’s worried about their budget.
