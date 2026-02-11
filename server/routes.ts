@@ -1846,5 +1846,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ==========================================
+  // CLINIC ENGAGEMENT LOGGING
+  // ==========================================
+
+  app.post("/api/clinic-engagement", async (req, res) => {
+    try {
+      const { visitToken, clinicName, commandUsed, commandCategory, patientLanguage, sessionDuration, userId } = req.body;
+      if (!commandUsed) {
+        return res.status(400).json({ message: "commandUsed is required" });
+      }
+      const entry = await storage.logClinicEngagement({
+        visitToken: visitToken || null,
+        clinicName: clinicName || null,
+        commandUsed,
+        commandCategory: commandCategory || null,
+        patientLanguage: patientLanguage || "spanish",
+        sessionDuration: sessionDuration || null,
+        userId: userId || null,
+      });
+      res.status(201).json(entry);
+    } catch (error: any) {
+      console.error("Error logging clinic engagement:", error);
+      res.status(500).json({ message: "Failed to log engagement" });
+    }
+  });
+
+  app.get("/api/clinic-engagement", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const engagement = await storage.getClinicEngagementByUser(userId);
+    res.json(engagement);
+  });
+
   return httpServer;
 }

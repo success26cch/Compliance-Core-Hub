@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -492,6 +492,23 @@ export class DatabaseStorage implements IStorage {
         eq(authorizationForms.userId, userId)
       ));
     return true;
+  }
+
+  async logClinicEngagement(entry: InsertClinicEngagement): Promise<ClinicEngagement> {
+    const [created] = await db.insert(clinicEngagement).values(entry).returning();
+    return created;
+  }
+
+  async getClinicEngagementByUser(userId: string): Promise<ClinicEngagement[]> {
+    return db.select().from(clinicEngagement)
+      .where(eq(clinicEngagement.userId, userId))
+      .orderBy(desc(clinicEngagement.createdAt));
+  }
+
+  async getClinicEngagementByToken(token: string): Promise<ClinicEngagement[]> {
+    return db.select().from(clinicEngagement)
+      .where(eq(clinicEngagement.visitToken, token))
+      .orderBy(desc(clinicEngagement.createdAt));
   }
 
   async setSuperadmin(userId: string, isSuperadminFlag: boolean): Promise<User | undefined> {

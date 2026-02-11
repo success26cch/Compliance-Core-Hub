@@ -288,6 +288,53 @@ export default function BrandNSwag() {
           </div>
         </section>
 
+        <section className="py-20 border-t border-border/50">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-display font-bold text-primary mb-4">
+                Recognition Platform Pricing
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Keep your QR recognition system running with a simple monthly platform fee.
+              </p>
+            </div>
+
+            <Card className="p-8 max-w-lg mx-auto text-center ring-2 ring-accent" data-testid="card-brandnswag-platform-pricing">
+              <Badge className="mb-4">Recognition Platform</Badge>
+              <h3 className="text-2xl font-bold text-primary mb-2">QR Recognition Platform</h3>
+              <p className="text-muted-foreground mb-6">Keeps your points system and QR scanning active</p>
+              <div className="mb-6">
+                <span className="text-5xl font-bold text-primary">$49</span>
+                <span className="text-muted-foreground">/mo</span>
+              </div>
+              <ul className="space-y-3 text-left mb-8">
+                {[
+                  "Active QR code recognition system",
+                  "Points tracking and leaderboards",
+                  "Employee reward triggers",
+                  "Peer-to-peer recognition scanning",
+                  "Monthly engagement reports",
+                  "Swag store management",
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-sm text-muted-foreground mb-6 italic">
+                Swag boxes and merchandise purchased separately. Platform fee ensures recurring revenue for your recognition program.
+              </p>
+              <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
+                <Button size="lg" className="w-full" data-testid="button-brandnswag-platform-subscribe">
+                  Get Started with BrandNSwag
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </a>
+            </Card>
+          </div>
+        </section>
+
         <section className="py-20 bg-primary text-primary-foreground">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-block bg-white/10 text-white text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6 rounded-lg">

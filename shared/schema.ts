@@ -400,6 +400,26 @@ export const insertAuthorizationFormSchema = createInsertSchema(authorizationFor
 export type AuthorizationForm = typeof authorizationForms.$inferSelect;
 export type InsertAuthorizationForm = z.infer<typeof insertAuthorizationFormSchema>;
 
+// Clinic Engagement Log - tracks BMA usage and clinic interactions
+export const clinicEngagement = pgTable("clinic_engagement", {
+  id: serial("id").primaryKey(),
+  visitToken: text("visit_token"),
+  clinicName: text("clinic_name"),
+  commandUsed: text("command_used").notNull(),
+  commandCategory: text("command_category"),
+  patientLanguage: text("patient_language").default("spanish"),
+  sessionDuration: integer("session_duration"),
+  userId: text("user_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertClinicEngagementSchema = createInsertSchema(clinicEngagement).omit({
+  id: true,
+  createdAt: true,
+});
+export type ClinicEngagement = typeof clinicEngagement.$inferSelect;
+export type InsertClinicEngagement = z.infer<typeof insertClinicEngagementSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

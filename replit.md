@@ -14,10 +14,13 @@
 - **Company Profile**: Set company information (NAICS code, DOT number, address, DER contact info, company logo) for compliance documentation (/settings)
 - **Human Expert Retainer**: Professional human support for crisis response, OSHA 300 log audits, and audit defense
 - **Lead Capture**: Free recordability cheat sheet download
-- **Training Courses**: Self-paced compliance training with certificates
-- **ACSI Mentorship Program**: CCH Exclusive - First ISO Mentorship Program. Ongoing guidance and competency development for internal system owners
-- **BrandNSwag**: Smart Swag division for employee recognition and engagement
-- **Bilingual Medical Assistant**: Landing page tool with three modes (Injury Reporting, New Hire Intake, Drug Screen Instructions). Features Spanish text-to-speech via Web Speech API, bidirectional speech-to-text (patient speaks Spanish, auto-translates to English), interactive body map, multi-step bilingual forms, Staff Command Center with clinic instructions, and printable clinical summaries. Component at `client/src/components/BilingualAssistant.tsx`
+- **Training Courses**: Self-paced compliance training with certificates. **Free year of Compliance Pro ($29/mo value) included with any course purchase.**
+- **ACSI Mentorship Program**: CCH Exclusive - First ISO Mentorship Program. Two tiers: Foundation ($2,500) and Executive ($5,000). 12-week intensive program with Lead Auditor mentoring.
+- **BrandNSwag**: Smart Swag division for employee recognition and engagement. QR Recognition Platform at $49/mo.
+- **Bilingual Medical Assistant**: Landing page tool with three modes (Injury Reporting, New Hire Intake, Drug Screen Instructions). Features Spanish text-to-speech via Web Speech API, bidirectional speech-to-text (patient speaks Spanish, auto-translates to English), interactive body map, multi-step bilingual forms, Staff Command Center with clinic instructions, and printable clinical summaries. Component at `client/src/components/BilingualAssistant.tsx`. **Standalone subscription at $149/mo per location** with dedicated page at `/bma-subscription`.
+- **BMA Standalone Subscription Page** (`/bma-subscription`): Interactive ROI labor savings calculator, comparison tables vs traditional interpreters, feature showcase, Stripe checkout integration
+- **Clinic Engagement Tracking**: Database table `clinic_engagement` logs BMA usage per visit (commands used, patient language, session duration). API at `/api/clinic-engagement`. Provides employer visibility into clinic interactions.
+- **Clinic Lead Generation**: Footer banner on ClinicAssistant page promoting BMA subscription with "Learn More" CTA
 - **Digital Medical Passport (CCH Handshake)**: QR-based clinic check-in system with Smart Digital Authorization Form. Employers fill out a complete authorization form (patient info, SSN last 4, DOB, services requested with checkboxes, billing preference, special instructions) and digitally sign it when generating QR codes. When clinic scans the QR, they receive the complete signed authorization form ready to print - no phone call needed. Includes "I'm Here" SMS notification to employer via Twilio, "I'm Back" return notification with total time-away tracking (arrival → return duration), 24-hour token expiry, and fallback PDF form upload. Components: `SignaturePad.tsx`, `PrintableAuthForm.tsx`. Pages: `/employee-passport` (generate QR with full auth form), `/clinic-assistant?token=xxx` (public clinic-facing page with printable form)
 
 ## Data Management Routes
@@ -27,6 +30,7 @@
 - **/settings**: Company Profile (with DER contact info, logo upload, and clinic authorization form uploads per visit type) and subscription management
 - **/employee-passport**: Digital Medical Passport - generate QR codes for employee clinic check-ins with complete digital authorization form (patient info, services, signature). Includes "Text Passport to Employee" (SMS via Twilio) and "Copy Link" buttons for delivering the passport to employees. Arrival time tracking shows when employee arrived at clinic. "I'm Back" return tracking with total duration displayed in Recent Visits.
 - **/clinic-assistant**: Public clinic-facing page (opened by QR scan) with employee info, printable signed authorization form, PDF fallback, employer notification with arrival timestamp, and bilingual tools
+- **/bma-subscription**: BMA standalone subscription page with ROI calculator, pricing, and Stripe checkout
 
 ## BrandNSwag Division
 Smart Swag makes safety fun and rewarding through QR-enabled company merchandise.
@@ -41,6 +45,7 @@ Smart Swag makes safety fun and rewarding through QR-enabled company merchandise
   - Perfect attendance bonuses
   - Employee referrals
   - Peer recognition
+- **Recognition Platform Fee**: $49/mo covers QR system, points tracking, leaderboards, engagement reports
 
 ### Swag Box Tiers
 - **Starter Box**: T-shirt + Cap + Welcome Card
@@ -60,6 +65,8 @@ Hoodies, T-Shirts, Hats & Caps, Jackets, Drinkware, Tech Gear
 | OSHA Recordkeeping Master | $299 | OSHA 300 logs, TRIR/EMR reduction, internal audits |
 | Complete Training Bundle | $899 | All 5 courses + Corporate License (Save $300+) |
 
+**Promotion**: Every course purchase includes 1 free year of Compliance Pro ($29/mo value = $348 savings).
+
 ## Pricing Structure
 
 ### Occupational Health (CCH)
@@ -74,12 +81,22 @@ Hoodies, T-Shirts, Hats & Caps, Jackets, Drinkware, Tech Gear
 |------|-------|----------|----------|
 | ISO Essentials | $49/mo | 5 Gap Analysis checks + Templates | Startups prepping for first certification |
 | ISO Professional | $149/mo | Unlimited ISO AI + Audit Checklists + Write-Up Free tools | Companies maintaining ISO 9001/14001/45001 |
-| Integrated Enterprise | $299/mo | CCH + ACSI Combined, Full suite + Dashboard | Mid-sized firms with high compliance risk |
+| Integrated Enterprise | $299/mo | CCH + ACSI Combined, up to 50 employees (+$2/employee beyond 50) | Mid-sized firms with high compliance risk |
 
-### Human Expert Retainer (Add-on)
-- **App + Retainer**: $499/mo - For companies with 20-100 employees who need professional safety director level protection
+### Specialized Services (Add-ons)
+| Service | Price | Description |
+|---------|-------|-------------|
+| Bilingual Medical Assistant | $149/mo per location | Standalone clinic tool for bilingual patient communication |
+| Human Expert Retainer | $499/mo | Professional safety director support, crisis response, audit defense |
+| BrandNSwag Platform | $49/mo | QR recognition system, points tracking, engagement reports |
 
-## ACSI Mentorship Program (CCH Exclusive)
+### ACSI Mentorship Program (CCH Exclusive)
+| Tier | Price | Includes |
+|------|-------|----------|
+| Foundation | $2,500 | 12-week intensive, 1-on-1 mentoring, one standard, certificate |
+| Executive | $5,000 | Everything in Foundation + multi-standard, mock audit, 3-month follow-up |
+
+## ACSI Mentorship Program Details
 The first and only ISO Mentorship Program - exclusive to CCH. Developed from years of real-world audit experience.
 
 ### Who It's For
@@ -114,8 +131,11 @@ Payment processing is set up with Stripe supporting:
 Products configured:
 - CCH: Safety Starter (Free), Compliance Pro ($29/mo), Unlimited Safety ($99/mo)
 - ACSI: ISO Essentials ($49/mo), ISO Professional ($149/mo)
-- Integrated Enterprise ($299/mo)
+- Integrated Enterprise ($299/mo, up to 50 employees, +$2/employee beyond 50)
 - Human Expert Retainer ($499/mo)
+- BMA Standalone ($149/mo per location)
+- BrandNSwag Platform ($49/mo)
+- ACSI Mentorship: Foundation ($2,500), Executive ($5,000)
 - Training courses: DOT Medical ($199), OSHA Medical ($249), Drug & Alcohol ($199), ISO Management ($349), OSHA Recordkeeping ($299), Complete Bundle ($899)
 
 ## User Preferences

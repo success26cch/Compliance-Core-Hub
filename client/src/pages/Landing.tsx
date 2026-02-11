@@ -4,6 +4,7 @@ import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -610,7 +611,7 @@ export default function Landing() {
               tier="Integrated Enterprise"
               price="$299"
               period="/mo"
-              features={["CCH + ACSI Combined", "Full Health, Safety & ISO suite", "Audit Readiness Dashboard", "Priority expert support"]}
+              features={["CCH + ACSI Combined", "Full Health, Safety & ISO suite", "Audit Readiness Dashboard", "Up to 50 employees included", "+$2/employee beyond 50", "Priority expert support"]}
               bestFor="Mid-sized firms with high compliance risk."
               buttonText="Enterprise Bundle"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
@@ -628,8 +629,101 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Additional Services Pricing */}
+      <section className="py-24 bg-muted/30 border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl font-display font-bold text-primary">Specialized Services</h2>
+            <p className="text-lg text-muted-foreground">
+              Add-on services to expand your compliance and engagement capabilities.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <Card className="p-6 flex flex-col" data-testid="card-landing-bma-pricing">
+              <Badge variant="secondary" className="self-start mb-3">Clinic Tool</Badge>
+              <h3 className="text-lg font-bold text-primary mb-1">Bilingual Medical Assistant</h3>
+              <div className="flex items-baseline gap-1 mb-3">
+                <span className="text-3xl font-bold text-primary">$149</span>
+                <span className="text-muted-foreground text-sm">/mo per location</span>
+              </div>
+              <ul className="space-y-2 mb-6 flex-1">
+                {["Unlimited bilingual translations", "Clinical commands in Spanish", "Body map injury reporting", "Printable clinical summaries"].map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/bma-subscription">
+                <Button variant="outline" className="w-full" data-testid="button-landing-bma">Learn More</Button>
+              </Link>
+            </Card>
+
+            <Card className="p-6 flex flex-col" data-testid="card-landing-retainer-pricing">
+              <Badge variant="secondary" className="self-start mb-3">Human Expert</Badge>
+              <h3 className="text-lg font-bold text-primary mb-1">Expert Retainer</h3>
+              <div className="flex items-baseline gap-1 mb-3">
+                <span className="text-3xl font-bold text-primary">$499</span>
+                <span className="text-muted-foreground text-sm">/mo</span>
+              </div>
+              <ul className="space-y-2 mb-6 flex-1">
+                {["Professional safety director support", "Crisis response within 24hrs", "OSHA 300 log audits", "Audit defense preparation"].map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/contact">
+                <Button variant="outline" className="w-full" data-testid="button-landing-retainer">Contact Us</Button>
+              </Link>
+            </Card>
+
+            <Card className="p-6 flex flex-col" data-testid="card-landing-mentorship-pricing">
+              <Badge className="self-start mb-3">CCH Exclusive</Badge>
+              <h3 className="text-lg font-bold text-primary mb-1">ACSI Mentorship</h3>
+              <div className="flex items-baseline gap-1 mb-3">
+                <span className="text-xl font-bold text-primary">From $2,500</span>
+              </div>
+              <ul className="space-y-2 mb-6 flex-1">
+                {["12-week intensive program", "1-on-1 Lead Auditor mentoring", "Foundation ($2,500) or Executive ($5,000)", "Mock audit simulation (Executive)"].map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/mentorship">
+                <Button variant="outline" className="w-full" data-testid="button-landing-mentorship">View Program</Button>
+              </Link>
+            </Card>
+
+            <Card className="p-6 flex flex-col" data-testid="card-landing-brandnswag-pricing">
+              <Badge variant="secondary" className="self-start mb-3">Recognition</Badge>
+              <h3 className="text-lg font-bold text-primary mb-1">BrandNSwag Platform</h3>
+              <div className="flex items-baseline gap-1 mb-3">
+                <span className="text-3xl font-bold text-primary">$49</span>
+                <span className="text-muted-foreground text-sm">/mo</span>
+              </div>
+              <ul className="space-y-2 mb-6 flex-1">
+                {["QR code recognition system", "Points tracking & leaderboards", "Employee reward triggers", "Monthly engagement reports"].map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/brandnswag">
+                <Button variant="outline" className="w-full" data-testid="button-landing-brandnswag">Learn More</Button>
+              </Link>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Training Courses Section */}
-      <section id="courses" className="py-24 bg-muted/30 border-t border-border/50">
+      <section id="courses" className="py-24 bg-white dark:bg-background border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-6 space-y-4">
             <img src={logoUrl} alt="Core Compliance Hub" className="h-24 w-auto mx-auto mb-2" data-testid="img-training-logo" />
@@ -642,6 +736,22 @@ export default function Landing() {
               Part of CCH's ongoing commitment to helping companies understand, comply, and stay compliant with federal and state regulations. Self-paced courses with certificates of completion.
             </p>
           </div>
+
+          <Card className="max-w-4xl mx-auto p-6 bg-gradient-to-r from-accent/10 to-primary/10 border-accent/30 mt-8 mb-4" data-testid="card-free-compliance-pro-promo">
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center">
+                  <Gift className="w-8 h-8 text-accent" />
+                </div>
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-lg font-bold text-primary">Purchase Any Course — Get 1 Free Year of Compliance Pro ($29/mo value)</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  That's $348 in Compliance Pro access — included with your course at no extra cost. Keep getting expert AI guidance while you learn.
+                </p>
+              </div>
+            </div>
+          </Card>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mt-12">
             <CourseCard 

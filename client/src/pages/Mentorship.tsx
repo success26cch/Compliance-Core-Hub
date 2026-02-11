@@ -288,6 +288,90 @@ export default function Mentorship() {
           </div>
         </section>
 
+        <section className="py-20 border-t border-border/50">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <Badge variant="secondary" className="text-sm mb-4">
+                <Award className="w-4 h-4 mr-2" />
+                High-Impact Investment
+              </Badge>
+              <h2 className="text-3xl font-display font-bold text-primary mb-4">
+                Mentorship Program Tiers
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Choose the level of mentorship that fits your organization's needs. Both tiers include a 12-week intensive program.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <Card className="p-8 flex flex-col" data-testid="card-mentorship-foundation">
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-primary mb-2">Foundation Tier</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-primary">$2,500</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">12-week intensive program</p>
+                </div>
+                <ul className="space-y-3 mb-6 flex-1">
+                  {[
+                    "Weekly 1-on-1 mentorship sessions",
+                    "Gap analysis review for one standard",
+                    "Internal audit preparation coaching",
+                    "Document review and feedback",
+                    "Email support between sessions",
+                    "Certificate of completion",
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm text-muted-foreground mb-6 italic">For individual system owners or internal auditors preparing for their first ISO audit.</p>
+                <Link href="/contact">
+                  <Button className="w-full" variant="outline" data-testid="button-mentorship-foundation">
+                    Apply for Foundation Tier
+                  </Button>
+                </Link>
+              </Card>
+
+              <Card className="p-8 flex flex-col ring-2 ring-accent" data-testid="card-mentorship-executive">
+                <Badge className="mb-4 self-start">Recommended</Badge>
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-primary mb-2">Executive Tier</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-primary">$5,000</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">12-week intensive + ongoing support</p>
+                </div>
+                <ul className="space-y-3 mb-6 flex-1">
+                  {[
+                    "Everything in Foundation Tier",
+                    "Multi-standard coverage (9001, 14001, 45001, IATF 16949)",
+                    "Mock audit simulation with detailed findings report",
+                    "Management review preparation and coaching",
+                    "Priority direct access to Lead Auditor mentor",
+                    "3 months of post-program follow-up support",
+                    "Custom procedure templates for your organization",
+                    "Audit defense preparation",
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm text-muted-foreground mb-6 italic">For organizations serious about audit readiness and long-term compliance sustainability.</p>
+                <Link href="/contact">
+                  <Button className="w-full" data-testid="button-mentorship-executive">
+                    Apply for Executive Tier
+                  </Button>
+                </Link>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         <section className="py-20 bg-primary text-primary-foreground">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-block bg-white/10 text-white text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6 rounded-lg">
