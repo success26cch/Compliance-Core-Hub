@@ -6,13 +6,31 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Users, 
   CheckCircle2, ArrowRight, ShoppingBag, Palette, Boxes, ScanLine,
-  Calendar, UserPlus, Shield, GraduationCap
+  Calendar, UserPlus, Shield, GraduationCap, ShoppingCart
 } from "lucide-react";
+import { useCart } from "@/hooks/use-cart";
+import { PRODUCTS } from "@/lib/products";
+import { CartTrigger } from "@/components/CartDrawer";
 import logoUrl from "@assets/1_1767636977932.png";
 import brandNSwagLogo from "@assets/2026_BNS_Logo_1768928815681.png";
 
 export default function BrandNSwag() {
   const { isAuthenticated } = useAuth();
+  const { addItem } = useCart();
+
+  const handleAddToCart = () => {
+    const product = PRODUCTS["brandnswag-platform"];
+    if (product) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        unitAmount: product.unitAmount,
+        currency: product.currency,
+        interval: product.interval,
+        category: product.category,
+      });
+    }
+  };
 
   const swagItems = [
     { name: "Hoodies", icon: Shirt, description: "Premium embroidered company hoodies" },
@@ -325,12 +343,18 @@ export default function BrandNSwag() {
               <p className="text-sm text-muted-foreground mb-6 italic">
                 Swag boxes and merchandise purchased separately. Platform fee ensures recurring revenue for your recognition program.
               </p>
-              <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" className="w-full" data-testid="button-brandnswag-platform-subscribe">
-                  Get Started with BrandNSwag
-                  <ArrowRight className="w-5 h-5 ml-2" />
+              <div className="space-y-2">
+                <Button size="lg" className="w-full" onClick={handleAddToCart} data-testid="button-add-cart-brandnswag-platform">
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  Add to Cart — $49/mo
                 </Button>
-              </a>
+                <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline" className="w-full" data-testid="button-brandnswag-platform-subscribe">
+                    Visit BrandNSwag.com
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </a>
+              </div>
             </Card>
           </div>
         </section>

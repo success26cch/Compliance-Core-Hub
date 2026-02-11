@@ -6,13 +6,31 @@ import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, ArrowRight, Users, Target, Shield, 
   TrendingUp, Award, BookOpen, MessageSquare, Calendar,
-  Briefcase, GraduationCap, ClipboardCheck
+  Briefcase, GraduationCap, ClipboardCheck, ShoppingCart
 } from "lucide-react";
+import { useCart } from "@/hooks/use-cart";
+import { PRODUCTS } from "@/lib/products";
+import { CartTrigger } from "@/components/CartDrawer";
 import logoUrl from "@assets/1_1767636977932.png";
 import mentorshipLogo from "@assets/tree.transp_1768928785893.png";
 
 export default function Mentorship() {
   const { isAuthenticated } = useAuth();
+  const { addItem } = useCart();
+
+  const handleAddToCart = (productId: string) => {
+    const product = PRODUCTS[productId];
+    if (product) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        unitAmount: product.unitAmount,
+        currency: product.currency,
+        interval: product.interval,
+        category: product.category,
+      });
+    }
+  };
 
   const benefits = [
     {
@@ -328,11 +346,17 @@ export default function Mentorship() {
                   ))}
                 </ul>
                 <p className="text-sm text-muted-foreground mb-6 italic">For individual system owners or internal auditors preparing for their first ISO audit.</p>
-                <Link href="/contact">
-                  <Button className="w-full" variant="outline" data-testid="button-mentorship-foundation">
-                    Apply for Foundation Tier
+                <div className="space-y-2">
+                  <Button className="w-full" onClick={() => handleAddToCart("mentorship-foundation")} data-testid="button-add-cart-mentorship-foundation">
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart — $2,500
                   </Button>
-                </Link>
+                  <Link href="/contact">
+                    <Button className="w-full" variant="outline" data-testid="button-mentorship-foundation">
+                      Apply for Foundation Tier
+                    </Button>
+                  </Link>
+                </div>
               </Card>
 
               <Card className="p-8 flex flex-col ring-2 ring-accent" data-testid="card-mentorship-executive">
@@ -362,11 +386,17 @@ export default function Mentorship() {
                   ))}
                 </ul>
                 <p className="text-sm text-muted-foreground mb-6 italic">For organizations serious about audit readiness and long-term compliance sustainability.</p>
-                <Link href="/contact">
-                  <Button className="w-full" data-testid="button-mentorship-executive">
-                    Apply for Executive Tier
+                <div className="space-y-2">
+                  <Button className="w-full" onClick={() => handleAddToCart("mentorship-executive")} data-testid="button-add-cart-mentorship-executive">
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart — $5,000
                   </Button>
-                </Link>
+                  <Link href="/contact">
+                    <Button className="w-full" variant="outline" data-testid="button-mentorship-executive">
+                      Apply for Executive Tier
+                    </Button>
+                  </Link>
+                </div>
               </Card>
             </div>
           </div>

@@ -29,6 +29,24 @@ export class StripeService {
     });
   }
 
+  async createMultiItemCheckoutSession(
+    customerId: string,
+    lineItems: Array<{ priceId: string; quantity: number }>,
+    successUrl: string,
+    cancelUrl: string,
+    mode: 'subscription' | 'payment' = 'subscription'
+  ) {
+    const stripe = await getUncachableStripeClient();
+    return await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card', 'paypal'],
+      line_items: lineItems.map(item => ({ price: item.priceId, quantity: item.quantity })),
+      mode,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
+  }
+
   async createCustomerPortalSession(customerId: string, returnUrl: string) {
     const stripe = await getUncachableStripeClient();
     return await stripe.billingPortal.sessions.create({

@@ -252,6 +252,86 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.post("/api/stripe/checkout-cart", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = (req.user as any).claims.sub;
+      const userEmail = (req.user as any).claims.email || `user-${userId}@example.com`;
+      const { items } = req.body;
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: "Cart items are required" });
+      }
+
+      for (const item of items) {
+        if (!item.priceId || !item.quantity || item.quantity < 1) {
+          return res.status(400).json({ message: "Each item must have a priceId and quantity >= 1" });
+        }
+      }
+
+      let sub = await storage.getSubscription(userId);
+      let customerId = sub?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripeService.createCustomer(userEmail, userId);
+        customerId = customer.id;
+        await storage.upsertSubscription({
+          userId,
+          status: "inactive",
+          stripeCustomerId: customerId,
+        });
+      }
+
+      const hasSubscription = items.some((i: any) => i.mode === "subscription");
+      const hasOneTime = items.some((i: any) => i.mode === "payment");
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const successUrl = `${baseUrl}/settings?checkout=success`;
+      const cancelUrl = `${baseUrl}/settings?checkout=cancel`;
+
+      if (hasSubscription && hasOneTime) {
+        const subItems = items.filter((i: any) => i.mode === "subscription");
+        const session = await stripeService.createMultiItemCheckoutSession(
+          customerId,
+          subItems.map((i: any) => ({ priceId: i.priceId, quantity: i.quantity })),
+          successUrl,
+          cancelUrl,
+          'subscription'
+        );
+
+        const oneTimeItems = items.filter((i: any) => i.mode === "payment");
+        const oneTimeSession = await stripeService.createMultiItemCheckoutSession(
+          customerId,
+          oneTimeItems.map((i: any) => ({ priceId: i.priceId, quantity: i.quantity })),
+          session.url || successUrl,
+          cancelUrl,
+          'payment'
+        );
+
+        return res.json({ url: oneTimeSession.url });
+      }
+
+      const mode = hasSubscription ? 'subscription' : 'payment';
+      const lineItems = items.map((i: any) => ({ priceId: i.priceId, quantity: i.quantity }));
+      
+      const session = await stripeService.createMultiItemCheckoutSession(
+        customerId,
+        lineItems,
+        successUrl,
+        cancelUrl,
+        mode as 'subscription' | 'payment'
+      );
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error('Cart checkout error:', error);
+      res.status(500).json({ message: error.message || "Failed to create checkout session" });
+    }
+  });
+
   app.post("/api/stripe/customer-portal", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

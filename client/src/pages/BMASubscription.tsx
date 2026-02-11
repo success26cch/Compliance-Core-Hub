@@ -8,13 +8,31 @@ import { useState } from "react";
 import {
   CheckCircle2, ArrowRight, Languages, Stethoscope, Calculator,
   DollarSign, Clock, Users, Mic, Volume2, Printer, FileText,
-  MessageSquare, TrendingUp, Shield
+  MessageSquare, TrendingUp, Shield, ShoppingCart
 } from "lucide-react";
+import { useCart } from "@/hooks/use-cart";
+import { PRODUCTS } from "@/lib/products";
+import { CartTrigger } from "@/components/CartDrawer";
 import logoUrl from "@assets/1_1767636977932.png";
 import cchLogo from "@assets/1_1770683748423.png";
 
 export default function BMASubscription() {
   const { isAuthenticated } = useAuth();
+  const { addItem } = useCart();
+
+  const handleAddToCart = () => {
+    const product = PRODUCTS["bma-subscription"];
+    if (product) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        unitAmount: product.unitAmount,
+        currency: product.currency,
+        interval: product.interval,
+        category: product.category,
+      });
+    }
+  };
 
   const [patientsPerDay, setPatientsPerDay] = useState(5);
   const [hourlyWage, setHourlyWage] = useState(22);
@@ -80,7 +98,8 @@ export default function BMASubscription() {
             <a href="/#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-pricing">Pricing</a>
             <Link href="/contact" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="nav-contact">Contact</Link>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <CartTrigger />
             {isAuthenticated ? (
               <Link href="/dashboard">
                 <Button data-testid="button-bma-dashboard">Go to Dashboard</Button>
@@ -365,15 +384,31 @@ export default function BMASubscription() {
                   </li>
                 ))}
               </ul>
-              <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
-                <Button size="lg" className="w-full" data-testid="button-bma-subscribe-main">
-                  Stop Wasting Labor — Start Your BMA Subscription Today
+              <div className="space-y-2">
+                <Button size="lg" className="w-full" onClick={handleAddToCart} data-testid="button-add-cart-bma-main">
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  Add to Cart — $149/mo
                 </Button>
-              </a>
+                <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                  <Button size="lg" variant="outline" className="w-full" data-testid="button-bma-subscribe-main">
+                    Start Your BMA Subscription Today
+                  </Button>
+                </a>
+              </div>
               <p className="text-xs text-muted-foreground mt-4">
                 Cancel anytime. No long-term contracts.
               </p>
             </Card>
+
+            <div className="text-center mt-8">
+              <p className="text-muted-foreground mb-3">Are you a clinic interested in partnering with CCH?</p>
+              <Link href="/clinic-agreement">
+                <Button variant="outline" data-testid="button-clinic-agreement-link">
+                  <FileText className="w-4 h-4 mr-2" />
+                  View Clinic Partnership Agreement
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
 

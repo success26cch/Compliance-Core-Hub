@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2 } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart } from "lucide-react";
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -21,6 +21,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { motion } from "framer-motion";
 import BilingualAssistant from "@/components/BilingualAssistant";
+import { useCart } from "@/hooks/use-cart";
+import { PRODUCTS } from "@/lib/products";
+import { CartTrigger } from "@/components/CartDrawer";
 
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -30,6 +33,22 @@ const leadFormSchema = z.object({
 export default function Landing() {
   const { user, isAuthenticated } = useAuth();
   const { mutate, isPending } = useCreateLead();
+  const { addItem } = useCart();
+
+  const handleAddToCart = (productId: string) => {
+    const product = PRODUCTS[productId];
+    if (product) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        unitAmount: product.unitAmount,
+        currency: product.currency,
+        interval: product.interval,
+        category: product.category,
+      });
+    }
+  };
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [trialQuestion, setTrialQuestion] = useState("");
   const [trialAnswer, setTrialAnswer] = useState("");
@@ -117,7 +136,8 @@ export default function Landing() {
             <a href="#faq" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
           </div>
           
-          <div className="flex items-center shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            <CartTrigger />
             {isAuthenticated ? (
               <Link href="/dashboard">
                 <Button size="sm" className="bg-white text-[hsl(222,47%,11%)] hover:bg-gray-100 font-semibold" data-testid="button-nav-dashboard">Dashboard</Button>
@@ -549,6 +569,8 @@ export default function Landing() {
               buttonText="Upgrade to Pro"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
               highlighted
+              productId="cch-compliance-pro"
+              onAddToCart={handleAddToCart}
             />
             <PricingCard 
               tier="Unlimited Safety"
@@ -558,6 +580,8 @@ export default function Landing() {
               bestFor="Safety Managers handling high-risk environments or large fleets."
               buttonText="Go Unlimited"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+              productId="cch-unlimited-safety"
+              onAddToCart={handleAddToCart}
             />
           </div>
           <div className="text-center mt-10">
@@ -595,6 +619,8 @@ export default function Landing() {
               buttonText="Start ISO Journey"
               buttonHref="https://acsi-quality.com/"
               external
+              productId="iso-essentials"
+              onAddToCart={handleAddToCart}
             />
             <PricingCard 
               tier="ISO Professional"
@@ -606,6 +632,8 @@ export default function Landing() {
               buttonHref="https://acsi-quality.com/"
               external
               highlighted
+              productId="iso-professional"
+              onAddToCart={handleAddToCart}
             />
             <PricingCard 
               tier="Integrated Enterprise"
@@ -615,6 +643,8 @@ export default function Landing() {
               bestFor="Mid-sized firms with high compliance risk."
               buttonText="Enterprise Bundle"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+              productId="integrated-enterprise"
+              onAddToCart={handleAddToCart}
             />
           </div>
           <div className="text-center mt-10">
@@ -655,9 +685,15 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/bma-subscription">
-                <Button variant="outline" className="w-full" data-testid="button-landing-bma">Learn More</Button>
-              </Link>
+              <div className="space-y-2">
+                <Button className="w-full" onClick={() => handleAddToCart("bma-subscription")} data-testid="button-add-cart-bma">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Cart
+                </Button>
+                <Link href="/bma-subscription">
+                  <Button variant="outline" className="w-full" data-testid="button-landing-bma">Learn More</Button>
+                </Link>
+              </div>
             </Card>
 
             <Card className="p-6 flex flex-col" data-testid="card-landing-retainer-pricing">
@@ -675,9 +711,15 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/contact">
-                <Button variant="outline" className="w-full" data-testid="button-landing-retainer">Contact Us</Button>
-              </Link>
+              <div className="space-y-2">
+                <Button className="w-full" onClick={() => handleAddToCart("expert-retainer")} data-testid="button-add-cart-retainer">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Cart
+                </Button>
+                <Link href="/contact">
+                  <Button variant="outline" className="w-full" data-testid="button-landing-retainer">Contact Us</Button>
+                </Link>
+              </div>
             </Card>
 
             <Card className="p-6 flex flex-col" data-testid="card-landing-mentorship-pricing">
@@ -694,9 +736,15 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/mentorship">
-                <Button variant="outline" className="w-full" data-testid="button-landing-mentorship">View Program</Button>
-              </Link>
+              <div className="space-y-2">
+                <Button className="w-full" onClick={() => handleAddToCart("mentorship-foundation")} data-testid="button-add-cart-mentorship">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Cart — Foundation
+                </Button>
+                <Link href="/mentorship">
+                  <Button variant="outline" className="w-full" data-testid="button-landing-mentorship">View Program</Button>
+                </Link>
+              </div>
             </Card>
 
             <Card className="p-6 flex flex-col" data-testid="card-landing-brandnswag-pricing">
@@ -714,9 +762,15 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/brandnswag">
-                <Button variant="outline" className="w-full" data-testid="button-landing-brandnswag">Learn More</Button>
-              </Link>
+              <div className="space-y-2">
+                <Button className="w-full" onClick={() => handleAddToCart("brandnswag-platform")} data-testid="button-add-cart-brandnswag">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Cart
+                </Button>
+                <Link href="/brandnswag">
+                  <Button variant="outline" className="w-full" data-testid="button-landing-brandnswag">Learn More</Button>
+                </Link>
+              </div>
             </Card>
           </div>
         </div>
@@ -761,6 +815,8 @@ export default function Landing() {
               price="$199"
               modules="4 Chapters"
               courseUrl="https://your-teachable-site.teachable.com/p/dot-medical-certification"
+              productId="course-dot-medical"
+              onAddToCart={handleAddToCart}
               chapters={[
                 "Chapter 1: Introduction to DOT Physical Requirements",
                 "Chapter 2: Understanding Disqualifying Conditions",
@@ -775,6 +831,8 @@ export default function Landing() {
               price="$249"
               modules="4 Chapters"
               courseUrl="https://your-teachable-site.teachable.com/p/osha-medical-surveillance"
+              productId="course-osha-surveillance"
+              onAddToCart={handleAddToCart}
               chapters={[
                 "Chapter 1: Respirator Medical Evaluations",
                 "Chapter 2: Asbestos & Lead Medical Surveillance",
@@ -789,6 +847,8 @@ export default function Landing() {
               price="$199"
               modules="4 Chapters"
               courseUrl="https://your-teachable-site.teachable.com/p/drug-alcohol-testing"
+              productId="course-drug-alcohol"
+              onAddToCart={handleAddToCart}
               chapters={[
                 "Chapter 1: DOT vs Non-DOT Testing Requirements",
                 "Chapter 2: Medical Review Officer (MRO) Process",
@@ -804,6 +864,8 @@ export default function Landing() {
               modules="12 Modules"
               highlighted
               courseUrl="https://your-teachable-site.teachable.com/p/iso-management-systems"
+              productId="course-iso-management"
+              onAddToCart={handleAddToCart}
               chapters={[
                 "Module 1: Introduction to ISO Standards",
                 "Module 2: High-Level Structure (HLS) Overview",
@@ -826,6 +888,8 @@ export default function Landing() {
               price="$299"
               modules="10 Modules"
               courseUrl="https://your-teachable-site.teachable.com/p/osha-recordkeeping-master"
+              productId="course-osha-recordkeeping"
+              onAddToCart={handleAddToCart}
               chapters={[
                 "Module 1: OSHA Recordkeeping Overview",
                 "Module 2: General Recording Criteria",
@@ -839,19 +903,19 @@ export default function Landing() {
                 "Module 10: Inspection Preparedness"
               ]}
             />
-            <a 
-              href="https://your-teachable-site.teachable.com/p/complete-training-bundle" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center hover-elevate cursor-pointer"
+            <div
+              className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center cursor-pointer"
             >
               <GraduationCap className="w-12 h-12 mb-4 opacity-80" />
               <h3 className="text-xl font-bold mb-2">Complete Training Bundle</h3>
               <p className="text-primary-foreground/80 text-sm mb-4">All 5 courses + Corporate License</p>
               <div className="text-3xl font-bold mb-4">$899</div>
-              <p className="text-xs text-primary-foreground/60">Save over $300</p>
-              <Button variant="secondary" size="sm" className="mt-4">Get the Bundle</Button>
-            </a>
+              <p className="text-xs text-primary-foreground/60 mb-4">Save over $300</p>
+              <Button variant="secondary" size="sm" onClick={() => handleAddToCart("course-complete-bundle")} data-testid="button-add-cart-bundle">
+                <ShoppingCart className="w-3 h-3 mr-1" />
+                Add Bundle to Cart
+              </Button>
+            </div>
           </div>
           <div className="text-center mt-10">
             <p className="text-muted-foreground mb-3">Need help choosing the right training for your team?</p>
@@ -1267,7 +1331,7 @@ function FeatureCard({ icon: Icon, imageSrc, title, description }: any) {
   );
 }
 
-function PricingCard({ tier, price, period, features, bestFor, buttonText, buttonHref, highlighted, external }: {
+function PricingCard({ tier, price, period, features, bestFor, buttonText, buttonHref, highlighted, external, productId, onAddToCart }: {
   tier: string;
   price: string;
   period: string;
@@ -1277,7 +1341,11 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
   buttonHref: string;
   highlighted?: boolean;
   external?: boolean;
+  productId?: string;
+  onAddToCart?: (productId: string) => void;
 }) {
+  const isFree = price === "Free";
+
   return (
     <div className={`p-8 rounded-2xl border ${highlighted ? 'border-accent bg-accent/5 ring-2 ring-accent' : 'border-border/50 bg-white'} flex flex-col`}>
       <div className="mb-6">
@@ -1296,16 +1364,30 @@ function PricingCard({ tier, price, period, features, bestFor, buttonText, butto
         ))}
       </ul>
       <p className="text-sm text-muted-foreground mb-6 italic">{bestFor}</p>
-      <a href={buttonHref} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-        <Button className="w-full" variant={highlighted ? 'default' : 'outline'} data-testid={`button-pricing-${tier.toLowerCase().replace(/\s+/g, '-')}`}>
-          {buttonText}
-        </Button>
-      </a>
+      <div className="space-y-2">
+        {!isFree && productId && onAddToCart ? (
+          <Button
+            className="w-full"
+            variant={highlighted ? 'default' : 'outline'}
+            onClick={() => onAddToCart(productId)}
+            data-testid={`button-add-cart-${tier.toLowerCase().replace(/\s+/g, '-')}`}
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Add to Cart
+          </Button>
+        ) : (
+          <a href={buttonHref} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+            <Button className="w-full" variant={highlighted ? 'default' : 'outline'} data-testid={`button-pricing-${tier.toLowerCase().replace(/\s+/g, '-')}`}>
+              {buttonText}
+            </Button>
+          </a>
+        )}
+      </div>
     </div>
   );
 }
 
-function CourseCard({ icon: Icon, title, description, price, modules, chapters, highlighted, courseUrl }: {
+function CourseCard({ icon: Icon, title, description, price, modules, chapters, highlighted, courseUrl, productId, onAddToCart }: {
   icon: any;
   title: string;
   description: string;
@@ -1314,6 +1396,8 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
   chapters: string[];
   highlighted?: boolean;
   courseUrl?: string;
+  productId?: string;
+  onAddToCart?: (productId: string) => void;
 }) {
   return (
     <div className={`p-6 rounded-2xl border ${highlighted ? 'border-accent bg-accent/5 ring-2 ring-accent' : 'border-border/50 bg-white'} flex flex-col`}>
@@ -1354,30 +1438,44 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
               ))}
             </ul>
           </div>
-          <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between">
+          <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between gap-2 flex-wrap">
             <div>
               <span className="text-2xl font-bold text-primary">{price}</span>
               <span className="text-sm text-muted-foreground ml-1">one-time</span>
             </div>
-            <a href={courseUrl || "#"} target="_blank" rel="noopener noreferrer">
-              <Button size="sm" data-testid={`button-enroll-dialog-${title.toLowerCase().replace(/\s+/g, '-')}`}>
-                Enroll Now
+            {productId && onAddToCart ? (
+              <Button size="sm" onClick={() => onAddToCart(productId)} data-testid={`button-add-cart-dialog-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+                <ShoppingCart className="w-3 h-3 mr-1" />
+                Add to Cart
               </Button>
-            </a>
+            ) : (
+              <a href={courseUrl || "#"} target="_blank" rel="noopener noreferrer">
+                <Button size="sm" data-testid={`button-enroll-dialog-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+                  Enroll Now
+                </Button>
+              </a>
+            )}
           </div>
         </DialogContent>
       </Dialog>
       
-      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+      <div className="flex items-center justify-between gap-2 flex-wrap pt-4 border-t border-border/50">
         <div>
           <span className="text-2xl font-bold text-primary">{price}</span>
           <span className="text-sm text-muted-foreground ml-1">one-time</span>
         </div>
-        <a href={courseUrl || "#"} target="_blank" rel="noopener noreferrer">
-          <Button size="sm" variant={highlighted ? "default" : "outline"} data-testid={`button-enroll-${title.toLowerCase().replace(/\s+/g, '-')}`}>
-            Enroll Now
+        {productId && onAddToCart ? (
+          <Button size="sm" variant={highlighted ? "default" : "outline"} onClick={() => onAddToCart(productId)} data-testid={`button-add-cart-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+            <ShoppingCart className="w-3 h-3 mr-1" />
+            Add to Cart
           </Button>
-        </a>
+        ) : (
+          <a href={courseUrl || "#"} target="_blank" rel="noopener noreferrer">
+            <Button size="sm" variant={highlighted ? "default" : "outline"} data-testid={`button-enroll-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+              Enroll Now
+            </Button>
+          </a>
+        )}
       </div>
     </div>
   );
