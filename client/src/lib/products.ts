@@ -57,7 +57,7 @@ export const PRODUCTS: Record<string, ProductDefinition> = {
   "bma-subscription": {
     id: "bma-subscription",
     name: "Spanish Bilingual Medical Assistant",
-    unitAmount: 14900,
+    unitAmount: 19900,
     currency: "usd",
     interval: "month",
     category: "Specialized",

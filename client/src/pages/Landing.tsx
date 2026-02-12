@@ -761,7 +761,7 @@ export default function Landing() {
               <Badge variant="secondary" className="self-start mb-3">Clinic Tool</Badge>
               <h3 className="text-lg font-bold text-primary mb-1">Spanish Bilingual Medical Assistant</h3>
               <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-3xl font-bold text-primary">$149</span>
+                <span className="text-3xl font-bold text-primary">$199</span>
                 <span className="text-muted-foreground text-sm">/mo per location</span>
               </div>
               <ul className="space-y-2 mb-6 flex-1">

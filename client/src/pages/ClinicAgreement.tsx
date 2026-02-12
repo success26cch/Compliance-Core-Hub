@@ -192,7 +192,7 @@ export default function ClinicAgreement() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <Card className="p-4">
                   <p className="text-sm text-muted-foreground mb-1">Subscription Fee</p>
-                  <p className="text-2xl font-bold text-primary">$149.00 <span className="text-sm font-normal text-muted-foreground">USD/month</span></p>
+                  <p className="text-2xl font-bold text-primary">$199.00 <span className="text-sm font-normal text-muted-foreground">USD/month</span></p>
                   <p className="text-xs text-muted-foreground mt-1">Billed per location</p>
                 </Card>
                 <Card className="p-4">
@@ -301,7 +301,7 @@ export default function ClinicAgreement() {
             <Label htmlFor="agree" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
               I confirm that I am authorized to enter into this agreement on behalf of the clinic named above.
               I have read and agree to the terms of the CCH Spanish Bilingual Assistant Clinic Partnership Agreement,
-              including the $149.00/month subscription fee billed per location.
+              including the $199.00/month subscription fee billed per location.
             </Label>
           </div>
 
@@ -318,7 +318,7 @@ export default function ClinicAgreement() {
               </>
             ) : (
               <>
-                <Handshake className="w-5 h-5 mr-2" /> Accept Agreement & Subscribe — $149/mo
+                <Handshake className="w-5 h-5 mr-2" /> Accept Agreement & Subscribe — $199/mo
               </>
             )}
           </Button>

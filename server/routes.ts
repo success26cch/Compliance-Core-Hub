@@ -292,7 +292,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
         const bmaProduct = (products as any[]).find((p: any) => 
           p.product_name?.toLowerCase().includes('bilingual') || 
           p.product_name?.toLowerCase().includes('bma') ||
-          (p.unit_amount === 14900 && p.recurring?.interval === 'month')
+          (p.unit_amount === 19900 && p.recurring?.interval === 'month')
         );
         
         await storage.createClinicAgreement({

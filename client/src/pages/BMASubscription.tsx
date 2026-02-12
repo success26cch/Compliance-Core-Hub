@@ -41,7 +41,7 @@ export default function BMASubscription() {
   const dailySavings = patientsPerDay * (minutesSaved / 60) * hourlyWage;
   const monthlySavings = dailySavings * 22;
   const annualSavings = monthlySavings * 12;
-  const subscriptionCost = 149;
+  const subscriptionCost = 199;
   const daysToPayoff = subscriptionCost > 0 && dailySavings > 0
     ? Math.ceil(subscriptionCost / dailySavings)
     : 0;
@@ -83,7 +83,7 @@ export default function BMASubscription() {
     { service: "Human Interpreter (in-person)", cost: "$45–$150/hour", note: "Scheduling delays, limited availability" },
     { service: "Video Remote Interpreter", cost: "$1.95–$3.49/min", note: "Per-minute charges add up fast" },
     { service: "Phone Interpreter", cost: "$1.50–$2.75/min", note: "No visual context for medical procedures" },
-    { service: "CCH Spanish Bilingual Assistant", cost: "$149/month", note: "Unlimited use, instant access, medical-specific" },
+    { service: "CCH Spanish Bilingual Assistant", cost: "$199/month", note: "Unlimited use, instant access, medical-specific" },
   ];
 
   return (
@@ -318,7 +318,7 @@ export default function BMASubscription() {
                         {daysToPayoff} {daysToPayoff === 1 ? 'day' : 'days'}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        at $149/month subscription
+                        at $199/month subscription
                       </p>
                     </div>
                   </div>
@@ -363,7 +363,7 @@ export default function BMASubscription() {
               <h3 className="text-2xl font-bold text-primary mb-2">BMA Digital Assistant</h3>
               <p className="text-muted-foreground mb-6">Per location, unlimited use</p>
               <div className="mb-6">
-                <span className="text-5xl font-bold text-primary">$149</span>
+                <span className="text-5xl font-bold text-primary">$199</span>
                 <span className="text-muted-foreground">/mo</span>
               </div>
               <ul className="space-y-3 text-left mb-8">
@@ -387,7 +387,7 @@ export default function BMASubscription() {
               <div className="space-y-2">
                 <Button size="lg" className="w-full" onClick={handleAddToCart} data-testid="button-add-cart-bma-main">
                   <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart — $149/mo
+                  Add to Cart — $199/mo
                 </Button>
                 <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
                   <Button size="lg" variant="outline" className="w-full" data-testid="button-bma-subscribe-main">

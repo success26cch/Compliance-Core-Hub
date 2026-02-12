@@ -65,7 +65,7 @@ const slides: DemoSlide[] = [
       "Spanish text-to-speech for patient communication",
       "Bidirectional speech-to-text: patient speaks Spanish, auto-translates to English",
       "Interactive body map for injury documentation",
-      "Standalone subscription: $149/mo per clinic location",
+      "Standalone subscription: $199/mo per clinic location",
     ],
     liveLink: "/bma-subscription",
     liveLinkLabel: "See Full BMA Details",
