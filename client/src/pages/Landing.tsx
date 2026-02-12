@@ -216,10 +216,10 @@ export default function Landing() {
               </div>
             </div>
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
-              Compliance Isn't a Guessing Game,<br /><span className="text-accent">It's Your Reputation.</span>
+              It's Your Reputation,<br /><span className="text-accent">Compliance Isn't a Guessing Game.</span>
             </h1>
             <p className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
-              Welcome to the future of compliance, welcome, to<br /><span className="text-accent">Core Compliance Hub.</span>
+              Welcome to Core Compliance Hub,<br /><span className="text-accent">Welcome to the Future of Compliance.</span>
             </p>
             <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
               <p className="text-lg text-primary leading-relaxed">
