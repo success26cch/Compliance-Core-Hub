@@ -788,7 +788,7 @@ export default function DemoPage() {
                         </div>
                         <div>
                           <p className="font-semibold" style={{ color: TEXT_PRIMARY }}>{planName}</p>
-                          {rest.length > 0 && <p className="text-sm" style={{ color: TEXT_SECONDARY }}>{rest.join(" - ")}</p>}
+                          {rest.length > 0 && <p className={`text-sm ${isBma ? "font-bold" : ""}`} style={{ color: isBma ? TEXT_PRIMARY : TEXT_SECONDARY }}>{rest.join(" - ")}</p>}
                         </div>
                       </div>
                     </Card>
