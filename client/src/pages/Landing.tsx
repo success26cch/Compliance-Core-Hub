@@ -886,9 +886,9 @@ export default function Landing() {
                 </div>
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-lg font-bold text-primary">Purchase Any Course — Get 1 Free Year of Compliance Pro ($29/mo value)</h3>
+                <h3 className="text-lg font-bold text-primary">Purchase Any Course — Get 3 Free Months of Compliance Pro ($29/mo value)</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  That's $348 in Compliance Pro access — included with your course at no extra cost. Keep getting expert AI guidance while you learn.
+                  That's $87 in Compliance Pro access — included with your course at no extra cost. Keep getting expert AI guidance while you learn.
                 </p>
               </div>
             </div>

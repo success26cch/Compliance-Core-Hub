@@ -208,7 +208,7 @@ const slides: DemoSlide[] = [
       "OSHA Medical Surveillance ($249) - Respirator physicals, fit testing, HAZWOPER",
       "Drug & Alcohol Testing ($199) - DOT vs Non-DOT, MRO roles, Clearinghouse",
       "ISO Management Systems ($349) - 9001/14001/45001, gap analysis, internal auditing",
-      "Every course purchase includes 1 FREE year of Compliance Pro ($348 value)",
+      "Every course purchase includes 3 FREE months of Compliance Pro ($87 value)",
     ],
     visual: "feature",
   },
