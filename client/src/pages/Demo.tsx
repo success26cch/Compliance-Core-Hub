@@ -252,10 +252,11 @@ const slides: DemoSlide[] = [
     color: "bg-primary",
     points: [
       "Safety Starter: FREE - 3 questions/month for small teams",
-      "Compliance Pro: $29/mo - 15 questions + PDF checklists",
-      "Unlimited Safety: $99/mo - Unlimited questions + audit prep",
+      "Compliance Pro: $29/mo - 15 AI Bot questions + PDF checklists",
+      "Unlimited Safety: $99/mo - Unlimited AI Bot + audit prep",
       "ISO Professional: $149/mo - Unlimited ISO AI + audit checklists",
       "Integrated Enterprise: $299/mo - CCH + ACSI combined, up to 50 employees",
+      "Spanish Bilingual Medical Assistant: $199/mo per location",
       "Human Expert Retainer: $499/mo - Professional safety director support",
     ],
     visual: "pricing",
