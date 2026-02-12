@@ -455,7 +455,7 @@ export default function Landing() {
                           variant="ghost"
                           onClick={botToggleListening}
                           disabled={botLoading}
-                          className={`absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7 ${botListening ? "text-accent" : "text-muted-foreground"}`}
+                          className={`absolute right-0.5 top-1/2 -translate-y-1/2 ${botListening ? "text-accent" : "text-muted-foreground"}`}
                           data-testid="button-bot-mic"
                         >
                           {botListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -471,7 +471,7 @@ export default function Landing() {
                     </Button>
                   </div>
                   {botListening && (
-                    <p className="text-xs text-center text-muted-foreground animate-pulse">
+                    <p className="text-xs text-center text-muted-foreground animate-pulse" data-testid="text-bot-listening">
                       Speak now... tap the mic again to stop.
                     </p>
                   )}

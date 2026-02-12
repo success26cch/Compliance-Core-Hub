@@ -47,7 +47,6 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
-      onTranscriptRef.current("");
       recognitionRef.current.start();
       setIsListening(true);
     }

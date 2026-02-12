@@ -241,7 +241,7 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
                 variant="ghost"
                 onClick={toggleListening}
                 disabled={isStreaming || limitReached}
-                className={`absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 ${isListening ? "text-accent" : "text-muted-foreground"}`}
+                className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? "text-accent" : "text-muted-foreground"}`}
                 data-testid="button-voice-input"
               >
                 {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}

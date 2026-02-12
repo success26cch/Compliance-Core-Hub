@@ -401,7 +401,7 @@ function DemoBotChat() {
               variant="ghost"
               onClick={toggleListening}
               disabled={loading || limitReached}
-              className={`absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7 ${isListening ? "text-accent" : "text-muted-foreground"}`}
+              className={`absolute right-0.5 top-1/2 -translate-y-1/2 ${isListening ? "text-accent" : "text-muted-foreground"}`}
               data-testid="button-demo-bot-mic"
             >
               {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -413,7 +413,7 @@ function DemoBotChat() {
         </Button>
       </div>
       {isListening && (
-        <p className="text-xs text-center py-1 animate-pulse" style={{ color: TEXT_SECONDARY }}>
+        <p className="text-xs text-center py-1 animate-pulse" style={{ color: TEXT_SECONDARY }} data-testid="text-demo-bot-listening">
           Speak now... tap the mic again to stop.
         </p>
       )}
