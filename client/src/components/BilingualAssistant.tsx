@@ -28,6 +28,11 @@ import {
   EyeOff,
   Wine,
   ShieldAlert,
+  Send,
+  MessageCircle,
+  Trash2,
+  User,
+  Bot,
 } from "lucide-react";
 
 type Mode = "injury" | "intake" | "drugscreen";
@@ -357,6 +362,360 @@ function speakSpanish(text: string) {
     utterance.pitch = 1;
     window.speechSynthesis.speak(utterance);
   }
+}
+
+interface BmaChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  speaker?: "provider" | "patient";
+  spanish?: string;
+}
+
+const BMA_CONTEXT_OPTIONS = [
+  { value: "dot-physical", label: "DOT Physical" },
+  { value: "drug-screen", label: "Drug & Alcohol Testing" },
+  { value: "injury-report", label: "Injury Reporting" },
+  { value: "work-restrictions", label: "Work Restrictions" },
+  { value: "respiratory-exam", label: "Respiratory / PFT" },
+  { value: "blood-draw", label: "Blood Draw / Lab Work" },
+  { value: "general", label: "General Medical Visit" },
+];
+
+function BmaInteractiveChatMode() {
+  const [messages, setMessages] = useState<BmaChatMessage[]>([]);
+  const [providerInput, setProviderInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeSpeaker, setActiveSpeaker] = useState<"provider" | "patient">("provider");
+  const [context, setContext] = useState("general");
+  const [isListening, setIsListening] = useState(false);
+  const [patientSpoken, setPatientSpoken] = useState("");
+  const recognitionRef = useRef<any>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = useCallback(async (text: string, speaker: "provider" | "patient") => {
+    if (!text.trim() || isLoading) return;
+
+    const prefix = speaker === "provider"
+      ? `[PROVIDER says in English]: ${text}`
+      : `[PATIENT says in Spanish]: ${text}`;
+
+    const userMsg: BmaChatMessage = { role: "user", content: prefix, speaker };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setProviderInput("");
+    setPatientSpoken("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/bma-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          context: BMA_CONTEXT_OPTIONS.find(c => c.value === context)?.label || "General Medical Visit",
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const assistantMsg: BmaChatMessage = {
+          role: "assistant",
+          content: data.reply,
+          spanish: data.spanish || "",
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+
+        if (speaker === "provider" && data.spanish) {
+          speakSpanish(data.spanish);
+        }
+      }
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Connection error. Please try again." }]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [messages, isLoading, context]);
+
+  const togglePatientListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-MX";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    let finalTranscript = patientSpoken;
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? " " : "") + transcript;
+          setPatientSpoken(finalTranscript);
+        } else {
+          interim = transcript;
+        }
+      }
+      if (interim) {
+        setPatientSpoken(finalTranscript + (finalTranscript ? " " : "") + interim);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+    setIsListening(true);
+  }, [isListening, patientSpoken]);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
+
+  const clearChat = () => {
+    setMessages([]);
+    setProviderInput("");
+    setPatientSpoken("");
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-5 h-5 text-[#FFC107]" />
+          <h3 className="text-lg font-bold text-white">AI Medical Interpreter</h3>
+          <Badge className="bg-green-500/20 text-green-400 no-default-hover-elevate no-default-active-elevate">
+            <Bot className="w-3 h-3 mr-1" /> AI-Powered
+          </Badge>
+        </div>
+        {messages.length > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-gray-600 text-gray-400"
+            onClick={clearChat}
+            data-testid="btn-bma-clear-chat"
+          >
+            <Trash2 className="w-3 h-3 mr-1" /> Clear
+          </Button>
+        )}
+      </div>
+      <p className="text-sm text-gray-400">
+        Real-time bidirectional interpretation between provider and patient. The AI translates with clinical precision, confirms understanding, and generates summaries for the medical record.
+      </p>
+
+      <div className="flex flex-wrap gap-2 mb-2">
+        <span className="text-xs text-gray-400 self-center">Visit Type:</span>
+        {BMA_CONTEXT_OPTIONS.map(opt => (
+          <Button
+            key={opt.value}
+            size="sm"
+            variant={context === opt.value ? "default" : "outline"}
+            className={context === opt.value
+              ? "bg-[#FFC107] text-black"
+              : "border-gray-600 text-gray-300"
+            }
+            onClick={() => setContext(opt.value)}
+            data-testid={`btn-bma-context-${opt.value}`}
+          >
+            {opt.label}
+          </Button>
+        ))}
+      </div>
+
+      <div className="rounded-md bg-gray-900/60 border border-gray-700/50 p-4 min-h-[200px] max-h-[400px] overflow-y-auto space-y-3" data-testid="bma-chat-messages">
+        {messages.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Start a conversation. Type what the provider says in English, or record the patient speaking Spanish.</p>
+          </div>
+        )}
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex gap-3 ${msg.role === "assistant" ? "" : ""}`}>
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+              msg.role === "assistant"
+                ? "bg-[#FFC107]/20"
+                : msg.speaker === "provider"
+                  ? "bg-blue-500/20"
+                  : "bg-green-500/20"
+            }`}>
+              {msg.role === "assistant" ? (
+                <Bot className="w-4 h-4 text-[#FFC107]" />
+              ) : msg.speaker === "provider" ? (
+                <Stethoscope className="w-4 h-4 text-blue-400" />
+              ) : (
+                <User className="w-4 h-4 text-green-400" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              {msg.role !== "assistant" && (
+                <span className={`text-[10px] uppercase tracking-wider font-semibold block mb-1 ${
+                  msg.speaker === "provider" ? "text-blue-400" : "text-green-400"
+                }`}>
+                  {msg.speaker === "provider" ? "Provider" : "Patient"}
+                </span>
+              )}
+              {msg.role === "assistant" ? (
+                <div className="text-sm text-white whitespace-pre-wrap leading-relaxed" data-testid={`bma-chat-response-${i}`}>
+                  {msg.content.split(/(\*\*[^*]+\*\*)/).map((part, pi) => {
+                    if (part.startsWith("**") && part.endsWith("**")) {
+                      return <span key={pi} className="font-bold text-[#FFC107]">{part.slice(2, -2)}</span>;
+                    }
+                    return <span key={pi}>{part}</span>;
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-white" data-testid={`bma-chat-input-${i}`}>
+                  {msg.content.replace(/^\[(PROVIDER|PATIENT) says in (English|Spanish)\]: /, "")}
+                </p>
+              )}
+            </div>
+            {msg.role === "assistant" && msg.spanish && (
+              <button
+                type="button"
+                onClick={() => speakSpanish(msg.spanish!)}
+                className="self-start mt-1 p-1.5 rounded-md bg-gray-800/60 border border-gray-700 opacity-60 hover:opacity-100 transition-opacity"
+                title="Speak Spanish translation"
+                data-testid={`btn-bma-speak-${i}`}
+              >
+                <Volume2 className="w-3.5 h-3.5 text-[#FFC107]" />
+              </button>
+            )}
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex gap-3 items-center">
+            <div className="w-7 h-7 rounded-full bg-[#FFC107]/20 flex items-center justify-center shrink-0">
+              <Loader2 className="w-4 h-4 text-[#FFC107] animate-spin" />
+            </div>
+            <p className="text-sm text-gray-400">Translating and analyzing...</p>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      <div className="flex gap-2 mb-2">
+        <Button
+          size="sm"
+          variant={activeSpeaker === "provider" ? "default" : "outline"}
+          className={activeSpeaker === "provider"
+            ? "bg-blue-600 text-white"
+            : "border-gray-600 text-gray-300"
+          }
+          onClick={() => setActiveSpeaker("provider")}
+          data-testid="btn-bma-speaker-provider"
+        >
+          <Stethoscope className="w-4 h-4 mr-1" /> Provider (English)
+        </Button>
+        <Button
+          size="sm"
+          variant={activeSpeaker === "patient" ? "default" : "outline"}
+          className={activeSpeaker === "patient"
+            ? "bg-green-600 text-white"
+            : "border-gray-600 text-gray-300"
+          }
+          onClick={() => setActiveSpeaker("patient")}
+          data-testid="btn-bma-speaker-patient"
+        >
+          <User className="w-4 h-4 mr-1" /> Patient (Spanish)
+        </Button>
+      </div>
+
+      {activeSpeaker === "provider" ? (
+        <div className="flex gap-2">
+          <Input
+            value={providerInput}
+            onChange={(e) => setProviderInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(providerInput, "provider"); } }}
+            placeholder="Type what the provider says in English..."
+            className="flex-1 bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500"
+            disabled={isLoading}
+            data-testid="input-bma-provider"
+          />
+          <Button
+            size="icon"
+            variant="default"
+            className="bg-blue-600"
+            onClick={() => sendMessage(providerInput, "provider")}
+            disabled={!providerInput.trim() || isLoading}
+            data-testid="btn-bma-send-provider"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={togglePatientListening}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md border transition-colors ${
+                isListening
+                  ? "bg-red-500/20 border-red-500/50 animate-pulse"
+                  : "bg-green-500/20 border-green-500/50"
+              }`}
+              data-testid="btn-bma-patient-mic"
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="w-4 h-4 text-red-400" />
+                  <span className="text-sm font-bold text-red-400">Stop</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4 text-green-400" />
+                  <span className="text-sm font-bold text-green-400">Record Patient</span>
+                </>
+              )}
+            </button>
+            <span className="text-xs text-gray-500">
+              {isListening ? "Listening for Spanish..." : "Press to record patient speaking Spanish"}
+            </span>
+          </div>
+          {patientSpoken && (
+            <div className="flex gap-2">
+              <div className="flex-1 rounded-md bg-gray-800/60 border border-green-500/30 p-2">
+                <span className="text-[10px] uppercase tracking-wider text-green-400 font-semibold block mb-1">Patient said (Spanish)</span>
+                <p className="text-sm text-white" data-testid="bma-patient-spoken">{patientSpoken}</p>
+              </div>
+              <Button
+                size="icon"
+                variant="default"
+                className="bg-green-600 self-end"
+                onClick={() => sendMessage(patientSpoken, "patient")}
+                disabled={isLoading}
+                data-testid="btn-bma-send-patient"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function CommandCenterMode() {
@@ -1502,6 +1861,10 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
           {mode === "injury" && <InjuryReportingMode />}
           {mode === "intake" && <NewHireIntakeMode />}
           {mode === "drugscreen" && <DrugScreenMode />}
+
+          <div className="mt-6 pt-4 border-t border-gray-700">
+            <BmaInteractiveChatMode />
+          </div>
 
           <div className="mt-6 pt-4 border-t border-gray-700">
             <CommandCenterMode />

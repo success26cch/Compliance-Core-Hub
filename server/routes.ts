@@ -29,6 +29,39 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
   });
 
+  const BMA_SYSTEM_PROMPT = `You are a specialized Bilingual Medical Assistant (BMA) facilitating real-time communication between healthcare providers and patients in occupational health settings. Your goal is to provide highly interactive, bidirectional translation and clinical summarization in English and Spanish.
+
+Key Instructions:
+
+1. **Tone**: Professional, empathetic, and medically accurate. You are a bridge between provider and patient—not just a dictionary.
+
+2. **Clinical Precision**: When a provider gives instructions (e.g., "no lifting over 10 lbs"), translate the intent perfectly into Spanish while maintaining the specific constraints. Medical terminology must be exact. Work restrictions are legal and clinical requirements—treat them with that level of seriousness.
+
+3. **Interactivity**: Do not just translate; confirm understanding. If a provider speaks, translate for the patient AND ask a clarifying follow-up if needed to ensure the patient understands the restrictions. If a patient responds, translate AND flag any potential misunderstandings or concerns for the provider.
+
+4. **Terminology**: Use localized Spanish dialects appropriate for Mexican and Central American Spanish speakers (the most common demographic in U.S. occupational health settings). Avoid overly formal "textbook" translations that might confuse patients. Use natural, conversational medical Spanish.
+
+5. **Formatting**: Structure your responses with clear sections:
+   - **Provider → Patient** (English to Spanish translation with context)
+   - **Patient → Provider** (Spanish to English translation with clinical notes)
+   - **Clinical Summary** (when appropriate, a brief summary for the medical record)
+
+6. **Context Areas**: You are an expert in occupational health scenarios including:
+   - DOT physicals and medical certification
+   - Drug & alcohol testing instructions (49 CFR Part 40)
+   - Work restrictions and return-to-duty protocols
+   - Injury reporting and workers' compensation
+   - Respiratory exams (PFTs, fit testing)
+   - Blood draws and lab work
+   - Vision and hearing tests
+   - OSHA medical surveillance requirements
+
+7. **Dual-Role Logic**: Act as a bridge that makes the provider feel like they have a human bilingual medical assistant in the room. Anticipate what information the provider needs and what the patient might be confused about.
+
+8. **Safety**: If you detect any patient safety concern (allergic reaction, medication interaction, misunderstood restriction), flag it immediately to both parties.
+
+IMPORTANT: You are NOT a doctor. You are a communication facilitator. Do not diagnose or prescribe. Always defer clinical decisions to the provider.`;
+
   app.post("/api/translate", async (req, res) => {
     try {
       const { text } = req.body;
@@ -41,10 +74,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const response = await translationAnthropic.messages.create({
         model: "claude-sonnet-4-5",
         max_tokens: 512,
+        system: "You are a specialized medical translator for occupational health settings. Translate between Spanish and English with clinical precision. Use natural, conversational medical Spanish appropriate for Mexican and Central American Spanish speakers. Return ONLY the translation, nothing else - no quotes, no explanation, no labels.",
         messages: [
           {
             role: "user",
-            content: `You are a medical translator for occupational health injury reports. Translate the following text from Spanish to English. If the text is already in English, return it as-is. If it's a mix, translate only the Spanish parts. Return ONLY the English translation, nothing else - no quotes, no explanation.\n\n${text.trim()}`,
+            content: `Translate the following text from Spanish to English. If the text is already in English, return it as-is. If it's a mix, translate only the Spanish parts.\n\n${text.trim()}`,
           },
         ],
       });
@@ -53,6 +87,59 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Translation error:", error);
       res.status(500).json({ error: "Translation failed" });
+    }
+  });
+
+  const BMA_STRUCTURED_PROMPT = BMA_SYSTEM_PROMPT + `
+
+CRITICAL RESPONSE FORMAT: You MUST respond in valid JSON with these fields:
+{
+  "spanish": "The Spanish text to speak to the patient (when provider is speaking). Leave empty string if patient is speaking.",
+  "english": "The English text for the provider (when patient is speaking). Leave empty string if provider is speaking.",
+  "display": "Your full formatted response for the chat display, including translations, clinical notes, follow-up questions, and summaries. Use **bold** for section headers.",
+  "followUp": "A suggested follow-up question or clarification for either party, or empty string if none needed."
+}
+
+Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
+
+  app.post("/api/bma-chat", async (req, res) => {
+    try {
+      const { messages, context } = req.body;
+      if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ error: "Messages required" });
+      }
+      if (messages.length > 50) {
+        return res.status(400).json({ error: "Conversation too long. Please clear and start a new session." });
+      }
+
+      const contextNote = context ? `\n\nCurrent clinical context: ${context}` : "";
+
+      const response = await translationAnthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: BMA_STRUCTURED_PROMPT + contextNote,
+        messages: messages.map((m: any) => ({
+          role: m.role === "user" ? "user" : "assistant",
+          content: typeof m.content === "string" ? m.content : "",
+        })),
+      });
+
+      const rawReply = response.content[0].type === "text" ? response.content[0].text : "";
+
+      try {
+        const parsed = JSON.parse(rawReply);
+        res.json({
+          reply: parsed.display || rawReply,
+          spanish: parsed.spanish || "",
+          english: parsed.english || "",
+          followUp: parsed.followUp || "",
+        });
+      } catch {
+        res.json({ reply: rawReply, spanish: "", english: "", followUp: "" });
+      }
+    } catch (error) {
+      console.error("BMA chat error:", error);
+      res.status(500).json({ error: "BMA chat failed" });
     }
   });
 
