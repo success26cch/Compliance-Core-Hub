@@ -787,7 +787,7 @@ export default function DemoPage() {
                           <CheckCircle2 className={`w-4 h-4 ${isBma ? "text-[#FFC107]" : "text-primary"}`} />
                         </div>
                         <div>
-                          <p className={`font-semibold ${isBma ? "text-[#FFC107]" : ""}`} style={isBma ? {} : { color: TEXT_PRIMARY }}>{planName}</p>
+                          <p className="font-semibold" style={{ color: TEXT_PRIMARY }}>{planName}</p>
                           {rest.length > 0 && <p className="text-sm" style={{ color: TEXT_SECONDARY }}>{rest.join(" - ")}</p>}
                         </div>
                       </div>
