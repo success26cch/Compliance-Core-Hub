@@ -30,7 +30,10 @@ import {
   Pause,
   Volume2,
   Loader2,
+  Mic,
+  MicOff,
 } from "lucide-react";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import logoUrl from "@assets/1_1767636977932.png";
 import cchLogo from "@assets/1_1770683748423.png";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
@@ -287,6 +290,7 @@ function DemoBotChat() {
   const [limitReached, setLimitReached] = useState(false);
   const [remaining, setRemaining] = useState(3);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((text) => setInput(text));
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -294,6 +298,7 @@ function DemoBotChat() {
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || loading || limitReached) return;
+    stopListening();
     const userMsg = input.trim();
     setInput("");
     const newMessages: BotMessage[] = [...messages, { role: "user", content: userMsg }];
@@ -377,21 +382,41 @@ function DemoBotChat() {
         )}
       </div>
       <div className="border-t p-2 flex items-center gap-2" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          placeholder={limitReached ? "Demo limit reached" : "Ask a compliance question..."}
-          disabled={limitReached || loading}
-          className="flex-1 text-sm px-3 py-2 rounded-md border bg-white/60 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
-          style={{ borderColor: "rgba(0,0,0,0.1)", color: TEXT_PRIMARY }}
-          data-testid="input-demo-bot"
-        />
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            placeholder={limitReached ? "Demo limit reached" : isListening ? "Listening..." : "Ask a compliance question..."}
+            disabled={limitReached || loading}
+            className={`w-full text-sm px-3 py-2 pr-9 rounded-md border bg-white/60 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 ${isListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
+            style={{ borderColor: isListening ? undefined : "rgba(0,0,0,0.1)", color: TEXT_PRIMARY }}
+            data-testid="input-demo-bot"
+          />
+          {speechSupported && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={toggleListening}
+              disabled={loading || limitReached}
+              className={`absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7 ${isListening ? "text-accent" : "text-muted-foreground"}`}
+              data-testid="button-demo-bot-mic"
+            >
+              {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+            </Button>
+          )}
+        </div>
         <Button size="icon" onClick={handleSubmit} disabled={!input.trim() || loading || limitReached} data-testid="button-demo-bot-send">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </div>
+      {isListening && (
+        <p className="text-xs text-center py-1 animate-pulse" style={{ color: TEXT_SECONDARY }}>
+          Speak now... tap the mic again to stop.
+        </p>
+      )}
       {!limitReached && remaining < 3 && (
         <div className="text-center pb-1">
           <span className="text-xs" style={{ color: TEXT_SECONDARY }}>{remaining} demo question{remaining !== 1 ? "s" : ""} remaining</span>

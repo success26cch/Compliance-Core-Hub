@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import logoUrl from "@assets/1_1767636977932.png";
@@ -58,6 +59,7 @@ export default function Landing() {
   const [botLimitReached, setBotLimitReached] = useState(false);
   const [botRemaining, setBotRemaining] = useState(3);
   const botScrollRef = useRef<HTMLDivElement>(null);
+  const { isListening: botListening, speechSupported: botSpeechSupported, toggleListening: botToggleListening, stopListening: botStopListening } = useSpeechRecognition((text) => setBotInput(text));
 
   useEffect(() => {
     if (botScrollRef.current) {
@@ -67,6 +69,7 @@ export default function Landing() {
 
   const handleBotSubmit = useCallback(async () => {
     if (!botInput.trim() || botLoading || botLimitReached) return;
+    botStopListening();
     const userMsg = botInput.trim();
     setBotInput("");
     const newMessages: BotMessage[] = [...botMessages, { role: "user", content: userMsg }];
@@ -433,22 +436,45 @@ export default function Landing() {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <Input
-                    value={botInput}
-                    onChange={(e) => setBotInput(e.target.value)}
-                    placeholder="Ask a compliance question..."
-                    disabled={botLoading}
-                    onKeyDown={(e) => e.key === "Enter" && handleBotSubmit()}
-                    data-testid="input-bot-question"
-                  />
-                  <Button
-                    onClick={handleBotSubmit}
-                    disabled={!botInput.trim() || botLoading}
-                    data-testid="button-bot-submit"
-                  >
-                    {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </Button>
+                <div className="space-y-1">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        value={botInput}
+                        onChange={(e) => setBotInput(e.target.value)}
+                        placeholder={botListening ? "Listening..." : "Ask a compliance question..."}
+                        disabled={botLoading}
+                        onKeyDown={(e) => e.key === "Enter" && handleBotSubmit()}
+                        className={`pr-9 ${botListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
+                        data-testid="input-bot-question"
+                      />
+                      {botSpeechSupported && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={botToggleListening}
+                          disabled={botLoading}
+                          className={`absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7 ${botListening ? "text-accent" : "text-muted-foreground"}`}
+                          data-testid="button-bot-mic"
+                        >
+                          {botListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                        </Button>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleBotSubmit}
+                      disabled={!botInput.trim() || botLoading}
+                      data-testid="button-bot-submit"
+                    >
+                      {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  {botListening && (
+                    <p className="text-xs text-center text-muted-foreground animate-pulse">
+                      Speak now... tap the mic again to stop.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
