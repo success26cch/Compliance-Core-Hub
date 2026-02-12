@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { chatStorage } from "./storage";
 import { storage } from "../../storage";
+import { CCH_SYSTEM_PROMPT, CCH_TRIAL_SYSTEM_PROMPT, CCH_LANDING_SYSTEM_PROMPT } from "./systemPrompt";
 
 const anthropic = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
@@ -102,7 +103,7 @@ export function registerChatRoutes(app: Express): void {
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",
         max_tokens: 1024,
-        system: "You are a Senior Occupational Health & Safety Compliance Expert. You specialize in OSHA 29 CFR 1904 recordkeeping, DOT FMCSA 49 CFR Part 40 drug & alcohol testing, and workplace safety compliance. Provide clear, concise, and helpful answers. This is a free trial question, so keep the answer focused but demonstrate your expertise. End your response by encouraging them to sign up for more detailed consultations.",
+        system: CCH_TRIAL_SYSTEM_PROMPT,
         messages: [{ role: "user", content: content.trim() }],
       });
 
@@ -168,11 +169,7 @@ export function registerChatRoutes(app: Express): void {
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",
         max_tokens: 1024,
-        system: `You are the CCH Expert Bot — a Senior Occupational Health & Safety Compliance Expert powered by Core Compliance Hub. You specialize in OSHA 29 CFR 1904 recordkeeping, DOT FMCSA 49 CFR Part 40 drug & alcohol testing, and workplace safety compliance. You also have knowledge of ISO 9001, 14001, and 45001 management systems.
-
-Be friendly, professional, and concise. Demonstrate deep expertise while keeping answers accessible. When appropriate, mention that CCH offers full AI-powered compliance tools, training courses, and ISO audit preparation.
-
-This visitor is trying the free bot — give genuinely helpful answers to build trust.`,
+        system: CCH_LANDING_SYSTEM_PROMPT,
         messages: conversationMessages,
       });
 
@@ -255,6 +252,7 @@ This visitor is trying the free bot — give genuinely helpful answers to build 
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",
         max_tokens: 2048,
+        system: CCH_SYSTEM_PROMPT,
         messages: chatMessages,
       });
 
