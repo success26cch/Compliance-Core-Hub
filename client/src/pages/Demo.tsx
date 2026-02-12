@@ -779,14 +779,15 @@ export default function DemoPage() {
               <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
                 {slide.points.map((point, i) => {
                   const [planName, ...rest] = point.split(" - ");
+                  const isBma = point.includes("$199") || point.toLowerCase().includes("bilingual");
                   return (
-                    <Card key={i} className="p-4">
+                    <Card key={i} className={`p-4 ${isBma ? "border-[#FFC107] bg-[#FFC107]/10 ring-2 ring-[#FFC107]" : ""}`}>
                       <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-4 h-4 text-primary" />
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isBma ? "bg-[#FFC107]/20" : "bg-primary/10"}`}>
+                          <CheckCircle2 className={`w-4 h-4 ${isBma ? "text-[#FFC107]" : "text-primary"}`} />
                         </div>
                         <div>
-                          <p className="font-semibold" style={{ color: TEXT_PRIMARY }}>{planName}</p>
+                          <p className={`font-semibold ${isBma ? "text-[#FFC107]" : ""}`} style={isBma ? {} : { color: TEXT_PRIMARY }}>{planName}</p>
                           {rest.length > 0 && <p className="text-sm" style={{ color: TEXT_SECONDARY }}>{rest.join(" - ")}</p>}
                         </div>
                       </div>
