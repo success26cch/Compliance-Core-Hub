@@ -642,8 +642,12 @@ export default function Landing() {
               tier="Safety Starter"
               price="Free"
               period=""
-              features={["3 Questions / month", "OSHA recordability guidance", "Basic DOT compliance help"]}
-              bestFor="Small teams or one-off 'Is this a recordable?' checks."
+              features={[
+                "3 Questions / month",
+                "OSHA Recordability Guidance — Ask 'Is this a recordable?' and get clear, regulation-backed answers based on OSHA 29 CFR 1904",
+                "Basic DOT Compliance Help — Quick answers on DOT physical requirements, drug testing basics, and Clearinghouse essentials",
+              ]}
+              bestFor="Small teams or one-off compliance checks. No credit card required."
               buttonText="Get Started"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
             />
@@ -651,8 +655,15 @@ export default function Landing() {
               tier="Compliance Pro"
               price="$29"
               period="/mo"
-              features={["15 Questions / month", "PDF Compliance Checklists", "Priority response times", "DOT physical guidance"]}
-              bestFor="Growing companies needing regular DOT/OSHA guidance."
+              features={[
+                "Everything in Safety Starter",
+                "15 Interactive AI Bot Questions / month",
+                "PDF Compliance Checklists",
+                "Priority response times",
+                "DOT physical & drug testing guidance",
+                "Workers' comp documentation help",
+              ]}
+              bestFor="Growing companies needing regular DOT/OSHA guidance. All self-service — no consulting time required."
               buttonText="Upgrade to Pro"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
               highlighted
@@ -663,8 +674,14 @@ export default function Landing() {
               tier="Unlimited Safety"
               price="$99"
               period="/mo"
-              features={["Unlimited AI Questions", "Audit Prep Tools", "Custom compliance reports", "Dedicated support"]}
-              bestFor="Safety Managers handling high-risk environments or large fleets."
+              features={[
+                "Everything in Compliance Pro",
+                "Unlimited AI OccHealth Bot Interactions",
+                "Audit Prep Tools",
+                "Custom compliance reports",
+                "Dedicated support",
+              ]}
+              bestFor="Safety Managers handling high-risk environments or large fleets. All self-service — no consulting time required."
               buttonText="Go Unlimited"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
               productId="cch-unlimited-safety"
