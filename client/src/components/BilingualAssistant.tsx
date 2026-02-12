@@ -388,8 +388,10 @@ function BmaInteractiveChatMode() {
   const [activeSpeaker, setActiveSpeaker] = useState<"provider" | "patient">("provider");
   const [context, setContext] = useState("general");
   const [isListening, setIsListening] = useState(false);
+  const [isProviderListening, setIsProviderListening] = useState(false);
   const [patientSpoken, setPatientSpoken] = useState("");
   const recognitionRef = useRef<any>(null);
+  const providerRecognitionRef = useRef<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -488,9 +490,58 @@ function BmaInteractiveChatMode() {
     setIsListening(true);
   }, [isListening, patientSpoken]);
 
+  const toggleProviderListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isProviderListening && providerRecognitionRef.current) {
+      providerRecognitionRef.current.stop();
+      setIsProviderListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    providerRecognitionRef.current = recognition;
+
+    let finalTranscript = providerInput;
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? " " : "") + transcript;
+          setProviderInput(finalTranscript);
+        } else {
+          interim = transcript;
+        }
+      }
+      if (interim) {
+        setProviderInput(finalTranscript + (finalTranscript ? " " : "") + interim);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsProviderListening(false);
+      providerRecognitionRef.current = null;
+    };
+
+    recognition.onerror = () => {
+      setIsProviderListening(false);
+      providerRecognitionRef.current = null;
+    };
+
+    recognition.start();
+    setIsProviderListening(true);
+  }, [isProviderListening, providerInput]);
+
   useEffect(() => {
     return () => {
       if (recognitionRef.current) recognitionRef.current.stop();
+      if (providerRecognitionRef.current) providerRecognitionRef.current.stop();
     };
   }, []);
 
@@ -645,12 +696,29 @@ function BmaInteractiveChatMode() {
 
       {activeSpeaker === "provider" ? (
         <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={toggleProviderListening}
+            className={`flex items-center justify-center w-9 shrink-0 rounded-md border transition-colors ${
+              isProviderListening
+                ? "bg-red-500/20 border-red-500/50 animate-pulse"
+                : "bg-blue-500/20 border-blue-500/50"
+            }`}
+            title={isProviderListening ? "Stop listening" : "Speak in English"}
+            data-testid="btn-bma-provider-mic"
+          >
+            {isProviderListening ? (
+              <MicOff className="w-4 h-4 text-red-400" />
+            ) : (
+              <Mic className="w-4 h-4 text-blue-400" />
+            )}
+          </button>
           <Input
             value={providerInput}
             onChange={(e) => setProviderInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(providerInput, "provider"); } }}
-            placeholder="Type what the provider says in English..."
-            className="flex-1 bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500"
+            placeholder={isProviderListening ? "Listening..." : "Type or speak what the provider says in English..."}
+            className={`flex-1 bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 ${isProviderListening ? "ring-2 ring-blue-500/50" : ""}`}
             disabled={isLoading}
             data-testid="input-bma-provider"
           />
