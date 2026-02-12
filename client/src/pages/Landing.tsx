@@ -221,12 +221,12 @@ export default function Landing() {
             <p className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
               Compliance Isn't a Guessing Game,<br /><span className="text-accent">It's Your Reputation.</span>
             </p>
-            <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary/5 to-accent/5 border-l-4 border-accent p-4 rounded-r-lg">
-              <p className="text-lg text-primary leading-relaxed">
-                CCH is the all-in-one compliance Eco-System command center for employers who are tired of the confusing regulations, the OSHA 300 recordables and scattered safety programs.
-              </p>
-              <p className="text-xl font-bold text-accent mt-2">
+            <div className="max-w-4xl mx-auto text-center">
+              <p className="text-xl font-bold text-accent">
                 The First Ever AI Designed just for Occupational Health. Safety Made Smart. Growth Made Possible.
+              </p>
+              <p className="text-lg text-primary leading-relaxed mt-3">
+                CCH is the all-in-one compliance Eco-System command center for employers who are tired of the confusing regulations, the OSHA 300 recordables and scattered safety programs.
               </p>
             </div>
 
