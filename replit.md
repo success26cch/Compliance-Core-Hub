@@ -14,7 +14,7 @@
 - **Company Profile**: Set company information (NAICS code, DOT number, address, DER contact info, company logo) for compliance documentation (/settings)
 - **Human Expert Retainer**: Professional human support for crisis response, OSHA 300 log audits, and audit defense
 - **Lead Capture**: Free recordability cheat sheet download
-- **Training Courses**: Self-paced compliance training with certificates. **Free 3 months of Compliance Pro ($29/mo value) included with any course purchase.**
+- **Training Courses**: Self-paced compliance training with certificates. **Free OccHealth Program Consultation included with any course purchase.**
 - **ACSI Mentorship Program**: CCH Exclusive - First ISO Mentorship Program. Two tiers: Foundation ($2,500) and Executive ($5,000). 12-week intensive program with Lead Auditor mentoring.
 - **BrandNSwag**: Smart Swag division for employee recognition and engagement. QR Recognition Platform at $49/mo.
 - **Spanish Bilingual Medical Assistant**: Landing page tool with three modes (Injury Reporting, New Hire Intake, Drug Screen Instructions). Features Spanish text-to-speech via Web Speech API, bidirectional speech-to-text (patient speaks Spanish, auto-translates to English), interactive body map, multi-step bilingual forms, Staff Command Center with clinic instructions, and printable clinical summaries. Component at `client/src/components/BilingualAssistant.tsx`. **Standalone subscription at $149/mo per location** with dedicated page at `/bma-subscription`. Currently supports Spanish-English only.
@@ -67,7 +67,7 @@ Hoodies, T-Shirts, Hats & Caps, Jackets, Drinkware, Tech Gear
 | OSHA Recordkeeping Master | $299 | OSHA 300 logs, TRIR/EMR reduction, internal audits |
 | Complete Training Bundle | $899 | All 5 courses + Corporate License (Save $300+) |
 
-**Promotion**: Every course purchase includes 3 free months of Compliance Pro ($29/mo value = $87 savings).
+**Promotion**: Every course purchase includes a free one-on-one OccHealth Program Consultation with a compliance expert.
 
 ## Pricing Structure
 

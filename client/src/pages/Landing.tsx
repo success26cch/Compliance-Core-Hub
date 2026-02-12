@@ -886,9 +886,9 @@ export default function Landing() {
                 </div>
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-lg font-bold text-primary">Purchase Any Course — Get 3 Free Months of Compliance Pro ($29/mo value)</h3>
+                <h3 className="text-lg font-bold text-primary">Purchase Any Course — Get a Free OccHealth Program Consultation</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  That's $87 in Compliance Pro access — included with your course at no extra cost. Keep getting expert AI guidance while you learn.
+                  Every course purchase includes a complimentary one-on-one consultation to review your occupational health program with a real compliance expert.
                 </p>
               </div>
             </div>
