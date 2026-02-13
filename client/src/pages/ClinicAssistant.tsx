@@ -80,6 +80,7 @@ interface PassportData {
     city: string | null;
     state: string | null;
     zipCode: string | null;
+    logoUrl: string | null;
   } | null;
   authorization: {
     name: string;
