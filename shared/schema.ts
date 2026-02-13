@@ -440,6 +440,129 @@ export const insertClinicAgreementSchema = createInsertSchema(clinicAgreements).
 export type ClinicAgreement = typeof clinicAgreements.$inferSelect;
 export type InsertClinicAgreement = z.infer<typeof insertClinicAgreementSchema>;
 
+// Training Courses
+export const courses = pgTable("courses", {
+  id: serial("id").primaryKey(),
+  productId: text("product_id").notNull(), // Maps to products.ts id like 'course-dot-medical'
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // 'occupational_health', 'iso', 'osha', 'drug_testing'
+  totalModules: integer("total_modules").notNull().default(0),
+  estimatedHours: integer("estimated_hours").notNull().default(1),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCourseSchema = createInsertSchema(courses).omit({ id: true, createdAt: true });
+export type Course = typeof courses.$inferSelect;
+export type InsertCourse = z.infer<typeof insertCourseSchema>;
+
+// Course Modules (chapters)
+export const courseModules = pgTable("course_modules", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  orderIndex: integer("order_index").notNull(),
+});
+
+export const insertCourseModuleSchema = createInsertSchema(courseModules).omit({ id: true });
+export type CourseModule = typeof courseModules.$inferSelect;
+export type InsertCourseModule = z.infer<typeof insertCourseModuleSchema>;
+
+// Course Lessons (sections within modules)
+export const courseLessons = pgTable("course_lessons", {
+  id: serial("id").primaryKey(),
+  moduleId: integer("module_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(), // HTML/markdown content
+  orderIndex: integer("order_index").notNull(),
+  videoUrl: text("video_url"), // Optional video embed
+});
+
+export const insertCourseLessonSchema = createInsertSchema(courseLessons).omit({ id: true });
+export type CourseLesson = typeof courseLessons.$inferSelect;
+export type InsertCourseLesson = z.infer<typeof insertCourseLessonSchema>;
+
+// Quiz Questions (per module)
+export const quizQuestions = pgTable("quiz_questions", {
+  id: serial("id").primaryKey(),
+  moduleId: integer("module_id").notNull(),
+  question: text("question").notNull(),
+  options: text("options").array().notNull(), // Array of answer choices
+  correctIndex: integer("correct_index").notNull(), // Index of correct answer in options array
+  explanation: text("explanation"), // Why the answer is correct
+  orderIndex: integer("order_index").notNull(),
+});
+
+export const insertQuizQuestionSchema = createInsertSchema(quizQuestions).omit({ id: true });
+export type QuizQuestion = typeof quizQuestions.$inferSelect;
+export type InsertQuizQuestion = z.infer<typeof insertQuizQuestionSchema>;
+
+// User Course Enrollments
+export const courseEnrollments = pgTable("course_enrollments", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  courseId: integer("course_id").notNull(),
+  status: text("status").notNull().default("active"), // 'active', 'completed'
+  progress: integer("progress").notNull().default(0), // Percentage 0-100
+  currentModuleId: integer("current_module_id"),
+  currentLessonId: integer("current_lesson_id"),
+  completedAt: timestamp("completed_at"),
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+});
+
+export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments).omit({ id: true, enrolledAt: true, completedAt: true });
+export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
+export type InsertCourseEnrollment = z.infer<typeof insertCourseEnrollmentSchema>;
+
+// Lesson Progress (tracks which lessons a user has completed)
+export const lessonProgress = pgTable("lesson_progress", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  lessonId: integer("lesson_id").notNull(),
+  moduleId: integer("module_id").notNull(),
+  courseId: integer("course_id").notNull(),
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertLessonProgressSchema = createInsertSchema(lessonProgress).omit({ id: true, completedAt: true });
+export type LessonProgress = typeof lessonProgress.$inferSelect;
+export type InsertLessonProgress = z.infer<typeof insertLessonProgressSchema>;
+
+// Quiz Attempts
+export const quizAttempts = pgTable("quiz_attempts", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  moduleId: integer("module_id").notNull(),
+  courseId: integer("course_id").notNull(),
+  score: integer("score").notNull(), // Percentage 0-100
+  passed: boolean("passed").notNull().default(false),
+  answers: text("answers"), // JSON string of user's answers
+  attemptedAt: timestamp("attempted_at").defaultNow(),
+});
+
+export const insertQuizAttemptSchema = createInsertSchema(quizAttempts).omit({ id: true, attemptedAt: true });
+export type QuizAttempt = typeof quizAttempts.$inferSelect;
+export type InsertQuizAttempt = z.infer<typeof insertQuizAttemptSchema>;
+
+// Course Certificates
+export const courseCertificates = pgTable("course_certificates", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  courseId: integer("course_id").notNull(),
+  enrollmentId: integer("enrollment_id").notNull(),
+  certificateNumber: text("certificate_number").notNull(),
+  userName: text("user_name").notNull(),
+  courseName: text("course_name").notNull(),
+  issuedAt: timestamp("issued_at").defaultNow(),
+});
+
+export const insertCourseCertificateSchema = createInsertSchema(courseCertificates).omit({ id: true, issuedAt: true });
+export type CourseCertificate = typeof courseCertificates.$inferSelect;
+export type InsertCourseCertificate = z.infer<typeof insertCourseCertificateSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

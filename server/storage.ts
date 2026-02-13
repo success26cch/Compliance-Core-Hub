@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -90,6 +90,46 @@ export interface IStorage {
   // Clinic Agreements
   createClinicAgreement(agreement: InsertClinicAgreement): Promise<ClinicAgreement>;
   getClinicAgreements(): Promise<ClinicAgreement[]>;
+
+  // Courses
+  getCourses(): Promise<Course[]>;
+  getCourseById(id: number): Promise<Course | undefined>;
+  getCourseByProductId(productId: string): Promise<Course | undefined>;
+  createCourse(course: InsertCourse): Promise<Course>;
+
+  // Course Modules
+  getModulesByCourse(courseId: number): Promise<CourseModule[]>;
+  getModuleById(id: number): Promise<CourseModule | undefined>;
+  createModule(mod: InsertCourseModule): Promise<CourseModule>;
+
+  // Course Lessons
+  getLessonsByModule(moduleId: number): Promise<CourseLesson[]>;
+  getLessonById(id: number): Promise<CourseLesson | undefined>;
+  createLesson(lesson: InsertCourseLesson): Promise<CourseLesson>;
+
+  // Quiz Questions
+  getQuizQuestionsByModule(moduleId: number): Promise<QuizQuestion[]>;
+  createQuizQuestion(question: InsertQuizQuestion): Promise<QuizQuestion>;
+
+  // Enrollments
+  getEnrollment(userId: string, courseId: number): Promise<CourseEnrollment | undefined>;
+  getEnrollmentsByUser(userId: string): Promise<CourseEnrollment[]>;
+  createEnrollment(enrollment: InsertCourseEnrollment): Promise<CourseEnrollment>;
+  updateEnrollment(id: number, updates: Partial<CourseEnrollment>): Promise<CourseEnrollment | undefined>;
+
+  // Lesson Progress
+  getLessonProgress(userId: string, courseId: number): Promise<LessonProgress[]>;
+  markLessonComplete(userId: string, lessonId: number, moduleId: number, courseId: number): Promise<LessonProgress>;
+
+  // Quiz Attempts
+  getQuizAttempts(userId: string, moduleId: number): Promise<QuizAttempt[]>;
+  createQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt>;
+
+  // Certificates
+  getCertificate(userId: string, courseId: number): Promise<CourseCertificate | undefined>;
+  getCertificatesByUser(userId: string): Promise<CourseCertificate[]>;
+  createCertificate(cert: InsertCourseCertificate): Promise<CourseCertificate>;
+  getCertificateByNumber(certNumber: string): Promise<CourseCertificate | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -530,6 +570,143 @@ export class DatabaseStorage implements IStorage {
 
   async getClinicAgreements(): Promise<ClinicAgreement[]> {
     return db.select().from(clinicAgreements).orderBy(desc(clinicAgreements.createdAt));
+  }
+
+  // Courses
+  async getCourses(): Promise<Course[]> {
+    return db.select().from(courses).orderBy(courses.id);
+  }
+
+  async getCourseById(id: number): Promise<Course | undefined> {
+    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    return course;
+  }
+
+  async getCourseByProductId(productId: string): Promise<Course | undefined> {
+    const [course] = await db.select().from(courses).where(eq(courses.productId, productId));
+    return course;
+  }
+
+  async createCourse(course: InsertCourse): Promise<Course> {
+    const [created] = await db.insert(courses).values(course).returning();
+    return created;
+  }
+
+  // Course Modules
+  async getModulesByCourse(courseId: number): Promise<CourseModule[]> {
+    return db.select().from(courseModules).where(eq(courseModules.courseId, courseId)).orderBy(courseModules.orderIndex);
+  }
+
+  async getModuleById(id: number): Promise<CourseModule | undefined> {
+    const [mod] = await db.select().from(courseModules).where(eq(courseModules.id, id));
+    return mod;
+  }
+
+  async createModule(mod: InsertCourseModule): Promise<CourseModule> {
+    const [created] = await db.insert(courseModules).values(mod).returning();
+    return created;
+  }
+
+  // Course Lessons
+  async getLessonsByModule(moduleId: number): Promise<CourseLesson[]> {
+    return db.select().from(courseLessons).where(eq(courseLessons.moduleId, moduleId)).orderBy(courseLessons.orderIndex);
+  }
+
+  async getLessonById(id: number): Promise<CourseLesson | undefined> {
+    const [lesson] = await db.select().from(courseLessons).where(eq(courseLessons.id, id));
+    return lesson;
+  }
+
+  async createLesson(lesson: InsertCourseLesson): Promise<CourseLesson> {
+    const [created] = await db.insert(courseLessons).values(lesson).returning();
+    return created;
+  }
+
+  // Quiz Questions
+  async getQuizQuestionsByModule(moduleId: number): Promise<QuizQuestion[]> {
+    return db.select().from(quizQuestions).where(eq(quizQuestions.moduleId, moduleId)).orderBy(quizQuestions.orderIndex);
+  }
+
+  async createQuizQuestion(question: InsertQuizQuestion): Promise<QuizQuestion> {
+    const [created] = await db.insert(quizQuestions).values(question).returning();
+    return created;
+  }
+
+  // Enrollments
+  async getEnrollment(userId: string, courseId: number): Promise<CourseEnrollment | undefined> {
+    const [enrollment] = await db.select().from(courseEnrollments)
+      .where(and(eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId)));
+    return enrollment;
+  }
+
+  async getEnrollmentsByUser(userId: string): Promise<CourseEnrollment[]> {
+    return db.select().from(courseEnrollments).where(eq(courseEnrollments.userId, userId)).orderBy(desc(courseEnrollments.enrolledAt));
+  }
+
+  async createEnrollment(enrollment: InsertCourseEnrollment): Promise<CourseEnrollment> {
+    const [created] = await db.insert(courseEnrollments).values(enrollment).returning();
+    return created;
+  }
+
+  async updateEnrollment(id: number, updates: Partial<CourseEnrollment>): Promise<CourseEnrollment | undefined> {
+    const [updated] = await db.update(courseEnrollments).set(updates).where(eq(courseEnrollments.id, id)).returning();
+    return updated;
+  }
+
+  // Lesson Progress
+  async getLessonProgress(userId: string, courseId: number): Promise<LessonProgress[]> {
+    return db.select().from(lessonProgress)
+      .where(and(eq(lessonProgress.userId, userId), eq(lessonProgress.courseId, courseId)));
+  }
+
+  async markLessonComplete(userId: string, lessonId: number, moduleId: number, courseId: number): Promise<LessonProgress> {
+    const existing = await db.select().from(lessonProgress)
+      .where(and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessonId)));
+    if (existing.length > 0) {
+      const [updated] = await db.update(lessonProgress)
+        .set({ completed: true, completedAt: new Date() })
+        .where(eq(lessonProgress.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(lessonProgress)
+      .values({ userId, lessonId, moduleId, courseId, completed: true })
+      .returning();
+    return created;
+  }
+
+  // Quiz Attempts
+  async getQuizAttempts(userId: string, moduleId: number): Promise<QuizAttempt[]> {
+    return db.select().from(quizAttempts)
+      .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.moduleId, moduleId)))
+      .orderBy(desc(quizAttempts.attemptedAt));
+  }
+
+  async createQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt> {
+    const [created] = await db.insert(quizAttempts).values(attempt).returning();
+    return created;
+  }
+
+  // Certificates
+  async getCertificate(userId: string, courseId: number): Promise<CourseCertificate | undefined> {
+    const [cert] = await db.select().from(courseCertificates)
+      .where(and(eq(courseCertificates.userId, userId), eq(courseCertificates.courseId, courseId)));
+    return cert;
+  }
+
+  async getCertificatesByUser(userId: string): Promise<CourseCertificate[]> {
+    return db.select().from(courseCertificates).where(eq(courseCertificates.userId, userId)).orderBy(desc(courseCertificates.issuedAt));
+  }
+
+  async createCertificate(cert: InsertCourseCertificate): Promise<CourseCertificate> {
+    const [created] = await db.insert(courseCertificates).values(cert).returning();
+    return created;
+  }
+
+  async getCertificateByNumber(certNumber: string): Promise<CourseCertificate | undefined> {
+    const [cert] = await db.select().from(courseCertificates)
+      .where(eq(courseCertificates.certificateNumber, certNumber));
+    return cert;
   }
 }
 

@@ -2122,5 +2122,333 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     res.json(engagement);
   });
 
+  // ============ TRAINING COURSES ============
+
+  // Get all available courses
+  app.get("/api/courses", async (_req, res) => {
+    try {
+      const allCourses = await storage.getCourses();
+      res.json(allCourses);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  // Get course overview (public - no lesson content exposed)
+  app.get("/api/courses/:id", async (req, res) => {
+    try {
+      const course = await storage.getCourseById(parseInt(req.params.id));
+      if (!course) return res.status(404).json({ message: "Course not found" });
+
+      const modules = await storage.getModulesByCourse(course.id);
+      const modulesOverview = await Promise.all(
+        modules.map(async (mod) => {
+          const lessons = await storage.getLessonsByModule(mod.id);
+          const questions = await storage.getQuizQuestionsByModule(mod.id);
+          return {
+            ...mod,
+            lessonCount: lessons.length,
+            lessonTitles: lessons.map(l => l.title),
+            quizQuestionCount: questions.length,
+          };
+        })
+      );
+
+      res.json({ ...course, modules: modulesOverview });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch course" });
+    }
+  });
+
+  // Get user's enrollments
+  app.get("/api/enrollments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const enrollments = await storage.getEnrollmentsByUser(userId);
+      res.json(enrollments);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch enrollments" });
+    }
+  });
+
+  // Enroll in a course (after purchase verification)
+  app.post("/api/enrollments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { courseId } = req.body;
+
+      const existing = await storage.getEnrollment(userId, courseId);
+      if (existing) return res.json(existing);
+
+      const enrollment = await storage.createEnrollment({
+        userId,
+        courseId,
+        status: "active",
+        progress: 0,
+      });
+      res.status(201).json(enrollment);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to enroll" });
+    }
+  });
+
+  // Get course content for enrolled user (lessons + progress)
+  app.get("/api/courses/:id/learn", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const courseId = parseInt(req.params.id);
+
+      const enrollment = await storage.getEnrollment(userId, courseId);
+      if (!enrollment) return res.status(403).json({ message: "Not enrolled in this course" });
+
+      const course = await storage.getCourseById(courseId);
+      if (!course) return res.status(404).json({ message: "Course not found" });
+
+      const modules = await storage.getModulesByCourse(courseId);
+      const progress = await storage.getLessonProgress(userId, courseId);
+      const completedLessonIds = new Set(progress.filter(p => p.completed).map(p => p.lessonId));
+
+      const modulesWithContent = await Promise.all(
+        modules.map(async (mod) => {
+          const lessons = await storage.getLessonsByModule(mod.id);
+          const quizQuestions = await storage.getQuizQuestionsByModule(mod.id);
+          const quizAttemptsList = await storage.getQuizAttempts(userId, mod.id);
+          const bestAttempt = quizAttemptsList.find(a => a.passed) || quizAttemptsList[0];
+
+          return {
+            ...mod,
+            lessons: lessons.map(l => ({
+              ...l,
+              completed: completedLessonIds.has(l.id),
+            })),
+            quizQuestionCount: quizQuestions.length,
+            quizPassed: quizAttemptsList.some(a => a.passed),
+            bestScore: bestAttempt?.score || null,
+          };
+        })
+      );
+
+      res.json({ ...course, enrollment, modules: modulesWithContent });
+    } catch (error: any) {
+      console.error("Error fetching course content:", error);
+      res.status(500).json({ message: "Failed to fetch course content" });
+    }
+  });
+
+  // Mark lesson as complete
+  app.post("/api/lessons/:id/complete", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const lessonId = parseInt(req.params.id);
+
+      const lesson = await storage.getLessonById(lessonId);
+      if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+
+      const mod = await storage.getModuleById(lesson.moduleId);
+      if (!mod) return res.status(404).json({ message: "Module not found" });
+
+      const enrollment = await storage.getEnrollment(userId, mod.courseId);
+      if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
+
+      const progressEntry = await storage.markLessonComplete(userId, lessonId, mod.id, mod.courseId);
+
+      // Calculate overall progress
+      const allModules = await storage.getModulesByCourse(mod.courseId);
+      let totalLessons = 0;
+      let completedLessons = 0;
+      for (const m of allModules) {
+        const lessons = await storage.getLessonsByModule(m.id);
+        totalLessons += lessons.length;
+      }
+      const allProgress = await storage.getLessonProgress(userId, mod.courseId);
+      completedLessons = allProgress.filter(p => p.completed).length;
+
+      const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+      await storage.updateEnrollment(enrollment.id, {
+        progress: progressPercent,
+        currentModuleId: mod.id,
+        currentLessonId: lessonId,
+      });
+
+      res.json({ progress: progressEntry, overallProgress: progressPercent });
+    } catch (error: any) {
+      console.error("Error marking lesson complete:", error);
+      res.status(500).json({ message: "Failed to mark lesson complete" });
+    }
+  });
+
+  // Get quiz questions for a module
+  app.get("/api/modules/:id/quiz", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const moduleId = parseInt(req.params.id);
+
+      const mod = await storage.getModuleById(moduleId);
+      if (!mod) return res.status(404).json({ message: "Module not found" });
+
+      const enrollment = await storage.getEnrollment(userId, mod.courseId);
+      if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
+
+      const questions = await storage.getQuizQuestionsByModule(moduleId);
+      // Don't send correctIndex to the client
+      const safeQuestions = questions.map(({ correctIndex, explanation, ...q }) => q);
+      res.json(safeQuestions);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch quiz" });
+    }
+  });
+
+  // Submit quiz answers
+  app.post("/api/modules/:id/quiz", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const moduleId = parseInt(req.params.id);
+      const { answers } = req.body; // Array of selected indices
+
+      const mod = await storage.getModuleById(moduleId);
+      if (!mod) return res.status(404).json({ message: "Module not found" });
+
+      const enrollment = await storage.getEnrollment(userId, mod.courseId);
+      if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
+
+      const questions = await storage.getQuizQuestionsByModule(moduleId);
+      if (questions.length === 0) return res.status(400).json({ message: "No quiz questions" });
+
+      let correct = 0;
+      const results = questions.map((q, i) => {
+        const userAnswer = answers[i] ?? -1;
+        const isCorrect = userAnswer === q.correctIndex;
+        if (isCorrect) correct++;
+        return {
+          questionId: q.id,
+          userAnswer,
+          correctAnswer: q.correctIndex,
+          isCorrect,
+          explanation: q.explanation,
+        };
+      });
+
+      const score = Math.round((correct / questions.length) * 100);
+      const passed = score >= 70; // 70% passing threshold
+
+      const attempt = await storage.createQuizAttempt({
+        userId,
+        moduleId,
+        courseId: mod.courseId,
+        score,
+        passed,
+        answers: JSON.stringify(answers),
+      });
+
+      res.json({ attempt, results, score, passed, correct, total: questions.length });
+    } catch (error: any) {
+      console.error("Error submitting quiz:", error);
+      res.status(500).json({ message: "Failed to submit quiz" });
+    }
+  });
+
+  // Complete course and generate certificate
+  app.post("/api/courses/:id/complete", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const courseId = parseInt(req.params.id);
+
+      const enrollment = await storage.getEnrollment(userId, courseId);
+      if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
+
+      const course = await storage.getCourseById(courseId);
+      if (!course) return res.status(404).json({ message: "Course not found" });
+
+      // Verify all module quizzes are passed
+      const modules = await storage.getModulesByCourse(courseId);
+      for (const mod of modules) {
+        const questions = await storage.getQuizQuestionsByModule(mod.id);
+        if (questions.length > 0) {
+          const attempts = await storage.getQuizAttempts(userId, mod.id);
+          const hasPassed = attempts.some(a => a.passed);
+          if (!hasPassed) {
+            return res.status(400).json({ message: `Module "${mod.title}" quiz not yet passed` });
+          }
+        }
+      }
+
+      // Check existing certificate
+      const existingCert = await storage.getCertificate(userId, courseId);
+      if (existingCert) return res.json(existingCert);
+
+      const user = await storage.getUserById(userId);
+      const userName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "Student";
+
+      const certNumber = `CCH-${course.productId.toUpperCase().replace(/[^A-Z0-9]/g, "")}-${Date.now().toString(36).toUpperCase()}`;
+
+      const certificate = await storage.createCertificate({
+        userId,
+        courseId,
+        enrollmentId: enrollment.id,
+        certificateNumber: certNumber,
+        userName,
+        courseName: course.title,
+      });
+
+      await storage.updateEnrollment(enrollment.id, {
+        status: "completed",
+        progress: 100,
+        completedAt: new Date(),
+      });
+
+      res.json(certificate);
+    } catch (error: any) {
+      console.error("Error completing course:", error);
+      res.status(500).json({ message: "Failed to complete course" });
+    }
+  });
+
+  // Get user certificates
+  app.get("/api/certificates", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const certs = await storage.getCertificatesByUser(userId);
+      res.json(certs);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch certificates" });
+    }
+  });
+
+  // Verify certificate (public)
+  app.get("/api/certificates/verify/:certNumber", async (req, res) => {
+    try {
+      const cert = await storage.getCertificateByNumber(req.params.certNumber);
+      if (!cert) return res.status(404).json({ valid: false, message: "Certificate not found" });
+      res.json({ valid: true, certificate: cert });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to verify certificate" });
+    }
+  });
+
+  // Seed course data (admin endpoint)
+  app.post("/api/admin/seed-courses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isAdmin = await storage.isSuperadmin(userId);
+    if (!isAdmin) return res.status(403).json({ message: "Forbidden" });
+
+    try {
+      const { seedDOTCourse } = await import("./courseSeed");
+      await seedDOTCourse(storage);
+      res.json({ message: "DOT Medical Certification course seeded successfully" });
+    } catch (error: any) {
+      console.error("Error seeding courses:", error);
+      res.status(500).json({ message: "Failed to seed courses" });
+    }
+  });
+
   return httpServer;
 }

@@ -27,6 +27,8 @@ import BMASubscription from "@/pages/BMASubscription";
 import ClinicAgreement from "@/pages/ClinicAgreement";
 import Demo from "@/pages/Demo";
 import SMSConsent from "@/pages/SMSConsent";
+import Training from "@/pages/Training";
+import CourseViewer from "@/pages/CourseViewer";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -54,6 +56,8 @@ function Router() {
       <Route path="/clinic-agreement" component={ClinicAgreement} />
       <Route path="/demo" component={Demo} />
       <Route path="/sms-consent" component={SMSConsent} />
+      <Route path="/training" component={Training} />
+      <Route path="/training/:id" component={CourseViewer} />
       <Route component={NotFound} />
     </Switch>
   );
