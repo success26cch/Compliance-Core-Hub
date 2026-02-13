@@ -481,6 +481,7 @@ function EmployeePassportContent() {
                   <p className="text-sm text-muted-foreground">No employees found. Add employees in the Employee Management section first.</p>
                 ) : (
                   <Select
+                    value={selectedEmployee ? String(selectedEmployee.id) : undefined}
                     onValueChange={(val) => {
                       const emp = employees.find((e) => e.id === parseInt(val));
                       setSelectedEmployee(emp || null);
@@ -807,6 +808,53 @@ function EmployeePassportContent() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            title="Open Passport (View QR & Resend)"
+                            onClick={() => {
+                              const qrUrl = `${window.location.origin}/clinic-assistant?token=${visit.passportToken}`;
+                              setGeneratedQR({
+                                qrUrl,
+                                token: visit.passportToken,
+                                employee: { firstName: visit.employeeName.split(" ")[0], lastName: visit.employeeName.split(" ").slice(1).join(" ") },
+                              });
+                              setSmsPhone("");
+                            }}
+                            data-testid={`btn-open-passport-${visit.id}`}
+                          >
+                            <QrCode className="w-4 h-4 text-[#FFC107]" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Edit & Regenerate Passport"
+                            onClick={() => {
+                              const emp = employees.find((e) => e.id === visit.employeeId);
+                              if (emp) setSelectedEmployee(emp);
+                              setVisitType(visit.visitType);
+                              setAuthName(visit.authorizationName || "");
+                              setAuthTitle(visit.authorizationTitle || "");
+                              setAuthPhone(visit.authorizationPhone || "");
+                              setBillingPreference(visit.billingPreference || "company_pay");
+                              setSpecialInstructions(visit.specialInstructions || "");
+                              setSelectedServices(visit.additionalServices || []);
+                              setSsnLast4(visit.ssnLast4 || "");
+                              setEmployeeDob(visit.employeeDob || "");
+                              setEmployeeAddress(visit.employeeAddress || "");
+                              setEmployeeLocation(visit.employeeLocation || "");
+                              setStaffingAgency(visit.staffingAgency || "");
+                              setSelectedClinicLocationId(visit.clinicLocationId ? String(visit.clinicLocationId) : "");
+                              setSignatureDataUrl(visit.signatureDataUrl || null);
+                              setGeneratedQR(null);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                              toast({ title: "Passport Loaded", description: "Edit the form below and regenerate when ready." });
+                            }}
+                            data-testid={`btn-edit-passport-${visit.id}`}
+                          >
+                            <PenLine className="w-4 h-4 text-blue-500" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Download Record"
                             onClick={() => saveVisitRecord(visit)}
                             data-testid={`btn-save-visit-${visit.id}`}
                           >
@@ -815,6 +863,7 @@ function EmployeePassportContent() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            title="Delete Visit"
                             onClick={() => deleteVisitMutation.mutate(visit.id)}
                             disabled={deleteVisitMutation.isPending}
                             data-testid={`btn-delete-visit-${visit.id}`}
