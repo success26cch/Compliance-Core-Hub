@@ -26,6 +26,7 @@ import {
   ArrowRight,
   Timer,
   Languages,
+  Mail,
 } from "lucide-react";
 
 interface ClinicLocationInfo {
@@ -128,6 +129,8 @@ export default function ClinicAssistant() {
   const [showAssistant, setShowAssistant] = useState(false);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [downloadingForm, setDownloadingForm] = useState(false);
+  const [clinicEmail, setClinicEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -529,7 +532,7 @@ export default function ClinicAssistant() {
               <h3 className="text-sm font-bold text-white">Signed Authorization Form</h3>
             </div>
             <p className="text-xs text-gray-400">
-              View and print the complete, digitally signed authorization form with all services and patient information.
+              View, print, or email the complete, digitally signed authorization form to the clinic front desk.
             </p>
             <Button
               className="w-full bg-[#FFC107] text-black font-bold"
@@ -538,6 +541,71 @@ export default function ClinicAssistant() {
             >
               <Printer className="w-4 h-4 mr-2" /> View & Print Authorization Form
             </Button>
+
+            <div className="border-t border-gray-700 pt-3 mt-2">
+              <p className="text-xs text-gray-400 mb-2">
+                Can't print? Email the authorization form directly to the clinic receptionist.
+              </p>
+              {emailSent ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-green-400 text-sm" data-testid="text-email-sent">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Email opened! Check your email app to send.
+                  </div>
+                  <button
+                    className="text-xs text-blue-400 underline"
+                    onClick={() => { setEmailSent(false); setClinicEmail(""); }}
+                    data-testid="btn-reset-email"
+                  >
+                    Send to a different email
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Clinic email address"
+                    value={clinicEmail}
+                    onChange={(e) => setClinicEmail(e.target.value)}
+                    className="bg-gray-900/60 border-gray-600 text-white placeholder:text-gray-500 flex-1"
+                    data-testid="input-clinic-email"
+                  />
+                  <Button
+                    className="bg-blue-600 text-white font-semibold shrink-0"
+                    disabled={!clinicEmail || !clinicEmail.includes("@")}
+                    onClick={() => {
+                      const formUrl = window.location.href;
+                      const subject = encodeURIComponent(
+                        `Authorization Form - ${employee.firstName} ${employee.lastName} | ${visitLabel}`
+                      );
+                      const companyName = company?.companyName || "Employer";
+                      const body = encodeURIComponent(
+                        `Hello,\n\n` +
+                        `Please find the digital authorization form for the following patient:\n\n` +
+                        `Patient: ${employee.firstName} ${employee.lastName}\n` +
+                        `Company: ${companyName}\n` +
+                        `Visit Type: ${visitLabel}\n` +
+                        (authorization?.name ? `Authorized By: ${authorization.name}\n` : "") +
+                        `\nClick the link below to view and print the signed authorization form:\n` +
+                        `${formUrl}\n\n` +
+                        `On the page, click "View & Print Authorization Form" to see the complete, signed form.\n\n` +
+                        `This is a verified CCH Medical Passport.\n` +
+                        `— Powered by Core Compliance Hub`
+                      );
+                      window.open(`mailto:${clinicEmail}?subject=${subject}&body=${body}`, "_self");
+                      setEmailSent(true);
+                      toast({
+                        title: "Email Ready",
+                        description: "Your email app should open with the authorization form link.",
+                      });
+                    }}
+                    data-testid="btn-email-clinic"
+                  >
+                    <Mail className="w-4 h-4 mr-1" /> Send
+                  </Button>
+                </div>
+              )}
+            </div>
           </Card>
         )}
 

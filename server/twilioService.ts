@@ -79,7 +79,11 @@ export async function sendSMS(toPhoneNumber: string, message: string): Promise<{
     return { success: true, sid: result.sid };
   } catch (error: any) {
     console.error('Twilio SMS error:', error.message);
-    return { success: false, error: error.message };
+    let userMessage = error.message;
+    if (error.message?.includes('unverified') || error.code === 21608) {
+      userMessage = 'Twilio trial account: recipient number must be verified at twilio.com first. Upgrade your Twilio account to send to any number.';
+    }
+    return { success: false, error: userMessage };
   }
 }
 

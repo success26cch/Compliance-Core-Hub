@@ -1667,9 +1667,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
       if (derPhone) {
         try {
-          const { getTwilioClient, getTwilioFromPhoneNumber } = await import("./twilioService");
-          const client = await getTwilioClient();
-          const fromNumber = await getTwilioFromPhoneNumber();
+          const { sendSMS } = await import("./twilioService");
 
           const visitTypeLabels: Record<string, string> = {
             dot_physical: "DOT Physical",
@@ -1688,13 +1686,13 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
           const message = `CCH Alert: Employee ${employeeName} has checked in${clinicInfo} for their ${visitLabel} at ${arrivalTimeStr}. Authorization was provided digitally via CCH Medical Passport.`;
 
-          await client.messages.create({
-            body: message,
-            from: fromNumber,
-            to: derPhone,
-          });
+          const result = await sendSMS(derPhone, message);
 
-          smsResult = { sent: true, message: "Employer notified via SMS" };
+          if (result.success) {
+            smsResult = { sent: true, message: "Employer notified via SMS" };
+          } else {
+            smsResult = { sent: false, message: `SMS failed: ${result.error}` };
+          }
         } catch (smsError: any) {
           console.error("SMS notification failed:", smsError);
           smsResult = { sent: false, message: `SMS failed: ${smsError.message}` };
@@ -1760,22 +1758,20 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
       if (derPhone) {
         try {
-          const { getTwilioClient, getTwilioFromPhoneNumber } = await import("./twilioService");
-          const client = await getTwilioClient();
-          const fromNumber = await getTwilioFromPhoneNumber();
+          const { sendSMS } = await import("./twilioService");
 
           const employeeName = `${employee.firstName} ${employee.lastName}`;
           const returnTimeStr = returnTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Chicago" });
 
           const message = `CCH Alert: Employee ${employeeName} is back from their clinic visit at ${returnTimeStr}. Total time away: ${durationStr}.`;
 
-          await client.messages.create({
-            body: message,
-            from: fromNumber,
-            to: derPhone,
-          });
+          const result = await sendSMS(derPhone, message);
 
-          smsResult = { sent: true, message: "Employer notified via SMS" };
+          if (result.success) {
+            smsResult = { sent: true, message: "Employer notified via SMS" };
+          } else {
+            smsResult = { sent: false, message: `SMS failed: ${result.error}` };
+          }
         } catch (smsError: any) {
           console.error("SMS return notification failed:", smsError);
           smsResult = { sent: false, message: `SMS failed: ${smsError.message}` };
