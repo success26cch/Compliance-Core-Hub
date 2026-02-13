@@ -35,6 +35,7 @@ interface PrintableAuthFormProps {
       city: string | null;
       state: string | null;
       zipCode: string | null;
+      logoUrl: string | null;
     } | null;
     authorization: {
       name: string;
@@ -125,6 +126,16 @@ export default function PrintableAuthForm({ data }: PrintableAuthFormProps) {
         data-testid="printable-auth-form"
       >
         <div className="text-center mb-4 border-b border-gray-400 pb-3">
+          {company?.logoUrl && (
+            <div className="mb-2">
+              <img
+                src={company.logoUrl}
+                alt={company.companyName || "Company Logo"}
+                className="h-14 max-w-[200px] object-contain mx-auto"
+                data-testid="form-company-logo"
+              />
+            </div>
+          )}
           <h1 className="text-base font-bold uppercase tracking-wide">Authorization for Examination or Treatment</h1>
           <p className="text-[10px] text-gray-500 mt-1">(patient must present authorization and photo ID at the time of service)</p>
         </div>
@@ -166,10 +177,16 @@ export default function PrintableAuthForm({ data }: PrintableAuthFormProps) {
               {visit.employeeLocation || "___________"}
             </span>
           </div>
-          <div className="flex gap-1 col-span-2">
-            <span className="font-semibold text-xs whitespace-nowrap">Staffing Agency:</span>
-            <span className="text-xs border-b border-gray-400 flex-1 pb-0.5" data-testid="form-staffing-agency">
-              {visit.staffingAgency || "___________"}
+          <div className="flex gap-1">
+            <span className="font-semibold text-xs whitespace-nowrap">Company Name:</span>
+            <span className="text-xs border-b border-gray-400 flex-1 pb-0.5" data-testid="form-company-name">
+              {company?.companyName || "___________"}
+            </span>
+          </div>
+          <div className="flex gap-1">
+            <span className="font-semibold text-xs whitespace-nowrap">Contact:</span>
+            <span className="text-xs border-b border-gray-400 flex-1 pb-0.5" data-testid="form-company-contact">
+              {company?.derName ? `${company.derName}${company.derPhone ? ` - ${company.derPhone}` : ""}` : (company?.phone || "___________")}
             </span>
           </div>
         </div>

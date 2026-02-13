@@ -543,9 +543,9 @@ function EmployeePassportContent() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs">Staffing Agency (if applicable)</Label>
+                <Label className="text-xs">Company Name</Label>
                 <Input
-                  placeholder="Agency name"
+                  placeholder="Company name"
                   value={staffingAgency}
                   onChange={(e) => setStaffingAgency(e.target.value)}
                   data-testid="input-staffing-agency"

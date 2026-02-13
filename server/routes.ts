@@ -1588,6 +1588,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
           city: companyProfile.city,
           state: companyProfile.state,
           zipCode: companyProfile.zipCode,
+          logoUrl: companyProfile.logoUrl,
         } : null,
         authorization: visit.authorizationName ? {
           name: visit.authorizationName,
@@ -1828,9 +1829,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       const phoneToUse = employeePhone || employee.phoneNumber;
       if (phoneToUse) {
         try {
-          const { getTwilioClient, getTwilioFromPhoneNumber } = await import("./twilioService");
-          const client = await getTwilioClient();
-          const fromNumber = await getTwilioFromPhoneNumber();
+          const { sendSMS } = await import("./twilioService");
 
           const visitTypeLabels: Record<string, string> = {
             dot_physical: "DOT Physical",
@@ -1847,13 +1846,13 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
           const smsBody = `${companyName} - Medical Passport: You have a ${visitLabel} appointment. Show this link at the clinic front desk: ${qrUrl} - Powered by CCH`;
 
-          await client.messages.create({
-            body: smsBody,
-            from: fromNumber,
-            to: phoneToUse,
-          });
+          const smsResult = await sendSMS(phoneToUse, smsBody);
 
-          results.sms = { sent: true, message: "SMS sent to employee" };
+          if (smsResult.success) {
+            results.sms = { sent: true, message: "SMS sent to employee" };
+          } else {
+            results.sms = { sent: false, message: `SMS failed: ${smsResult.error}` };
+          }
         } catch (smsError: any) {
           console.error("Employee SMS failed:", smsError);
           results.sms = { sent: false, message: `SMS failed: ${smsError.message}` };
