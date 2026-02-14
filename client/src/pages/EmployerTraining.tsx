@@ -27,6 +27,10 @@ import {
   GraduationCap,
   Clock,
   TrendingUp,
+  Info,
+  LinkIcon,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import type { Employee, Course, TrainingAssignment } from "@shared/schema";
 import logoUrl from "@assets/1_1770683748423.png";
@@ -49,6 +53,7 @@ export default function EmployerTraining() {
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
   const [selectedEmployees, setSelectedEmployees] = useState<number[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
 
@@ -149,6 +154,66 @@ export default function EmployerTraining() {
             <p className="text-sm text-gray-400">Assign and track employee training progress</p>
           </div>
         </div>
+
+        <Card className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-700/40 mb-8" data-testid="card-instructions">
+          <button
+            onClick={() => setShowInstructions(!showInstructions)}
+            className="w-full flex items-center justify-between p-5 text-left"
+            data-testid="button-toggle-instructions"
+          >
+            <div className="flex items-center gap-3">
+              <Info className="w-6 h-6 text-blue-400 flex-shrink-0" />
+              <h2 className="text-lg font-bold text-white">How It Works</h2>
+            </div>
+            {showInstructions ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
+          {showInstructions && (
+            <div className="px-5 pb-5 space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="flex gap-3 items-start">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-blue-400 font-bold text-sm">1</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">Assign a Course</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Click "Assign Course" above. Select one or more employees and the courses you want them to complete, then hit Assign.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-blue-400 font-bold text-sm">2</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">Share the Link</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Each assignment gets a unique access link. Click the <LinkIcon className="w-3 h-3 inline text-blue-400" /> copy button next to any assignment to get the link, then send it to your employee via email or text.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-blue-400 font-bold text-sm">3</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">Track Progress</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Your employees open the link and start training right away — no account needed. You'll see their progress update in real time on this dashboard.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 border-t border-gray-700/50 pt-3">
+                Employees must first be added in your <Link href="/employees"><span className="text-blue-400 hover:text-blue-300 underline cursor-pointer">Employee Management</span></Link> page before you can assign them courses.
+              </p>
+            </div>
+          )}
+        </Card>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-gray-800/60 border-gray-700 p-5" data-testid="card-stat-total">

@@ -20,7 +20,8 @@ import {
   MessageSquare,
   Phone,
   TrendingUp,
-  Calendar
+  Calendar,
+  GraduationCap
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -583,6 +584,26 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Employer Training Portal */}
+          <Card className="hover:shadow-lg transition-shadow border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-indigo-500/5" data-testid="card-employer-training">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-blue-500" />
+                Employer Training Portal
+              </CardTitle>
+              <CardDescription>
+                Assign compliance courses to your employees, send them access links, and track their progress — no employee accounts needed.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/employer-training">
+                <Button className="w-full sm:w-auto gap-2 bg-blue-600 hover:bg-blue-700 text-white" data-testid="button-employer-training">
+                  Open Training Portal <ArrowUpRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
           {/* Quick Actions Row */}
           <div className="grid md:grid-cols-2 gap-6">

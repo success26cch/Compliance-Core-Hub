@@ -1005,6 +1005,28 @@ export default function Landing() {
               </Button>
             </div>
           </div>
+          <Card className="max-w-4xl mx-auto p-6 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/30 mt-12 mb-4" data-testid="card-employer-portal-promo">
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <Users className="w-8 h-8 text-blue-500" />
+                </div>
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-lg font-bold text-primary">Employer Training Portal</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Need to train your team? Assign courses to employees, send them a simple access link, and track their progress and certificates — all from one dashboard. No employee accounts required.
+                </p>
+              </div>
+              <Link href={isAuthenticated ? "/employer-training" : "/api/login"}>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0" data-testid="button-employer-portal-cta">
+                  <GraduationCap className="w-4 h-4" />
+                  Open Employer Portal
+                </Button>
+              </Link>
+            </div>
+          </Card>
+
           <div className="text-center mt-10">
             <p className="text-muted-foreground mb-3">Need help choosing the right training for your team?</p>
             <Link href="/contact">
