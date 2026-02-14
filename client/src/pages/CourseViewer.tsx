@@ -170,7 +170,6 @@ export default function CourseViewer() {
   const activeLesson = activeModule?.lessons[activeLessonIndex];
   const allModulesQuizzesPassed = courseData?.modules.every(m => m.quizQuestionCount === 0 || m.quizPassed) ?? false;
 
-  // Navigate to first incomplete lesson on load
   useEffect(() => {
     if (courseData?.modules) {
       for (let mi = 0; mi < courseData.modules.length; mi++) {
@@ -185,6 +184,15 @@ export default function CourseViewer() {
       }
     }
   }, [courseData?.modules?.length]);
+
+  useEffect(() => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  }, [activeModuleIndex, activeLessonIndex]);
+
+  useEffect(() => {
+    return () => { window.speechSynthesis.cancel(); };
+  }, []);
 
   if (isLoading) {
     return (
@@ -250,15 +258,6 @@ export default function CourseViewer() {
     setIsSpeaking(true);
     speakNext();
   };
-
-  useEffect(() => {
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-  }, [activeModuleIndex, activeLessonIndex]);
-
-  useEffect(() => {
-    return () => { window.speechSynthesis.cancel(); };
-  }, []);
 
   const handleMarkComplete = () => {
     if (activeLesson) {

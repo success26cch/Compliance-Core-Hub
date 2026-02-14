@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,6 +21,9 @@ import {
   ArrowLeft,
   Play,
   Trophy,
+  Upload,
+  Trash2,
+  Video,
 } from "lucide-react";
 import type { Course, CourseEnrollment, CourseCertificate } from "@shared/schema";
 import logoUrl from "@assets/1_1770683748423.png";
@@ -59,6 +62,46 @@ export default function Training() {
     queryKey: ["/api/certificates"],
     enabled: isAuthenticated,
   });
+
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+
+  const { data: trainingVideo } = useQuery<{ url: string | null }>({
+    queryKey: ["/api/training-video"],
+  });
+
+  const deleteVideoMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/training-video");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-video"] });
+      toast({ title: "Video removed" });
+    },
+  });
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum file size is 100MB", variant: "destructive" });
+      return;
+    }
+    setVideoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("video", file);
+      const res = await fetch("/api/training-video", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      queryClient.invalidateQueries({ queryKey: ["/api/training-video"] });
+      toast({ title: "Video uploaded successfully" });
+    } catch {
+      toast({ title: "Failed to upload video", variant: "destructive" });
+    } finally {
+      setVideoUploading(false);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+    }
+  };
 
   const enrollMutation = useMutation({
     mutationFn: async (courseId: number) => {
@@ -129,26 +172,81 @@ export default function Training() {
           </div>
         </div>
 
-        <Card className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border-blue-700/50 p-6 mb-8">
-          <div className="flex items-start gap-4">
-            <GraduationCap className="w-10 h-10 text-blue-400 flex-shrink-0" />
-            <div>
-              <h2 className="text-xl font-bold text-white mb-2">Professional Compliance Training</h2>
-              <p className="text-gray-300 text-sm">
-                Each course includes video-style modules, comprehensive text lessons, and quizzes at the end of each module.
-                Score 70% or higher on all module quizzes to earn your CCH Certificate of Completion.
-              </p>
-              <p className="text-yellow-400 text-sm mt-2 font-medium">
-                Every course purchase includes a FREE one-on-one OccHealth Program Consultation.
-              </p>
-              <Link href="/employer-training">
-                <span className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm mt-3 cursor-pointer underline" data-testid="link-employer-portal">
-                  Employer Training Portal — Assign & track employee progress
-                </span>
-              </Link>
+        {trainingVideo?.url ? (
+          <div className="mb-8 rounded-xl overflow-hidden border border-gray-700/50 bg-gray-900" data-testid="training-video-section">
+            <video
+              src={trainingVideo.url}
+              controls
+              className="w-full max-h-[400px] object-contain bg-black"
+              data-testid="training-video-player"
+            />
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <GraduationCap className="w-6 h-6 text-blue-400" />
+                <div>
+                  <h2 className="text-lg font-bold text-white">Professional Compliance Training</h2>
+                  <p className="text-xs text-gray-400">Self-paced courses with certificates of completion</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {isAuthenticated && (
+                  <>
+                    <input type="file" ref={videoInputRef} accept="video/mp4,video/webm,video/quicktime,video/x-msvideo" onChange={handleVideoUpload} className="hidden" data-testid="input-video-upload" />
+                    <Button variant="outline" size="sm" className="border-gray-600 text-gray-400" onClick={() => videoInputRef.current?.click()} disabled={videoUploading} data-testid="btn-replace-video">
+                      {videoUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    </Button>
+                    <Button variant="outline" size="sm" className="border-red-700/50 text-red-400 hover:bg-red-900/30" onClick={() => deleteVideoMutation.mutate()} disabled={deleteVideoMutation.isPending} data-testid="btn-delete-video">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </Card>
+        ) : (
+          <Card className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border-blue-700/50 p-6 mb-8" data-testid="training-hero-card">
+            <div className="flex items-start gap-4">
+              <GraduationCap className="w-10 h-10 text-blue-400 flex-shrink-0" />
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-white mb-2">Professional Compliance Training</h2>
+                <p className="text-gray-300 text-sm">
+                  Each course includes video-style modules, comprehensive text lessons, and quizzes at the end of each module.
+                  Score 70% or higher on all module quizzes to earn your CCH Certificate of Completion.
+                </p>
+                <p className="text-yellow-400 text-sm mt-2 font-medium">
+                  Every course purchase includes a FREE one-on-one OccHealth Program Consultation.
+                </p>
+                {isAuthenticated && (
+                  <div className="mt-4">
+                    <input type="file" ref={videoInputRef} accept="video/mp4,video/webm,video/quicktime,video/x-msvideo" onChange={handleVideoUpload} className="hidden" data-testid="input-video-upload" />
+                    <Button variant="outline" size="sm" className="border-blue-600/50 text-blue-400 hover:bg-blue-900/30" onClick={() => videoInputRef.current?.click()} disabled={videoUploading} data-testid="btn-upload-video">
+                      {videoUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Video className="w-4 h-4 mr-2" />}
+                      Upload Intro Video
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <Link href="/employer-training">
+              <span className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm mt-3 cursor-pointer underline ml-14" data-testid="link-employer-portal">
+                Employer Training Portal — Assign & track employee progress
+              </span>
+            </Link>
+          </Card>
+        )}
+
+        {trainingVideo?.url && (
+          <div className="flex items-center gap-4 mb-6 text-sm">
+            <p className="text-yellow-400 font-medium">
+              Every course purchase includes a FREE one-on-one OccHealth Program Consultation.
+            </p>
+            <Link href="/employer-training">
+              <span className="text-blue-400 hover:text-blue-300 cursor-pointer underline whitespace-nowrap" data-testid="link-employer-portal-secondary">
+                Employer Training Portal
+              </span>
+            </Link>
+          </div>
+        )}
 
         {isAuthenticated && hasEnrollments && (
           <div className="flex gap-1 mb-6 bg-gray-800/60 p-1 rounded-lg w-fit" data-testid="tab-switcher">

@@ -14,6 +14,34 @@ import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const videoStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const dir = path.join(process.cwd(), "uploads", "videos");
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `training-intro-${Date.now()}${ext}`);
+  },
+});
+const videoUpload = multer({
+  storage: videoStorage,
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".mp4", ".webm", ".mov", ".avi"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only video files (mp4, webm, mov, avi) are allowed"));
+    }
+  },
+});
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Auth Setup
@@ -2687,6 +2715,59 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
   });
 
   // Delete training assignment
+  const uploadsDir = path.resolve(process.cwd(), "uploads");
+  app.use("/uploads", (req, res, next) => {
+    const resolved = path.resolve(uploadsDir, req.path.replace(/^\//, ""));
+    if (!resolved.startsWith(uploadsDir)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    if (fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+      res.sendFile(resolved);
+    } else {
+      res.status(404).json({ message: "File not found" });
+    }
+  });
+
+  app.post("/api/training-video", videoUpload.single("video"), async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    if (!req.file) return res.status(400).json({ message: "No video file provided" });
+
+    const oldFiles = fs.readdirSync(path.join(process.cwd(), "uploads", "videos"));
+    for (const f of oldFiles) {
+      if (f !== req.file.filename) {
+        fs.unlinkSync(path.join(process.cwd(), "uploads", "videos", f));
+      }
+    }
+
+    const videoUrl = `/uploads/videos/${req.file.filename}`;
+    res.json({ url: videoUrl, filename: req.file.originalname });
+  });
+
+  app.get("/api/training-video", async (_req, res) => {
+    const dir = path.join(process.cwd(), "uploads", "videos");
+    if (!fs.existsSync(dir)) return res.json({ url: null });
+    const files = fs.readdirSync(dir).filter(f => /\.(mp4|webm|mov|avi)$/i.test(f));
+    if (files.length === 0) return res.json({ url: null });
+    files.sort((a, b) => {
+      const aTime = fs.statSync(path.join(dir, a)).mtimeMs;
+      const bTime = fs.statSync(path.join(dir, b)).mtimeMs;
+      return bTime - aTime;
+    });
+    res.json({ url: `/uploads/videos/${files[0]}` });
+  });
+
+  app.delete("/api/training-video", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const dir = path.join(process.cwd(), "uploads", "videos");
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir);
+      for (const f of files) {
+        fs.unlinkSync(path.join(dir, f));
+      }
+    }
+    res.json({ success: true });
+  });
+
   app.delete("/api/training-assignments/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
