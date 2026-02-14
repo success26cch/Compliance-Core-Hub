@@ -350,19 +350,28 @@ export default function CourseViewer() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-4 py-2 flex items-center gap-3 z-10">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white" data-testid="btn-toggle-sidebar">
-            <FileText className="w-5 h-5" />
-          </button>
-          <span className="text-sm text-gray-400 truncate">
-            {activeModule?.title} {activeLesson && viewMode === "lesson" ? `› ${activeLesson.title}` : viewMode === "quiz" ? "› Module Quiz" : ""}
-          </span>
+        <div className="sticky top-0 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-4 py-2 flex items-center justify-between z-10">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white shrink-0" data-testid="btn-toggle-sidebar">
+              <FileText className="w-5 h-5" />
+            </button>
+            <span className="text-sm text-gray-400 truncate">
+              {activeModule?.title} {activeLesson && viewMode === "lesson" ? `› ${activeLesson.title}` : viewMode === "quiz" ? "› Module Quiz" : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 ml-4" data-testid="header-brand">
+            <img src={logoUrl} alt="CCH" className="w-6 h-6 rounded" />
+            <span className="text-xs font-semibold text-gray-500 hidden sm:inline">Core Compliance Hub</span>
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto px-6 py-8">
           {/* LESSON VIEW */}
           {viewMode === "lesson" && activeLesson && (
-            <div>
+            <div className="relative">
+              <div className="absolute top-0 right-0 opacity-[0.04] pointer-events-none select-none" data-testid="watermark-logo">
+                <img src={logoUrl} alt="" className="w-32 h-32" />
+              </div>
               <h1 className="text-2xl font-bold mb-6" data-testid="text-lesson-title">{activeLesson.title}</h1>
 
               <div
@@ -404,12 +413,20 @@ export default function CourseViewer() {
                   </Button>
                 </div>
               </div>
+
+              <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-800/50" data-testid="lesson-footer-brand">
+                <img src={logoUrl} alt="CCH" className="w-4 h-4 rounded opacity-40" />
+                <span className="text-[10px] text-gray-600 tracking-wide">CCH PROPRIETARY TRAINING MATERIAL</span>
+              </div>
             </div>
           )}
 
           {/* QUIZ VIEW */}
           {viewMode === "quiz" && quizQuestions && (
-            <div>
+            <div className="relative">
+              <div className="absolute top-0 right-0 opacity-[0.04] pointer-events-none select-none">
+                <img src={logoUrl} alt="" className="w-32 h-32" />
+              </div>
               <div className="flex items-center gap-3 mb-6">
                 <HelpCircle className="w-6 h-6 text-purple-400" />
                 <h1 className="text-2xl font-bold" data-testid="text-quiz-title">{activeModule?.title} — Quiz</h1>
@@ -518,31 +535,87 @@ export default function CourseViewer() {
           {/* CERTIFICATE VIEW */}
           {viewMode === "certificate" && certificate && (
             <div className="flex justify-center py-8">
-              <div className="w-full max-w-2xl" data-testid="certificate-display">
-                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-yellow-600/50 p-8 text-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIwLjMiLz48cGF0aCBkPSJNIDEwIDAgTCAxMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjAuMyIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-20" />
+              <div className="w-full max-w-3xl" data-testid="certificate-display">
+                <div className="bg-gradient-to-br from-[#0a0f1a] via-[#0d1321] to-[#0a0f1a] rounded-lg p-3 shadow-2xl">
+                  <div className="border-2 border-yellow-600/60 rounded-lg p-2">
+                    <div className="border border-yellow-700/30 rounded-lg relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-[0.03]" style={{
+                        backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(212,175,55,0.15) 35px, rgba(212,175,55,0.15) 36px),
+                          repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(212,175,55,0.15) 35px, rgba(212,175,55,0.15) 36px)`
+                      }} />
 
-                  <div className="relative z-10">
-                    <img src={logoUrl} alt="CCH" className="w-16 h-16 mx-auto mb-4 rounded" />
-                    <p className="text-yellow-400 text-sm font-medium tracking-widest uppercase mb-2">Certificate of Completion</p>
-                    <h2 className="text-3xl font-bold text-white mb-2">Core Compliance Hub</h2>
-                    <div className="w-24 h-0.5 bg-yellow-600 mx-auto my-4" />
-                    <p className="text-gray-400 text-sm mb-1">This certifies that</p>
-                    <p className="text-2xl font-bold text-white mb-4">{certificate.userName}</p>
-                    <p className="text-gray-400 text-sm mb-1">has successfully completed</p>
-                    <p className="text-xl font-semibold text-blue-400 mb-6">{certificate.courseName}</p>
-                    <div className="flex items-center justify-center gap-8 text-xs text-gray-500">
-                      <div>
-                        <p className="text-gray-400">Certificate No.</p>
-                        <p className="text-white font-mono">{certificate.certificateNumber}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Date Issued</p>
-                        <p className="text-white">{new Date(certificate.issuedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+                      <div className="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-yellow-600/40 rounded-tl-lg" />
+                      <div className="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-yellow-600/40 rounded-tr-lg" />
+                      <div className="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-yellow-600/40 rounded-bl-lg" />
+                      <div className="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-yellow-600/40 rounded-br-lg" />
+
+                      <div className="relative z-10 px-8 py-10 md:px-16 md:py-14 text-center">
+                        <div className="flex items-center justify-center gap-4 mb-6">
+                          <div className="w-12 h-0.5 bg-gradient-to-r from-transparent to-yellow-600/60" />
+                          <img src={logoUrl} alt="CCH" className="w-20 h-20 rounded-lg shadow-lg shadow-yellow-900/20" />
+                          <div className="w-12 h-0.5 bg-gradient-to-l from-transparent to-yellow-600/60" />
+                        </div>
+
+                        <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide mb-1">CORE COMPLIANCE HUB</h2>
+                        <p className="text-xs text-gray-500 tracking-[0.3em] uppercase mb-6">Professional Development & Compliance Training</p>
+
+                        <div className="flex items-center justify-center gap-3 mb-6">
+                          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-yellow-600/40 to-transparent" />
+                          <Award className="w-6 h-6 text-yellow-500" />
+                          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-yellow-600/40 to-transparent" />
+                        </div>
+
+                        <p className="text-yellow-500 text-lg md:text-xl font-semibold tracking-[0.2em] uppercase mb-8">Certificate of Completion</p>
+
+                        <p className="text-gray-400 text-sm mb-2">This is to certify that</p>
+                        <p className="text-3xl md:text-4xl font-bold text-white mb-1" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                          {certificate.userName}
+                        </p>
+                        <div className="w-64 h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent mx-auto mb-6" />
+
+                        <p className="text-gray-400 text-sm mb-2">has successfully completed all requirements for</p>
+                        <p className="text-xl md:text-2xl font-semibold text-blue-400 mb-2">{certificate.courseName}</p>
+                        <p className="text-xs text-gray-500 mb-8">including all module assessments with a passing score of 70% or higher</p>
+
+                        <div className="flex items-center justify-center gap-3 mb-8">
+                          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-yellow-600/30 to-transparent" />
+                          <div className="w-2 h-2 rounded-full bg-yellow-600/40" />
+                          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-yellow-600/30 to-transparent" />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto mb-8">
+                          <div className="text-center">
+                            <div className="w-32 h-px bg-gray-600 mx-auto mb-2" />
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Date Issued</p>
+                            <p className="text-xs text-white mt-1 font-medium">
+                              {new Date(certificate.issuedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                            </p>
+                          </div>
+                          <div className="text-center flex flex-col items-center justify-end">
+                            <div className="w-12 h-12 rounded-full border-2 border-yellow-600/40 flex items-center justify-center mb-1">
+                              <img src={logoUrl} alt="CCH Seal" className="w-8 h-8 rounded-full" />
+                            </div>
+                            <p className="text-[9px] text-yellow-600/60 uppercase tracking-wider">Official Seal</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="w-32 h-px bg-gray-600 mx-auto mb-2" />
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Authorized By</p>
+                            <p className="text-xs text-white mt-1 font-medium">CCH Training Division</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-gray-800/40 rounded-lg px-4 py-3 inline-block">
+                          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Certificate Number</p>
+                          <p className="text-sm text-white font-mono tracking-wider">{certificate.certificateNumber}</p>
+                        </div>
+
+                        <p className="text-[10px] text-gray-600 mt-4">
+                          Verify this certificate at {window.location.origin}/api/certificates/verify/{certificate.certificateNumber}
+                        </p>
                       </div>
                     </div>
                   </div>
-                </Card>
+                </div>
 
                 <div className="flex justify-center gap-3 mt-6">
                   <Button variant="outline" className="border-gray-700" onClick={() => window.print()} data-testid="btn-print-cert">

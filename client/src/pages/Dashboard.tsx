@@ -21,7 +21,8 @@ import {
   Phone,
   TrendingUp,
   Calendar,
-  GraduationCap
+  GraduationCap,
+  BookOpen
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -585,25 +586,47 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Employer Training Portal */}
-          <Card className="hover:shadow-lg transition-shadow border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-indigo-500/5" data-testid="card-employer-training">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-blue-500" />
-                Employer Training Portal
-              </CardTitle>
-              <CardDescription>
-                Assign compliance courses to your employees, send them access links, and track their progress — no employee accounts needed.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/employer-training">
-                <Button className="w-full sm:w-auto gap-2 bg-blue-600 hover:bg-blue-700 text-white" data-testid="button-employer-training">
-                  Open Training Portal <ArrowUpRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Employer Training Portal */}
+            <Card className="hover:shadow-lg transition-shadow border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-indigo-500/5" data-testid="card-employer-training">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-blue-500" />
+                  Employer Training Portal
+                </CardTitle>
+                <CardDescription>
+                  Assign compliance courses to your employees, send them access links, and track their progress.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/employer-training">
+                  <Button className="w-full sm:w-auto gap-2 bg-blue-600 hover:bg-blue-700 text-white" data-testid="button-employer-training">
+                    Open Training Portal <ArrowUpRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* My Courses */}
+            <Card className="hover:shadow-lg transition-shadow border-green-500/30 bg-gradient-to-r from-green-500/5 to-emerald-500/5" data-testid="card-my-courses">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-green-500" />
+                  My Courses
+                </CardTitle>
+                <CardDescription>
+                  Access your purchased courses, continue where you left off, and view your certificates of completion.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/training?tab=my-courses">
+                  <Button className="w-full sm:w-auto gap-2 bg-green-600 hover:bg-green-700 text-white" data-testid="button-my-courses">
+                    View My Courses <ArrowUpRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Quick Actions Row */}
           <div className="grid md:grid-cols-2 gap-6">

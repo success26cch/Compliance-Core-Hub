@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -19,6 +20,7 @@ import {
   Loader2,
   ArrowLeft,
   Play,
+  Trophy,
 } from "lucide-react";
 import type { Course, CourseEnrollment, CourseCertificate } from "@shared/schema";
 import logoUrl from "@assets/1_1770683748423.png";
@@ -37,6 +39,12 @@ export default function Training() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<"my-courses" | "catalog">(
+    tabParam === "my-courses" ? "my-courses" : tabParam === "catalog" ? "catalog" : "my-courses"
+  );
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
@@ -94,6 +102,15 @@ export default function Training() {
     }
   };
 
+  const hasEnrollments = enrollments.length > 0;
+  const effectiveTab = hasEnrollments ? activeTab : "catalog";
+
+  const activeEnrollments = enrollments.filter(e => e.status === "active");
+  const completedEnrollments = enrollments.filter(e => e.status === "completed");
+  const totalProgress = enrollments.length > 0
+    ? Math.round(enrollments.reduce((sum, e) => sum + (e.progress || 0), 0) / enrollments.length)
+    : 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white">
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -133,141 +150,231 @@ export default function Training() {
           </div>
         </Card>
 
-        {/* Certificates Section */}
-        {certificates.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Award className="w-5 h-5 text-yellow-400" />
-              Your Certificates
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {certificates.map((cert) => (
-                <Card key={cert.id} className="bg-gradient-to-r from-yellow-900/20 to-amber-900/20 border-yellow-700/30 p-4" data-testid={`cert-card-${cert.id}`}>
-                  <div className="flex items-center gap-3">
-                    <Award className="w-8 h-8 text-yellow-400" />
-                    <div>
-                      <p className="font-semibold text-white">{cert.courseName}</p>
-                      <p className="text-xs text-gray-400">Certificate #{cert.certificateNumber}</p>
-                      <p className="text-xs text-gray-400">Issued: {new Date(cert.issuedAt!).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+        {isAuthenticated && hasEnrollments && (
+          <div className="flex gap-1 mb-6 bg-gray-800/60 p-1 rounded-lg w-fit" data-testid="tab-switcher">
+            <button
+              className={`px-5 py-2.5 rounded-md text-sm font-medium transition flex items-center gap-2 ${effectiveTab === "my-courses" ? "bg-blue-600 text-white shadow" : "text-gray-400 hover:text-white"}`}
+              onClick={() => setActiveTab("my-courses")}
+              data-testid="tab-my-courses"
+            >
+              <GraduationCap className="w-4 h-4" />
+              My Courses ({enrollments.length})
+            </button>
+            <button
+              className={`px-5 py-2.5 rounded-md text-sm font-medium transition flex items-center gap-2 ${effectiveTab === "catalog" ? "bg-blue-600 text-white shadow" : "text-gray-400 hover:text-white"}`}
+              onClick={() => setActiveTab("catalog")}
+              data-testid="tab-catalog"
+            >
+              <BookOpen className="w-4 h-4" />
+              Course Catalog
+            </button>
           </div>
         )}
 
-        {/* Active Courses */}
-        {enrollments.filter(e => e.status === "active").length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Play className="w-5 h-5 text-green-400" />
-              Continue Learning
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {enrollments.filter(e => e.status === "active").map((enrollment) => {
-                const course = courses.find(c => c.id === enrollment.courseId);
-                if (!course) return null;
-                return (
-                  <Card key={enrollment.id} className="bg-gray-800/60 border-gray-700 p-4 hover:border-blue-500/50 transition cursor-pointer" data-testid={`active-course-${enrollment.courseId}`} onClick={() => navigate(`/training/${course.id}`)}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-white">{course.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${enrollment.progress}%` }} />
+        {effectiveTab === "my-courses" && isAuthenticated && hasEnrollments && (
+          <div data-testid="section-my-courses">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card className="bg-gray-800/60 border-gray-700 p-4 text-center" data-testid="stat-total">
+                <p className="text-2xl font-bold text-white">{enrollments.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Total Courses</p>
+              </Card>
+              <Card className="bg-gray-800/60 border-gray-700 p-4 text-center" data-testid="stat-in-progress">
+                <p className="text-2xl font-bold text-blue-400">{activeEnrollments.length}</p>
+                <p className="text-xs text-gray-400 mt-1">In Progress</p>
+              </Card>
+              <Card className="bg-gray-800/60 border-gray-700 p-4 text-center" data-testid="stat-completed">
+                <p className="text-2xl font-bold text-green-400">{completedEnrollments.length}</p>
+                <p className="text-xs text-gray-400 mt-1">Completed</p>
+              </Card>
+              <Card className="bg-gray-800/60 border-gray-700 p-4 text-center" data-testid="stat-avg-progress">
+                <p className="text-2xl font-bold text-yellow-400">{totalProgress}%</p>
+                <p className="text-xs text-gray-400 mt-1">Avg Progress</p>
+              </Card>
+            </div>
+
+            {certificates.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                  Earned Certificates
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {certificates.map((cert) => {
+                    const course = courses.find(c => c.id === cert.courseId);
+                    return (
+                      <Card key={cert.id} className="bg-gradient-to-r from-yellow-900/20 to-amber-900/20 border-yellow-700/30 p-4 cursor-pointer hover:border-yellow-600/50 transition" data-testid={`cert-card-${cert.id}`} onClick={() => navigate(`/training/${cert.courseId}`)}>
+                        <div className="flex items-center gap-3">
+                          <Award className="w-8 h-8 text-yellow-400 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white truncate">{cert.courseName}</p>
+                            <p className="text-xs text-gray-400">Certificate #{cert.certificateNumber}</p>
+                            <p className="text-xs text-gray-400">Issued: {new Date(cert.issuedAt!).toLocaleDateString()}</p>
                           </div>
-                          <span className="text-xs text-gray-400">{enrollment.progress}%</span>
+                          <Button variant="outline" size="sm" className="border-yellow-700/50 text-yellow-400 text-xs shrink-0" data-testid={`btn-view-cert-${cert.id}`}>
+                            View
+                          </Button>
                         </div>
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400" />
-                    </div>
-                  </Card>
-                );
-              })}
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activeEnrollments.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                  <Play className="w-5 h-5 text-blue-400" />
+                  In Progress
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeEnrollments.map((enrollment) => {
+                    const course = courses.find(c => c.id === enrollment.courseId);
+                    if (!course) return null;
+                    const meta = COURSE_PRODUCT_MAP[course.productId];
+                    return (
+                      <Card key={enrollment.id} className="bg-gray-800/60 border-gray-700 p-4 hover:border-blue-500/50 transition cursor-pointer" data-testid={`my-course-active-${enrollment.courseId}`} onClick={() => navigate(`/training/${course.id}`)}>
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">{meta?.icon || "📚"}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white truncate">{course.title}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{course.totalModules} modules</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${enrollment.progress}%` }} />
+                              </div>
+                              <span className="text-xs text-gray-400 shrink-0">{enrollment.progress}%</span>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-5 h-5 text-gray-500 mt-1 shrink-0" />
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {completedEnrollments.length > 0 && !certificates.length && (
+              <div className="mb-6">
+                <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                  Completed
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {completedEnrollments.map((enrollment) => {
+                    const course = courses.find(c => c.id === enrollment.courseId);
+                    if (!course) return null;
+                    const meta = COURSE_PRODUCT_MAP[course.productId];
+                    return (
+                      <Card key={enrollment.id} className="bg-gray-800/60 border-gray-700 p-4 hover:border-green-500/50 transition cursor-pointer" data-testid={`my-course-completed-${enrollment.courseId}`} onClick={() => navigate(`/training/${course.id}`)}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{meta?.icon || "📚"}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white truncate">{course.title}</p>
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs mt-1">
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> Completed
+                            </Badge>
+                          </div>
+                          <ArrowRight className="w-5 h-5 text-gray-500 shrink-0" />
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="text-center mt-6">
+              <Button variant="outline" className="border-gray-700 text-gray-400" onClick={() => setActiveTab("catalog")} data-testid="btn-browse-more">
+                <BookOpen className="w-4 h-4 mr-2" /> Browse More Courses
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Course Catalog */}
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-blue-400" />
-          Course Catalog
-        </h2>
+        {effectiveTab === "catalog" && (
+          <div data-testid="section-catalog">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-blue-400" />
+              Course Catalog
+            </h2>
 
-        {coursesLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-          </div>
-        ) : courses.length === 0 ? (
-          <Card className="bg-gray-800/60 border-gray-700 p-8 text-center">
-            <GraduationCap className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-            <p className="text-gray-400">Courses are being prepared. Check back soon!</p>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => {
-              const product = PRODUCTS[course.productId];
-              const enrollment = getEnrollment(course.id);
-              const certificate = getCertificate(course.id);
-              const meta = COURSE_PRODUCT_MAP[course.productId];
+            {coursesLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+              </div>
+            ) : courses.length === 0 ? (
+              <Card className="bg-gray-800/60 border-gray-700 p-8 text-center">
+                <GraduationCap className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-400">Courses are being prepared. Check back soon!</p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courses.map((course) => {
+                  const product = PRODUCTS[course.productId];
+                  const enrollment = getEnrollment(course.id);
+                  const certificate = getCertificate(course.id);
+                  const meta = COURSE_PRODUCT_MAP[course.productId];
 
-              return (
-                <Card key={course.id} className="bg-gray-800/60 border-gray-700 p-5 flex flex-col" data-testid={`course-card-${course.id}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-3xl">{meta?.icon || "📚"}</span>
-                    {certificate && (
-                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                        <Award className="w-3 h-3 mr-1" /> Completed
-                      </Badge>
-                    )}
-                    {enrollment && !certificate && (
-                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                        {enrollment.progress}% Complete
-                      </Badge>
-                    )}
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-white mb-2">{course.title}</h3>
-                  <p className="text-sm text-gray-400 mb-4 flex-1">{course.description}</p>
-
-                  <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" /> {course.totalModules} modules
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> ~{course.estimatedHours}h
-                    </span>
-                  </div>
-
-                  {product && (
-                    <p className="text-xl font-bold text-white mb-4">
-                      ${(product.unitAmount / 100).toFixed(0)}
-                      <span className="text-sm text-gray-400 font-normal ml-1">per person</span>
-                    </p>
-                  )}
-
-                  <div className="flex gap-2">
-                    {enrollment ? (
-                      <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => navigate(`/training/${course.id}`)} data-testid={`btn-continue-${course.id}`}>
-                        {certificate ? "Review Course" : "Continue"} <ArrowRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    ) : (
-                      <>
-                        <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStartCourse(course)} data-testid={`btn-start-${course.id}`}>
-                          Start Course <Play className="w-4 h-4 ml-1" />
-                        </Button>
-                        {product && (
-                          <Button variant="outline" className="border-gray-600" onClick={() => handleAddToCart(course.productId)} data-testid={`btn-cart-${course.id}`}>
-                            <ShoppingCart className="w-4 h-4" />
-                          </Button>
+                  return (
+                    <Card key={course.id} className="bg-gray-800/60 border-gray-700 p-5 flex flex-col" data-testid={`course-card-${course.id}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-3xl">{meta?.icon || "📚"}</span>
+                        {certificate && (
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                            <Award className="w-3 h-3 mr-1" /> Completed
+                          </Badge>
                         )}
-                      </>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
+                        {enrollment && !certificate && (
+                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                            {enrollment.progress}% Complete
+                          </Badge>
+                        )}
+                      </div>
+
+                      <h3 className="text-lg font-semibold text-white mb-2">{course.title}</h3>
+                      <p className="text-sm text-gray-400 mb-4 flex-1">{course.description}</p>
+
+                      <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+                        <span className="flex items-center gap-1">
+                          <BookOpen className="w-3 h-3" /> {course.totalModules} modules
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> ~{course.estimatedHours}h
+                        </span>
+                      </div>
+
+                      {product && (
+                        <p className="text-xl font-bold text-white mb-4">
+                          ${(product.unitAmount / 100).toFixed(0)}
+                          <span className="text-sm text-gray-400 font-normal ml-1">per person</span>
+                        </p>
+                      )}
+
+                      <div className="flex gap-2">
+                        {enrollment ? (
+                          <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => navigate(`/training/${course.id}`)} data-testid={`btn-continue-${course.id}`}>
+                            {certificate ? "Review Course" : "Continue"} <ArrowRight className="w-4 h-4 ml-1" />
+                          </Button>
+                        ) : (
+                          <>
+                            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStartCourse(course)} data-testid={`btn-start-${course.id}`}>
+                              Start Course <Play className="w-4 h-4 ml-1" />
+                            </Button>
+                            {product && (
+                              <Button variant="outline" className="border-gray-600" onClick={() => handleAddToCart(course.productId)} data-testid={`btn-cart-${course.id}`}>
+                                <ShoppingCart className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
