@@ -22,6 +22,8 @@ import {
   Trophy,
   RotateCcw,
   Printer,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import logoUrl from "@assets/1_1770683748423.png";
 
@@ -98,6 +100,7 @@ export default function CourseViewer() {
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizResults, setQuizResults] = useState<{ results: QuizResult[]; score: number; passed: boolean; correct: number; total: number } | null>(null);
   const [certificate, setCertificate] = useState<any>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const { data: courseData, isLoading } = useQuery<CourseData>({
     queryKey: ["/api/courses", courseId, "learn", trainingToken],
@@ -204,6 +207,58 @@ export default function CourseViewer() {
       </div>
     );
   }
+
+  const handleToggleSpeech = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    if (!activeLesson) return;
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = activeLesson.content;
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    if (!textContent.trim()) return;
+
+    const chunks: string[] = [];
+    const sentences = textContent.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g) || [textContent];
+    let currentChunk = "";
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length > 180) {
+        if (currentChunk) chunks.push(currentChunk.trim());
+        currentChunk = sentence;
+      } else {
+        currentChunk += sentence;
+      }
+    }
+    if (currentChunk.trim()) chunks.push(currentChunk.trim());
+
+    let chunkIndex = 0;
+    const speakNext = () => {
+      if (chunkIndex >= chunks.length) {
+        setIsSpeaking(false);
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.onend = () => { chunkIndex++; speakNext(); };
+      utterance.onerror = () => { setIsSpeaking(false); };
+      window.speechSynthesis.speak(utterance);
+    };
+
+    setIsSpeaking(true);
+    speakNext();
+  };
+
+  useEffect(() => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  }, [activeModuleIndex, activeLessonIndex]);
+
+  useEffect(() => {
+    return () => { window.speechSynthesis.cancel(); };
+  }, []);
 
   const handleMarkComplete = () => {
     if (activeLesson) {
@@ -372,7 +427,17 @@ export default function CourseViewer() {
               <div className="absolute top-0 right-0 opacity-[0.04] pointer-events-none select-none" data-testid="watermark-logo">
                 <img src={logoUrl} alt="" className="w-32 h-32" />
               </div>
-              <h1 className="text-2xl font-bold mb-6" data-testid="text-lesson-title">{activeLesson.title}</h1>
+              <div className="flex items-center gap-3 mb-6">
+                <h1 className="text-2xl font-bold" data-testid="text-lesson-title">{activeLesson.title}</h1>
+                <button
+                  onClick={handleToggleSpeech}
+                  className={`p-2 rounded-full transition shrink-0 ${isSpeaking ? "bg-blue-600 text-white animate-pulse" : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"}`}
+                  title={isSpeaking ? "Stop reading" : "Read lesson aloud"}
+                  data-testid="btn-text-to-speech"
+                >
+                  {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+              </div>
 
               <div
                 className="prose prose-invert prose-sm max-w-none
@@ -415,8 +480,8 @@ export default function CourseViewer() {
               </div>
 
               <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-800/50" data-testid="lesson-footer-brand">
-                <img src={logoUrl} alt="CCH" className="w-4 h-4 rounded opacity-40" />
-                <span className="text-[10px] text-gray-600 tracking-wide">CCH PROPRIETARY TRAINING MATERIAL</span>
+                <img src={logoUrl} alt="CCH" className="w-4 h-4 rounded opacity-60" />
+                <span className="text-[11px] text-white font-bold tracking-widest">CCH PROPRIETARY TRAINING MATERIAL</span>
               </div>
             </div>
           )}
