@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -101,6 +101,8 @@ export default function CourseViewer() {
   const [quizResults, setQuizResults] = useState<{ results: QuizResult[]; score: number; passed: boolean; correct: number; total: number } | null>(null);
   const [certificate, setCertificate] = useState<any>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: courseData, isLoading } = useQuery<CourseData>({
     queryKey: ["/api/courses", courseId, "learn", trainingToken],
@@ -186,12 +188,27 @@ export default function CourseViewer() {
   }, [courseData?.modules?.length]);
 
   useEffect(() => {
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      const src = audioRef.current.src;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+      if (src.startsWith("blob:")) URL.revokeObjectURL(src);
+    }
     setIsSpeaking(false);
+    setIsLoadingAudio(false);
   }, [activeModuleIndex, activeLessonIndex]);
 
   useEffect(() => {
-    return () => { window.speechSynthesis.cancel(); };
+    return () => {
+      if (audioRef.current) {
+        const src = audioRef.current.src;
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+        if (src.startsWith("blob:")) URL.revokeObjectURL(src);
+      }
+    };
   }, []);
 
   if (isLoading) {
@@ -216,10 +233,21 @@ export default function CourseViewer() {
     );
   }
 
-  const handleToggleSpeech = () => {
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+  const stopAudio = () => {
+    if (audioRef.current) {
+      const src = audioRef.current.src;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+      if (src.startsWith("blob:")) URL.revokeObjectURL(src);
+    }
+    setIsSpeaking(false);
+    setIsLoadingAudio(false);
+  };
+
+  const handleToggleSpeech = async () => {
+    if (isSpeaking || isLoadingAudio) {
+      stopAudio();
       return;
     }
     if (!activeLesson) return;
@@ -228,35 +256,37 @@ export default function CourseViewer() {
     const textContent = tempDiv.textContent || tempDiv.innerText || "";
     if (!textContent.trim()) return;
 
-    const chunks: string[] = [];
-    const sentences = textContent.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g) || [textContent];
-    let currentChunk = "";
-    for (const sentence of sentences) {
-      if ((currentChunk + sentence).length > 180) {
-        if (currentChunk) chunks.push(currentChunk.trim());
-        currentChunk = sentence;
-      } else {
-        currentChunk += sentence;
-      }
-    }
-    if (currentChunk.trim()) chunks.push(currentChunk.trim());
-
-    let chunkIndex = 0;
-    const speakNext = () => {
-      if (chunkIndex >= chunks.length) {
+    try {
+      setIsLoadingAudio(true);
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textContent.trim() }),
+      });
+      if (!response.ok) throw new Error("TTS failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
         setIsSpeaking(false);
-        return;
-      }
-      const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.onend = () => { chunkIndex++; speakNext(); };
-      utterance.onerror = () => { setIsSpeaking(false); };
-      window.speechSynthesis.speak(utterance);
-    };
-
-    setIsSpeaking(true);
-    speakNext();
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setIsLoadingAudio(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+      await audio.play();
+      setIsLoadingAudio(false);
+      setIsSpeaking(true);
+    } catch (err) {
+      console.error("TTS error:", err);
+      setIsLoadingAudio(false);
+      setIsSpeaking(false);
+    }
   };
 
   const handleMarkComplete = () => {
@@ -430,11 +460,11 @@ export default function CourseViewer() {
                 <h1 className="text-2xl font-bold" data-testid="text-lesson-title">{activeLesson.title}</h1>
                 <button
                   onClick={handleToggleSpeech}
-                  className={`p-2 rounded-full transition shrink-0 ${isSpeaking ? "bg-blue-600 text-white animate-pulse" : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"}`}
-                  title={isSpeaking ? "Stop reading" : "Read lesson aloud"}
+                  className={`p-2 rounded-full transition shrink-0 ${isLoadingAudio ? "bg-yellow-600 text-white animate-pulse" : isSpeaking ? "bg-blue-600 text-white animate-pulse" : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"}`}
+                  title={isLoadingAudio ? "Generating audio..." : isSpeaking ? "Stop reading" : "Read lesson aloud (AI voice)"}
                   data-testid="btn-text-to-speech"
                 >
-                  {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                  {isLoadingAudio ? <Loader2 className="w-5 h-5 animate-spin" /> : isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                 </button>
               </div>
 

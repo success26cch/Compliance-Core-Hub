@@ -17,6 +17,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { textToSpeech } from "./replit_integrations/audio/client";
 
 const videoStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -2766,6 +2767,26 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
     }
     res.json({ success: true });
+  });
+
+  app.post("/api/tts", async (req, res) => {
+    try {
+      const { text, voice = "nova" } = req.body;
+      if (!text || typeof text !== "string") {
+        return res.status(400).json({ message: "Text is required" });
+      }
+      const trimmed = text.slice(0, 4000);
+      const audioBuffer = await textToSpeech(trimmed, voice, "mp3");
+      res.set({
+        "Content-Type": "audio/mpeg",
+        "Content-Length": audioBuffer.length.toString(),
+        "Cache-Control": "public, max-age=3600",
+      });
+      res.send(audioBuffer);
+    } catch (error: any) {
+      console.error("TTS error:", error);
+      res.status(500).json({ message: "Failed to generate speech" });
+    }
   });
 
   app.delete("/api/training-assignments/:id", async (req, res) => {
