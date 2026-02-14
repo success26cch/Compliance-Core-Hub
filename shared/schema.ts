@@ -563,6 +563,25 @@ export const insertCourseCertificateSchema = createInsertSchema(courseCertificat
 export type CourseCertificate = typeof courseCertificates.$inferSelect;
 export type InsertCourseCertificate = z.infer<typeof insertCourseCertificateSchema>;
 
+// Training Assignments (Employer assigns courses to employees)
+export const trainingAssignments = pgTable("training_assignments", {
+  id: serial("id").primaryKey(),
+  employerUserId: text("employer_user_id").notNull(),
+  employeeId: integer("employee_id").notNull(),
+  courseId: integer("course_id").notNull(),
+  accessToken: text("access_token").notNull().unique(),
+  status: text("status").notNull().default("assigned"), // 'assigned', 'in_progress', 'completed'
+  progress: integer("progress").notNull().default(0),
+  enrollmentUserId: text("enrollment_user_id"),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertTrainingAssignmentSchema = createInsertSchema(trainingAssignments).omit({ id: true, assignedAt: true, startedAt: true, completedAt: true });
+export type TrainingAssignment = typeof trainingAssignments.$inferSelect;
+export type InsertTrainingAssignment = z.infer<typeof insertTrainingAssignmentSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

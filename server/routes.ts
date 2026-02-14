@@ -2194,12 +2194,32 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  // Helper: resolve userId from auth or training token
+  async function resolveTrainingUserId(req: any): Promise<{ userId: string; allowedCourseId?: number } | null> {
+    if (req.isAuthenticated()) {
+      return { userId: (req.user as any).claims?.sub || (req.user as any).id };
+    }
+    const token = req.query?.token || req.body?.token;
+    if (token) {
+      const assignment = await storage.getTrainingAssignmentByToken(token);
+      if (assignment && assignment.status !== "revoked") {
+        const uid = assignment.enrollmentUserId || `employee:${assignment.employeeId}`;
+        return { userId: uid, allowedCourseId: assignment.courseId };
+      }
+    }
+    return null;
+  }
+
   // Get course content for enrolled user (lessons + progress)
   app.get("/api/courses/:id/learn", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const resolved = await resolveTrainingUserId(req);
+    if (!resolved) return res.status(401).json({ message: "Unauthorized" });
+    const { userId, allowedCourseId } = resolved;
     try {
-      const userId = (req.user as any).claims.sub;
       const courseId = parseInt(req.params.id);
+      if (allowedCourseId && allowedCourseId !== courseId) {
+        return res.status(403).json({ message: "Token does not grant access to this course" });
+      }
 
       const enrollment = await storage.getEnrollment(userId, courseId);
       if (!enrollment) return res.status(403).json({ message: "Not enrolled in this course" });
@@ -2240,9 +2260,10 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Mark lesson as complete
   app.post("/api/lessons/:id/complete", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const resolved = await resolveTrainingUserId(req);
+    if (!resolved) return res.status(401).json({ message: "Unauthorized" });
+    const { userId, allowedCourseId } = resolved;
     try {
-      const userId = (req.user as any).claims.sub;
       const lessonId = parseInt(req.params.id);
 
       const lesson = await storage.getLessonById(lessonId);
@@ -2250,6 +2271,10 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
       const mod = await storage.getModuleById(lesson.moduleId);
       if (!mod) return res.status(404).json({ message: "Module not found" });
+
+      if (allowedCourseId && allowedCourseId !== mod.courseId) {
+        return res.status(403).json({ message: "Token does not grant access to this course" });
+      }
 
       const enrollment = await storage.getEnrollment(userId, mod.courseId);
       if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
@@ -2283,13 +2308,18 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Get quiz questions for a module
   app.get("/api/modules/:id/quiz", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const resolved = await resolveTrainingUserId(req);
+    if (!resolved) return res.status(401).json({ message: "Unauthorized" });
+    const { userId, allowedCourseId } = resolved;
     try {
-      const userId = (req.user as any).claims.sub;
       const moduleId = parseInt(req.params.id);
 
       const mod = await storage.getModuleById(moduleId);
       if (!mod) return res.status(404).json({ message: "Module not found" });
+
+      if (allowedCourseId && allowedCourseId !== mod.courseId) {
+        return res.status(403).json({ message: "Token does not grant access to this course" });
+      }
 
       const enrollment = await storage.getEnrollment(userId, mod.courseId);
       if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
@@ -2305,14 +2335,19 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Submit quiz answers
   app.post("/api/modules/:id/quiz", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const resolved = await resolveTrainingUserId(req);
+    if (!resolved) return res.status(401).json({ message: "Unauthorized" });
+    const { userId, allowedCourseId } = resolved;
     try {
-      const userId = (req.user as any).claims.sub;
       const moduleId = parseInt(req.params.id);
-      const { answers } = req.body; // Array of selected indices
+      const { answers } = req.body;
 
       const mod = await storage.getModuleById(moduleId);
       if (!mod) return res.status(404).json({ message: "Module not found" });
+
+      if (allowedCourseId && allowedCourseId !== mod.courseId) {
+        return res.status(403).json({ message: "Token does not grant access to this course" });
+      }
 
       const enrollment = await storage.getEnrollment(userId, mod.courseId);
       if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
@@ -2355,10 +2390,14 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Complete course and generate certificate
   app.post("/api/courses/:id/complete", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const resolved = await resolveTrainingUserId(req);
+    if (!resolved) return res.status(401).json({ message: "Unauthorized" });
+    const { userId, allowedCourseId } = resolved;
     try {
-      const userId = (req.user as any).claims.sub;
       const courseId = parseInt(req.params.id);
+      if (allowedCourseId && allowedCourseId !== courseId) {
+        return res.status(403).json({ message: "Token does not grant access to this course" });
+      }
 
       const enrollment = await storage.getEnrollment(userId, courseId);
       if (!enrollment) return res.status(403).json({ message: "Not enrolled" });
@@ -2447,6 +2486,220 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     } catch (error: any) {
       console.error("Error seeding courses:", error);
       res.status(500).json({ message: "Failed to seed courses" });
+    }
+  });
+
+  // ======================== EMPLOYER TRAINING PORTAL ========================
+
+  // Get all training assignments for the employer
+  app.get("/api/training-assignments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).id;
+    try {
+      const assignments = await storage.getTrainingAssignmentsByEmployer(userId);
+
+      const employeeList = await storage.getEmployees(userId);
+      const courseList = await storage.getCourses();
+
+      const employeeMap = new Map(employeeList.map(e => [e.id, e]));
+      const courseMap = new Map(courseList.map(c => [c.id, c]));
+
+      const enriched = assignments.map(a => ({
+        ...a,
+        employee: employeeMap.get(a.employeeId),
+        course: courseMap.get(a.courseId),
+      }));
+
+      res.json(enriched);
+    } catch (error: any) {
+      console.error("Error fetching training assignments:", error);
+      res.status(500).json({ message: "Failed to fetch training assignments" });
+    }
+  });
+
+  // Create training assignment(s)
+  app.post("/api/training-assignments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).id;
+    const { employeeIds, courseIds } = req.body;
+
+    if (!employeeIds?.length || !courseIds?.length) {
+      return res.status(400).json({ message: "Employee IDs and Course IDs are required" });
+    }
+
+    try {
+      const created: any[] = [];
+      const crypto = await import("crypto");
+
+      for (const employeeId of employeeIds) {
+        const employee = await storage.getEmployeeById(employeeId, userId);
+        if (!employee) continue;
+
+        for (const courseId of courseIds) {
+          const existing = await storage.getTrainingAssignmentByEmployeeAndCourse(userId, employeeId, courseId);
+          if (existing) {
+            created.push(existing);
+            continue;
+          }
+
+          const accessToken = crypto.randomBytes(32).toString("hex");
+          const assignment = await storage.createTrainingAssignment({
+            employerUserId: userId,
+            employeeId,
+            courseId,
+            accessToken,
+            status: "assigned",
+            progress: 0,
+          });
+          created.push(assignment);
+        }
+      }
+
+      res.json(created);
+    } catch (error: any) {
+      console.error("Error creating training assignments:", error);
+      res.status(500).json({ message: "Failed to create training assignments" });
+    }
+  });
+
+  // Get employer training dashboard stats
+  app.get("/api/training-assignments/stats", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).id;
+    try {
+      const assignments = await storage.getTrainingAssignmentsByEmployer(userId);
+      const total = assignments.length;
+      const assigned = assignments.filter(a => a.status === "assigned").length;
+      const inProgress = assignments.filter(a => a.status === "in_progress").length;
+      const completed = assignments.filter(a => a.status === "completed").length;
+      const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      res.json({ total, assigned, inProgress, completed, completionRate });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Redeem training access token (public - employee uses this to start their course)
+  app.post("/api/training-access/redeem", async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: "Token is required" });
+
+    try {
+      const assignment = await storage.getTrainingAssignmentByToken(token);
+      if (!assignment || assignment.status === "revoked") return res.status(404).json({ message: "Invalid or expired training link" });
+
+      const employeeUserId = `employee:${assignment.employeeId}`;
+
+      if (!assignment.enrollmentUserId) {
+        let enrollment = await storage.getEnrollment(employeeUserId, assignment.courseId);
+        if (!enrollment) {
+          enrollment = await storage.createEnrollment({
+            userId: employeeUserId,
+            courseId: assignment.courseId,
+            status: "active",
+            progress: 0,
+          });
+        }
+
+        await storage.updateTrainingAssignment(assignment.id, {
+          enrollmentUserId: employeeUserId,
+          status: "in_progress",
+          startedAt: new Date(),
+        });
+      }
+
+      const employee = await storage.getEmployeeByIdPublic(assignment.employeeId);
+
+      res.json({
+        assignmentId: assignment.id,
+        courseId: assignment.courseId,
+        employeeUserId,
+        employeeName: employee ? `${employee.firstName} ${employee.lastName}` : "Employee",
+        token,
+      });
+    } catch (error: any) {
+      console.error("Error redeeming training token:", error);
+      res.status(500).json({ message: "Failed to redeem training link" });
+    }
+  });
+
+  // Get employee training session (used by course viewer with token)
+  app.get("/api/training-access/session", async (req, res) => {
+    const token = req.query.token as string;
+    if (!token) return res.status(400).json({ message: "Token is required" });
+
+    try {
+      const assignment = await storage.getTrainingAssignmentByToken(token);
+      if (!assignment || assignment.status === "revoked") return res.status(404).json({ message: "Invalid training link" });
+
+      const employeeUserId = assignment.enrollmentUserId || `employee:${assignment.employeeId}`;
+      const enrollment = await storage.getEnrollment(employeeUserId, assignment.courseId);
+      const employee = await storage.getEmployeeByIdPublic(assignment.employeeId);
+
+      res.json({
+        assignmentId: assignment.id,
+        courseId: assignment.courseId,
+        employeeUserId,
+        employeeName: employee ? `${employee.firstName} ${employee.lastName}` : "Employee",
+        enrollment,
+        status: assignment.status,
+        progress: assignment.progress,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to get training session" });
+    }
+  });
+
+  // Sync assignment progress from enrollment data (called periodically or on course viewer)
+  app.post("/api/training-assignments/:id/sync", async (req, res) => {
+    const assignmentId = parseInt(req.params.id);
+    const { token } = req.body;
+
+    try {
+      const assignment = token
+        ? await storage.getTrainingAssignmentByToken(token)
+        : null;
+
+      if (!assignment || assignment.id !== assignmentId || assignment.status === "revoked") {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+
+      const employeeUserId = assignment.enrollmentUserId || `employee:${assignment.employeeId}`;
+      const enrollment = await storage.getEnrollment(employeeUserId, assignment.courseId);
+
+      if (enrollment) {
+        const updates: any = { progress: enrollment.progress };
+        if (enrollment.status === "completed" && assignment.status !== "completed") {
+          updates.status = "completed";
+          updates.completedAt = new Date();
+        } else if (enrollment.progress > 0 && assignment.status === "assigned") {
+          updates.status = "in_progress";
+          if (!assignment.startedAt) updates.startedAt = new Date();
+        }
+        await storage.updateTrainingAssignment(assignment.id, updates);
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to sync progress" });
+    }
+  });
+
+  // Delete training assignment
+  app.delete("/api/training-assignments/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).id;
+    const assignmentId = parseInt(req.params.id);
+
+    try {
+      const assignment = await storage.getTrainingAssignmentById(assignmentId, userId);
+      if (!assignment) return res.status(404).json({ message: "Assignment not found" });
+
+      await storage.updateTrainingAssignment(assignmentId, { status: "revoked" as any });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to revoke assignment" });
     }
   });
 

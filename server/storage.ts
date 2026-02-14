@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -130,6 +130,14 @@ export interface IStorage {
   getCertificatesByUser(userId: string): Promise<CourseCertificate[]>;
   createCertificate(cert: InsertCourseCertificate): Promise<CourseCertificate>;
   getCertificateByNumber(certNumber: string): Promise<CourseCertificate | undefined>;
+
+  // Training Assignments
+  createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment>;
+  getTrainingAssignmentsByEmployer(employerUserId: string): Promise<TrainingAssignment[]>;
+  getTrainingAssignmentByToken(token: string): Promise<TrainingAssignment | undefined>;
+  getTrainingAssignmentById(id: number, employerUserId: string): Promise<TrainingAssignment | undefined>;
+  updateTrainingAssignment(id: number, updates: Partial<TrainingAssignment>): Promise<TrainingAssignment | undefined>;
+  getTrainingAssignmentByEmployeeAndCourse(employerUserId: string, employeeId: number, courseId: number): Promise<TrainingAssignment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -707,6 +715,48 @@ export class DatabaseStorage implements IStorage {
     const [cert] = await db.select().from(courseCertificates)
       .where(eq(courseCertificates.certificateNumber, certNumber));
     return cert;
+  }
+
+  // Training Assignments
+  async createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment> {
+    const [created] = await db.insert(trainingAssignments).values(assignment).returning();
+    return created;
+  }
+
+  async getTrainingAssignmentsByEmployer(employerUserId: string): Promise<TrainingAssignment[]> {
+    return db.select().from(trainingAssignments)
+      .where(eq(trainingAssignments.employerUserId, employerUserId))
+      .orderBy(desc(trainingAssignments.assignedAt));
+  }
+
+  async getTrainingAssignmentByToken(token: string): Promise<TrainingAssignment | undefined> {
+    const [assignment] = await db.select().from(trainingAssignments)
+      .where(eq(trainingAssignments.accessToken, token));
+    return assignment;
+  }
+
+  async getTrainingAssignmentById(id: number, employerUserId: string): Promise<TrainingAssignment | undefined> {
+    const [assignment] = await db.select().from(trainingAssignments)
+      .where(and(eq(trainingAssignments.id, id), eq(trainingAssignments.employerUserId, employerUserId)));
+    return assignment;
+  }
+
+  async updateTrainingAssignment(id: number, updates: Partial<TrainingAssignment>): Promise<TrainingAssignment | undefined> {
+    const [updated] = await db.update(trainingAssignments)
+      .set(updates)
+      .where(eq(trainingAssignments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getTrainingAssignmentByEmployeeAndCourse(employerUserId: string, employeeId: number, courseId: number): Promise<TrainingAssignment | undefined> {
+    const [assignment] = await db.select().from(trainingAssignments)
+      .where(and(
+        eq(trainingAssignments.employerUserId, employerUserId),
+        eq(trainingAssignments.employeeId, employeeId),
+        eq(trainingAssignments.courseId, courseId)
+      ));
+    return assignment;
   }
 }
 

@@ -85,42 +85,47 @@ export default function CourseViewer() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
+  const searchParams = new URLSearchParams(window.location.search);
+  const trainingToken = searchParams.get("token");
+  const hasAccess = isAuthenticated || !!trainingToken;
+  const tokenParam = trainingToken ? `?token=${trainingToken}` : "";
+
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>("lesson");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Quiz state
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizResults, setQuizResults] = useState<{ results: QuizResult[]; score: number; passed: boolean; correct: number; total: number } | null>(null);
   const [certificate, setCertificate] = useState<any>(null);
 
   const { data: courseData, isLoading } = useQuery<CourseData>({
-    queryKey: ["/api/courses", courseId, "learn"],
+    queryKey: ["/api/courses", courseId, "learn", trainingToken],
     queryFn: async () => {
-      const res = await fetch(`/api/courses/${courseId}/learn`);
+      const res = await fetch(`/api/courses/${courseId}/learn${tokenParam}`);
       if (!res.ok) throw new Error("Failed to fetch course");
       return res.json();
     },
-    enabled: isAuthenticated && courseId > 0,
+    enabled: hasAccess && courseId > 0,
   });
 
   const markCompleteMutation = useMutation({
     mutationFn: async (lessonId: number) => {
-      const res = await apiRequest("POST", `/api/lessons/${lessonId}/complete`, {});
+      const body = trainingToken ? { token: trainingToken } : {};
+      const res = await apiRequest("POST", `/api/lessons/${lessonId}/complete`, body);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "learn"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "learn", trainingToken] });
     },
   });
 
   const activeModuleForQuiz = courseData?.modules[activeModuleIndex];
   const { data: quizQuestions } = useQuery<QuizQuestion[]>({
-    queryKey: ["/api/modules", activeModuleForQuiz?.id, "quiz"],
+    queryKey: ["/api/modules", activeModuleForQuiz?.id, "quiz", trainingToken],
     queryFn: async () => {
       if (!activeModuleForQuiz) return [];
-      const res = await fetch(`/api/modules/${activeModuleForQuiz.id}/quiz`);
+      const res = await fetch(`/api/modules/${activeModuleForQuiz.id}/quiz${tokenParam}`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -129,13 +134,15 @@ export default function CourseViewer() {
 
   const submitQuizMutation = useMutation({
     mutationFn: async ({ moduleId, answers }: { moduleId: number; answers: number[] }) => {
-      const res = await apiRequest("POST", `/api/modules/${moduleId}/quiz`, { answers });
+      const body: any = { answers };
+      if (trainingToken) body.token = trainingToken;
+      const res = await apiRequest("POST", `/api/modules/${moduleId}/quiz`, body);
       return res.json();
     },
     onSuccess: (data) => {
       setQuizResults(data);
       setViewMode("quiz-results");
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "learn"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "learn", trainingToken] });
       if (data.passed) {
         toast({ title: "Quiz Passed!", description: `You scored ${data.score}%` });
       }
@@ -144,7 +151,8 @@ export default function CourseViewer() {
 
   const completeCurseMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/courses/${courseId}/complete`, {});
+      const body = trainingToken ? { token: trainingToken } : {};
+      const res = await apiRequest("POST", `/api/courses/${courseId}/complete`, body);
       return res.json();
     },
     onSuccess: (data) => {

@@ -124,6 +124,11 @@ export default function Training() {
               <p className="text-yellow-400 text-sm mt-2 font-medium">
                 Every course purchase includes a FREE one-on-one OccHealth Program Consultation.
               </p>
+              <Link href="/employer-training">
+                <span className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm mt-3 cursor-pointer underline" data-testid="link-employer-portal">
+                  Employer Training Portal — Assign & track employee progress
+                </span>
+              </Link>
             </div>
           </div>
         </Card>

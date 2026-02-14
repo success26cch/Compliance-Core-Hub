@@ -29,6 +29,8 @@ import Demo from "@/pages/Demo";
 import SMSConsent from "@/pages/SMSConsent";
 import Training from "@/pages/Training";
 import CourseViewer from "@/pages/CourseViewer";
+import EmployerTraining from "@/pages/EmployerTraining";
+import EmployeeTraining from "@/pages/EmployeeTraining";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -58,6 +60,8 @@ function Router() {
       <Route path="/sms-consent" component={SMSConsent} />
       <Route path="/training" component={Training} />
       <Route path="/training/:id" component={CourseViewer} />
+      <Route path="/employer-training" component={EmployerTraining} />
+      <Route path="/employee-training" component={EmployeeTraining} />
       <Route component={NotFound} />
     </Switch>
   );
