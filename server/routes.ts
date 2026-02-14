@@ -2494,7 +2494,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
   // Get all training assignments for the employer
   app.get("/api/training-assignments", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
-    const userId = (req.user as any).id;
+    const userId = (req.user as any).claims.sub;
     try {
       const assignments = await storage.getTrainingAssignmentsByEmployer(userId);
 
@@ -2520,7 +2520,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
   // Create training assignment(s)
   app.post("/api/training-assignments", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
-    const userId = (req.user as any).id;
+    const userId = (req.user as any).claims.sub;
     const { employeeIds, courseIds } = req.body;
 
     if (!employeeIds?.length || !courseIds?.length) {
@@ -2565,7 +2565,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
   // Get employer training dashboard stats
   app.get("/api/training-assignments/stats", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
-    const userId = (req.user as any).id;
+    const userId = (req.user as any).claims.sub;
     try {
       const assignments = await storage.getTrainingAssignmentsByEmployer(userId);
       const total = assignments.length;
@@ -2689,7 +2689,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
   // Delete training assignment
   app.delete("/api/training-assignments/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
-    const userId = (req.user as any).id;
+    const userId = (req.user as any).claims.sub;
     const assignmentId = parseInt(req.params.id);
 
     try {
