@@ -103,7 +103,9 @@ export default function Training() {
               <ArrowLeft className="w-5 h-5" />
             </button>
           </Link>
-          <img src={logoUrl} alt="CCH Logo" className="w-10 h-10 rounded" />
+          <Link href="/">
+            <img src={logoUrl} alt="CCH Logo" className="w-10 h-10 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
+          </Link>
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-page-title">Training Courses</h1>
             <p className="text-sm text-gray-400">Self-paced compliance training with certificates</p>
@@ -236,7 +238,7 @@ export default function Training() {
                   {product && (
                     <p className="text-xl font-bold text-white mb-4">
                       ${(product.unitAmount / 100).toFixed(0)}
-                      <span className="text-sm text-gray-400 font-normal ml-1">one-time</span>
+                      <span className="text-sm text-gray-400 font-normal ml-1">per person</span>
                     </p>
                   )}
 

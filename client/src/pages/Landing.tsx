@@ -915,96 +915,80 @@ export default function Landing() {
             <CourseCard 
               icon={Stethoscope}
               title="DOT Medical Certification"
-              description="Master DOT physical requirements, disqualifying conditions, medical holds, and the clearance process for CDL drivers."
+              description="The complete employer guide to DOT physical requirements, disqualifying conditions, medical holds, clearance processes, audit findings, return-to-duty protocols, and driver preparation for CDL compliance."
               price="$199"
-              modules="4 Chapters"
-              courseUrl="https://your-teachable-site.teachable.com/p/dot-medical-certification"
+              modules="8 Modules"
               productId="course-dot-medical"
               onAddToCart={handleAddToCart}
               chapters={[
-                "Chapter 1: Introduction to DOT Physical Requirements",
-                "Chapter 2: Understanding Disqualifying Conditions",
-                "Chapter 3: Medical Holds & Waiting Periods",
-                "Chapter 4: The Medical Examiner Certification Process"
+                "Module 1: The Federal Mandate & DOT Physical Requirements",
+                "Module 2: Health Conditions & Disqualifying Standards",
+                "Module 3: Medical Hold & The Clearance Process",
+                "Module 4: Documentation, Forms & State Requirements",
+                "Module 5: Common DOT Audit Findings & Employer Liability",
+                "Module 6: Return-to-Duty, SAP Process & Special Situations",
+                "Module 7: Driver Preparation Masterclass & Case Studies",
+                "Module 8: Official References & Comprehensive Final Exam"
               ]}
             />
             <CourseCard 
               icon={Shield}
               title="OSHA Medical Surveillance"
-              description="Respirator physicals, asbestos exams, HAZWOPER requirements, PFTs, and fit testing compliance."
+              description="Master respirator physicals, fit testing (QLFT vs QNFT), pulmonary function testing, asbestos & lead surveillance under 29 CFR 1910.1001, HAZWOPER medical requirements, and employer compliance programs."
               price="$249"
-              modules="4 Chapters"
-              courseUrl="https://your-teachable-site.teachable.com/p/osha-medical-surveillance"
+              modules="8 Modules"
               productId="course-osha-surveillance"
               onAddToCart={handleAddToCart}
               chapters={[
-                "Chapter 1: Respirator Medical Evaluations",
-                "Chapter 2: Asbestos & Lead Medical Surveillance",
-                "Chapter 3: HAZWOPER Physical Requirements",
-                "Chapter 4: Pulmonary Function Testing & Fit Testing"
+                "Module 1: OSHA Respiratory Protection Standard — The Foundation",
+                "Module 2: Respirator Fit Testing — QLFT vs QNFT",
+                "Module 3: Pulmonary Function Testing (PFT/Spirometry)",
+                "Module 4: Asbestos Medical Surveillance (29 CFR 1910.1001)",
+                "Module 5: HAZWOPER Medical Surveillance (29 CFR 1910.120)",
+                "Module 6: Employer Compliance Programs & OSHA Enforcement",
+                "Module 7: Advanced Topics, Special Populations & Case Studies",
+                "Module 8: Official References & Comprehensive Final Exam"
               ]}
             />
             <CourseCard 
               icon={Syringe}
               title="Drug & Alcohol Testing"
-              description="DOT vs Non-DOT testing, MRO roles, Clearinghouse compliance, return-to-duty process, and 5 vs 10-panel testing."
+              description="DOT vs Non-DOT testing protocols, random testing programs, breath alcohol testing, FMCSA Clearinghouse compliance, MRO processes, return-to-duty SAP requirements, and building a legally defensible program."
               price="$199"
-              modules="4 Chapters"
-              courseUrl="https://your-teachable-site.teachable.com/p/drug-alcohol-testing"
+              modules="8 Modules"
               productId="course-drug-alcohol"
               onAddToCart={handleAddToCart}
               chapters={[
-                "Chapter 1: DOT vs Non-DOT Testing Requirements",
-                "Chapter 2: Medical Review Officer (MRO) Process",
-                "Chapter 3: Clearinghouse Compliance & Queries",
-                "Chapter 4: Return-to-Duty & Follow-Up Testing"
-              ]}
-            />
-            <CourseCard 
-              icon={ShieldCheck}
-              title="ISO Management Systems"
-              description="Complete ISO 9001, 14001, 45001 training. HLS structure, gap analysis, internal auditing, and CAPA mastery."
-              price="$349"
-              modules="12 Modules"
-              highlighted
-              courseUrl="https://your-teachable-site.teachable.com/p/iso-management-systems"
-              productId="course-iso-management"
-              onAddToCart={handleAddToCart}
-              chapters={[
-                "Module 1: Introduction to ISO Standards",
-                "Module 2: High-Level Structure (HLS) Overview",
-                "Module 3: ISO 9001 Quality Management",
-                "Module 4: ISO 14001 Environmental Management",
-                "Module 5: ISO 45001 Occupational Health & Safety",
-                "Module 6: Gap Analysis Methodology",
-                "Module 7: Documentation Requirements",
-                "Module 8: Internal Audit Planning",
-                "Module 9: Conducting Effective Audits",
-                "Module 10: Nonconformity & CAPA",
-                "Module 11: Management Review",
-                "Module 12: Certification Preparation"
+                "Module 1: Foundations of a Drug-Free Workplace Program",
+                "Module 2: DOT vs Non-DOT Testing — The Critical Distinctions",
+                "Module 3: The DOT Random Testing Program",
+                "Module 4: Breath Alcohol Testing (BAT) & Post-Accident Protocols",
+                "Module 5: The FMCSA Drug & Alcohol Clearinghouse",
+                "Module 6: Return-to-Duty (RTD) & The SAP Process",
+                "Module 7: Building a Legally Defensible Program & Case Studies",
+                "Module 8: Quick Reference Guide & Comprehensive Final Exam"
               ]}
             />
             <CourseCard 
               icon={ClipboardList}
               title="OSHA Recordkeeping Master"
-              description="Recordables Reimagined: Master OSHA 300 logs, reduce TRIR/EMR, avoid costly mistakes, and conduct internal audits."
+              description="The definitive strategic intelligence program for mastering OSHA 300 recordkeeping and EMR optimization. Master the First Aid vs Medical Treatment distinction, conduct internal log audits, and transform your safety program into a competitive advantage."
               price="$299"
               modules="10 Modules"
-              courseUrl="https://your-teachable-site.teachable.com/p/osha-recordkeeping-master"
+              highlighted
               productId="course-osha-recordkeeping"
               onAddToCart={handleAddToCart}
               chapters={[
-                "Module 1: OSHA Recordkeeping Overview",
-                "Module 2: General Recording Criteria",
-                "Module 3: Work-Relatedness Determination",
-                "Module 4: Days Away, Restricted, or Transfer",
-                "Module 5: First Aid vs. Medical Treatment",
-                "Module 6: Privacy Cases & Exemptions",
-                "Module 7: OSHA 300 Log Management",
-                "Module 8: TRIR & EMR Calculations",
-                "Module 9: Internal Audit Procedures",
-                "Module 10: Inspection Preparedness"
+                "Module 1: OSHA 300 Recordkeeping — Your Hidden Cost Center",
+                "Module 2: What's Recordable and What's Not — The Definitive Decision Guide",
+                "Module 3: Mastering the OSHA 300 Log — Column by Column",
+                "Module 4: The OSHA 301 & 300A Forms — The Compliance-to-Cash Connection",
+                "Module 5: Working with Clinics the Right Way",
+                "Module 6: Avoiding the Top 10 Employer Mistakes",
+                "Module 7: Real Case Scenarios — Interactive Learning",
+                "Module 8: Conducting an OSHA Log Audit",
+                "Module 9: Advanced Incident Investigation & Root Cause Analysis",
+                "Module 10: Executive Capstone — Implementing the CCH System"
               ]}
             />
             <div
@@ -1012,7 +996,7 @@ export default function Landing() {
             >
               <GraduationCap className="w-12 h-12 mb-4 opacity-80" />
               <h3 className="text-xl font-bold mb-2">Complete Training Bundle</h3>
-              <p className="text-primary-foreground/80 text-sm mb-4">All 5 courses + Corporate License</p>
+              <p className="text-primary-foreground/80 text-sm mb-4">All 4 courses + Corporate License</p>
               <div className="text-3xl font-bold mb-4">$899</div>
               <p className="text-xs text-primary-foreground/60 mb-4">Save over $300</p>
               <Button variant="secondary" size="sm" onClick={() => handleAddToCart("course-complete-bundle")} data-testid="button-add-cart-bundle">
@@ -1545,7 +1529,7 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
           <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between gap-2 flex-wrap">
             <div>
               <span className="text-2xl font-bold text-primary">{price}</span>
-              <span className="text-sm text-muted-foreground ml-1">one-time</span>
+              <span className="text-sm text-muted-foreground ml-1">per person</span>
             </div>
             {productId && onAddToCart ? (
               <Button size="sm" onClick={() => onAddToCart(productId)} data-testid={`button-add-cart-dialog-${title.toLowerCase().replace(/\s+/g, '-')}`}>
@@ -1566,7 +1550,7 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
       <div className="flex items-center justify-between gap-2 flex-wrap pt-4 border-t border-border/50">
         <div>
           <span className="text-2xl font-bold text-primary">{price}</span>
-          <span className="text-sm text-muted-foreground ml-1">one-time</span>
+          <span className="text-sm text-muted-foreground ml-1">per person</span>
         </div>
         {productId && onAddToCart ? (
           <Button size="sm" variant={highlighted ? "default" : "outline"} onClick={() => onAddToCart(productId)} data-testid={`button-add-cart-${title.toLowerCase().replace(/\s+/g, '-')}`}>

@@ -261,7 +261,9 @@ export default function CourseViewer() {
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               </Link>
-              <img src={logoUrl} alt="CCH" className="w-6 h-6 rounded" />
+              <Link href="/">
+                <img src={logoUrl} alt="CCH" className="w-6 h-6 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
+              </Link>
               <span className="text-sm font-medium text-gray-300 truncate">{courseData.title}</span>
             </div>
             <div className="flex items-center gap-2">
