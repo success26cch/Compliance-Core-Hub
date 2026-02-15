@@ -456,14 +456,26 @@ export default function Training() {
                         <div className="mb-3" data-testid={`policy-incentive-${course.id}`}>
                           {certificate ? (
                             <Link href="/drug-alcohol-policy">
-                              <span className="inline-flex items-center gap-1.5 text-xs bg-green-500/20 text-green-400 border border-green-500/30 rounded-full px-3 py-1.5 cursor-pointer hover:bg-green-500/30 transition" data-testid="btn-download-policy">
-                                <FileText className="w-3 h-3" /> Download Your FREE D&A Policy
-                              </span>
+                              <div className="bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-2 border-green-400/60 rounded-lg p-3 cursor-pointer hover:from-green-600/40 hover:to-emerald-600/40 transition-all" data-testid="btn-download-policy">
+                                <div className="flex items-center gap-2">
+                                  <Gift className="w-5 h-5 text-green-300 flex-shrink-0" />
+                                  <div>
+                                    <p className="text-sm font-bold text-green-300">FREE D&A Downloadable Policy</p>
+                                    <p className="text-xs text-green-400/80">Click to download your Word document</p>
+                                  </div>
+                                </div>
+                              </div>
                             </Link>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full px-3 py-1.5">
-                              <Gift className="w-3 h-3" /> FREE Drug & Alcohol Policy included
-                            </span>
+                            <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400/60 rounded-lg p-3 animate-pulse-subtle">
+                              <div className="flex items-center gap-2">
+                                <Gift className="w-5 h-5 text-amber-300 flex-shrink-0" />
+                                <div>
+                                  <p className="text-sm font-bold text-amber-300">FREE D&A Downloadable Policy</p>
+                                  <p className="text-xs text-amber-400/80">Complete this course to unlock your free policy</p>
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </div>
                       )}
