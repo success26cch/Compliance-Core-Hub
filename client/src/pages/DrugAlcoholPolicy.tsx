@@ -9,7 +9,9 @@ import {
   Lock,
   Loader2,
   FileText,
+  Download,
 } from "lucide-react";
+import { generatePolicyDocx } from "@/lib/generatePolicyDocx";
 import logoUrl from "@assets/1_1770683748423.png";
 
 export default function DrugAlcoholPolicy() {
@@ -79,6 +81,9 @@ export default function DrugAlcoholPolicy() {
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Training
           </Button>
           <div className="flex-1" />
+          <Button variant="outline" className="border-gray-700" onClick={() => generatePolicyDocx(companyName)} data-testid="btn-download-docx">
+            <Download className="w-4 h-4 mr-2" /> Download Word Doc
+          </Button>
           <Button variant="outline" className="border-gray-700" onClick={() => window.print()} data-testid="btn-print-policy">
             <Printer className="w-4 h-4 mr-2" /> Print Policy
           </Button>
@@ -328,7 +333,10 @@ export default function DrugAlcoholPolicy() {
           </div>
         </div>
 
-        <div className="flex justify-center gap-3 mt-6 print:hidden">
+        <div className="flex flex-wrap justify-center gap-3 mt-6 print:hidden">
+          <Button variant="outline" className="border-gray-700" onClick={() => generatePolicyDocx(companyName)} data-testid="btn-download-docx-bottom">
+            <Download className="w-4 h-4 mr-2" /> Download Word Doc
+          </Button>
           <Button variant="outline" className="border-gray-700" onClick={() => window.print()} data-testid="btn-print-policy-bottom">
             <Printer className="w-4 h-4 mr-2" /> Print Policy
           </Button>
