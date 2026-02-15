@@ -24,6 +24,9 @@
 - **Clinic Lead Generation**: Footer banner on ClinicAssistant page promoting BMA subscription with "Learn More" CTA
 - **Digital Medical Passport (CCH Handshake)**: QR-based clinic check-in system with Smart Digital Authorization Form. Employers fill out a complete authorization form (patient info, SSN last 4, DOB, services requested with checkboxes, billing preference, special instructions) and digitally sign it when generating QR codes. When clinic scans the QR, they receive the complete signed authorization form ready to print - no phone call needed. Includes "I'm Here" SMS notification to employer via Twilio, "I'm Back" return notification with total time-away tracking (arrival → return duration), 24-hour token expiry, and fallback PDF form upload. Components: `SignaturePad.tsx`, `PrintableAuthForm.tsx`. Pages: `/employee-passport` (generate QR with full auth form), `/clinic-assistant?token=xxx` (public clinic-facing page with printable form)
 
+## Standalone Corey App
+- **/corey**: Standalone AI compliance assistant — clean, focused experience without the full CCH platform. Dark theme, own landing page for unauthenticated users, full chat experience for logged-in users. Shares the same backend/conversations/subscription system as the main CCH bot. Component: `client/src/pages/Corey.tsx`
+
 ## Data Management Routes
 - **/dashboard**: Client Compliance Dashboard with metrics, incident heatmap, action queue
 - **/employees**: Employee Management - add/edit/delete employees, track DOT physicals, drug tests, respiratory exams

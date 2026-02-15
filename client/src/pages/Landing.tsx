@@ -384,9 +384,14 @@ export default function Landing() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Link href="/corey">
+                  <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-try-corey-standalone">
+                    <Bot className="w-5 h-5 mr-2" /> Try Corey — Standalone App
+                  </Button>
+                </Link>
                 <a href="#ask-corey">
-                  <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-ask-corey">
-                    <Bot className="w-5 h-5 mr-2" /> Ask Corey a Compliance Question
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-ask-corey">
+                    Ask Corey Below
                   </Button>
                 </a>
               </div>
