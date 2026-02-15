@@ -9,15 +9,6 @@ export interface ProductDefinition {
 }
 
 export const PRODUCTS: Record<string, ProductDefinition> = {
-  "cch-compliance-pro": {
-    id: "cch-compliance-pro",
-    name: "Compliance Pro",
-    unitAmount: 2900,
-    currency: "usd",
-    interval: "month",
-    category: "CCH Corey",
-    stripeProductName: "Compliance Pro",
-  },
   "cch-unlimited-safety": {
     id: "cch-unlimited-safety",
     name: "Unlimited Safety",

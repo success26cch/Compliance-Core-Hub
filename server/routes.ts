@@ -1314,7 +1314,6 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       
       // Calculate MRR from active subscriptions
       const planPrices: Record<string, number> = {
-        'cch_compliance_pro': 29,
         'cch_unlimited_safety': 99,
         'acsi_iso_essentials': 49,
         'acsi_iso_professional': 149,
@@ -1349,7 +1348,6 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       );
       
       const planPrices: Record<string, number> = {
-        'cch_compliance_pro': 29,
         'cch_unlimited_safety': 99,
         'acsi_iso_essentials': 49,
         'acsi_iso_professional': 149,

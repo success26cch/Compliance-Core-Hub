@@ -55,7 +55,6 @@ type Lead = {
 
 const planLabels: Record<string, string> = {
   'free': 'Free',
-  'cch_compliance_pro': 'Compliance Pro ($29)',
   'cch_unlimited_safety': 'Unlimited Safety ($99)',
   'acsi_iso_essentials': 'ISO Essentials ($49)',
   'acsi_iso_professional': 'ISO Professional ($149)',

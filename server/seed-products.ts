@@ -22,23 +22,6 @@ async function createProducts() {
   });
   console.log('Created: Safety Starter (Free)');
   
-  const cchCompliancePro = await stripe.products.create({
-    name: 'Compliance Pro',
-    description: 'CCH Occupational Health - 15 Questions/month + PDF Checklists',
-    metadata: {
-      category: 'cch',
-      tier: 'pro',
-    },
-  });
-  
-  await stripe.prices.create({
-    product: cchCompliancePro.id,
-    unit_amount: 2900,
-    currency: 'usd',
-    recurring: { interval: 'month' },
-  });
-  console.log('Created: Compliance Pro ($29/mo)');
-  
   const cchUnlimitedSafety = await stripe.products.create({
     name: 'Unlimited Safety',
     description: 'CCH Occupational Health - Unlimited Questions + Audit Prep Tools',

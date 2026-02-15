@@ -726,7 +726,7 @@ export default function Landing() {
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <PricingCard 
               tier="Safety Starter"
               price="Free"
@@ -741,38 +741,24 @@ export default function Landing() {
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
             />
             <PricingCard 
-              tier="Compliance Pro"
-              price="$29"
-              period="/mo"
-              features={[
-                "Everything in Safety Starter",
-                "15 Interactive Corey Questions / month",
-                "PDF Compliance Checklists",
-                "Priority response times",
-                "DOT physical & drug testing guidance",
-                "Workers' comp documentation help",
-              ]}
-              bestFor="Growing companies needing regular DOT/OSHA guidance. All self-service — no consulting time required."
-              buttonText="Upgrade to Pro"
-              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
-              highlighted
-              productId="cch-compliance-pro"
-              onAddToCart={handleAddToCart}
-            />
-            <PricingCard 
               tier="Unlimited Safety"
               price="$99"
               period="/mo"
               features={[
-                "Everything in Compliance Pro",
+                "Everything in Safety Starter",
                 "Unlimited Corey Interactions",
+                "PDF Compliance Checklists",
                 "Audit Prep Tools",
+                "DOT physical & drug testing guidance",
+                "Workers' comp documentation help",
                 "Custom compliance reports",
+                "Priority response times",
                 "Dedicated support",
               ]}
-              bestFor="Safety Managers handling high-risk environments or large fleets. All self-service — no consulting time required."
+              bestFor="Safety Managers, growing companies, and large fleets. All self-service — no consulting time required."
               buttonText="Go Unlimited"
               buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+              highlighted
               productId="cch-unlimited-safety"
               onAddToCart={handleAddToCart}
             />

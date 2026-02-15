@@ -271,9 +271,8 @@ const slides: DemoSlide[] = [
     icon: Zap,
     color: "bg-primary",
     points: [
-      "Safety Starter: FREE - 3 questions/month for small teams",
-      "Compliance Pro: $29/mo - 15 Corey questions + PDF checklists",
-      "Unlimited Safety: $99/mo - Unlimited Corey + audit prep",
+      "Safety Starter: FREE - 3 Corey questions/month for small teams",
+      "Unlimited Safety: $99/mo - Unlimited Corey + audit prep + PDF checklists",
       "ISO Professional: $149/mo - Unlimited ISO AI + audit checklists",
       "Integrated Enterprise: $299/mo - CCH + ACSI combined, up to 50 employees",
       "Spanish Bilingual Medical Assistant: $199/mo per location",

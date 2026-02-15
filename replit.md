@@ -74,9 +74,8 @@ Hoodies, T-Shirts, Hats & Caps, Jackets, Drinkware, Tech Gear
 ### Occupational Health (CCH)
 | Tier | Price | Included | Best For |
 |------|-------|----------|----------|
-| Safety Starter | Free | 3 Questions/month | Small teams, one-off checks |
-| Compliance Pro | $29/mo | 15 Questions/month + PDF Checklists | Growing companies |
-| Unlimited Safety | $99/mo | Unlimited Questions + Audit Prep Tools | Safety Managers, large fleets |
+| Safety Starter | Free | 3 Corey Questions/month | Small teams, one-off checks |
+| Unlimited Safety | $99/mo | Unlimited Corey + Audit Prep Tools + PDF Checklists + Dedicated Support | Safety Managers, growing companies, large fleets |
 
 ### ISO Management (ACSI)
 | Tier | Price | Included | Best For |
@@ -131,7 +130,7 @@ Payment processing is set up with Stripe supporting:
 - One-time purchases for training courses
 
 Products configured:
-- CCH: Safety Starter (Free), Compliance Pro ($29/mo), Unlimited Safety ($99/mo)
+- CCH: Safety Starter (Free), Unlimited Safety ($99/mo)
 - ACSI: ISO Essentials ($49/mo), ISO Professional ($149/mo)
 - Integrated Enterprise ($299/mo, up to 50 employees, +$2/employee beyond 50)
 - Human Expert Retainer ($499/mo)

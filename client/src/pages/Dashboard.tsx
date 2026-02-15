@@ -351,7 +351,6 @@ export default function Dashboard() {
   // Determine user tier
   const plan = subStatus?.plan;
   const isPro = subStatus?.isPro;
-  const isCompliancePro = plan === 'pro_monthly'; // $29 plan
   const isUnlimited = plan === 'unlimited_monthly'; // $99 plan
 
   return (
@@ -367,7 +366,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant={isPro ? "default" : "secondary"}>
-                {isUnlimited ? 'Unlimited Safety' : isCompliancePro ? 'Compliance Pro' : 'Safety Starter'}
+                {isUnlimited ? 'Unlimited Safety' : 'Safety Starter'}
               </Badge>
               {!isPro && (
                 <Link href="/settings">
@@ -668,7 +667,7 @@ export default function Dashboard() {
         </div>
 
         {/* Sidebar for Pro Users */}
-        {(isCompliancePro || isUnlimited) && (
+        {isUnlimited && (
           <div className="hidden xl:block w-80 space-y-4">
             {/* AI Consultant Mini Chat */}
             <Card className="sticky top-4" data-testid="card-ai-sidebar">
@@ -709,19 +708,19 @@ export default function Dashboard() {
               </Card>
             )}
 
-            {/* Upgrade prompt for Compliance Pro users */}
-            {isCompliancePro && !isUnlimited && (
+            {/* Upgrade prompt for free users */}
+            {!isUnlimited && (
               <Card className="border-primary/30 bg-primary/5">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Unlock Human Expert Access</CardTitle>
+                  <CardTitle className="text-sm">Unlock Unlimited Corey + Human Expert Access</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-xs text-muted-foreground">
-                    Upgrade to Unlimited Safety for priority human expert support.
+                    Upgrade to Unlimited Safety for unlimited Corey interactions and priority human expert support.
                   </p>
                   <Link href="/settings">
                     <Button variant="outline" className="w-full" size="sm">
-                      View Upgrade Options
+                      Upgrade to Unlimited - $99/mo
                     </Button>
                   </Link>
                 </CardContent>

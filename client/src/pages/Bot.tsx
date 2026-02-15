@@ -67,7 +67,7 @@ export default function BotPage() {
               <span>Free questions: {usageData.questionCount} / {usageData.freeLimit} used</span>
               {usageData.questionCount >= usageData.freeLimit && (
                 <Link href="/settings">
-                  <Button size="sm" variant="outline">Upgrade for $29/mo</Button>
+                  <Button size="sm" variant="outline">Upgrade to Unlimited - $99/mo</Button>
                 </Link>
               )}
             </div>
@@ -82,14 +82,11 @@ export default function BotPage() {
                 </div>
                 <h3 className="text-xl font-bold text-primary">You've Reached Your Monthly Limit</h3>
                 <p className="text-muted-foreground">
-                  Upgrade to Pro for unlimited answers or contact us for a direct consultation.
+                  Upgrade to Unlimited Safety for unlimited Corey answers, audit prep tools, and dedicated support.
                 </p>
                 <div className="space-y-3 pt-2">
                   <Link href="/settings">
-                    <Button className="w-full bg-accent hover:bg-accent/90">Compliance Pro - $29/mo</Button>
-                  </Link>
-                  <Link href="/settings">
-                    <Button variant="outline" className="w-full">Unlimited Safety - $99/mo</Button>
+                    <Button className="w-full bg-accent hover:bg-accent/90">Unlimited Safety - $99/mo</Button>
                   </Link>
                 </div>
               </Card>
