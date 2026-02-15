@@ -184,7 +184,7 @@ export function generateRecordabilityCheatSheet(): typeof PDFDocument.prototype 
   doc.fillColor(textColor)
      .fontSize(7)
      .font('Helvetica')
-     .text('Use the OccHealth Consultant AI at Core Compliance Hub for instant guidance on complex recordability questions. Our AI references OSHA 29 CFR 1904 to help you make the right call.', margin + 10, y + 18, { width: contentWidth - 20 });
+     .text('Ask Corey — the Core Compliance Hub AI — for instant guidance on complex recordability questions. Corey references OSHA 29 CFR 1904 to help you make the right call.', margin + 10, y + 18, { width: contentWidth - 20 });
 
   y += 48;
   

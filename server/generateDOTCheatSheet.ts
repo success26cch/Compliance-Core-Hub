@@ -188,7 +188,7 @@ export function generateDOTDrugTestingCheatSheet(): typeof PDFDocument.prototype
   doc.fillColor(textColor)
      .fontSize(7)
      .font('Helvetica')
-     .text('Use the OccHealth Consultant AI at Core Compliance Hub for instant guidance on DOT drug and alcohol testing requirements. Our AI references 49 CFR Part 40.', margin + 10, y + 18, { width: contentWidth - 20 });
+     .text('Ask Corey — the Core Compliance Hub AI — for instant guidance on DOT drug and alcohol testing requirements. Corey references 49 CFR Part 40.', margin + 10, y + 18, { width: contentWidth - 20 });
 
   y += 48;
   

@@ -176,7 +176,7 @@ export function generateSafetyManagerCheatSheet(): typeof PDFDocument.prototype 
   doc.fillColor(textColor)
      .fontSize(7)
      .font('Helvetica')
-     .text('Use the OccHealth Consultant AI at Core Compliance Hub for instant answers to compliance questions. Get guidance on OSHA, DOT, and workplace safety 24/7.', margin + 10, y + 17, { width: contentWidth - 20 });
+     .text('Ask Corey — the Core Compliance Hub AI — for instant answers to compliance questions. Get guidance on OSHA, DOT, and workplace safety 24/7.', margin + 10, y + 17, { width: contentWidth - 20 });
 
   y += 44;
   

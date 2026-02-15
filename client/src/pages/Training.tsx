@@ -216,7 +216,7 @@ export default function Training() {
                   Score 70% or higher on all module quizzes to earn your CCH Certificate of Completion.
                 </p>
                 <p className="text-yellow-400 text-sm mt-2 font-medium">
-                  Every course purchase includes a FREE one-on-one OccHealth Program Consultation.
+                  Every course purchase includes a FREE one-on-one Compliance Program Consultation.
                 </p>
                 {isAuthenticated && (
                   <div className="mt-4">
@@ -240,7 +240,7 @@ export default function Training() {
         {trainingVideo?.url && (
           <div className="flex items-center gap-4 mb-6 text-sm">
             <p className="text-yellow-400 font-medium">
-              Every course purchase includes a FREE one-on-one OccHealth Program Consultation.
+              Every course purchase includes a FREE one-on-one Compliance Program Consultation.
             </p>
             <Link href="/employer-training">
               <span className="text-blue-400 hover:text-blue-300 cursor-pointer underline whitespace-nowrap" data-testid="link-employer-portal-secondary">

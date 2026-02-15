@@ -1,10 +1,10 @@
 # Core Compliance Hub
 
 ## Overview
-**CCH: THE ONE STOP EMPLOYER SHOP** - Occupational health and compliance platform featuring an AI-powered OccHealth Consultant, ACSI ISO Manager, OSHA 300 decision tool, professional training courses, **ACSI Mentorship Program** (CCH exclusive), and **BrandNSwag** employee recognition division.
+**CCH: THE ONE STOP EMPLOYER SHOP** - Occupational health and compliance platform featuring Corey (AI-powered compliance expert), ACSI ISO Manager, OSHA 300 decision tool, professional training courses, **ACSI Mentorship Program** (CCH exclusive), and **BrandNSwag** employee recognition division.
 
 ## Features
-- **OccHealth Consultant**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert, referencing OSHA 29 CFR 1904 and DOT 49 CFR Part 40
+- **Corey (Ask Corey)**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert, referencing OSHA 29 CFR 1904 and DOT 49 CFR Part 40
 - **ACSI ISO Manager**: Lead ISO Auditor AI for ISO 9001, 14001, and 45001. Helps with Gap Analysis, Quality Manuals, and Internal Audit preparation with a "Write-Up Free" philosophy
 - **OSHA 300, Log it or Not**: Interactive decision tree for OSHA recordability
 - **Client Compliance Dashboard**: Real-time metrics for ISO audit readiness, medical surveillance, drug screen status, with incident heatmap and action queue

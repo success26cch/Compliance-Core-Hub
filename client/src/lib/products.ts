@@ -15,7 +15,7 @@ export const PRODUCTS: Record<string, ProductDefinition> = {
     unitAmount: 2900,
     currency: "usd",
     interval: "month",
-    category: "CCH OccHealth",
+    category: "CCH Corey",
     stripeProductName: "Compliance Pro",
   },
   "cch-unlimited-safety": {
@@ -24,7 +24,7 @@ export const PRODUCTS: Record<string, ProductDefinition> = {
     unitAmount: 9900,
     currency: "usd",
     interval: "month",
-    category: "CCH OccHealth",
+    category: "CCH Corey",
     stripeProductName: "Unlimited Safety",
   },
   "iso-essentials": {

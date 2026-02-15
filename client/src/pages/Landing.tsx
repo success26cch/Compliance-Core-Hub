@@ -732,7 +732,7 @@ export default function Landing() {
               price="Free"
               period=""
               features={[
-                "3 Questions / month",
+                "3 Corey Questions / month",
                 "OSHA Recordability Guidance — Ask 'Is this a recordable?' and get clear, regulation-backed answers based on OSHA 29 CFR 1904",
                 "Basic DOT Compliance Help — Quick answers on DOT physical requirements, drug testing basics, and Clearinghouse essentials",
               ]}
@@ -746,7 +746,7 @@ export default function Landing() {
               period="/mo"
               features={[
                 "Everything in Safety Starter",
-                "15 Interactive AI Bot Questions / month",
+                "15 Interactive Corey Questions / month",
                 "PDF Compliance Checklists",
                 "Priority response times",
                 "DOT physical & drug testing guidance",
@@ -765,7 +765,7 @@ export default function Landing() {
               period="/mo"
               features={[
                 "Everything in Compliance Pro",
-                "Unlimited AI OccHealth Bot Interactions",
+                "Unlimited Corey Interactions",
                 "Audit Prep Tools",
                 "Custom compliance reports",
                 "Dedicated support",
@@ -992,7 +992,7 @@ export default function Landing() {
                 </div>
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-lg font-bold text-primary">Purchase Any Course — Get a Free OccHealth Program Consultation</h3>
+                <h3 className="text-lg font-bold text-primary">Purchase Any Course — Get a Free Compliance Program Consultation</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   Every course purchase includes a complimentary one-on-one consultation to review your occupational health program with a real compliance expert.
                 </p>
