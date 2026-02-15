@@ -4,6 +4,8 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const onTranscriptRef = useRef(onTranscript);
+  const shouldBeListeningRef = useRef(false);
+  const fullTranscriptRef = useRef("");
   onTranscriptRef.current = onTranscript;
 
   const speechSupported = typeof window !== 'undefined' &&
@@ -14,29 +16,66 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
     recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0].transcript)
-        .join('');
-      onTranscriptRef.current(transcript);
+      let finalText = "";
+      let interimText = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalText += result[0].transcript;
+        } else {
+          interimText += result[0].transcript;
+        }
+      }
+      const combined = (finalText + " " + interimText).trim();
+      if (combined) {
+        onTranscriptRef.current(combined);
+      }
     };
 
     recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech' && shouldBeListeningRef.current) {
+        try {
+          recognition.stop();
+          setTimeout(() => {
+            if (shouldBeListeningRef.current) {
+              recognition.start();
+            }
+          }, 100);
+        } catch (e) {}
+        return;
+      }
+      if (event.error === 'aborted') return;
       console.error('Speech recognition error:', event.error);
+      shouldBeListeningRef.current = false;
       setIsListening(false);
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      if (shouldBeListeningRef.current) {
+        try {
+          setTimeout(() => {
+            if (shouldBeListeningRef.current) {
+              recognition.start();
+            }
+          }, 100);
+        } catch (e) {
+          shouldBeListeningRef.current = false;
+          setIsListening(false);
+        }
+      } else {
+        setIsListening(false);
+      }
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      shouldBeListeningRef.current = false;
       recognition.abort();
     };
   }, []);
@@ -44,9 +83,12 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const toggleListening = useCallback(() => {
     if (!recognitionRef.current) return;
     if (isListening) {
+      shouldBeListeningRef.current = false;
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
+      fullTranscriptRef.current = "";
+      shouldBeListeningRef.current = true;
       recognitionRef.current.start();
       setIsListening(true);
     }
@@ -54,6 +96,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current && isListening) {
+      shouldBeListeningRef.current = false;
       recognitionRef.current.stop();
       setIsListening(false);
     }
