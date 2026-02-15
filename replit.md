@@ -26,6 +26,7 @@
 
 ## Standalone Corey App
 - **/corey**: Standalone AI compliance assistant — clean, focused experience without the full CCH platform. Dark theme, own landing page for unauthenticated users, full chat experience for logged-in users. Shares the same backend/conversations/subscription system as the main CCH bot. Component: `client/src/pages/Corey.tsx`
+- **PWA (Progressive Web App)**: Corey is installable as a standalone app on mobile and desktop. Manifest at `client/public/manifest.json`, service worker at `client/public/sw.js`, icons at `client/public/icon-*.png`. Install prompt hook: `client/src/hooks/use-pwa-install.ts`. Service worker registered in `client/src/main.tsx`. Supports offline caching with network-first strategy (API calls excluded).
 
 ## Data Management Routes
 - **/dashboard**: Client Compliance Dashboard with metrics, incident heatmap, action queue

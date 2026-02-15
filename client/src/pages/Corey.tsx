@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+import { Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield, CheckCircle2, Sparkles, ArrowRight, Download, Smartphone } from "lucide-react";
 import { Link } from "wouter";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { usePwaInstall } from "@/hooks/use-pwa-install";
 import logoUrl from "@assets/1_1767636977932.png";
 
 export default function CoreyStandalone() {
@@ -34,6 +35,8 @@ export default function CoreyStandalone() {
 }
 
 function CoreyLanding() {
+  const { isInstallable, isInstalled, promptInstall } = usePwaInstall();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
       <header className="border-b border-white/10">
@@ -48,6 +51,18 @@ function CoreyLanding() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {isInstallable && !isInstalled && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={promptInstall}
+                className="border-accent/50 text-accent hover:bg-accent/10 gap-1.5"
+                data-testid="button-pwa-install-header"
+              >
+                <Download className="w-4 h-4" />
+                Install App
+              </Button>
+            )}
             <Link href="/">
               <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="link-cch-home">
                 CCH Platform
@@ -80,11 +95,24 @@ function CoreyLanding() {
                 <Bot className="w-5 h-5 mr-2" /> Get Started Free
               </Button>
             </a>
-            <Link href="/">
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6" data-testid="button-corey-learn-more">
-                Learn More <ArrowRight className="w-4 h-4 ml-2" />
+            {isInstallable && !isInstalled && (
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={promptInstall}
+                className="border-accent/40 text-accent hover:bg-accent/10 text-lg px-8 py-6 gap-2"
+                data-testid="button-pwa-install-hero"
+              >
+                <Smartphone className="w-5 h-5" /> Install App
               </Button>
-            </Link>
+            )}
+            {!isInstallable && (
+              <Link href="/">
+                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6" data-testid="button-corey-learn-more">
+                  Learn More <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            )}
           </div>
         </section>
 
@@ -165,6 +193,7 @@ function CoreyApp() {
   const { mutate: createConversation } = useCreateConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   const { user } = useAuth();
+  const { isInstallable, isInstalled, promptInstall } = usePwaInstall();
 
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -213,6 +242,18 @@ function CoreyApp() {
               <Badge className="bg-accent/20 text-accent border-accent/30 text-xs" data-testid="badge-corey-unlimited">
                 Unlimited
               </Badge>
+            )}
+            {isInstallable && !isInstalled && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={promptInstall}
+                className="text-accent hover:bg-accent/10 text-xs gap-1"
+                data-testid="button-pwa-install-app"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Install
+              </Button>
             )}
             <Link href="/">
               <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 text-xs" data-testid="link-cch-platform">
