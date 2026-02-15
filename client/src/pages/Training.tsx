@@ -24,6 +24,8 @@ import {
   Upload,
   Trash2,
   Video,
+  FileText,
+  Gift,
 } from "lucide-react";
 import type { Course, CourseEnrollment, CourseCertificate } from "@shared/schema";
 import logoUrl from "@assets/1_1770683748423.png";
@@ -444,10 +446,26 @@ export default function Training() {
                       </div>
 
                       {product && (
-                        <p className="text-xl font-bold text-white mb-4">
+                        <p className="text-xl font-bold text-white mb-2">
                           ${(product.unitAmount / 100).toFixed(0)}
                           <span className="text-sm text-gray-400 font-normal ml-1">per person</span>
                         </p>
+                      )}
+
+                      {course.productId === "course-drug-alcohol" && (
+                        <div className="mb-3" data-testid={`policy-incentive-${course.id}`}>
+                          {certificate ? (
+                            <Link href="/drug-alcohol-policy">
+                              <span className="inline-flex items-center gap-1.5 text-xs bg-green-500/20 text-green-400 border border-green-500/30 rounded-full px-3 py-1.5 cursor-pointer hover:bg-green-500/30 transition" data-testid="btn-download-policy">
+                                <FileText className="w-3 h-3" /> Download Your FREE D&A Policy
+                              </span>
+                            </Link>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full px-3 py-1.5">
+                              <Gift className="w-3 h-3" /> FREE Drug & Alcohol Policy included
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       <div className="flex gap-2">

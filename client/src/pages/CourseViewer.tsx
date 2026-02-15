@@ -53,6 +53,7 @@ interface CourseData {
   id: number;
   title: string;
   description: string;
+  productId: string;
   totalModules: number;
   enrollment: {
     id: number;
@@ -711,10 +712,17 @@ export default function CourseViewer() {
                   </div>
                 </div>
 
-                <div className="flex justify-center gap-3 mt-6">
+                <div className="flex flex-wrap justify-center gap-3 mt-6">
                   <Button variant="outline" className="border-gray-700" onClick={() => window.print()} data-testid="btn-print-cert">
                     <Printer className="w-4 h-4 mr-2" /> Print Certificate
                   </Button>
+                  {courseData.productId === "course-drug-alcohol" && (
+                    <Link href={`/drug-alcohol-policy${trainingToken ? `?token=${trainingToken}` : ""}`}>
+                      <Button className="bg-purple-600 hover:bg-purple-700" data-testid="btn-get-policy">
+                        <FileText className="w-4 h-4 mr-2" /> Get Your FREE D&A Policy
+                      </Button>
+                    </Link>
+                  )}
                   <Link href="/training">
                     <Button className="bg-blue-600 hover:bg-blue-700" data-testid="btn-back-courses">
                       Back to Courses
