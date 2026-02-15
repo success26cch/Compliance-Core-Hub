@@ -1568,6 +1568,18 @@ function CourseCard({ icon: Icon, title, description, price, modules, chapters, 
           </div>
         </DialogContent>
       </Dialog>
+
+      {productId === "course-drug-alcohol" && (
+        <div className="mb-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 rounded-lg p-3 animate-pulse-subtle" data-testid="landing-policy-incentive">
+          <div className="flex items-center gap-2">
+            <Gift className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-amber-700">FREE D&A Downloadable Policy</p>
+              <p className="text-xs text-amber-600/80">Complete this course to unlock your free policy</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="flex items-center justify-between gap-2 flex-wrap pt-4 border-t border-border/50">
         <div>
