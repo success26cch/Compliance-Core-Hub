@@ -633,8 +633,8 @@ export default function Dashboard() {
             <Card className="hover:shadow-lg transition-shadow border-primary/10 bg-gradient-to-br from-white to-primary/5 dark:from-background dark:to-primary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  Ask the CCH Expert Bot
-                  <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">Powered by CCH AI</span>
+                  Ask Corey
+                  <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">Your AI Compliance Expert</span>
                 </CardTitle>
                 <CardDescription>
                   Get instant answers for OSHA 1904 and DOT regulations.

@@ -338,12 +338,101 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CCH Expert Bot */}
-      <section className="relative bg-[hsl(222,47%,11%)] overflow-hidden py-12" id="cch-bot" data-testid="section-cch-bot">
+      {/* Meet Corey Section */}
+      <section className="relative py-16 overflow-hidden" id="meet-corey" data-testid="section-meet-corey">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-accent/5 to-background"></div>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-4 mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm border border-accent/20">
+              <Sparkles className="w-4 h-4" />
+              INTRODUCING
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-primary" data-testid="text-meet-corey-title">
+              Meet <span className="text-accent">COREY</span>
+            </h2>
+            <p className="text-xl md:text-2xl font-bold text-primary/80">
+              The Only AI Built for Occ-Health.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div className="space-y-6">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Most AI is general; <strong className="text-primary">Corey is a specialist.</strong> Built exclusively for the Core Compliance Hub, Corey is a 24/7 expert trained in OSHA 300 recordkeeping, DOT regulations, and respirator compliance.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Corey doesn't just store data — <strong className="text-primary">Corey provides the strategic intelligence</strong> you need to protect your company.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-5 h-5 text-accent" />
+                  </div>
+                  <p className="text-muted-foreground"><strong className="text-primary">Stuck on a recordable?</strong> Ask Corey.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-5 h-5 text-accent" />
+                  </div>
+                  <p className="text-muted-foreground"><strong className="text-primary">Need an EMR audit?</strong> Corey's on it.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-5 h-5 text-accent" />
+                  </div>
+                  <p className="text-muted-foreground"><strong className="text-primary">Confused about a clinical instruction?</strong> Corey has the answer.</p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <a href="#ask-corey">
+                  <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-ask-corey">
+                    <Bot className="w-5 h-5 mr-2" /> Ask Corey a Compliance Question
+                  </Button>
+                </a>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-primary/20 rounded-3xl blur-2xl"></div>
+                <div className="relative bg-white border-2 border-accent/20 rounded-3xl p-8 shadow-xl" data-testid="corey-avatar-card">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg">
+                      <Bot className="w-16 h-16 text-white" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-2xl font-black text-primary">COREY</h3>
+                      <p className="text-sm text-accent font-semibold">Core Compliance Hub AI</p>
+                      <p className="text-xs text-muted-foreground mt-1">Senior Occ-Health & Safety Expert</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                      <span className="text-xs font-medium text-green-700">Online 24/7</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 w-full pt-2">
+                      <div className="text-center p-2 rounded-lg bg-muted/50">
+                        <p className="text-lg font-bold text-primary">25+</p>
+                        <p className="text-[10px] text-muted-foreground">Years Expertise</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-muted/50">
+                        <p className="text-lg font-bold text-primary">24/7</p>
+                        <p className="text-[10px] text-muted-foreground">Available</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ask Corey - AI Chat */}
+      <section className="relative bg-[hsl(222,47%,11%)] overflow-hidden py-12" id="ask-corey" data-testid="section-ask-corey">
         <div className="absolute inset-0 opacity-5">
           <div className="animate-marquee whitespace-nowrap flex items-center h-full">
             {Array.from({ length: 20 }).map((_, i) => (
-              <span key={i} className="text-6xl font-black mx-8 text-white">CCH BOT</span>
+              <span key={i} className="text-6xl font-black mx-8 text-white">COREY</span>
             ))}
           </div>
         </div>
@@ -353,16 +442,16 @@ export default function Landing() {
               <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
                 <Bot className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl md:text-3xl font-display font-black text-white" data-testid="text-cch-bot-title">
-                CCH Expert Bot
+              <h3 className="text-2xl md:text-3xl font-display font-black text-white" data-testid="text-corey-title">
+                Ask Corey
               </h3>
             </div>
             <p className="text-white/70 text-sm">
-              Powered by CCH AI &middot; {botRemaining} free question{botRemaining !== 1 ? "s" : ""} remaining
+              Your AI Occ-Health Expert &middot; {botRemaining} free question{botRemaining !== 1 ? "s" : ""} remaining
             </p>
           </div>
 
-          <Card className="overflow-hidden border-0 shadow-2xl" data-testid="card-cch-bot">
+          <Card className="overflow-hidden border-0 shadow-2xl" data-testid="card-ask-corey">
             <div
               ref={botScrollRef}
               className="h-80 overflow-y-auto p-4 space-y-4 bg-muted/30"
@@ -374,8 +463,8 @@ export default function Landing() {
                     <Bot className="w-8 h-8 text-accent" />
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">Ask the CCH Expert Bot</p>
-                    <p className="text-sm mt-1">Ask about OSHA recordability, DOT physicals, drug testing, ISO audits, or any compliance question.</p>
+                    <p className="font-semibold text-foreground">Ask Corey a Compliance Question</p>
+                    <p className="text-sm mt-1">OSHA recordability, DOT physicals, drug testing, ISO audits — Corey knows it all.</p>
                   </div>
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     {["Is a laceration needing stitches OSHA recordable?", "What's required for a DOT physical?", "Explain ISO 45001 basics"].map((q) => (
@@ -442,7 +531,7 @@ export default function Landing() {
                       <Input
                         value={botInput}
                         onChange={(e) => setBotInput(e.target.value)}
-                        placeholder={botListening ? "Listening..." : "Ask a compliance question..."}
+                        placeholder={botListening ? "Listening..." : "Ask Corey a compliance question..."}
                         disabled={botLoading}
                         onKeyDown={(e) => e.key === "Enter" && handleBotSubmit()}
                         className={`pr-9 ${botListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
@@ -567,8 +656,8 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 gap-8">
             <FeatureCard 
               icon={Bot}
-              title="OccHealth Consultant"
-              description="OSHA recordables, DOT compliance, and drug screening guidance. Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
+              title="Meet Corey — Your AI Compliance Expert"
+              description="Corey is the only AI built for Occ-Health. Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
             />
             <FeatureCard 
               imageSrc={acsiLogo}

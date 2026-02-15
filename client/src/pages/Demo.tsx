@@ -93,8 +93,8 @@ const slides: DemoSlide[] = [
   },
   {
     id: "ai-consultant",
-    title: "CCH Expert Bot",
-    subtitle: "AI-Powered OccHealth Consultant",
+    title: "Ask Corey",
+    subtitle: "Your AI Occ-Health Compliance Expert",
     icon: Bot,
     color: "bg-primary",
     points: [

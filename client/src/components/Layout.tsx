@@ -38,7 +38,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   const links = [
     { href: "/settings", label: "Company Profile", icon: Building2 },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/bot", label: "OccHealth Consultant", icon: Bot },
+    { href: "/bot", label: "Ask Corey", icon: Bot },
     { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },

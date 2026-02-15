@@ -202,7 +202,7 @@ export default function Resources() {
             <CardContent className="pt-8 pb-8">
               <h3 className="text-2xl font-bold mb-4">Need More Than Cheat Sheets?</h3>
               <p className="mb-6 text-primary-foreground/80">
-                Try our AI-powered OccHealth Consultant for instant answers to your compliance questions. 
+                Ask Corey — our AI-powered compliance expert — for instant answers to your compliance questions. 
                 Free tier includes 3 questions per month.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
