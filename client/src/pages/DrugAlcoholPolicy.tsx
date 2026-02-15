@@ -48,7 +48,7 @@ export default function DrugAlcoholPolicy() {
     enabled: isAuthenticated,
   });
 
-  const isUnlocked = hasCertificate || hasTokenAccess;
+  const isUnlocked = isAuthenticated || hasCertificate || hasTokenAccess;
 
   if (!isUnlocked) {
     return (
