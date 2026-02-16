@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useChatStream, useConversations, useCreateConversation } from "@/hooks/use-chat";
 import { useQuestionUsage } from "@/hooks/use-subscriptions";
 import { useAuth } from "@/hooks/use-auth";
@@ -7,10 +7,18 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield, CheckCircle2, Sparkles, ArrowRight, Download, Smartphone } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield,
+  CheckCircle2, Sparkles, ArrowRight, Download, Smartphone, MoreVertical,
+  Copy, Mail, FileText, Trash2, Pencil, Share2, FileDown, ClipboardCopy
+} from "lucide-react";
 import { Link } from "wouter";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import logoUrl from "@assets/1_1767636977932.png";
 
 export default function CoreyStandalone() {
@@ -163,8 +171,8 @@ function CoreyLanding() {
                 <ul className="space-y-3 text-sm text-white/70 text-left">
                   <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Everything in Free</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Unlimited questions</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Audit prep tools</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> PDF compliance checklists</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Document generation</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Export & share conversations</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Priority support</li>
                 </ul>
               </Card>
@@ -194,9 +202,12 @@ function CoreyApp() {
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   const { user } = useAuth();
   const { isInstallable, isInstalled, promptInstall } = usePwaInstall();
+  const { toast } = useToast();
 
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const handleNewChat = () => {
     createConversation("New Question", {
@@ -207,11 +218,48 @@ function CoreyApp() {
     });
   };
 
+  const handleDeleteConversation = async (id: number) => {
+    try {
+      await fetch(`/api/conversations/${id}`, { method: "DELETE", credentials: "include" });
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      if (activeConversationId === id) {
+        setActiveConversationId(null);
+      }
+      toast({ title: "Conversation deleted" });
+    } catch {
+      toast({ title: "Failed to delete conversation", variant: "destructive" });
+    }
+  };
+
+  const handleRenameConversation = async (id: number) => {
+    if (!renameValue.trim()) return;
+    try {
+      await apiRequest("PATCH", `/api/conversations/${id}`, { title: renameValue.trim() });
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      setRenamingId(null);
+      setRenameValue("");
+      toast({ title: "Conversation renamed" });
+    } catch {
+      toast({ title: "Failed to rename", variant: "destructive" });
+    }
+  };
+
   useEffect(() => {
     if (!activeConversationId && conversations && conversations.length > 0) {
       setActiveConversationId(conversations[0].id);
     }
   }, [conversations, activeConversationId]);
+
+  const DOCUMENT_TEMPLATES = [
+    { label: "Drug & Alcohol Policy", prompt: "Generate a complete Drug & Alcohol Policy document for our company based on 49 CFR Part 40 and FMCSA 49 CFR Part 382. Include all required sections: purpose, scope, definitions, prohibited conduct, testing types (pre-employment, random, reasonable suspicion, post-accident, return-to-duty, follow-up), consequences, SAP referral, confidentiality, and employee acknowledgment. Format it as a professional policy document ready for implementation." },
+    { label: "OSHA Recordkeeping SOP", prompt: "Generate a Standard Operating Procedure (SOP) for OSHA Recordkeeping based on 29 CFR 1904. Include sections for: determining work-relatedness, recordability decision criteria, first aid vs. recordable distinction, OSHA 300 Log maintenance, OSHA 300A annual summary posting requirements, OSHA 301 incident reports, employee privacy cases, electronic submission requirements, and responsible parties. Format as a professional SOP document." },
+    { label: "Respiratory Protection Program", prompt: "Generate a complete Respiratory Protection Program document per OSHA 29 CFR 1910.134. Include: program administrator responsibilities, workplace hazard evaluation, respirator selection, medical evaluations, fit testing procedures (qualitative and quantitative), training requirements, use and maintenance, breathing air quality, recordkeeping, and program evaluation. Format as a professional program document." },
+    { label: "Hearing Conservation Program", prompt: "Generate a Hearing Conservation Program document per OSHA 29 CFR 1910.95. Include: noise monitoring, audiometric testing program, hearing protection selection, employee training, recordkeeping requirements, action level (85 dBA) and PEL (90 dBA) procedures, baseline and annual audiograms, Standard Threshold Shift evaluation, and follow-up procedures." },
+    { label: "Hazard Communication Program", prompt: "Generate a Hazard Communication Program (HazCom/GHS) document per OSHA 29 CFR 1910.1200. Include: written program elements, chemical inventory, Safety Data Sheet management, container labeling requirements (GHS pictograms, signal words, hazard statements), employee training program, non-routine tasks, contractors, and recordkeeping." },
+    { label: "Return-to-Duty Checklist", prompt: "Generate a comprehensive Return-to-Duty Checklist for DOT-regulated employees per 49 CFR Part 40 Subpart O. Include: SAP initial evaluation, treatment/education completion, SAP follow-up evaluation, Clearinghouse reporting steps, return-to-duty test (negative drug / <0.02 alcohol), direct observation requirements, follow-up testing plan (minimum 6 tests in 12 months), employer documentation requirements, and employee acknowledgment." },
+    { label: "Incident Investigation Form", prompt: "Generate a comprehensive Incident Investigation Form and procedure based on OSHA 29 CFR 1904.7. Include: incident details (who, what, when, where), witness statements, root cause analysis (5 Whys, Fishbone), contributing factors, OSHA recordability determination, corrective actions, preventive measures, responsible parties, follow-up dates, and management sign-off. Format as a fillable form template." },
+    { label: "Lockout/Tagout (LOTO) Program", prompt: "Generate a complete Lockout/Tagout (LOTO) Program per OSHA 29 CFR 1910.147. Include: purpose and scope, definitions, responsibilities, energy control procedures, lockout/tagout device requirements, authorized and affected employee training, periodic inspections, group lockout procedures, shift/personnel changes, and contractor coordination." },
+  ];
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
@@ -284,21 +332,66 @@ function CoreyApp() {
           <ScrollArea className="flex-1 p-2" style={{ height: 'calc(100% - 56px)' }}>
             <div className="space-y-1">
               {conversations?.map((conv: any) => (
-                <button
-                  key={conv.id}
-                  onClick={() => {
-                    setActiveConversationId(conv.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-colors ${
-                    activeConversationId === conv.id
-                      ? "bg-accent/20 text-accent font-medium"
-                      : "text-white/50 hover:bg-white/10 hover:text-white/70"
-                  }`}
-                  data-testid={`button-conversation-${conv.id}`}
-                >
-                  {conv.title}
-                </button>
+                <div key={conv.id} className="group relative">
+                  {renamingId === conv.id ? (
+                    <form
+                      onSubmit={(e) => { e.preventDefault(); handleRenameConversation(conv.id); }}
+                      className="flex gap-1 px-1"
+                    >
+                      <Input
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        className="h-7 text-xs bg-white/10 border-white/20 text-white"
+                        autoFocus
+                        onBlur={() => setRenamingId(null)}
+                        data-testid={`input-rename-${conv.id}`}
+                      />
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setActiveConversationId(conv.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-colors pr-8 ${
+                        activeConversationId === conv.id
+                          ? "bg-accent/20 text-accent font-medium"
+                          : "text-white/50 hover:bg-white/10 hover:text-white/70"
+                      }`}
+                      data-testid={`button-conversation-${conv.id}`}
+                    >
+                      {conv.title}
+                    </button>
+                  )}
+                  {renamingId !== conv.id && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-white/80 hover:bg-white/10 transition-opacity"
+                          data-testid={`button-conversation-menu-${conv.id}`}
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          onClick={() => { setRenamingId(conv.id); setRenameValue(conv.title); }}
+                          data-testid={`menu-rename-${conv.id}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-2" /> Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteConversation(conv.id)}
+                          className="text-red-400 focus:text-red-400"
+                          data-testid={`menu-delete-${conv.id}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
               ))}
             </div>
           </ScrollArea>
@@ -325,7 +418,11 @@ function CoreyApp() {
           )}
 
           {activeConversationId ? (
-            <CoreyChatInterface conversationId={activeConversationId} onMessageSent={() => refetchUsage()} />
+            <CoreyChatInterface
+              conversationId={activeConversationId}
+              onMessageSent={() => refetchUsage()}
+              documentTemplates={DOCUMENT_TEMPLATES}
+            />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-white/40 p-8 text-center">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center mb-6">
@@ -333,9 +430,39 @@ function CoreyApp() {
               </div>
               <h3 className="text-lg font-semibold text-white/60 mb-2">Ask Corey Anything</h3>
               <p className="text-sm max-w-md mb-6">OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers.</p>
-              <Button onClick={handleNewChat} className="bg-accent hover:bg-accent/90" data-testid="button-start-first-chat">
-                <Plus className="w-4 h-4 mr-2" /> Start a Conversation
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={handleNewChat} className="bg-accent hover:bg-accent/90" data-testid="button-start-first-chat">
+                  <Plus className="w-4 h-4 mr-2" /> Start a Conversation
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="border-white/20 text-white/70 hover:text-white hover:bg-white/10" data-testid="button-generate-document">
+                      <FileText className="w-4 h-4 mr-2" /> Generate a Document
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-72">
+                    {DOCUMENT_TEMPLATES.map((tmpl, i) => (
+                      <DropdownMenuItem
+                        key={i}
+                        onClick={() => {
+                          createConversation(tmpl.label, {
+                            onSuccess: (data) => {
+                              setActiveConversationId(data.id);
+                              setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: tmpl.prompt } }));
+                              }, 300);
+                            },
+                          });
+                        }}
+                        data-testid={`menu-doc-template-${i}`}
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-2 text-accent" />
+                        {tmpl.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           )}
         </div>
@@ -344,10 +471,26 @@ function CoreyApp() {
   );
 }
 
-function CoreyChatInterface({ conversationId, onMessageSent }: { conversationId: number; onMessageSent?: () => void }) {
+interface DocumentTemplate {
+  label: string;
+  prompt: string;
+}
+
+function CoreyChatInterface({
+  conversationId,
+  onMessageSent,
+  documentTemplates
+}: {
+  conversationId: number;
+  onMessageSent?: () => void;
+  documentTemplates?: DocumentTemplate[];
+}) {
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
 
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
     setInput(transcript);
@@ -358,6 +501,18 @@ function CoreyChatInterface({ conversationId, onMessageSent }: { conversationId:
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.prompt) {
+        sendMessage(detail.prompt);
+        if (onMessageSent) setTimeout(() => onMessageSent(), 500);
+      }
+    };
+    window.addEventListener("corey-auto-send", handler);
+    return () => window.removeEventListener("corey-auto-send", handler);
+  }, [sendMessage, onMessageSent]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -372,8 +527,152 @@ function CoreyChatInterface({ conversationId, onMessageSent }: { conversationId:
     }
   };
 
+  const formatConversationText = useCallback(() => {
+    return messages.map((msg) => {
+      const role = msg.role === "user" ? "You" : "Corey";
+      return `${role}:\n${msg.content}\n`;
+    }).join("\n---\n\n");
+  }, [messages]);
+
+  const handleCopyConversation = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(formatConversationText());
+      toast({ title: "Conversation copied to clipboard" });
+    } catch {
+      toast({ title: "Failed to copy", variant: "destructive" });
+    }
+  }, [formatConversationText, toast]);
+
+  const handleDownloadText = useCallback(() => {
+    const text = `COREY — AI Compliance Expert\nCore Compliance Hub\nGenerated: ${new Date().toLocaleDateString()}\n${"=".repeat(50)}\n\n${formatConversationText()}`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `corey-conversation-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Conversation downloaded" });
+  }, [formatConversationText, toast]);
+
+  const handleDownloadDocument = useCallback(() => {
+    const lastAssistantMsg = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistantMsg) {
+      toast({ title: "No document to download", variant: "destructive" });
+      return;
+    }
+    const text = `COREY — AI Compliance Expert\nCore Compliance Hub\nDocument Generated: ${new Date().toLocaleDateString()}\n${"=".repeat(50)}\n\n${lastAssistantMsg.content}`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `corey-document-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Document downloaded" });
+  }, [messages, toast]);
+
+  const handleEmailConversation = useCallback(async () => {
+    if (!emailTo.trim()) return;
+    const subject = encodeURIComponent("Corey Compliance Consultation — Core Compliance Hub");
+    const body = encodeURIComponent(formatConversationText());
+    window.open(`mailto:${emailTo.trim()}?subject=${subject}&body=${body}`, "_blank");
+    setShowShareDialog(false);
+    setEmailTo("");
+    toast({ title: "Email client opened" });
+  }, [emailTo, formatConversationText, toast]);
+
+  const handleCopyLastResponse = useCallback(async () => {
+    const lastAssistantMsg = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistantMsg) return;
+    try {
+      await navigator.clipboard.writeText(lastAssistantMsg.content);
+      toast({ title: "Response copied to clipboard" });
+    } catch {
+      toast({ title: "Failed to copy", variant: "destructive" });
+    }
+  }, [messages, toast]);
+
   return (
     <>
+      {messages.length > 0 && (
+        <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 gap-1.5 text-xs" data-testid="button-share-menu">
+                  <Share2 className="w-3.5 h-3.5" /> Share
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuItem onClick={handleCopyConversation} data-testid="menu-copy-conversation">
+                  <ClipboardCopy className="w-3.5 h-3.5 mr-2" /> Copy Conversation
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyLastResponse} data-testid="menu-copy-last-response">
+                  <Copy className="w-3.5 h-3.5 mr-2" /> Copy Last Response
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowShareDialog(true)} data-testid="menu-email-conversation">
+                  <Mail className="w-3.5 h-3.5 mr-2" /> Email / Forward
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDownloadText} data-testid="menu-download-conversation">
+                  <FileDown className="w-3.5 h-3.5 mr-2" /> Download Conversation
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadDocument} data-testid="menu-download-document">
+                  <FileText className="w-3.5 h-3.5 mr-2" /> Download Last Response
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {documentTemplates && documentTemplates.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 gap-1.5 text-xs" data-testid="button-generate-doc-inline">
+                  <FileText className="w-3.5 h-3.5" /> Generate Document
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                {documentTemplates.map((tmpl, i) => (
+                  <DropdownMenuItem
+                    key={i}
+                    onClick={() => {
+                      sendMessage(tmpl.prompt);
+                      if (onMessageSent) setTimeout(() => onMessageSent(), 500);
+                    }}
+                    data-testid={`menu-inline-doc-${i}`}
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-2 text-accent" />
+                    {tmpl.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      )}
+
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Email Conversation</DialogTitle>
+            <DialogDescription>Enter the email address to forward this conversation to.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input
+              placeholder="email@example.com"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+              type="email"
+              data-testid="input-email-forward"
+            />
+            <Button onClick={handleEmailConversation} disabled={!emailTo.trim()} data-testid="button-send-email">
+              <Mail className="w-4 h-4 mr-2" /> Send
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="space-y-6 max-w-3xl mx-auto">
           {messages.length === 0 && (
@@ -384,7 +683,7 @@ function CoreyChatInterface({ conversationId, onMessageSent }: { conversationId:
               <h3 className="text-white/50 font-medium mb-2">How can I help you today?</h3>
               <p className="text-white/30 text-sm max-w-md mx-auto">Ask about OSHA recordability, DOT compliance, drug testing protocols, or any workplace safety question.</p>
               <div className="flex flex-wrap gap-2 justify-center mt-6">
-                {["Is this injury recordable?", "DOT physical requirements", "Random drug testing rules", "Respirator fit testing"].map((q) => (
+                {["Is this injury recordable?", "DOT physical requirements", "Random drug testing rules", "Respirator fit testing", "Write me a Drug & Alcohol Policy"].map((q) => (
                   <button
                     key={q}
                     onClick={() => setInput(q)}
@@ -405,20 +704,36 @@ function CoreyChatInterface({ conversationId, onMessageSent }: { conversationId:
               `}>
                 {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-accent" />}
               </div>
-              <div className={`
-                rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-[85%] md:max-w-[75%]
-                ${msg.role === 'user'
-                  ? 'bg-primary/80 text-white rounded-tr-sm'
-                  : 'bg-white/5 text-white/90 border border-white/10 rounded-tl-sm'}
-              `}>
-                <div className="prose prose-sm prose-invert">
-                  {msg.content || (isStreaming && idx === messages.length - 1 ? (
-                    <span className="flex items-center gap-2 text-white/40">
-                      <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
-                      Thinking...
-                    </span>
-                  ) : "")}
+              <div className="group relative">
+                <div className={`
+                  rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-[85%] md:max-w-[75%]
+                  ${msg.role === 'user'
+                    ? 'bg-primary/80 text-white rounded-tr-sm'
+                    : 'bg-white/5 text-white/90 border border-white/10 rounded-tl-sm'}
+                `}>
+                  <div className="prose prose-sm prose-invert whitespace-pre-wrap">
+                    {msg.content || (isStreaming && idx === messages.length - 1 ? (
+                      <span className="flex items-center gap-2 text-white/40">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                        Thinking...
+                      </span>
+                    ) : "")}
+                  </div>
                 </div>
+                {msg.role === "assistant" && msg.content && !isStreaming && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(msg.content);
+                        toast({ title: "Copied" });
+                      } catch {}
+                    }}
+                    className="absolute -bottom-5 left-2 opacity-0 group-hover:opacity-100 transition-opacity text-white/30 hover:text-white/60 flex items-center gap-1 text-xs"
+                    data-testid={`button-copy-msg-${idx}`}
+                  >
+                    <Copy className="w-3 h-3" /> Copy
+                  </button>
+                )}
               </div>
             </div>
           ))}

@@ -66,6 +66,22 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
+  // Rename conversation
+  app.patch("/api/conversations/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { title } = req.body;
+      if (!title || typeof title !== "string") {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      await chatStorage.updateConversationTitle(id, title);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error renaming conversation:", error);
+      res.status(500).json({ error: "Failed to rename conversation" });
+    }
+  });
+
   // Delete conversation
   app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
