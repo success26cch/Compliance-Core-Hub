@@ -82,7 +82,7 @@ export default function ClinicLetter() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Clinic-Communication-Letter-${formData.companyName.replace(/[^a-zA-Z0-9]/g, "-")}.pdf`;
+      a.download = `Clinic-Communication-Letter-${formData.companyName.replace(/[^a-zA-Z0-9]/g, "-")}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -334,7 +334,7 @@ export default function ClinicLetter() {
                 ) : (
                   <>
                     <Download className="w-5 h-5 mr-2" />
-                    Download Clinic Letter (PDF)
+                    Download Clinic Letter (Word)
                   </>
                 )}
               </Button>

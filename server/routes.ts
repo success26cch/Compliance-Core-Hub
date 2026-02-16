@@ -12,7 +12,7 @@ import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
-import { generateClinicLetter, getAvailableInjuryTypes } from "./generateClinicLetter";
+import { generateClinicLetterDocx, getAvailableInjuryTypes } from "./generateClinicLetter";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
@@ -566,15 +566,14 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       });
 
       const params = schema.parse(req.body);
-      const doc = generateClinicLetter(params);
+      const buffer = await generateClinicLetterDocx(params);
 
       const sanitizedCompany = params.companyName.replace(/[^a-zA-Z0-9]/g, '-');
-      const filename = `Clinic-Communication-Letter-${sanitizedCompany}.pdf`;
+      const filename = `Clinic-Communication-Letter-${sanitizedCompany}.docx`;
 
-      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      doc.pipe(res);
-      doc.end();
+      res.send(buffer);
     } catch (error: any) {
       console.error('Error generating clinic letter:', error);
       if (error.name === 'ZodError') {
