@@ -32,6 +32,7 @@ import CourseViewer from "@/pages/CourseViewer";
 import EmployerTraining from "@/pages/EmployerTraining";
 import EmployeeTraining from "@/pages/EmployeeTraining";
 import DrugAlcoholPolicy from "@/pages/DrugAlcoholPolicy";
+import ClinicLetter from "@/pages/ClinicLetter";
 import CoreyStandalone from "@/pages/Corey";
 import NotFound from "@/pages/not-found";
 
@@ -65,6 +66,7 @@ function Router() {
       <Route path="/employer-training" component={EmployerTraining} />
       <Route path="/employee-training" component={EmployeeTraining} />
       <Route path="/drug-alcohol-policy" component={DrugAlcoholPolicy} />
+      <Route path="/clinic-letter" component={ClinicLetter} />
       <Route path="/corey" component={CoreyStandalone} />
       <Route component={NotFound} />
     </Switch>

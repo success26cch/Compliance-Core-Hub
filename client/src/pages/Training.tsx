@@ -480,6 +480,22 @@ export default function Training() {
                         </div>
                       )}
 
+                      {course.productId === "course-osha-recordkeeping" && (
+                        <div className="mb-3" data-testid={`clinic-letter-incentive-${course.id}`}>
+                          <Link href="/clinic-letter">
+                            <div className="bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border-2 border-blue-400/60 rounded-lg p-3 cursor-pointer hover:from-blue-600/40 hover:to-cyan-600/40 transition-all" data-testid="btn-clinic-letter">
+                              <div className="flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-blue-300 flex-shrink-0" />
+                                <div>
+                                  <p className="text-sm font-bold text-blue-300">FREE Clinic Communication Letter</p>
+                                  <p className="text-xs text-blue-400/80">Generate injury-specific letters for your clinic</p>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
                         {enrollment ? (
                           <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => navigate(`/training/${course.id}`)} data-testid={`btn-continue-${course.id}`}>

@@ -12,6 +12,7 @@ import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
+import { generateClinicLetter, getAvailableInjuryTypes } from "./generateClinicLetter";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
@@ -537,6 +538,50 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     } catch (error: any) {
       console.error('Error generating Safety Manager cheat sheet:', error);
       res.status(500).json({ message: "Failed to generate cheat sheet" });
+    }
+  });
+
+  app.get("/api/clinic-letter/injury-types", async (_req, res) => {
+    try {
+      res.json(getAvailableInjuryTypes());
+    } catch (error: any) {
+      console.error('Error getting injury types:', error);
+      res.status(500).json({ message: "Failed to get injury types" });
+    }
+  });
+
+  app.post("/api/clinic-letter/generate", async (req, res) => {
+    try {
+      const schema = z.object({
+        companyName: z.string().min(1, "Company name is required"),
+        companyAddress: z.string().optional(),
+        companyPhone: z.string().optional(),
+        companyContact: z.string().optional(),
+        companyContactTitle: z.string().optional(),
+        clinicName: z.string().optional(),
+        employeeName: z.string().optional(),
+        injuryType: z.string().min(1, "Injury type is required"),
+        injuryDescription: z.string().optional(),
+        dateOfInjury: z.string().optional(),
+      });
+
+      const params = schema.parse(req.body);
+      const doc = generateClinicLetter(params);
+
+      const sanitizedCompany = params.companyName.replace(/[^a-zA-Z0-9]/g, '-');
+      const filename = `Clinic-Communication-Letter-${sanitizedCompany}.pdf`;
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      doc.pipe(res);
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generating clinic letter:', error);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Invalid form data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to generate clinic letter" });
+      }
     }
   });
 
