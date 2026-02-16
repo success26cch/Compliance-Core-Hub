@@ -181,43 +181,46 @@ const INJURY_GUIDANCE: Record<string, { title: string; firstAidPreferences: stri
 export async function generateClinicLetterDocx(params: ClinicLetterParams): Promise<Buffer> {
   const guidance = INJURY_GUIDANCE[params.injuryType] || INJURY_GUIDANCE.general;
   const today = params.dateOfInjury || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const fs = 18;
-  const sm = 16;
-  const bul = 16;
+  const fs = 22;
+  const sm = 20;
+  const bul = 20;
+  const fontFamily = 'Arial';
 
   const headerFields: Paragraph[] = [];
 
-  headerFields.push(new Paragraph({
-    children: [new TextRun({ text: `Date: ${today}`, size: fs })],
-    spacing: { after: 60 },
-  }));
+  const noBorders = { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } };
 
   headerFields.push(new Paragraph({
-    children: [new TextRun({ text: `To: ${params.clinicName || 'Treating Occupational Health Provider'}`, size: fs, bold: true })],
+    children: [new TextRun({ text: `Date: ${today}`, size: fs, font: fontFamily })],
     spacing: { after: 40 },
   }));
 
   headerFields.push(new Paragraph({
-    children: [new TextRun({ text: `From: ${params.companyName}`, size: fs, bold: true })],
-    spacing: { after: 40 },
+    children: [new TextRun({ text: `To: ${params.clinicName || 'Treating Occupational Health Provider'}`, size: fs, bold: true, font: fontFamily })],
+    spacing: { after: 30 },
+  }));
+
+  headerFields.push(new Paragraph({
+    children: [new TextRun({ text: `From: ${params.companyName}`, size: fs, bold: true, font: fontFamily })],
+    spacing: { after: 20 },
   }));
 
   if (params.companyContact) {
     headerFields.push(new Paragraph({
-      children: [new TextRun({ text: `Contact: ${params.companyContact}${params.companyContactTitle ? `, ${params.companyContactTitle}` : ''}`, size: sm })],
-      spacing: { after: 30 },
+      children: [new TextRun({ text: `Contact: ${params.companyContact}${params.companyContactTitle ? `, ${params.companyContactTitle}` : ''}`, size: sm, font: fontFamily })],
+      spacing: { after: 20 },
     }));
   }
   if (params.companyPhone) {
     headerFields.push(new Paragraph({
-      children: [new TextRun({ text: `Phone: ${params.companyPhone}`, size: sm })],
-      spacing: { after: 30 },
+      children: [new TextRun({ text: `Phone: ${params.companyPhone}`, size: sm, font: fontFamily })],
+      spacing: { after: 20 },
     }));
   }
   if (params.companyAddress) {
     headerFields.push(new Paragraph({
-      children: [new TextRun({ text: `Address: ${params.companyAddress}`, size: sm })],
-      spacing: { after: 30 },
+      children: [new TextRun({ text: `Address: ${params.companyAddress}`, size: sm, font: fontFamily })],
+      spacing: { after: 20 },
     }));
   }
 
@@ -225,46 +228,45 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
     ? `Re: ${params.employeeName} — ${guidance.title}`
     : `Re: Employee Workplace Injury — ${guidance.title}`;
   headerFields.push(new Paragraph({
-    children: [new TextRun({ text: reLine, size: fs, bold: true })],
-    spacing: { after: 30 },
+    children: [new TextRun({ text: reLine, size: fs, bold: true, font: fontFamily })],
+    spacing: { after: 20 },
   }));
 
   if (params.injuryDescription) {
     headerFields.push(new Paragraph({
-      children: [new TextRun({ text: `Injury Description: ${params.injuryDescription}`, size: sm, italics: true })],
-      spacing: { after: 60 },
+      children: [new TextRun({ text: `Injury Description: ${params.injuryDescription}`, size: sm, italics: true, font: fontFamily })],
+      spacing: { after: 40 },
     }));
   }
 
   const introParagraphs = [
     new Paragraph({
-      children: [new TextRun({ text: 'Dear Treating Provider,', size: fs })],
-      spacing: { after: 80 },
+      children: [new TextRun({ text: 'Dear Treating Provider,', size: fs, font: fontFamily })],
+      spacing: { after: 60 },
     }),
     new Paragraph({
-      children: [new TextRun({ text: `Thank you for seeing our employee. ${params.companyName} takes workplace safety and accurate OSHA recordkeeping seriously. We respectfully request that, when multiple clinically appropriate treatment options exist, you consider treatment approaches that remain within the OSHA first-aid classification under 29 CFR 1904.7(a). This is not a request to withhold necessary medical care — it is a request to consider first-aid-level treatment FIRST when clinically sufficient.`, size: fs })],
-      spacing: { after: 80 },
+      children: [new TextRun({ text: `Thank you for seeing our employee. ${params.companyName} takes workplace safety and accurate OSHA recordkeeping seriously. We respectfully request that, when multiple clinically appropriate treatment options exist, you consider treatment approaches that remain within the OSHA first-aid classification under 29 CFR 1904.7(a). This is not a request to withhold necessary medical care — it is a request to consider first-aid-level treatment FIRST when clinically sufficient.`, size: fs, font: fontFamily })],
+      spacing: { after: 60 },
     }),
   ];
 
   const greenHeaderRow = new TableRow({
     children: [new TableCell({
       children: [new Paragraph({
-        children: [new TextRun({ text: 'PREFERRED FIRST-AID TREATMENT OPTIONS', size: 18, bold: true, color: 'FFFFFF' })],
-        alignment: AlignmentType.LEFT,
+        children: [new TextRun({ text: 'PREFERRED FIRST-AID TREATMENT OPTIONS', size: 20, bold: true, color: 'FFFFFF', font: fontFamily })],
       })],
       shading: { fill: '276749', type: ShadingType.CLEAR, color: 'auto' },
-      borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+      borders: noBorders,
     })],
   });
 
   const greenBulletRows = guidance.firstAidPreferences.map(item => new TableRow({
     children: [new TableCell({
       children: [new Paragraph({
-        children: [new TextRun({ text: `  •  ${item}`, size: bul, color: '276749' })],
-        spacing: { after: 30 },
+        children: [new TextRun({ text: `  •  ${item}`, size: bul, color: '276749', font: fontFamily })],
+        spacing: { after: 20 },
       })],
-      borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+      borders: noBorders,
     })],
   }));
 
@@ -276,21 +278,20 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
   const redHeaderRow = new TableRow({
     children: [new TableCell({
       children: [new Paragraph({
-        children: [new TextRun({ text: 'TREATMENTS THAT TRIGGER OSHA RECORDABILITY', size: 18, bold: true, color: 'FFFFFF' })],
-        alignment: AlignmentType.LEFT,
+        children: [new TextRun({ text: 'TREATMENTS THAT TRIGGER OSHA RECORDABILITY', size: 20, bold: true, color: 'FFFFFF', font: fontFamily })],
       })],
       shading: { fill: 'C53030', type: ShadingType.CLEAR, color: 'auto' },
-      borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+      borders: noBorders,
     })],
   });
 
   const redBulletRows = guidance.avoidItems.map(item => new TableRow({
     children: [new TableCell({
       children: [new Paragraph({
-        children: [new TextRun({ text: `  •  ${item}`, size: bul, color: 'C53030' })],
-        spacing: { after: 30 },
+        children: [new TextRun({ text: `  •  ${item}`, size: bul, color: 'C53030', font: fontFamily })],
+        spacing: { after: 20 },
       })],
-      borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+      borders: noBorders,
     })],
   }));
 
@@ -301,24 +302,22 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
 
   const clinicalNotesRow = new TableRow({
     children: [new TableCell({
-      children: [
-        new Paragraph({
-          children: [new TextRun({ text: 'CLINICAL NOTES', size: 16, bold: true, color: 'FFFFFF' })],
-        }),
-      ],
+      children: [new Paragraph({
+        children: [new TextRun({ text: 'CLINICAL NOTES', size: 18, bold: true, color: 'FFFFFF', font: fontFamily })],
+      })],
       shading: { fill: '2C5282', type: ShadingType.CLEAR, color: 'auto' },
-      borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+      borders: noBorders,
     })],
   });
 
   const clinicalNotesBody = new TableRow({
     children: [new TableCell({
       children: [new Paragraph({
-        children: [new TextRun({ text: guidance.clinicalNotes, size: sm, italics: true })],
-        spacing: { before: 40, after: 40 },
+        children: [new TextRun({ text: guidance.clinicalNotes, size: sm, italics: true, font: fontFamily })],
+        spacing: { before: 30, after: 30 },
       })],
       shading: { fill: 'F0F4F8', type: ShadingType.CLEAR, color: 'auto' },
-      borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+      borders: noBorders,
     })],
   });
 
@@ -329,45 +328,23 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
 
   const closingParagraphs = [
     new Paragraph({
-      children: [new TextRun({ text: 'If medical treatment beyond first aid is clinically necessary, please proceed with the appropriate care. We ask only that you document the clinical rationale for the treatment choice so we can accurately classify the case on our OSHA 300 Log.', size: fs })],
-      spacing: { before: 100, after: 80 },
+      children: [new TextRun({ text: 'If medical treatment beyond first aid is clinically necessary, please proceed with appropriate care. We ask that you document the clinical rationale so we can accurately classify the case on our OSHA 300 Log.', size: fs, font: fontFamily })],
+      spacing: { before: 60, after: 60 },
     }),
-    new Paragraph({
-      children: [new TextRun({ text: 'Respectfully,', size: fs, bold: true })],
-      spacing: { after: 40 },
-    }),
-    new Paragraph({
-      children: [new TextRun({ text: params.companyContact || '[Authorized Company Representative]', size: fs, bold: true })],
-      spacing: { after: 20 },
-    }),
-  ];
-
-  if (params.companyContactTitle) {
-    closingParagraphs.push(new Paragraph({
-      children: [new TextRun({ text: params.companyContactTitle, size: sm })],
-      spacing: { after: 20 },
-    }));
-  }
-
-  closingParagraphs.push(new Paragraph({
-    children: [new TextRun({ text: params.companyName, size: sm })],
-    spacing: { after: 20 },
-  }));
-
-  if (params.companyPhone) {
-    closingParagraphs.push(new Paragraph({
-      children: [new TextRun({ text: params.companyPhone, size: sm })],
-      spacing: { after: 20 },
-    }));
-  }
-
-  const footerParagraphs = [
     new Paragraph({
       children: [
-        new TextRun({ text: 'Powered by Core Compliance Hub (CCH)', size: 13, bold: true, color: '1E3A5F' }),
-        new TextRun({ text: ' | www.corecompliancehub.com | A DBA of ACSI', size: 13, color: '666666' }),
+        new TextRun({ text: 'Respectfully, ', size: fs, font: fontFamily }),
+        new TextRun({ text: params.companyContact || '[Authorized Company Representative]', size: fs, bold: true, font: fontFamily }),
+        ...(params.companyContactTitle ? [new TextRun({ text: `, ${params.companyContactTitle}`, size: sm, font: fontFamily })] : []),
       ],
-      alignment: AlignmentType.CENTER,
+      spacing: { after: 10 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: params.companyName, size: sm, font: fontFamily }),
+        ...(params.companyPhone ? [new TextRun({ text: `  |  ${params.companyPhone}`, size: sm, font: fontFamily })] : []),
+      ],
+      spacing: { after: 10 },
     }),
   ];
 
@@ -377,29 +354,49 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
     const logoData = fsModule.readFileSync(logoPath);
     logoImageRun = new ImageRun({
       data: logoData,
-      transformation: { width: 120, height: 40 },
+      transformation: { width: 45, height: 45 },
       type: 'png',
     });
   } catch (e) {}
 
   const headerChildren: Paragraph[] = [
     new Paragraph({
-      children: [new TextRun({ text: 'EMPLOYER CLINIC COMMUNICATION LETTER', size: 22, bold: true, color: '1E3A5F' })],
+      children: [new TextRun({ text: 'EMPLOYER CLINIC COMMUNICATION LETTER', size: 24, bold: true, color: '1E3A5F', font: fontFamily })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 10 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: 'Occupational Health Treatment Preferences — Per 29 CFR 1904.7(a)', size: 16, italics: true, color: '666666', font: fontFamily })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 20 },
     }),
-    new Paragraph({
-      children: [new TextRun({ text: 'Occupational Health Treatment Preferences — Per 29 CFR 1904.7(a)', size: 16, italics: true, color: '666666' })],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 40 },
-    }),
   ];
+
+  const footerChildren: Paragraph[] = [];
+  if (logoImageRun) {
+    footerChildren.push(new Paragraph({
+      children: [
+        logoImageRun,
+        new TextRun({ text: '  Core Compliance Hub', size: 14, bold: true, color: '1E3A5F', font: fontFamily }),
+        new TextRun({ text: '  |  www.corecompliancehub.com  |  A DBA of ACSI', size: 12, color: '888888', font: fontFamily }),
+      ],
+      alignment: AlignmentType.CENTER,
+    }));
+  } else {
+    footerChildren.push(new Paragraph({
+      children: [
+        new TextRun({ text: 'Core Compliance Hub', size: 14, bold: true, color: '1E3A5F', font: fontFamily }),
+        new TextRun({ text: '  |  www.corecompliancehub.com  |  A DBA of ACSI', size: 12, color: '888888', font: fontFamily }),
+      ],
+      alignment: AlignmentType.CENTER,
+    }));
+  }
 
   const doc = new Document({
     sections: [{
       properties: {
         page: {
-          margin: { top: 600, bottom: 500, left: 720, right: 720 },
+          margin: { top: 600, bottom: 600, left: 720, right: 720 },
         },
       },
       headers: {
@@ -409,27 +406,16 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
       },
       footers: {
         default: new Footer({
-          children: [
-            ...(logoImageRun ? [new Paragraph({
-              children: [logoImageRun],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 40 },
-            })] : []),
-            ...footerParagraphs,
-            new Paragraph({
-              children: [new TextRun({ text: 'This letter is for informational purposes only and does not constitute legal advice.', size: 11, color: '999999', italics: true })],
-              alignment: AlignmentType.CENTER,
-            }),
-          ],
+          children: footerChildren,
         }),
       },
       children: [
         ...headerFields,
         ...introParagraphs,
         greenTable,
-        new Paragraph({ spacing: { after: 60 } }),
+        new Paragraph({ spacing: { after: 40 } }),
         redTable,
-        new Paragraph({ spacing: { after: 60 } }),
+        new Paragraph({ spacing: { after: 40 } }),
         clinicalTable,
         ...closingParagraphs,
       ],
