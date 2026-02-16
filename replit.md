@@ -4,7 +4,7 @@
 **CCH: THE ONE STOP EMPLOYER SHOP** - Occupational health and compliance platform featuring Corey (AI-powered compliance expert), ACSI ISO Manager, OSHA 300 decision tool, professional training courses, **ACSI Mentorship Program** (CCH exclusive), and **BrandNSwag** employee recognition division.
 
 ## Features
-- **Corey (Ask Corey)**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert, referencing OSHA 29 CFR 1904 and DOT 49 CFR Part 40
+- **Corey (Ask Corey)**: AI-powered chat acting as a Senior Occupational Health & Safety Compliance Expert and Lead ISO Auditor, referencing OSHA 29 CFR, DOT 49 CFR Part 40, and comprehensive ISO standards (9001, 14001, 45001, IATF 16949, AS9100, ISO 13485, ISO 22000, ISO 27001, ISO 50001, ISO 22301, ISO 31000, ISO 19011). Generates 15 compliance document templates including ISO Quality Manuals, Environmental Policies, OH&S Programs, Internal Audit Procedures, PPAP Checklists, 8D Reports, and IMS Management Review Agendas.
 - **ACSI ISO Manager**: Lead ISO Auditor AI for ISO 9001, 14001, and 45001. Helps with Gap Analysis, Quality Manuals, and Internal Audit preparation with a "Write-Up Free" philosophy
 - **OSHA 300, Log it or Not**: Interactive decision tree for OSHA recordability
 - **Client Compliance Dashboard**: Real-time metrics for ISO audit readiness, medical surveillance, drug screen status, with incident heatmap and action queue
