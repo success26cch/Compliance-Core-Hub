@@ -176,7 +176,7 @@ const INJURY_GUIDANCE: Record<string, { title: string; firstAidPreferences: stri
 export function generateClinicLetter(params: ClinicLetterParams): typeof PDFDocument.prototype {
   const doc = new PDFDocument({
     size: 'LETTER',
-    margins: { top: 40, bottom: 40, left: 50, right: 50 },
+    margins: { top: 40, bottom: 60, left: 55, right: 55 },
   });
 
   const primaryColor = '#1e3a5f';
@@ -186,169 +186,173 @@ export function generateClinicLetter(params: ClinicLetterParams): typeof PDFDocu
   const greenColor = '#276749';
   const redColor = '#c53030';
   const pageWidth = 612;
-  const margin = 50;
+  const margin = 55;
   const contentWidth = pageWidth - (margin * 2);
+  const bodySize = 10.5;
+  const bulletSize = 10;
+  const smallSize = 9;
+  const lineGap = 3.5;
+  const bulletGap = 5;
+  const sectionGap = 16;
+  const maxY = 680;
 
   const guidance = INJURY_GUIDANCE[params.injuryType] || INJURY_GUIDANCE.general;
 
-  doc.rect(0, 0, pageWidth, 80).fill(primaryColor);
-
   const logoPath = path.join(process.cwd(), 'attached_assets', '4_1768938699860.png');
+
+  doc.rect(0, 0, pageWidth, 85).fill(primaryColor);
+
   try {
-    doc.image(logoPath, margin, 8, { width: 140 });
+    doc.image(logoPath, margin, 10, { width: 140 });
   } catch (e) {}
 
   doc.fillColor('white')
-     .fontSize(14)
+     .fontSize(15)
      .font('Helvetica-Bold')
      .text('EMPLOYER CLINIC COMMUNICATION LETTER', margin + 160, 18, { width: contentWidth - 160, align: 'right' });
 
-  doc.fontSize(9)
+  doc.fontSize(10)
      .font('Helvetica')
-     .text('Occupational Health Treatment Preferences', margin + 160, 38, { width: contentWidth - 160, align: 'right' });
+     .text('Occupational Health Treatment Preferences', margin + 160, 40, { width: contentWidth - 160, align: 'right' });
 
-  doc.fontSize(8)
+  doc.fontSize(9)
      .font('Helvetica-Oblique')
-     .text('Per 29 CFR 1904.7(a) — First Aid Classification Standards', margin + 160, 52, { width: contentWidth - 160, align: 'right' });
+     .text('Per 29 CFR 1904.7(a) — First Aid Classification Standards', margin + 160, 56, { width: contentWidth - 160, align: 'right' });
 
-  let y = 95;
+  let y = 100;
 
   const today = params.dateOfInjury || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  doc.fillColor(textColor).fontSize(9).font('Helvetica');
+  doc.fillColor(textColor).fontSize(bodySize).font('Helvetica');
   doc.text(`Date: ${today}`, margin, y);
-  y += 14;
+  y += 18;
 
   if (params.clinicName) {
     doc.font('Helvetica-Bold').text(`To: ${params.clinicName}`, margin, y);
-    y += 14;
+    y += 18;
   } else {
     doc.font('Helvetica-Bold').text('To: Treating Occupational Health Provider', margin, y);
-    y += 14;
+    y += 18;
   }
 
   doc.font('Helvetica-Bold').text(`From: ${params.companyName}`, margin, y);
-  y += 12;
+  y += 16;
   if (params.companyContact) {
     doc.font('Helvetica').text(`Contact: ${params.companyContact}${params.companyContactTitle ? `, ${params.companyContactTitle}` : ''}`, margin, y);
-    y += 12;
+    y += 16;
   }
   if (params.companyPhone) {
     doc.font('Helvetica').text(`Phone: ${params.companyPhone}`, margin, y);
-    y += 12;
+    y += 16;
   }
   if (params.companyAddress) {
     doc.font('Helvetica').text(`Address: ${params.companyAddress}`, margin, y);
-    y += 12;
+    y += 16;
   }
 
-  y += 4;
+  y += 6;
 
   if (params.employeeName) {
     doc.font('Helvetica-Bold').text(`Re: ${params.employeeName} — ${guidance.title}`, margin, y);
   } else {
     doc.font('Helvetica-Bold').text(`Re: Employee Workplace Injury — ${guidance.title}`, margin, y);
   }
-  y += 6;
+  y += 8;
   if (params.injuryDescription) {
-    doc.font('Helvetica').fontSize(8).text(`Injury Description: ${params.injuryDescription}`, margin, y, { width: contentWidth });
-    y += doc.heightOfString(`Injury Description: ${params.injuryDescription}`, { width: contentWidth }) + 4;
+    doc.font('Helvetica').fontSize(smallSize).text(`Injury Description: ${params.injuryDescription}`, margin, y, { width: contentWidth });
+    y += doc.heightOfString(`Injury Description: ${params.injuryDescription}`, { width: contentWidth }) + 6;
   }
 
-  y += 8;
-  doc.moveTo(margin, y).lineTo(pageWidth - margin, y).strokeColor(primaryColor).lineWidth(1).stroke();
   y += 10;
+  doc.moveTo(margin, y).lineTo(pageWidth - margin, y).strokeColor(primaryColor).lineWidth(1).stroke();
+  y += 14;
 
-  doc.fillColor(textColor).fontSize(9).font('Helvetica');
+  doc.fillColor(textColor).fontSize(bodySize).font('Helvetica');
   const introText = `Dear Treating Provider,
 
 Thank you for seeing our employee. ${params.companyName} is a partner of Core Compliance Hub (CCH) and takes workplace safety and accurate OSHA recordkeeping seriously. We are committed to ensuring our employees receive appropriate and timely medical care for all workplace injuries.
 
 We respectfully request that, when multiple clinically appropriate treatment options exist, you consider treatment approaches that remain within the OSHA first-aid classification under 29 CFR 1904.7(a). This is not a request to withhold or delay necessary medical care — it is a request to consider first-aid-level treatment FIRST when it is clinically sufficient to treat the injury. This approach helps us maintain accurate OSHA 300 Log records and manage our recordable incident rates responsibly.`;
 
-  doc.text(introText, margin, y, { width: contentWidth, lineGap: 2 });
-  y += doc.heightOfString(introText, { width: contentWidth, lineGap: 2 }) + 12;
+  doc.text(introText, margin, y, { width: contentWidth, lineGap: lineGap });
+  y += doc.heightOfString(introText, { width: contentWidth, lineGap: lineGap }) + sectionGap;
 
-  doc.rect(margin, y, contentWidth, 18).fill(greenColor);
-  doc.fillColor('white').fontSize(10).font('Helvetica-Bold');
-  doc.text('PREFERRED FIRST-AID TREATMENT OPTIONS', margin + 8, y + 4, { width: contentWidth - 16 });
-  y += 24;
+  const checkPageBreak = (neededSpace: number) => {
+    if (y + neededSpace > maxY) {
+      doc.addPage();
+      y = 50;
+    }
+  };
 
-  doc.fillColor(textColor).fontSize(8).font('Helvetica');
-  doc.text(`For this type of injury (${guidance.title}), we request that you consider the following first-aid-level treatments when clinically appropriate:`, margin, y, { width: contentWidth });
-  y += doc.heightOfString(`For this type of injury (${guidance.title}), we request that you consider the following first-aid-level treatments when clinically appropriate:`, { width: contentWidth }) + 6;
+  checkPageBreak(30);
+  doc.rect(margin, y, contentWidth, 22).fill(greenColor);
+  doc.fillColor('white').fontSize(11).font('Helvetica-Bold');
+  doc.text('PREFERRED FIRST-AID TREATMENT OPTIONS', margin + 10, y + 5, { width: contentWidth - 20 });
+  y += 30;
+
+  doc.fillColor(textColor).fontSize(smallSize).font('Helvetica');
+  const prefIntro = `For this type of injury (${guidance.title}), we request that you consider the following first-aid-level treatments when clinically appropriate:`;
+  doc.text(prefIntro, margin, y, { width: contentWidth, lineGap: lineGap });
+  y += doc.heightOfString(prefIntro, { width: contentWidth, lineGap: lineGap }) + 8;
 
   guidance.firstAidPreferences.forEach((item) => {
     const bulletText = `•  ${item}`;
-    const textHeight = doc.heightOfString(bulletText, { width: contentWidth - 20 });
-    if (y + textHeight > 700) {
-      doc.addPage();
-      y = 40;
-    }
-    doc.fillColor(greenColor).font('Helvetica').fontSize(8);
-    doc.text(bulletText, margin + 10, y, { width: contentWidth - 20 });
-    y += textHeight + 3;
+    doc.font('Helvetica').fontSize(bulletSize);
+    const textHeight = doc.heightOfString(bulletText, { width: contentWidth - 24, lineGap: lineGap });
+    checkPageBreak(textHeight + bulletGap);
+    doc.fillColor(greenColor);
+    doc.text(bulletText, margin + 12, y, { width: contentWidth - 24, lineGap: lineGap });
+    y += textHeight + bulletGap;
   });
 
-  y += 10;
+  y += sectionGap;
 
-  if (y > 620) {
-    doc.addPage();
-    y = 40;
-  }
+  checkPageBreak(30);
+  doc.rect(margin, y, contentWidth, 22).fill(redColor);
+  doc.fillColor('white').fontSize(11).font('Helvetica-Bold');
+  doc.text('TREATMENTS THAT TRIGGER OSHA RECORDABILITY', margin + 10, y + 5, { width: contentWidth - 20 });
+  y += 30;
 
-  doc.rect(margin, y, contentWidth, 18).fill(redColor);
-  doc.fillColor('white').fontSize(10).font('Helvetica-Bold');
-  doc.text('TREATMENTS THAT TRIGGER OSHA RECORDABILITY', margin + 8, y + 4, { width: contentWidth - 16 });
-  y += 24;
-
-  doc.fillColor(textColor).fontSize(8).font('Helvetica');
-  doc.text('Please be aware that the following treatments cross the threshold from first aid to medical treatment under 29 CFR 1904.7(a), making the case OSHA-recordable:', margin, y, { width: contentWidth });
-  y += doc.heightOfString('Please be aware that the following treatments cross the threshold from first aid to medical treatment under 29 CFR 1904.7(a), making the case OSHA-recordable:', { width: contentWidth }) + 6;
+  doc.fillColor(textColor).fontSize(smallSize).font('Helvetica');
+  const avoidIntro = 'Please be aware that the following treatments cross the threshold from first aid to medical treatment under 29 CFR 1904.7(a), making the case OSHA-recordable:';
+  doc.text(avoidIntro, margin, y, { width: contentWidth, lineGap: lineGap });
+  y += doc.heightOfString(avoidIntro, { width: contentWidth, lineGap: lineGap }) + 8;
 
   guidance.avoidItems.forEach((item) => {
     const bulletText = `•  ${item}`;
-    const textHeight = doc.heightOfString(bulletText, { width: contentWidth - 20 });
-    if (y + textHeight > 700) {
-      doc.addPage();
-      y = 40;
-    }
-    doc.fillColor(redColor).font('Helvetica').fontSize(8);
-    doc.text(bulletText, margin + 10, y, { width: contentWidth - 20 });
-    y += textHeight + 3;
+    doc.font('Helvetica').fontSize(bulletSize);
+    const textHeight = doc.heightOfString(bulletText, { width: contentWidth - 24, lineGap: lineGap });
+    checkPageBreak(textHeight + bulletGap);
+    doc.fillColor(redColor);
+    doc.text(bulletText, margin + 12, y, { width: contentWidth - 24, lineGap: lineGap });
+    y += textHeight + bulletGap;
   });
 
-  y += 10;
+  y += sectionGap;
 
-  if (y > 580) {
-    doc.addPage();
-    y = 40;
-  }
+  checkPageBreak(30);
+  doc.rect(margin, y, contentWidth, 22).fill(accentColor);
+  doc.fillColor('white').fontSize(11).font('Helvetica-Bold');
+  doc.text('CLINICAL NOTES FOR THIS INJURY TYPE', margin + 10, y + 5, { width: contentWidth - 20 });
+  y += 30;
 
-  doc.rect(margin, y, contentWidth, 18).fill(accentColor);
-  doc.fillColor('white').fontSize(10).font('Helvetica-Bold');
-  doc.text('CLINICAL NOTES FOR THIS INJURY TYPE', margin + 8, y + 4, { width: contentWidth - 16 });
-  y += 24;
+  doc.font('Helvetica-Oblique').fontSize(smallSize);
+  const notesHeight = doc.heightOfString(guidance.clinicalNotes, { width: contentWidth - 24, lineGap: lineGap });
+  checkPageBreak(notesHeight + 16);
+  doc.rect(margin, y, contentWidth, notesHeight + 16).fill(lightBg);
+  doc.fillColor(textColor).font('Helvetica-Oblique').fontSize(smallSize);
+  doc.text(guidance.clinicalNotes, margin + 12, y + 8, { width: contentWidth - 24, lineGap: lineGap });
+  y += notesHeight + 28;
 
-  doc.rect(margin, y, contentWidth, 4).fill(lightBg);
-  doc.rect(margin, y, contentWidth, doc.heightOfString(guidance.clinicalNotes, { width: contentWidth - 20 }) + 12).fill(lightBg);
-  doc.fillColor(textColor).font('Helvetica-Oblique').fontSize(8);
-  doc.text(guidance.clinicalNotes, margin + 10, y + 6, { width: contentWidth - 20 });
-  y += doc.heightOfString(guidance.clinicalNotes, { width: contentWidth - 20 }) + 20;
+  checkPageBreak(30);
+  doc.rect(margin, y, contentWidth, 22).fill(primaryColor);
+  doc.fillColor('white').fontSize(11).font('Helvetica-Bold');
+  doc.text('29 CFR 1904.7(a) — FIRST AID TREATMENT SUMMARY', margin + 10, y + 5, { width: contentWidth - 20 });
+  y += 30;
 
-  if (y > 560) {
-    doc.addPage();
-    y = 40;
-  }
-
-  doc.rect(margin, y, contentWidth, 18).fill(primaryColor);
-  doc.fillColor('white').fontSize(10).font('Helvetica-Bold');
-  doc.text('29 CFR 1904.7(a) — FIRST AID TREATMENT SUMMARY', margin + 8, y + 4, { width: contentWidth - 16 });
-  y += 24;
-
-  doc.fillColor(textColor).fontSize(8).font('Helvetica');
-  doc.text('Under OSHA\'s recordkeeping standard, the following treatments are classified as FIRST AID and do NOT make a case recordable:', margin, y, { width: contentWidth });
-  y += 14;
+  doc.fillColor(textColor).fontSize(smallSize).font('Helvetica');
+  doc.text('Under OSHA\'s recordkeeping standard, the following treatments are classified as FIRST AID and do NOT make a case recordable:', margin, y, { width: contentWidth, lineGap: lineGap });
+  y += doc.heightOfString('Under OSHA\'s recordkeeping standard, the following treatments are classified as FIRST AID and do NOT make a case recordable:', { width: contentWidth, lineGap: lineGap }) + 8;
 
   const firstAidList = [
     "Non-prescription medications at nonprescription strength (OTC dosing only)",
@@ -371,22 +375,15 @@ We respectfully request that, when multiple clinically appropriate treatment opt
 
   firstAidList.forEach((item) => {
     const bulletText = `✓  ${item}`;
-    const textHeight = doc.heightOfString(bulletText, { width: contentWidth - 20 });
-    if (y + textHeight > 700) {
-      doc.addPage();
-      y = 40;
-    }
-    doc.fillColor(greenColor).font('Helvetica').fontSize(7.5);
-    doc.text(bulletText, margin + 10, y, { width: contentWidth - 20 });
-    y += textHeight + 2;
+    doc.font('Helvetica').fontSize(smallSize);
+    const textHeight = doc.heightOfString(bulletText, { width: contentWidth - 24, lineGap: lineGap });
+    checkPageBreak(textHeight + 4);
+    doc.fillColor(greenColor);
+    doc.text(bulletText, margin + 12, y, { width: contentWidth - 24, lineGap: lineGap });
+    y += textHeight + 4;
   });
 
-  y += 12;
-
-  if (y > 580) {
-    doc.addPage();
-    y = 40;
-  }
+  y += sectionGap;
 
   const closingText = `We understand and respect that all treatment decisions must be based on the treating provider's clinical judgment and the best interest of the patient. We are not asking you to withhold necessary medical care. We are simply requesting that when multiple clinically appropriate treatment options exist for this injury, you consider the option that maintains first-aid classification under OSHA's regulatory framework.
 
@@ -394,55 +391,59 @@ If medical treatment beyond first aid is clinically necessary, please proceed wi
 
 Thank you for your partnership in helping us provide quality care for our employees while maintaining accurate OSHA compliance records.`;
 
-  doc.fillColor(textColor).fontSize(9).font('Helvetica');
-  doc.text(closingText, margin, y, { width: contentWidth, lineGap: 2 });
-  y += doc.heightOfString(closingText, { width: contentWidth, lineGap: 2 }) + 16;
+  doc.fillColor(textColor).fontSize(bodySize).font('Helvetica');
+  const closingHeight = doc.heightOfString(closingText, { width: contentWidth, lineGap: lineGap });
+  checkPageBreak(closingHeight + 20);
+  doc.text(closingText, margin, y, { width: contentWidth, lineGap: lineGap });
+  y += closingHeight + 20;
 
-  if (y > 650) {
-    doc.addPage();
-    y = 40;
-  }
+  checkPageBreak(80);
 
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(textColor);
+  doc.font('Helvetica-Bold').fontSize(bodySize).fillColor(textColor);
   doc.text('Respectfully,', margin, y);
-  y += 14;
+  y += 18;
   doc.text(params.companyContact || '[Authorized Company Representative]', margin, y);
-  y += 12;
+  y += 16;
   if (params.companyContactTitle) {
     doc.font('Helvetica').text(params.companyContactTitle, margin, y);
-    y += 12;
+    y += 16;
   }
   doc.font('Helvetica').text(params.companyName, margin, y);
-  y += 12;
+  y += 16;
   if (params.companyPhone) {
     doc.text(params.companyPhone, margin, y);
-    y += 12;
+    y += 16;
   }
 
-  y += 16;
+  y += 20;
 
-  if (y + 120 > 740) {
-    doc.addPage();
-    y = 40;
-  }
+  const logoBottomWidth = 80;
+  const footerTextX = margin + logoBottomWidth + 20;
+  const footerTextWidth = contentWidth - logoBottomWidth - 30;
+  const footerBodyText = `${params.companyName} is a partner of Core Compliance Hub (CCH) — THE ONE STOP EMPLOYER SHOP for occupational health and safety compliance. This letter was generated using CCH's OSHA Recordkeeping training program to facilitate clear communication between employers and treating providers regarding OSHA first-aid classification standards under 29 CFR 1904.7(a).`;
+  doc.font('Helvetica').fontSize(8);
+  const footerTextHeight = doc.heightOfString(footerBodyText, { width: footerTextWidth, lineGap: 2 });
+  const footerBoxHeight = Math.max(footerTextHeight + 30, logoBottomWidth * 0.6 + 20);
 
-  doc.rect(margin, y, contentWidth, 70).fill(lightBg);
+  checkPageBreak(footerBoxHeight + 40);
+
+  doc.rect(margin, y, contentWidth, footerBoxHeight).fill(lightBg);
 
   try {
-    doc.image(logoPath, margin + 10, y + 8, { width: 100 });
+    doc.image(logoPath, margin + 10, y + (footerBoxHeight - logoBottomWidth * 0.45) / 2, { width: logoBottomWidth });
   } catch (e) {}
 
-  doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(9);
-  doc.text('CCH Partner Company', margin + 120, y + 8);
-  doc.fillColor(textColor).font('Helvetica').fontSize(7.5);
-  doc.text(`${params.companyName} is a partner of Core Compliance Hub (CCH) — THE ONE STOP EMPLOYER SHOP for occupational health and safety compliance. This letter was generated using CCH's OSHA Recordkeeping training program to facilitate clear communication between employers and treating providers regarding OSHA first-aid classification standards under 29 CFR 1904.7(a).`, margin + 120, y + 22, { width: contentWidth - 130 });
+  doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(10);
+  doc.text('CCH Partner Company', footerTextX, y + 10);
+  doc.fillColor(textColor).font('Helvetica').fontSize(8);
+  doc.text(footerBodyText, footerTextX, y + 24, { width: footerTextWidth, lineGap: 2 });
 
-  y += 78;
+  y += footerBoxHeight + 10;
 
-  doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(7);
+  doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(7.5);
   doc.text('Core Compliance Hub | www.corecompliancehub.com | A DBA of ACSI — Assessment and Consulting Services International', margin, y, { align: 'center', width: contentWidth });
-  y += 10;
-  doc.fillColor(textColor).font('Helvetica').fontSize(6.5);
+  y += 12;
+  doc.fillColor(textColor).font('Helvetica').fontSize(7);
   doc.text('This letter is for informational purposes only and does not constitute legal advice. All treatment decisions must be made based on the treating provider\'s clinical judgment. Consult 29 CFR 1904 for official OSHA recordkeeping requirements.', margin, y, { align: 'center', width: contentWidth });
 
   return doc;
