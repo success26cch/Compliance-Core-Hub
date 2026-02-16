@@ -392,7 +392,17 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
     }));
   }
 
+  const lineSpacing = Math.round(240 * 1.15);
+
   const doc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: { font: fontFamily, size: fs },
+          paragraph: { spacing: { line: lineSpacing } },
+        },
+      },
+    },
     sections: [{
       properties: {
         page: {
