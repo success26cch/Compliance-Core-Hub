@@ -421,13 +421,23 @@ Thank you for your partnership in helping us provide quality care for our employ
 
   y += 16;
 
-  doc.rect(margin, y, contentWidth, 50).fill(lightBg);
-  doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(9);
-  doc.text('CCH Partner Company', margin + 10, y + 6);
-  doc.fillColor(textColor).font('Helvetica').fontSize(7.5);
-  doc.text(`${params.companyName} is a partner of Core Compliance Hub (CCH) — THE ONE STOP EMPLOYER SHOP for occupational health and safety compliance. This letter was generated using CCH's OSHA Recordkeeping training program to facilitate clear communication between employers and treating providers regarding OSHA first-aid classification standards under 29 CFR 1904.7(a).`, margin + 10, y + 18, { width: contentWidth - 20 });
+  if (y + 120 > 740) {
+    doc.addPage();
+    y = 40;
+  }
 
-  y += 58;
+  doc.rect(margin, y, contentWidth, 70).fill(lightBg);
+
+  try {
+    doc.image(logoPath, margin + 10, y + 8, { width: 100 });
+  } catch (e) {}
+
+  doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(9);
+  doc.text('CCH Partner Company', margin + 120, y + 8);
+  doc.fillColor(textColor).font('Helvetica').fontSize(7.5);
+  doc.text(`${params.companyName} is a partner of Core Compliance Hub (CCH) — THE ONE STOP EMPLOYER SHOP for occupational health and safety compliance. This letter was generated using CCH's OSHA Recordkeeping training program to facilitate clear communication between employers and treating providers regarding OSHA first-aid classification standards under 29 CFR 1904.7(a).`, margin + 120, y + 22, { width: contentWidth - 130 });
+
+  y += 78;
 
   doc.fillColor(primaryColor).font('Helvetica-Bold').fontSize(7);
   doc.text('Core Compliance Hub | www.corecompliancehub.com | A DBA of ACSI — Assessment and Consulting Services International', margin, y, { align: 'center', width: contentWidth });
