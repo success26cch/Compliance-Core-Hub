@@ -54,6 +54,31 @@ export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = videoContainerRef.current;
+    const video = heroVideoRef.current;
+    if (!container || !video) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+          video.muted = false;
+          setVideoMuted(false);
+        } else {
+          video.pause();
+          video.muted = true;
+          setVideoMuted(true);
+        }
+      },
+      { threshold: 0.6 }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   const toggleVideoSound = () => {
     if (heroVideoRef.current) {
@@ -201,7 +226,7 @@ export default function Landing() {
           >
             <div className="flex flex-col items-center w-full">
               <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 lg:h-96 w-auto mx-auto -mb-4" />
-              <div className="relative w-full max-w-5xl mx-auto">
+              <div ref={videoContainerRef} className="relative w-full max-w-5xl mx-auto">
                 <video
                   ref={heroVideoRef}
                   src={heroVideoUrl}
