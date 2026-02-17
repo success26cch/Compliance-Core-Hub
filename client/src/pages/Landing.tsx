@@ -16,6 +16,7 @@ import mentorshipLogo from "@assets/tree.transp_1768928785893.png";
 import brandNSwagLogo from "@assets/2026_BNS_Logo_1768928815681.png";
 import cchLogo from "@assets/1_1770683748423.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
+import heroVideoUrl from "@assets/CCH_BOT_VIDEO_1771359482914.mp4";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -191,7 +192,15 @@ export default function Landing() {
           >
             <div className="flex flex-col items-center w-full">
               <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 lg:h-96 w-auto mx-auto -mb-4" />
-              <img src={teamImageUrl} alt="CCH Team - Safety Professionals" className="w-full max-w-5xl h-auto object-contain mx-auto" />
+              <video
+                src={heroVideoUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full max-w-5xl h-auto rounded-lg shadow-xl mx-auto"
+                data-testid="video-hero"
+              />
             </div>
             
             <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
