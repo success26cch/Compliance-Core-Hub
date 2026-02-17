@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -52,6 +52,15 @@ export default function Landing() {
   };
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  const toggleVideoSound = () => {
+    if (heroVideoRef.current) {
+      heroVideoRef.current.muted = !heroVideoRef.current.muted;
+      setVideoMuted(heroVideoRef.current.muted);
+    }
+  };
 
   interface BotMessage { role: "user" | "assistant"; content: string }
   const [botMessages, setBotMessages] = useState<BotMessage[]>([]);
@@ -192,15 +201,27 @@ export default function Landing() {
           >
             <div className="flex flex-col items-center w-full">
               <img src={logoUrl} alt="Core Compliance Hub" className="h-56 md:h-80 lg:h-96 w-auto mx-auto -mb-4" />
-              <video
-                src={heroVideoUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full max-w-5xl h-auto rounded-lg shadow-xl mx-auto"
-                data-testid="video-hero"
-              />
+              <div className="relative w-full max-w-5xl mx-auto">
+                <video
+                  ref={heroVideoRef}
+                  src={heroVideoUrl}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-auto rounded-lg shadow-xl"
+                  data-testid="video-hero"
+                />
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  onClick={toggleVideoSound}
+                  className="absolute bottom-4 right-4 rounded-full opacity-80 hover:opacity-100"
+                  data-testid="button-video-sound-toggle"
+                >
+                  {videoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </Button>
+              </div>
             </div>
             
             <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
