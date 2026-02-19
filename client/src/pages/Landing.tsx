@@ -277,10 +277,13 @@ export default function Landing() {
               Compliance Isn't a Guessing Game,<br /><span className="text-accent">It's Your Reputation.</span>
             </p>
             <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-block bg-black px-6 py-4 rounded-md">
-                <p className="text-xl md:text-2xl font-black text-accent leading-snug">
-                  Meet Corey: The world's first AI born from the DNA of 29 CFR.
-                </p>
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-gradient-to-r from-accent/30 via-accent/10 to-accent/30 blur-xl -z-10 scale-110"></div>
+                <div className="bg-black px-8 py-5 rounded-md border border-accent/40 shadow-[0_0_30px_rgba(var(--accent),0.15)]">
+                  <p className="text-xl md:text-2xl font-black text-accent leading-snug">
+                    Meet Corey: The world's first AI born from the DNA of 29 CFR.
+                  </p>
+                </div>
               </div>
               <p className="text-lg font-bold text-primary leading-relaxed mt-3">
                 As the only specialist that lives and breathes occupational health and safety compliance, Corey isn't just an AI—it's your 24/7 Compliance Guardian, built from the ground up to automate, track, and protect your entire safety ecosystem.
