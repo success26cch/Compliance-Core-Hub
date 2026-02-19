@@ -277,11 +277,14 @@ export default function Landing() {
               Compliance Isn't a Guessing Game,<br /><span className="text-accent">It's Your Reputation.</span>
             </p>
             <div className="max-w-4xl mx-auto text-center">
-              <p className="text-xl font-bold text-accent">
-                The First Ever AI Designed just for Occupational Health.<br />Safety Made Smart. Growth Made Possible.
+              <p className="text-xl md:text-2xl font-black text-accent leading-snug">
+                Meet Corey: The world's first AI born from the DNA of 29 CFR.
               </p>
-              <p className="text-lg text-primary leading-relaxed mt-3">
-                CCH is the all-in-one compliance Eco-System command center for employers who are tired of the confusing regulations, the OSHA 300 recordables and scattered safety programs.
+              <p className="text-lg font-bold text-primary leading-relaxed mt-3">
+                As the only specialist that lives and breathes occupational health and safety compliance, Corey isn't just an AI—it's your 24/7 Compliance Guardian, built from the ground up to automate, track, and protect your entire safety ecosystem.
+              </p>
+              <p className="text-xl font-black text-accent mt-4">
+                Give Corey a shot, ask him anything.
               </p>
             </div>
 
