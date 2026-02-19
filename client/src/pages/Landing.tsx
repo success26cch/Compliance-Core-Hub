@@ -188,6 +188,7 @@ export default function Landing() {
       <nav className="bg-[hsl(222,47%,11%)] sticky top-0 z-[9999]">
         <div className="flex items-center justify-between h-12 px-4 gap-2">
           <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide flex-1">
+            <Link href="/about" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-about">About</Link>
             <a href="#features" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-features">Features</a>
             <a href="#pricing" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-pricing">Pricing</a>
             <Link href="/resources" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-resources">Free Resources</Link>

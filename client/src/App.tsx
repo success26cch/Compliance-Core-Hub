@@ -34,6 +34,7 @@ import EmployeeTraining from "@/pages/EmployeeTraining";
 import DrugAlcoholPolicy from "@/pages/DrugAlcoholPolicy";
 import ClinicLetter from "@/pages/ClinicLetter";
 import CoreyStandalone from "@/pages/Corey";
+import About from "@/pages/About";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/drug-alcohol-policy" component={DrugAlcoholPolicy} />
       <Route path="/clinic-letter" component={ClinicLetter} />
       <Route path="/corey" component={CoreyStandalone} />
+      <Route path="/about" component={About} />
       <Route component={NotFound} />
     </Switch>
   );
