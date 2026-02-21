@@ -37,6 +37,12 @@ const COURSE_PRODUCT_MAP: Record<string, { productId: string; icon: string; colo
   "course-iso-management": { productId: "course-iso-management", icon: "📋", color: "orange" },
   "course-osha-recordkeeping": { productId: "course-osha-recordkeeping", icon: "📊", color: "red" },
   "course-complete-bundle": { productId: "course-complete-bundle", icon: "🎓", color: "yellow" },
+  "bns-workplace-safety-orientation": { productId: "bns-workplace-safety-orientation", icon: "🏢", color: "blue" },
+  "bns-injury-reporting": { productId: "bns-injury-reporting", icon: "🩹", color: "red" },
+  "bns-slips-trips-falls": { productId: "bns-slips-trips-falls", icon: "⚠️", color: "yellow" },
+  "bns-hazcom-right-to-know": { productId: "bns-hazcom-right-to-know", icon: "☣️", color: "purple" },
+  "bns-ppe-essentials": { productId: "bns-ppe-essentials", icon: "🦺", color: "orange" },
+  "bns-drug-alcohol-awareness": { productId: "bns-drug-alcohol-awareness", icon: "🚫", color: "green" },
 };
 
 export default function Training() {
@@ -395,11 +401,6 @@ export default function Training() {
 
         {effectiveTab === "catalog" && (
           <div data-testid="section-catalog">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-400" />
-              Course Catalog
-            </h2>
-
             {coursesLoading ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
@@ -410,114 +411,189 @@ export default function Training() {
                 <p className="text-gray-400">Courses are being prepared. Check back soon!</p>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((course) => {
-                  const product = PRODUCTS[course.productId];
-                  const enrollment = getEnrollment(course.id);
-                  const certificate = getCertificate(course.id);
-                  const meta = COURSE_PRODUCT_MAP[course.productId];
+              <>
+                {courses.filter(c => c.category !== "new_hire_safety").length > 0 && (
+                  <div className="mb-10">
+                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-blue-400" />
+                      Professional Compliance Courses
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {courses.filter(c => c.category !== "new_hire_safety").map((course) => {
+                        const product = PRODUCTS[course.productId];
+                        const enrollment = getEnrollment(course.id);
+                        const certificate = getCertificate(course.id);
+                        const meta = COURSE_PRODUCT_MAP[course.productId];
 
-                  return (
-                    <Card key={course.id} className="bg-gray-800/60 border-gray-700 p-5 flex flex-col" data-testid={`course-card-${course.id}`}>
-                      <div className="flex items-start justify-between mb-3">
-                        <span className="text-3xl">{meta?.icon || "📚"}</span>
-                        {certificate && (
-                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                            <Award className="w-3 h-3 mr-1" /> Completed
-                          </Badge>
-                        )}
-                        {enrollment && !certificate && (
-                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                            {enrollment.progress}% Complete
-                          </Badge>
-                        )}
-                      </div>
-
-                      <h3 className="text-lg font-semibold text-white mb-2">{course.title}</h3>
-                      <p className="text-sm text-gray-400 mb-4 flex-1">{course.description}</p>
-
-                      <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
-                        <span className="flex items-center gap-1">
-                          <BookOpen className="w-3 h-3" /> {course.totalModules} modules
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> ~{course.estimatedHours}h
-                        </span>
-                      </div>
-
-                      {product && (
-                        <p className="text-xl font-bold text-white mb-2">
-                          ${(product.unitAmount / 100).toFixed(0)}
-                          <span className="text-sm text-gray-400 font-normal ml-1">per person</span>
-                        </p>
-                      )}
-
-                      {course.productId === "course-drug-alcohol" && (
-                        <div className="mb-3" data-testid={`policy-incentive-${course.id}`}>
-                          {certificate ? (
-                            <Link href="/drug-alcohol-policy">
-                              <div className="bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-2 border-green-400/60 rounded-lg p-3 cursor-pointer hover:from-green-600/40 hover:to-emerald-600/40 transition-all" data-testid="btn-download-policy">
-                                <div className="flex items-center gap-2">
-                                  <Gift className="w-5 h-5 text-green-300 flex-shrink-0" />
-                                  <div>
-                                    <p className="text-sm font-bold text-green-300">FREE D&A Downloadable Policy</p>
-                                    <p className="text-xs text-green-400/80">Click to download your Word document</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </Link>
-                          ) : (
-                            <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400/60 rounded-lg p-3 animate-pulse-subtle">
-                              <div className="flex items-center gap-2">
-                                <Gift className="w-5 h-5 text-amber-300 flex-shrink-0" />
-                                <div>
-                                  <p className="text-sm font-bold text-amber-300">FREE D&A Downloadable Policy</p>
-                                  <p className="text-xs text-amber-400/80">Complete this course to unlock your free policy</p>
-                                </div>
-                              </div>
+                        return (
+                          <Card key={course.id} className="bg-gray-800/60 border-gray-700 p-5 flex flex-col" data-testid={`course-card-${course.id}`}>
+                            <div className="flex items-start justify-between mb-3">
+                              <span className="text-3xl">{meta?.icon || "📚"}</span>
+                              {certificate && (
+                                <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                                  <Award className="w-3 h-3 mr-1" /> Completed
+                                </Badge>
+                              )}
+                              {enrollment && !certificate && (
+                                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                  {enrollment.progress}% Complete
+                                </Badge>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      )}
 
-                      {course.productId === "course-osha-recordkeeping" && (
-                        <div className="mb-3" data-testid={`clinic-letter-incentive-${course.id}`}>
-                          <Link href="/clinic-letter">
-                            <div className="bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border-2 border-blue-400/60 rounded-lg p-3 cursor-pointer hover:from-blue-600/40 hover:to-cyan-600/40 transition-all" data-testid="btn-clinic-letter">
-                              <div className="flex items-center gap-2">
-                                <FileText className="w-5 h-5 text-blue-300 flex-shrink-0" />
-                                <div>
-                                  <p className="text-sm font-bold text-blue-300">FREE Clinic Communication Letter</p>
-                                  <p className="text-xs text-blue-400/80">Generate injury-specific letters for your clinic</p>
-                                </div>
-                              </div>
+                            <h3 className="text-lg font-semibold text-white mb-2">{course.title}</h3>
+                            <p className="text-sm text-gray-400 mb-4 flex-1">{course.description}</p>
+
+                            <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+                              <span className="flex items-center gap-1">
+                                <BookOpen className="w-3 h-3" /> {course.totalModules} modules
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> ~{course.estimatedHours}h
+                              </span>
                             </div>
-                          </Link>
-                        </div>
-                      )}
 
-                      <div className="flex gap-2">
-                        {enrollment ? (
-                          <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => navigate(`/training/${course.id}`)} data-testid={`btn-continue-${course.id}`}>
-                            {certificate ? "Review Course" : "Continue"} <ArrowRight className="w-4 h-4 ml-1" />
-                          </Button>
-                        ) : (
-                          <>
-                            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStartCourse(course)} data-testid={`btn-start-${course.id}`}>
-                              Start Course <Play className="w-4 h-4 ml-1" />
-                            </Button>
                             {product && (
-                              <Button variant="outline" className="border-gray-600" onClick={() => handleAddToCart(course.productId)} data-testid={`btn-cart-${course.id}`}>
-                                <ShoppingCart className="w-4 h-4" />
-                              </Button>
+                              <p className="text-xl font-bold text-white mb-2">
+                                ${(product.unitAmount / 100).toFixed(0)}
+                                <span className="text-sm text-gray-400 font-normal ml-1">per person</span>
+                              </p>
                             )}
-                          </>
-                        )}
+
+                            {course.productId === "course-drug-alcohol" && (
+                              <div className="mb-3" data-testid={`policy-incentive-${course.id}`}>
+                                {certificate ? (
+                                  <Link href="/drug-alcohol-policy">
+                                    <div className="bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-2 border-green-400/60 rounded-lg p-3 cursor-pointer hover:from-green-600/40 hover:to-emerald-600/40 transition-all" data-testid="btn-download-policy">
+                                      <div className="flex items-center gap-2">
+                                        <Gift className="w-5 h-5 text-green-300 flex-shrink-0" />
+                                        <div>
+                                          <p className="text-sm font-bold text-green-300">FREE D&A Downloadable Policy</p>
+                                          <p className="text-xs text-green-400/80">Click to download your Word document</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </Link>
+                                ) : (
+                                  <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400/60 rounded-lg p-3 animate-pulse-subtle">
+                                    <div className="flex items-center gap-2">
+                                      <Gift className="w-5 h-5 text-amber-300 flex-shrink-0" />
+                                      <div>
+                                        <p className="text-sm font-bold text-amber-300">FREE D&A Downloadable Policy</p>
+                                        <p className="text-xs text-amber-400/80">Complete this course to unlock your free policy</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {course.productId === "course-osha-recordkeeping" && (
+                              <div className="mb-3" data-testid={`clinic-letter-incentive-${course.id}`}>
+                                <Link href="/clinic-letter">
+                                  <div className="bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border-2 border-blue-400/60 rounded-lg p-3 cursor-pointer hover:from-blue-600/40 hover:to-cyan-600/40 transition-all" data-testid="btn-clinic-letter">
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="w-5 h-5 text-blue-300 flex-shrink-0" />
+                                      <div>
+                                        <p className="text-sm font-bold text-blue-300">FREE Clinic Communication Letter</p>
+                                        <p className="text-xs text-blue-400/80">Generate injury-specific letters for your clinic</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Link>
+                              </div>
+                            )}
+
+                            <div className="flex gap-2">
+                              {enrollment ? (
+                                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => navigate(`/training/${course.id}`)} data-testid={`btn-continue-${course.id}`}>
+                                  {certificate ? "Review Course" : "Continue"} <ArrowRight className="w-4 h-4 ml-1" />
+                                </Button>
+                              ) : (
+                                <>
+                                  <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStartCourse(course)} data-testid={`btn-start-${course.id}`}>
+                                    Start Course <Play className="w-4 h-4 ml-1" />
+                                  </Button>
+                                  {product && (
+                                    <Button variant="outline" className="border-gray-600" onClick={() => handleAddToCart(course.productId)} data-testid={`btn-cart-${course.id}`}>
+                                      <ShoppingCart className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {courses.filter(c => c.category === "new_hire_safety").length > 0 && (
+                  <div className="mb-10" data-testid="section-brandnswag-courses">
+                    <div className="mb-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="text-2xl">🎁</span>
+                        <h2 className="text-lg font-semibold text-white">BrandNSwag — New Hire Safety Courses</h2>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
+                      <p className="text-sm text-gray-400 ml-11">Short, OSHA-focused safety courses for onboarding new employees. Under 20 minutes each.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {courses.filter(c => c.category === "new_hire_safety").map((course) => {
+                        const enrollment = getEnrollment(course.id);
+                        const certificate = getCertificate(course.id);
+                        const meta = COURSE_PRODUCT_MAP[course.productId];
+
+                        return (
+                          <Card key={course.id} className="bg-gray-800/60 border-gray-700 p-5 flex flex-col" data-testid={`course-card-${course.id}`}>
+                            <div className="flex items-start justify-between mb-3">
+                              <span className="text-3xl">{meta?.icon || "📚"}</span>
+                              {certificate && (
+                                <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                                  <Award className="w-3 h-3 mr-1" /> Completed
+                                </Badge>
+                              )}
+                              {enrollment && !certificate && (
+                                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                  {enrollment.progress}% Complete
+                                </Badge>
+                              )}
+                            </div>
+
+                            <h3 className="text-lg font-semibold text-white mb-2">{course.title}</h3>
+                            <p className="text-sm text-gray-400 mb-4 flex-1">{course.description}</p>
+
+                            <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+                              <span className="flex items-center gap-1">
+                                <BookOpen className="w-3 h-3" /> {course.totalModules} modules
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> ~{course.estimatedHours}h
+                              </span>
+                            </div>
+
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 w-fit mb-4">
+                              Included with BrandNSwag
+                            </Badge>
+
+                            <div className="flex gap-2">
+                              {enrollment ? (
+                                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => navigate(`/training/${course.id}`)} data-testid={`btn-continue-${course.id}`}>
+                                  {certificate ? "Review Course" : "Continue"} <ArrowRight className="w-4 h-4 ml-1" />
+                                </Button>
+                              ) : (
+                                <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStartCourse(course)} data-testid={`btn-start-${course.id}`}>
+                                  Start Course <Play className="w-4 h-4 ml-1" />
+                                </Button>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

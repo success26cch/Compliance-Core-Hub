@@ -140,6 +140,15 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
+  // Auto-seed BrandNSwag new hire safety courses on startup
+  try {
+    const { storage } = await import("./storage");
+    const { seedBrandNSwagCourses } = await import("./brandnswagCourseSeed");
+    await seedBrandNSwagCourses(storage);
+  } catch (error) {
+    console.error("Failed to auto-seed BrandNSwag courses:", error);
+  }
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

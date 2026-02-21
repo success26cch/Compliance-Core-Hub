@@ -2553,7 +2553,9 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     try {
       const { seedDOTCourse } = await import("./courseSeed");
       await seedDOTCourse(storage);
-      res.json({ message: "DOT Medical Certification course seeded successfully" });
+      const { seedBrandNSwagCourses } = await import("./brandnswagCourseSeed");
+      await seedBrandNSwagCourses(storage);
+      res.json({ message: "All courses seeded successfully" });
     } catch (error: any) {
       console.error("Error seeding courses:", error);
       res.status(500).json({ message: "Failed to seed courses" });
