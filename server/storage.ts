@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -138,6 +138,13 @@ export interface IStorage {
   getTrainingAssignmentById(id: number, employerUserId: string): Promise<TrainingAssignment | undefined>;
   updateTrainingAssignment(id: number, updates: Partial<TrainingAssignment>): Promise<TrainingAssignment | undefined>;
   getTrainingAssignmentByEmployeeAndCourse(employerUserId: string, employeeId: number, courseId: number): Promise<TrainingAssignment | undefined>;
+  getNewHireAssignmentsByEmployee(employerUserId: string, employeeId: number): Promise<TrainingAssignment[]>;
+
+  // New Hire Completions
+  createNewHireCompletion(completion: InsertNewHireCompletion): Promise<NewHireCompletion>;
+  getNewHireCompletionsByEmployer(employerUserId: string): Promise<NewHireCompletion[]>;
+  getNewHireCompletionByEmployee(employerUserId: string, employeeId: number): Promise<NewHireCompletion | undefined>;
+  updateNewHireCompletion(id: number, updates: Partial<NewHireCompletion>): Promise<NewHireCompletion | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -757,6 +764,44 @@ export class DatabaseStorage implements IStorage {
         eq(trainingAssignments.courseId, courseId)
       ));
     return assignment;
+  }
+
+  async getNewHireAssignmentsByEmployee(employerUserId: string, employeeId: number): Promise<TrainingAssignment[]> {
+    return db.select().from(trainingAssignments)
+      .where(and(
+        eq(trainingAssignments.employerUserId, employerUserId),
+        eq(trainingAssignments.employeeId, employeeId),
+        eq(trainingAssignments.assignmentType, "new_hire_onboarding")
+      ))
+      .orderBy(trainingAssignments.assignedAt);
+  }
+
+  async createNewHireCompletion(completion: InsertNewHireCompletion): Promise<NewHireCompletion> {
+    const [created] = await db.insert(newHireCompletions).values(completion).returning();
+    return created;
+  }
+
+  async getNewHireCompletionsByEmployer(employerUserId: string): Promise<NewHireCompletion[]> {
+    return db.select().from(newHireCompletions)
+      .where(eq(newHireCompletions.employerUserId, employerUserId))
+      .orderBy(desc(newHireCompletions.completedAt));
+  }
+
+  async getNewHireCompletionByEmployee(employerUserId: string, employeeId: number): Promise<NewHireCompletion | undefined> {
+    const [completion] = await db.select().from(newHireCompletions)
+      .where(and(
+        eq(newHireCompletions.employerUserId, employerUserId),
+        eq(newHireCompletions.employeeId, employeeId)
+      ));
+    return completion;
+  }
+
+  async updateNewHireCompletion(id: number, updates: Partial<NewHireCompletion>): Promise<NewHireCompletion | undefined> {
+    const [updated] = await db.update(newHireCompletions)
+      .set(updates)
+      .where(eq(newHireCompletions.id, id))
+      .returning();
+    return updated;
   }
 }
 

@@ -573,6 +573,8 @@ export const trainingAssignments = pgTable("training_assignments", {
   status: text("status").notNull().default("assigned"), // 'assigned', 'in_progress', 'completed'
   progress: integer("progress").notNull().default(0),
   enrollmentUserId: text("enrollment_user_id"),
+  assignmentType: text("assignment_type").notNull().default("standard"), // 'standard', 'new_hire_onboarding'
+  deadline: timestamp("deadline"),
   assignedAt: timestamp("assigned_at").defaultNow(),
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
@@ -581,6 +583,21 @@ export const trainingAssignments = pgTable("training_assignments", {
 export const insertTrainingAssignmentSchema = createInsertSchema(trainingAssignments).omit({ id: true, assignedAt: true, startedAt: true, completedAt: true });
 export type TrainingAssignment = typeof trainingAssignments.$inferSelect;
 export type InsertTrainingAssignment = z.infer<typeof insertTrainingAssignmentSchema>;
+
+// New Hire Onboarding Completions (BrandNSwag QR + Points)
+export const newHireCompletions = pgTable("new_hire_completions", {
+  id: serial("id").primaryKey(),
+  employerUserId: text("employer_user_id").notNull(),
+  employeeId: integer("employee_id").notNull(),
+  qrCodeData: text("qr_code_data").notNull(),
+  pointsAwarded: integer("points_awarded").notNull().default(100),
+  hrNotified: boolean("hr_notified").notNull().default(false),
+  completedAt: timestamp("completed_at").defaultNow(),
+});
+
+export const insertNewHireCompletionSchema = createInsertSchema(newHireCompletions).omit({ id: true, completedAt: true });
+export type NewHireCompletion = typeof newHireCompletions.$inferSelect;
+export type InsertNewHireCompletion = z.infer<typeof insertNewHireCompletionSchema>;
 
 // Types for API communication
 export type CreateLeadRequest = InsertLead;

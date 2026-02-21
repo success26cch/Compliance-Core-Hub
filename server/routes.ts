@@ -2849,5 +2849,223 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  // ======================== NEW HIRE ONBOARDING ========================
+
+  // Assign all BrandNSwag new hire courses as a bundle with 24-hour deadline
+  app.post("/api/training-assignments/new-hire", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const { employeeIds } = req.body;
+
+    if (!employeeIds?.length) {
+      return res.status(400).json({ message: "Employee IDs are required" });
+    }
+
+    try {
+      const allCourses = await storage.getCourses();
+      const newHireCourses = allCourses.filter(c => c.category === "new_hire_safety");
+
+      if (newHireCourses.length === 0) {
+        return res.status(400).json({ message: "No new hire safety courses found. Please seed courses first." });
+      }
+
+      const crypto = await import("crypto");
+      const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+      const created: any[] = [];
+
+      for (const employeeId of employeeIds) {
+        const employee = await storage.getEmployeeById(employeeId, userId);
+        if (!employee) continue;
+
+        for (const course of newHireCourses) {
+          const existing = await storage.getTrainingAssignmentByEmployeeAndCourse(userId, employeeId, course.id);
+          if (existing) {
+            created.push(existing);
+            continue;
+          }
+
+          const accessToken = crypto.randomBytes(32).toString("hex");
+          const assignment = await storage.createTrainingAssignment({
+            employerUserId: userId,
+            employeeId,
+            courseId: course.id,
+            accessToken,
+            status: "assigned",
+            progress: 0,
+            assignmentType: "new_hire_onboarding",
+            deadline,
+          });
+          created.push(assignment);
+        }
+      }
+
+      res.json({ assignments: created, deadline: deadline.toISOString(), totalCourses: newHireCourses.length });
+    } catch (error: any) {
+      console.error("Error creating new hire onboarding assignments:", error);
+      res.status(500).json({ message: "Failed to create new hire onboarding assignments" });
+    }
+  });
+
+  // Check new hire onboarding completion status for an employee
+  app.get("/api/new-hire/status/:employeeId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const employeeId = parseInt(req.params.employeeId);
+
+    try {
+      const assignments = await storage.getNewHireAssignmentsByEmployee(userId, employeeId);
+      if (assignments.length === 0) {
+        return res.json({ status: "not_assigned", assignments: [], completion: null });
+      }
+
+      const totalCourses = assignments.length;
+      const completedCourses = assignments.filter(a => a.status === "completed").length;
+      const allCompleted = completedCourses === totalCourses;
+      const deadline = assignments[0]?.deadline;
+      const isOverdue = deadline ? new Date() > new Date(deadline) : false;
+
+      const completion = await storage.getNewHireCompletionByEmployee(userId, employeeId);
+
+      res.json({
+        status: allCompleted ? "completed" : isOverdue ? "overdue" : "in_progress",
+        assignments,
+        totalCourses,
+        completedCourses,
+        deadline,
+        isOverdue,
+        completion,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch new hire status" });
+    }
+  });
+
+  // Check and process new hire completion (called when a course is completed)
+  app.post("/api/new-hire/check-completion", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const { employeeId } = req.body;
+
+    if (!employeeId) return res.status(400).json({ message: "Employee ID is required" });
+
+    try {
+      const assignments = await storage.getNewHireAssignmentsByEmployee(userId, employeeId);
+      if (assignments.length === 0) {
+        return res.json({ completed: false, message: "No new hire assignments found" });
+      }
+
+      const allCompleted = assignments.every(a => a.status === "completed");
+      if (!allCompleted) {
+        const completedCount = assignments.filter(a => a.status === "completed").length;
+        return res.json({
+          completed: false,
+          completedCourses: completedCount,
+          totalCourses: assignments.length,
+        });
+      }
+
+      // Check if already completed
+      const existing = await storage.getNewHireCompletionByEmployee(userId, employeeId);
+      if (existing) {
+        return res.json({ completed: true, completion: existing, alreadyProcessed: true });
+      }
+
+      // Generate unique QR code data
+      const crypto = await import("crypto");
+      const qrCodeData = JSON.stringify({
+        type: "brandnswag_new_hire",
+        employeeId,
+        code: crypto.randomBytes(16).toString("hex"),
+        points: 100,
+        issuedAt: new Date().toISOString(),
+      });
+
+      // Create completion record
+      const completion = await storage.createNewHireCompletion({
+        employerUserId: userId,
+        employeeId,
+        qrCodeData,
+        pointsAwarded: 100,
+        hrNotified: false,
+      });
+
+      res.json({ completed: true, completion, newlyCompleted: true });
+    } catch (error: any) {
+      console.error("Error checking new hire completion:", error);
+      res.status(500).json({ message: "Failed to check completion" });
+    }
+  });
+
+  // Get all new hire completions for the employer
+  app.get("/api/new-hire/completions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+
+    try {
+      const completions = await storage.getNewHireCompletionsByEmployer(userId);
+      res.json(completions);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch completions" });
+    }
+  });
+
+  // Mark HR as notified for a completion
+  app.post("/api/new-hire/completions/:id/notify", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateNewHireCompletion(id, { hrNotified: true });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to update notification status" });
+    }
+  });
+
+  // Get new hire onboarding assignments for the employer dashboard
+  app.get("/api/training-assignments/new-hire", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+
+    try {
+      const allAssignments = await storage.getTrainingAssignmentsByEmployer(userId);
+      const newHireAssignments = allAssignments.filter(a => a.assignmentType === "new_hire_onboarding");
+
+      // Group by employee
+      const groupedByEmployee: Record<number, { employee?: any; assignments: any[]; deadline?: Date | null; allCompleted: boolean }> = {};
+
+      for (const assignment of newHireAssignments) {
+        if (!groupedByEmployee[assignment.employeeId]) {
+          const employee = await storage.getEmployeeById(assignment.employeeId, userId);
+          groupedByEmployee[assignment.employeeId] = {
+            employee,
+            assignments: [],
+            deadline: assignment.deadline,
+            allCompleted: true,
+          };
+        }
+        groupedByEmployee[assignment.employeeId].assignments.push(assignment);
+        if (assignment.status !== "completed") {
+          groupedByEmployee[assignment.employeeId].allCompleted = false;
+        }
+      }
+
+      const grouped = Object.entries(groupedByEmployee).map(([empId, data]) => ({
+        employeeId: parseInt(empId),
+        employee: data.employee,
+        assignments: data.assignments,
+        deadline: data.deadline,
+        allCompleted: data.allCompleted,
+        completedCount: data.assignments.filter((a: any) => a.status === "completed").length,
+        totalCount: data.assignments.length,
+      }));
+
+      res.json(grouped);
+    } catch (error: any) {
+      console.error("Error fetching new hire assignments:", error);
+      res.status(500).json({ message: "Failed to fetch new hire assignments" });
+    }
+  });
+
   return httpServer;
 }
