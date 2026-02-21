@@ -31,6 +31,12 @@ import {
   LinkIcon,
   ChevronDown,
   ChevronUp,
+  UserPlus,
+  Timer,
+  QrCode,
+  AlertTriangle,
+  Trophy,
+  Sparkles,
 } from "lucide-react";
 import type { Employee, Course, TrainingAssignment } from "@shared/schema";
 import logoUrl from "@assets/1_1770683748423.png";
@@ -56,6 +62,9 @@ export default function EmployerTraining() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [selectedEmployees, setSelectedEmployees] = useState<number[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
+  const [newHireDialogOpen, setNewHireDialogOpen] = useState(false);
+  const [selectedNewHireEmployees, setSelectedNewHireEmployees] = useState<number[]>([]);
+  const [activeTab, setActiveTab] = useState<"assignments" | "newhire">("assignments");
 
   const { data: assignments = [], isLoading: assignmentsLoading } = useQuery<EnrichedAssignment[]>({
     queryKey: ["/api/training-assignments"],
@@ -72,6 +81,56 @@ export default function EmployerTraining() {
   const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
   });
+
+  const { data: newHireGroups = [], isLoading: newHireLoading } = useQuery<any[]>({
+    queryKey: ["/api/training-assignments/new-hire"],
+  });
+
+  const newHireAssignMutation = useMutation({
+    mutationFn: async (body: { employeeIds: number[] }) => {
+      const res = await apiRequest("POST", "/api/training-assignments/new-hire", body);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-assignments/new-hire"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-assignments/stats"] });
+      setNewHireDialogOpen(false);
+      setSelectedNewHireEmployees([]);
+      toast({
+        title: "New Hire Onboarding Started",
+        description: `${data.totalCourses} safety courses assigned with a 24-hour deadline.`,
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to assign new hire onboarding.", variant: "destructive" });
+    },
+  });
+
+  const handleNewHireAssign = () => {
+    if (selectedNewHireEmployees.length === 0) {
+      toast({ title: "Selection Required", description: "Please select at least one employee.", variant: "destructive" });
+      return;
+    }
+    newHireAssignMutation.mutate({ employeeIds: selectedNewHireEmployees });
+  };
+
+  const toggleNewHireEmployee = (id: number) => {
+    setSelectedNewHireEmployees((prev) =>
+      prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]
+    );
+  };
+
+  const getTimeRemaining = (deadline: string | Date | null) => {
+    if (!deadline) return null;
+    const now = new Date();
+    const dl = new Date(deadline);
+    const diff = dl.getTime() - now.getTime();
+    if (diff <= 0) return { text: "Overdue", overdue: true };
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return { text: `${hours}h ${minutes}m remaining`, overdue: false };
+  };
 
   const assignMutation = useMutation({
     mutationFn: async (body: { employeeIds: number[]; courseIds: number[] }) => {
@@ -254,6 +313,246 @@ export default function EmployerTraining() {
           </Card>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-6" data-testid="tab-navigation">
+          <button
+            onClick={() => setActiveTab("assignments")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              activeTab === "assignments"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+            }`}
+            data-testid="tab-assignments"
+          >
+            <BookOpen className="w-4 h-4 inline mr-2" />
+            Course Assignments
+          </button>
+          <button
+            onClick={() => setActiveTab("newhire")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              activeTab === "newhire"
+                ? "bg-orange-600 text-white"
+                : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+            }`}
+            data-testid="tab-newhire"
+          >
+            <UserPlus className="w-4 h-4 inline mr-2" />
+            New Hire Onboarding
+            {newHireGroups.length > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 bg-orange-500/30 text-orange-300 text-xs rounded-full">
+                {newHireGroups.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* NEW HIRE ONBOARDING TAB */}
+        {activeTab === "newhire" && (
+          <div className="space-y-6">
+            <Card className="bg-gradient-to-r from-orange-900/30 to-amber-900/30 border-orange-700/40 p-5" data-testid="card-newhire-info">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 text-orange-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold text-white mb-1">BrandNSwag New Hire Safety Training</h2>
+                  <p className="text-sm text-gray-300 mb-3">
+                    Assign all 6 OSHA-focused safety courses as a bundle with a 24-hour completion deadline. Employees earn 100 BrandNSwag points and a unique QR reward code upon completion.
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                    <span className="flex items-center gap-1 bg-gray-800/60 px-2 py-1 rounded">
+                      <BookOpen className="w-3 h-3" /> 6 Courses
+                    </span>
+                    <span className="flex items-center gap-1 bg-gray-800/60 px-2 py-1 rounded">
+                      <Timer className="w-3 h-3" /> 24hr Deadline
+                    </span>
+                    <span className="flex items-center gap-1 bg-gray-800/60 px-2 py-1 rounded">
+                      <Trophy className="w-3 h-3" /> 100 Points
+                    </span>
+                    <span className="flex items-center gap-1 bg-gray-800/60 px-2 py-1 rounded">
+                      <QrCode className="w-3 h-3" /> QR Reward
+                    </span>
+                  </div>
+                </div>
+                <Dialog open={newHireDialogOpen} onOpenChange={setNewHireDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-orange-600 hover:bg-orange-700 gap-2 shrink-0" data-testid="button-assign-newhire">
+                      <UserPlus className="w-4 h-4" />
+                      Start Onboarding
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <UserPlus className="w-5 h-5 text-orange-400" />
+                        New Hire Safety Onboarding
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <p className="text-sm text-gray-500">
+                        Select new hires to assign all 6 BrandNSwag safety courses. Each employee gets a 24-hour deadline and earns 100 points + a QR reward upon completion.
+                      </p>
+                      <div>
+                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          Select New Hires ({selectedNewHireEmployees.length} selected)
+                        </h3>
+                        <div className="max-h-60 overflow-y-auto space-y-1 border border-gray-200 dark:border-gray-700 rounded-md p-2">
+                          {employees.length === 0 ? (
+                            <p className="text-sm text-gray-500 py-2 text-center">No employees found. Add employees first.</p>
+                          ) : (
+                            employees.map((emp) => {
+                              const alreadyAssigned = newHireGroups.some((g: any) => g.employeeId === emp.id);
+                              return (
+                                <label
+                                  key={emp.id}
+                                  className={`flex items-center gap-3 p-2 rounded cursor-pointer ${
+                                    alreadyAssigned ? "opacity-50" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  }`}
+                                  data-testid={`checkbox-newhire-${emp.id}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedNewHireEmployees.includes(emp.id)}
+                                    onChange={() => !alreadyAssigned && toggleNewHireEmployee(emp.id)}
+                                    disabled={alreadyAssigned}
+                                    className="w-4 h-4 rounded border-gray-300"
+                                  />
+                                  <span className="text-sm flex-1">
+                                    {emp.firstName} {emp.lastName}
+                                    {emp.department && <span className="text-gray-500 ml-1">({emp.department})</span>}
+                                  </span>
+                                  {alreadyAssigned && (
+                                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">Already Assigned</Badge>
+                                  )}
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full bg-orange-600 hover:bg-orange-700 gap-2"
+                        onClick={handleNewHireAssign}
+                        disabled={selectedNewHireEmployees.length === 0 || newHireAssignMutation.isPending}
+                        data-testid="button-submit-newhire"
+                      >
+                        {newHireAssignMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <UserPlus className="w-4 h-4" />
+                        )}
+                        {newHireAssignMutation.isPending
+                          ? "Assigning..."
+                          : `Start Onboarding for ${selectedNewHireEmployees.length} Employee(s)`}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </Card>
+
+            {/* New Hire Progress Cards */}
+            {newHireLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
+              </div>
+            ) : newHireGroups.length === 0 ? (
+              <Card className="bg-gray-800/60 border-gray-700 p-8 text-center" data-testid="card-newhire-empty">
+                <UserPlus className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">No New Hire Onboarding Active</h3>
+                <p className="text-gray-400 mb-4">
+                  Click "Start Onboarding" to assign the 6-course safety bundle to new employees.
+                </p>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {newHireGroups.map((group: any) => {
+                  const timeRemaining = getTimeRemaining(group.deadline);
+                  const progressPercent = group.totalCount > 0
+                    ? Math.round((group.completedCount / group.totalCount) * 100)
+                    : 0;
+
+                  return (
+                    <Card
+                      key={group.employeeId}
+                      className={`border p-5 ${
+                        group.allCompleted
+                          ? "bg-green-900/20 border-green-700/40"
+                          : timeRemaining?.overdue
+                          ? "bg-red-900/20 border-red-700/40"
+                          : "bg-gray-800/60 border-gray-700"
+                      }`}
+                      data-testid={`card-newhire-${group.employeeId}`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                            group.allCompleted
+                              ? "bg-green-500/20 text-green-400"
+                              : timeRemaining?.overdue
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-orange-500/20 text-orange-400"
+                          }`}>
+                            {group.employee
+                              ? `${group.employee.firstName?.[0] || ""}${group.employee.lastName?.[0] || ""}`
+                              : "?"}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white" data-testid={`text-newhire-name-${group.employeeId}`}>
+                              {group.employee
+                                ? `${group.employee.firstName} ${group.employee.lastName}`
+                                : `Employee #${group.employeeId}`}
+                            </p>
+                            {group.employee?.department && (
+                              <p className="text-xs text-gray-500">{group.employee.department}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {group.allCompleted ? (
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1" data-testid={`badge-newhire-complete-${group.employeeId}`}>
+                              <Trophy className="w-3 h-3" /> Completed - 100 pts
+                            </Badge>
+                          ) : timeRemaining?.overdue ? (
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 gap-1" data-testid={`badge-newhire-overdue-${group.employeeId}`}>
+                              <AlertTriangle className="w-3 h-3" /> {timeRemaining.text}
+                            </Badge>
+                          ) : timeRemaining ? (
+                            <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 gap-1" data-testid={`badge-newhire-timer-${group.employeeId}`}>
+                              <Timer className="w-3 h-3" /> {timeRemaining.text}
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              group.allCompleted
+                                ? "bg-green-500"
+                                : timeRemaining?.overdue
+                                ? "bg-red-500"
+                                : "bg-orange-500"
+                            }`}
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                        <span className="text-sm text-gray-400 whitespace-nowrap" data-testid={`text-newhire-progress-${group.employeeId}`}>
+                          {group.completedCount}/{group.totalCount} courses
+                        </span>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* COURSE ASSIGNMENTS TAB */}
+        {activeTab === "assignments" && (
+        <>
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="relative flex-1 min-w-[200px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -457,6 +756,8 @@ export default function EmployerTraining() {
               </table>
             </div>
           </Card>
+        )}
+        </>
         )}
 
         <div className="text-center mt-8">

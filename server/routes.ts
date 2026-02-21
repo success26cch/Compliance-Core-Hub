@@ -2690,6 +2690,8 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
         employeeUserId,
         employeeName: employee ? `${employee.firstName} ${employee.lastName}` : "Employee",
         token,
+        assignmentType: assignment.assignmentType,
+        deadline: assignment.deadline,
       });
     } catch (error: any) {
       console.error("Error redeeming training token:", error);
