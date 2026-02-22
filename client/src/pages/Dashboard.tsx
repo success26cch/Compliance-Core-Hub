@@ -371,9 +371,10 @@ export default function Dashboard() {
               src={coreyVideo}
               autoPlay
               playsInline
+              muted
               onEnded={() => setVideoEnded(true)}
-              className="w-40 h-auto rounded-lg"
-              style={{ background: 'transparent' }}
+              className="w-40 h-auto"
+              style={{ background: 'none' }}
               data-testid="video-corey-intro"
             />
             {videoEnded && (
