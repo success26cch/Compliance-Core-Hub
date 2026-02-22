@@ -53,6 +53,23 @@ export const insertQuestionUsageSchema = createInsertSchema(questionUsage).omit(
 export type QuestionUsage = typeof questionUsage.$inferSelect;
 export type InsertQuestionUsage = z.infer<typeof insertQuestionUsageSchema>;
 
+// Trial leads - tracks name/email for free trial usage (prevents abuse)
+export const trialLeads = pgTable("trial_leads", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  questionCount: integer("question_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTrialLeadSchema = createInsertSchema(trialLeads).omit({
+  id: true,
+  questionCount: true,
+  createdAt: true,
+});
+export type TrialLead = typeof trialLeads.$inferSelect;
+export type InsertTrialLead = z.infer<typeof insertTrialLeadSchema>;
+
 // Contact inquiries (retainer, general questions, etc.)
 export const contactInquiries = pgTable("contact_inquiries", {
   id: serial("id").primaryKey(),

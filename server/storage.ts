@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -14,6 +14,11 @@ export interface IStorage {
   // Question Usage
   getQuestionUsage(userId: string): Promise<QuestionUsage | undefined>;
   incrementQuestionCount(userId: string): Promise<QuestionUsage>;
+
+  // Trial Leads
+  getTrialLeadByEmail(email: string): Promise<TrialLead | undefined>;
+  createTrialLead(lead: InsertTrialLead): Promise<TrialLead>;
+  incrementTrialQuestionCount(email: string): Promise<TrialLead | undefined>;
 
   // Contact Inquiries
   createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry>;
@@ -211,6 +216,27 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(questionUsage).values({ userId, questionCount: 1 }).returning();
       return created;
     }
+  }
+
+  async getTrialLeadByEmail(email: string): Promise<TrialLead | undefined> {
+    const [lead] = await db.select().from(trialLeads).where(eq(trialLeads.email, email.toLowerCase()));
+    return lead;
+  }
+
+  async createTrialLead(lead: InsertTrialLead): Promise<TrialLead> {
+    const [newLead] = await db.insert(trialLeads).values({ ...lead, email: lead.email.toLowerCase() }).returning();
+    return newLead;
+  }
+
+  async incrementTrialQuestionCount(email: string): Promise<TrialLead | undefined> {
+    const existing = await this.getTrialLeadByEmail(email.toLowerCase());
+    if (!existing) return undefined;
+    const [updated] = await db
+      .update(trialLeads)
+      .set({ questionCount: existing.questionCount + 1 })
+      .where(eq(trialLeads.id, existing.id))
+      .returning();
+    return updated;
   }
 
   async createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry> {
