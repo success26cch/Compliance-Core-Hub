@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion } from "@shared/schema";
+import { leads, subscriptions, questionUsage, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -145,6 +145,21 @@ export interface IStorage {
   getNewHireCompletionsByEmployer(employerUserId: string): Promise<NewHireCompletion[]>;
   getNewHireCompletionByEmployee(employerUserId: string, employeeId: number): Promise<NewHireCompletion | undefined>;
   updateNewHireCompletion(id: number, updates: Partial<NewHireCompletion>): Promise<NewHireCompletion | undefined>;
+
+  // Corey Team Seats
+  getTeamByAdmin(adminUserId: string): Promise<CoreyTeam | undefined>;
+  getTeamMembership(userId: string): Promise<{ team: CoreyTeam; member: CoreyTeamMember } | undefined>;
+  createTeam(team: InsertCoreyTeam): Promise<CoreyTeam>;
+  updateTeamSeats(teamId: number, totalSeats: number): Promise<CoreyTeam | undefined>;
+  updateTeamSubscription(teamId: number, stripeSubscriptionId: string, stripeCustomerId: string, status: string): Promise<CoreyTeam | undefined>;
+  getTeamById(teamId: number): Promise<CoreyTeam | undefined>;
+  getTeamMembers(teamId: number): Promise<CoreyTeamMember[]>;
+  addTeamMember(member: InsertCoreyTeamMember): Promise<CoreyTeamMember>;
+  removeTeamMember(memberId: number, teamId: number): Promise<CoreyTeamMember | undefined>;
+  getTeamMemberByEmail(teamId: number, email: string): Promise<CoreyTeamMember | undefined>;
+  getTeamMemberByToken(inviteToken: string): Promise<CoreyTeamMember | undefined>;
+  activateTeamMember(memberId: number, userId: string): Promise<CoreyTeamMember | undefined>;
+  getActiveTeamMemberCount(teamId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -802,6 +817,115 @@ export class DatabaseStorage implements IStorage {
       .where(eq(newHireCompletions.id, id))
       .returning();
     return updated;
+  }
+
+  // Corey Team Seats
+  async getTeamByAdmin(adminUserId: string): Promise<CoreyTeam | undefined> {
+    const [team] = await db.select().from(coreyTeams).where(eq(coreyTeams.adminUserId, adminUserId));
+    return team;
+  }
+
+  async getTeamMembership(userId: string): Promise<{ team: CoreyTeam; member: CoreyTeamMember } | undefined> {
+    const adminTeam = await this.getTeamByAdmin(userId);
+    if (adminTeam && adminTeam.status === "active" && adminTeam.stripeSubscriptionId) {
+      const [adminMember] = await db.select().from(coreyTeamMembers)
+        .where(and(
+          eq(coreyTeamMembers.teamId, adminTeam.id),
+          eq(coreyTeamMembers.userId, userId),
+          eq(coreyTeamMembers.status, "active")
+        ));
+      if (adminMember) {
+        return { team: adminTeam, member: adminMember };
+      }
+      return { team: adminTeam, member: { id: 0, teamId: adminTeam.id, userId, email: "", name: null, role: "admin", status: "active", inviteToken: null, invitedAt: null, joinedAt: null } as CoreyTeamMember };
+    }
+    const memberRows = await db.select({ team: coreyTeams, member: coreyTeamMembers })
+      .from(coreyTeamMembers)
+      .innerJoin(coreyTeams, eq(coreyTeamMembers.teamId, coreyTeams.id))
+      .where(and(
+        eq(coreyTeamMembers.userId, userId),
+        eq(coreyTeamMembers.status, "active"),
+        eq(coreyTeams.status, "active"),
+        sql`${coreyTeams.stripeSubscriptionId} IS NOT NULL`
+      ));
+    if (memberRows.length > 0) {
+      return memberRows[0];
+    }
+    return undefined;
+  }
+
+  async createTeam(team: InsertCoreyTeam): Promise<CoreyTeam> {
+    const [created] = await db.insert(coreyTeams).values(team).returning();
+    return created;
+  }
+
+  async updateTeamSeats(teamId: number, totalSeats: number): Promise<CoreyTeam | undefined> {
+    const [updated] = await db.update(coreyTeams)
+      .set({ totalSeats, updatedAt: new Date() })
+      .where(eq(coreyTeams.id, teamId))
+      .returning();
+    return updated;
+  }
+
+  async updateTeamSubscription(teamId: number, stripeSubscriptionId: string, stripeCustomerId: string, status: string): Promise<CoreyTeam | undefined> {
+    const [updated] = await db.update(coreyTeams)
+      .set({ stripeSubscriptionId, stripeCustomerId, status, updatedAt: new Date() })
+      .where(eq(coreyTeams.id, teamId))
+      .returning();
+    return updated;
+  }
+
+  async getTeamById(teamId: number): Promise<CoreyTeam | undefined> {
+    const [team] = await db.select().from(coreyTeams).where(eq(coreyTeams.id, teamId));
+    return team;
+  }
+
+  async getTeamMembers(teamId: number): Promise<CoreyTeamMember[]> {
+    return db.select().from(coreyTeamMembers)
+      .where(eq(coreyTeamMembers.teamId, teamId))
+      .orderBy(coreyTeamMembers.invitedAt);
+  }
+
+  async addTeamMember(member: InsertCoreyTeamMember): Promise<CoreyTeamMember> {
+    const [created] = await db.insert(coreyTeamMembers).values(member).returning();
+    return created;
+  }
+
+  async removeTeamMember(memberId: number, teamId: number): Promise<CoreyTeamMember | undefined> {
+    const [updated] = await db.update(coreyTeamMembers)
+      .set({ status: "removed" })
+      .where(and(eq(coreyTeamMembers.id, memberId), eq(coreyTeamMembers.teamId, teamId)))
+      .returning();
+    return updated;
+  }
+
+  async getTeamMemberByEmail(teamId: number, email: string): Promise<CoreyTeamMember | undefined> {
+    const [member] = await db.select().from(coreyTeamMembers)
+      .where(and(eq(coreyTeamMembers.teamId, teamId), eq(coreyTeamMembers.email, email)));
+    return member;
+  }
+
+  async getTeamMemberByToken(inviteToken: string): Promise<CoreyTeamMember | undefined> {
+    const [member] = await db.select().from(coreyTeamMembers)
+      .where(eq(coreyTeamMembers.inviteToken, inviteToken));
+    return member;
+  }
+
+  async activateTeamMember(memberId: number, userId: string): Promise<CoreyTeamMember | undefined> {
+    const [updated] = await db.update(coreyTeamMembers)
+      .set({ userId, status: "active", joinedAt: new Date() })
+      .where(eq(coreyTeamMembers.id, memberId))
+      .returning();
+    return updated;
+  }
+
+  async getActiveTeamMemberCount(teamId: number): Promise<number> {
+    const result = await db.select({ count: count() }).from(coreyTeamMembers)
+      .where(and(
+        eq(coreyTeamMembers.teamId, teamId),
+        sql`${coreyTeamMembers.status} IN ('active', 'invited')`
+      ));
+    return result[0]?.count || 0;
   }
 }
 

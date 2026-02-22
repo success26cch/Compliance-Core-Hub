@@ -283,7 +283,7 @@ function CoreyApp() {
           </div>
           <div className="flex items-center gap-3">
             {usageData && !usageData.isPro && (
-              <Badge variant="secondary" className="bg-white/10 text-white/60 border-white/20 text-xs" data-testid="badge-corey-usage">
+              <Badge variant="secondary" className="bg-white/10 text-white/80 border-white/20 text-xs" data-testid="badge-corey-usage">
                 {usageData.questionCount}/{usageData.freeLimit} free
               </Badge>
             )}
@@ -305,7 +305,7 @@ function CoreyApp() {
               </Button>
             )}
             <Link href="/">
-              <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 text-xs" data-testid="link-cch-platform">
+              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 text-xs" data-testid="link-cch-platform">
                 CCH Platform
               </Button>
             </Link>
@@ -357,7 +357,7 @@ function CoreyApp() {
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-colors pr-8 ${
                         activeConversationId === conv.id
                           ? "bg-accent/20 text-accent font-medium"
-                          : "text-white/50 hover:bg-white/10 hover:text-white/70"
+                          : "text-white/70 hover:bg-white/10 hover:text-white/90"
                       }`}
                       data-testid={`button-conversation-${conv.id}`}
                     >
@@ -689,7 +689,7 @@ function CoreyChatInterface({
               variant="ghost"
               size="sm"
               onClick={handlePrintConversation}
-              className="text-white/50 hover:text-white hover:bg-white/10 gap-1.5 text-xs"
+              className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5 text-xs"
               data-testid="button-print-conversation"
             >
               <Printer className="w-3.5 h-3.5" /> Print
@@ -707,7 +707,7 @@ function CoreyChatInterface({
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 gap-1.5 text-xs" data-testid="button-share-menu">
+                <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5 text-xs" data-testid="button-share-menu">
                   <Share2 className="w-3.5 h-3.5" /> Share
                 </Button>
               </DropdownMenuTrigger>
@@ -735,7 +735,7 @@ function CoreyChatInterface({
           {documentTemplates && documentTemplates.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 gap-1.5 text-xs" data-testid="button-generate-doc-inline">
+                <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5 text-xs" data-testid="button-generate-doc-inline">
                   <FileText className="w-3.5 h-3.5" /> Generate Document
                 </Button>
               </DropdownMenuTrigger>
@@ -787,14 +787,14 @@ function CoreyChatInterface({
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center mx-auto mb-4">
                 <Bot className="w-8 h-8 text-accent/60" />
               </div>
-              <h3 className="text-white/50 font-medium mb-2">How can I help you today?</h3>
-              <p className="text-white/30 text-sm max-w-md mx-auto">Ask about OSHA recordability, DOT compliance, drug testing protocols, or any workplace safety question.</p>
+              <h3 className="text-white/80 font-medium mb-2">How can I help you today?</h3>
+              <p className="text-white/60 text-sm max-w-md mx-auto">Ask about OSHA recordability, DOT compliance, drug testing protocols, or any workplace safety question.</p>
               <div className="flex flex-wrap gap-2 justify-center mt-6">
                 {["Is this injury recordable?", "DOT physical requirements", "Random drug testing rules", "Respirator fit testing", "Write me a Drug & Alcohol Policy"].map((q) => (
                   <button
                     key={q}
                     onClick={() => setInput(q)}
-                    className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/50 text-xs hover:bg-white/10 hover:text-white/70 transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80 text-xs hover:bg-white/20 hover:text-white transition-colors"
                     data-testid={`button-suggestion-${q.replace(/\s+/g, '-').toLowerCase()}`}
                   >
                     {q}
@@ -816,9 +816,9 @@ function CoreyChatInterface({
                   rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-[85%] md:max-w-[75%]
                   ${msg.role === 'user'
                     ? 'bg-primary/80 text-white rounded-tr-sm'
-                    : 'bg-white/5 text-white/90 border border-white/10 rounded-tl-sm'}
+                    : 'bg-slate-800/80 text-white/95 border border-slate-700/50 rounded-tl-sm'}
                 `}>
-                  <div className="prose prose-sm prose-invert whitespace-pre-wrap">
+                  <div className="whitespace-pre-wrap break-words">
                     {msg.content || (isStreaming && idx === messages.length - 1 ? (
                       <span className="flex items-center gap-2 text-white/40">
                         <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />

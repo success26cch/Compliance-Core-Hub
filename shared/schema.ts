@@ -599,6 +599,49 @@ export const insertNewHireCompletionSchema = createInsertSchema(newHireCompletio
 export type NewHireCompletion = typeof newHireCompletions.$inferSelect;
 export type InsertNewHireCompletion = z.infer<typeof insertNewHireCompletionSchema>;
 
+// Corey Team Seats (multi-user team billing)
+export const coreyTeams = pgTable("corey_teams", {
+  id: serial("id").primaryKey(),
+  adminUserId: text("admin_user_id").notNull(),
+  companyName: text("company_name").notNull(),
+  totalSeats: integer("total_seats").notNull().default(1),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeCustomerId: text("stripe_customer_id"),
+  status: text("status").notNull().default("active"), // 'active', 'inactive', 'cancelled'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCoreyTeamSchema = createInsertSchema(coreyTeams).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type CoreyTeam = typeof coreyTeams.$inferSelect;
+export type InsertCoreyTeam = z.infer<typeof insertCoreyTeamSchema>;
+
+// Team Members (invited users within a team)
+export const coreyTeamMembers = pgTable("corey_team_members", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull(),
+  userId: text("user_id"), // null until invite is accepted and user signs in
+  email: text("email").notNull(),
+  name: text("name"),
+  role: text("role").notNull().default("member"), // 'admin', 'member'
+  status: text("status").notNull().default("invited"), // 'invited', 'active', 'removed'
+  inviteToken: text("invite_token"),
+  invitedAt: timestamp("invited_at").defaultNow(),
+  joinedAt: timestamp("joined_at"),
+});
+
+export const insertCoreyTeamMemberSchema = createInsertSchema(coreyTeamMembers).omit({
+  id: true,
+  invitedAt: true,
+  joinedAt: true,
+});
+export type CoreyTeamMember = typeof coreyTeamMembers.$inferSelect;
+export type InsertCoreyTeamMember = z.infer<typeof insertCoreyTeamMemberSchema>;
+
 // Types for API communication
 export type CreateLeadRequest = InsertLead;
 export type LeadResponse = Lead;

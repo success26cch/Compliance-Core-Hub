@@ -258,8 +258,17 @@ export function registerChatRoutes(app: Express): void {
       const isPro = sub?.status === "active";
       const userIsAdmin = isAdmin(req.user);
       
-      // Admins and Pro users bypass limits
-      if (!isPro && !userIsAdmin) {
+      let isTeamMember = false;
+      if (!isPro) {
+        const membership = await storage.getTeamMembership(userId);
+        if (membership) {
+          isTeamMember = true;
+        }
+      }
+      const hasAccess = isPro || userIsAdmin || isTeamMember;
+      
+      // Users with access bypass limits
+      if (!hasAccess) {
         const usage = await storage.getQuestionUsage(userId);
         if ((usage?.questionCount || 0) >= FREE_QUESTION_LIMIT) {
           return res.status(403).json({ 
@@ -271,8 +280,8 @@ export function registerChatRoutes(app: Express): void {
         }
       }
 
-      // Increment question count for non-pro, non-admin users
-      if (!isPro && !userIsAdmin) {
+      // Increment question count for users without access
+      if (!hasAccess) {
         await storage.incrementQuestionCount(userId);
       }
 

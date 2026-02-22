@@ -15,6 +15,7 @@ import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatShe
 import { generateClinicLetterDocx, getAvailableInjuryTypes } from "./generateClinicLetter";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
+import { randomUUID } from "crypto";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -206,11 +207,26 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
     const userId = (req.user as any).claims.sub; // Replit Auth ID
     const sub = await storage.getSubscription(userId);
+    const isPro = sub?.status === "active";
     
+    let teamMembership = null;
+    if (!isPro) {
+      const membership = await storage.getTeamMembership(userId);
+      if (membership) {
+        teamMembership = {
+          teamId: membership.team.id,
+          companyName: membership.team.companyName,
+          role: membership.member.role,
+          status: membership.team.status,
+        };
+      }
+    }
+
     res.json({
       status: sub?.status || "inactive",
       plan: sub?.plan,
-      isPro: sub?.status === "active",
+      isPro: isPro || !!teamMembership,
+      teamMembership,
     });
   });
 
@@ -3066,6 +3082,306 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     } catch (error: any) {
       console.error("Error fetching new hire assignments:", error);
       res.status(500).json({ message: "Failed to fetch new hire assignments" });
+    }
+  });
+
+  // Corey Team Seats Management
+  app.get("/api/team", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+
+    const adminTeam = await storage.getTeamByAdmin(userId);
+    if (adminTeam) {
+      const members = await storage.getTeamMembers(adminTeam.id);
+      return res.json({ team: adminTeam, members, role: "admin" });
+    }
+
+    const membership = await storage.getTeamMembership(userId);
+    if (membership) {
+      const members = await storage.getTeamMembers(membership.team.id);
+      return res.json({ team: membership.team, members, role: membership.member.role });
+    }
+
+    return res.json({ team: null, members: [], role: null });
+  });
+
+  app.post("/api/team", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+
+    const existing = await storage.getTeamByAdmin(userId);
+    if (existing) {
+      return res.status(400).json({ message: "You already have a team" });
+    }
+    const membership = await storage.getTeamMembership(userId);
+    if (membership) {
+      return res.status(400).json({ message: "You already belong to a team" });
+    }
+
+    const { companyName, totalSeats } = req.body;
+    if (!companyName || typeof companyName !== "string") {
+      return res.status(400).json({ message: "Company name is required" });
+    }
+    const seats = parseInt(totalSeats) || 1;
+    if (seats < 1) {
+      return res.status(400).json({ message: "Total seats must be at least 1" });
+    }
+
+    const team = await storage.createTeam({
+      adminUserId: userId,
+      companyName,
+      totalSeats: seats,
+      status: "active",
+    });
+
+    const userEmail = (req.user as any).claims.email || `admin-${userId}@team.local`;
+    const userName = (req.user as any).claims.name || (req.user as any).claims.preferred_username || null;
+    await storage.addTeamMember({
+      teamId: team.id,
+      userId,
+      email: userEmail,
+      name: userName,
+      role: "admin",
+      status: "active",
+    });
+
+    const members = await storage.getTeamMembers(team.id);
+    res.status(201).json({ team, members, role: "admin" });
+  });
+
+  app.post("/api/team/members", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+
+    const team = await storage.getTeamByAdmin(userId);
+    if (!team) {
+      return res.status(403).json({ message: "Only team admins can invite members" });
+    }
+
+    const { email, name } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const existingMember = await storage.getTeamMemberByEmail(team.id, email);
+    if (existingMember && existingMember.status !== "removed") {
+      return res.status(400).json({ message: "This email is already on the team" });
+    }
+
+    const activeCount = await storage.getActiveTeamMemberCount(team.id);
+    if (activeCount >= team.totalSeats) {
+      return res.status(400).json({ message: `Seat limit reached (${team.totalSeats} seats). Upgrade to add more members.` });
+    }
+
+    const inviteToken = randomUUID();
+    const member = await storage.addTeamMember({
+      teamId: team.id,
+      email,
+      name: name || null,
+      role: "member",
+      status: "invited",
+      inviteToken,
+    });
+
+    res.status(201).json(member);
+  });
+
+  app.delete("/api/team/members/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+
+    const team = await storage.getTeamByAdmin(userId);
+    if (!team) {
+      return res.status(403).json({ message: "Only team admins can remove members" });
+    }
+
+    const memberId = parseInt(req.params.id);
+    if (isNaN(memberId)) {
+      return res.status(400).json({ message: "Invalid member ID" });
+    }
+
+    const removed = await storage.removeTeamMember(memberId, team.id);
+    if (!removed) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.json({ success: true, member: removed });
+  });
+
+  app.patch("/api/team/seats", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+
+    const team = await storage.getTeamByAdmin(userId);
+    if (!team) {
+      return res.status(403).json({ message: "Only team admins can update seats" });
+    }
+
+    const { totalSeats } = req.body;
+    const seats = parseInt(totalSeats);
+    if (isNaN(seats) || seats < 1) {
+      return res.status(400).json({ message: "Total seats must be at least 1" });
+    }
+
+    const activeCount = await storage.getActiveTeamMemberCount(team.id);
+    if (seats < activeCount) {
+      return res.status(400).json({ message: `Cannot reduce below current member count (${activeCount})` });
+    }
+
+    const updated = await storage.updateTeamSeats(team.id, seats);
+    res.json(updated);
+  });
+
+  app.get("/api/team/join/:token", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const { token } = req.params;
+
+    const member = await storage.getTeamMemberByToken(token);
+    if (!member) {
+      return res.status(404).json({ message: "Invalid or expired invite token" });
+    }
+
+    if (member.status === "active") {
+      return res.status(400).json({ message: "This invite has already been accepted" });
+    }
+
+    if (member.status === "removed") {
+      return res.status(400).json({ message: "This invite has been revoked" });
+    }
+
+    const existingMembership = await storage.getTeamMembership(userId);
+    if (existingMembership) {
+      return res.status(400).json({ message: "You already belong to a team" });
+    }
+
+    const activated = await storage.activateTeamMember(member.id, userId);
+    res.json({ success: true, member: activated });
+  });
+
+  app.post("/api/team/checkout", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) {
+        return res.status(404).json({ message: "No team found. Create a team first." });
+      }
+
+      const userEmail = (req.user as any).claims.email || "";
+      const sub = await storage.getSubscription(userId);
+      let customerId = sub?.stripeCustomerId || team.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripeService.createCustomer(userEmail, userId);
+        customerId = customer.id;
+        await storage.upsertSubscription({
+          userId,
+          status: sub?.status || "inactive",
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: sub?.stripeSubscriptionId || null,
+          plan: sub?.plan || null,
+        });
+      }
+
+      const products = await stripeService.listProductsWithPrices();
+      const coreyProduct = products.find((p: any) => 
+        p.name?.toLowerCase().includes('unlimited safety') || 
+        p.name?.toLowerCase().includes('corey') ||
+        p.name?.toLowerCase().includes('pro')
+      );
+
+      if (!coreyProduct || !coreyProduct.prices?.length) {
+        return res.status(400).json({ message: "Corey subscription product not found in Stripe. Please configure it first." });
+      }
+
+      const monthlyPrice = coreyProduct.prices.find((p: any) => p.recurring?.interval === 'month') || coreyProduct.prices[0];
+
+      const stripe = (await import('./stripeClient')).getUncachableStripeClient;
+      const stripeClient = await stripe();
+      const session = await stripeClient.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{ price: monthlyPrice.id, quantity: team.totalSeats }],
+        mode: 'subscription',
+        success_url: `${req.protocol}://${req.get("host")}/settings?team_checkout=success`,
+        cancel_url: `${req.protocol}://${req.get("host")}/settings?team_checkout=cancelled`,
+        metadata: {
+          teamId: team.id.toString(),
+          type: 'team_subscription',
+        },
+        subscription_data: {
+          metadata: {
+            teamId: team.id.toString(),
+            type: 'team_subscription',
+          },
+        },
+      });
+
+      res.json({ url: session.url, sessionId: session.id });
+    } catch (error: any) {
+      console.error("Team checkout error:", error);
+      res.status(500).json({ message: error.message || "Failed to create team checkout session" });
+    }
+  });
+
+  app.post("/api/team/activate", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) {
+        return res.status(404).json({ message: "No team found" });
+      }
+
+      if (team.stripeSubscriptionId) {
+        return res.json({ success: true, message: "Team already activated" });
+      }
+
+      const stripe = (await import('./stripeClient')).getUncachableStripeClient;
+      const stripeClient = await stripe();
+
+      const sub = await storage.getSubscription(userId);
+      const customerId = sub?.stripeCustomerId || team.stripeCustomerId;
+      if (!customerId) {
+        return res.status(400).json({ message: "No Stripe customer found" });
+      }
+
+      const subscriptions = await stripeClient.subscriptions.list({
+        customer: customerId,
+        status: 'active',
+        limit: 10,
+      });
+
+      const teamSub = subscriptions.data.find((s: any) => 
+        s.metadata?.teamId === team.id.toString() || s.metadata?.type === 'team_subscription'
+      );
+
+      if (teamSub) {
+        await storage.updateTeamSubscription(team.id, teamSub.id, customerId, 'active');
+        res.json({ success: true, message: "Team subscription activated" });
+      } else {
+        res.status(400).json({ message: "No active team subscription found. Please complete checkout first." });
+      }
+    } catch (error: any) {
+      console.error("Team activate error:", error);
+      res.status(500).json({ message: error.message || "Failed to activate team" });
     }
   });
 
