@@ -22,7 +22,9 @@ function stripMarkdown(text: string): string {
     .replace(/^---+$/gm, '')
     .replace(/^===+$/gm, '')
     .replace(/^\s*[-*+]\s+/gm, '- ')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[☐☑☒□■◻◼◽◾▢▣✓✗✘⬜⬛🔲🔳✅❎]/g, '[ ]')
+    .replace(/&\s+(?=[A-Z])/g, '[ ] ');
 }
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";

@@ -35,7 +35,9 @@ function stripMarkdown(text: string): string {
     .replace(/^---+$/gm, '')
     .replace(/^===+$/gm, '')
     .replace(/^\s*[-*+]\s+/gm, '- ')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[☐☑☒□■◻◼◽◾▢▣✓✗✘⬜⬛🔲🔳✅❎]/g, '[ ]')
+    .replace(/&\s+(?=[A-Z])/g, '[ ] ');
 }
 
 export default function CoreyStandalone() {
