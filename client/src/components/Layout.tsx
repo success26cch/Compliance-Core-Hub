@@ -19,7 +19,9 @@ import {
   Bell,
   Users,
   QrCode,
-  MessageSquare
+  MessageSquare,
+  ClipboardCheck,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -43,6 +45,8 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/team-seats", label: "Team Seats", icon: Users },
     { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
+    { href: "/compliance-checklists", label: "Compliance Checklists", icon: FileText },
+    { href: "/audit-prep", label: "Audit Prep Tools", icon: ClipboardCheck },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
     { href: "/employee-passport", label: "Medical Passport", icon: QrCode },
     { href: "/contact", label: "Contact Us", icon: MessageSquare },

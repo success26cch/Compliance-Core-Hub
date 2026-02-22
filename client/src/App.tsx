@@ -39,6 +39,8 @@ import TeamSeats from "@/pages/TeamSeats";
 import About from "@/pages/About";
 import CompanyProfile from "@/pages/CompanyProfile";
 import GetStarted from "@/pages/GetStarted";
+import ComplianceChecklists from "@/pages/ComplianceChecklists";
+import AuditPrep from "@/pages/AuditPrep";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -89,6 +91,8 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/company-profile" component={CompanyProfile} />
       <Route path="/get-started" component={GetStarted} />
+      <Route path="/compliance-checklists" component={ComplianceChecklists} />
+      <Route path="/audit-prep" component={AuditPrep} />
       <Route component={NotFound} />
     </Switch>
   );

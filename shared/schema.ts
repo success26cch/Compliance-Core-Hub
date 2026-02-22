@@ -282,6 +282,23 @@ export const insertAuditReadinessSchema = createInsertSchema(auditReadiness).omi
 export type AuditReadiness = typeof auditReadiness.$inferSelect;
 export type InsertAuditReadiness = z.infer<typeof insertAuditReadinessSchema>;
 
+// Audit Checklist Items (per-user completion tracking)
+export const auditChecklistItems = pgTable("audit_checklist_items", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  category: text("category").notNull(), // 'osha', 'dot', 'iso_9001', 'iso_14001', 'iso_45001'
+  itemKey: text("item_key").notNull(), // unique identifier for the checklist item within category
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertAuditChecklistItemSchema = createInsertSchema(auditChecklistItems).omit({
+  id: true,
+  completedAt: true,
+});
+export type AuditChecklistItem = typeof auditChecklistItems.$inferSelect;
+export type InsertAuditChecklistItem = z.infer<typeof insertAuditChecklistItemSchema>;
+
 // Company Profile
 export const companyProfiles = pgTable("company_profiles", {
   id: serial("id").primaryKey(),

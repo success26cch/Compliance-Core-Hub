@@ -723,6 +723,117 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  // Audit Prep Tools API routes
+  app.get("/api/audit-checklist/:category", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { category } = req.params;
+      const items = await storage.getAuditChecklistItems(userId, category);
+      res.json(items);
+    } catch (error: any) {
+      console.error('Error fetching audit checklist:', error);
+      res.status(500).json({ message: "Failed to fetch checklist" });
+    }
+  });
+
+  app.post("/api/audit-checklist/toggle", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { category, itemKey, totalItems } = req.body;
+      if (!category || !itemKey) {
+        return res.status(400).json({ message: "Category and itemKey are required" });
+      }
+      const item = await storage.toggleAuditChecklistItem(userId, category, itemKey);
+      
+      const allItems = await storage.getAuditChecklistItems(userId, category);
+      const completedCount = allItems.filter(i => i.completed).length;
+      await storage.updateAuditReadiness(userId, category, completedCount, totalItems || allItems.length);
+      
+      res.json(item);
+    } catch (error: any) {
+      console.error('Error toggling checklist item:', error);
+      res.status(500).json({ message: "Failed to toggle item" });
+    }
+  });
+
+  app.get("/api/audit-readiness", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const readiness = await storage.getAuditReadinessByUser(userId);
+      res.json(readiness);
+    } catch (error: any) {
+      console.error('Error fetching audit readiness:', error);
+      res.status(500).json({ message: "Failed to fetch audit readiness" });
+    }
+  });
+
+  app.get("/api/audit-prep/pdf-summary", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const readiness = await storage.getAuditReadinessByUser(userId);
+      
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ size: 'LETTER', margin: 40 });
+      
+      const primaryColor = '#1e3a5f';
+      const pageWidth = 612;
+      const margin = 40;
+      const contentWidth = pageWidth - (margin * 2);
+      
+      doc.rect(0, 0, pageWidth, 70).fill(primaryColor);
+      doc.fillColor('white').fontSize(20).font('Helvetica-Bold')
+        .text('AUDIT READINESS SUMMARY', margin, 15, { align: 'center', width: contentWidth });
+      doc.fontSize(11).font('Helvetica')
+        .text('Core Compliance Hub — Audit Prep Tools', margin, 40, { align: 'center', width: contentWidth });
+      doc.fontSize(8).font('Helvetica-Oblique')
+        .text(`Generated: ${new Date().toLocaleDateString()}`, margin, 54, { align: 'center', width: contentWidth });
+      
+      let y = 90;
+      
+      const categoryLabels: Record<string, string> = {
+        'osha': 'OSHA Compliance',
+        'dot': 'DOT Compliance',
+        'iso_9001': 'ISO 9001 — Quality Management',
+        'iso_14001': 'ISO 14001 — Environmental Management',
+        'iso_45001': 'ISO 45001 — OH&S Management',
+      };
+      
+      if (readiness.length === 0) {
+        doc.fillColor('#666').fontSize(12).font('Helvetica')
+          .text('No audit preparation data recorded yet. Start checking off items in the Audit Prep Tools to build your readiness report.', margin, y, { width: contentWidth });
+      } else {
+        readiness.forEach(r => {
+          const pct = r.totalItems ? Math.round((r.completedItems! / r.totalItems!) * 100) : 0;
+          const label = categoryLabels[r.category] || r.category;
+          
+          doc.fillColor(primaryColor).fontSize(12).font('Helvetica-Bold').text(label, margin, y);
+          y += 18;
+          doc.fillColor('#333').fontSize(10).font('Helvetica')
+            .text(`Completed: ${r.completedItems} / ${r.totalItems} items (${pct}%)`, margin + 10, y);
+          y += 14;
+          
+          doc.rect(margin + 10, y, contentWidth - 20, 12).fill('#e5e7eb');
+          doc.rect(margin + 10, y, Math.max(1, (contentWidth - 20) * (pct / 100)), 12).fill(pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444');
+          doc.fillColor('white').fontSize(7).font('Helvetica-Bold')
+            .text(`${pct}%`, margin + 12, y + 2);
+          y += 24;
+        });
+      }
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="Audit-Readiness-Summary.pdf"');
+      doc.pipe(res);
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generating audit PDF:', error);
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
   app.get("/api/clinic-letter/injury-types", async (_req, res) => {
     try {
       res.json(getAvailableInjuryTypes());

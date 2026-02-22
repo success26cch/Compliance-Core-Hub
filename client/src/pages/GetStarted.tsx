@@ -115,8 +115,8 @@ export default function GetStarted() {
                   {[
                     "Everything in Safety Starter",
                     "Unlimited Corey Interactions",
-                    "PDF Compliance Checklists",
-                    "Audit Prep Tools",
+                    "Compliance Checklist Library (downloadable PDFs)",
+                    "Interactive Audit Prep Tools with progress tracking",
                     "DOT physical & drug testing guidance",
                     "Workers' comp documentation help",
                     "Custom compliance reports",

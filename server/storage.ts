@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -282,6 +282,50 @@ export class DatabaseStorage implements IStorage {
     const topPages = Array.from(pageMap.entries()).map(([page, count]) => ({ page, count })).sort((a, b) => b.count - a.count).slice(0, 10);
 
     return { totalVisits, todayVisits, last30Days, topPages };
+  }
+
+  async getAuditChecklistItems(userId: string, category: string): Promise<AuditChecklistItem[]> {
+    return await db.select().from(auditChecklistItems)
+      .where(and(eq(auditChecklistItems.userId, userId), eq(auditChecklistItems.category, category)));
+  }
+
+  async toggleAuditChecklistItem(userId: string, category: string, itemKey: string): Promise<AuditChecklistItem> {
+    const [existing] = await db.select().from(auditChecklistItems)
+      .where(and(
+        eq(auditChecklistItems.userId, userId),
+        eq(auditChecklistItems.category, category),
+        eq(auditChecklistItems.itemKey, itemKey)
+      ));
+
+    if (existing) {
+      const newCompleted = !existing.completed;
+      const [updated] = await db.update(auditChecklistItems)
+        .set({ completed: newCompleted, completedAt: newCompleted ? new Date() : null })
+        .where(eq(auditChecklistItems.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(auditChecklistItems)
+        .values({ userId, category, itemKey, completed: true, completedAt: new Date() })
+        .returning();
+      return created;
+    }
+  }
+
+  async getAuditReadinessByUser(userId: string): Promise<AuditReadiness[]> {
+    return await db.select().from(auditReadiness).where(eq(auditReadiness.userId, userId));
+  }
+
+  async updateAuditReadiness(userId: string, category: string, completedItems: number, totalItems: number): Promise<void> {
+    const [existing] = await db.select().from(auditReadiness)
+      .where(and(eq(auditReadiness.userId, userId), eq(auditReadiness.category, category)));
+    if (existing) {
+      await db.update(auditReadiness)
+        .set({ completedItems, totalItems, lastUpdated: new Date() })
+        .where(eq(auditReadiness.id, existing.id));
+    } else {
+      await db.insert(auditReadiness).values({ userId, category, completedItems, totalItems });
+    }
   }
 
   async createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry> {
