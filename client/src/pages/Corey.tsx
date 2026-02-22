@@ -344,7 +344,7 @@ function CoreyApp() {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <div className="p-3 border-b border-white/10">
-            <Button onClick={handleNewChat} variant="outline" className="w-full justify-start gap-2 border-white/20 text-white/70 hover:text-white hover:bg-white/10" data-testid="button-new-chat">
+            <Button onClick={handleNewChat} variant="outline" className="w-full justify-start gap-2 border-slate-500 bg-slate-800 text-white hover:bg-slate-700" data-testid="button-new-chat">
               <Plus className="w-4 h-4" /> New Question
             </Button>
           </div>
