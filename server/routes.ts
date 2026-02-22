@@ -3318,8 +3318,8 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
         payment_method_types: ['card'],
         line_items: [{ price: monthlyPrice.id, quantity: team.totalSeats }],
         mode: 'subscription',
-        success_url: `${req.protocol}://${req.get("host")}/settings?team_checkout=success`,
-        cancel_url: `${req.protocol}://${req.get("host")}/settings?team_checkout=cancelled`,
+        success_url: `${req.protocol}://${req.get("host")}/team-seats?team_checkout=success`,
+        cancel_url: `${req.protocol}://${req.get("host")}/team-seats?team_checkout=cancelled`,
         metadata: {
           teamId: team.id.toString(),
           type: 'team_subscription',

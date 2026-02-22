@@ -1435,7 +1435,6 @@ export default function Settings() {
           </CardFooter>
         </Card>
 
-        <TeamManagement />
       </div>
     </ProtectedLayout>
   );
