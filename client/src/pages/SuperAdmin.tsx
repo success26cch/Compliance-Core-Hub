@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Users, TrendingUp, AlertTriangle, Download, Mail, Building2, UserCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { DollarSign, Users, TrendingUp, AlertTriangle, Download, Mail, Building2, UserCheck, Clock, CheckCircle2, XCircle, Bot, MessageSquare } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { apiRequest } from "@/lib/queryClient";
 import { Redirect } from "wouter";
@@ -50,6 +50,14 @@ type Lead = {
   id: number;
   name: string;
   email: string;
+  createdAt: string | null;
+};
+
+type TrialLead = {
+  id: number;
+  name: string;
+  email: string;
+  questionCount: number;
   createdAt: string | null;
 };
 

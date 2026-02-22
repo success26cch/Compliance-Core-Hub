@@ -1652,6 +1652,39 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  // Get all trial leads (Ask Corey trials)
+  app.get("/api/superadmin/trial-leads", requireSuperadmin, async (req, res) => {
+    try {
+      const allTrialLeads = await storage.getAllTrialLeads();
+      res.json(allTrialLeads);
+    } catch (error: any) {
+      console.error('Error fetching trial leads:', error);
+      res.status(500).json({ message: "Failed to fetch trial leads" });
+    }
+  });
+
+  // Export trial leads as CSV
+  app.get("/api/superadmin/trial-leads/export", requireSuperadmin, async (req, res) => {
+    try {
+      const allTrialLeads = await storage.getAllTrialLeads();
+      const headers = ['ID', 'Name', 'Email', 'Questions Asked', 'Created At'];
+      const rows = allTrialLeads.map(lead => [
+        lead.id,
+        `"${(lead.name || '').replace(/"/g, '""')}"`,
+        `"${(lead.email || '').replace(/"/g, '""')}"`,
+        lead.questionCount,
+        lead.createdAt ? new Date(lead.createdAt).toISOString() : ''
+      ].join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="trial-leads-export.csv"');
+      res.send(csv);
+    } catch (error: any) {
+      console.error('Error exporting trial leads:', error);
+      res.status(500).json({ message: "Failed to export trial leads" });
+    }
+  });
+
   // Update inquiry status (for retainer queue)
   app.patch("/api/superadmin/inquiries/:id/status", requireSuperadmin, async (req, res) => {
     try {

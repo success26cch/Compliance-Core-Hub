@@ -17,6 +17,7 @@ export interface IStorage {
 
   // Trial Leads
   getTrialLeadByEmail(email: string): Promise<TrialLead | undefined>;
+  getAllTrialLeads(): Promise<TrialLead[]>;
   createTrialLead(lead: InsertTrialLead): Promise<TrialLead>;
   incrementTrialQuestionCount(email: string): Promise<TrialLead | undefined>;
 
@@ -221,6 +222,10 @@ export class DatabaseStorage implements IStorage {
   async getTrialLeadByEmail(email: string): Promise<TrialLead | undefined> {
     const [lead] = await db.select().from(trialLeads).where(eq(trialLeads.email, email.toLowerCase()));
     return lead;
+  }
+
+  async getAllTrialLeads(): Promise<TrialLead[]> {
+    return db.select().from(trialLeads).orderBy(desc(trialLeads.createdAt));
   }
 
   async createTrialLead(lead: InsertTrialLead): Promise<TrialLead> {
