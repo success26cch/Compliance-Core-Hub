@@ -966,6 +966,13 @@ function CoreyChatInterface({
                         <><Volume2 className="w-3 h-3" /> Listen</>
                       )}
                     </button>
+                    <button
+                      onClick={handleDownloadDocument}
+                      className="text-white/60 hover:text-white flex items-center gap-1 text-xs"
+                      data-testid={`button-pdf-msg-${idx}`}
+                    >
+                      <FileDown className="w-3 h-3" /> PDF
+                    </button>
                   </div>
                 )}
               </div>
