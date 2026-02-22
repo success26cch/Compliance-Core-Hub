@@ -27,10 +27,14 @@ function isAdmin(user: any): boolean {
 }
 
 export function registerChatRoutes(app: Express): void {
-  // Get all conversations
+  // Get all conversations (auth required - user-scoped)
   app.get("/api/conversations", async (req: Request, res: Response) => {
     try {
-      const conversations = await chatStorage.getAllConversations();
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required. Each Corey subscription is personal and cannot be shared." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const conversations = await chatStorage.getAllConversations(userId);
       res.json(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -38,11 +42,15 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
-  // Get single conversation with messages
+  // Get single conversation with messages (auth required - user-scoped)
   app.get("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
-      const conversation = await chatStorage.getConversation(id);
+      const conversation = await chatStorage.getConversation(id, userId);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
       }
@@ -54,11 +62,15 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
-  // Create new conversation
+  // Create new conversation (auth required - user-scoped)
   app.post("/api/conversations", async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
       const { title } = req.body;
-      const conversation = await chatStorage.createConversation(title || "New Chat");
+      const conversation = await chatStorage.createConversation(title || "New Chat", userId);
       res.status(201).json(conversation);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -66,15 +78,19 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
-  // Rename conversation
+  // Rename conversation (auth required - user-scoped)
   app.patch("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
       const { title } = req.body;
       if (!title || typeof title !== "string") {
         return res.status(400).json({ error: "Title is required" });
       }
-      await chatStorage.updateConversationTitle(id, title);
+      await chatStorage.updateConversationTitle(id, title, userId);
       res.json({ success: true });
     } catch (error) {
       console.error("Error renaming conversation:", error);
@@ -82,11 +98,15 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
-  // Delete conversation
+  // Delete conversation (auth required - user-scoped)
   app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
-      await chatStorage.deleteConversation(id);
+      await chatStorage.deleteConversation(id, userId);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting conversation:", error);
@@ -223,10 +243,17 @@ export function registerChatRoutes(app: Express): void {
 
       // Check authentication and usage limits
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Authentication required. Each Corey subscription is personal." });
       }
       
       const userId = (req.user as any).claims.sub;
+      
+      // Verify this conversation belongs to the authenticated user
+      const conversation = await chatStorage.getConversation(conversationId, userId);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      
       const sub = await storage.getSubscription(userId);
       const isPro = sub?.status === "active";
       const userIsAdmin = isAdmin(req.user);
