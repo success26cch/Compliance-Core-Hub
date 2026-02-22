@@ -27,6 +27,8 @@ async function requirePlatformAccess(req: any, res: any): Promise<boolean> {
     return false;
   }
   const userId = (req.user as any).claims.sub;
+  const user = await storage.getUserById(userId);
+  if (user?.isSuperadmin) return true;
   const sub = await storage.getSubscription(userId);
   const hasPlatform = sub?.status === 'active' && 
     (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise');
@@ -223,8 +225,10 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
     const userId = (req.user as any).claims.sub; // Replit Auth ID
     const sub = await storage.getSubscription(userId);
+    const user = await storage.getUserById(userId);
+    const isAdmin = user?.isSuperadmin === true;
     const isPro = sub?.status === "active";
-    const hasPlatform = isPro && (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise');
+    const hasPlatform = isAdmin || (isPro && (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise'));
     
     let teamMembership = null;
     if (!isPro) {
@@ -242,8 +246,9 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     res.json({
       status: sub?.status || "inactive",
       plan: sub?.plan,
-      isPro: isPro || !!teamMembership,
-      hasPlatform: hasPlatform || false,
+      isPro: isPro || isAdmin || !!teamMembership,
+      hasPlatform,
+      isAdmin,
       teamMembership,
     });
   });
