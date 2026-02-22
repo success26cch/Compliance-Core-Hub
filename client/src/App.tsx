@@ -38,6 +38,7 @@ import CoreyStandalone from "@/pages/Corey";
 import TeamSeats from "@/pages/TeamSeats";
 import About from "@/pages/About";
 import CompanyProfile from "@/pages/CompanyProfile";
+import GetStarted from "@/pages/GetStarted";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -87,6 +88,7 @@ function Router() {
       <Route path="/team-seats" component={TeamSeats} />
       <Route path="/about" component={About} />
       <Route path="/company-profile" component={CompanyProfile} />
+      <Route path="/get-started" component={GetStarted} />
       <Route component={NotFound} />
     </Switch>
   );

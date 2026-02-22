@@ -491,11 +491,11 @@ export default function Landing() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+              <Link href="/get-started">
                 <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-hero-get-started">
                   Get Started Free
                 </Button>
-              </a>
+              </Link>
               <a href="#features">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto" data-testid="button-hero-see-features">
                   See Features
@@ -957,7 +957,7 @@ export default function Landing() {
               ]}
               bestFor="Small teams or one-off compliance checks. No credit card required."
               buttonText="Get Started"
-              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+              buttonHref="/get-started"
             />
             <PricingCard 
               tier="Unlimited Safety"
@@ -976,7 +976,7 @@ export default function Landing() {
               ]}
               bestFor="Safety Managers, growing companies, and large fleets. All self-service — no consulting time required."
               buttonText="Go Unlimited"
-              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+              buttonHref="/get-started"
               highlighted
               productId="cch-unlimited-safety"
               onAddToCart={handleAddToCart}
@@ -1040,7 +1040,7 @@ export default function Landing() {
               features={["CCH + ACSI Combined", "Full Health, Safety & ISO suite", "Audit Readiness Dashboard", "Up to 50 employees included", "+$2/employee beyond 50", "Priority expert support"]}
               bestFor="Mid-sized firms with high compliance risk."
               buttonText="Enterprise Bundle"
-              buttonHref={isAuthenticated ? "/dashboard" : "/api/login"}
+              buttonHref="/get-started"
               productId="integrated-enterprise"
               onAddToCart={handleAddToCart}
             />
@@ -1684,12 +1684,12 @@ export default function Landing() {
             Join hundreds of companies using Core Compliance Hub to protect their employees, reduce fines, and stay audit-ready. Start free today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+            <Link href="/get-started">
               <Button size="lg" variant="secondary" className="px-10 text-lg font-semibold" data-testid="button-cta-get-started">
                 Get Started Free
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-            </a>
+            </Link>
             <Link href="/contact">
               <Button size="lg" variant="outline" className="px-10 text-lg" data-testid="button-cta-contact-us">
                 <MessageSquare className="w-5 h-5 mr-2" />
