@@ -373,8 +373,7 @@ export default function Dashboard() {
               playsInline
               muted
               onEnded={() => setVideoEnded(true)}
-              className="w-40 h-auto"
-              style={{ background: 'none' }}
+              className="w-40 h-auto mix-blend-multiply"
               data-testid="video-corey-intro"
             />
             {videoEnded && (
