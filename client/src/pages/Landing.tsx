@@ -813,29 +813,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Trust & Statistics Banner */}
-      <section className="py-12 bg-primary text-primary-foreground">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">10,000+</div>
-              <div className="text-primary-foreground/70 text-sm">Compliance Questions Answered</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">$2.5M+</div>
-              <div className="text-primary-foreground/70 text-sm">In Potential Fines Prevented</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">500+</div>
-              <div className="text-primary-foreground/70 text-sm">Companies Protected</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">98%</div>
-              <div className="text-primary-foreground/70 text-sm">Customer Satisfaction</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Spanish Bilingual Medical Assistant */}
       <BilingualAssistant />

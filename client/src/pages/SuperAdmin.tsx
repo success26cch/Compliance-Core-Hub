@@ -103,6 +103,11 @@ export default function SuperAdmin() {
     enabled: checkData?.isSuperadmin === true,
   });
 
+  const { data: trialLeads, isLoading: trialLeadsLoading } = useQuery<TrialLead[]>({
+    queryKey: ['/api/superadmin/trial-leads'],
+    enabled: checkData?.isSuperadmin === true,
+  });
+
   const updateInquiryStatus = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       return apiRequest('PATCH', `/api/superadmin/inquiries/${id}/status`, { status });
@@ -214,6 +219,13 @@ export default function SuperAdmin() {
           <TabsTrigger value="leads" data-testid="tab-leads">
             <Mail className="w-4 h-4 mr-2" />
             Leads
+          </TabsTrigger>
+          <TabsTrigger value="trial-leads" data-testid="tab-trial-leads">
+            <Bot className="w-4 h-4 mr-2" />
+            Ask Corey Trials
+            {trialLeads && trialLeads.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{trialLeads.length}</Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -447,6 +459,72 @@ export default function SuperAdmin() {
               {leads && leads.length > 0 && (
                 <div className="mt-4 text-sm text-muted-foreground">
                   Total leads: {leads.length}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Ask Corey Trials Tab */}
+        <TabsContent value="trial-leads">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-accent" />
+                    Ask Corey Trial Users
+                  </CardTitle>
+                  <CardDescription>People who tried Ask Corey before signing up</CardDescription>
+                </div>
+                <Button onClick={() => window.open('/api/superadmin/trial-leads/export', '_blank')} data-testid="button-export-trial-leads">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {trialLeadsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="text-center">Questions Asked</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {trialLeads?.map((lead) => (
+                      <TableRow key={lead.id} data-testid={`row-trial-lead-${lead.id}`}>
+                        <TableCell className="font-medium">{lead.name}</TableCell>
+                        <TableCell>{lead.email}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={lead.questionCount >= 3 ? "destructive" : "secondary"}>
+                            <MessageSquare className="w-3 h-3 mr-1" />
+                            {lead.questionCount}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(lead.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {(!trialLeads || trialLeads.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          No trial users yet
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+              {trialLeads && trialLeads.length > 0 && (
+                <div className="mt-4 text-sm text-muted-foreground">
+                  Total trial users: {trialLeads.length}
                 </div>
               )}
             </CardContent>
