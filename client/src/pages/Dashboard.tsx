@@ -23,13 +23,15 @@ import {
   TrendingUp,
   Calendar,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  RotateCcw,
+  Volume2
 } from "lucide-react";
 import { Link } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -318,6 +320,8 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const { toast } = useToast();
+  const [videoEnded, setVideoEnded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
     queryKey: ['/api/dashboard/metrics'],
@@ -361,15 +365,35 @@ export default function Dashboard() {
       <div className="flex gap-6">
         {/* Main Dashboard Content */}
         <div className="flex-1 space-y-6">
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-1">
             <video
+              ref={videoRef}
               src={coreyVideo}
               autoPlay
-              muted
               playsInline
+              onEnded={() => setVideoEnded(true)}
               className="w-40 h-auto rounded-lg"
+              style={{ background: 'transparent' }}
               data-testid="video-corey-intro"
             />
+            {videoEnded && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs gap-1 text-muted-foreground hover:text-primary h-7 px-2"
+                onClick={() => {
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = 0;
+                    videoRef.current.play();
+                    setVideoEnded(false);
+                  }
+                }}
+                data-testid="button-replay-corey"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Replay
+              </Button>
+            )}
           </div>
 
           {/* Header */}
