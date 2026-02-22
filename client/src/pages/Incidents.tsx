@@ -1,4 +1,5 @@
 import { ProtectedLayout } from "@/components/Layout";
+import { PlatformGate } from "@/components/PlatformGate";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1297,6 +1298,7 @@ export default function Incidents() {
   const pendingReviewCount = incidents.filter(i => i.status === 'pending_review').length;
 
   return (
+    <PlatformGate featureName="Incident Log & OSHA 300">
     <ProtectedLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -1469,5 +1471,6 @@ export default function Incidents() {
         />
       </div>
     </ProtectedLayout>
+    </PlatformGate>
   );
 }

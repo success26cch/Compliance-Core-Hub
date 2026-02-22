@@ -36,7 +36,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   });
   
   const links = [
-    { href: "/settings", label: "Company Profile", icon: Building2 },
+    { href: "/settings", label: "Settings", icon: Settings },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/bot", label: "Ask Corey", icon: Bot },
     { href: "/team-seats", label: "Team Seats", icon: Users },

@@ -1,4 +1,5 @@
 import { ProtectedLayout } from "@/components/Layout";
+import { PlatformGate } from "@/components/PlatformGate";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -136,6 +137,7 @@ export default function DOTNotifications() {
   };
 
   return (
+    <PlatformGate featureName="DOT Notifications">
     <ProtectedLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -440,5 +442,6 @@ export default function DOTNotifications() {
         </Card>
       </div>
     </ProtectedLayout>
+    </PlatformGate>
   );
 }

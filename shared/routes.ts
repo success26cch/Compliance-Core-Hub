@@ -46,6 +46,7 @@ export const api = {
           status: z.string(),
           plan: z.string().nullable().optional(),
           isPro: z.boolean(),
+          hasPlatform: z.boolean().optional(),
         }),
         401: errorSchemas.unauthorized,
       },

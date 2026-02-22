@@ -21,6 +21,22 @@ import path from "path";
 import fs from "fs";
 import { textToSpeech } from "./replit_integrations/audio/client";
 
+async function requirePlatformAccess(req: any, res: any): Promise<boolean> {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ message: "Unauthorized" });
+    return false;
+  }
+  const userId = (req.user as any).claims.sub;
+  const sub = await storage.getSubscription(userId);
+  const hasPlatform = sub?.status === 'active' && 
+    (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise');
+  if (!hasPlatform) {
+    res.status(403).json({ message: "Employer Platform subscription required" });
+    return false;
+  }
+  return true;
+}
+
 const videoStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     const dir = path.join(process.cwd(), "uploads", "videos");
@@ -208,6 +224,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     const userId = (req.user as any).claims.sub; // Replit Auth ID
     const sub = await storage.getSubscription(userId);
     const isPro = sub?.status === "active";
+    const hasPlatform = isPro && (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise');
     
     let teamMembership = null;
     if (!isPro) {
@@ -226,6 +243,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       status: sub?.status || "inactive",
       plan: sub?.plan,
       isPro: isPro || !!teamMembership,
+      hasPlatform: hasPlatform || false,
       teamMembership,
     });
   });
@@ -270,6 +288,128 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     } catch (error: any) {
       console.error('Checkout error:', error);
       res.status(500).json({ message: error.message || "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/subscriptions/platform-checkout", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = (req.user as any).claims.sub;
+      const userEmail = (req.user as any).claims.email || `user-${userId}@example.com`;
+      const { plan } = req.body; // 'corey_pro', 'employer_platform', or 'setup_fee'
+      
+      if (!plan) {
+        return res.status(400).json({ message: "Plan is required" });
+      }
+
+      let sub = await storage.getSubscription(userId);
+      let customerId = sub?.stripeCustomerId;
+      
+      if (!customerId) {
+        const customer = await stripeService.createCustomer(userEmail, userId);
+        customerId = customer.id;
+        await storage.upsertSubscription({
+          userId,
+          status: "inactive",
+          stripeCustomerId: customerId,
+        });
+      }
+      
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const stripe = (await import('./stripeClient')).getUncachableStripeClient();
+      const stripeClient = await stripe;
+
+      const planConfig: Record<string, { name: string; amount: number; interval?: string; mode: string }> = {
+        corey_pro: { name: 'CCH Unlimited Safety - Corey AI', amount: 9900, interval: 'month', mode: 'subscription' },
+        employer_platform: { name: 'CCH Employer Compliance Platform', amount: 29900, interval: 'month', mode: 'subscription' },
+        setup_fee: { name: 'CCH Platform Setup & Onboarding', amount: 49900, mode: 'payment' },
+      };
+
+      const config = planConfig[plan];
+      if (!config) {
+        return res.status(400).json({ message: "Invalid plan" });
+      }
+
+      const lineItem: any = {
+        price_data: {
+          currency: 'usd',
+          product_data: { name: config.name },
+          unit_amount: config.amount,
+        },
+        quantity: 1,
+      };
+      if (config.interval) {
+        lineItem.price_data.recurring = { interval: config.interval };
+      }
+
+      const session = await stripeClient.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [lineItem],
+        mode: config.mode as any,
+        success_url: `${baseUrl}/settings?platform_checkout=success&plan=${plan}`,
+        cancel_url: `${baseUrl}/settings?platform_checkout=cancelled`,
+        metadata: {
+          userId,
+          plan,
+          type: 'platform_subscription',
+        },
+      });
+      
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error('Platform checkout error:', error);
+      res.status(500).json({ message: error.message || "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/subscriptions/activate-platform", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { plan } = req.body;
+      
+      if (plan === 'setup_fee') {
+        return res.json({ success: true, message: "Setup fee paid" });
+      }
+
+      const sub = await storage.getSubscription(userId);
+      if (!sub?.stripeCustomerId) {
+        return res.status(400).json({ message: "No customer record found. Please complete checkout first." });
+      }
+
+      const stripeClient = await (await import('./stripeClient')).getUncachableStripeClient();
+      const sessions = await stripeClient.checkout.sessions.list({
+        customer: sub.stripeCustomerId,
+        limit: 5,
+      });
+
+      const validSession = sessions.data.find(
+        (s: any) => s.payment_status === 'paid' && 
+        s.metadata?.plan === plan && 
+        s.metadata?.type === 'platform_subscription'
+      );
+
+      if (!validSession) {
+        return res.status(403).json({ message: "No valid paid checkout session found for this plan." });
+      }
+      
+      await storage.upsertSubscription({
+        userId,
+        status: "active",
+        plan: plan || 'employer_platform',
+        stripeSubscriptionId: validSession.subscription as string || sub.stripeSubscriptionId,
+      });
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Activation error:', error);
+      res.status(500).json({ message: "Failed to activate subscription" });
     }
   });
 
@@ -757,9 +897,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Get employees
   app.get("/api/employees", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     const employeeList = await storage.getEmployees(userId);
     res.json(employeeList);
@@ -767,9 +905,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Create employee
   app.post("/api/employees", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     
     try {
@@ -790,9 +926,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Update employee
   app.patch("/api/employees/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     const id = parseInt(req.params.id);
     
@@ -814,9 +948,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Delete employee
   app.delete("/api/employees/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     const id = parseInt(req.params.id);
     
@@ -835,9 +967,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Get incidents
   app.get("/api/incidents", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     const incidentList = await storage.getIncidents(userId);
     res.json(incidentList);
@@ -845,9 +975,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Get incidents for chart (last 6 months)
   app.get("/api/incidents/chart", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     
     const endDate = new Date();
@@ -883,9 +1011,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Create incident
   app.post("/api/incidents", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     
     try {
@@ -997,9 +1123,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Get action items
   app.get("/api/action-items", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     const pending = req.query.pending === 'true';
     
@@ -1041,9 +1165,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   // Create action item
   app.post("/api/action-items", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
     
     try {
@@ -1311,9 +1433,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
   
   // Upload DOT card image for employee
   app.post("/api/employees/:id/dot-card", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(await requirePlatformAccess(req, res))) return;
     
     try {
       const userId = (req.user as any).claims.sub;

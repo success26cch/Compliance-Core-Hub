@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/Layout";
+import { PlatformGate } from "@/components/PlatformGate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -924,8 +925,10 @@ function EmployeePassportContent() {
 
 export default function EmployeePassport() {
   return (
+    <PlatformGate featureName="Medical Passport">
     <ProtectedLayout>
       <EmployeePassportContent />
     </ProtectedLayout>
+    </PlatformGate>
   );
 }

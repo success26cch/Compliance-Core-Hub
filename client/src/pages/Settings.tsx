@@ -990,25 +990,260 @@ export default function Settings() {
     saveProfile.mutate();
   };
 
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('platform_checkout') === 'success') {
+      const plan = params.get('plan');
+      if (plan && plan !== 'setup_fee') {
+        fetch('/api/subscriptions/activate-platform', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ plan }),
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              toast({ title: "Subscription Activated!", description: "Your plan is now active." });
+              queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/status'] });
+            }
+          })
+          .catch(() => {});
+      } else if (plan === 'setup_fee') {
+        toast({ title: "Setup Fee Paid!", description: "Our team will begin your onboarding process." });
+      }
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
+
+  const handlePlatformCheckout = async (plan: string) => {
+    setCheckoutLoading(plan);
+    try {
+      const res = await fetch('/api/subscriptions/platform-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ plan }),
+      });
+      if (!res.ok) throw new Error('Failed to create checkout');
+      const data = await res.json();
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to start checkout", variant: "destructive" });
+      setCheckoutLoading(null);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const res = await fetch('/api/stripe/customer-portal', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to open portal');
+      const data = await res.json();
+      window.location.href = data.url;
+    } catch {
+      toast({ title: "Error", description: "Unable to open subscription management.", variant: "destructive" });
+    }
+  };
+
+  const currentPlan = subStatus?.plan || null;
+  const hasPlatform = (subStatus as any)?.hasPlatform || false;
+  const isCoreyPro = subStatus?.isPro && !hasPlatform;
+
+  const getPlanLabel = () => {
+    if (hasPlatform) return 'Employer Compliance Platform';
+    if (subStatus?.isPro) return 'Unlimited Safety (Corey AI)';
+    return 'Safety Starter (Free)';
+  };
+
   return (
     <ProtectedLayout>
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center gap-3">
-          <Building2 className="w-8 h-8 text-primary" />
+          <Shield className="w-8 h-8 text-primary" />
           <div>
-            <h2 className="text-2xl font-bold font-display text-primary">Company Profile</h2>
-            <p className="text-muted-foreground">Set up your company information for compliance documentation</p>
+            <h2 className="text-2xl font-bold font-display text-primary">Account & Subscription</h2>
+            <p className="text-muted-foreground">Manage your CCH plan, company profile, and compliance tools</p>
           </div>
         </div>
+
+        <Card data-testid="card-account-info">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Account Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Name</label>
+                <div className="text-base font-medium" data-testid="text-user-name">{user?.firstName} {user?.lastName}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <div className="text-base font-medium" data-testid="text-user-email">{user?.email}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Current Plan</label>
+                <div className="flex items-center gap-2">
+                  <Badge variant={hasPlatform ? "default" : subStatus?.isPro ? "secondary" : "outline"} className="text-sm" data-testid="badge-current-plan">
+                    {getPlanLabel()}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div>
+          <h3 className="text-lg font-bold mb-4 text-primary">Choose Your Plan</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className={`border-2 relative ${!subStatus?.isPro ? 'border-primary bg-primary/5' : 'border-border'}`} data-testid="card-plan-free">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Safety Starter</CardTitle>
+                  {!subStatus?.isPro && <Badge variant="default" className="text-xs">Current</Badge>}
+                </div>
+                <div className="text-3xl font-bold text-primary">Free</div>
+                <CardDescription>Try CCH with basic access</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>3 Corey AI questions/month</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 Decision Tree</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Training course previews</span></div>
+                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No compliance dashboard</span></div>
+                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No employee management</span></div>
+                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No OSHA 300 logging</span></div>
+                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No Medical Passport</span></div>
+              </CardContent>
+            </Card>
+
+            <Card className={`border-2 relative ${isCoreyPro ? 'border-primary bg-primary/5' : 'border-border'}`} data-testid="card-plan-corey">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Unlimited Safety</CardTitle>
+                  {isCoreyPro && <Badge variant="default" className="text-xs">Current</Badge>}
+                </div>
+                <div className="text-3xl font-bold text-primary">$99<span className="text-base font-normal text-muted-foreground">/mo per seat</span></div>
+                <CardDescription>Unlimited Corey AI access</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey AI queries</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>PDF document generation</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 Decision Tree</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority support</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Team seat purchasing</span></div>
+                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No compliance dashboard</span></div>
+                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No employee management</span></div>
+              </CardContent>
+              <CardFooter>
+                {!subStatus?.isPro && (
+                  <Button
+                    className="w-full"
+                    onClick={() => handlePlatformCheckout('corey_pro')}
+                    disabled={!!checkoutLoading}
+                    data-testid="button-subscribe-corey"
+                  >
+                    {checkoutLoading === 'corey_pro' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    Subscribe - $99/mo
+                  </Button>
+                )}
+                {isCoreyPro && (
+                  <Button variant="outline" className="w-full" onClick={handleManageSubscription} data-testid="button-manage-corey">
+                    Manage Subscription
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+
+            <Card className={`border-2 relative ${hasPlatform ? 'border-accent bg-accent/5' : 'border-accent/50'}`} data-testid="card-plan-platform">
+              {!hasPlatform && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-accent text-white px-3 py-1 text-xs font-bold">MOST POPULAR</Badge>
+                </div>
+              )}
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Employer Platform</CardTitle>
+                  {hasPlatform && <Badge className="bg-accent text-white text-xs">Current</Badge>}
+                </div>
+                <div className="text-3xl font-bold text-accent">$299<span className="text-base font-normal text-muted-foreground">/mo</span></div>
+                <CardDescription>Complete compliance management system</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span className="font-medium">Everything in Unlimited Safety</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Dashboard & Metrics</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Employee Management (up to 50)</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 Incident Log & Reports</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Corrective Action Plans (CAPA)</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Medical Passport (QR Check-in)</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>DOT Expiration Notifications</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Action Queue & Priority Alerts</span></div>
+                <p className="text-xs text-muted-foreground pt-1">+$2/employee beyond 50</p>
+              </CardContent>
+              <CardFooter className="flex-col gap-2">
+                {!hasPlatform && (
+                  <Button
+                    className="w-full bg-accent hover:bg-accent/90 text-white font-bold"
+                    onClick={() => handlePlatformCheckout('employer_platform')}
+                    disabled={!!checkoutLoading}
+                    data-testid="button-subscribe-platform"
+                  >
+                    {checkoutLoading === 'employer_platform' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
+                    Subscribe - $299/mo
+                  </Button>
+                )}
+                {hasPlatform && (
+                  <Button variant="outline" className="w-full" onClick={handleManageSubscription} data-testid="button-manage-platform">
+                    Manage Subscription
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+
+        {!hasPlatform && (
+          <Card className="border border-dashed border-accent/40 bg-accent/5" data-testid="card-setup-fee">
+            <CardContent className="py-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-accent/10 p-2 rounded-lg">
+                    <Building2 className="w-5 h-5 text-accent" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Platform Setup & Onboarding</h4>
+                    <p className="text-sm text-muted-foreground">One-time $499 fee. We configure your company profile, import employees, set up clinic locations, and walk you through every feature.</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="shrink-0 border-accent/50 text-accent hover:bg-accent/10"
+                  onClick={() => handlePlatformCheckout('setup_fee')}
+                  disabled={!!checkoutLoading}
+                  data-testid="button-setup-fee"
+                >
+                  {checkoutLoading === 'setup_fee' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Add Setup - $499
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card data-testid="card-company-profile" className="border-2 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-primary" />
-              Company Information
+              Company Profile
             </CardTitle>
             <CardDescription>
-              Used for OSHA logs, DOT compliance, and audit documentation.
+              Your company information used for OSHA logs, DOT compliance, and audit documentation.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1095,62 +1330,28 @@ export default function Settings() {
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
-                    <Input 
-                      id="city" 
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="Houston"
-                      data-testid="input-city"
-                    />
+                    <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Houston" data-testid="input-city" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State</Label>
-                    <Input 
-                      id="state" 
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      placeholder="TX"
-                      data-testid="input-state"
-                    />
+                    <Input id="state" value={state} onChange={(e) => setState(e.target.value)} placeholder="TX" data-testid="input-state" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="zipCode">ZIP Code</Label>
-                    <Input 
-                      id="zipCode" 
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
-                      placeholder="77001"
-                      data-testid="input-zip"
-                    />
+                    <Input id="zipCode" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="77001" data-testid="input-zip" />
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="naicsCode">NAICS Code</Label>
-                    <Input 
-                      id="naicsCode" 
-                      value={naicsCode}
-                      onChange={(e) => setNaicsCode(e.target.value)}
-                      placeholder="e.g., 484121"
-                      data-testid="input-naics"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      North American Industry Classification for OSHA reporting
-                    </p>
+                    <Input id="naicsCode" value={naicsCode} onChange={(e) => setNaicsCode(e.target.value)} placeholder="e.g., 484121" data-testid="input-naics" />
+                    <p className="text-xs text-muted-foreground">North American Industry Classification for OSHA reporting</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dotNumber">DOT Number</Label>
-                    <Input 
-                      id="dotNumber" 
-                      value={dotNumber}
-                      onChange={(e) => setDotNumber(e.target.value)}
-                      placeholder="e.g., 1234567"
-                      data-testid="input-dot"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Required for transportation/trucking companies
-                    </p>
+                    <Input id="dotNumber" value={dotNumber} onChange={(e) => setDotNumber(e.target.value)} placeholder="e.g., 1234567" data-testid="input-dot" />
+                    <p className="text-xs text-muted-foreground">Required for transportation/trucking companies</p>
                   </div>
                 </div>
 
@@ -1162,38 +1363,18 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground mb-4">
                     The DER is your company's primary contact for DOT drug & alcohol testing programs and compliance matters.
                   </p>
-                  
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="derName">DER Name</Label>
-                      <Input 
-                        id="derName" 
-                        value={derName}
-                        onChange={(e) => setDerName(e.target.value)}
-                        placeholder="John Smith"
-                        data-testid="input-der-name"
-                      />
+                      <Input id="derName" value={derName} onChange={(e) => setDerName(e.target.value)} placeholder="John Smith" data-testid="input-der-name" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="derPhone">DER Phone</Label>
-                      <Input 
-                        id="derPhone" 
-                        value={derPhone}
-                        onChange={(e) => setDerPhone(e.target.value)}
-                        placeholder="(555) 123-4567"
-                        data-testid="input-der-phone"
-                      />
+                      <Input id="derPhone" value={derPhone} onChange={(e) => setDerPhone(e.target.value)} placeholder="(555) 123-4567" data-testid="input-der-phone" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="derEmail">DER Email</Label>
-                      <Input 
-                        id="derEmail" 
-                        type="email"
-                        value={derEmail}
-                        onChange={(e) => setDerEmail(e.target.value)}
-                        placeholder="der@company.com"
-                        data-testid="input-der-email"
-                      />
+                      <Input id="derEmail" type="email" value={derEmail} onChange={(e) => setDerEmail(e.target.value)} placeholder="der@company.com" data-testid="input-der-email" />
                     </div>
                   </div>
                 </div>
@@ -1204,86 +1385,39 @@ export default function Settings() {
                     <h3 className="font-semibold">Primary Occupational Health Clinic</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Set your company's designated clinic for DOT physicals, drug testing, and medical surveillance. 
-                    This information will be included in DOT expiration notifications sent to employees.
+                    Set your company's designated clinic for DOT physicals, drug testing, and medical surveillance.
                   </p>
-                  
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="clinicName">Clinic Name</Label>
-                      <Input 
-                        id="clinicName" 
-                        value={clinicName}
-                        onChange={(e) => setClinicName(e.target.value)}
-                        placeholder="e.g., ABC Occupational Health Services"
-                        data-testid="input-clinic-name"
-                      />
+                      <Input id="clinicName" value={clinicName} onChange={(e) => setClinicName(e.target.value)} placeholder="e.g., ABC Occupational Health Services" data-testid="input-clinic-name" />
                     </div>
-                    
                     <div className="space-y-2">
                       <Label htmlFor="clinicAddress">Address</Label>
-                      <Input 
-                        id="clinicAddress" 
-                        value={clinicAddress}
-                        onChange={(e) => setClinicAddress(e.target.value)}
-                        placeholder="e.g., 456 Medical Center Dr"
-                        data-testid="input-clinic-address"
-                      />
+                      <Input id="clinicAddress" value={clinicAddress} onChange={(e) => setClinicAddress(e.target.value)} placeholder="e.g., 456 Medical Center Dr" data-testid="input-clinic-address" />
                     </div>
-                    
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="clinicCity">City</Label>
-                        <Input 
-                          id="clinicCity" 
-                          value={clinicCity}
-                          onChange={(e) => setClinicCity(e.target.value)}
-                          placeholder="Houston"
-                          data-testid="input-clinic-city"
-                        />
+                        <Input id="clinicCity" value={clinicCity} onChange={(e) => setClinicCity(e.target.value)} placeholder="Houston" data-testid="input-clinic-city" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="clinicState">State</Label>
-                        <Input 
-                          id="clinicState" 
-                          value={clinicState}
-                          onChange={(e) => setClinicState(e.target.value)}
-                          placeholder="TX"
-                          data-testid="input-clinic-state"
-                        />
+                        <Input id="clinicState" value={clinicState} onChange={(e) => setClinicState(e.target.value)} placeholder="TX" data-testid="input-clinic-state" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="clinicZipCode">ZIP Code</Label>
-                        <Input 
-                          id="clinicZipCode" 
-                          value={clinicZipCode}
-                          onChange={(e) => setClinicZipCode(e.target.value)}
-                          placeholder="77001"
-                          data-testid="input-clinic-zip"
-                        />
+                        <Input id="clinicZipCode" value={clinicZipCode} onChange={(e) => setClinicZipCode(e.target.value)} placeholder="77001" data-testid="input-clinic-zip" />
                       </div>
                     </div>
-                    
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="clinicPhone">Phone</Label>
-                        <Input 
-                          id="clinicPhone" 
-                          value={clinicPhone}
-                          onChange={(e) => setClinicPhone(e.target.value)}
-                          placeholder="(555) 987-6543"
-                          data-testid="input-clinic-phone"
-                        />
+                        <Input id="clinicPhone" value={clinicPhone} onChange={(e) => setClinicPhone(e.target.value)} placeholder="(555) 987-6543" data-testid="input-clinic-phone" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="clinicHours">Hours</Label>
-                        <Input 
-                          id="clinicHours" 
-                          value={clinicHours}
-                          onChange={(e) => setClinicHours(e.target.value)}
-                          placeholder="e.g., Mon-Fri 8am-5pm"
-                          data-testid="input-clinic-hours"
-                        />
+                        <Input id="clinicHours" value={clinicHours} onChange={(e) => setClinicHours(e.target.value)} placeholder="e.g., Mon-Fri 8am-5pm" data-testid="input-clinic-hours" />
                       </div>
                     </div>
                   </div>
@@ -1297,24 +1431,11 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Upload your company logo for use on compliance documents and reports. Max 2MB.
                   </p>
-                  
                   <div className="flex items-start gap-6">
                     {logoUrl ? (
                       <div className="relative">
-                        <img 
-                          src={logoUrl} 
-                          alt="Company Logo" 
-                          className="w-32 h-32 object-contain border rounded-md bg-white"
-                          data-testid="img-company-logo"
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="destructive"
-                          className="absolute -top-2 -right-2 w-6 h-6"
-                          onClick={removeLogo}
-                          data-testid="button-remove-logo"
-                        >
+                        <img src={logoUrl} alt="Company Logo" className="w-32 h-32 object-contain border rounded-md bg-white" data-testid="img-company-logo" />
+                        <Button type="button" size="icon" variant="destructive" className="absolute -top-2 -right-2 w-6 h-6" onClick={removeLogo} data-testid="button-remove-logo">
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
@@ -1324,38 +1445,17 @@ export default function Settings() {
                       </div>
                     )}
                     <div className="space-y-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                        id="logo-upload"
-                        data-testid="input-logo-upload"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="gap-2"
-                        data-testid="button-upload-logo"
-                      >
+                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" id="logo-upload" data-testid="input-logo-upload" />
+                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="gap-2" data-testid="button-upload-logo">
                         <Upload className="w-4 h-4" />
                         {logoUrl ? "Change Logo" : "Upload Logo"}
                       </Button>
-                      <p className="text-xs text-muted-foreground">
-                        PNG, JPG, or GIF up to 2MB
-                      </p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG, or GIF up to 2MB</p>
                     </div>
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="gap-2 mt-4" 
-                  disabled={saveProfile.isPending}
-                  data-testid="button-save-profile"
-                >
+                <Button type="submit" className="gap-2 mt-4" disabled={saveProfile.isPending} data-testid="button-save-profile">
                   <Save className="w-4 h-4" />
                   {saveProfile.isPending ? "Saving..." : "Save Company Profile"}
                 </Button>
@@ -1367,74 +1467,6 @@ export default function Settings() {
         <AuthorizationFormsSection />
 
         <ClinicLocationsSection />
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Name</label>
-                <div className="text-lg font-medium">{user?.firstName} {user?.lastName}</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <div className="text-lg font-medium">{user?.email}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={`border-2 ${subStatus?.isPro ? 'border-primary' : 'border-accent'}`}>
-          <CardHeader>
-            <div className="flex flex-wrap justify-between items-start gap-2">
-              <div>
-                <CardTitle className="text-xl">Pro Subscription</CardTitle>
-                <CardDescription>Unlock full access to compliance tools</CardDescription>
-              </div>
-              {subStatus?.isPro ? (
-                <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2">
-                  <Shield className="w-4 h-4" /> Active
-                </span>
-              ) : (
-                <span className="bg-muted text-muted-foreground px-3 py-1 rounded-full text-sm font-medium">Free Plan</span>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 mt-2">
-              <li className="flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-500" />
-                <span>Unlimited Ask Corey AI Queries</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-500" />
-                <span>Full Access to OSHA 300, Log it or Not Tool</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-500" />
-                <span>Priority Email Support</span>
-              </li>
-            </ul>
-          </CardContent>
-          <CardFooter>
-            {!subStatus?.isPro && (
-              <Button 
-                onClick={handleUpgrade} 
-                disabled={isPending}
-                className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-12"
-                data-testid="button-upgrade"
-              >
-                {isPending ? "Processing..." : "Upgrade to Pro - $99/mo"}
-              </Button>
-            )}
-            {subStatus?.isPro && (
-              <Button variant="outline" className="w-full" data-testid="button-manage-subscription">Manage Subscription</Button>
-            )}
-          </CardFooter>
-        </Card>
-
       </div>
     </ProtectedLayout>
   );

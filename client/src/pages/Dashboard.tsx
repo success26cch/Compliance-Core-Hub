@@ -1,4 +1,5 @@
 import { ProtectedLayout } from "@/components/Layout";
+import { PlatformGate } from "@/components/PlatformGate";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -354,6 +355,7 @@ export default function Dashboard() {
   const isUnlimited = plan === 'unlimited_monthly'; // $99 plan
 
   return (
+    <PlatformGate featureName="Compliance Dashboard">
     <ProtectedLayout>
       <div className="flex gap-6">
         {/* Main Dashboard Content */}
@@ -730,5 +732,6 @@ export default function Dashboard() {
         )}
       </div>
     </ProtectedLayout>
+    </PlatformGate>
   );
 }
