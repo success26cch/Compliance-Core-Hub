@@ -26,6 +26,7 @@ import {
   BookOpen
 } from "lucide-react";
 import { Link } from "wouter";
+import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
@@ -360,6 +361,17 @@ export default function Dashboard() {
       <div className="flex gap-6">
         {/* Main Dashboard Content */}
         <div className="flex-1 space-y-6">
+          <div className="flex justify-center">
+            <video
+              src={coreyVideo}
+              autoPlay
+              muted
+              playsInline
+              className="w-40 h-auto rounded-lg"
+              data-testid="video-corey-intro"
+            />
+          </div>
+
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
