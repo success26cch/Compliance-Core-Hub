@@ -1652,6 +1652,32 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  // Track page visit (public, no auth required)
+  app.post("/api/track-visit", async (req, res) => {
+    try {
+      const { page } = req.body;
+      if (!page || typeof page !== "string") {
+        return res.status(400).json({ message: "Page is required" });
+      }
+      await storage.recordPageVisit(page);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error tracking visit:', error);
+      res.status(500).json({ message: "Failed to track visit" });
+    }
+  });
+
+  // Get site visit stats (superadmin only)
+  app.get("/api/superadmin/site-visits", requireSuperadmin, async (req, res) => {
+    try {
+      const stats = await storage.getSiteVisitStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error('Error fetching site visit stats:', error);
+      res.status(500).json({ message: "Failed to fetch site visit stats" });
+    }
+  });
+
   // Get all trial leads (Ask Corey trials)
   app.get("/api/superadmin/trial-leads", requireSuperadmin, async (req, res) => {
     try {

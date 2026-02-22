@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Users, TrendingUp, AlertTriangle, Download, Mail, Building2, UserCheck, Clock, CheckCircle2, XCircle, Bot, MessageSquare } from "lucide-react";
+import { DollarSign, Users, TrendingUp, AlertTriangle, Download, Mail, Building2, UserCheck, Clock, CheckCircle2, XCircle, Bot, MessageSquare, Eye, BarChart3 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { apiRequest } from "@/lib/queryClient";
 import { Redirect } from "wouter";
@@ -61,6 +61,13 @@ type TrialLead = {
   createdAt: string | null;
 };
 
+type SiteVisitStats = {
+  totalVisits: number;
+  todayVisits: number;
+  last30Days: { date: string; count: number }[];
+  topPages: { page: string; count: number }[];
+};
+
 const planLabels: Record<string, string> = {
   'free': 'Free',
   'cch_unlimited_safety': 'Unlimited Safety ($99)',
@@ -105,6 +112,11 @@ export default function SuperAdmin() {
 
   const { data: trialLeads, isLoading: trialLeadsLoading } = useQuery<TrialLead[]>({
     queryKey: ['/api/superadmin/trial-leads'],
+    enabled: checkData?.isSuperadmin === true,
+  });
+
+  const { data: siteVisitStats } = useQuery<SiteVisitStats>({
+    queryKey: ['/api/superadmin/site-visits'],
     enabled: checkData?.isSuperadmin === true,
   });
 
@@ -158,7 +170,7 @@ export default function SuperAdmin() {
       </div>
 
       {/* Revenue Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card data-testid="card-mrr">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total MRR</CardTitle>
@@ -197,6 +209,21 @@ export default function SuperAdmin() {
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
+
+        <Card data-testid="card-site-visits">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Site Visitors</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {siteVisitStats?.totalVisits?.toLocaleString() || '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {siteVisitStats?.todayVisits?.toLocaleString() || '0'} today
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="companies" className="space-y-4">
@@ -226,6 +253,10 @@ export default function SuperAdmin() {
             {trialLeads && trialLeads.length > 0 && (
               <Badge variant="secondary" className="ml-2">{trialLeads.length}</Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="traffic" data-testid="tab-traffic">
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Site Traffic
           </TabsTrigger>
         </TabsList>
 
@@ -525,6 +556,76 @@ export default function SuperAdmin() {
               {trialLeads && trialLeads.length > 0 && (
                 <div className="mt-4 text-sm text-muted-foreground">
                   Total trial users: {trialLeads.length}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Site Traffic Tab */}
+        <TabsContent value="traffic">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                Site Traffic Analytics
+              </CardTitle>
+              <CardDescription>Page visits tracked across the platform</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2 mb-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Page Views</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{siteVisitStats?.totalVisits?.toLocaleString() || '0'}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Views</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-blue-600">{siteVisitStats?.todayVisits?.toLocaleString() || '0'}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {siteVisitStats?.last30Days && siteVisitStats.last30Days.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium mb-3">Last 30 Days Traffic</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={siteVisitStats.last30Days}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="count" stroke="hsl(var(--accent))" strokeWidth={2} name="Views" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {siteVisitStats?.topPages && siteVisitStats.topPages.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Top Pages</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Page</TableHead>
+                        <TableHead className="text-right">Views</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {siteVisitStats.topPages.map((p, i) => (
+                        <TableRow key={p.page} data-testid={`row-page-${i}`}>
+                          <TableCell className="font-medium">{p.page}</TableCell>
+                          <TableCell className="text-right">{p.count.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </CardContent>

@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, trialLeads, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -20,6 +20,10 @@ export interface IStorage {
   getAllTrialLeads(): Promise<TrialLead[]>;
   createTrialLead(lead: InsertTrialLead): Promise<TrialLead>;
   incrementTrialQuestionCount(email: string): Promise<TrialLead | undefined>;
+
+  // Site Visits
+  recordPageVisit(page: string): Promise<void>;
+  getSiteVisitStats(): Promise<{ totalVisits: number; todayVisits: number; last30Days: { date: string; count: number }[]; topPages: { page: string; count: number }[] }>;
 
   // Contact Inquiries
   createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry>;
@@ -242,6 +246,42 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trialLeads.id, existing.id))
       .returning();
     return updated;
+  }
+
+  async recordPageVisit(page: string): Promise<void> {
+    const today = new Date().toISOString().slice(0, 10);
+    const [existing] = await db.select().from(siteVisits).where(and(eq(siteVisits.page, page), eq(siteVisits.visitDate, today)));
+    if (existing) {
+      await db.update(siteVisits).set({ visitCount: existing.visitCount + 1 }).where(eq(siteVisits.id, existing.id));
+    } else {
+      await db.insert(siteVisits).values({ page, visitDate: today, visitCount: 1 });
+    }
+  }
+
+  async getSiteVisitStats(): Promise<{ totalVisits: number; todayVisits: number; last30Days: { date: string; count: number }[]; topPages: { page: string; count: number }[] }> {
+    const today = new Date().toISOString().slice(0, 10);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const allVisits = await db.select().from(siteVisits);
+
+    let totalVisits = 0;
+    let todayVisits = 0;
+    const dailyMap = new Map<string, number>();
+    const pageMap = new Map<string, number>();
+
+    for (const v of allVisits) {
+      totalVisits += v.visitCount;
+      if (v.visitDate === today) todayVisits += v.visitCount;
+      if (v.visitDate >= thirtyDaysAgo) {
+        dailyMap.set(v.visitDate, (dailyMap.get(v.visitDate) || 0) + v.visitCount);
+      }
+      pageMap.set(v.page, (pageMap.get(v.page) || 0) + v.visitCount);
+    }
+
+    const last30Days = Array.from(dailyMap.entries()).map(([date, count]) => ({ date, count })).sort((a, b) => a.date.localeCompare(b.date));
+    const topPages = Array.from(pageMap.entries()).map(([page, count]) => ({ page, count })).sort((a, b) => b.count - a.count).slice(0, 10);
+
+    return { totalVisits, todayVisits, last30Days, topPages };
   }
 
   async createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry> {

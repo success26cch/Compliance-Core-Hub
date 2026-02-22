@@ -70,6 +70,16 @@ export const insertTrialLeadSchema = createInsertSchema(trialLeads).omit({
 export type TrialLead = typeof trialLeads.$inferSelect;
 export type InsertTrialLead = z.infer<typeof insertTrialLeadSchema>;
 
+// Site visits - tracks page visits for analytics
+export const siteVisits = pgTable("site_visits", {
+  id: serial("id").primaryKey(),
+  page: text("page").notNull(),
+  visitDate: text("visit_date").notNull(),
+  visitCount: integer("visit_count").notNull().default(0),
+});
+
+export type SiteVisit = typeof siteVisits.$inferSelect;
+
 // Contact inquiries (retainer, general questions, etc.)
 export const contactInquiries = pgTable("contact_inquiries", {
   id: serial("id").primaryKey(),

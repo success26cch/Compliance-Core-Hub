@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { useEffect } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -38,6 +39,18 @@ import TeamSeats from "@/pages/TeamSeats";
 import About from "@/pages/About";
 import CompanyProfile from "@/pages/CompanyProfile";
 import NotFound from "@/pages/not-found";
+
+function PageTracker() {
+  const [location] = useLocation();
+  useEffect(() => {
+    fetch("/api/track-visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: location }),
+    }).catch(() => {});
+  }, [location]);
+  return null;
+}
 
 function Router() {
   return (
@@ -86,6 +99,7 @@ function App() {
         <CartProvider>
           <Toaster />
           <CartDrawer />
+          <PageTracker />
           <Router />
         </CartProvider>
       </TooltipProvider>
