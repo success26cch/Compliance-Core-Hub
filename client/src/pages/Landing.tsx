@@ -5,9 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import jsPDF from "jspdf";
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/^---+$/gm, '')
+    .replace(/^===+$/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '- ')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+}
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import logoUrl from "@assets/1_1767636977932.png";
@@ -95,11 +111,94 @@ export default function Landing() {
   const [botRemaining, setBotRemaining] = useState(3);
   const botScrollRef = useRef<HTMLDivElement>(null);
   const { isListening: botListening, speechSupported: botSpeechSupported, toggleListening: botToggleListening, stopListening: botStopListening } = useSpeechRecognition((text) => setBotInput(text));
+  const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (botScrollRef.current) {
       botScrollRef.current.scrollTop = botScrollRef.current.scrollHeight;
     }
+  }, [botMessages]);
+
+  useEffect(() => {
+    if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
+  }, []);
+
+  const handleBotSpeak = useCallback((text: string, idx: number) => {
+    if (!('speechSynthesis' in window)) return;
+    if (speakingIdx === idx) {
+      window.speechSynthesis.cancel();
+      setSpeakingIdx(null);
+      speechRef.current = null;
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const cleanText = stripMarkdown(text);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.95;
+    const voices = window.speechSynthesis.getVoices();
+    const naturalNames = ['Samantha','Karen','Daniel','Google UK English Female','Google US English','Microsoft Aria','Microsoft Jenny'];
+    const enVoices = voices.filter(v => v.lang.startsWith('en'));
+    const preferred = enVoices.find(v => naturalNames.some(n => v.name.includes(n)))
+      || enVoices.find(v => v.name.includes('Natural') || v.name.includes('Neural'))
+      || enVoices.find(v => v.name.includes('Google'))
+      || enVoices[0];
+    if (preferred) utterance.voice = preferred;
+    utterance.onend = () => { setSpeakingIdx(null); speechRef.current = null; };
+    utterance.onerror = () => { setSpeakingIdx(null); speechRef.current = null; };
+    speechRef.current = utterance;
+    setSpeakingIdx(idx);
+    window.speechSynthesis.speak(utterance);
+  }, [speakingIdx]);
+
+  const handleBotDownloadPdf = useCallback(() => {
+    const lastMsg = [...botMessages].reverse().find(m => m.role === "assistant");
+    if (!lastMsg) return;
+    const cleanText = stripMarkdown(lastMsg.content);
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pw = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const uw = pw - margin * 2;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const lh = 18; const lw = (img.width / img.height) * lh;
+      doc.addImage(img, 'PNG', (pw - lw) / 2, 10, lw, lh);
+      doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+      doc.text('Core Compliance Hub', pw / 2, 32, { align: 'center' });
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pw / 2, 37, { align: 'center' });
+      doc.setDrawColor(200, 160, 50); doc.setLineWidth(0.5);
+      doc.line(margin, 40, pw - margin, 40);
+      doc.setFontSize(11); doc.setTextColor(30, 30, 30);
+      const lines = doc.splitTextToSize(cleanText, uw);
+      let y = 48; const ph = doc.internal.pageSize.getHeight();
+      for (const line of lines) {
+        if (y > ph - 25) { doc.addPage(); y = 20; }
+        const t = line.trim();
+        if (t === t.toUpperCase() && t.length > 3 && t.length < 80 && /[A-Z]/.test(t)) {
+          doc.setFontSize(12); doc.setFont('helvetica', 'bold'); y += 3;
+          doc.text(t, margin, y);
+          doc.setFontSize(11); doc.setFont('helvetica', 'normal'); y += 7;
+        } else { doc.text(line, margin, y); y += 6; }
+      }
+      const tp = doc.getNumberOfPages();
+      for (let i = 1; i <= tp; i++) {
+        doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+        doc.text('Generated by Corey — Core Compliance Hub', pw / 2, ph - 10, { align: 'center' });
+        doc.text(`Page ${i} of ${tp}`, pw - margin, ph - 10, { align: 'right' });
+      }
+      doc.save(`corey-document-${new Date().toISOString().slice(0, 10)}.pdf`);
+    };
+    img.onerror = () => {
+      doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+      doc.text('COREY — AI Compliance Expert', pw / 2, 20, { align: 'center' });
+      doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
+      const lines = doc.splitTextToSize(cleanText, uw);
+      let y = 35; const ph = doc.internal.pageSize.getHeight();
+      for (const line of lines) { if (y > ph - 25) { doc.addPage(); y = 20; } doc.text(line, margin, y); y += 6; }
+      doc.save(`corey-document-${new Date().toISOString().slice(0, 10)}.pdf`);
+    };
+    img.src = logoUrl;
   }, [botMessages]);
 
   const handleBotSubmit = useCallback(async () => {
@@ -556,16 +655,43 @@ export default function Landing() {
                       <Bot className="w-4 h-4 text-white" />
                     </div>
                   )}
-                  <div className={`max-w-[80%] rounded-lg px-4 py-3 text-sm whitespace-pre-wrap ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border text-card-foreground"
-                  }`}>
-                    {msg.content || (botLoading && i === botMessages.length - 1 ? (
-                      <span className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
-                      </span>
-                    ) : null)}
+                  <div className="flex flex-col max-w-[80%]">
+                    <div className={`rounded-lg px-4 py-3 text-sm whitespace-pre-wrap ${
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border border-border text-card-foreground"
+                    }`}>
+                      {msg.content ? stripMarkdown(msg.content) : (botLoading && i === botMessages.length - 1 ? (
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
+                        </span>
+                      ) : null)}
+                    </div>
+                    {msg.role === "assistant" && msg.content && !botLoading && (
+                      <div className="mt-1 ml-1 flex items-center gap-3">
+                        <button
+                          onClick={() => navigator.clipboard.writeText(stripMarkdown(msg.content))}
+                          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
+                          data-testid={`button-bot-copy-${i}`}
+                        >
+                          <Copy className="w-3 h-3" /> Copy
+                        </button>
+                        <button
+                          onClick={() => handleBotSpeak(msg.content, i)}
+                          className={`flex items-center gap-1 text-xs transition-colors ${speakingIdx === i ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}
+                          data-testid={`button-bot-speak-${i}`}
+                        >
+                          {speakingIdx === i ? <><Square className="w-3 h-3 fill-current" /> Stop</> : <><Volume2 className="w-3 h-3" /> Listen</>}
+                        </button>
+                        <button
+                          onClick={handleBotDownloadPdf}
+                          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
+                          data-testid={`button-bot-pdf-${i}`}
+                        >
+                          <FileDown className="w-3 h-3" /> PDF
+                        </button>
+                      </div>
+                    )}
                   </div>
                   {msg.role === "user" && (
                     <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
