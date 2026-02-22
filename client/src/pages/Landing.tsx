@@ -111,6 +111,9 @@ export default function Landing() {
   const [botLoading, setBotLoading] = useState(false);
   const [botLimitReached, setBotLimitReached] = useState(false);
   const [botRemaining, setBotRemaining] = useState(3);
+  const [botTrialName, setBotTrialName] = useState(() => localStorage.getItem("cch_trial_name") || "");
+  const [botTrialEmail, setBotTrialEmail] = useState(() => localStorage.getItem("cch_trial_email") || "");
+  const [botTrialGated, setBotTrialGated] = useState(() => !localStorage.getItem("cch_trial_email"));
   const botScrollRef = useRef<HTMLDivElement>(null);
   const { isListening: botListening, speechSupported: botSpeechSupported, toggleListening: botToggleListening, stopListening: botStopListening } = useSpeechRecognition((text) => setBotInput(text));
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
@@ -216,7 +219,7 @@ export default function Landing() {
       const response = await fetch("/api/landing-bot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: userMsg, history: newMessages }),
+        body: JSON.stringify({ content: userMsg, history: newMessages, name: botTrialName, email: botTrialEmail }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -264,7 +267,7 @@ export default function Landing() {
     } finally {
       setBotLoading(false);
     }
-  }, [botInput, botLoading, botLimitReached, botMessages]);
+  }, [botInput, botLoading, botLimitReached, botMessages, botTrialName, botTrialEmail]);
 
   const form = useForm<z.infer<typeof leadFormSchema>>({
     resolver: zodResolver(leadFormSchema),
@@ -622,6 +625,46 @@ export default function Landing() {
           </div>
 
           <Card className="overflow-hidden border-0 shadow-2xl" data-testid="card-ask-corey">
+            {botTrialGated ? (
+              <div className="h-80 flex flex-col items-center justify-center p-6 space-y-4 bg-muted/30">
+                <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Bot className="w-8 h-8 text-accent" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-foreground">Try Corey Free</p>
+                  <p className="text-sm mt-1 text-muted-foreground">Enter your info to ask up to 3 compliance questions</p>
+                </div>
+                <div className="w-full max-w-xs space-y-2">
+                  <Input
+                    value={botTrialName}
+                    onChange={(e) => setBotTrialName(e.target.value)}
+                    placeholder="Your name"
+                    data-testid="input-landing-trial-name"
+                  />
+                  <Input
+                    type="email"
+                    value={botTrialEmail}
+                    onChange={(e) => setBotTrialEmail(e.target.value)}
+                    placeholder="Work email"
+                    onKeyDown={(e) => { if (e.key === "Enter" && botTrialName.trim() && botTrialEmail.includes("@")) { localStorage.setItem("cch_trial_name", botTrialName.trim()); localStorage.setItem("cch_trial_email", botTrialEmail.trim()); setBotTrialGated(false); } }}
+                    data-testid="input-landing-trial-email"
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      localStorage.setItem("cch_trial_name", botTrialName.trim());
+                      localStorage.setItem("cch_trial_email", botTrialEmail.trim());
+                      setBotTrialGated(false);
+                    }}
+                    disabled={!botTrialName.trim() || !botTrialEmail.includes("@")}
+                    data-testid="button-landing-trial-start"
+                  >
+                    Start Free Trial
+                  </Button>
+                </div>
+              </div>
+            ) : (
+            <>
             <div
               ref={botScrollRef}
               className="h-80 overflow-y-auto p-4 space-y-4 bg-muted/30"
@@ -764,6 +807,8 @@ export default function Landing() {
                 </div>
               )}
             </div>
+            </>
+            )}
           </Card>
         </div>
       </section>

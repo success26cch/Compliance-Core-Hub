@@ -11,8 +11,7 @@ const anthropic = new Anthropic({
 
 const FREE_QUESTION_LIMIT = 3;
 const LANDING_BOT_LIMIT = 3;
-const trialUsage = new Map<string, boolean>();
-const landingBotUsage = new Map<string, { count: number; messages: Array<{ role: string; content: string }> }>();
+const TRIAL_QUESTION_LIMIT = 1;
 
 // Admin users get unlimited access (set via environment variable)
 // Format: comma-separated user IDs, emails, or usernames
@@ -114,23 +113,32 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
-  // Trial question - 1 free question without login (rate limited by session)
+  // Trial question - 1 free question without login (tracked by email in DB)
   app.post("/api/trial-question", async (req: Request, res: Response) => {
     try {
-      const { content } = req.body;
+      const { content, name, email } = req.body;
       if (!content || typeof content !== "string" || content.trim().length === 0) {
         return res.status(400).json({ error: "Question is required" });
       }
+      if (!name || typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({ error: "Name is required to try Corey" });
+      }
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).json({ error: "Valid email is required to try Corey" });
+      }
 
-      // Rate limit by IP - store in memory
-      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
-      if (trialUsage.has(clientIp)) {
+      let trialLead = await storage.getTrialLeadByEmail(email);
+      if (trialLead && trialLead.questionCount >= TRIAL_QUESTION_LIMIT) {
         return res.status(403).json({ 
           error: "You've used your free trial question. Sign up to keep asking!",
           limitReached: true 
         });
       }
-      trialUsage.set(clientIp, true);
+
+      if (!trialLead) {
+        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() });
+      }
+      await storage.incrementTrialQuestionCount(email);
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -167,31 +175,35 @@ export function registerChatRoutes(app: Express): void {
 
   app.post("/api/landing-bot", async (req: Request, res: Response) => {
     try {
-      const { content, history } = req.body;
+      const { content, history, name, email } = req.body;
       if (!content || typeof content !== "string" || content.trim().length === 0) {
         return res.status(400).json({ error: "Question is required" });
       }
-
-      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
-      let session = landingBotUsage.get(clientIp);
-      if (!session) {
-        session = { count: 0, messages: [] };
-        landingBotUsage.set(clientIp, session);
+      if (!name || typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({ error: "Name is required to chat with Corey" });
+      }
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).json({ error: "Valid email is required to chat with Corey" });
       }
 
-      if (session.count >= LANDING_BOT_LIMIT) {
+      let trialLead = await storage.getTrialLeadByEmail(email);
+      if (!trialLead) {
+        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() });
+      }
+
+      if (trialLead.questionCount >= LANDING_BOT_LIMIT) {
         return res.status(403).json({
           error: "You've reached the free question limit. Sign up to keep the conversation going!",
           limitReached: true,
-          count: session.count,
+          count: trialLead.questionCount,
           limit: LANDING_BOT_LIMIT,
         });
       }
 
-      session.count++;
-      session.messages.push({ role: "user", content: content.trim() });
+      const updatedLead = await storage.incrementTrialQuestionCount(email);
+      const newCount = updatedLead?.questionCount ?? (trialLead.questionCount + 1);
 
-      const conversationMessages = (history && Array.isArray(history) ? history : session.messages).map((m: any) => ({
+      const conversationMessages = (history && Array.isArray(history) ? history : []).concat([{ role: "user", content: content.trim() }]).map((m: any) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
       }));
@@ -200,7 +212,8 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      res.write(`data: ${JSON.stringify({ remaining: LANDING_BOT_LIMIT - session.count })}\n\n`);
+      const remaining = Math.max(0, LANDING_BOT_LIMIT - newCount);
+      res.write(`data: ${JSON.stringify({ remaining })}\n\n`);
 
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",
@@ -220,9 +233,7 @@ export function registerChatRoutes(app: Express): void {
         }
       }
 
-      session.messages.push({ role: "assistant", content: assistantText });
-
-      res.write(`data: ${JSON.stringify({ done: true, remaining: LANDING_BOT_LIMIT - session.count })}\n\n`);
+      res.write(`data: ${JSON.stringify({ done: true, remaining })}\n\n`);
       res.end();
     } catch (error) {
       console.error("Error in landing bot:", error);

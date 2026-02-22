@@ -309,12 +309,22 @@ function DemoBotChat() {
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [remaining, setRemaining] = useState(3);
+  const [trialName, setTrialName] = useState(() => localStorage.getItem("cch_trial_name") || "");
+  const [trialEmail, setTrialEmail] = useState(() => localStorage.getItem("cch_trial_email") || "");
+  const [trialGated, setTrialGated] = useState(() => !localStorage.getItem("cch_trial_email"));
   const scrollRef = useRef<HTMLDivElement>(null);
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((text) => setInput(text));
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
+
+  const handleTrialGate = useCallback(() => {
+    if (!trialName.trim() || !trialEmail.trim() || !trialEmail.includes("@")) return;
+    localStorage.setItem("cch_trial_name", trialName.trim());
+    localStorage.setItem("cch_trial_email", trialEmail.trim());
+    setTrialGated(false);
+  }, [trialName, trialEmail]);
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || loading || limitReached) return;
@@ -329,7 +339,7 @@ function DemoBotChat() {
       const response = await fetch("/api/landing-bot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: userMsg, history: newMessages }),
+        body: JSON.stringify({ content: userMsg, history: newMessages, name: trialName, email: trialEmail }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -369,10 +379,39 @@ function DemoBotChat() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, limitReached, messages]);
+  }, [input, loading, limitReached, messages, trialName, trialEmail]);
 
   return (
     <div className="flex flex-col h-full">
+      {trialGated ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-3">
+          <Bot className="w-10 h-10 opacity-50" style={{ color: TEXT_SECONDARY }} />
+          <p className="text-sm font-medium text-center" style={{ color: TEXT_PRIMARY }}>Enter your info to try Corey free</p>
+          <input
+            type="text"
+            value={trialName}
+            onChange={(e) => setTrialName(e.target.value)}
+            placeholder="Your name"
+            className="w-full max-w-xs text-sm px-3 py-2 rounded-md border bg-white/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            style={{ borderColor: "rgba(0,0,0,0.1)", color: TEXT_PRIMARY }}
+            data-testid="input-demo-trial-name"
+          />
+          <input
+            type="email"
+            value={trialEmail}
+            onChange={(e) => setTrialEmail(e.target.value)}
+            placeholder="Work email"
+            className="w-full max-w-xs text-sm px-3 py-2 rounded-md border bg-white/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            style={{ borderColor: "rgba(0,0,0,0.1)", color: TEXT_PRIMARY }}
+            onKeyDown={(e) => e.key === "Enter" && handleTrialGate()}
+            data-testid="input-demo-trial-email"
+          />
+          <Button size="sm" onClick={handleTrialGate} disabled={!trialName.trim() || !trialEmail.includes("@")} data-testid="button-demo-trial-start">
+            Start Free Trial
+          </Button>
+        </div>
+      ) : (
+      <>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {messages.length === 0 && (
           <div className="text-center py-6" style={{ color: TEXT_SECONDARY }}>
@@ -441,6 +480,8 @@ function DemoBotChat() {
         <div className="text-center pb-1">
           <span className="text-xs" style={{ color: TEXT_SECONDARY }}>{remaining} demo question{remaining !== 1 ? "s" : ""} remaining</span>
         </div>
+      )}
+      </>
       )}
     </div>
   );
