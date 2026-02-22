@@ -36,6 +36,7 @@ import ClinicLetter from "@/pages/ClinicLetter";
 import CoreyStandalone from "@/pages/Corey";
 import TeamSeats from "@/pages/TeamSeats";
 import About from "@/pages/About";
+import CompanyProfile from "@/pages/CompanyProfile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -72,6 +73,7 @@ function Router() {
       <Route path="/corey" component={CoreyStandalone} />
       <Route path="/team-seats" component={TeamSeats} />
       <Route path="/about" component={About} />
+      <Route path="/company-profile" component={CompanyProfile} />
       <Route component={NotFound} />
     </Switch>
   );

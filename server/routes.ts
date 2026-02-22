@@ -243,6 +243,25 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
     }
 
+    let joinDate: string | null = null;
+    let nextPaymentDate: string | null = null;
+
+    if (sub?.createdAt) {
+      joinDate = sub.createdAt.toISOString();
+    }
+
+    if (sub?.stripeSubscriptionId && isPro) {
+      try {
+        const { getUncachableStripeClient } = await import('./stripeClient');
+        const stripe = await getUncachableStripeClient();
+        const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId) as any;
+        if (stripeSub?.current_period_end) {
+          nextPaymentDate = new Date(stripeSub.current_period_end * 1000).toISOString();
+        }
+      } catch (e) {
+      }
+    }
+
     res.json({
       status: sub?.status || "inactive",
       plan: sub?.plan,
@@ -250,6 +269,8 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       hasPlatform,
       isAdmin,
       teamMembership,
+      joinDate,
+      nextPaymentDate,
     });
   });
 
