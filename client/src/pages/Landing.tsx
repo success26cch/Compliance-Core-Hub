@@ -1007,25 +1007,13 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <PricingCard 
-              tier="ISO Essentials"
-              price="$49"
-              period="/mo"
-              features={["5 AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance"]}
-              bestFor="Startups preparing for first certification."
-              buttonText="Start ISO Journey"
-              buttonHref="https://acsi-quality.com/"
-              external
-              productId="iso-essentials"
-              onAddToCart={handleAddToCart}
-            />
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <PricingCard 
               tier="ISO Professional"
-              price="$149"
+              price="$199"
               period="/mo"
-              features={["Unlimited ISO AI guidance", "Internal Audit Checklists", "'Write-Up Free' Guarantee tools", "Quality Manual drafting"]}
-              bestFor="Companies maintaining ISO 9001/14001/45001."
+              features={["AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance", "Unlimited ISO AI guidance", "Internal Audit Checklists", "'Write-Up Free' Guarantee tools", "Quality Manual drafting"]}
+              bestFor="Startups and companies maintaining ISO 9001/14001/45001."
               buttonText="Go Professional"
               buttonHref="https://acsi-quality.com/"
               external

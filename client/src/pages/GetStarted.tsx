@@ -150,35 +150,7 @@ export default function GetStarted() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl">
-            <Card className="flex flex-col" data-testid="card-plan-iso-essentials">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <img src={acsiLogo} alt="ACSI" className="h-6 w-auto" />
-                  <CardTitle className="text-lg">ISO Essentials</CardTitle>
-                </div>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-3xl font-bold text-primary">$49</span>
-                  <span className="text-muted-foreground">/mo</span>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ul className="space-y-2 mb-6 flex-1">
-                  {["5 AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance"].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-muted-foreground italic mb-4">Startups preparing for first certification.</p>
-                <Button className="w-full" variant="outline" onClick={() => handleAddToCart("iso-essentials")} data-testid="button-add-cart-iso-essentials">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart — $49/mo
-                </Button>
-              </CardContent>
-            </Card>
-
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
             <Card className="flex flex-col border-accent ring-2 ring-accent" data-testid="card-plan-iso-professional">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -187,23 +159,23 @@ export default function GetStarted() {
                 </div>
                 <Badge className="bg-accent text-white w-fit mt-1">Recommended</Badge>
                 <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-3xl font-bold text-primary">$149</span>
+                  <span className="text-3xl font-bold text-primary">$199</span>
                   <span className="text-muted-foreground">/mo</span>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
                 <ul className="space-y-2 mb-6 flex-1">
-                  {["Unlimited ISO AI guidance", "Internal Audit Checklists", "'Write-Up Free' Guarantee tools", "Quality Manual drafting"].map((f, i) => (
+                  {["AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance", "Unlimited ISO AI guidance", "Internal Audit Checklists", "'Write-Up Free' Guarantee tools", "Quality Manual drafting"].map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
                       <span>{f}</span>
                     </li>
                   ))}
                 </ul>
-                <p className="text-xs text-muted-foreground italic mb-4">Companies maintaining ISO 9001/14001/45001.</p>
+                <p className="text-xs text-muted-foreground italic mb-4">Startups and companies maintaining ISO 9001/14001/45001.</p>
                 <Button className="w-full" onClick={() => handleAddToCart("iso-professional")} data-testid="button-add-cart-iso-professional">
                   <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart — $149/mo
+                  Add to Cart — $199/mo
                 </Button>
               </CardContent>
             </Card>
