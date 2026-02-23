@@ -97,36 +97,36 @@ export function Sidebar({ className = "" }: { className?: string }) {
         {/* Human Expert Retainer Section */}
         <div className="mt-6 pt-4 border-t border-border/50">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-3">
-            Human Expert Retainer
+            Success Manager Retainer
           </h3>
           <Card className="p-4 bg-accent/5 border-accent/20">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-accent" />
-                <h4 className="font-bold text-sm text-primary">Safety Officer on Standby</h4>
+                <h4 className="font-bold text-sm text-primary">Your Compliance Partner</h4>
               </div>
               
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-primary">The $0-Liability Safety Retainer</p>
-                <p className="text-xs text-muted-foreground">Your AI handles the questions; we handle the emergencies.</p>
+                <p className="text-xs font-semibold text-primary">$499/mo — Dedicated Support</p>
+                <p className="text-xs text-muted-foreground">Your AI handles the questions; your Success Manager keeps you on track.</p>
               </div>
               
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <Phone className="w-3.5 h-3.5 text-accent mt-0.5 flex-shrink-0" />
-                  <span><strong>Immediate Crisis Response:</strong> 4-hour callback for workplace accidents or OSHA inspections.</span>
+                  <span><strong>Priority Support:</strong> Direct access to Mario for system navigation and compliance guidance.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <FileCheck className="w-3.5 h-3.5 text-accent mt-0.5 flex-shrink-0" />
-                  <span><strong>OSHA 300 Log Audit:</strong> We review your year-end records to ensure 100% accuracy before you submit.</span>
+                  <span><strong>Monthly Pulse Check:</strong> 30-minute call to review your dashboard metrics and action items.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Shield className="w-3.5 h-3.5 text-accent mt-0.5 flex-shrink-0" />
-                  <span><strong>Audit Defense:</strong> If you get a DOT or OSHA audit letter, we sit at the table with you.</span>
+                  <span><strong>Quarterly Log Review:</strong> We verify your forms are complete and records are organized.</span>
                 </li>
               </ul>
               
-              <a href="mailto:retainer@corecompliancehub.com?subject=Retainer%20Inquiry" data-testid="button-inquire-retainer">
+              <a href="mailto:retainer@corecompliancehub.com?subject=Success%20Manager%20Retainer%20Inquiry" data-testid="button-inquire-retainer">
                 <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-xs">
                   <Mail className="w-3.5 h-3.5 mr-1.5" />
                   Inquire About Retainer

@@ -260,15 +260,15 @@ export default function GetStarted() {
             <Card className="flex flex-col" data-testid="card-plan-retainer">
               <CardHeader className="pb-3">
                 <Badge variant="secondary" className="w-fit">Human Expert</Badge>
-                <CardTitle className="text-lg mt-2">Expert Retainer</CardTitle>
+                <CardTitle className="text-lg mt-2">Success Manager Retainer</CardTitle>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="text-2xl font-bold text-primary">$499</span>
-                  <span className="text-sm text-muted-foreground">/mo</span>
+                  <span className="text-sm text-muted-foreground">/mo*</span>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
                 <ul className="space-y-2 mb-4 flex-1">
-                  {["Professional safety director support", "Crisis response within 24hrs", "OSHA 300 log audits", "Audit defense preparation"].map((f, i) => (
+                  {["Priority support — direct access to Mario", "Monthly Compliance Pulse Check (30-min call)", "Quarterly Log Review & AI Optimization", "Compliance Readiness Oversight", "Custom form integration into Bilingual Assistant"].map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                       <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
                       <span>{f}</span>
@@ -377,6 +377,15 @@ export default function GetStarted() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </section>
+
+        <section className="mb-16 max-w-4xl mx-auto">
+          <h3 className="text-sm font-semibold text-muted-foreground mb-4">* The Fine Print</h3>
+          <div className="space-y-3 text-xs text-muted-foreground">
+            <p><strong>Not Legal Advice:</strong> Core Compliance Hub (CCH) provides safety consulting and compliance support based on industry best practices and AI-driven insights. CCH does not provide legal advice. All final compliance decisions, disciplinary actions, and legal filings remain the sole responsibility of the Employer. For specific legal matters, please consult with a qualified employment attorney.</p>
+            <p><strong>No Guarantee of Outcome:</strong> While CCH tools and support are designed to minimize risk and improve audit readiness, CCH does not guarantee specific outcomes regarding OSHA inspections, DOT audits, or insurance premium adjustments. Compliance is an ongoing process that requires the Employer's active participation and adherence to safety protocols.</p>
+            <p><strong>Accuracy of Information:</strong> Expert Retainer support and AI-generated reports are only as accurate as the data provided by the User. CCH is not responsible for errors, omissions, or penalties resulting from incomplete or inaccurate information entered into the platform by the Employer or its representatives.</p>
           </div>
         </section>
 
