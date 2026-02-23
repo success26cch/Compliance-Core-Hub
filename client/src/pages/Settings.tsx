@@ -572,18 +572,24 @@ export default function Settings() {
                   {hasPlatform && <Badge className="bg-accent text-white text-xs">Current</Badge>}
                 </div>
                 <div className="text-3xl font-bold text-accent">$299<span className="text-base font-normal text-muted-foreground">/mo</span></div>
-                <CardDescription>Complete compliance management system</CardDescription>
+                <CardDescription>One platform, one price, everything you need</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span className="font-medium">Everything in Unlimited Safety</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Dashboard & Metrics</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Employee Management (up to 50)</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 Incident Log & Reports</span></div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider pb-1">Compliance & Employee Management</p>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Dashboard with real-time metrics</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Employee tracking & medical surveillance</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 logging & incident management</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>DOT notifications & drug testing tools</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Medical Passport with QR check-in</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Corrective Action Plans (CAPA)</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Medical Passport (QR Check-in)</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>DOT Expiration Notifications</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Action Queue & Priority Alerts</span></div>
-                <p className="text-xs text-muted-foreground pt-1">+$2/employee beyond 50</p>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">ISO & Audit Readiness</p>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>ISO 9001/14001/45001 AI guidance</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>AI Gap Analysis & audit checklists</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Audit Readiness Dashboard</span></div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">24/7 Access to Corey AI</p>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey AI queries</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>PDF document generation</span></div>
+                <p className="text-xs text-muted-foreground pt-1">Up to 50 employees included. +$2/employee beyond 50</p>
               </CardContent>
               <CardFooter className="flex-col gap-2">
                 {!hasPlatform && (
