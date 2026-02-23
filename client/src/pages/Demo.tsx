@@ -276,7 +276,6 @@ const slides: DemoSlide[] = [
       "ISO Professional: $149/mo - Unlimited ISO AI + audit checklists",
       "Integrated Enterprise: $299/mo - CCH + ACSI combined, up to 50 employees",
       "Spanish Bilingual Medical Assistant: $199/mo per location",
-      "Human Expert Retainer: $499/mo - Professional safety director support",
     ],
     visual: "pricing",
   },

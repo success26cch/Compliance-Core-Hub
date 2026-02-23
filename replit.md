@@ -25,6 +25,9 @@ The CCH platform is built with a modern web stack, utilizing React, Vite, Tailwi
 - **Data Management Routes:** Dedicated routes for dashboard, employee management, incident logging, account settings, team seat management, digital passport generation, clinic assistant interface, and specialized letter generators.
 - **Branded Divisions:** Includes BrandNSwag for employee recognition and ACSI Mentorship Program for ISO guidance, integrated within the CCH ecosystem.
 
+## Deferred Features (Not Yet Live)
+- **Success Manager Retainer ($499/mo):** Removed from all pages — not ready yet. Features planned: Priority support (direct access to Mario), Monthly Compliance Pulse Check (30-min call), Quarterly Log Review & AI Optimization, Compliance Readiness Oversight, Custom form integration into Bilingual Assistant. Includes three disclaimers: Not Legal Advice, No Guarantee of Outcome, Accuracy of Information. Will be re-added when ready.
+
 ## External Dependencies
 - **AI Integration:** Anthropic Claude (via Replit AI) for AI-powered chat and expert systems.
 - **Authentication:** Replit Auth for user authentication.

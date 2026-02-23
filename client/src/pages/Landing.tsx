@@ -1083,32 +1083,6 @@ export default function Landing() {
               </div>
             </Card>
 
-            <Card className="p-6 flex flex-col" data-testid="card-landing-retainer-pricing">
-              <Badge variant="secondary" className="self-start mb-3">Human Expert</Badge>
-              <h3 className="text-lg font-bold text-primary mb-1">Success Manager Retainer</h3>
-              <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-3xl font-bold text-primary">$499</span>
-                <span className="text-muted-foreground text-sm">/mo*</span>
-              </div>
-              <ul className="space-y-2 mb-6 flex-1">
-                {["Priority support — direct access to Mario", "Monthly Compliance Pulse Check (30-min call)", "Quarterly Log Review & AI Optimization", "Compliance Readiness Oversight", "Custom form integration into Bilingual Assistant"].map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="space-y-2">
-                <Button className="w-full" onClick={() => handleAddToCart("expert-retainer")} data-testid="button-add-cart-retainer">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
-                </Button>
-                <Link href="/contact">
-                  <Button variant="outline" className="w-full" data-testid="button-landing-retainer">Contact Us</Button>
-                </Link>
-              </div>
-            </Card>
-
             <Card className="p-6 flex flex-col" data-testid="card-landing-mentorship-pricing">
               <Badge className="self-start mb-3">CCH Exclusive</Badge>
               <h3 className="text-lg font-bold text-primary mb-1">ACSI Mentorship</h3>
@@ -1318,98 +1292,6 @@ export default function Landing() {
                 Contact Us
               </Button>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Human Expert Retainer Section */}
-      <section className="py-24 bg-white border-t border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                <Phone className="w-4 h-4" />
-                Human Expert Support
-              </div>
-              <h2 className="text-3xl font-display font-bold text-primary">
-                Your Compliance Success Manager
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                AI is powerful, but sometimes you need a real person in your corner. Our Success Manager Retainer gives you a dedicated compliance partner who ensures your team is getting the most out of CCH:
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground"><strong>Priority Support:</strong> Direct access to Mario for system navigation and compliance guidance</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground"><strong>Monthly Compliance Pulse Check:</strong> A 30-minute call to review your CCH dashboard metrics and action items</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground"><strong>Quarterly Log Review & AI Optimization:</strong> We verify your team is completing AI-prompted forms and your records are organized</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground"><strong>Compliance Readiness Oversight:</strong> We ensure your digital folders are organized so your team knows exactly where to find records when an inspector asks</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground"><strong>Custom Form Integration:</strong> We build your company-specific forms into the Bilingual Medical Assistant</span>
-                </li>
-              </ul>
-              <div className="pt-4">
-                <Link href="/contact">
-                  <Button variant="outline" data-testid="button-contact-retainer">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Contact Us
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <div className="bg-muted/30 rounded-2xl border border-border/50 p-8 text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
-                <Users className="w-10 h-10" />
-              </div>
-              <h3 className="text-2xl font-bold text-primary mb-2">App + Success Manager</h3>
-              <p className="text-muted-foreground mb-6">For companies who want a dedicated compliance partner to maximize their CCH investment</p>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-primary">$499</span>
-                <span className="text-muted-foreground">/mo*</span>
-              </div>
-              <ul className="space-y-2 text-left mb-8">
-                <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                  <span>All Unlimited Safety features included</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                  <span>Direct access to Mario for support</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                  <span>Monthly 30-min compliance pulse check</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                  <span>Quarterly log review & AI optimization</span>
-                </li>
-              </ul>
-              <Link href="/contact">
-                <Button size="lg" className="w-full" data-testid="button-human-expert-access">
-                  Get Your Success Manager
-                </Button>
-              </Link>
-            </div>
-          </div>
-          <div className="mt-12 max-w-4xl mx-auto">
-            <h4 className="text-sm font-semibold text-muted-foreground mb-3">* The Fine Print</h4>
-            <div className="space-y-2 text-xs text-muted-foreground">
-              <p><strong>Not Legal Advice:</strong> Core Compliance Hub (CCH) provides safety consulting and compliance support based on industry best practices and AI-driven insights. CCH does not provide legal advice. All final compliance decisions, disciplinary actions, and legal filings remain the sole responsibility of the Employer. For specific legal matters, please consult with a qualified employment attorney.</p>
-              <p><strong>No Guarantee of Outcome:</strong> While CCH tools and support are designed to minimize risk and improve audit readiness, CCH does not guarantee specific outcomes regarding OSHA inspections, DOT audits, or insurance premium adjustments. Compliance is an ongoing process that requires the Employer's active participation and adherence to safety protocols.</p>
-              <p><strong>Accuracy of Information:</strong> Expert Retainer support and AI-generated reports are only as accurate as the data provided by the User. CCH is not responsible for errors, omissions, or penalties resulting from incomplete or inaccurate information entered into the platform by the Employer or its representatives.</p>
-            </div>
           </div>
         </div>
       </section>
@@ -1627,7 +1509,7 @@ export default function Landing() {
                 Is the AI guidance legally binding?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                CCH provides educational guidance based on OSHA 29 CFR 1904, DOT 49 CFR Part 40, and ISO standards. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, we recommend our Human Expert Retainer service.
+                CCH provides educational guidance based on OSHA 29 CFR 1904, DOT 49 CFR Part 40, and ISO standards. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, please consult with a qualified employment attorney.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2" className="bg-muted/30 rounded-lg border border-border/50 px-6">
@@ -1660,14 +1542,6 @@ export default function Landing() {
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 Yes! All training courses include a certificate of completion upon finishing the curriculum. Certificates can be used to demonstrate continuing education in occupational health, safety, and compliance to employers and regulatory bodies.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-6" className="bg-muted/30 rounded-lg border border-border/50 px-6">
-              <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
-                How does the Success Manager Retainer work?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                The Success Manager Retainer ($499/mo) gives you a dedicated compliance partner. You get all Unlimited Safety features plus direct access to Mario for priority support, a monthly 30-minute compliance pulse check to review your dashboard metrics, quarterly log reviews to ensure your records are complete and organized, compliance readiness oversight, and custom form integration into the Bilingual Medical Assistant. Ideal for companies who want hands-on guidance to maximize their CCH investment.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

@@ -728,33 +728,16 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Retainer Support for Unlimited Plan */}
-            {isUnlimited && (
-              <Card className="border-accent/50 bg-accent/5" data-testid="card-retainer-support">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-accent" />
-                    Human Expert Access
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    As an Unlimited subscriber, you have priority access to our human compliance experts.
-                  </p>
-                  <RetainerSupportDialog />
-                </CardContent>
-              </Card>
-            )}
 
             {/* Upgrade prompt for free users */}
             {!isUnlimited && (
               <Card className="border-primary/30 bg-primary/5">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Unlock Unlimited Corey + Human Expert Access</CardTitle>
+                  <CardTitle className="text-sm">Unlock Unlimited Corey Access</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-xs text-muted-foreground">
-                    Upgrade to Unlimited Safety for unlimited Corey interactions and priority human expert support.
+                    Upgrade to Unlimited Safety for unlimited Corey interactions and full compliance tools.
                   </p>
                   <Link href="/settings">
                     <Button variant="outline" className="w-full" size="sm">

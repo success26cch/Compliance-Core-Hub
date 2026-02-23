@@ -235,7 +235,6 @@ export default function Contact() {
                                 <SelectItem value="iso">ISO Certification &amp; Audits</SelectItem>
                                 <SelectItem value="training">Training Courses</SelectItem>
                                 <SelectItem value="mentorship">ACSI Mentorship Program</SelectItem>
-                                <SelectItem value="retainer">Human Expert Retainer ($499/mo)</SelectItem>
                                 <SelectItem value="consultation">One-Time Consultation</SelectItem>
                                 <SelectItem value="demo">Request a Demo</SelectItem>
                               </SelectContent>
@@ -310,10 +309,6 @@ export default function Contact() {
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
                     <span>Training &amp; mentorship programs</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                    <span>Human Expert Retainer ($499/mo)</span>
                   </li>
                 </ul>
               </CardContent>
