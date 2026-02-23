@@ -8,6 +8,7 @@ import { PRODUCTS } from "@/lib/products";
 import { CartTrigger } from "@/components/CartDrawer";
 import logoUrl from "@assets/1_1770683748423.png";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
+import coreyImg from "@assets/6_1771806567979.png";
 
 export default function GetStarted() {
   const { addItem } = useCart();
@@ -199,6 +200,15 @@ export default function GetStarted() {
                       </li>
                     ))}
                   </ul>
+                </div>
+                <div className="border-t border-border/50 pt-4 mb-4">
+                  <div className="flex items-center gap-4 bg-primary/5 rounded-xl p-4">
+                    <img src={coreyImg} alt="Corey AI Assistant" className="w-20 h-20 object-contain flex-shrink-0" data-testid="img-corey-employer-card" />
+                    <div>
+                      <h4 className="text-sm font-bold text-primary">24/7 Access to Corey AI</h4>
+                      <p className="text-xs text-muted-foreground mt-1">Your AI-powered Senior Compliance Expert is always on call — get instant answers on OSHA, DOT, ISO, and more, any time of day.</p>
+                    </div>
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground italic mb-4 text-center">For companies serious about compliance — from startups to mid-sized firms.</p>
                 <Button className="w-full" size="lg" onClick={() => handleAddToCart("employer-platform")} data-testid="button-add-cart-employer-platform">
