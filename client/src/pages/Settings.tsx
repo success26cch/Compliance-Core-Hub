@@ -509,16 +509,12 @@ export default function Settings() {
                   {!subStatus?.isPro && <Badge variant="default" className="text-xs">Current</Badge>}
                 </div>
                 <div className="text-3xl font-bold text-primary">Free</div>
-                <CardDescription>Try CCH with basic access</CardDescription>
+                <CardDescription>No credit card required</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>3 Corey AI questions/month</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 Decision Tree</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Training course previews</span></div>
-                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No compliance dashboard</span></div>
-                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No employee management</span></div>
-                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No OSHA 300 logging</span></div>
-                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No Medical Passport</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>3 Corey Questions / month</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA Recordability Guidance</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Basic DOT Compliance Help</span></div>
               </CardContent>
             </Card>
 
@@ -528,17 +524,19 @@ export default function Settings() {
                   <CardTitle className="text-lg">Unlimited Safety</CardTitle>
                   {isCoreyPro && <Badge variant="default" className="text-xs">Current</Badge>}
                 </div>
-                <div className="text-3xl font-bold text-primary">$99<span className="text-base font-normal text-muted-foreground">/mo per seat</span></div>
+                <div className="text-3xl font-bold text-primary">$99<span className="text-base font-normal text-muted-foreground">/mo per user</span></div>
                 <CardDescription>Unlimited Corey AI access</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey AI queries</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>PDF document generation</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 Decision Tree</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority support</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Team seat purchasing</span></div>
-                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No compliance dashboard</span></div>
-                <div className="flex items-center gap-2 text-muted-foreground"><X className="w-4 h-4 shrink-0" /><span>No employee management</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Everything in Safety Starter</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey Interactions</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Checklist Library (downloadable PDFs)</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Interactive Audit Prep Tools with progress tracking</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>DOT physical & drug testing guidance</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Workers' comp documentation help</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Custom compliance reports</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority response times</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Dedicated support</span></div>
               </CardContent>
               <CardFooter>
                 {!subStatus?.isPro && (
@@ -563,7 +561,7 @@ export default function Settings() {
             <Card className={`border-2 relative ${hasPlatform ? 'border-accent bg-accent/5' : 'border-accent/50'}`} data-testid="card-plan-platform">
               {!hasPlatform && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-accent text-white px-3 py-1 text-xs font-bold">MOST POPULAR</Badge>
+                  <Badge className="bg-accent text-white px-3 py-1 text-xs font-bold">One Platform. Everything Included.</Badge>
                 </div>
               )}
               <CardHeader className="pb-3">
@@ -572,10 +570,10 @@ export default function Settings() {
                   {hasPlatform && <Badge className="bg-accent text-white text-xs">Current</Badge>}
                 </div>
                 <div className="text-3xl font-bold text-accent">$299<span className="text-base font-normal text-muted-foreground">/mo</span></div>
-                <CardDescription>One platform, one price, everything you need</CardDescription>
+                <CardDescription>Up to 50 employees included · +$2/employee beyond 50</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <p className="text-xs font-semibold text-primary uppercase tracking-wider pb-1">Compliance & Employee Management</p>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider pb-1">Health & Safety</p>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Dashboard with real-time metrics</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Employee tracking & medical surveillance</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 logging & incident management</span></div>
@@ -585,11 +583,18 @@ export default function Settings() {
                 <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">ISO & Audit Readiness</p>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>ISO 9001/14001/45001 AI guidance</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>AI Gap Analysis & audit checklists</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Quality Manual & procedure drafting</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>'Write-Up Free' Guarantee tools</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Management Review templates</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Audit Readiness Dashboard</span></div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">Also Included</p>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Supplier audit checklists</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Document control & tracking</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Certification Readiness Score</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority expert support</span></div>
                 <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">24/7 Access to Corey AI</p>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey AI queries</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>PDF document generation</span></div>
-                <p className="text-xs text-muted-foreground pt-1">Up to 50 employees included. +$2/employee beyond 50</p>
               </CardContent>
               <CardFooter className="flex-col gap-2">
                 {!hasPlatform && (
