@@ -150,87 +150,58 @@ export default function GetStarted() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl">
-            <Card className="flex flex-col border-accent ring-2 ring-accent" data-testid="card-plan-iso-essentials">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <img src={acsiLogo} alt="ACSI" className="h-6 w-auto" />
-                  <CardTitle className="text-lg">ISO Essentials</CardTitle>
+          <div className="max-w-2xl mx-auto">
+            <Card className="flex flex-col border-accent ring-2 ring-accent" data-testid="card-plan-employer-platform">
+              <CardHeader className="text-center pb-2">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Building2 className="w-6 h-6 text-accent" />
+                  <CardTitle className="text-xl">Complete Compliance Platform</CardTitle>
                 </div>
-                <Badge className="bg-accent text-white w-fit mt-1">Recommended</Badge>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-3xl font-bold text-primary">$99</span>
+                <Badge className="bg-accent text-white w-fit mx-auto">One Platform. Everything Included.</Badge>
+                <div className="flex items-baseline justify-center gap-1 mt-4">
+                  <span className="text-4xl font-bold text-primary">$299</span>
                   <span className="text-muted-foreground">/mo</span>
                 </div>
+                <p className="text-sm text-muted-foreground mt-2">Up to 50 employees included &middot; +$2/employee beyond 50</p>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ul className="space-y-2 mb-6 flex-1">
-                  {["AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance", "Internal Audit Checklists", "Corrective Action Tracking", "Document Control Basics", "Certification Readiness Score"].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-muted-foreground italic mb-4">Startups and growing companies preparing for certification.</p>
-                <Button className="w-full" onClick={() => handleAddToCart("iso-essentials")} data-testid="button-add-cart-iso-essentials">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart — $99/mo
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="flex flex-col" data-testid="card-plan-iso-professional">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">ISO Professional</CardTitle>
+              <CardContent className="flex-1 flex flex-col pt-4">
+                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-1 mb-6">
+                  <div>
+                    <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Health & Safety</h4>
+                    <ul className="space-y-2 mb-5">
+                      {["Compliance Dashboard with real-time metrics", "Employee tracking & medical surveillance", "OSHA 300 logging & incident management", "DOT notifications & drug testing tools", "Medical Passport with QR check-in", "Corrective Action Plans (CAPA)"].map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">ISO & Audit Readiness</h4>
+                    <ul className="space-y-2 mb-5">
+                      {["ISO 9001/14001/45001 AI guidance", "AI Gap Analysis & audit checklists", "Quality Manual & procedure drafting", "'Write-Up Free' Guarantee tools", "Management Review templates", "Audit Readiness Dashboard"].map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-3xl font-bold text-primary">$199</span>
-                  <span className="text-muted-foreground">/mo</span>
+                <div className="border-t border-border/50 pt-4 mb-4">
+                  <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Also Included</h4>
+                  <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
+                    {["Supplier audit checklists", "Document control & tracking", "Certification Readiness Score", "Priority expert support"].map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ul className="space-y-2 mb-6 flex-1">
-                  {["Everything in ISO Essentials", "Unlimited ISO AI guidance", "'Write-Up Free' Guarantee tools", "Quality Manual drafting", "Management Review templates", "Supplier audit checklists", "Dedicated ISO advisor support"].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-muted-foreground italic mb-4">Companies actively maintaining ISO 9001/14001/45001.</p>
-                <Button className="w-full" variant="outline" onClick={() => handleAddToCart("iso-professional")} data-testid="button-add-cart-iso-professional">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart — $199/mo
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="flex flex-col" data-testid="card-plan-enterprise">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-accent" />
-                  <CardTitle className="text-lg">Integrated Enterprise</CardTitle>
-                </div>
-                <Badge variant="secondary" className="w-fit mt-1">CCH + ACSI Combined</Badge>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-3xl font-bold text-primary">$299</span>
-                  <span className="text-muted-foreground">/mo</span>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ul className="space-y-2 mb-6 flex-1">
-                  {["Full Health, Safety & ISO suite", "Audit Readiness Dashboard", "Up to 50 employees included", "+$2/employee beyond 50", "Priority expert support"].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-muted-foreground italic mb-4">Mid-sized firms with high compliance risk.</p>
-                <Button className="w-full" onClick={() => handleAddToCart("integrated-enterprise")} data-testid="button-add-cart-enterprise">
+                <p className="text-sm text-muted-foreground italic mb-4 text-center">For companies serious about compliance — from startups to mid-sized firms.</p>
+                <Button className="w-full" size="lg" onClick={() => handleAddToCart("employer-platform")} data-testid="button-add-cart-employer-platform">
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Add to Cart — $299/mo
                 </Button>

@@ -1007,41 +1007,30 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="max-w-2xl mx-auto">
             <PricingCard 
-              tier="ISO Essentials"
-              price="$99"
-              period="/mo"
-              features={["AI Gap Analysis checks", "Procedure Templates", "ISO 9001/14001/45001 guidance", "Internal Audit Checklists", "Corrective Action Tracking", "Document Control Basics", "Certification Readiness Score"]}
-              bestFor="Startups and growing companies preparing for certification."
-              buttonText="Start ISO Journey"
-              buttonHref="https://acsi-quality.com/"
-              external
-              highlighted
-              productId="iso-essentials"
-              onAddToCart={handleAddToCart}
-            />
-            <PricingCard 
-              tier="ISO Professional"
-              price="$199"
-              period="/mo"
-              features={["Everything in ISO Essentials", "Unlimited ISO AI guidance", "'Write-Up Free' Guarantee tools", "Quality Manual drafting", "Management Review templates", "Supplier audit checklists", "Dedicated ISO advisor support"]}
-              bestFor="Companies actively maintaining ISO 9001/14001/45001."
-              buttonText="Go Professional"
-              buttonHref="https://acsi-quality.com/"
-              external
-              productId="iso-professional"
-              onAddToCart={handleAddToCart}
-            />
-            <PricingCard 
-              tier="Integrated Enterprise"
+              tier="Complete Compliance Platform"
               price="$299"
               period="/mo"
-              features={["CCH + ACSI Combined", "Full Health, Safety & ISO suite", "Audit Readiness Dashboard", "Up to 50 employees included", "+$2/employee beyond 50", "Priority expert support"]}
-              bestFor="Mid-sized firms with high compliance risk."
-              buttonText="Enterprise Bundle"
+              features={[
+                "Compliance Dashboard with real-time metrics",
+                "Employee tracking & medical surveillance",
+                "OSHA 300 logging & incident management",
+                "DOT notifications & drug testing tools",
+                "Medical Passport with QR check-in",
+                "ISO 9001/14001/45001 AI guidance",
+                "AI Gap Analysis & audit checklists",
+                "Quality Manual & procedure drafting",
+                "'Write-Up Free' Guarantee tools",
+                "Audit Readiness Dashboard",
+                "Up to 50 employees included (+$2/ea beyond 50)",
+                "Priority expert support",
+              ]}
+              bestFor="For companies serious about compliance — from startups to mid-sized firms. One platform, one price, everything you need."
+              buttonText="Get Started — $299/mo"
               buttonHref="/get-started"
-              productId="integrated-enterprise"
+              highlighted
+              productId="employer-platform"
               onAddToCart={handleAddToCart}
             />
           </div>
