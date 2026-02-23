@@ -202,8 +202,8 @@ export default function GetStarted() {
                   </ul>
                 </div>
                 <div className="border-t border-border/50 pt-4 mb-4">
-                  <div className="flex items-center gap-4 bg-primary/5 rounded-xl p-4">
-                    <img src={coreyImg} alt="Corey AI Assistant" className="w-20 h-20 object-contain flex-shrink-0" data-testid="img-corey-employer-card" />
+                  <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                    <img src={coreyImg} alt="Corey AI Assistant" className="w-32 h-32 object-contain flex-shrink-0" data-testid="img-corey-employer-card" />
                     <div>
                       <h4 className="text-sm font-bold text-primary">24/7 Access to Corey AI</h4>
                       <p className="text-xs text-muted-foreground mt-1">Your AI-powered Senior Compliance Expert is always on call — get instant answers on OSHA, DOT, ISO, and more, any time of day.</p>
