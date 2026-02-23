@@ -591,6 +591,7 @@ export default function Settings() {
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Supplier audit checklists</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Document control & tracking</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Certification Readiness Score</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Glossary (OSHA, DOT, ISO & more)</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority expert support</span></div>
                 <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">24/7 Access to Corey AI</p>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey AI queries</span></div>

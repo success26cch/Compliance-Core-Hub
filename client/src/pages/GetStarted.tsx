@@ -193,7 +193,7 @@ export default function GetStarted() {
                 <div className="border-t border-border/50 pt-4 mb-4">
                   <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Also Included</h4>
                   <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
-                    {["Supplier audit checklists", "Document control & tracking", "Certification Readiness Score", "Priority expert support"].map((f, i) => (
+                    {["Supplier audit checklists", "Document control & tracking", "Certification Readiness Score", "Compliance Glossary (OSHA, DOT, ISO & more)", "Priority expert support"].map((f, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
                         <span>{f}</span>

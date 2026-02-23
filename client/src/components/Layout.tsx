@@ -21,7 +21,8 @@ import {
   QrCode,
   MessageSquare,
   ClipboardCheck,
-  FileText
+  FileText,
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -47,6 +48,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
     { href: "/compliance-checklists", label: "Compliance Checklists", icon: FileText },
     { href: "/audit-prep", label: "Audit Prep Tools", icon: ClipboardCheck },
+    { href: "/compliance-glossary", label: "Compliance Glossary", icon: BookOpen },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
     { href: "/employee-passport", label: "Medical Passport", icon: QrCode },
     { href: "/contact", label: "Contact Us", icon: MessageSquare },

@@ -41,6 +41,7 @@ import CompanyProfile from "@/pages/CompanyProfile";
 import GetStarted from "@/pages/GetStarted";
 import ComplianceChecklists from "@/pages/ComplianceChecklists";
 import AuditPrep from "@/pages/AuditPrep";
+import ComplianceGlossary from "@/pages/ComplianceGlossary";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -93,6 +94,7 @@ function Router() {
       <Route path="/get-started" component={GetStarted} />
       <Route path="/compliance-checklists" component={ComplianceChecklists} />
       <Route path="/audit-prep" component={AuditPrep} />
+      <Route path="/compliance-glossary" component={ComplianceGlossary} />
       <Route component={NotFound} />
     </Switch>
   );
