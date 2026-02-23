@@ -49,7 +49,8 @@ export function generateISOAuditCheatSheet(): typeof PDFDocument.prototype {
   ];
 
   thirtyDays.forEach(item => {
-    doc.text(`☐ ${item}`, margin + 10, y, { width: contentWidth - 20 });
+    doc.rect(margin + 10, y + 1, 6, 6).lineWidth(0.5).strokeColor(textColor).stroke();
+    doc.text(item, margin + 20, y, { width: contentWidth - 30 });
     y += 11;
   });
 
@@ -73,7 +74,8 @@ export function generateISOAuditCheatSheet(): typeof PDFDocument.prototype {
   ];
 
   fourteenDays.forEach(item => {
-    doc.text(`☐ ${item}`, margin + 10, y, { width: contentWidth - 20 });
+    doc.rect(margin + 10, y + 1, 6, 6).lineWidth(0.5).strokeColor(textColor).stroke();
+    doc.text(item, margin + 20, y, { width: contentWidth - 30 });
     y += 11;
   });
 
@@ -96,7 +98,8 @@ export function generateISOAuditCheatSheet(): typeof PDFDocument.prototype {
   ];
 
   dayBefore.forEach(item => {
-    doc.text(`☐ ${item}`, margin + 10, y, { width: contentWidth - 20 });
+    doc.rect(margin + 10, y + 1, 6, 6).lineWidth(0.5).strokeColor(textColor).stroke();
+    doc.text(item, margin + 20, y, { width: contentWidth - 30 });
     y += 11;
   });
 
@@ -133,13 +136,15 @@ export function generateISOAuditCheatSheet(): typeof PDFDocument.prototype {
 
   const startY = y;
   leftFindings.forEach(item => {
-    doc.text(`• ${item}`, leftX + 10, y, { width: colWidth - 20 });
+    doc.circle(leftX + 13, y + 3, 1.5).fill(textColor);
+    doc.fillColor(textColor).text(item, leftX + 20, y, { width: colWidth - 30 });
     y += 10;
   });
 
   let rightY = startY;
   rightFindings.forEach(item => {
-    doc.text(`• ${item}`, rightX, rightY, { width: colWidth - 20 });
+    doc.circle(rightX + 3, rightY + 3, 1.5).fill(textColor);
+    doc.fillColor(textColor).text(item, rightX + 10, rightY, { width: colWidth - 20 });
     rightY += 10;
   });
 
@@ -163,7 +168,8 @@ export function generateISOAuditCheatSheet(): typeof PDFDocument.prototype {
   ];
 
   questions.forEach(item => {
-    doc.text(`• ${item}`, margin + 10, y, { width: contentWidth - 20 });
+    doc.circle(margin + 13, y + 3, 1.5).fill(textColor);
+    doc.fillColor(textColor).text(item, margin + 20, y, { width: contentWidth - 30 });
     y += 11;
   });
 
