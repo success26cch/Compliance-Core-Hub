@@ -96,6 +96,7 @@ export interface IStorage {
   getUserGrowthLast30Days(): Promise<{ date: string; count: number }[]>;
   getRetainerRequests(): Promise<ContactInquiry[]>;
   setSuperadmin(userId: string, isSuperadmin: boolean): Promise<User | undefined>;
+  getCompanyUsageStats(): Promise<any[]>;
 
   // Clinic Agreements
   createClinicAgreement(agreement: InsertClinicAgreement): Promise<ClinicAgreement>;
@@ -706,6 +707,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updated;
+  }
+
+  async getCompanyUsageStats(): Promise<any[]> {
+    const result = await db.execute(sql`
+      SELECT 
+        u.id as user_id,
+        COALESCE(cp.company_name, CONCAT(u.first_name, ' ', u.last_name), u.email) as company_name,
+        (SELECT COUNT(*) FROM conversations c WHERE c.user_id = u.id) as conversations_count,
+        (SELECT COUNT(*) FROM messages m JOIN conversations c ON m.conversation_id = c.id WHERE c.user_id = u.id) as messages_count,
+        (SELECT COUNT(*) FROM employees e WHERE e.user_id = u.id) as employees_count,
+        (SELECT COUNT(*) FROM incidents i WHERE i.user_id = u.id) as incidents_count,
+        (SELECT COUNT(*) FROM audit_checklist_items aci WHERE aci.user_id = u.id AND aci.completed = true) as audit_items_completed,
+        (SELECT COUNT(*) FROM dot_notifications dn WHERE dn.user_id = u.id) as dot_notifications_count,
+        (SELECT MAX(m.created_at) FROM messages m JOIN conversations c ON m.conversation_id = c.id WHERE c.user_id = u.id) as last_corey_activity,
+        s.plan,
+        s.status as plan_status
+      FROM users u
+      LEFT JOIN company_profiles cp ON cp.user_id = u.id
+      LEFT JOIN subscriptions s ON s.user_id = u.id
+      ORDER BY messages_count DESC
+    `);
+    return result.rows;
   }
 
   async createClinicAgreement(agreement: InsertClinicAgreement): Promise<ClinicAgreement> {

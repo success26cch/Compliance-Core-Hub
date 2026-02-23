@@ -78,7 +78,12 @@ export default function ComplianceChecklists() {
     enabled: isAuthenticated,
   });
 
-  const hasAccess = subscription?.status === 'active';
+  const { data: superadminCheck } = useQuery<{ isSuperadmin: boolean }>({
+    queryKey: ['/api/superadmin/check'],
+    enabled: isAuthenticated,
+  });
+
+  const hasAccess = subscription?.status === 'active' || superadminCheck?.isSuperadmin === true;
 
   const handleDownload = (url: string) => {
     if (!hasAccess) return;

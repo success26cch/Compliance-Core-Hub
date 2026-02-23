@@ -164,7 +164,12 @@ export default function AuditPrep() {
     enabled: isAuthenticated,
   });
 
-  const hasAccess = subscription?.status === 'active';
+  const { data: superadminCheck } = useQuery<{ isSuperadmin: boolean }>({
+    queryKey: ['/api/superadmin/check'],
+    enabled: isAuthenticated,
+  });
+
+  const hasAccess = subscription?.status === 'active' || superadminCheck?.isSuperadmin === true;
 
   const { data: checklistData } = useQuery<AuditChecklistItem[]>({
     queryKey: ['/api/audit-checklist', activeTab],

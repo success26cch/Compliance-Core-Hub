@@ -1705,6 +1705,16 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  app.get("/api/superadmin/company-usage", requireSuperadmin, async (req, res) => {
+    try {
+      const usage = await storage.getCompanyUsageStats();
+      res.json(usage);
+    } catch (error: any) {
+      console.error('Error fetching company usage:', error);
+      res.status(500).json({ message: "Failed to fetch company usage" });
+    }
+  });
+
   // Get user growth over last 30 days
   app.get("/api/superadmin/growth", requireSuperadmin, async (req, res) => {
     try {

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Users, TrendingUp, AlertTriangle, Download, Mail, Building2, UserCheck, Clock, CheckCircle2, XCircle, Bot, MessageSquare, Eye, BarChart3 } from "lucide-react";
+import { DollarSign, Users, TrendingUp, AlertTriangle, Download, Mail, Building2, UserCheck, Clock, CheckCircle2, XCircle, Bot, MessageSquare, Eye, BarChart3, Activity } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { apiRequest } from "@/lib/queryClient";
 import { Redirect } from "wouter";
@@ -68,6 +68,20 @@ type SiteVisitStats = {
   topPages: { page: string; count: number }[];
 };
 
+type CompanyUsage = {
+  user_id: string;
+  company_name: string;
+  conversations_count: string;
+  messages_count: string;
+  employees_count: string;
+  incidents_count: string;
+  audit_items_completed: string;
+  dot_notifications_count: string;
+  last_corey_activity: string | null;
+  plan: string | null;
+  plan_status: string | null;
+};
+
 const planLabels: Record<string, string> = {
   'free': 'Free',
   'cch_unlimited_safety': 'Unlimited Safety ($99)',
@@ -117,6 +131,11 @@ export default function SuperAdmin() {
 
   const { data: siteVisitStats } = useQuery<SiteVisitStats>({
     queryKey: ['/api/superadmin/site-visits'],
+    enabled: checkData?.isSuperadmin === true,
+  });
+
+  const { data: companyUsage, isLoading: usageLoading } = useQuery<CompanyUsage[]>({
+    queryKey: ['/api/superadmin/company-usage'],
     enabled: checkData?.isSuperadmin === true,
   });
 
@@ -253,6 +272,10 @@ export default function SuperAdmin() {
             {trialLeads && trialLeads.length > 0 && (
               <Badge variant="secondary" className="ml-2">{trialLeads.length}</Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="usage" data-testid="tab-usage">
+            <Activity className="w-4 h-4 mr-2" />
+            Tool Usage
           </TabsTrigger>
           <TabsTrigger value="traffic" data-testid="tab-traffic">
             <BarChart3 className="w-4 h-4 mr-2" />
@@ -556,6 +579,107 @@ export default function SuperAdmin() {
               {trialLeads && trialLeads.length > 0 && (
                 <div className="mt-4 text-sm text-muted-foreground">
                   Total trial users: {trialLeads.length}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tool Usage Tab */}
+        <TabsContent value="usage">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-accent" />
+                Company Tool Usage
+              </CardTitle>
+              <CardDescription>See which tools and features each company is actively using</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {usageLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Plan</TableHead>
+                        <TableHead className="text-center">Corey Chats</TableHead>
+                        <TableHead className="text-center">Messages</TableHead>
+                        <TableHead className="text-center">Employees</TableHead>
+                        <TableHead className="text-center">Incidents</TableHead>
+                        <TableHead className="text-center">Audit Items</TableHead>
+                        <TableHead className="text-center">DOT Alerts</TableHead>
+                        <TableHead>Last Active</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {companyUsage?.map((usage) => {
+                        const totalActivity = Number(usage.messages_count) + Number(usage.employees_count) + Number(usage.incidents_count) + Number(usage.audit_items_completed) + Number(usage.dot_notifications_count);
+                        return (
+                          <TableRow key={usage.user_id} data-testid={`row-usage-${usage.user_id}`}>
+                            <TableCell>
+                              <div className="font-medium">{usage.company_name}</div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={usage.plan_status === 'active' ? 'default' : 'secondary'}>
+                                {planLabels[usage.plan || ''] || 'Free'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={Number(usage.conversations_count) > 0 ? 'font-medium text-accent' : 'text-muted-foreground'}>
+                                {usage.conversations_count}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={Number(usage.messages_count) > 0 ? 'font-medium text-accent' : 'text-muted-foreground'}>
+                                {usage.messages_count}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={Number(usage.employees_count) > 0 ? 'font-medium text-blue-600' : 'text-muted-foreground'}>
+                                {usage.employees_count}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={Number(usage.incidents_count) > 0 ? 'font-medium text-orange-600' : 'text-muted-foreground'}>
+                                {usage.incidents_count}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={Number(usage.audit_items_completed) > 0 ? 'font-medium text-purple-600' : 'text-muted-foreground'}>
+                                {usage.audit_items_completed}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={Number(usage.dot_notifications_count) > 0 ? 'font-medium text-green-600' : 'text-muted-foreground'}>
+                                {usage.dot_notifications_count}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {usage.last_corey_activity ? (
+                                <span className="text-sm text-muted-foreground">
+                                  {new Date(usage.last_corey_activity).toLocaleDateString()}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">Never</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {(!companyUsage || companyUsage.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                            No usage data available
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </CardContent>
