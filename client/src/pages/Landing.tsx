@@ -1180,17 +1180,17 @@ export default function Landing() {
               ]}
             />
             <div
-              className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center cursor-pointer"
+              className="p-8 rounded-2xl bg-primary text-primary-foreground flex flex-col justify-center items-center text-center"
             >
               <GraduationCap className="w-12 h-12 mb-4 opacity-80" />
               <h3 className="text-xl font-bold mb-2">Complete Training Bundle</h3>
               <p className="text-primary-foreground/80 text-sm mb-4">All 4 courses + Corporate License</p>
-              <div className="text-3xl font-bold mb-4">$899</div>
-              <p className="text-xs text-primary-foreground/60 mb-4">Save over $300</p>
-              <Button variant="secondary" size="sm" onClick={() => handleAddToCart("course-complete-bundle")} data-testid="button-add-cart-bundle">
-                <ShoppingCart className="w-3 h-3 mr-1" />
-                Add Bundle to Cart
-              </Button>
+              <p className="text-lg font-semibold text-primary-foreground mb-4">Bundle pricing available</p>
+              <Link href="/get-started">
+                <Button variant="secondary" size="sm" data-testid="button-view-bundle-pricing">
+                  View Bundle Pricing
+                </Button>
+              </Link>
             </div>
           </div>
           <Card className="max-w-4xl mx-auto p-6 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/30 mt-12 mb-4" data-testid="card-employer-portal-promo">
