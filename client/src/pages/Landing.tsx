@@ -34,6 +34,7 @@ import mentorshipLogo from "@assets/tree.transp_1768928785893.png";
 import brandNSwagLogo from "@assets/2026_BNS_Logo_1768928815681.png";
 import cchLogo from "@assets/1_1770683748423.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
+import coreyImg from "@assets/3_1771982948528.png";
 import heroVideoUrl from "@assets/CCH_BOT_VIDEO_1771359482914.mp4";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -804,7 +805,7 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-2 gap-8">
             <FeatureCard 
-              imageSrc={cchLogo}
+              imageSrc={coreyImg}
               title="Meet Corey — Your AI Compliance Expert"
               description="Corey is the only AI built for Occ-Health. Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
             />
