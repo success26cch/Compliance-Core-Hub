@@ -378,8 +378,8 @@ export default function GetStarted() {
                 Contact Us
               </Button>
             </Link>
-            <Link href="/demo">
-              <Button size="lg" data-testid="button-try-demo">
+            <Link href="/corey">
+              <Button size="lg" data-testid="button-try-corey">
                 Try Corey Free
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
