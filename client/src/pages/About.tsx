@@ -66,7 +66,7 @@ export default function About() {
                 Why We Built CCH
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                Every day, employers across America face a mountain of federal regulations they're expected to understand and follow — OSHA recordkeeping, DOT medical requirements, drug and alcohol testing protocols, respiratory protection standards — the list never stops growing.
+                Every day, employers across America face a mountain of federal regulations they're expected to understand and follow — OSHA 300 recordkeeping, DOT medical requirements, drug and alcohol testing protocols, respiratory protection standards — the list never stops growing.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 The problem? Most employers don't have a dedicated safety director. They don't have a compliance team. They have a safety manager who's also the HR manager, the fleet coordinator, and the person who orders supplies. They're doing their best, but they're drowning.
