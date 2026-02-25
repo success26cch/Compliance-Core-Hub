@@ -972,10 +972,10 @@ function CommandCenterMode() {
           <button
             key={j}
             onClick={() => speakSpanish(cmd.es)}
-            className="flex items-start gap-3 p-3 rounded-md bg-gray-800/60 border border-gray-700 hover:border-[#FFC107]/50 hover:bg-gray-800 transition-all text-left group"
+            className="flex items-start gap-3 p-3 rounded-md bg-gray-800/60 border border-[#FFC107]/50 hover:bg-gray-800 transition-all text-left group"
             data-testid={`btn-speak-${activeCategory}-${j}`}
           >
-            <div className="mt-0.5 w-8 h-8 rounded-full bg-[#FFC107]/20 flex items-center justify-center shrink-0 group-hover:bg-[#FFC107]/30 transition-colors">
+            <div className="mt-0.5 w-8 h-8 rounded-full bg-[#FFC107]/30 flex items-center justify-center shrink-0 group-hover:bg-[#FFC107]/40 transition-colors">
               <Volume2 className="w-4 h-4 text-[#FFC107]" />
             </div>
             <div className="flex-1 min-w-0">
@@ -1247,7 +1247,7 @@ function InjuryReportingMode() {
               className={`p-2 rounded-md text-left text-sm transition-all border ${
                 data.bodyParts.includes(part.en)
                   ? "bg-[#FFC107]/20 border-[#FFC107]/50 text-[#FFC107]"
-                  : "bg-gray-800/40 border-gray-700 text-white hover:border-gray-500"
+                  : "bg-gray-800/40 border-[#FFC107]/30 text-white hover:border-[#FFC107]/50"
               }`}
               data-testid={`btn-body-${part.en.toLowerCase().replace(/\s+/g, "-")}`}
             >
@@ -1643,7 +1643,7 @@ function NewHireIntakeMode() {
                 className={`p-2 rounded-md text-left text-sm border transition-all ${
                   data.conditions.includes(c.en)
                     ? "bg-[#FFC107]/20 border-[#FFC107]/50 text-[#FFC107]"
-                    : "bg-gray-800/40 border-gray-700 text-white hover:border-gray-500"
+                    : "bg-gray-800/40 border-[#FFC107]/30 text-white hover:border-[#FFC107]/50"
                 }`}
                 data-testid={`btn-condition-${c.en.toLowerCase().replace(/[\s/]+/g, "-")}`}
               >
@@ -1853,7 +1853,7 @@ function DrugScreenMode() {
             <button
               key={i}
               onClick={() => speakSpanish(cmd.es)}
-              className="flex items-center gap-2 p-2 rounded-md bg-gray-900/50 border border-gray-700 hover:border-[#FFC107]/40 transition-all text-left"
+              className="flex items-center gap-2 p-2 rounded-md bg-gray-900/50 border border-[#FFC107]/40 hover:border-[#FFC107]/60 transition-all text-left"
               data-testid={`btn-quick-cmd-${activeTab}-${i}`}
             >
               <Volume2 className="w-3.5 h-3.5 text-[#FFC107] shrink-0" />
