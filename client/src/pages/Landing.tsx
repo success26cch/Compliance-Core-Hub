@@ -804,7 +804,7 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-2 gap-8">
             <FeatureCard 
-              icon={Bot}
+              imageSrc={cchLogo}
               title="Meet Corey — Your AI Compliance Expert"
               description="Corey is the only AI built for Occ-Health. Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
             />
@@ -1524,8 +1524,8 @@ function FeatureCard({ icon: Icon, imageSrc, title, description }: any) {
   return (
     <div className="p-8 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
       {imageSrc ? (
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6">
-          <img src={imageSrc} alt={title} className="w-12 h-12 object-contain" data-testid={`img-feature-${title?.toLowerCase().replace(/\s+/g, '-')}`} />
+        <div className="w-20 h-20 rounded-xl flex items-center justify-center mb-6">
+          <img src={imageSrc} alt={title} className="w-20 h-20 object-contain" data-testid={`img-feature-${title?.toLowerCase().replace(/\s+/g, '-')}`} />
         </div>
       ) : (
         <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-6">
