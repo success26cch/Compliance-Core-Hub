@@ -1912,8 +1912,8 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
               key={m.key}
               variant={mode === m.key ? "default" : "outline"}
               className={mode === m.key
-                ? "bg-[#FFC107] text-black"
-                : "border-gray-600 text-white"
+                ? "bg-[#FFC107] text-black font-bold"
+                : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black font-semibold"
               }
               onClick={() => setMode(m.key)}
               data-testid={`btn-mode-${m.key}`}
