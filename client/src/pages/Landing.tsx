@@ -85,49 +85,46 @@ const RECORDABILITY_QUESTIONS = [
   },
 ];
 
-function getRecordabilityUsage(): { count: number; date: string } {
-  try {
-    const stored = localStorage.getItem("cch-recordability-usage");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      const today = new Date().toDateString();
-      if (parsed.date === today) return parsed;
-    }
-  } catch {}
-  return { count: 0, date: new Date().toDateString() };
-}
-
-function incrementRecordabilityUsage() {
-  const usage = getRecordabilityUsage();
-  const updated = { count: usage.count + 1, date: new Date().toDateString() };
-  localStorage.setItem("cch-recordability-usage", JSON.stringify(updated));
-  return updated.count;
-}
-
 const MAX_FREE_USES = 3;
 
 function RecordabilityDecisionTree() {
   const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<"recordable" | "not-recordable" | "likely-not-recordable" | null>(null);
-  const [usageCount, setUsageCount] = useState(() => getRecordabilityUsage().count);
-  const [limitReached, setLimitReached] = useState(() => getRecordabilityUsage().count >= MAX_FREE_USES);
+  const [usageCount, setUsageCount] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
+  const [loading, setLoading] = useState(true);
   const totalSteps = RECORDABILITY_QUESTIONS.length;
+
+  useEffect(() => {
+    fetch("/api/recordability/usage")
+      .then(res => res.json())
+      .then(data => {
+        setUsageCount(data.count);
+        setLimitReached(data.count >= data.limit);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const handleAnswer = (answer: "yes" | "no") => {
     const q = RECORDABILITY_QUESTIONS[currentStep];
     if (answer === "yes") {
       if (q.yesResult) {
         setResult(q.yesResult);
-        const newCount = incrementRecordabilityUsage();
-        setUsageCount(newCount);
+        fetch("/api/recordability/usage", { method: "POST" })
+          .then(res => res.json())
+          .then(data => setUsageCount(data.count))
+          .catch(() => {});
       } else if (q.yesNext) {
         setCurrentStep(q.yesNext - 1);
       }
     } else {
       if (q.noResult) {
         setResult(q.noResult);
-        const newCount = incrementRecordabilityUsage();
-        setUsageCount(newCount);
+        fetch("/api/recordability/usage", { method: "POST" })
+          .then(res => res.json())
+          .then(data => setUsageCount(data.count))
+          .catch(() => {});
       } else if (q.noNext) {
         setCurrentStep(q.noNext - 1);
       }
@@ -184,7 +181,11 @@ function RecordabilityDecisionTree() {
         </div>
 
         <div className="bg-[hsl(222,47%,15%)] rounded-md border border-white/10 overflow-hidden">
-          {limitReached ? (
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="w-8 h-8 mx-auto border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : limitReached ? (
             <div className="p-8 text-center" data-testid="section-recordability-limit">
               <div className="mb-6">
                 <div className="w-16 h-16 mx-auto rounded-full bg-accent/10 flex items-center justify-center mb-4">

@@ -703,3 +703,11 @@ export type CheckoutSessionRequest = {
 export type CheckoutSessionResponse = {
   url: string;
 };
+
+export const recordabilityUsage = pgTable("recordability_usage", {
+  id: serial("id").primaryKey(),
+  ipAddress: text("ip_address").notNull(),
+  usedAt: timestamp("used_at").defaultNow(),
+});
+
+export type RecordabilityUsage = typeof recordabilityUsage.$inferSelect;

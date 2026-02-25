@@ -3711,5 +3711,29 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  app.get("/api/recordability/usage", async (req: Request, res: Response) => {
+    try {
+      const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const count = await storage.getRecordabilityUsageCount(ip);
+      res.json({ count, limit: 3 });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/recordability/usage", async (req: Request, res: Response) => {
+    try {
+      const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const currentCount = await storage.getRecordabilityUsageCount(ip);
+      if (currentCount >= 3) {
+        return res.status(429).json({ message: "Daily limit reached", count: currentCount, limit: 3 });
+      }
+      await storage.addRecordabilityUsage(ip);
+      res.json({ count: currentCount + 1, limit: 3 });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   return httpServer;
 }
