@@ -34,7 +34,7 @@ import mentorshipLogo from "@assets/tree.transp_1768928785893.png";
 import brandNSwagLogo from "@assets/2026_BNS_Logo_1768928815681.png";
 import cchLogo from "@assets/1_1770683748423.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
-import coreyImg from "@assets/3_1771982948528.png";
+import coreyImg from "@assets/9_1771983400638.png";
 import heroVideoUrl from "@assets/CCH_BOT_VIDEO_1771359482914.mp4";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
