@@ -42,6 +42,8 @@ import CompanyProfile from "@/pages/CompanyProfile";
 import GetStarted from "@/pages/GetStarted";
 import ComplianceChecklists from "@/pages/ComplianceChecklists";
 import AuditPrep from "@/pages/AuditPrep";
+import TryCorey from "@/pages/TryCorey";
+import QRCodePage from "@/pages/QRCode";
 import ComplianceGlossary from "@/pages/ComplianceGlossary";
 import NotFound from "@/pages/not-found";
 
@@ -89,6 +91,8 @@ function Router() {
       <Route path="/drug-alcohol-policy" component={DrugAlcoholPolicy} />
       <Route path="/clinic-letter" component={ClinicLetter} />
       <Route path="/corey" component={CoreyStandalone} />
+      <Route path="/try-corey" component={TryCorey} />
+      <Route path="/qr-code" component={QRCodePage} />
       <Route path="/team-seats" component={TeamSeats} />
       <Route path="/about" component={About} />
       <Route path="/company-profile" component={CompanyProfile} />

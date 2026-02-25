@@ -24,6 +24,7 @@ The CCH platform is built with a modern web stack, utilizing React, Vite, Tailwi
 - **Dark Mode:** Full dark mode support using `next-themes` with class-based toggling. Toggle available in Layout navbar and Landing page navbar. Persisted via localStorage (`cch-theme` key).
 - **"Is This Recordable?" Decision Tree:** Interactive 5-question OSHA recordability tool on the Landing page (public, no login required). Based on 29 CFR 1904 criteria.
 - **Compare Plans Table:** Side-by-side feature comparison table on GetStarted page showing Free vs. Corey AI ($99) vs. Employer Platform ($299) with all feature rows and CTAs.
+- **Try Corey QR Code:** Dedicated `/try-corey` trial page accessed via QR code for marketing materials. Uses the landing bot API with 3-question limit per email. QR code downloadable in PNG/SVG at `/qr-code`. Server generates QR codes via `qrcode` npm package.
 - **PWA (Progressive Web App):** The standalone Corey application is designed as a PWA, offering an installable, dark-themed experience with offline caching capabilities.
 - **Data Management Routes:** Dedicated routes for dashboard, employee management, incident logging, account settings, team seat management, digital passport generation, clinic assistant interface, and specialized letter generators.
 - **Branded Divisions:** Includes BrandNSwag for employee recognition and ACSI Mentorship Program for ISO guidance, integrated within the CCH ecosystem.

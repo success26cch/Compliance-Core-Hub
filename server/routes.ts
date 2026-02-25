@@ -3711,6 +3711,44 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  app.get("/api/qr/try-corey", async (req: Request, res: Response) => {
+    try {
+      const QRCode = await import("qrcode");
+      const host = req.headers.host || "localhost:5000";
+      const protocol = req.headers["x-forwarded-proto"] || "https";
+      const url = `${protocol}://${host}/try-corey`;
+      const svg = await QRCode.toString(url, {
+        type: "svg",
+        width: 400,
+        margin: 2,
+        color: { dark: "#0f172a", light: "#ffffff" },
+      });
+      res.setHeader("Content-Type", "image/svg+xml");
+      res.send(svg);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/qr/try-corey/png", async (req: Request, res: Response) => {
+    try {
+      const QRCode = await import("qrcode");
+      const host = req.headers.host || "localhost:5000";
+      const protocol = req.headers["x-forwarded-proto"] || "https";
+      const url = `${protocol}://${host}/try-corey`;
+      const buffer = await QRCode.toBuffer(url, {
+        width: 800,
+        margin: 2,
+        color: { dark: "#0f172a", light: "#ffffff" },
+      });
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Content-Disposition", "attachment; filename=corey-qr-code.png");
+      res.send(buffer);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/recordability/usage", async (req: Request, res: Response) => {
     try {
       const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
