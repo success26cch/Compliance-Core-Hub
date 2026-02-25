@@ -820,7 +820,7 @@ export default function Landing() {
           <div className="mt-8 max-w-4xl mx-auto" data-testid="acsi-assessment-box">
             <div className="rounded-2xl border-2 border-[#F57C00] bg-gradient-to-br from-[#F57C00]/10 via-[#FF9800]/5 to-[#FFC107]/10 p-8 md:p-10 space-y-6">
               <div className="flex items-center gap-3 mb-2">
-                <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" data-testid="img-acsi-assessment-logo" />
+                <img src={acsiLogo} alt="ACSI" className="w-20 h-20 object-contain" data-testid="img-acsi-assessment-logo" />
                 <h3 className="text-2xl font-display font-bold text-foreground">Is Your Management System Really Ready?</h3>
               </div>
               <p className="text-muted-foreground">
