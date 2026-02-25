@@ -108,6 +108,15 @@ export const PRODUCTS: Record<string, ProductDefinition> = {
     category: "Training",
     stripeProductName: "OSHA Medical",
   },
+  "course-osha-medical": {
+    id: "course-osha-medical",
+    name: "OSHA Medical Surveillance Course",
+    unitAmount: 24900,
+    currency: "usd",
+    interval: null,
+    category: "Training",
+    stripeProductName: "OSHA Medical",
+  },
   "course-drug-alcohol": {
     id: "course-drug-alcohol",
     name: "Drug & Alcohol Testing Course",

@@ -28,11 +28,12 @@ import {
   Gift,
 } from "lucide-react";
 import type { Course, CourseEnrollment, CourseCertificate } from "@shared/schema";
-import logoUrl from "@assets/1_1770683748423.png";
+import logoUrl from "@assets/8_1771987279284.png";
 
 const COURSE_PRODUCT_MAP: Record<string, { productId: string; icon: string; color: string }> = {
   "course-dot-medical": { productId: "course-dot-medical", icon: "🩺", color: "blue" },
   "course-osha-surveillance": { productId: "course-osha-surveillance", icon: "🔬", color: "green" },
+  "course-osha-medical": { productId: "course-osha-medical", icon: "🔬", color: "green" },
   "course-drug-alcohol": { productId: "course-drug-alcohol", icon: "🧪", color: "purple" },
   "course-iso-management": { productId: "course-iso-management", icon: "📋", color: "orange" },
   "course-osha-recordkeeping": { productId: "course-osha-recordkeeping", icon: "📊", color: "red" },
@@ -172,10 +173,10 @@ export default function Training() {
             </button>
           </Link>
           <Link href="/">
-            <img src={logoUrl} alt="CCH Logo" className="w-10 h-10 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
+            <img src={logoUrl} alt="CCH Logo" className="w-16 h-16 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-page-title">Training Courses</h1>
+            <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">Training Courses</h1>
             <p className="text-sm text-gray-400">Self-paced compliance training with certificates</p>
           </div>
         </div>
@@ -534,7 +535,7 @@ export default function Training() {
                     <div className="mb-4">
                       <div className="flex items-center gap-3 mb-1">
                         <span className="text-2xl">🎁</span>
-                        <h2 className="text-lg font-semibold text-white">BrandNSwag — New Hire Safety Courses</h2>
+                        <h2 className="text-lg font-semibold text-white">New Hire Safety Courses with BrandNSwag Points</h2>
                       </div>
                       <p className="text-sm text-gray-400 ml-11">Short, OSHA-focused safety courses for onboarding new employees. Under 20 minutes each.</p>
                     </div>
