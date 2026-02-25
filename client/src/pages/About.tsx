@@ -182,7 +182,7 @@ export default function About() {
                 </h3>
                 <ul className="space-y-3">
                   {[
-                    "24/7 access to a compliance AI that references actual OSHA and DOT regulation",
+                    "24/7 access to Corey, the compliance AI that references actual OSHA and DOT regulation",
                     "Interactive tools that teach recordability — not just dictate it",
                     "Training courses that turn your team into compliance-confident professionals",
                     "Employee tracking that alerts you before physicals, drug tests, and certifications expire",
