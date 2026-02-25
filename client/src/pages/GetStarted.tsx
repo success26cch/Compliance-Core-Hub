@@ -332,23 +332,35 @@ export default function GetStarted() {
               { id: "course-drug-alcohol", name: "Drug & Alcohol Testing", price: "$199", desc: "Master DOT-compliant drug and alcohol testing procedures" },
               { id: "course-iso-management", name: "ISO Management Systems", price: "$349", desc: "Full training on ISO 9001, 14001, and 45001 management systems" },
               { id: "course-osha-recordkeeping", name: "OSHA Recordkeeping Master", price: "$299", desc: "Deep dive into OSHA 300 logs, recordability rules, and compliance" },
-              { id: "course-complete-bundle", name: "Complete Training Bundle", price: "$899", desc: "All courses bundled at a savings — best value for comprehensive training", highlighted: true },
-            ].map((course) => (
+              { id: "course-complete-bundle", name: "Complete Training Bundle", desc: "Custom-built bundle pricing tailored to your team's size and training needs. Contact us for a consultation.", highlighted: true, isBundle: true },
+            ].map((course: any) => (
               <Card key={course.id} className={`flex flex-col ${course.highlighted ? 'border-accent ring-2 ring-accent' : ''}`} data-testid={`card-${course.id}`}>
                 <CardHeader className="pb-3">
                   {course.highlighted && <Badge className="bg-accent text-white w-fit mb-1">Best Value</Badge>}
                   <CardTitle className="text-lg">{course.name}</CardTitle>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-2xl font-bold text-primary">{course.price}</span>
-                    <span className="text-sm text-muted-foreground">one-time</span>
-                  </div>
+                  {course.isBundle ? (
+                    <p className="text-sm font-semibold text-accent mt-1">Custom pricing — consultation required</p>
+                  ) : (
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-2xl font-bold text-primary">{course.price}</span>
+                      <span className="text-sm text-muted-foreground">one-time</span>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
                   <p className="text-sm text-muted-foreground mb-4 flex-1">{course.desc}</p>
-                  <Button className="w-full" variant={course.highlighted ? 'default' : 'outline'} onClick={() => handleAddToCart(course.id)} data-testid={`button-add-cart-${course.id}`}>
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart — {course.price}
-                  </Button>
+                  {course.isBundle ? (
+                    <Link href="/contact">
+                      <Button className="w-full" data-testid={`button-contact-bundle`}>
+                        Request a Consultation
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button className="w-full" variant="outline" onClick={() => handleAddToCart(course.id)} data-testid={`button-add-cart-${course.id}`}>
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Add to Cart — {course.price}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
