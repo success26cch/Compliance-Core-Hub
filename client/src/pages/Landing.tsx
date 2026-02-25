@@ -277,10 +277,10 @@ function RecordabilityDecisionTree() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/corey" className="flex-1">
+                <Link href="/get-started" className="flex-1">
                   <Button className="w-full bg-accent text-white font-bold" data-testid="button-recordability-cta">
                     <Bot className="w-4 h-4 mr-2" />
-                    Get Expert Guidance with Corey
+                    Get Unlimited Guidance — $99/mo
                   </Button>
                 </Link>
                 <Button
