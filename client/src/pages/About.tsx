@@ -382,10 +382,10 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div className="space-y-5">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground" data-testid="text-acsi-title">
-                Backed by ACSI Services International
+                Backed by ACSI, Assessment & Consulting Services Inc.
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                CCH is a division of <strong className="text-foreground">ACSI Services International</strong> — a consulting, auditing, and engineering firm with over 25 years of experience in ISO management systems and organizational excellence.
+                CCH is a division of <strong className="text-foreground">ACSI, Assessment & Consulting Services Inc.</strong> — a consulting, auditing, and engineering firm with over 25 years of experience in ISO management systems and organizational excellence.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 When your compliance needs go beyond what AI and education tools can provide — when you need a Lead Auditor at your facility, a management system built from scratch, or hands-on crisis support — ACSI's team of professionals is ready to step in.
@@ -409,7 +409,7 @@ export default function About() {
               </div>
             </div>
             <div className="flex flex-col items-center gap-6">
-              <img src={acsiLogo} alt="ACSI Services International" className="w-40 h-40 object-contain" data-testid="img-acsi-logo-about" />
+              <img src={acsiLogo} alt="ACSI, Assessment & Consulting Services Inc." className="w-40 h-40 object-contain" data-testid="img-acsi-logo-about" />
               <p className="text-sm text-muted-foreground text-center max-w-xs">
                 Consulting, Auditing, Engineering, Training, Mentorship, and Professional Placement
               </p>
@@ -454,7 +454,7 @@ export default function About() {
           <img src={cchLogo} alt="CCH" className="w-10 h-10 object-contain mx-auto" />
           <p className="text-sm font-semibold text-foreground">Core Compliance Hub</p>
           <p className="text-xs text-muted-foreground">
-            A division of ACSI Services International | acsi-quality.com | (313) 479-4545
+            A division of ACSI, Assessment & Consulting Services Inc. | acsi-quality.com | (313) 479-4545
           </p>
         </div>
       </footer>
