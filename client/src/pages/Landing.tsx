@@ -191,9 +191,9 @@ function RecordabilityDecisionTree() {
                 <div className="w-16 h-16 mx-auto rounded-full bg-accent/10 flex items-center justify-center mb-4">
                   <ShieldCheck className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-3">Daily Limit Reached</h3>
+                <h3 className="text-2xl font-bold text-white mb-3">Limit Reached</h3>
                 <p className="text-white/70 text-lg max-w-md mx-auto mb-2">
-                  You've used all {MAX_FREE_USES} free assessments for today.
+                  You've used all {MAX_FREE_USES} free assessments.
                 </p>
                 <p className="text-white/50 text-sm max-w-md mx-auto">
                   Corey AI provides unlimited recordability guidance, compliance checklists, and expert-level OSHA analysis — 24/7.
@@ -225,7 +225,7 @@ function RecordabilityDecisionTree() {
                   Question {currentStep + 1} of {totalSteps}
                 </div>
                 <div className="text-xs text-white/40" data-testid="text-uses-remaining">
-                  {MAX_FREE_USES - usageCount} free {MAX_FREE_USES - usageCount === 1 ? "use" : "uses"} remaining today
+                  {MAX_FREE_USES - usageCount} free {MAX_FREE_USES - usageCount === 1 ? "use" : "uses"} remaining
                 </div>
               </div>
               <motion.div
