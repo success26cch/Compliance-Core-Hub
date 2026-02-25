@@ -107,7 +107,7 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <p className="text-muted-foreground leading-relaxed">
-                That belief is why we built <strong className="text-foreground">Corey</strong> — the world's first AI designed specifically for occupational health and safety compliance. Not a generic chatbot. Not a search engine. A specialist that lives and breathes 29 CFR, DOT 49 CFR Part 40, and ISO management standards.
+                That belief is why we built <strong className="text-foreground">Corey</strong> — the world's first AI designed specifically for occupational health and safety compliance. Not a generic chatbot. Not a search engine. <strong className="text-foreground">A specialist that lives and breathes 29 CFR, DOT 49 CFR Part 40, and ISO management standards.</strong>
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Corey doesn't just answer questions — <strong className="text-foreground">Corey teaches.</strong> When you ask "Is this recordable?", Corey doesn't just say yes or no. Corey walks you through the regulation, explains why, and shows you how to document it correctly. That's education in action.
