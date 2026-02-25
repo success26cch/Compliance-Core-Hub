@@ -75,7 +75,7 @@ export default function About() {
                 <strong className="text-foreground">CCH was built to be the compliance partner they've never had.</strong> Not a consultant you call once a year. Not a binder on a shelf. A living, breathing platform that educates, tracks, and automates — every single day.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                CCH operates as a division of <strong className="text-foreground">ACSI Services International</strong>, bringing decades of real-world audit and compliance expertise into an accessible, AI-powered platform that any employer can use.
+                CCH operates as a division of <strong className="text-foreground">ACSI, Assessment & Consulting Services Inc.</strong>, bringing decades of real-world audit and compliance expertise into an accessible, AI-powered platform that any employer can use.
               </p>
             </div>
             <div className="flex flex-col items-center gap-8">
