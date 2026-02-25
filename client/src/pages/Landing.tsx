@@ -1497,7 +1497,7 @@ export default function Landing() {
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="px-10 text-lg" data-testid="button-cta-contact-us">
+              <Button size="lg" variant="outline" className="px-10 text-lg text-black border-black hover:bg-black hover:text-white" data-testid="button-cta-contact-us">
                 <MessageSquare className="w-5 h-5 mr-2" />
                 Contact Us
               </Button>
