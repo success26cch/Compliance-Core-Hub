@@ -21,6 +21,9 @@ The CCH platform is built with a modern web stack, utilizing React, Vite, Tailwi
     - **BrandNSwag:** An employee recognition platform using QR-code recognition for points-based rewards.
     - **Spanish Bilingual Medical Assistant (BMA):** A standalone tool for clinics featuring bidirectional speech-to-text translation, interactive body maps, and multi-step bilingual forms for injury reporting, new hire intake, and drug screen instructions.
     - **Digital Medical Passport (CCH Handshake):** A QR-based clinic check-in system with smart digital authorization forms, employer notifications, and time-away tracking.
+- **Dark Mode:** Full dark mode support using `next-themes` with class-based toggling. Toggle available in Layout navbar and Landing page navbar. Persisted via localStorage (`cch-theme` key).
+- **"Is This Recordable?" Decision Tree:** Interactive 5-question OSHA recordability tool on the Landing page (public, no login required). Based on 29 CFR 1904 criteria.
+- **Compare Plans Table:** Side-by-side feature comparison table on GetStarted page showing Free vs. Corey AI ($99) vs. Employer Platform ($299) with all feature rows and CTAs.
 - **PWA (Progressive Web App):** The standalone Corey application is designed as a PWA, offering an installable, dark-themed experience with offline caching capabilities.
 - **Data Management Routes:** Dedicated routes for dashboard, employee management, incident logging, account settings, team seat management, digital passport generation, clinic assistant interface, and specialized letter generators.
 - **Branded Divisions:** Includes BrandNSwag for employee recognition and ACSI Mentorship Program for ISO guidance, integrated within the CCH ecosystem.

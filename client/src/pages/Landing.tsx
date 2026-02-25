@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import jsPDF from "jspdf";
@@ -45,11 +45,203 @@ import BilingualAssistant from "@/components/BilingualAssistant";
 import { useCart } from "@/hooks/use-cart";
 import { PRODUCTS } from "@/lib/products";
 import { CartTrigger } from "@/components/CartDrawer";
+import { ThemeToggle } from "@/components/Layout";
 
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
 });
+
+const RECORDABILITY_QUESTIONS = [
+  {
+    id: 1,
+    question: "Did the incident happen at work or in a work environment?",
+    noResult: "not-recordable" as const,
+    yesNext: 2,
+  },
+  {
+    id: 2,
+    question: "Did it result in death, days away from work, restricted work, or job transfer?",
+    yesResult: "recordable" as const,
+    noNext: 3,
+  },
+  {
+    id: 3,
+    question: "Did it require medical treatment beyond first aid?",
+    yesResult: "recordable" as const,
+    noNext: 4,
+  },
+  {
+    id: 4,
+    question: "Did it result in loss of consciousness?",
+    yesResult: "recordable" as const,
+    noNext: 5,
+  },
+  {
+    id: 5,
+    question: "Was there a significant injury or illness diagnosed by a physician or licensed healthcare professional?",
+    yesResult: "recordable" as const,
+    noResult: "likely-not-recordable" as const,
+  },
+];
+
+function RecordabilityDecisionTree() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [result, setResult] = useState<"recordable" | "not-recordable" | "likely-not-recordable" | null>(null);
+  const totalSteps = RECORDABILITY_QUESTIONS.length;
+
+  const handleAnswer = (answer: "yes" | "no") => {
+    const q = RECORDABILITY_QUESTIONS[currentStep];
+    if (answer === "yes") {
+      if (q.yesResult) {
+        setResult(q.yesResult);
+      } else if (q.yesNext) {
+        setCurrentStep(q.yesNext - 1);
+      }
+    } else {
+      if (q.noResult) {
+        setResult(q.noResult);
+      } else if (q.noNext) {
+        setCurrentStep(q.noNext - 1);
+      }
+    }
+  };
+
+  const handleStartOver = () => {
+    setCurrentStep(0);
+    setResult(null);
+  };
+
+  const resultConfig = {
+    recordable: {
+      title: "Likely OSHA Recordable",
+      description: "Based on your answers, this incident likely meets OSHA 29 CFR 1904 recordability criteria and should be recorded on your OSHA 300 Log.",
+      color: "text-red-400",
+      bgColor: "bg-red-500/10 border-red-500/30",
+      icon: AlertTriangle,
+    },
+    "not-recordable": {
+      title: "Not Recordable",
+      description: "Based on your answers, this incident does not appear to be work-related and is likely not OSHA recordable.",
+      color: "text-green-400",
+      bgColor: "bg-green-500/10 border-green-500/30",
+      icon: ShieldCheck,
+    },
+    "likely-not-recordable": {
+      title: "Likely Not Recordable",
+      description: "Based on your answers, this incident likely does not meet OSHA 29 CFR 1904 recordability criteria. However, always consult a compliance expert for complex cases.",
+      color: "text-green-400",
+      bgColor: "bg-green-500/10 border-green-500/30",
+      icon: ShieldCheck,
+    },
+  };
+
+  return (
+    <section className="py-24 bg-[hsl(222,47%,11%)] border-t border-border/50" data-testid="section-recordability-tree">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10 space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm border border-accent/20">
+            <ClipboardList className="w-4 h-4" />
+            FREE TOOL
+          </div>
+          <h2 className="text-3xl md:text-4xl font-display font-black text-white" data-testid="text-recordability-title">
+            Is This <span className="text-accent">Recordable?</span>
+          </h2>
+          <p className="text-white/70 text-lg max-w-xl mx-auto">
+            Use this quick 5-question tool based on OSHA 29 CFR 1904 to determine if your workplace incident needs to be recorded.
+          </p>
+        </div>
+
+        <div className="bg-[hsl(222,47%,15%)] rounded-md border border-white/10 overflow-hidden">
+          {!result ? (
+            <div className="p-8">
+              <div className="flex items-center gap-2 mb-6" data-testid="progress-recordability">
+                {Array.from({ length: totalSteps }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                      i <= currentStep ? "bg-accent" : "bg-white/10"
+                    }`}
+                    data-testid={`progress-step-${i}`}
+                  />
+                ))}
+              </div>
+              <div className="text-sm text-accent font-semibold mb-2" data-testid="text-step-indicator">
+                Question {currentStep + 1} of {totalSteps}
+              </div>
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <p className="text-xl md:text-2xl font-bold text-white mb-8" data-testid="text-recordability-question">
+                  {RECORDABILITY_QUESTIONS[currentStep].question}
+                </p>
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => handleAnswer("yes")}
+                    className="flex-1 bg-accent text-white font-bold text-lg py-6"
+                    data-testid="button-recordability-yes"
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    onClick={() => handleAnswer("no")}
+                    variant="outline"
+                    className="flex-1 border-white/20 text-white font-bold text-lg py-6"
+                    data-testid="button-recordability-no"
+                  >
+                    No
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="p-8"
+            >
+              <div className={`rounded-md border p-6 mb-6 ${resultConfig[result].bgColor}`} data-testid="card-recordability-result">
+                <div className="flex items-center gap-3 mb-3">
+                  {(() => {
+                    const Icon = resultConfig[result].icon;
+                    return <Icon className={`w-8 h-8 ${resultConfig[result].color}`} />;
+                  })()}
+                  <h3 className={`text-2xl font-black ${resultConfig[result].color}`} data-testid="text-recordability-result">
+                    {resultConfig[result].title}
+                  </h3>
+                </div>
+                <p className="text-white/80 text-base leading-relaxed" data-testid="text-recordability-description">
+                  {resultConfig[result].description}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/corey" className="flex-1">
+                  <Button className="w-full bg-accent text-white font-bold" data-testid="button-recordability-cta">
+                    <Bot className="w-4 h-4 mr-2" />
+                    Get Expert Guidance with Corey
+                  </Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  onClick={handleStartOver}
+                  className="border-white/20 text-white font-bold"
+                  data-testid="button-recordability-restart"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Start Over
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Landing() {
   const { user, isAuthenticated } = useAuth();
@@ -305,6 +497,9 @@ export default function Landing() {
           </div>
           
           <div className="flex items-center gap-2 shrink-0">
+            <div className="text-white">
+              <ThemeToggle />
+            </div>
             <CartTrigger />
             {isAuthenticated ? (
               <Link href="/dashboard">
@@ -792,6 +987,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Is This Recordable? Decision Tree */}
+      <RecordabilityDecisionTree />
 
       {/* Features Grid */}
       <section id="features" className="py-24 bg-muted/30 border-t border-border/50">

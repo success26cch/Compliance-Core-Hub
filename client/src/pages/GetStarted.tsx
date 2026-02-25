@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, ArrowRight, ShoppingCart, Building2, Stethoscope, Award, GraduationCap, Users, Sparkles, ArrowLeft } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, ArrowRight, ShoppingCart, Building2, Stethoscope, Award, GraduationCap, Users, Sparkles, ArrowLeft, Check, X, BarChart3 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { PRODUCTS } from "@/lib/products";
 import { CartTrigger } from "@/components/CartDrawer";
@@ -364,6 +364,121 @@ export default function GetStarted() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </section>
+
+        <section className="mb-16" data-testid="section-compare-plans">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-primary" data-testid="text-section-compare">Compare Plans</h2>
+              <p className="text-sm text-muted-foreground">See all features side by side to find the right fit</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full min-w-[640px] border-collapse" data-testid="table-compare-plans">
+              <thead className="sticky top-0 z-10">
+                <tr>
+                  <th className="text-left p-4 bg-muted/50 dark:bg-muted/20 rounded-tl-md font-semibold text-foreground" data-testid="th-feature">Feature</th>
+                  <th className="text-center p-4 bg-muted/50 dark:bg-muted/20 font-semibold text-foreground" data-testid="th-free">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>Free</span>
+                      <span className="text-lg font-bold text-primary">$0</span>
+                    </div>
+                  </th>
+                  <th className="text-center p-4 bg-accent/10 dark:bg-accent/20 border-x-2 border-accent font-semibold text-foreground" data-testid="th-corey-ai">
+                    <div className="flex flex-col items-center gap-1">
+                      <Badge className="bg-accent text-white">Most Popular</Badge>
+                      <span>Corey AI</span>
+                      <span className="text-lg font-bold text-primary">$99<span className="text-xs font-normal text-muted-foreground">/mo per user</span></span>
+                    </div>
+                  </th>
+                  <th className="text-center p-4 bg-muted/50 dark:bg-muted/20 rounded-tr-md font-semibold text-foreground" data-testid="th-employer">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>Employer Platform</span>
+                      <span className="text-lg font-bold text-primary">$299<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: "Corey AI Questions", free: "3/month", corey: "Unlimited", employer: "Unlimited" },
+                  { feature: "OSHA Recordability Guidance", free: true, corey: true, employer: true },
+                  { feature: "Basic DOT Help", free: true, corey: true, employer: true },
+                  { feature: "Compliance Checklists", free: false, corey: true, employer: true },
+                  { feature: "Audit Prep & Templates", free: false, corey: true, employer: true },
+                  { feature: "Workers' Comp Guidance", free: false, corey: true, employer: true },
+                  { feature: "Custom Reports", free: false, corey: true, employer: true },
+                  { feature: "Priority Support", free: false, corey: true, employer: true },
+                  { feature: "DOT Compliance Alerts", free: false, corey: true, employer: true },
+                  { feature: "Employee Management", free: false, corey: false, employer: true },
+                  { feature: "OSHA 300 Log & Reporting", free: false, corey: false, employer: true },
+                  { feature: "Medical Passport (CCH Handshake)", free: false, corey: false, employer: true },
+                  { feature: "Incident Management & CAPA", free: false, corey: false, employer: true },
+                  { feature: "ISO Audit Readiness (ACSI)", free: false, corey: false, employer: true },
+                  { feature: "Compliance Glossary", free: false, corey: false, employer: true },
+                  { feature: "DOT Random Pool Notifications", free: false, corey: false, employer: true },
+                  { feature: "Bilingual Medical Assistant", free: false, corey: false, employer: true },
+                ].map((row, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-muted/20 dark:bg-muted/10" : ""} data-testid={`row-feature-${idx}`}>
+                    <td className="p-4 text-sm font-medium text-foreground" data-testid={`text-feature-${idx}`}>{row.feature}</td>
+                    <td className="p-4 text-center" data-testid={`cell-free-${idx}`}>
+                      {typeof row.free === "string" ? (
+                        <span className="text-sm text-muted-foreground">{row.free}</span>
+                      ) : row.free ? (
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-muted-foreground/40 mx-auto" />
+                      )}
+                    </td>
+                    <td className="p-4 text-center border-x-2 border-accent/30" data-testid={`cell-corey-${idx}`}>
+                      {typeof row.corey === "string" ? (
+                        <span className="text-sm font-medium text-accent">{row.corey}</span>
+                      ) : row.corey ? (
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-muted-foreground/40 mx-auto" />
+                      )}
+                    </td>
+                    <td className="p-4 text-center" data-testid={`cell-employer-${idx}`}>
+                      {typeof row.employer === "string" ? (
+                        <span className="text-sm font-medium text-accent">{row.employer}</span>
+                      ) : row.employer ? (
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-muted-foreground/40 mx-auto" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td className="p-4"></td>
+                  <td className="p-4 text-center">
+                    <Link href="/api/login">
+                      <Button variant="outline" className="w-full max-w-[160px]" data-testid="button-compare-free-signup">
+                        Sign Up Free
+                      </Button>
+                    </Link>
+                  </td>
+                  <td className="p-4 text-center border-x-2 border-accent/30">
+                    <Button className="w-full max-w-[160px]" onClick={() => handleAddToCart("cch-unlimited-safety")} data-testid="button-compare-add-corey">
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Add to Cart
+                    </Button>
+                  </td>
+                  <td className="p-4 text-center">
+                    <Button className="w-full max-w-[160px]" onClick={() => handleAddToCart("employer-platform")} data-testid="button-compare-add-employer">
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Add to Cart
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 

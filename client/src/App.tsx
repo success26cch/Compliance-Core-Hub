@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
 import { CartDrawer } from "@/components/CartDrawer";
+import { ThemeProvider } from "next-themes";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import BotPage from "@/pages/Bot";
@@ -102,16 +103,18 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <CartProvider>
-          <Toaster />
-          <CartDrawer />
-          <PageTracker />
-          <Router />
-        </CartProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="cch-theme">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <CartProvider>
+            <Toaster />
+            <CartDrawer />
+            <PageTracker />
+            <Router />
+          </CartProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

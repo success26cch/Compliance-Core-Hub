@@ -22,13 +22,32 @@ import {
   MessageSquare,
   ClipboardCheck,
   FileText,
-  BookOpen
+  BookOpen,
+  Sun,
+  Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import hubLogo from "@assets/6_1770259909295.png";
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      data-testid="button-theme-toggle"
+    >
+      <Sun className="w-5 h-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute w-5 h-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
+  );
+}
 
 export function Sidebar({ className = "" }: { className?: string }) {
   const [location] = useLocation();
@@ -82,7 +101,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   };
 
   return (
-    <div className={`flex flex-col h-full bg-white border-r border-border/50 ${className}`}>
+    <div className={`flex flex-col h-full bg-card border-r border-border/50 ${className}`}>
       <div className="px-4 py-2 border-b border-border/50">
         <Link href="/">
           <div className="flex items-center justify-center overflow-hidden h-16 cursor-pointer" data-testid="link-home-logo">
@@ -154,22 +173,25 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <header className="md:hidden h-16 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-10">
+        <header className="md:hidden h-16 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-10">
           <Link href="/">
             <div className="flex items-center cursor-pointer" data-testid="link-mobile-home-logo">
               <img src={hubLogo} alt="Core Compliance Hub" className="h-10 w-auto" />
             </div>
           </Link>
-          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-6 h-6" />
-              </Button>
-            </SheetTrigger>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="w-6 h-6" />
+                </Button>
+              </SheetTrigger>
             <SheetContent side="left" className="p-0">
               <Sidebar />
             </SheetContent>
           </Sheet>
+          </div>
         </header>
 
         {/* Page Content */}
@@ -184,6 +206,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
                 <p className="text-muted-foreground mt-1">Here's your compliance overview.</p>
               </div>
               <div className="hidden md:flex items-center gap-3">
+                <ThemeToggle />
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                   {user?.firstName?.[0] || <User className="w-5 h-5" />}
                 </div>
