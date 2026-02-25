@@ -398,34 +398,272 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-start">
-              <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                  </div>
-                  <span><strong className="text-primary">AI-Powered Compliance:</strong> Get instant, expert answers on OSHA 300 recordability, DOT physicals, and drug testing—24/7.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                  </div>
-                  <span><strong className="text-primary">ISO Certification Ready:</strong> 9001, 14001, 45001—our Lead Auditor AI guides you from gap analysis to audit day.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                  </div>
-                  <span><strong className="text-primary">Professional Training:</strong> Self-paced courses with certificates your auditors actually respect.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                  </div>
-                  <span><strong className="text-primary">Employee Recognition:</strong> BrandNSwag turns safety milestones into rewards your team actually wants.</span>
-                </li>
-              </ul>
+            {/* Meet Corey + Ask Corey Chat - directly under the CTA */}
+            <div className="max-w-4xl mx-auto w-full" id="meet-corey" data-testid="section-meet-corey">
+              <div className="text-center space-y-3 mb-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm border border-accent/20">
+                  <Sparkles className="w-4 h-4" />
+                  INTRODUCING
+                </div>
+                <h2 className="text-3xl md:text-4xl font-display font-black text-primary" data-testid="text-meet-corey-title">
+                  Meet <span className="text-accent">COREY</span>
+                </h2>
+                <p className="text-lg font-bold text-primary/80">
+                  The Only AI Built for Occ-Health.
+                </p>
+              </div>
 
+              <div id="ask-corey" data-testid="section-ask-corey">
+                <div className="relative bg-[hsl(222,47%,11%)] rounded-xl overflow-hidden">
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="animate-marquee whitespace-nowrap flex items-center h-full">
+                      {Array.from({ length: 20 }).map((_, i) => (
+                        <span key={i} className="text-6xl font-black mx-8 text-white">COREY</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="relative z-10 p-6">
+                    <div className="text-center space-y-2 mb-4">
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                          <Bot className="w-6 h-6 text-white" />
+                        </div>
+                        <h3 className="text-2xl md:text-3xl font-display font-black text-white" data-testid="text-corey-title">
+                          Ask Corey
+                        </h3>
+                      </div>
+                      <p className="text-white/70 text-sm">
+                        Your AI Occ-Health Expert &middot; {botRemaining} free question{botRemaining !== 1 ? "s" : ""} remaining
+                      </p>
+                    </div>
+
+                    <Card className="overflow-hidden border-0 shadow-2xl" data-testid="card-ask-corey">
+                      {botTrialGated ? (
+                        <div className="h-80 flex flex-col items-center justify-center p-6 space-y-4 bg-muted/30">
+                          <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+                            <Bot className="w-8 h-8 text-accent" />
+                          </div>
+                          <div className="text-center">
+                            <p className="font-semibold text-foreground">Try Corey Free</p>
+                            <p className="text-sm mt-1 text-muted-foreground">Enter your info to ask up to 3 compliance questions</p>
+                          </div>
+                          <div className="w-full max-w-xs space-y-2">
+                            <Input
+                              value={botTrialName}
+                              onChange={(e) => setBotTrialName(e.target.value)}
+                              placeholder="Your name"
+                              data-testid="input-landing-trial-name"
+                            />
+                            <Input
+                              type="email"
+                              value={botTrialEmail}
+                              onChange={(e) => setBotTrialEmail(e.target.value)}
+                              placeholder="Work email"
+                              onKeyDown={(e) => { if (e.key === "Enter" && botTrialName.trim() && botTrialEmail.includes("@")) { localStorage.setItem("cch_trial_name", botTrialName.trim()); localStorage.setItem("cch_trial_email", botTrialEmail.trim()); setBotTrialGated(false); } }}
+                              data-testid="input-landing-trial-email"
+                            />
+                            <Button
+                              className="w-full"
+                              onClick={() => {
+                                localStorage.setItem("cch_trial_name", botTrialName.trim());
+                                localStorage.setItem("cch_trial_email", botTrialEmail.trim());
+                                setBotTrialGated(false);
+                              }}
+                              disabled={!botTrialName.trim() || !botTrialEmail.includes("@")}
+                              data-testid="button-landing-trial-start"
+                            >
+                              Start Free Trial
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                      <>
+                      <div
+                        ref={botScrollRef}
+                        className="h-80 overflow-y-auto p-4 space-y-4 bg-muted/30"
+                        data-testid="bot-messages"
+                      >
+                        {botMessages.length === 0 && (
+                          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 text-muted-foreground">
+                            <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+                              <Bot className="w-8 h-8 text-accent" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">Ask Corey a Compliance Question</p>
+                              <p className="text-sm mt-1">OSHA recordability, DOT physicals, drug testing, ISO audits — Corey knows it all.</p>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                              {["Is a laceration needing stitches OSHA recordable?", "What's required for a DOT physical?", "Explain ISO 45001 basics"].map((q) => (
+                                <button
+                                  key={q}
+                                  onClick={() => { setBotInput(q); }}
+                                  className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:bg-muted transition-colors"
+                                  data-testid={`button-suggestion-${q.slice(0, 15).replace(/\s/g, "-").toLowerCase()}`}
+                                >
+                                  {q}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {botMessages.map((msg, i) => (
+                          <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`} data-testid={`bot-message-${i}`}>
+                            {msg.role === "assistant" && (
+                              <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-1">
+                                <Bot className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                            <div className="flex flex-col max-w-[80%]">
+                              <div className={`rounded-lg px-4 py-3 text-sm whitespace-pre-wrap ${
+                                msg.role === "user"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-card border border-border text-card-foreground"
+                              }`}>
+                                {msg.content ? stripMarkdown(msg.content) : (botLoading && i === botMessages.length - 1 ? (
+                                  <span className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
+                                  </span>
+                                ) : null)}
+                              </div>
+                              {msg.role === "assistant" && msg.content && !botLoading && (
+                                <div className="mt-1 ml-1 flex items-center gap-3">
+                                  <button
+                                    onClick={() => navigator.clipboard.writeText(stripMarkdown(msg.content))}
+                                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
+                                    data-testid={`button-bot-copy-${i}`}
+                                  >
+                                    <Copy className="w-3 h-3" /> Copy
+                                  </button>
+                                  <button
+                                    onClick={() => handleBotSpeak(msg.content, i)}
+                                    className={`flex items-center gap-1 text-xs transition-colors ${speakingIdx === i ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}
+                                    data-testid={`button-bot-speak-${i}`}
+                                  >
+                                    {speakingIdx === i ? <><Square className="w-3 h-3 fill-current" /> Stop</> : <><Volume2 className="w-3 h-3" /> Listen</>}
+                                  </button>
+                                  <button
+                                    onClick={handleBotDownloadPdf}
+                                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
+                                    data-testid={`button-bot-pdf-${i}`}
+                                  >
+                                    <FileDown className="w-3 h-3" /> PDF
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            {msg.role === "user" && (
+                              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+                                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="border-t border-border p-3 bg-card">
+                        {botLimitReached ? (
+                          <div className="text-center space-y-3 py-2">
+                            <p className="text-sm font-medium text-muted-foreground">
+                              You've used your free questions. Sign up to unlock unlimited access!
+                            </p>
+                            <div className="flex items-center justify-center gap-3 flex-wrap">
+                              <a href="/api/login">
+                                <Button data-testid="button-bot-signup">
+                                  Sign Up Free <ArrowRight className="w-4 h-4 ml-1" />
+                                </Button>
+                              </a>
+                              <a href="#pricing">
+                                <Button variant="outline" data-testid="button-bot-pricing">View Plans</Button>
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <Input
+                                  value={botInput}
+                                  onChange={(e) => setBotInput(e.target.value)}
+                                  placeholder={botListening ? "Listening..." : "Ask Corey a compliance question..."}
+                                  disabled={botLoading}
+                                  onKeyDown={(e) => e.key === "Enter" && handleBotSubmit()}
+                                  className={`pr-9 ${botListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
+                                  data-testid="input-bot-question"
+                                />
+                                {botSpeechSupported && (
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={botToggleListening}
+                                    disabled={botLoading}
+                                    className={`absolute right-0.5 top-1/2 -translate-y-1/2 ${botListening ? "text-accent" : "text-muted-foreground"}`}
+                                    data-testid="button-bot-mic"
+                                  >
+                                    {botListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                                  </Button>
+                                )}
+                              </div>
+                              <Button
+                                onClick={handleBotSubmit}
+                                disabled={!botInput.trim() || botLoading}
+                                data-testid="button-bot-submit"
+                              >
+                                {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                              </Button>
+                            </div>
+                            {botListening && (
+                              <p className="text-xs text-center text-muted-foreground animate-pulse" data-testid="text-bot-listening">
+                                Speak now... tap the mic again to stop.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      </>
+                      )}
+                    </Card>
+
+                    <div className="flex justify-center gap-3 mt-4">
+                      <Link href="/corey">
+                        <Button size="lg" className="shadow-lg shadow-primary/25" data-testid="button-try-corey-standalone">
+                          <Bot className="w-5 h-5 mr-2" /> Try Corey — Standalone App
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <ul className="space-y-4 text-muted-foreground max-w-4xl mx-auto mt-10">
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">AI-Powered Compliance:</strong> Get instant, expert answers on OSHA 300 recordability, DOT physicals, and drug testing—24/7.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">ISO Certification Ready:</strong> 9001, 14001, 45001—our Lead Auditor AI guides you from gap analysis to audit day.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">Professional Training:</strong> Self-paced courses with certificates your auditors actually respect.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" />
+                </div>
+                <span><strong className="text-primary">Employee Recognition:</strong> BrandNSwag turns safety milestones into rewards your team actually wants.</span>
+              </li>
+            </ul>
+
+            <div className="max-w-lg mx-auto mt-10">
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -505,314 +743,6 @@ export default function Landing() {
           </motion.div>
         </div>
       </section>
-
-      {/* Meet Corey Section */}
-      <section className="relative py-16 overflow-hidden" id="meet-corey" data-testid="section-meet-corey">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-accent/5 to-background"></div>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-4 mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm border border-accent/20">
-              <Sparkles className="w-4 h-4" />
-              INTRODUCING
-            </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-primary" data-testid="text-meet-corey-title">
-              Meet <span className="text-accent">COREY</span>
-            </h2>
-            <p className="text-xl md:text-2xl font-bold text-primary/80">
-              The Only AI Built for Occ-Health.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div className="space-y-6">
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Most AI is general; <strong className="text-primary">Corey is a specialist.</strong> Built exclusively for the Core Compliance Hub, Corey is a 24/7 expert trained in OSHA 300 recordkeeping, DOT regulations, and respirator compliance.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                Corey doesn't just store data — <strong className="text-primary">Corey provides the strategic intelligence</strong> you need to protect your company.
-              </p>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
-                  </div>
-                  <p className="text-muted-foreground"><strong className="text-primary">Stuck on a recordable?</strong> Ask Corey.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
-                  </div>
-                  <p className="text-muted-foreground"><strong className="text-primary">Need an EMR audit?</strong> Corey's on it.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
-                  </div>
-                  <p className="text-muted-foreground"><strong className="text-primary">Confused about a clinical instruction?</strong> Corey has the answer.</p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Link href="/corey">
-                  <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-try-corey-standalone">
-                    <Bot className="w-5 h-5 mr-2" /> Try Corey — Standalone App
-                  </Button>
-                </Link>
-                <a href="#ask-corey">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-ask-corey">
-                    Ask Corey Below
-                  </Button>
-                </a>
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-primary/20 rounded-3xl blur-2xl"></div>
-                <div className="relative bg-white border-2 border-accent/20 rounded-3xl p-8 shadow-xl" data-testid="corey-avatar-card">
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg">
-                      <Bot className="w-16 h-16 text-white" />
-                    </div>
-                    <div className="text-center">
-                      <h3 className="text-2xl font-black text-primary">COREY</h3>
-                      <p className="text-sm text-accent font-semibold">Core Compliance Hub AI</p>
-                      <p className="text-xs text-muted-foreground mt-1">Senior Occ-Health & Safety Expert</p>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200">
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                      <span className="text-xs font-medium text-green-700">Online 24/7</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 w-full pt-2">
-                      <div className="text-center p-2 rounded-lg bg-muted/50">
-                        <p className="text-lg font-bold text-primary">25+</p>
-                        <p className="text-[10px] text-muted-foreground">Years Expertise</p>
-                      </div>
-                      <div className="text-center p-2 rounded-lg bg-muted/50">
-                        <p className="text-lg font-bold text-primary">24/7</p>
-                        <p className="text-[10px] text-muted-foreground">Available</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Ask Corey - AI Chat */}
-      <section className="relative bg-[hsl(222,47%,11%)] overflow-hidden py-12" id="ask-corey" data-testid="section-ask-corey">
-        <div className="absolute inset-0 opacity-5">
-          <div className="animate-marquee whitespace-nowrap flex items-center h-full">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <span key={i} className="text-6xl font-black mx-8 text-white">COREY</span>
-            ))}
-          </div>
-        </div>
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3 mb-6">
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-2xl md:text-3xl font-display font-black text-white" data-testid="text-corey-title">
-                Ask Corey
-              </h3>
-            </div>
-            <p className="text-white/70 text-sm">
-              Your AI Occ-Health Expert &middot; {botRemaining} free question{botRemaining !== 1 ? "s" : ""} remaining
-            </p>
-          </div>
-
-          <Card className="overflow-hidden border-0 shadow-2xl" data-testid="card-ask-corey">
-            {botTrialGated ? (
-              <div className="h-80 flex flex-col items-center justify-center p-6 space-y-4 bg-muted/30">
-                <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Bot className="w-8 h-8 text-accent" />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-foreground">Try Corey Free</p>
-                  <p className="text-sm mt-1 text-muted-foreground">Enter your info to ask up to 3 compliance questions</p>
-                </div>
-                <div className="w-full max-w-xs space-y-2">
-                  <Input
-                    value={botTrialName}
-                    onChange={(e) => setBotTrialName(e.target.value)}
-                    placeholder="Your name"
-                    data-testid="input-landing-trial-name"
-                  />
-                  <Input
-                    type="email"
-                    value={botTrialEmail}
-                    onChange={(e) => setBotTrialEmail(e.target.value)}
-                    placeholder="Work email"
-                    onKeyDown={(e) => { if (e.key === "Enter" && botTrialName.trim() && botTrialEmail.includes("@")) { localStorage.setItem("cch_trial_name", botTrialName.trim()); localStorage.setItem("cch_trial_email", botTrialEmail.trim()); setBotTrialGated(false); } }}
-                    data-testid="input-landing-trial-email"
-                  />
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      localStorage.setItem("cch_trial_name", botTrialName.trim());
-                      localStorage.setItem("cch_trial_email", botTrialEmail.trim());
-                      setBotTrialGated(false);
-                    }}
-                    disabled={!botTrialName.trim() || !botTrialEmail.includes("@")}
-                    data-testid="button-landing-trial-start"
-                  >
-                    Start Free Trial
-                  </Button>
-                </div>
-              </div>
-            ) : (
-            <>
-            <div
-              ref={botScrollRef}
-              className="h-80 overflow-y-auto p-4 space-y-4 bg-muted/30"
-              data-testid="bot-messages"
-            >
-              {botMessages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 text-muted-foreground">
-                  <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
-                    <Bot className="w-8 h-8 text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">Ask Corey a Compliance Question</p>
-                    <p className="text-sm mt-1">OSHA recordability, DOT physicals, drug testing, ISO audits — Corey knows it all.</p>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    {["Is a laceration needing stitches OSHA recordable?", "What's required for a DOT physical?", "Explain ISO 45001 basics"].map((q) => (
-                      <button
-                        key={q}
-                        onClick={() => { setBotInput(q); }}
-                        className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:bg-muted transition-colors"
-                        data-testid={`button-suggestion-${q.slice(0, 15).replace(/\s/g, "-").toLowerCase()}`}
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {botMessages.map((msg, i) => (
-                <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`} data-testid={`bot-message-${i}`}>
-                  {msg.role === "assistant" && (
-                    <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                  <div className="flex flex-col max-w-[80%]">
-                    <div className={`rounded-lg px-4 py-3 text-sm whitespace-pre-wrap ${
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-card-foreground"
-                    }`}>
-                      {msg.content ? stripMarkdown(msg.content) : (botLoading && i === botMessages.length - 1 ? (
-                        <span className="flex items-center gap-2 text-muted-foreground">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
-                        </span>
-                      ) : null)}
-                    </div>
-                    {msg.role === "assistant" && msg.content && !botLoading && (
-                      <div className="mt-1 ml-1 flex items-center gap-3">
-                        <button
-                          onClick={() => navigator.clipboard.writeText(stripMarkdown(msg.content))}
-                          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-                          data-testid={`button-bot-copy-${i}`}
-                        >
-                          <Copy className="w-3 h-3" /> Copy
-                        </button>
-                        <button
-                          onClick={() => handleBotSpeak(msg.content, i)}
-                          className={`flex items-center gap-1 text-xs transition-colors ${speakingIdx === i ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}
-                          data-testid={`button-bot-speak-${i}`}
-                        >
-                          {speakingIdx === i ? <><Square className="w-3 h-3 fill-current" /> Stop</> : <><Volume2 className="w-3 h-3" /> Listen</>}
-                        </button>
-                        <button
-                          onClick={handleBotDownloadPdf}
-                          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-                          data-testid={`button-bot-pdf-${i}`}
-                        >
-                          <FileDown className="w-3 h-3" /> PDF
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {msg.role === "user" && (
-                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
-                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t border-border p-3 bg-card">
-              {botLimitReached ? (
-                <div className="text-center space-y-3 py-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    You've used your free questions. Sign up to unlock unlimited access!
-                  </p>
-                  <div className="flex items-center justify-center gap-3 flex-wrap">
-                    <a href="/api/login">
-                      <Button data-testid="button-bot-signup">
-                        Sign Up Free <ArrowRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </a>
-                    <a href="#pricing">
-                      <Button variant="outline" data-testid="button-bot-pricing">View Plans</Button>
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        value={botInput}
-                        onChange={(e) => setBotInput(e.target.value)}
-                        placeholder={botListening ? "Listening..." : "Ask Corey a compliance question..."}
-                        disabled={botLoading}
-                        onKeyDown={(e) => e.key === "Enter" && handleBotSubmit()}
-                        className={`pr-9 ${botListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
-                        data-testid="input-bot-question"
-                      />
-                      {botSpeechSupported && (
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={botToggleListening}
-                          disabled={botLoading}
-                          className={`absolute right-0.5 top-1/2 -translate-y-1/2 ${botListening ? "text-accent" : "text-muted-foreground"}`}
-                          data-testid="button-bot-mic"
-                        >
-                          {botListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                        </Button>
-                      )}
-                    </div>
-                    <Button
-                      onClick={handleBotSubmit}
-                      disabled={!botInput.trim() || botLoading}
-                      data-testid="button-bot-submit"
-                    >
-                      {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                  {botListening && (
-                    <p className="text-xs text-center text-muted-foreground animate-pulse" data-testid="text-bot-listening">
-                      Speak now... tap the mic again to stop.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            </>
-            )}
-          </Card>
-        </div>
-      </section>
-
 
       {/* Spanish Bilingual Medical Assistant */}
       <BilingualAssistant />
