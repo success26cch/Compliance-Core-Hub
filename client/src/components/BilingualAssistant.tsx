@@ -565,7 +565,7 @@ function BmaInteractiveChatMode() {
           <Button
             size="sm"
             variant="outline"
-            className="border-gray-600 text-gray-100"
+            className="bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
             onClick={clearChat}
             data-testid="btn-bma-clear-chat"
           >
@@ -586,7 +586,7 @@ function BmaInteractiveChatMode() {
             variant={context === opt.value ? "default" : "outline"}
             className={context === opt.value
               ? "bg-[#FFC107] text-black"
-              : "border-gray-600 text-white"
+              : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
             }
             onClick={() => setContext(opt.value)}
             data-testid={`btn-bma-context-${opt.value}`}
@@ -673,7 +673,7 @@ function BmaInteractiveChatMode() {
           variant={activeSpeaker === "provider" ? "default" : "outline"}
           className={activeSpeaker === "provider"
             ? "bg-blue-600 text-white"
-            : "border-gray-600 text-white"
+            : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
           }
           onClick={() => setActiveSpeaker("provider")}
           data-testid="btn-bma-speaker-provider"
@@ -685,7 +685,7 @@ function BmaInteractiveChatMode() {
           variant={activeSpeaker === "patient" ? "default" : "outline"}
           className={activeSpeaker === "patient"
             ? "bg-green-600 text-white"
-            : "border-gray-600 text-white"
+            : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
           }
           onClick={() => setActiveSpeaker("patient")}
           data-testid="btn-bma-speaker-patient"
@@ -956,7 +956,7 @@ function CommandCenterMode() {
             variant={activeCategory === i ? "default" : "outline"}
             className={activeCategory === i
               ? "bg-[#FFC107] text-black"
-              : "border-gray-600 text-white"
+              : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
             }
             onClick={() => setActiveCategory(i)}
             data-testid={`btn-category-${cat.category.toLowerCase().replace(/\s+/g, "-")}`}
@@ -1138,7 +1138,7 @@ function InjuryReportingMode() {
             Injury Report Summary
           </h3>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="border-gray-600 text-white" onClick={() => setShowSummary(false)} data-testid="btn-injury-back">
+            <Button size="sm" variant="outline" className="bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black" onClick={() => setShowSummary(false)} data-testid="btn-injury-back">
               <ChevronLeft className="w-4 h-4 mr-1" /> Edit
             </Button>
             <Button size="sm" className="bg-[#FFC107] text-black" onClick={handlePrint} data-testid="btn-injury-print">
@@ -1230,7 +1230,7 @@ function InjuryReportingMode() {
               variant={bodyRegion === r ? "default" : "outline"}
               className={bodyRegion === r
                 ? "bg-[#FFC107] text-black"
-                : "border-gray-600 text-white"
+                : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
               }
               onClick={() => setBodyRegion(r)}
               data-testid={`btn-region-${r}`}
@@ -1372,7 +1372,7 @@ function InjuryReportingMode() {
               variant={data.witnessed === opt ? "default" : "outline"}
               className={data.witnessed === opt
                 ? "bg-[#FFC107] text-black"
-                : "border-gray-600 text-white"
+                : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
               }
               onClick={() => setData({ ...data, witnessed: opt })}
               data-testid={`btn-witnessed-${opt.split(" ")[0].toLowerCase()}`}
@@ -1486,7 +1486,7 @@ function NewHireIntakeMode() {
             Clinical Summary (English)
           </h3>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="border-gray-600 text-white" onClick={() => setShowSummary(false)} data-testid="btn-intake-back">
+            <Button size="sm" variant="outline" className="bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black" onClick={() => setShowSummary(false)} data-testid="btn-intake-back">
               <ChevronLeft className="w-4 h-4 mr-1" /> Edit
             </Button>
             <Button size="sm" className="bg-[#FFC107] text-black" onClick={handlePrint} data-testid="btn-intake-print">
@@ -1551,7 +1551,7 @@ function NewHireIntakeMode() {
                   ? "bg-[#FFC107] text-black"
                   : i < step
                   ? "bg-[#FFC107]/30 text-[#FFC107]"
-                  : "bg-gray-700 text-gray-100"
+                  : "bg-[#F57C00]/60 text-white"
               }`}
               data-testid={`btn-step-${i}`}
             >
@@ -1672,7 +1672,7 @@ function NewHireIntakeMode() {
         <Button
           size="sm"
           variant="outline"
-          className="border-gray-600 text-white"
+          className="bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
           onClick={() => setStep(Math.max(0, step - 1))}
           disabled={step === 0}
           data-testid="btn-intake-prev"
@@ -1821,7 +1821,7 @@ function DrugScreenMode() {
             variant={activeTab === t.key ? "default" : "outline"}
             className={activeTab === t.key
               ? "bg-[#FFC107] text-black"
-              : "border-gray-600 text-white"
+              : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
             }
             onClick={() => setActiveTab(t.key)}
             data-testid={`btn-drug-tab-${t.key}`}
