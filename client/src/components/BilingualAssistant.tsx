@@ -565,7 +565,7 @@ function BmaInteractiveChatMode() {
           <Button
             size="sm"
             variant="outline"
-            className="border-gray-600 text-gray-400"
+            className="border-gray-600 text-gray-100"
             onClick={clearChat}
             data-testid="btn-bma-clear-chat"
           >
@@ -573,12 +573,12 @@ function BmaInteractiveChatMode() {
           </Button>
         )}
       </div>
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-gray-100">
         Real-time bidirectional interpretation between provider and patient. The AI translates with clinical precision, confirms understanding, and generates summaries for the medical record.
       </p>
 
       <div className="flex flex-wrap gap-2 mb-2">
-        <span className="text-xs text-gray-400 self-center">Visit Type:</span>
+        <span className="text-xs text-gray-100 self-center">Visit Type:</span>
         {BMA_CONTEXT_OPTIONS.map(opt => (
           <Button
             key={opt.value}
@@ -586,7 +586,7 @@ function BmaInteractiveChatMode() {
             variant={context === opt.value ? "default" : "outline"}
             className={context === opt.value
               ? "bg-[#FFC107] text-black"
-              : "border-gray-600 text-gray-300"
+              : "border-gray-600 text-white"
             }
             onClick={() => setContext(opt.value)}
             data-testid={`btn-bma-context-${opt.value}`}
@@ -661,7 +661,7 @@ function BmaInteractiveChatMode() {
             <div className="w-7 h-7 rounded-full bg-[#FFC107]/20 flex items-center justify-center shrink-0">
               <Loader2 className="w-4 h-4 text-[#FFC107] animate-spin" />
             </div>
-            <p className="text-sm text-gray-400">Translating and analyzing...</p>
+            <p className="text-sm text-gray-100">Translating and analyzing...</p>
           </div>
         )}
         <div ref={chatEndRef} />
@@ -673,7 +673,7 @@ function BmaInteractiveChatMode() {
           variant={activeSpeaker === "provider" ? "default" : "outline"}
           className={activeSpeaker === "provider"
             ? "bg-blue-600 text-white"
-            : "border-gray-600 text-gray-300"
+            : "border-gray-600 text-white"
           }
           onClick={() => setActiveSpeaker("provider")}
           data-testid="btn-bma-speaker-provider"
@@ -685,7 +685,7 @@ function BmaInteractiveChatMode() {
           variant={activeSpeaker === "patient" ? "default" : "outline"}
           className={activeSpeaker === "patient"
             ? "bg-green-600 text-white"
-            : "border-gray-600 text-gray-300"
+            : "border-gray-600 text-white"
           }
           onClick={() => setActiveSpeaker("patient")}
           data-testid="btn-bma-speaker-patient"
@@ -887,14 +887,14 @@ function CommandCenterMode() {
           <Mic className="w-3 h-3 mr-1" /> Speech-to-Text
         </Badge>
       </div>
-      <p className="text-sm text-gray-400">Click any button to speak the instruction in Spanish to the patient, or use the microphone to listen to the patient and see the English translation.</p>
+      <p className="text-sm text-gray-100">Click any button to speak the instruction in Spanish to the patient, or use the microphone to listen to the patient and see the English translation.</p>
 
       <div className="rounded-md bg-gray-800/40 border border-gray-700/50 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mic className="w-4 h-4 text-[#FFC107]" />
             <span className="text-sm font-bold text-[#FFC107]">Patient Speech-to-Text</span>
-            <span className="text-xs text-gray-400">/ Escuchar al paciente</span>
+            <span className="text-xs text-gray-100">/ Escuchar al paciente</span>
           </div>
           <button
             type="button"
@@ -923,7 +923,7 @@ function CommandCenterMode() {
         {(spokenText || isListening) && (
           <div className="space-y-2">
             <div className="rounded-md bg-gray-900/60 border border-gray-700/50 p-3">
-              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block mb-1">Spanish (what the patient said)</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-100 font-semibold block mb-1">Spanish (what the patient said)</span>
               <p className="text-white text-sm" data-testid="stt-spanish-text">
                 {spokenText || (isListening ? "Listening..." : "")}
               </p>
@@ -956,7 +956,7 @@ function CommandCenterMode() {
             variant={activeCategory === i ? "default" : "outline"}
             className={activeCategory === i
               ? "bg-[#FFC107] text-black"
-              : "border-gray-600 text-gray-300"
+              : "border-gray-600 text-white"
             }
             onClick={() => setActiveCategory(i)}
             data-testid={`btn-category-${cat.category.toLowerCase().replace(/\s+/g, "-")}`}
@@ -980,7 +980,7 @@ function CommandCenterMode() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#FFC107]">{cmd.es}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{cmd.en}</p>
+              <p className="text-xs text-gray-100 mt-0.5">{cmd.en}</p>
             </div>
           </button>
         ))}
@@ -1138,7 +1138,7 @@ function InjuryReportingMode() {
             Injury Report Summary
           </h3>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="border-gray-600 text-gray-300" onClick={() => setShowSummary(false)} data-testid="btn-injury-back">
+            <Button size="sm" variant="outline" className="border-gray-600 text-white" onClick={() => setShowSummary(false)} data-testid="btn-injury-back">
               <ChevronLeft className="w-4 h-4 mr-1" /> Edit
             </Button>
             <Button size="sm" className="bg-[#FFC107] text-black" onClick={handlePrint} data-testid="btn-injury-print">
@@ -1149,15 +1149,15 @@ function InjuryReportingMode() {
 
         <Card className="bg-gray-800/60 border-gray-700 p-4 space-y-3">
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Employee</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Employee</span>
             <p className="text-white font-medium">{data.employeeName || "N/A"}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Date of Injury</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Date of Injury</span>
             <p className="text-white font-medium">{data.dateOfInjury || "N/A"}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Body Parts Affected</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Body Parts Affected</span>
             <div className="flex flex-wrap gap-1 mt-1">
               {data.bodyParts.length > 0 ? data.bodyParts.map((p) => (
                 <Badge key={p} className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">{p}</Badge>
@@ -1165,11 +1165,11 @@ function InjuryReportingMode() {
             </div>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Mechanism</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Mechanism</span>
             <p className="text-white font-medium">{data.mechanism || "N/A"}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Description (Original)</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Description (Original)</span>
             <p className="text-white font-medium">{data.description || "N/A"}</p>
           </div>
           {translatedDescription && (
@@ -1181,7 +1181,7 @@ function InjuryReportingMode() {
             </div>
           )}
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Witnessed</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Witnessed</span>
             <p className="text-white font-medium">{data.witnessed || "N/A"}</p>
           </div>
         </Card>
@@ -1194,12 +1194,12 @@ function InjuryReportingMode() {
       <div className="flex items-center gap-2 mb-2">
         <AlertTriangle className="w-5 h-5 text-[#FFC107]" />
         <h3 className="text-lg font-bold text-white">Injury Reporting</h3>
-        <span className="text-sm text-gray-400">/ Reporte de Lesiones</span>
+        <span className="text-sm text-gray-100">/ Reporte de Lesiones</span>
       </div>
 
       <div className="grid md:grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Employee Name / Nombre del empleado</label>
+          <label className="text-xs text-gray-100 mb-1 block">Employee Name / Nombre del empleado</label>
           <Input
             className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500"
             placeholder="Full name"
@@ -1209,7 +1209,7 @@ function InjuryReportingMode() {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Date of Injury / Fecha de lesión</label>
+          <label className="text-xs text-gray-100 mb-1 block">Date of Injury / Fecha de lesión</label>
           <Input
             type="date"
             className="bg-gray-800/60 border-gray-700 text-white"
@@ -1221,7 +1221,7 @@ function InjuryReportingMode() {
       </div>
 
       <div>
-        <label className="text-xs text-gray-400 mb-2 block">Body Part Affected / Parte del cuerpo afectada</label>
+        <label className="text-xs text-gray-100 mb-2 block">Body Part Affected / Parte del cuerpo afectada</label>
         <div className="flex gap-2 mb-2">
           {["upper", "torso", "lower"].map((r) => (
             <Button
@@ -1230,7 +1230,7 @@ function InjuryReportingMode() {
               variant={bodyRegion === r ? "default" : "outline"}
               className={bodyRegion === r
                 ? "bg-[#FFC107] text-black"
-                : "border-gray-600 text-gray-300"
+                : "border-gray-600 text-white"
               }
               onClick={() => setBodyRegion(r)}
               data-testid={`btn-region-${r}`}
@@ -1247,7 +1247,7 @@ function InjuryReportingMode() {
               className={`p-2 rounded-md text-left text-sm transition-all border ${
                 data.bodyParts.includes(part.en)
                   ? "bg-[#FFC107]/20 border-[#FFC107]/50 text-[#FFC107]"
-                  : "bg-gray-800/40 border-gray-700 text-gray-300 hover:border-gray-500"
+                  : "bg-gray-800/40 border-gray-700 text-white hover:border-gray-500"
               }`}
               data-testid={`btn-body-${part.en.toLowerCase().replace(/\s+/g, "-")}`}
             >
@@ -1272,7 +1272,7 @@ function InjuryReportingMode() {
       </div>
 
       <div>
-        <label className="text-xs text-gray-400 mb-1 block">Mechanism of Injury / Mecanismo de lesión</label>
+        <label className="text-xs text-gray-100 mb-1 block">Mechanism of Injury / Mecanismo de lesión</label>
         <select
           className="w-full rounded-md bg-gray-800/60 border border-gray-700 text-white p-2 text-sm"
           value={data.mechanism}
@@ -1295,7 +1295,7 @@ function InjuryReportingMode() {
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="text-xs text-gray-400 block">
+          <label className="text-xs text-gray-100 block">
             Description / Descripción
             <span className="ml-2 text-[#FFC107]/70 text-[10px] font-normal">
               Auto-translates Spanish to English
@@ -1363,7 +1363,7 @@ function InjuryReportingMode() {
       </div>
 
       <div>
-        <label className="text-xs text-gray-400 mb-1 block">Witnessed? / ¿Hubo testigos?</label>
+        <label className="text-xs text-gray-100 mb-1 block">Witnessed? / ¿Hubo testigos?</label>
         <div className="flex gap-2">
           {["Yes / Sí", "No", "Unknown / Desconocido"].map((opt) => (
             <Button
@@ -1372,7 +1372,7 @@ function InjuryReportingMode() {
               variant={data.witnessed === opt ? "default" : "outline"}
               className={data.witnessed === opt
                 ? "bg-[#FFC107] text-black"
-                : "border-gray-600 text-gray-300"
+                : "border-gray-600 text-white"
               }
               onClick={() => setData({ ...data, witnessed: opt })}
               data-testid={`btn-witnessed-${opt.split(" ")[0].toLowerCase()}`}
@@ -1486,7 +1486,7 @@ function NewHireIntakeMode() {
             Clinical Summary (English)
           </h3>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="border-gray-600 text-gray-300" onClick={() => setShowSummary(false)} data-testid="btn-intake-back">
+            <Button size="sm" variant="outline" className="border-gray-600 text-white" onClick={() => setShowSummary(false)} data-testid="btn-intake-back">
               <ChevronLeft className="w-4 h-4 mr-1" /> Edit
             </Button>
             <Button size="sm" className="bg-[#FFC107] text-black" onClick={handlePrint} data-testid="btn-intake-print">
@@ -1497,23 +1497,23 @@ function NewHireIntakeMode() {
 
         <Card className="bg-gray-800/60 border-gray-700 p-4 space-y-3">
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Patient</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Patient</span>
             <p className="text-white font-medium">{data.firstName} {data.lastName}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Date of Birth</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Date of Birth</span>
             <p className="text-white font-medium">{data.dob || "N/A"}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Current Medications</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Current Medications</span>
             <p className="text-white font-medium">{data.medications || "None reported"}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Surgical History</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Surgical History</span>
             <p className="text-white font-medium">{data.surgeries || "None reported"}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Chronic Conditions</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Chronic Conditions</span>
             <div className="flex flex-wrap gap-1 mt-1">
               {data.conditions.length > 0 ? data.conditions.map((c) => (
                 <Badge key={c} className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">{c}</Badge>
@@ -1521,11 +1521,11 @@ function NewHireIntakeMode() {
             </div>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Allergies</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Allergies</span>
             <p className="text-white font-medium">{data.allergies || "NKDA"}</p>
           </div>
           <div>
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Additional Notes</span>
+            <span className="text-xs text-gray-100 uppercase tracking-wide">Additional Notes</span>
             <p className="text-white font-medium">{data.notes || "None"}</p>
           </div>
         </Card>
@@ -1538,7 +1538,7 @@ function NewHireIntakeMode() {
       <div className="flex items-center gap-2 mb-2">
         <UserPlus className="w-5 h-5 text-[#FFC107]" />
         <h3 className="text-lg font-bold text-white">New Hire Intake</h3>
-        <span className="text-sm text-gray-400">/ Admisión de nuevo empleado</span>
+        <span className="text-sm text-gray-100">/ Admisión de nuevo empleado</span>
       </div>
 
       <div className="flex items-center gap-1 mb-4">
@@ -1551,7 +1551,7 @@ function NewHireIntakeMode() {
                   ? "bg-[#FFC107] text-black"
                   : i < step
                   ? "bg-[#FFC107]/30 text-[#FFC107]"
-                  : "bg-gray-700 text-gray-400"
+                  : "bg-gray-700 text-gray-100"
               }`}
               data-testid={`btn-step-${i}`}
             >
@@ -1562,27 +1562,27 @@ function NewHireIntakeMode() {
             )}
           </div>
         ))}
-        <span className="text-xs text-gray-400 ml-2">{steps[step].title}</span>
+        <span className="text-xs text-gray-100 ml-2">{steps[step].title}</span>
       </div>
 
       {step === 0 && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">First Name / Nombre</label>
+              <label className="text-xs text-gray-100 mb-1 block">First Name / Nombre</label>
               <Input className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500" placeholder="Nombre" value={data.firstName} onChange={(e) => setData({ ...data, firstName: e.target.value })} data-testid="input-intake-firstname" />
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Last Name / Apellido</label>
+              <label className="text-xs text-gray-100 mb-1 block">Last Name / Apellido</label>
               <Input className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500" placeholder="Apellido" value={data.lastName} onChange={(e) => setData({ ...data, lastName: e.target.value })} data-testid="input-intake-lastname" />
             </div>
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Date of Birth / Fecha de nacimiento</label>
+            <label className="text-xs text-gray-100 mb-1 block">Date of Birth / Fecha de nacimiento</label>
             <Input type="date" className="bg-gray-800/60 border-gray-700 text-white" value={data.dob} onChange={(e) => setData({ ...data, dob: e.target.value })} data-testid="input-intake-dob" />
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Allergies / Alergias</label>
+            <label className="text-xs text-gray-100 mb-1 block">Allergies / Alergias</label>
             <Input className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500" placeholder="List allergies or NKDA / Liste alergias o NKDA" value={data.allergies} onChange={(e) => setData({ ...data, allergies: e.target.value })} data-testid="input-intake-allergies" />
           </div>
         </div>
@@ -1590,10 +1590,10 @@ function NewHireIntakeMode() {
 
       {step === 1 && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-white">
             <span className="text-[#FFC107] font-semibold">¿Está tomando algún medicamento actualmente?</span>
             <br />
-            <span className="text-gray-400 text-xs">Are you currently taking any medications?</span>
+            <span className="text-gray-100 text-xs">Are you currently taking any medications?</span>
           </p>
           <Textarea
             className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 min-h-[100px]"
@@ -1610,10 +1610,10 @@ function NewHireIntakeMode() {
 
       {step === 2 && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-white">
             <span className="text-[#FFC107] font-semibold">¿Ha tenido alguna cirugía?</span>
             <br />
-            <span className="text-gray-400 text-xs">Have you had any surgeries?</span>
+            <span className="text-gray-100 text-xs">Have you had any surgeries?</span>
           </p>
           <Textarea
             className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 min-h-[100px]"
@@ -1630,10 +1630,10 @@ function NewHireIntakeMode() {
 
       {step === 3 && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-white">
             <span className="text-[#FFC107] font-semibold">¿Tiene alguna de las siguientes condiciones?</span>
             <br />
-            <span className="text-gray-400 text-xs">Do you have any of the following conditions?</span>
+            <span className="text-gray-100 text-xs">Do you have any of the following conditions?</span>
           </p>
           <div className="grid grid-cols-2 gap-2">
             {conditionsList.map((c) => (
@@ -1643,7 +1643,7 @@ function NewHireIntakeMode() {
                 className={`p-2 rounded-md text-left text-sm border transition-all ${
                   data.conditions.includes(c.en)
                     ? "bg-[#FFC107]/20 border-[#FFC107]/50 text-[#FFC107]"
-                    : "bg-gray-800/40 border-gray-700 text-gray-300 hover:border-gray-500"
+                    : "bg-gray-800/40 border-gray-700 text-white hover:border-gray-500"
                 }`}
                 data-testid={`btn-condition-${c.en.toLowerCase().replace(/[\s/]+/g, "-")}`}
               >
@@ -1653,7 +1653,7 @@ function NewHireIntakeMode() {
             ))}
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Additional Notes / Notas adicionales</label>
+            <label className="text-xs text-gray-100 mb-1 block">Additional Notes / Notas adicionales</label>
             <Textarea
               className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 min-h-[60px]"
               placeholder="Any other medical information / Otra información médica"
@@ -1672,7 +1672,7 @@ function NewHireIntakeMode() {
         <Button
           size="sm"
           variant="outline"
-          className="border-gray-600 text-gray-300"
+          className="border-gray-600 text-white"
           onClick={() => setStep(Math.max(0, step - 1))}
           disabled={step === 0}
           data-testid="btn-intake-prev"
@@ -1718,7 +1718,7 @@ function StepList({ steps, tabKey }: { steps: typeof DRUG_SCREEN_STEPS; tabKey: 
                 <span className="font-semibold text-white text-sm">{s.title}</span>
                 <span className="text-xs text-gray-500">/ {s.titleEs}</span>
               </div>
-              <p className="text-sm text-gray-300 mb-1">{s.en}</p>
+              <p className="text-sm text-white mb-1">{s.en}</p>
               <p className="text-xs text-[#FFC107]/80 italic">{s.es}</p>
               <button
                 onClick={() => speakSpanish(s.es)}
@@ -1810,7 +1810,7 @@ function DrugScreenMode() {
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <FlaskConical className="w-5 h-5 text-[#FFC107]" />
         <h3 className="text-lg font-bold text-white">Drug & Alcohol Testing</h3>
-        <span className="text-sm text-gray-400">/ Pruebas de Drogas y Alcohol</span>
+        <span className="text-sm text-gray-100">/ Pruebas de Drogas y Alcohol</span>
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
@@ -1821,7 +1821,7 @@ function DrugScreenMode() {
             variant={activeTab === t.key ? "default" : "outline"}
             className={activeTab === t.key
               ? "bg-[#FFC107] text-black"
-              : "border-gray-600 text-gray-300"
+              : "border-gray-600 text-white"
             }
             onClick={() => setActiveTab(t.key)}
             data-testid={`btn-drug-tab-${t.key}`}
@@ -1837,7 +1837,7 @@ function DrugScreenMode() {
         <ShieldAlert className="w-5 h-5 text-[#FFC107] shrink-0" />
         <div className="min-w-0">
           <p className="text-sm text-[#FFC107] font-semibold">{alertByTab[activeTab].title}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{alertByTab[activeTab].desc}</p>
+          <p className="text-xs text-gray-100 mt-0.5">{alertByTab[activeTab].desc}</p>
         </div>
       </div>
 
@@ -1901,7 +1901,7 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
           <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3">
             Spanish Bilingual Medical Assistant
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
+          <p className="text-gray-100 max-w-2xl mx-auto">
             AI-powered occupational health tool with Spanish text-to-speech. Built for clinic staff serving bilingual workforces.
           </p>
         </div>
@@ -1913,7 +1913,7 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
               variant={mode === m.key ? "default" : "outline"}
               className={mode === m.key
                 ? "bg-[#FFC107] text-black"
-                : "border-gray-600 text-gray-300"
+                : "border-gray-600 text-white"
               }
               onClick={() => setMode(m.key)}
               data-testid={`btn-mode-${m.key}`}
