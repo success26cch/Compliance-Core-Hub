@@ -85,9 +85,32 @@ const RECORDABILITY_QUESTIONS = [
   },
 ];
 
+function getRecordabilityUsage(): { count: number; date: string } {
+  try {
+    const stored = localStorage.getItem("cch-recordability-usage");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const today = new Date().toDateString();
+      if (parsed.date === today) return parsed;
+    }
+  } catch {}
+  return { count: 0, date: new Date().toDateString() };
+}
+
+function incrementRecordabilityUsage() {
+  const usage = getRecordabilityUsage();
+  const updated = { count: usage.count + 1, date: new Date().toDateString() };
+  localStorage.setItem("cch-recordability-usage", JSON.stringify(updated));
+  return updated.count;
+}
+
+const MAX_FREE_USES = 3;
+
 function RecordabilityDecisionTree() {
   const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<"recordable" | "not-recordable" | "likely-not-recordable" | null>(null);
+  const [usageCount, setUsageCount] = useState(() => getRecordabilityUsage().count);
+  const [limitReached, setLimitReached] = useState(() => getRecordabilityUsage().count >= MAX_FREE_USES);
   const totalSteps = RECORDABILITY_QUESTIONS.length;
 
   const handleAnswer = (answer: "yes" | "no") => {
@@ -95,12 +118,16 @@ function RecordabilityDecisionTree() {
     if (answer === "yes") {
       if (q.yesResult) {
         setResult(q.yesResult);
+        const newCount = incrementRecordabilityUsage();
+        setUsageCount(newCount);
       } else if (q.yesNext) {
         setCurrentStep(q.yesNext - 1);
       }
     } else {
       if (q.noResult) {
         setResult(q.noResult);
+        const newCount = incrementRecordabilityUsage();
+        setUsageCount(newCount);
       } else if (q.noNext) {
         setCurrentStep(q.noNext - 1);
       }
@@ -108,6 +135,10 @@ function RecordabilityDecisionTree() {
   };
 
   const handleStartOver = () => {
+    if (usageCount >= MAX_FREE_USES) {
+      setLimitReached(true);
+      return;
+    }
     setCurrentStep(0);
     setResult(null);
   };
@@ -153,7 +184,29 @@ function RecordabilityDecisionTree() {
         </div>
 
         <div className="bg-[hsl(222,47%,15%)] rounded-md border border-white/10 overflow-hidden">
-          {!result ? (
+          {limitReached ? (
+            <div className="p-8 text-center" data-testid="section-recordability-limit">
+              <div className="mb-6">
+                <div className="w-16 h-16 mx-auto rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                  <ShieldCheck className="w-8 h-8 text-accent" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Daily Limit Reached</h3>
+                <p className="text-white/70 text-lg max-w-md mx-auto mb-2">
+                  You've used all {MAX_FREE_USES} free assessments for today.
+                </p>
+                <p className="text-white/50 text-sm max-w-md mx-auto">
+                  Corey AI provides unlimited recordability guidance, compliance checklists, and expert-level OSHA analysis — 24/7.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/get-started">
+                  <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-8 py-6 text-lg" data-testid="button-recordability-upgrade">
+                    Get Unlimited Access with Corey — $99/mo
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : !result ? (
             <div className="p-8">
               <div className="flex items-center gap-2 mb-6" data-testid="progress-recordability">
                 {Array.from({ length: totalSteps }).map((_, i) => (
@@ -166,8 +219,13 @@ function RecordabilityDecisionTree() {
                   />
                 ))}
               </div>
-              <div className="text-sm text-accent font-semibold mb-2" data-testid="text-step-indicator">
-                Question {currentStep + 1} of {totalSteps}
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm text-accent font-semibold" data-testid="text-step-indicator">
+                  Question {currentStep + 1} of {totalSteps}
+                </div>
+                <div className="text-xs text-white/40" data-testid="text-uses-remaining">
+                  {MAX_FREE_USES - usageCount} free {MAX_FREE_USES - usageCount === 1 ? "use" : "uses"} remaining today
+                </div>
               </div>
               <motion.div
                 key={currentStep}
@@ -188,8 +246,7 @@ function RecordabilityDecisionTree() {
                   </Button>
                   <Button
                     onClick={() => handleAnswer("no")}
-                    variant="outline"
-                    className="flex-1 border-white/20 text-white font-bold text-lg py-6"
+                    className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold text-lg py-6"
                     data-testid="button-recordability-no"
                   >
                     No
