@@ -53,7 +53,7 @@ export default function About() {
             Education Is Our Mission.<br /><span className="text-accent">Compliance Is Our Craft.</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Core Compliance Hub exists for one reason: to educate employers on occupational health and safety so they can protect their people, stay compliant, and grow with confidence.
+            Core Compliance Hub exists for one reason: to educate employers on occupational health and safety — rooted in 29 CFR (Code of Federal Regulations, Title 29), where all of OSHA's safety and health standards are published. CCH is all about the regs. We exist so employers can understand them, apply them, protect their people, stay compliant, and grow with confidence.
           </p>
         </div>
       </section>
