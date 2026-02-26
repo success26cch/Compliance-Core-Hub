@@ -229,6 +229,8 @@ function CoreyApp() {
   const [renameValue, setRenameValue] = useState("");
   const [topicPickerOpen, setTopicPickerOpen] = useState(false);
   const [topicPickerMode, setTopicPickerMode] = useState<"meeting" | "weekly">("meeting");
+  const [customTopicMode, setCustomTopicMode] = useState(false);
+  const [customTopicValue, setCustomTopicValue] = useState("");
 
   const SAFETY_TOPICS = [
     "Slips, Trips & Falls Prevention",
@@ -568,6 +570,8 @@ function CoreyApp() {
                       onClick={() => {
                         if (action.openTopicPicker) {
                           setTopicPickerMode(action.openTopicPicker);
+                          setCustomTopicMode(false);
+                          setCustomTopicValue("");
                           setTopicPickerOpen(true);
                           return;
                         }
@@ -656,20 +660,67 @@ function CoreyApp() {
                 : "Select a topic and Corey will generate a ready-to-present 5-minute safety talk with regulatory references."}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[50vh] pr-2">
-            <div className="grid grid-cols-1 gap-2 py-2">
-              {SAFETY_TOPICS.map((topic) => (
-                <button
-                  key={topic}
-                  onClick={() => handleTopicSelect(topic)}
-                  className="w-full text-left px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 transition-colors hover:bg-accent/10 hover:border-accent/30 hover:text-white"
-                  data-testid={`topic-${topic.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+          {customTopicMode ? (
+            <div className="space-y-3 py-2">
+              <Input
+                value={customTopicValue}
+                onChange={(e) => setCustomTopicValue(e.target.value)}
+                placeholder="Type your safety topic here..."
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customTopicValue.trim()) {
+                    handleTopicSelect(customTopicValue.trim());
+                  }
+                }}
+                data-testid="input-custom-topic"
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    if (customTopicValue.trim()) handleTopicSelect(customTopicValue.trim());
+                  }}
+                  disabled={!customTopicValue.trim()}
+                  className="flex-1 bg-accent hover:bg-accent/90 text-white"
+                  data-testid="button-submit-custom-topic"
                 >
-                  {topic}
-                </button>
-              ))}
+                  Go
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => { setCustomTopicMode(false); setCustomTopicValue(""); }}
+                  className="border-white/20 text-white"
+                  data-testid="button-back-to-topics"
+                >
+                  Back to List
+                </Button>
+              </div>
             </div>
-          </ScrollArea>
+          ) : (
+            <>
+              <button
+                onClick={() => setCustomTopicMode(true)}
+                className="w-full text-left px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-sm text-accent font-semibold transition-colors hover:bg-accent/20"
+                data-testid="button-custom-topic"
+              >
+                I'll Pick My Own Topic
+              </button>
+              <ScrollArea className="max-h-[45vh] pr-2">
+                <div className="grid grid-cols-1 gap-2 py-2">
+                  {SAFETY_TOPICS.map((topic) => (
+                    <button
+                      key={topic}
+                      onClick={() => handleTopicSelect(topic)}
+                      className="w-full text-left px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 transition-colors hover:bg-accent/10 hover:border-accent/30 hover:text-white"
+                      data-testid={`topic-${topic.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
