@@ -7,14 +7,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield,
   CheckCircle2, Sparkles, ArrowRight, Download, Smartphone, MoreVertical,
   Copy, Mail, FileText, Trash2, Pencil, Share2, FileDown, ClipboardCopy,
-  Printer, Volume2, VolumeX, Square
+  Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle
 } from "lucide-react";
 import { Link } from "wouter";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -269,15 +269,78 @@ function CoreyApp() {
     }
   }, [conversations, activeConversationId]);
 
+  const QUICK_ACTIONS = [
+    {
+      id: "safety-meeting",
+      title: "Lead a Safety Meeting",
+      description: "Let Corey run a structured safety meeting with agenda, discussion, and action items.",
+      icon: ClipboardList,
+      iconBg: "bg-accent/20",
+      iconColor: "text-accent",
+      prompt: "I need you to lead a safety meeting for my team right now. Please start by presenting a structured agenda with 3-4 safety topics relevant to a general industry workplace. For each topic, provide the OSHA regulatory reference, a brief talking point, and a discussion question to engage the team. After we go through the topics, help me summarize action items and generate meeting minutes I can distribute. Let's begin — present the agenda first.",
+    },
+    {
+      id: "osha-300-audit",
+      title: "Audit My OSHA 300",
+      description: "Walk through a guided audit of your OSHA 300 Log for accuracy and compliance.",
+      icon: Search,
+      iconBg: "bg-primary/20",
+      iconColor: "text-primary",
+      prompt: "I need you to audit my OSHA 300 Log. Walk me through a guided Q&A audit per 29 CFR 1904. Start by asking me about my establishment information, then go through each required column of the OSHA 300 Log one by one. Check for common errors like: miscounted days away/restricted, cases that should have been recorded but weren't, privacy concern cases not properly handled, and whether my annual summary (300A) was posted correctly from February 1 to April 30. Ask me one question at a time and evaluate my answers against OSHA requirements.",
+    },
+    {
+      id: "mock-inspection",
+      title: "Mock OSHA Inspection",
+      description: "Simulate what an OSHA compliance officer would ask during an inspection.",
+      icon: AlertTriangle,
+      iconBg: "bg-yellow-500/20",
+      iconColor: "text-yellow-400",
+      prompt: "Conduct a mock OSHA inspection of my workplace. Act as an OSHA Compliance Safety and Health Officer (CSHO) conducting an on-site inspection. Start with the opening conference — ask about my establishment, number of employees, and industry. Then walk me through what you would inspect: review of OSHA 300 logs, written programs (HazCom, LOTO, Respiratory), training records, PPE assessments, and walk-around observations. Ask me questions one at a time as if you were actually inspecting my facility. Flag any potential citations (Serious, Other-than-Serious, Willful, Repeat) and reference the specific 29 CFR standards. End with a closing conference summarizing findings.",
+    },
+    {
+      id: "weekly-safety-topic",
+      title: "Weekly Safety Topic",
+      description: "Get a ready-to-present 5-minute safety talk with regulatory references.",
+      icon: BookOpen,
+      iconBg: "bg-green-500/20",
+      iconColor: "text-green-400",
+      prompt: "Generate a 5-minute weekly safety topic briefing I can present to my team today. Pick a relevant general industry safety topic and include: the specific OSHA standard reference (29 CFR), 3-4 key talking points, a real-world scenario or example, 2 discussion questions to engage the team, and one actionable takeaway. Format it so I can read it directly to my crew. Make it practical and engaging, not just regulatory text.",
+    },
+    {
+      id: "compliance-calendar",
+      title: "Compliance Calendar Check",
+      description: "Review upcoming regulatory deadlines and required submissions.",
+      icon: Calendar,
+      iconBg: "bg-blue-500/20",
+      iconColor: "text-blue-400",
+      prompt: "Help me check my compliance calendar. Based on today's date, walk me through all upcoming OSHA, DOT, and EPA regulatory deadlines I should be aware of for the next 90 days. Include: OSHA 300A posting/removal dates, OSHA electronic submission deadlines (ITA), DOT random drug testing rate requirements, respirator fit test annual requirements, hearing conservation audiogram schedules, fire extinguisher inspections, and any other time-sensitive compliance obligations. Ask me about my industry and company size so you can tailor the deadlines to my situation.",
+    },
+  ];
+
   const DOCUMENT_TEMPLATES = [
-    { label: "Drug & Alcohol Policy", prompt: "Generate a complete Drug & Alcohol Policy document for our company based on 49 CFR Part 40 and FMCSA 49 CFR Part 382. Include all required sections: purpose, scope, definitions, prohibited conduct, testing types (pre-employment, random, reasonable suspicion, post-accident, return-to-duty, follow-up), consequences, SAP referral, confidentiality, and employee acknowledgment. Format it as a professional policy document ready for implementation." },
-    { label: "OSHA Recordkeeping SOP", prompt: "Generate a Standard Operating Procedure (SOP) for OSHA Recordkeeping based on 29 CFR 1904. Include sections for: determining work-relatedness, recordability decision criteria, first aid vs. recordable distinction, OSHA 300 Log maintenance, OSHA 300A annual summary posting requirements, OSHA 301 incident reports, employee privacy cases, electronic submission requirements, and responsible parties. Format as a professional SOP document." },
-    { label: "Respiratory Protection Program", prompt: "Generate a complete Respiratory Protection Program document per OSHA 29 CFR 1910.134. Include: program administrator responsibilities, workplace hazard evaluation, respirator selection, medical evaluations, fit testing procedures (qualitative and quantitative), training requirements, use and maintenance, breathing air quality, recordkeeping, and program evaluation. Format as a professional program document." },
-    { label: "Hearing Conservation Program", prompt: "Generate a Hearing Conservation Program document per OSHA 29 CFR 1910.95. Include: noise monitoring, audiometric testing program, hearing protection selection, employee training, recordkeeping requirements, action level (85 dBA) and PEL (90 dBA) procedures, baseline and annual audiograms, Standard Threshold Shift evaluation, and follow-up procedures." },
-    { label: "Hazard Communication Program", prompt: "Generate a Hazard Communication Program (HazCom/GHS) document per OSHA 29 CFR 1910.1200. Include: written program elements, chemical inventory, Safety Data Sheet management, container labeling requirements (GHS pictograms, signal words, hazard statements), employee training program, non-routine tasks, contractors, and recordkeeping." },
-    { label: "Return-to-Duty Checklist", prompt: "Generate a comprehensive Return-to-Duty Checklist for DOT-regulated employees per 49 CFR Part 40 Subpart O. Include: SAP initial evaluation, treatment/education completion, SAP follow-up evaluation, Clearinghouse reporting steps, return-to-duty test (negative drug / <0.02 alcohol), direct observation requirements, follow-up testing plan (minimum 6 tests in 12 months), employer documentation requirements, and employee acknowledgment." },
-    { label: "Incident Investigation Form", prompt: "Generate a comprehensive Incident Investigation Form and procedure based on OSHA 29 CFR 1904.7. Include: incident details (who, what, when, where), witness statements, root cause analysis (5 Whys, Fishbone), contributing factors, OSHA recordability determination, corrective actions, preventive measures, responsible parties, follow-up dates, and management sign-off. Format as a fillable form template." },
-    { label: "Lockout/Tagout (LOTO) Program", prompt: "Generate a complete Lockout/Tagout (LOTO) Program per OSHA 29 CFR 1910.147. Include: purpose and scope, definitions, responsibilities, energy control procedures, lockout/tagout device requirements, authorized and affected employee training, periodic inspections, group lockout procedures, shift/personnel changes, and contractor coordination." },
+    { category: "Policies & Programs", label: "Drug & Alcohol Policy", prompt: "Generate a complete Drug & Alcohol Policy document for our company based on 49 CFR Part 40 and FMCSA 49 CFR Part 382. Include all required sections: purpose, scope, definitions, prohibited conduct, testing types (pre-employment, random, reasonable suspicion, post-accident, return-to-duty, follow-up), consequences, SAP referral, confidentiality, and employee acknowledgment. Format it as a professional policy document ready for implementation." },
+    { category: "Policies & Programs", label: "OSHA Recordkeeping SOP", prompt: "Generate a Standard Operating Procedure (SOP) for OSHA Recordkeeping based on 29 CFR 1904. Include sections for: determining work-relatedness, recordability decision criteria, first aid vs. recordable distinction, OSHA 300 Log maintenance, OSHA 300A annual summary posting requirements, OSHA 301 incident reports, employee privacy cases, electronic submission requirements, and responsible parties. Format as a professional SOP document." },
+    { category: "Policies & Programs", label: "Respiratory Protection Program", prompt: "Generate a complete Respiratory Protection Program document per OSHA 29 CFR 1910.134. Include: program administrator responsibilities, workplace hazard evaluation, respirator selection, medical evaluations, fit testing procedures (qualitative and quantitative), training requirements, use and maintenance, breathing air quality, recordkeeping, and program evaluation. Format as a professional program document." },
+    { category: "Policies & Programs", label: "Hearing Conservation Program", prompt: "Generate a Hearing Conservation Program document per OSHA 29 CFR 1910.95. Include: noise monitoring, audiometric testing program, hearing protection selection, employee training, recordkeeping requirements, action level (85 dBA) and PEL (90 dBA) procedures, baseline and annual audiograms, Standard Threshold Shift evaluation, and follow-up procedures." },
+    { category: "Policies & Programs", label: "Hazard Communication Program", prompt: "Generate a Hazard Communication Program (HazCom/GHS) document per OSHA 29 CFR 1910.1200. Include: written program elements, chemical inventory, Safety Data Sheet management, container labeling requirements (GHS pictograms, signal words, hazard statements), employee training program, non-routine tasks, contractors, and recordkeeping." },
+    { category: "Policies & Programs", label: "Lockout/Tagout (LOTO) Program", prompt: "Generate a complete Lockout/Tagout (LOTO) Program per OSHA 29 CFR 1910.147. Include: purpose and scope, definitions, responsibilities, energy control procedures, lockout/tagout device requirements, authorized and affected employee training, periodic inspections, group lockout procedures, shift/personnel changes, and contractor coordination." },
+    { category: "Policies & Programs", label: "Emergency Action Plan", prompt: "Generate a complete Emergency Action Plan (EAP) per OSHA 29 CFR 1910.38. Include: emergency escape procedures and routes, critical plant operations procedures, employee headcount procedures after evacuation, rescue and medical duties, preferred means of reporting emergencies, names of persons to contact for further information, alarm system description, evacuation procedures for employees with disabilities, training requirements, and review schedule. Format as a professional plan document ready for implementation." },
+    { category: "Policies & Programs", label: "Fire Prevention Plan", prompt: "Generate a complete Fire Prevention Plan per OSHA 29 CFR 1910.39. Include: list of all major fire hazards and proper handling/storage procedures for hazardous materials, potential ignition sources and their control, type of fire protection equipment necessary, procedures to control accumulation of flammable and combustible waste materials, procedures for regular maintenance of safeguards, names of responsible personnel for maintenance of fire prevention equipment, names of responsible personnel for control of fuel source hazards, housekeeping procedures, employee training requirements, and coordination with Emergency Action Plan. Format as a professional plan document." },
+    { category: "Policies & Programs", label: "Bloodborne Pathogen Exposure Control Plan", prompt: "Generate a complete Bloodborne Pathogen Exposure Control Plan per OSHA 29 CFR 1910.1030. Include: exposure determination by job classification, schedule and methods of implementation, Hepatitis B vaccination program, post-exposure evaluation and follow-up procedures, communication of hazards (labels, signs, training), engineering and work practice controls, personal protective equipment requirements, housekeeping procedures, regulated waste disposal, laundry procedures, recordkeeping requirements (sharps injury log, training records, medical records), and annual plan review procedures. Format as a professional program document." },
+    { category: "Policies & Programs", label: "Forklift/PIT Safety Program", prompt: "Generate a complete Forklift/Powered Industrial Truck (PIT) Safety Program per OSHA 29 CFR 1910.178. Include: program scope and purpose, types of powered industrial trucks covered, operator training requirements (formal instruction, practical training, evaluation), topics to be covered in training (truck-related topics, workplace-related topics), refresher training and evaluation triggers, operator certification documentation, pre-shift inspection procedures, safe operating procedures, load handling, traveling, fueling/charging, maintenance requirements, pedestrian safety, and recordkeeping. Format as a professional program document." },
+    { category: "Policies & Programs", label: "Fall Protection Plan", prompt: "Generate a complete Fall Protection Plan per OSHA 29 CFR 1926.502. Include: identification of all fall hazards in the work area, methods of fall protection to be used (guardrails, safety nets, personal fall arrest systems), procedures for assembly, maintenance, inspection and disassembly of fall protection systems, procedures for handling, storage and securing of tools and materials, rescue procedures for workers who have fallen, training requirements for all employees exposed to fall hazards, duty to have fall protection at 6 feet in construction, leading edge work procedures, and documentation requirements. Format as a professional plan document." },
+    { category: "Policies & Programs", label: "Electrical Safety Program", prompt: "Generate a complete Electrical Safety Program based on NFPA 70E and OSHA 29 CFR 1910 Subpart S. Include: program scope and purpose, qualified vs. unqualified person definitions, electrical hazard analysis procedures, arc flash risk assessment, shock risk assessment, approach boundaries (limited, restricted, prohibited), PPE requirements and selection (arc-rated clothing, insulated gloves, face shields), energized electrical work permit procedures, lockout/tagout coordination, safe work practices, training requirements for qualified and unqualified persons, equipment maintenance and inspection, portable electric equipment and extension cord safety, and recordkeeping requirements. Format as a professional program document." },
+    { category: "Policies & Programs", label: "Process Safety Management Overview", prompt: "Generate a comprehensive Process Safety Management (PSM) program overview per OSHA 29 CFR 1910.119. Include all 14 elements: employee participation, process safety information, process hazard analysis (PHA), operating procedures, training (initial and refresher), contractors, pre-startup safety review, mechanical integrity, hot work permits, management of change (MOC), incident investigation, emergency planning and response, compliance audits, and trade secrets. For each element, describe the regulatory requirements, implementation steps, and documentation needs. Format as a professional program overview document." },
+    { category: "Permits & Forms", label: "Return-to-Duty Checklist", prompt: "Generate a comprehensive Return-to-Duty Checklist for DOT-regulated employees per 49 CFR Part 40 Subpart O. Include: SAP initial evaluation, treatment/education completion, SAP follow-up evaluation, Clearinghouse reporting steps, return-to-duty test (negative drug / <0.02 alcohol), direct observation requirements, follow-up testing plan (minimum 6 tests in 12 months), employer documentation requirements, and employee acknowledgment." },
+    { category: "Permits & Forms", label: "Incident Investigation Form", prompt: "Generate a comprehensive Incident Investigation Form and procedure based on OSHA 29 CFR 1904.7. Include: incident details (who, what, when, where), witness statements, root cause analysis (5 Whys, Fishbone), contributing factors, OSHA recordability determination, corrective actions, preventive measures, responsible parties, follow-up dates, and management sign-off. Format as a fillable form template." },
+    { category: "Permits & Forms", label: "Confined Space Entry Permit", prompt: "Generate a complete Confined Space Entry Permit template per OSHA 29 CFR 1910.146. Include: permit space identification and location, purpose of entry, date and authorized duration, authorized entrants, attendants, and entry supervisors, hazards of the permit space, measures to isolate the space and eliminate/control hazards (lockout/tagout, purging, ventilating), acceptable entry conditions, results of initial and periodic atmospheric testing (oxygen, flammable gases, toxic substances), rescue and emergency services and contact information, communication procedures, equipment required (ventilation, PPE, lighting, barriers, rescue), hot work permit cross-reference if applicable, and entry supervisor sign-off. Format as a professional permit form." },
+    { category: "Permits & Forms", label: "Hot Work Permit", prompt: "Generate a complete Hot Work Permit template for welding, cutting, brazing, and other spark-producing operations. Include: date, time, and duration of work, location and description of work to be performed, fire watch requirements (during and 60 minutes post-work), fire protection equipment required and verified, sprinkler system status, combustible materials clearance (35-foot radius), floor and wall opening protection, confined space considerations, atmospheric testing if applicable, responsible supervisor authorization, fire watch personnel acknowledgment, contractor information if applicable, and final inspection sign-off. Reference OSHA 29 CFR 1910.252 and NFPA 51B. Format as a professional permit form." },
+    { category: "Permits & Forms", label: "Contractor Safety Pre-Qualification Form", prompt: "Generate a comprehensive Contractor Safety Pre-Qualification Form. Include sections for: company information, insurance certificates (general liability, workers compensation, auto), EMR (Experience Modification Rate) for past 3 years, OSHA 300 log summary (TRIR and DART rates) for past 3 years, written safety program verification, drug and alcohol testing program, employee training documentation, PPE program, OSHA citation history, safety personnel/competent person identification, subcontractor management procedures, emergency response capabilities, equipment inspection/maintenance records, references from previous clients, and contractor acknowledgment of host employer safety rules. Format as a professional pre-qualification form." },
+    { category: "Meeting Tools", label: "Safety Meeting Agenda Template", prompt: "Generate a professional Safety Meeting Agenda Template that can be reused for weekly or monthly safety meetings. Include: meeting header (date, time, location, facilitator), attendance sign-in section, review of previous meeting action items, incident/near-miss review since last meeting, main safety topic presentation section (with space for regulatory reference), open discussion/employee concerns section, new business items, action items assignment (task, responsible person, due date), next meeting date and topic preview, and facilitator/manager sign-off. Reference OSHA's recommendation for regular safety meetings as part of an effective Injury and Illness Prevention Program. Format as a reusable professional template." },
+    { category: "Meeting Tools", label: "Weekly Safety Topic Brief", prompt: "Generate a Weekly Safety Topic Brief template designed for 5-10 minute toolbox talks or safety moments. Include: topic title and date, applicable OSHA/DOT regulation reference, key talking points (3-5 bullet points), real-world scenario or case study, discussion questions for the crew (2-3 questions), key takeaway message, presenter name and sign-off, and attendee sign-in section. Also provide a list of 12 suggested weekly topics with their regulatory references covering: slip/trip/fall prevention, PPE proper use, heat illness prevention, electrical safety awareness, hazard communication/SDS review, fire extinguisher use, ladder safety, manual lifting/ergonomics, housekeeping, emergency evacuation review, hand tool safety, and driving safety. Format as a professional brief template." },
+    { category: "Assessments", label: "Job Hazard Analysis (JHA)", prompt: "Generate a complete Job Hazard Analysis (JHA) template and instructions. Include: job title and department, date of analysis and analyst name, required PPE, training requirements, step-by-step job breakdown column, potential hazards for each step, recommended safe procedures/controls for each hazard, risk rating matrix (severity x probability), residual risk after controls, review and approval signatures. Also include instructions on how to conduct a JHA: selecting the job, breaking the job into steps, identifying hazards, and determining preventive measures. Reference OSHA Publication 3071 (Job Hazard Analysis). Format as a professional analysis template with a completed example for a common task." },
+    { category: "Assessments", label: "New Employee Safety Orientation Checklist", prompt: "Generate a comprehensive New Employee Safety Orientation Checklist. Include sections covering: company safety policy overview, emergency action plan and evacuation routes, fire prevention and extinguisher locations, first aid kit locations and procedures, reporting injuries/incidents/near-misses, hazard communication and SDS locations, PPE requirements and issuance, lockout/tagout awareness, confined space awareness, electrical safety basics, fall protection (if applicable), machine guarding, housekeeping standards, drug and alcohol policy, workplace violence prevention, driver safety (if applicable), department-specific hazards, employee rights under OSHA, how to contact safety personnel, and employee acknowledgment signature with date. Format as a professional checklist with checkboxes for each item." },
+    { category: "Assessments", label: "PPE Hazard Assessment", prompt: "Generate a complete PPE Hazard Assessment template per OSHA 29 CFR 1910.132. Include: workplace/job area identification, assessment date and certifying person, survey of workplace for hazards (impact, penetration, compression, chemical, heat, harmful dust, light/radiation, electrical, fall, noise), hazard sources identified by body area (head, eyes/face, hands, feet, body, hearing, respiratory), PPE selection for each identified hazard with specific standards referenced (ANSI Z87.1 for eye, ANSI Z89.1 for head, ASTM F2412/F2413 for foot, etc.), certification statement that the workplace hazard assessment has been performed per 29 CFR 1910.132(d)(2), employee training documentation, and periodic reassessment schedule. Format as a professional assessment form." },
   ];
 
   return (
@@ -443,13 +506,43 @@ function CoreyApp() {
               documentTemplates={DOCUMENT_TEMPLATES}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-white/40 p-8 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center text-white/40 p-6 text-center overflow-y-auto">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center mb-6">
                 <Bot className="w-10 h-10 text-accent/60" />
               </div>
               <h3 className="text-lg font-semibold text-white/60 mb-2">Ask Corey Anything</h3>
               <p className="text-sm max-w-md mb-6">OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers.</p>
-              <div className="flex flex-col sm:flex-row gap-3">
+
+              <div className="w-full max-w-2xl mb-6">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Quick Actions</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {QUICK_ACTIONS.map((action) => (
+                    <button
+                      key={action.id}
+                      onClick={() => {
+                        createConversation(action.title, {
+                          onSuccess: (data) => {
+                            setActiveConversationId(data.id);
+                            setTimeout(() => {
+                              window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: action.prompt } }));
+                            }, 300);
+                          },
+                        });
+                      }}
+                      className="flex flex-col items-start gap-2 p-4 rounded-lg bg-white/5 border border-white/10 text-left transition-colors hover:bg-white/10 hover:border-white/20"
+                      data-testid={`quick-action-${action.id}`}
+                    >
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${action.iconBg}`}>
+                        <action.icon className={`w-5 h-5 ${action.iconColor}`} />
+                      </div>
+                      <span className="text-sm font-medium text-white/80">{action.title}</span>
+                      <span className="text-xs text-white/40 leading-relaxed">{action.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 flex-wrap justify-center">
                 <Button onClick={handleNewChat} className="bg-accent hover:bg-accent/90" data-testid="button-start-first-chat">
                   <Plus className="w-4 h-4 mr-2" /> Start a Conversation
                 </Button>
@@ -459,26 +552,39 @@ function CoreyApp() {
                       <FileText className="w-4 h-4 mr-2" /> Generate a Document
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-72">
-                    {DOCUMENT_TEMPLATES.map((tmpl, i) => (
-                      <DropdownMenuItem
-                        key={i}
-                        onClick={() => {
-                          createConversation(tmpl.label, {
-                            onSuccess: (data) => {
-                              setActiveConversationId(data.id);
-                              setTimeout(() => {
-                                window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: tmpl.prompt } }));
-                              }, 300);
-                            },
-                          });
-                        }}
-                        data-testid={`menu-doc-template-${i}`}
-                      >
-                        <FileText className="w-3.5 h-3.5 mr-2 text-accent" />
-                        {tmpl.label}
-                      </DropdownMenuItem>
-                    ))}
+                  <DropdownMenuContent align="center" className="w-72 max-h-80 overflow-y-auto">
+                    {["Policies & Programs", "Permits & Forms", "Meeting Tools", "Assessments"].map((cat, catIdx) => {
+                      const items = DOCUMENT_TEMPLATES.filter(t => t.category === cat);
+                      if (items.length === 0) return null;
+                      return (
+                        <DropdownMenuGroup key={cat}>
+                          {catIdx > 0 && <DropdownMenuSeparator />}
+                          <DropdownMenuLabel className="text-xs text-white/50">{cat}</DropdownMenuLabel>
+                          {items.map((tmpl) => {
+                            const globalIdx = DOCUMENT_TEMPLATES.indexOf(tmpl);
+                            return (
+                              <DropdownMenuItem
+                                key={globalIdx}
+                                onClick={() => {
+                                  createConversation(tmpl.label, {
+                                    onSuccess: (data) => {
+                                      setActiveConversationId(data.id);
+                                      setTimeout(() => {
+                                        window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: tmpl.prompt } }));
+                                      }, 300);
+                                    },
+                                  });
+                                }}
+                                data-testid={`menu-doc-template-${globalIdx}`}
+                              >
+                                <FileText className="w-3.5 h-3.5 mr-2 text-accent" />
+                                {tmpl.label}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuGroup>
+                      );
+                    })}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -491,6 +597,7 @@ function CoreyApp() {
 }
 
 interface DocumentTemplate {
+  category: string;
   label: string;
   prompt: string;
 }
@@ -855,20 +962,33 @@ function CoreyChatInterface({
                   <FileText className="w-3.5 h-3.5" /> Generate Document
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72">
-                {documentTemplates.map((tmpl, i) => (
-                  <DropdownMenuItem
-                    key={i}
-                    onClick={() => {
-                      sendMessage(tmpl.prompt);
-                      if (onMessageSent) setTimeout(() => onMessageSent(), 500);
-                    }}
-                    data-testid={`menu-inline-doc-${i}`}
-                  >
-                    <FileText className="w-3.5 h-3.5 mr-2 text-accent" />
-                    {tmpl.label}
-                  </DropdownMenuItem>
-                ))}
+              <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-y-auto">
+                {["Policies & Programs", "Permits & Forms", "Meeting Tools", "Assessments"].map((cat, catIdx) => {
+                  const items = (documentTemplates || []).filter(t => t.category === cat);
+                  if (items.length === 0) return null;
+                  return (
+                    <DropdownMenuGroup key={cat}>
+                      {catIdx > 0 && <DropdownMenuSeparator />}
+                      <DropdownMenuLabel className="text-xs text-white/50">{cat}</DropdownMenuLabel>
+                      {items.map((tmpl) => {
+                        const globalIdx = (documentTemplates || []).indexOf(tmpl);
+                        return (
+                          <DropdownMenuItem
+                            key={globalIdx}
+                            onClick={() => {
+                              sendMessage(tmpl.prompt);
+                              if (onMessageSent) setTimeout(() => onMessageSent(), 500);
+                            }}
+                            data-testid={`menu-inline-doc-${globalIdx}`}
+                          >
+                            <FileText className="w-3.5 h-3.5 mr-2 text-accent" />
+                            {tmpl.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuGroup>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
