@@ -678,7 +678,7 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link href="/bot">
+                <Link href="/corey">
                   <Button className="w-full sm:w-auto gap-2" data-testid="button-chat-bot">
                     Start Chat <ArrowUpRight className="w-4 h-4" />
                   </Button>
@@ -719,7 +719,7 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">
                   Quick access to your 24/7 AI compliance expert. Ask about OSHA, DOT, or ISO regulations.
                 </p>
-                <Link href="/bot">
+                <Link href="/corey">
                   <Button className="w-full gap-2" size="sm" data-testid="button-sidebar-chat">
                     <MessageSquare className="w-4 h-4" />
                     Open AI Consultant

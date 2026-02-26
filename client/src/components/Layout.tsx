@@ -61,7 +61,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/settings", label: "Settings", icon: Settings },
     { href: "/company-profile", label: "Company Profile", icon: Building2 },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/bot", label: "Ask Corey", icon: Bot },
+    { href: "/corey", label: "Ask Corey", icon: Bot },
     { href: "/team-seats", label: "Team Seats", icon: Users },
     { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
