@@ -227,6 +227,54 @@ function CoreyApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [topicPickerOpen, setTopicPickerOpen] = useState(false);
+  const [topicPickerMode, setTopicPickerMode] = useState<"meeting" | "weekly">("meeting");
+
+  const SAFETY_TOPICS = [
+    "Slips, Trips & Falls Prevention",
+    "PPE — Proper Use & Inspection",
+    "Lockout/Tagout (LOTO)",
+    "Fire Safety & Extinguisher Use",
+    "Electrical Safety",
+    "Hazard Communication & SDS",
+    "Machine Guarding",
+    "Forklift / Powered Industrial Truck Safety",
+    "Confined Space Awareness",
+    "Fall Protection",
+    "Heat Illness Prevention",
+    "Ergonomics & Manual Lifting",
+    "Ladder Safety",
+    "Housekeeping & Workplace Organization",
+    "Emergency Action Plan & Evacuation",
+    "Bloodborne Pathogens",
+    "Hearing Conservation",
+    "Respiratory Protection",
+    "Hand & Power Tool Safety",
+    "Driving & Fleet Safety",
+    "Chemical Safety & Spill Response",
+    "Incident Reporting & Near-Miss",
+    "New Employee Safety Orientation",
+    "Crane & Rigging Safety",
+    "Welding & Hot Work Safety",
+  ];
+
+  const handleTopicSelect = (topic: string) => {
+    setTopicPickerOpen(false);
+    const title = topicPickerMode === "meeting"
+      ? `Safety Meeting: ${topic}`
+      : `Safety Topic: ${topic}`;
+    const prompt = topicPickerMode === "meeting"
+      ? `I need you to lead a safety meeting for my team on the topic: "${topic}". Please present a structured agenda that includes: 1) An opening safety moment related to ${topic}, 2) The OSHA regulatory references and CFR citations that apply to ${topic}, 3) 3-4 key discussion points with real-world examples, 4) A real-world incident scenario related to ${topic} for the team to discuss, 5) 2-3 discussion questions to engage the team, 6) Key takeaways, 7) Action items with responsible parties and due dates. After we discuss, generate meeting minutes I can distribute. Let's begin — present the agenda.`
+      : `Generate a 5-minute weekly safety topic briefing on: "${topic}". Include: the specific OSHA standard reference (29 CFR), 3-4 key talking points, a real-world enforcement case or incident example related to ${topic}, 2-3 discussion questions to engage the team, one actionable takeaway, and 2 quiz questions to check understanding. Format it so I can read it directly to my crew. Make it practical and engaging, not just regulatory text.`;
+    createConversation(title, {
+      onSuccess: (data) => {
+        setActiveConversationId(data.id);
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt } }));
+        }, 300);
+      },
+    });
+  };
 
   const handleNewChat = () => {
     createConversation("New Question", {
@@ -269,11 +317,12 @@ function CoreyApp() {
     {
       id: "safety-meeting",
       title: "Lead a Safety Meeting",
-      description: "Let Corey run a structured safety meeting with agenda, discussion, and action items.",
+      description: "Choose a topic and let Corey build your full safety meeting agenda.",
       icon: ClipboardList,
       iconBg: "bg-accent/20",
       iconColor: "text-accent",
-      prompt: "I need you to lead a safety meeting for my team right now. Please start by presenting a structured agenda with 3-4 safety topics relevant to a general industry workplace. For each topic, provide the OSHA regulatory reference, a brief talking point, and a discussion question to engage the team. After we go through the topics, help me summarize action items and generate meeting minutes I can distribute. Let's begin — present the agenda first.",
+      prompt: "",
+      openTopicPicker: "meeting" as const,
     },
     {
       id: "osha-300-audit",
@@ -296,11 +345,12 @@ function CoreyApp() {
     {
       id: "weekly-safety-topic",
       title: "Weekly Safety Topic",
-      description: "Get a ready-to-present 5-minute safety talk with regulatory references.",
+      description: "Pick a topic and get a ready-to-present 5-minute safety talk.",
       icon: BookOpen,
       iconBg: "bg-green-500/20",
       iconColor: "text-green-400",
-      prompt: "Generate a 5-minute weekly safety topic briefing I can present to my team today. Pick a relevant general industry safety topic and include: the specific OSHA standard reference (29 CFR), 3-4 key talking points, a real-world scenario or example, 2 discussion questions to engage the team, and one actionable takeaway. Format it so I can read it directly to my crew. Make it practical and engaging, not just regulatory text.",
+      prompt: "",
+      openTopicPicker: "weekly" as const,
     },
     {
       id: "compliance-calendar",
@@ -516,6 +566,11 @@ function CoreyApp() {
                     <button
                       key={action.id}
                       onClick={() => {
+                        if (action.openTopicPicker) {
+                          setTopicPickerMode(action.openTopicPicker);
+                          setTopicPickerOpen(true);
+                          return;
+                        }
                         createConversation(action.title, {
                           onSuccess: (data) => {
                             setActiveConversationId(data.id);
@@ -588,7 +643,68 @@ function CoreyApp() {
           )}
         </div>
       </div>
+
+      <Dialog open={topicPickerOpen} onOpenChange={setTopicPickerOpen}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg">
+              {topicPickerMode === "meeting" ? "Choose a Safety Meeting Topic" : "Choose a Weekly Safety Topic"}
+            </DialogTitle>
+            <DialogDescription className="text-white/50">
+              {topicPickerMode === "meeting"
+                ? "Select a topic and Corey will build a full safety meeting agenda with discussion questions, scenarios, and action items."
+                : "Select a topic and Corey will generate a ready-to-present 5-minute safety talk with regulatory references."}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[50vh] pr-2">
+            <div className="grid grid-cols-1 gap-2 py-2">
+              {SAFETY_TOPICS.map((topic) => (
+                <button
+                  key={topic}
+                  onClick={() => handleTopicSelect(topic)}
+                  className="w-full text-left px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 transition-colors hover:bg-accent/10 hover:border-accent/30 hover:text-white"
+                  data-testid={`topic-${topic.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                >
+                  {topic}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <FloatingMicButton
+        activeConversationId={activeConversationId}
+        isStreaming={false}
+      />
     </div>
+  );
+}
+
+function FloatingMicButton({ activeConversationId, isStreaming }: { activeConversationId: number | null; isStreaming: boolean }) {
+  const { isListening, speechSupported, toggleListening } = useSpeechRecognition((transcript: string) => {
+    window.dispatchEvent(new CustomEvent("corey-floating-mic", { detail: { transcript } }));
+  });
+
+  if (!speechSupported || !activeConversationId) return null;
+
+  return (
+    <button
+      onClick={toggleListening}
+      disabled={isStreaming}
+      className={`fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all ${
+        isListening
+          ? "bg-accent shadow-accent/40 animate-pulse"
+          : "bg-slate-800 border border-white/20 shadow-black/40"
+      }`}
+      data-testid="button-floating-mic"
+    >
+      {isListening ? (
+        <MicOff className="w-6 h-6 text-white" />
+      ) : (
+        <Mic className="w-6 h-6 text-white/70" />
+      )}
+    </button>
   );
 }
 
@@ -637,6 +753,17 @@ function CoreyChatInterface({
     window.addEventListener("corey-auto-send", handler);
     return () => window.removeEventListener("corey-auto-send", handler);
   }, [sendMessage, onMessageSent]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.transcript) {
+        setInput(detail.transcript);
+      }
+    };
+    window.addEventListener("corey-floating-mic", handler);
+    return () => window.removeEventListener("corey-floating-mic", handler);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
