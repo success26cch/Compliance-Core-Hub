@@ -544,7 +544,7 @@ function CoreyApp() {
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="border-white/20 text-white/70 hover:text-white hover:bg-white/10" data-testid="button-generate-document">
+                    <Button className="bg-white/10 border border-white/20 text-white font-semibold" data-testid="button-generate-document">
                       <FileText className="w-4 h-4 mr-2" /> Generate a Document
                     </Button>
                   </DropdownMenuTrigger>
