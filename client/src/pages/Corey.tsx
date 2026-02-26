@@ -365,12 +365,12 @@ function CoreyApp() {
     },
     {
       id: "gap-analysis",
-      title: "Gap Analysis",
-      description: "Walk through your compliance programs and identify what's missing.",
+      title: "Gap Analysis — ACSI",
+      description: "Full gap analysis is an ACSI service. Let Corey connect you.",
       icon: Target,
       iconBg: "bg-orange-500/20",
       iconColor: "text-orange-400",
-      prompt: "I need you to perform a compliance gap analysis for my company. Walk through each required OSHA written program one by one based on my operations. For each program, ask me: 'Do you have a written [program name]?' Then check if it meets the regulatory requirements. Cover these programs: Hazard Communication (29 CFR 1910.1200), Lockout/Tagout (29 CFR 1910.147), Respiratory Protection (29 CFR 1910.134), Hearing Conservation (29 CFR 1910.95), Bloodborne Pathogens (29 CFR 1910.1030), Emergency Action Plan (29 CFR 1910.38), Fire Prevention Plan (29 CFR 1910.39), PPE Hazard Assessment (29 CFR 1910.132), Confined Space (29 CFR 1910.146), and Forklift/PIT (29 CFR 1910.178). Also check training documentation, inspection schedules, and recordkeeping. Ask me one question at a time. Prioritize gaps by risk level: critical, major, minor. At the end, provide a summary of all gaps found and recommended next steps.",
+      prompt: "A user is interested in a Gap Analysis for their compliance programs or ISO management system. Gap Analysis is a core service provided by ACSI (Assessment & Consulting Services Inc.), our dedicated ISO and compliance consulting division. Please explain what a Gap Analysis involves — covering ISO 9001, 14001, 45001, and OSHA compliance program reviews — and let them know that ACSI's Lead ISO Auditors specialize in conducting thorough gap analyses, audit preparation, and implementation support. Provide the link to ACSI at https://acsi-quality.com/ and encourage them to reach out to ACSI directly for a full gap analysis engagement. You can answer general questions about what gap analysis covers, but for the actual structured assessment, direct them to ACSI.",
     },
     {
       id: "osha-recordability",
