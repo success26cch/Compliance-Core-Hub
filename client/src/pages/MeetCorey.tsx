@@ -239,19 +239,11 @@ export default function MeetCorey() {
               <p className="text-base text-white/50 mb-8 max-w-xl">
                 Not a chatbot. Not a search engine. Corey is the person in the office that everyone goes to — from the plant floor to the corner office.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link href="/corey">
-                  <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-bold px-8 py-6 text-lg gap-2" data-testid="button-hero-try-free">
-                    <Bot className="w-5 h-5" />
-                    Try Corey Free
-                  </Button>
-                </Link>
-                <Link href="/get-started">
-                  <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold px-8 py-6 text-lg gap-2" data-testid="button-hero-pricing">
-                    View Pricing
-                    <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </Link>
+              <div className="flex items-center gap-3 justify-center lg:justify-start">
+                <Badge className="bg-white/10 text-white/70 border-white/20 text-sm px-4 py-2">
+                  <ShieldCheck className="w-4 h-4 mr-2 inline" />
+                  3 free questions — no credit card required
+                </Badge>
               </div>
             </motion.div>
 
@@ -344,7 +336,7 @@ export default function MeetCorey() {
             className="text-center mb-16"
           >
             <Badge className="bg-red-500/10 text-red-400 border-red-500/20 mb-4">Anti-Hallucination Protocol</Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-trust-title">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-4" data-testid="text-trust-title">
               Zero Tolerance for <span className="text-red-400">Guessing.</span>
             </h2>
             <p className="text-lg text-white/50 max-w-2xl mx-auto">
@@ -460,7 +452,7 @@ export default function MeetCorey() {
             className="text-center mb-16"
           >
             <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20 mb-4">Document Generation</Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-documents-title">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-4" data-testid="text-documents-title">
               23 Templates. <span className="text-accent">One Click.</span>
             </h2>
             <p className="text-lg text-white/50 max-w-2xl mx-auto">
@@ -570,7 +562,7 @@ export default function MeetCorey() {
             className="text-center mb-12"
           >
             <Badge className="bg-white/10 text-white/80 border-white/10 mb-4">Who Is Corey For?</Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-audience-title">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-4" data-testid="text-audience-title">
               Everyone Goes to <span className="text-accent">Corey.</span>
             </h2>
           </motion.div>
@@ -668,7 +660,7 @@ export default function MeetCorey() {
                 </Button>
               </Link>
               <Link href="/get-started">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-subscribe">
+                <Button size="lg" className="bg-white/10 border-2 border-white/30 text-white font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-subscribe">
                   Subscribe — $99/mo
                   <ArrowRight className="w-5 h-5" />
                 </Button>
