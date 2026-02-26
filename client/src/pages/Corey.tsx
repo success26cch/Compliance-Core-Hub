@@ -14,7 +14,7 @@ import {
   Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield,
   CheckCircle2, Sparkles, ArrowRight, Download, Smartphone, MoreVertical,
   Copy, Mail, FileText, Trash2, Pencil, Share2, FileDown, ClipboardCopy,
-  Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle
+  Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle, Target, Scale
 } from "lucide-react";
 import { Link } from "wouter";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -362,6 +362,24 @@ function CoreyApp() {
       iconBg: "bg-blue-500/20",
       iconColor: "text-blue-400",
       prompt: "Help me check my compliance calendar. Based on today's date, walk me through all upcoming OSHA, DOT, and EPA regulatory deadlines I should be aware of for the next 90 days. Include: OSHA 300A posting/removal dates, OSHA electronic submission deadlines (ITA), DOT random drug testing rate requirements, respirator fit test annual requirements, hearing conservation audiogram schedules, fire extinguisher inspections, and any other time-sensitive compliance obligations. Ask me about my industry and company size so you can tailor the deadlines to my situation.",
+    },
+    {
+      id: "gap-analysis",
+      title: "Gap Analysis",
+      description: "Walk through your compliance programs and identify what's missing.",
+      icon: Target,
+      iconBg: "bg-orange-500/20",
+      iconColor: "text-orange-400",
+      prompt: "I need you to perform a compliance gap analysis for my company. Walk through each required OSHA written program one by one based on my operations. For each program, ask me: 'Do you have a written [program name]?' Then check if it meets the regulatory requirements. Cover these programs: Hazard Communication (29 CFR 1910.1200), Lockout/Tagout (29 CFR 1910.147), Respiratory Protection (29 CFR 1910.134), Hearing Conservation (29 CFR 1910.95), Bloodborne Pathogens (29 CFR 1910.1030), Emergency Action Plan (29 CFR 1910.38), Fire Prevention Plan (29 CFR 1910.39), PPE Hazard Assessment (29 CFR 1910.132), Confined Space (29 CFR 1910.146), and Forklift/PIT (29 CFR 1910.178). Also check training documentation, inspection schedules, and recordkeeping. Ask me one question at a time. Prioritize gaps by risk level: critical, major, minor. At the end, provide a summary of all gaps found and recommended next steps.",
+    },
+    {
+      id: "osha-recordability",
+      title: "Is This Recordable?",
+      description: "Walk through an incident to determine if it's OSHA recordable.",
+      icon: Scale,
+      iconBg: "bg-pink-500/20",
+      iconColor: "text-pink-400",
+      prompt: "I need help determining if a workplace incident is OSHA recordable under 29 CFR 1904. Walk me through the recordability decision step by step. Ask me these questions one at a time: 1) Did the incident involve a work-related injury or illness? 2) Is it a new case or a recurrence of a previously recorded case? 3) Did it result in death? 4) Did it result in days away from work? 5) Did it result in restricted work activity or job transfer? 6) Did it require medical treatment beyond first aid? 7) Did it result in loss of consciousness? 8) Was it a significant injury or illness diagnosed by a physician or licensed health care professional? For each answer, explain the regulatory basis from 29 CFR 1904.7. Also help me understand the difference between first aid and medical treatment per OSHA's definitions. At the end, give me a clear determination: recordable or not recordable, and which OSHA 300 Log column to use if recordable.",
     },
   ];
 
