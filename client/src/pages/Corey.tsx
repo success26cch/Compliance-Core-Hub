@@ -263,11 +263,7 @@ function CoreyApp() {
     }
   };
 
-  useEffect(() => {
-    if (!activeConversationId && conversations && conversations.length > 0) {
-      setActiveConversationId(conversations[0].id);
-    }
-  }, [conversations, activeConversationId]);
+  
 
   const QUICK_ACTIONS = [
     {
@@ -385,9 +381,9 @@ function CoreyApp() {
                 Install
               </Button>
             )}
-            <Link href="/">
+            <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 text-xs" data-testid="link-cch-platform">
-                CCH Platform
+                ← Dashboard
               </Button>
             </Link>
           </div>
