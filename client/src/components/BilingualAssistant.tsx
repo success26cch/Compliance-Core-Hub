@@ -364,6 +364,24 @@ function speakSpanish(text: string) {
   }
 }
 
+function speakEnglish(text: string) {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const clean = text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/^\s*[-*]\s+/gm, '');
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const enVoices = voices.filter(v => v.lang.startsWith('en'));
+    const preferred = enVoices.find(v => v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('Microsoft Jenny'))
+      || enVoices.find(v => v.name.includes('Natural') || v.name.includes('Neural'))
+      || enVoices[0];
+    if (preferred) utterance.voice = preferred;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 interface BmaChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -643,16 +661,31 @@ function BmaInteractiveChatMode() {
                 </p>
               )}
             </div>
-            {msg.role === "assistant" && msg.spanish && (
-              <button
-                type="button"
-                onClick={() => speakSpanish(msg.spanish!)}
-                className="self-start mt-1 p-1.5 rounded-md bg-gray-800/60 border border-gray-700 opacity-60 hover:opacity-100 transition-opacity"
-                title="Speak Spanish translation"
-                data-testid={`btn-bma-speak-${i}`}
-              >
-                <Volume2 className="w-3.5 h-3.5 text-[#FFC107]" />
-              </button>
+            {msg.role === "assistant" && (
+              <div className="flex flex-col gap-1 self-start mt-1">
+                <button
+                  type="button"
+                  onClick={() => speakEnglish(msg.content)}
+                  className="p-1.5 rounded-md bg-gray-800/60 border border-blue-500/30 opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+                  title="Listen in English"
+                  data-testid={`btn-bma-listen-en-${i}`}
+                >
+                  <Volume2 className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="text-[10px] text-blue-400 font-semibold">EN</span>
+                </button>
+                {msg.spanish && (
+                  <button
+                    type="button"
+                    onClick={() => speakSpanish(msg.spanish!)}
+                    className="p-1.5 rounded-md bg-gray-800/60 border border-[#FFC107]/30 opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+                    title="Listen in Spanish"
+                    data-testid={`btn-bma-listen-es-${i}`}
+                  >
+                    <Volume2 className="w-3.5 h-3.5 text-[#FFC107]" />
+                    <span className="text-[10px] text-[#FFC107] font-semibold">ES</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         ))}
