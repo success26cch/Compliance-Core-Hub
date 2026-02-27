@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link as WouterLink } from "wouter";
 import { ProtectedLayout } from "@/components/Layout";
 import { PlatformGate } from "@/components/PlatformGate";
 import { Card } from "@/components/ui/card";
@@ -755,6 +756,26 @@ function EmployeePassportContent() {
                 </div>
               ))}
             </div>
+          </Card>
+
+          <Card className="p-6 border-blue-500/20 bg-gradient-to-br from-background to-blue-500/5">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-5 h-5 text-blue-400" />
+              <h2 className="text-lg font-bold">Clinic Communication Letter</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Send a professional letter to your clinic setting expectations for first-aid treatment, OTC medication use, and restriction wording — helping keep cases non-recordable when clinically appropriate.
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant="secondary" className="text-xs">29 CFR 1904.7(a)</Badge>
+              <Badge variant="secondary" className="text-xs">OTC Preference</Badge>
+              <Badge variant="secondary" className="text-xs">Restriction Wording Guide</Badge>
+            </div>
+            <WouterLink href="/clinic-letter">
+              <Button className="w-full gap-2 bg-blue-600 hover:bg-blue-500 text-white" data-testid="button-clinic-letter-passport">
+                <FileText className="w-4 h-4" /> Generate Clinic Letter
+              </Button>
+            </WouterLink>
           </Card>
 
           <Card className="p-6">

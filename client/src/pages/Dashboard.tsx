@@ -25,7 +25,9 @@ import {
   GraduationCap,
   BookOpen,
   RotateCcw,
-  Volume2
+  Volume2,
+  FileText,
+  QrCode
 } from "lucide-react";
 import { Link } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
@@ -697,6 +699,47 @@ export default function Dashboard() {
                 <Link href="/decision-tree">
                   <Button variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-decision-tree">
                     Start Assessment <ArrowUpRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Clinic Authorization Forms */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="hover:shadow-lg transition-shadow border-blue-500/20 bg-gradient-to-br from-white to-blue-50/50 dark:from-background dark:to-blue-500/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-500" />
+                  Clinic Communication Letter
+                </CardTitle>
+                <CardDescription>
+                  Set expectations with your occupational health clinic — first-aid treatment preferences, OTC medication requests, and restriction wording guidance per 29 CFR 1904.7(a).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/clinic-letter">
+                  <Button className="w-full sm:w-auto gap-2 bg-blue-600 hover:bg-blue-500 text-white" data-testid="button-clinic-letter-dashboard">
+                    <FileText className="w-4 h-4" /> Generate Letter
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow border-[#FFC107]/20 bg-gradient-to-br from-white to-amber-50/50 dark:from-background dark:to-[#FFC107]/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-[#FFC107]" />
+                  Digital Medical Passport
+                </CardTitle>
+                <CardDescription>
+                  Generate QR-based clinic authorization forms for your employees. Clinics scan the code, you get notified instantly.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/employee-passport">
+                  <Button variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-passport-dashboard">
+                    <QrCode className="w-4 h-4" /> Generate Passport
                   </Button>
                 </Link>
               </CardContent>
