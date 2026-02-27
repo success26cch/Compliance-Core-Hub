@@ -47,6 +47,7 @@ import QRCodePage from "@/pages/QRCode";
 import ComplianceGlossary from "@/pages/ComplianceGlossary";
 import MeetCorey from "@/pages/MeetCorey";
 import DemoTour from "@/pages/DemoTour";
+import PlatformBrief from "@/pages/PlatformBrief";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -104,6 +105,7 @@ function Router() {
       <Route path="/compliance-glossary" component={ComplianceGlossary} />
       <Route path="/meet-corey" component={MeetCorey} />
       <Route path="/demo-tour" component={DemoTour} />
+      <Route path="/platform-brief" component={PlatformBrief} />
       <Route component={NotFound} />
     </Switch>
   );
