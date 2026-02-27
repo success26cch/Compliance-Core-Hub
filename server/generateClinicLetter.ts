@@ -326,10 +326,185 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
     width: { size: 100, type: WidthType.PERCENTAGE },
   });
 
+  // OTC Medication Preference Section
+  const otcHeaderRow = new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: 'OTC (OVER-THE-COUNTER) MEDICATION PREFERENCE', size: 20, bold: true, color: 'FFFFFF', font: fontFamily })],
+      })],
+      shading: { fill: '6B46C1', type: ShadingType.CLEAR, color: 'auto' },
+      borders: noBorders,
+    })],
+  });
+
+  const otcItems = [
+    'We respectfully request that non-prescription (OTC) medications be recommended whenever clinically appropriate. Any prescription — regardless of type — triggers OSHA recordability under 29 CFR 1904.7(a).',
+    'Ibuprofen (Advil/Motrin) 200mg, Naproxen (Aleve) 220mg, and Acetaminophen (Tylenol) 500mg are available OTC and are classified as first aid when recommended at non-prescription strength.',
+    'OTC topical analgesics (Biofreeze, IcyHot, Aspercreme, Salonpas patches, Arnica gel) are first aid and often effective for musculoskeletal complaints.',
+    'OTC hydrocortisone cream (0.5% or 1%) for skin irritation/dermatitis is first aid. Prescription-strength topical steroids trigger recordability.',
+    'OTC antihistamines (Benadryl, Claritin, Zyrtec) at non-prescription dosing are first aid.',
+    'If the provider believes a prescription medication is medically necessary, please proceed — but understand this will make the case OSHA recordable.',
+  ];
+
+  const otcBulletRows = otcItems.map(item => new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: `  •  ${item}`, size: bul, color: '6B46C1', font: fontFamily })],
+        spacing: { after: 20 },
+      })],
+      borders: noBorders,
+    })],
+  }));
+
+  const otcTable = new Table({
+    rows: [otcHeaderRow, ...otcBulletRows],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+
+  // Work Restriction Wording Guidance Section
+  const restrictionHeaderRow = new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: 'WORK RESTRICTION WORDING — HOW IT IMPACTS RECORDABILITY', size: 20, bold: true, color: 'FFFFFF', font: fontFamily })],
+      })],
+      shading: { fill: 'D97706', type: ShadingType.CLEAR, color: 'auto' },
+      borders: noBorders,
+    })],
+  });
+
+  const restrictionIntroRow = new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: 'Under 29 CFR 1904.7(a), work restrictions trigger OSHA recordability. How a provider words the return-to-work note can be the difference between a recordable and a non-recordable case. We ask that restrictions be medically necessary and worded as specifically as possible to the employee\'s actual functional limitations.', size: sm, font: fontFamily })],
+        spacing: { before: 20, after: 30 },
+      })],
+      borders: noBorders,
+    })],
+  });
+
+  const wordingMakesRecordableHeader = new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: '  WORDING THAT MAKES IT RECORDABLE:', size: bul, bold: true, color: 'C53030', font: fontFamily })],
+        spacing: { before: 10, after: 10 },
+      })],
+      borders: noBorders,
+      shading: { fill: 'FFF5F5', type: ShadingType.CLEAR, color: 'auto' },
+    })],
+  });
+
+  const recordableExamples = [
+    '"No lifting over 10 lbs" — This is a specific restriction that triggers recordability.',
+    '"No use of right hand" — Specific restriction = recordable.',
+    '"Light duty only" — Vague but still a restriction = recordable.',
+    '"No pushing, pulling, or overhead reaching" — Specific functional limitation = recordable.',
+    '"Sit-down work only" — Restriction that prevents routine functions = recordable.',
+  ];
+
+  const recordableExampleRows = recordableExamples.map(item => new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: `    •  ${item}`, size: bul, color: 'C53030', font: fontFamily })],
+        spacing: { after: 15 },
+      })],
+      borders: noBorders,
+    })],
+  }));
+
+  const wordingNonRecordableHeader = new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: '  HOW THE CLINIC SHOULD WORD IT (IF CLINICALLY APPROPRIATE):', size: bul, bold: true, color: '276749', font: fontFamily })],
+        spacing: { before: 20, after: 10 },
+      })],
+      borders: noBorders,
+      shading: { fill: 'F0FFF4', type: ShadingType.CLEAR, color: 'auto' },
+    })],
+  });
+
+  const nonRecordableExamples = [
+    '"Return to work. May modify activities as tolerated. Use proper body mechanics. Ice and anti-inflammatories as needed."',
+    '"Return to full duty work as tolerated. Avoid forceful pushing/pulling if it causes significant pain."',
+    '"Return to regular duties. Employee may self-limit activities based on comfort level. OTC ibuprofen as needed."',
+    '"Fit for full duty. Recommend ergonomic awareness and stretching breaks. Follow up as needed."',
+    '"Return to work without restrictions. Employee educated on proper lifting techniques and self-care."',
+  ];
+
+  const nonRecordableExampleRows = nonRecordableExamples.map(item => new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: `    •  ${item}`, size: bul, color: '276749', font: fontFamily })],
+        spacing: { after: 15 },
+      })],
+      borders: noBorders,
+    })],
+  }));
+
+  const keyDifferenceRow = new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: '  KEY DIFFERENCE: ', size: bul, bold: true, font: fontFamily }), new TextRun({ text: '"As tolerated" language allows the employee to self-limit without the provider imposing a formal restriction. Under OSHA\'s recordkeeping standard, a recommendation is not the same as a restriction. If the employee CAN perform their routine job functions and the provider is simply advising caution, this is not a recordable restriction.', size: bul, font: fontFamily })],
+        spacing: { before: 20, after: 20 },
+      })],
+      borders: noBorders,
+      shading: { fill: 'FFFBEB', type: ShadingType.CLEAR, color: 'auto' },
+    })],
+  });
+
+  const restrictionTable = new Table({
+    rows: [
+      restrictionHeaderRow, restrictionIntroRow,
+      wordingMakesRecordableHeader, ...recordableExampleRows,
+      wordingNonRecordableHeader, ...nonRecordableExampleRows,
+      keyDifferenceRow,
+    ],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+
+  // Clinic Education Section
+  const educationHeaderRow = new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: 'EDUCATE YOUR CLINIC — WHAT WE ASK OF OUR TREATING PROVIDERS', size: 20, bold: true, color: 'FFFFFF', font: fontFamily })],
+      })],
+      shading: { fill: '1E3A5F', type: ShadingType.CLEAR, color: 'auto' },
+      borders: noBorders,
+    })],
+  });
+
+  const educationItems = [
+    'Many occupational health providers are not fully aware of how their clinical documentation impacts OSHA recordkeeping. A single word choice — "restriction" vs. "recommendation" — can determine whether an injury is recorded on the OSHA 300 Log.',
+    'We need restrictions to be medically necessary and worded as specifically as possible to the employee\'s actual functional limitations. If the employee can safely work as tolerated, that is the preferred approach.',
+    'If the employee genuinely needs restrictions, we need clear, specific guidance — and we understand that makes it recordable under OSHA. We will never ask you to withhold medically necessary care.',
+    'Please use OTC (over-the-counter) medications whenever clinically appropriate. Any prescription — even a single dose of a prescription anti-inflammatory like Meloxicam — makes the case OSHA recordable under 29 CFR 1904.7(a).',
+    'When recommending follow-up care, consider whether the follow-up is for observation/monitoring (not medical treatment) vs. active treatment (medical treatment). Observation visits do not trigger recordability; treatment visits do.',
+    'Diagnostic procedures — X-rays, MRIs, CT scans, blood tests, pulse oximetry — are NOT medical treatment under OSHA\'s definition. Do not hesitate to order diagnostics. The case only becomes recordable if treatment beyond first aid is administered or a significant injury/illness is diagnosed.',
+    'If you determine that medical treatment beyond first aid IS clinically necessary, please document the specific clinical rationale. This helps us accurately classify the case and ensures proper OSHA 300 Log compliance.',
+  ];
+
+  const educationBulletRows = educationItems.map(item => new TableRow({
+    children: [new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: `  •  ${item}`, size: bul, color: '1E3A5F', font: fontFamily })],
+        spacing: { after: 25 },
+      })],
+      borders: noBorders,
+    })],
+  }));
+
+  const educationTable = new Table({
+    rows: [educationHeaderRow, ...educationBulletRows],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+
   const closingParagraphs = [
     new Paragraph({
       children: [new TextRun({ text: 'If medical treatment beyond first aid is clinically necessary, please proceed with appropriate care. We ask that you document the clinical rationale so we can accurately classify the case on our OSHA 300 Log.', size: fs, font: fontFamily })],
-      spacing: { before: 60, after: 60 },
+      spacing: { before: 60, after: 40 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: 'We value our partnership with your clinic and appreciate your attention to how clinical documentation impacts OSHA recordkeeping. Together, we can ensure employees receive the best care while maintaining accurate and compliant records.', size: fs, font: fontFamily })],
+      spacing: { after: 60 },
     }),
     new Paragraph({
       children: [
@@ -427,6 +602,12 @@ export async function generateClinicLetterDocx(params: ClinicLetterParams): Prom
         redTable,
         new Paragraph({ spacing: { after: 40 } }),
         clinicalTable,
+        new Paragraph({ spacing: { after: 40 } }),
+        otcTable,
+        new Paragraph({ spacing: { after: 40 } }),
+        restrictionTable,
+        new Paragraph({ spacing: { after: 40 } }),
+        educationTable,
         ...closingParagraphs,
       ],
     }],
