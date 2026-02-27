@@ -23,6 +23,38 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import logoUrl from "@assets/1_1767636977932.png";
 import jsPDF from "jspdf";
 
+function sanitizeForPdf(text: string): string {
+  return text
+    .replace(/μ/g, 'u')
+    .replace(/µ/g, 'u')
+    .replace(/³/g, '3')
+    .replace(/²/g, '2')
+    .replace(/¹/g, '1')
+    .replace(/¼/g, '1/4')
+    .replace(/½/g, '1/2')
+    .replace(/¾/g, '3/4')
+    .replace(/°/g, ' degrees ')
+    .replace(/±/g, '+/-')
+    .replace(/≥/g, '>=')
+    .replace(/≤/g, '<=')
+    .replace(/≈/g, '~')
+    .replace(/→/g, '->')
+    .replace(/←/g, '<-')
+    .replace(/—/g, '--')
+    .replace(/–/g, '-')
+    .replace(/'/g, "'")
+    .replace(/'/g, "'")
+    .replace(/"/g, '"')
+    .replace(/"/g, '"')
+    .replace(/…/g, '...')
+    .replace(/•/g, '-')
+    .replace(/·/g, '-')
+    .replace(/©/g, '(c)')
+    .replace(/®/g, '(R)')
+    .replace(/™/g, '(TM)')
+    .replace(/[^\x00-\x7F]/g, '');
+}
+
 function stripMarkdown(text: string): string {
   return text
     .replace(/^#{1,6}\s+/gm, '')
@@ -882,7 +914,7 @@ function CoreyChatInterface({
       return;
     }
 
-    const cleanText = stripMarkdown(lastAssistantMsg.content);
+    const cleanText = sanitizeForPdf(stripMarkdown(lastAssistantMsg.content));
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 20;
