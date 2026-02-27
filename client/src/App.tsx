@@ -46,6 +46,7 @@ import TryCorey from "@/pages/TryCorey";
 import QRCodePage from "@/pages/QRCode";
 import ComplianceGlossary from "@/pages/ComplianceGlossary";
 import MeetCorey from "@/pages/MeetCorey";
+import DemoTour from "@/pages/DemoTour";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -102,6 +103,7 @@ function Router() {
       <Route path="/audit-prep" component={AuditPrep} />
       <Route path="/compliance-glossary" component={ComplianceGlossary} />
       <Route path="/meet-corey" component={MeetCorey} />
+      <Route path="/demo-tour" component={DemoTour} />
       <Route component={NotFound} />
     </Switch>
   );
