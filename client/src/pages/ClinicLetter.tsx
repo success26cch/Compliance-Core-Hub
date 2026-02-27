@@ -116,7 +116,7 @@ export default function ClinicLetter() {
         </div>
 
         <div className="text-center mb-10">
-          <img src={logoUrl} alt="Core Compliance Hub" className="h-16 mx-auto mb-4" />
+          <img src={logoUrl} alt="Core Compliance Hub" className="h-32 mx-auto mb-4" />
           <h1 className="text-3xl font-bold mb-2 text-white" data-testid="text-page-title">
             <FileText className="inline w-8 h-8 mr-3 text-blue-400" />
             Employer Clinic Communication Letter
