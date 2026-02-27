@@ -29,7 +29,7 @@ import {
   Loader2,
   ClipboardList,
 } from "lucide-react";
-import logoUrl from "@assets/1_1770683748423.png";
+import logoUrl from "@assets/8_1772230567281.png";
 
 export default function ClinicLetter() {
   const { toast } = useToast();
@@ -117,7 +117,7 @@ export default function ClinicLetter() {
 
         <div className="text-center mb-10">
           <img src={logoUrl} alt="Core Compliance Hub" className="h-16 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">
+          <h1 className="text-3xl font-bold mb-2 text-white" data-testid="text-page-title">
             <FileText className="inline w-8 h-8 mr-3 text-blue-400" />
             Employer Clinic Communication Letter
           </h1>
@@ -173,7 +173,7 @@ export default function ClinicLetter() {
         </div>
 
         <Card className="bg-slate-800/60 border-slate-700 p-6 md:p-8 mb-8">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
             <ClipboardList className="w-6 h-6 text-blue-400" />
             Generate Your Letter
           </h2>
