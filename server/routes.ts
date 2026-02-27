@@ -897,12 +897,15 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     const sub = await storage.getSubscription(userId);
     const isPro = sub?.status === "active";
     const userIsAdmin = isAdmin(req.user);
+    const user = await storage.getUserById(userId);
+    const isSuperadmin = user?.isSuperadmin === true;
+    const hasFullAccess = isPro || userIsAdmin || isSuperadmin;
     
     res.json({
       questionCount: usage?.questionCount || 0,
       freeLimit: 3,
-      canAsk: isPro || userIsAdmin || (usage?.questionCount || 0) < 3,
-      isPro: isPro || userIsAdmin,
+      canAsk: hasFullAccess || (usage?.questionCount || 0) < 3,
+      isPro: hasFullAccess,
     });
   });
 

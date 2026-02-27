@@ -25,6 +25,13 @@ function isAdmin(user: any): boolean {
   return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(email) || ADMIN_USERS.includes(username);
 }
 
+async function isAdminOrSuperadmin(user: any): Promise<boolean> {
+  if (isAdmin(user)) return true;
+  if (!user?.claims?.sub) return false;
+  const dbUser = await storage.getUserById(user.claims.sub);
+  return dbUser?.isSuperadmin === true;
+}
+
 export function registerChatRoutes(app: Express): void {
   // Get all conversations (auth required - user-scoped)
   app.get("/api/conversations", async (req: Request, res: Response) => {
@@ -267,10 +274,10 @@ export function registerChatRoutes(app: Express): void {
       
       const sub = await storage.getSubscription(userId);
       const isPro = sub?.status === "active";
-      const userIsAdmin = isAdmin(req.user);
+      const userIsAdmin = await isAdminOrSuperadmin(req.user);
       
       let isTeamMember = false;
-      if (!isPro) {
+      if (!isPro && !userIsAdmin) {
         const membership = await storage.getTeamMembership(userId);
         if (membership) {
           isTeamMember = true;
