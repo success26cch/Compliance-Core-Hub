@@ -14,7 +14,8 @@ import {
   Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield,
   CheckCircle2, Sparkles, ArrowRight, Download, Smartphone, MoreVertical,
   Copy, Mail, FileText, Trash2, Pencil, Share2, FileDown, ClipboardCopy,
-  Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle, Target, Scale
+  Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle, Target, Scale,
+  X, ExternalLink
 } from "lucide-react";
 import { Link } from "wouter";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -72,6 +73,83 @@ function stripMarkdown(text: string): string {
     .replace(/&\s+(?=[A-Z])/g, '[ ] ');
 }
 
+function PwaInstallBanner({ onInstallClick }: { onInstallClick?: () => Promise<boolean> }) {
+  const [dismissed, setDismissed] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const ua = navigator.userAgent || "";
+    setIsIos(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+    setIsAndroid(/Android/.test(ua));
+    setIsStandalone(
+      window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true
+    );
+
+    const wasDismissed = sessionStorage.getItem("pwa-banner-dismissed");
+    if (wasDismissed) setDismissed(true);
+  }, []);
+
+  if (isStandalone || dismissed) return null;
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    sessionStorage.setItem("pwa-banner-dismissed", "1");
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-accent/20 via-primary/20 to-accent/20 border-b border-accent/30" data-testid="pwa-install-banner">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5 text-accent" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white">Install Corey on Your Phone</p>
+            {isIos ? (
+              <p className="text-xs text-white/60 leading-relaxed">
+                Tap the <span className="inline-flex items-center gap-0.5 text-accent font-medium"><ExternalLink className="w-3 h-3" /> Share</span> button below, then tap <span className="text-accent font-medium">"Add to Home Screen"</span>
+              </p>
+            ) : isAndroid ? (
+              <p className="text-xs text-white/60">
+                Tap <span className="text-accent font-medium">"Install"</span> to add Corey to your home screen — instant access, no app store needed.
+              </p>
+            ) : (
+              <p className="text-xs text-white/60">
+                Add Corey to your home screen for instant access — works like a native app, no download needed.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {!isIos && onInstallClick && (
+            <Button
+              size="sm"
+              onClick={async () => {
+                const accepted = await onInstallClick();
+                if (accepted) handleDismiss();
+              }}
+              className="bg-accent hover:bg-accent/90 text-xs gap-1.5 shadow-lg shadow-accent/25"
+              data-testid="button-pwa-banner-install"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Install
+            </Button>
+          )}
+          <button
+            onClick={handleDismiss}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            data-testid="button-pwa-banner-dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CoreyStandalone() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
@@ -98,6 +176,7 @@ function CoreyLanding() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+      <PwaInstallBanner onInstallClick={isInstallable ? promptInstall : undefined} />
       <header className="border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -443,6 +522,7 @@ function CoreyApp() {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      <PwaInstallBanner onInstallClick={isInstallable ? promptInstall : undefined} />
       <header className="border-b border-white/10 flex-shrink-0">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
