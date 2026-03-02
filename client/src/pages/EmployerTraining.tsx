@@ -39,7 +39,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { Employee, Course, TrainingAssignment } from "@shared/schema";
-import logoUrl from "@assets/1_1770683748423.png";
+import logoUrl from "@assets/8_1772477620380.png";
 
 interface EnrichedAssignment extends TrainingAssignment {
   employee?: Employee;
@@ -206,10 +206,10 @@ export default function EmployerTraining() {
             </button>
           </Link>
           <Link href="/">
-            <img src={logoUrl} alt="CCH Logo" className="w-10 h-10 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
+            <img src={logoUrl} alt="CCH Logo" className="w-24 h-24 rounded-xl cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-page-title">Employer Training Portal</h1>
+            <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">Employer Training Portal</h1>
             <p className="text-sm text-gray-400">Assign and track employee training progress</p>
           </div>
         </div>
