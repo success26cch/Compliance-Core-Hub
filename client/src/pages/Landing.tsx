@@ -1133,7 +1133,7 @@ export default function Landing() {
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             <PricingCard 
               tier="Safety Starter"
               price="Free"
@@ -1169,6 +1169,28 @@ export default function Landing() {
               productId="cch-unlimited-safety"
               onAddToCart={handleAddToCart}
             />
+            <PricingCard 
+              tier="Complete Compliance Platform"
+              price="$299"
+              period="/mo"
+              features={[
+                "Everything in Unlimited Safety",
+                "Compliance Dashboard with real-time metrics",
+                "Employee tracking & medical surveillance (11 types)",
+                "OSHA 300 & 301 logging & incident management",
+                "DOT notifications at 60/30/15/7-day windows",
+                "CCH Handshake — QR-based Medical Passport",
+                "Training LMS with PDF certificates",
+                "Corrective Action Plans (CAPA)",
+                "ISO 9001/14001/45001 AI guidance",
+                "Up to 50 employees included (+$2/ea beyond 50)",
+              ]}
+              bestFor="For companies serious about compliance — from startups to mid-sized firms. One platform, one price, everything you need."
+              buttonText="Get Started — $299/mo"
+              buttonHref="/get-started"
+              productId="employer-platform"
+              onAddToCart={handleAddToCart}
+            />
           </div>
           <div className="text-center mt-10">
             <p className="text-muted-foreground mb-3">Not sure which plan is right for you?</p>
@@ -1185,7 +1207,7 @@ export default function Landing() {
       {/* ISO Management Pricing Section */}
       <section className="py-24 bg-white dark:bg-background border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
             <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
               <img src={acsiLogo} alt="ACSI" className="h-16 w-auto mx-auto mb-4 hover:opacity-80 transition-opacity" data-testid="img-acsi-logo-landing" />
             </a>
@@ -1195,41 +1217,29 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="max-w-2xl mx-auto">
-            <PricingCard 
-              tier="Complete Compliance Platform"
-              price="$299"
-              period="/mo"
-              features={[
-                "Compliance Dashboard with real-time metrics",
-                "Employee tracking & medical surveillance",
-                "OSHA 300 logging & incident management",
-                "DOT notifications & drug testing tools",
-                "Medical Passport with QR check-in",
-                "ISO 9001/14001/45001 AI guidance",
-                "AI Gap Analysis & audit checklists",
-                "Quality Manual & procedure drafting",
-                "'Write-Up Free' Guarantee tools",
-                "Audit Readiness Dashboard",
-                "Up to 50 employees included (+$2/ea beyond 50)",
-                "Priority expert support",
-              ]}
-              bestFor="For companies serious about compliance — from startups to mid-sized firms. One platform, one price, everything you need."
-              buttonText="Get Started — $299/mo"
-              buttonHref="/get-started"
-              highlighted
-              productId="employer-platform"
-              onAddToCart={handleAddToCart}
-            />
-          </div>
-          <div className="text-center mt-10">
-            <p className="text-muted-foreground mb-3">Questions about ISO certification or audit readiness?</p>
-            <Link href="/contact">
-              <Button variant="outline" data-testid="button-contact-iso-pricing">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Contact Us — Let's Talk
-              </Button>
-            </Link>
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <div className="bg-muted/40 border border-border rounded-2xl px-8 py-10 space-y-4">
+              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
+                <Sparkles className="w-7 h-7 text-accent" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">ACSI Training &amp; Certification Plans — Coming Soon</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                ACSI is building a dedicated suite of ISO training programs, audit packages, and certification-readiness plans. Pricing will be announced when they launch. In the meantime, contact ACSI directly for current consulting and training engagements.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer">
+                  <Button className="bg-accent text-black font-semibold" data-testid="button-visit-acsi-pricing">
+                    Visit acsi-quality.com
+                  </Button>
+                </a>
+                <Link href="/contact">
+                  <Button variant="outline" data-testid="button-contact-iso-pricing">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Contact Us — Let's Talk
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
