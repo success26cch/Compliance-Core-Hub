@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Bot, Globe, BookOpen, Phone, CheckCircle2, Sparkles, TrendingUp, Heart, Lightbulb, Shield, GraduationCap, FileText, Users, Stethoscope, ClipboardList, AlertTriangle, Target, Zap, Building2, Award, Smartphone, Settings2 } from "lucide-react";
-import logoUrl from "@assets/1_1767636977932.png";
+import logoUrl from "@assets/7_1772482223269.png";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import cchLogo from "@assets/1_1770683748423.png";
 
@@ -34,7 +34,7 @@ export default function About() {
               Back to Home
             </Button>
           </Link>
-          <img src={logoUrl} alt="Core Compliance Hub" className="h-10 w-auto" />
+          <img src={logoUrl} alt="Core Compliance Hub" className="h-16 w-auto" />
           <Link href="/contact">
             <Button size="sm" className="bg-white text-[hsl(222,47%,11%)] font-semibold" data-testid="button-contact-us">
               Contact Us
