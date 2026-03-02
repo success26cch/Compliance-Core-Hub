@@ -369,7 +369,7 @@ export default function ClinicLetter() {
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                <span className="text-slate-300">Professional employer letterhead with CCH partner branding</span>
+                <span className="text-slate-300">Professional employer letterhead with CCHUB partner branding</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />

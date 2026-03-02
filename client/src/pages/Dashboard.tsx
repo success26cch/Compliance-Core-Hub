@@ -496,7 +496,7 @@ const HELP_CONTENT: Record<string, HelpContent> = {
     nextHref: "/clinic-letter",
   },
   digitalPassport: {
-    title: "Digital Medical Passport (CCH Handshake)",
+    title: "Digital Medical Passport (CCHUB Handshake)",
     what: "Generate a QR code for each employee that links to their digital clinic authorization form. When the employee arrives at the clinic, staff scan the QR code to access the pre-filled form — and you're instantly notified by text.",
     how: [
       "Generate a passport for each employee in the Digital Medical Passport section.",
@@ -575,11 +575,11 @@ const SEARCH_INDEX = [
   { label: "Employer Training Portal", description: "Assign compliance courses, track employee progress", href: "/employer-training", icon: GraduationCap, category: "Pages" },
   { label: "My Courses", description: "Access your purchased training courses and certificates", href: "/training?tab=my-courses", icon: BookOpen, category: "Pages" },
   { label: "Clinic Communication Letter", description: "Generate a letter for your occupational health clinic", href: "/clinic-letter", icon: FileText, category: "Tools" },
-  { label: "Digital Medical Passport (CCH Handshake)", description: "QR-based clinic authorization forms, instant employer notifications", href: "/employee-passport", icon: QrCode, category: "Tools" },
+  { label: "Digital Medical Passport (CCHUB Handshake)", description: "QR-based clinic authorization forms, instant employer notifications", href: "/employee-passport", icon: QrCode, category: "Tools" },
   { label: "OSHA 300 Decision Tree", description: "Determine if an injury is OSHA recordable in minutes", href: "/decision-tree", icon: ClipboardList, category: "Tools" },
   { label: "Account Settings", description: "Manage your subscription, billing, and account info", href: "/settings", icon: Activity, category: "Pages" },
   { label: "Team Management", description: "Manage seats and team access for Corey AI", href: "/team", icon: Users, category: "Pages" },
-  { label: "Platform Tour", description: "Interactive walkthrough of all CCH features", href: "/demo-tour", icon: Shield, category: "Pages" },
+  { label: "Platform Tour", description: "Interactive walkthrough of all CCHUB features", href: "/demo-tour", icon: Shield, category: "Pages" },
   { label: "Drug & Alcohol Policy", description: "Generate per 49 CFR Part 40 / FMCSA 382", href: "/corey", icon: FileText, category: "Documents" },
   { label: "OSHA Recordkeeping SOP", description: "Generate per 29 CFR 1904", href: "/corey", icon: FileText, category: "Documents" },
   { label: "Respiratory Protection Program", description: "Generate per 29 CFR 1910.134", href: "/corey", icon: FileText, category: "Documents" },

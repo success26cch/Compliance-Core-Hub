@@ -53,7 +53,7 @@ export default function About() {
             Education Is Our Mission.<br /><span className="text-accent">Compliance Is Our Craft.</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Core Compliance Hub exists for one reason: to educate employers on occupational health and safety — rooted in 29 CFR (Code of Federal Regulations, Title 29), where all of OSHA's safety and health standards are published. CCH is all about the regs. We exist so employers can understand them, apply them, protect their people, stay compliant, and grow with confidence.
+            Core Compliance Hub exists for one reason: to educate employers on occupational health and safety — rooted in 29 CFR (Code of Federal Regulations, Title 29), where all of OSHA's safety and health standards are published. CCHUB is all about the regs. We exist so employers can understand them, apply them, protect their people, stay compliant, and grow with confidence.
           </p>
         </div>
       </section>
@@ -63,7 +63,7 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground" data-testid="text-origin-title">
-                Why We Built CCH
+                Why We Built CCHUB
               </h2>
               <p className="text-muted-foreground leading-relaxed">
                 Every day, employers across America face a mountain of federal regulations they're expected to understand and follow — OSHA 300 recordkeeping, DOT medical requirements, drug and alcohol testing protocols, respiratory protection standards — the list never stops growing.
@@ -72,10 +72,10 @@ export default function About() {
                 The problem? Most employers don't have a dedicated safety director. They don't have a compliance team. They have a safety manager who's also the HR manager, the fleet coordinator, and the person who orders supplies. They're doing their best, but they're drowning.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">CCH was built to be the compliance partner they've never had.</strong> Not a consultant you call once a year. Not a binder on a shelf. A living, breathing platform that educates, tracks, and automates — every single day.
+                <strong className="text-foreground">CCHUB was built to be the compliance partner they've never had.</strong> Not a consultant you call once a year. Not a binder on a shelf. A living, breathing platform that educates, tracks, and automates — every single day.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                CCH operates as a division of <strong className="text-foreground">ACSI, Assessment & Consulting Services Inc.</strong>, bringing decades of real-world audit and compliance expertise into an accessible, AI-powered platform that any employer can use.
+                CCHUB operates as a division of <strong className="text-foreground">ACSI, Assessment & Consulting Services Inc.</strong>, bringing decades of real-world audit and compliance expertise into an accessible, AI-powered platform that any employer can use.
               </p>
             </div>
             <div className="flex flex-col items-center gap-8">
@@ -100,7 +100,7 @@ export default function About() {
               Education First — Everything Else Follows
             </h2>
             <p className="text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              At CCH, we believe that when employers truly understand the regulations — not just fear them — they build safer workplaces, reduce incidents, lower their EMR, and create a culture where compliance isn't a burden. It's a competitive advantage.
+              At CCHUB, we believe that when employers truly understand the regulations — not just fear them — they build safer workplaces, reduce incidents, lower their EMR, and create a culture where compliance isn't a burden. It's a competitive advantage.
             </p>
           </div>
 
@@ -117,7 +117,7 @@ export default function About() {
               </p>
             </div>
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-foreground">How CCH Educates Employers:</h3>
+              <h3 className="text-lg font-bold text-foreground">How CCHUB Educates Employers:</h3>
               <ul className="space-y-3">
                 {[
                   { icon: Bot, text: "Corey AI — instant, regulation-backed answers that explain the 'why' behind every rule" },
@@ -178,7 +178,7 @@ export default function About() {
               <CardContent className="pt-6 space-y-4">
                 <h3 className="text-lg font-bold text-accent flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  What CCH Delivers
+                  What CCHUB Delivers
                 </h3>
                 <ul className="space-y-3">
                   {[
@@ -208,7 +208,7 @@ export default function About() {
               More Than an AI — A Complete Compliance Ecosystem
             </h2>
             <p className="text-muted-foreground max-w-3xl mx-auto">
-              CCH isn't just Corey. It's a full suite of tools designed to cover every aspect of your occupational health and safety program.
+              CCHUB isn't just Corey. It's a full suite of tools designed to cover every aspect of your occupational health and safety program.
             </p>
           </div>
 
@@ -236,7 +236,7 @@ export default function About() {
               },
               {
                 icon: Stethoscope,
-                title: "CCH Handshake — Digital Medical Passport",
+                title: "CCHUB Handshake — Digital Medical Passport",
                 description: "QR-based clinic check-in that replaces paper authorization forms. Employee scans in, clinic sees full authorization details, and you get an instant text the moment they arrive.",
               },
               {
@@ -316,7 +316,7 @@ export default function About() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center space-y-4">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground" data-testid="text-difference-title">
-              What Sets CCH Apart
+              What Sets CCHUB Apart
             </h2>
           </div>
 
@@ -325,7 +325,7 @@ export default function About() {
               {
                 icon: Target,
                 title: "Purpose-Built, Not Retrofitted",
-                description: "CCH wasn't a tech company that pivoted into safety. We started in the field — on factory floors, in warehouses, at audit tables. Every feature was born from a real compliance problem we watched employers struggle with.",
+                description: "CCHUB wasn't a tech company that pivoted into safety. We started in the field — on factory floors, in warehouses, at audit tables. Every feature was born from a real compliance problem we watched employers struggle with.",
               },
               {
                 icon: BookOpen,
@@ -335,12 +335,12 @@ export default function About() {
               {
                 icon: Zap,
                 title: "Instant Access, Not Appointment-Based",
-                description: "Traditional compliance support means calling a consultant, waiting for a callback, and paying by the hour. CCH gives you expert-level answers in seconds, any time of day, any day of the year.",
+                description: "Traditional compliance support means calling a consultant, waiting for a callback, and paying by the hour. CCHUB gives you expert-level answers in seconds, any time of day, any day of the year.",
               },
               {
                 icon: Heart,
                 title: "We Actually Care About Your Workers",
-                description: "Behind every regulation is a person who got hurt. Behind every recordability decision is a family. CCH exists because we believe every worker deserves to go home safe, and every employer deserves the tools to make that happen.",
+                description: "Behind every regulation is a person who got hurt. Behind every recordability decision is a family. CCHUB exists because we believe every worker deserves to go home safe, and every employer deserves the tools to make that happen.",
               },
             ].map((item) => (
               <Card key={item.title} className="overflow-visible" data-testid={`card-diff-${item.title.toLowerCase().replace(/\s+/g, '-').slice(0, 20)}`}>
@@ -361,10 +361,10 @@ export default function About() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="text-center space-y-4">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground" data-testid="text-who-title">
-              Who CCH Is For
+              Who CCHUB Is For
             </h2>
             <p className="text-muted-foreground max-w-3xl mx-auto">
-              If you have employees and you're responsible for keeping them safe and your company compliant, CCH was built for you.
+              If you have employees and you're responsible for keeping them safe and your company compliant, CCHUB was built for you.
             </p>
           </div>
 
@@ -395,7 +395,7 @@ export default function About() {
               Industries We Serve
             </h2>
             <p className="text-muted-foreground max-w-3xl mx-auto">
-              Occupational health and safety compliance touches every industry. CCH is built to serve them all.
+              Occupational health and safety compliance touches every industry. CCHUB is built to serve them all.
             </p>
           </div>
 
@@ -423,13 +423,13 @@ export default function About() {
                 Backed by ACSI, Assessment & Consulting Services Inc.
               </h2>
               <p className="text-muted-foreground leading-relaxed">
-                CCH is a division of <strong className="text-foreground">ACSI, Assessment & Consulting Services Inc.</strong> — a consulting, auditing, and engineering firm with over 25 years of experience in ISO management systems and organizational excellence.
+                CCHUB is a division of <strong className="text-foreground">ACSI, Assessment & Consulting Services Inc.</strong> — a consulting, auditing, and engineering firm with over 25 years of experience in ISO management systems and organizational excellence.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 When your compliance needs go beyond what AI and education tools can provide — when you need a Lead Auditor at your facility, a management system built from scratch, or hands-on crisis support — ACSI's team of professionals is ready to step in.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                CCH educates and automates. ACSI implements and audits. Together, they cover every stage of your compliance journey.
+                CCHUB educates and automates. ACSI implements and audits. Together, they cover every stage of your compliance journey.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
                 <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer">
@@ -462,7 +462,7 @@ export default function About() {
             Your Compliance Journey Starts Here
           </h2>
           <p className="text-white/70 text-lg max-w-2xl mx-auto">
-            Whether you have a quick recordability question or you're building an entire compliance program from the ground up — CCH is here to educate, empower, and protect.
+            Whether you have a quick recordability question or you're building an entire compliance program from the ground up — CCHUB is here to educate, empower, and protect.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
             <Link href="/corey">
@@ -489,7 +489,7 @@ export default function About() {
 
       <footer className="py-8 border-t">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
-          <img src={cchLogo} alt="CCH" className="w-10 h-10 object-contain mx-auto" />
+          <img src={cchLogo} alt="CCHUB" className="w-10 h-10 object-contain mx-auto" />
           <p className="text-sm font-semibold text-foreground">Core Compliance Hub</p>
           <p className="text-xs text-muted-foreground">
             A division of ACSI, Assessment & Consulting Services Inc. | acsi-quality.com | (313) 479-4545

@@ -33,7 +33,7 @@ export default function GetStarted() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoUrl} alt="CCH" className="h-10 w-auto" />
+              <img src={logoUrl} alt="CCHUB" className="h-10 w-auto" />
               <span className="text-lg font-bold text-primary hidden sm:block">Core Compliance Hub</span>
             </div>
           </Link>
@@ -259,7 +259,7 @@ export default function GetStarted() {
 
             <Card className="flex flex-col" data-testid="card-plan-mentorship">
               <CardHeader className="pb-3">
-                <Badge className="w-fit">CCH Exclusive</Badge>
+                <Badge className="w-fit">CCHUB Exclusive</Badge>
                 <CardTitle className="text-lg mt-2">ACSI Mentorship</CardTitle>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="text-2xl font-bold text-primary">From $2,500</span>
@@ -417,7 +417,7 @@ export default function GetStarted() {
                   { feature: "DOT Compliance Alerts", free: false, corey: true, employer: true },
                   { feature: "Employee Management", free: false, corey: false, employer: true },
                   { feature: "OSHA 300 Log & Reporting", free: false, corey: false, employer: true },
-                  { feature: "Medical Passport (CCH Handshake)", free: false, corey: false, employer: true },
+                  { feature: "Medical Passport (CCHUB Handshake)", free: false, corey: false, employer: true },
                   { feature: "Incident Management & CAPA", free: false, corey: false, employer: true },
                   { feature: "ISO Audit Readiness (ACSI)", free: false, corey: false, employer: true },
                   { feature: "Compliance Glossary", free: false, corey: false, employer: true },

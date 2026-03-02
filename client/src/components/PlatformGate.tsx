@@ -38,7 +38,7 @@ export function PlatformGate({ children, featureName }: { children: React.ReactN
             {featureName} Requires the Employer Platform
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            This feature is part of the CCH Employer Compliance Platform. Upgrade to unlock your full compliance management system.
+            This feature is part of the CCHUB Employer Compliance Platform. Upgrade to unlock your full compliance management system.
           </p>
         </div>
 

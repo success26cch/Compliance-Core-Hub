@@ -197,7 +197,7 @@ export default function MeetCorey() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoUrl} alt="CCH" className="h-9 w-auto" />
+              <img src={logoUrl} alt="CCHUB" className="h-9 w-auto" />
               <span className="text-base font-bold text-white hidden sm:block">Core Compliance Hub</span>
             </div>
           </Link>
@@ -676,7 +676,7 @@ export default function MeetCorey() {
       <footer className="border-t border-white/5 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src={logoUrl} alt="CCH" className="h-6 w-auto" />
+            <img src={logoUrl} alt="CCHUB" className="h-6 w-auto" />
             <span className="text-sm text-white/40">Core Compliance Hub</span>
           </div>
           <div className="flex items-center gap-6">

@@ -114,7 +114,7 @@ export default function BrandNSwag() {
             <div className="text-center max-w-4xl mx-auto space-y-6">
               <Badge variant="secondary" className="text-sm px-4 py-1" data-testid="badge-brandnswag-division">
                 <Sparkles className="w-4 h-4 mr-2" />
-                A CCH Division
+                A CCHUB Division
               </Badge>
               <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
                 <img src={brandNSwagLogo} alt="BrandNSwag" className="h-24 md:h-32 w-auto mx-auto hover:opacity-80 transition-opacity" data-testid="img-brandnswag-logo" />
@@ -135,7 +135,7 @@ export default function BrandNSwag() {
                 </a>
                 <Link href="/">
                   <Button size="lg" variant="outline" data-testid="button-brandnswag-back-home">
-                    Back to CCH Home
+                    Back to CCHUB Home
                   </Button>
                 </Link>
               </div>
@@ -362,13 +362,13 @@ export default function BrandNSwag() {
         <section className="py-20 bg-primary text-primary-foreground">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-block bg-white/10 text-white text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6 rounded-lg">
-              CCH: The One Stop Employer Shop
+              CCHUB: The One Stop Employer Shop
             </div>
             <h2 className="text-3xl font-display font-bold mb-4">
               Ready to Transform Your Employee Recognition?
             </h2>
             <p className="text-xl text-primary-foreground/80 mb-8">
-              From compliance to engagement—CCH has everything your workforce needs.
+              From compliance to engagement—CCHUB has everything your workforce needs.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
@@ -379,7 +379,7 @@ export default function BrandNSwag() {
               </a>
               <Link href="/">
                 <Button size="lg" variant="outline" data-testid="button-brandnswag-cta-explore">
-                  Explore All CCH Services
+                  Explore All CCHUB Services
                 </Button>
               </Link>
             </div>

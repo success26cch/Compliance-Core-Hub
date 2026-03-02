@@ -12,7 +12,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
   const course = await storage.createCourse({
     productId: "course-osha-recordkeeping",
     title: "OSHA Recordkeeping Master: Compliance-to-Profit",
-    description: "The definitive strategic intelligence program for mastering OSHA 300 recordkeeping and EMR optimization. Learn to accurately classify every workplace incident, master the critical First Aid vs Medical Treatment distinction, conduct internal log audits, leverage data for root cause analysis, and transform your safety program from a cost center into a competitive advantage. Covers 29 CFR 1904, TRIR/DART calculations, Workers' Compensation EMR impact, clinic communication protocols, and the complete CCH System for organizational resilience.",
+    description: "The definitive strategic intelligence program for mastering OSHA 300 recordkeeping and EMR optimization. Learn to accurately classify every workplace incident, master the critical First Aid vs Medical Treatment distinction, conduct internal log audits, leverage data for root cause analysis, and transform your safety program from a cost center into a competitive advantage. Covers 29 CFR 1904, TRIR/DART calculations, Workers' Compensation EMR impact, clinic communication protocols, and the complete CCHUB System for organizational resilience.",
     category: "occupational_health",
     totalModules: 10,
     estimatedHours: 10,
@@ -3755,14 +3755,14 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
   await storage.createLesson({
     moduleId: mod6.id,
-    title: "6.4 The CCH Recordkeeping Checkpoint System",
+    title: "6.4 The CCHUB Recordkeeping Checkpoint System",
     orderIndex: 3,
     content: `<div class="lesson-content">
-<h2>The CCH Recordkeeping Checkpoint System</h2>
+<h2>The CCHUB Recordkeeping Checkpoint System</h2>
 
 <p>Throughout this course, you have learned the regulatory framework for OSHA recordkeeping, the classification criteria for first aid vs. medical treatment, the data flow from 301 to 300 to 300A, the financial mechanics of EMR, the strategies for clinic communication and modified duty management, and the ten most common and costly employer mistakes. The final piece of the puzzle is a <strong>systematic quality assurance process</strong> that ensures every recordkeeping entry is accurate, complete, and defensible before it enters your OSHA 300 Log.</p>
 
-<p>The <strong>CCH Recordkeeping Checkpoint System</strong> is a five-point verification process designed to catch errors before they are committed — not after an OSHA inspection, insurance audit, or legal proceeding reveals them years later. This system, when implemented consistently, eliminates the vast majority of recordkeeping errors and provides a documented quality assurance trail that demonstrates organizational diligence.</p>
+<p>The <strong>CCHUB Recordkeeping Checkpoint System</strong> is a five-point verification process designed to catch errors before they are committed — not after an OSHA inspection, insurance audit, or legal proceeding reveals them years later. This system, when implemented consistently, eliminates the vast majority of recordkeeping errors and provides a documented quality assurance trail that demonstrates organizational diligence.</p>
 
 <h3>The Five-Point Checkpoint</h3>
 
@@ -3924,7 +3924,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <div class="case-study">
 <h4>Case Study: 80% Error Reduction in One Year</h4>
 <p>A food distribution company with 380 employees and three distribution centers had a history of OSHA recordkeeping citations — they had been cited for recordkeeping deficiencies in three of the last five OSHA inspections, accumulating $42,000 in penalties. The company's recordkeeping errors spanned all ten mistake categories: over-recording (5 cases), missing 301 narratives (8 cases), late entries (6 cases), incorrect day counts (4 cases), and failure to retain prior-year records at one of three locations.</p>
-<p>The company implemented the CCH Recordkeeping Checkpoint System with the following components:</p>
+<p>The company implemented the CCHUB Recordkeeping Checkpoint System with the following components:</p>
 <ul>
 <li>Five-point checkpoint forms for every case evaluation</li>
 <li>Two-person verification for all recording decisions</li>
@@ -3951,7 +3951,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <h3>Strategic Takeaway</h3>
 
-<p>The CCH Recordkeeping Checkpoint System is the operational framework that makes everything you have learned in this course actionable at the point of decision. Every regulatory concept, every classification rule, every deadline requirement, and every documentation standard is distilled into five sequential checkpoints that must be completed before any case is entered on — or excluded from — the OSHA 300 Log. The system's power lies not in its complexity (it is deliberately simple) but in its consistency: when every case goes through the same five-step verification, documented and reviewed by a second person, the error rate drops to near-zero and the organization maintains a defensible, accurate, and financially optimized recordkeeping program. The checkpoint system is the difference between "we try to do recordkeeping right" and "we have a system that ensures recordkeeping is done right, every time, with documented proof."</p>
+<p>The CCHUB Recordkeeping Checkpoint System is the operational framework that makes everything you have learned in this course actionable at the point of decision. Every regulatory concept, every classification rule, every deadline requirement, and every documentation standard is distilled into five sequential checkpoints that must be completed before any case is entered on — or excluded from — the OSHA 300 Log. The system's power lies not in its complexity (it is deliberately simple) but in its consistency: when every case goes through the same five-step verification, documented and reviewed by a second person, the error rate drops to near-zero and the organization maintains a defensible, accurate, and financially optimized recordkeeping program. The checkpoint system is the difference between "we try to do recordkeeping right" and "we have a system that ensures recordkeeping is done right, every time, with documented proof."</p>
 </div>`,
   });
   totalLessons++;
@@ -4037,7 +4037,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     },
     {
       moduleId: mod6.id,
-      question: "What are the five checkpoints in the CCH Recordkeeping Checkpoint System, in order?",
+      question: "What are the five checkpoints in the CCHUB Recordkeeping Checkpoint System, in order?",
       options: [
         "Incident Report, Medical Review, Supervisor Approval, HR Review, Filing",
         "Work-Related Check, Medical Treatment Check, Days Count Check, Seven-Day Check, Five-Year Check",
@@ -4050,7 +4050,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     },
     {
       moduleId: mod6.id,
-      question: "What error reduction did the case study demonstrate after implementing the CCH Recordkeeping Checkpoint System?",
+      question: "What error reduction did the case study demonstrate after implementing the CCHUB Recordkeeping Checkpoint System?",
       options: [
         "25% error reduction over three years",
         "50% error reduction in the first six months",
@@ -4093,7 +4093,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <h3>How to Approach Each Scenario</h3>
 
-<p>For every scenario, apply the <strong>CCH Five-Point Checkpoint System</strong> you learned in Module 6:</p>
+<p>For every scenario, apply the <strong>CCHUB Five-Point Checkpoint System</strong> you learned in Module 6:</p>
 
 <ol>
 <li><strong>Checkpoint 1: Is it a New Case?</strong> — Has the employee experienced a new injury/illness, or is this a continuation of a previously recorded case?</li>
@@ -4161,7 +4161,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <p>Since the only recording trigger is Medical Treatment Beyond First Aid (no days away, no restrictions, no transfer), this case is classified as an <strong>"Other Recordable Case" — Column N</strong> (also known as Column J on some versions of the form). It is recorded on the OSHA 300 Log with a check in the "Other Recordable Cases" column.</p>
 
 <p><strong>Checkpoint 5: Documentation</strong></p>
-<p>Complete the OSHA 301 Incident Report within 7 calendar days. Enter the case on the OSHA 300 Log. File the clinic documentation (showing prescription medication prescribed) with the 301. Document the analysis in the CCH Checkpoint Form.</p>
+<p>Complete the OSHA 301 Incident Report within 7 calendar days. Enter the case on the OSHA 300 Log. File the clinic documentation (showing prescription medication prescribed) with the 301. Document the analysis in the CCHUB Checkpoint Form.</p>
 
 <h4>Final Determination: RECORDABLE — Other Recordable Case (Column N)</h4>
 
@@ -4229,7 +4229,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <h4>Final Determination: NOT RECORDABLE — Commuting Exception</h4>
 
-<p><strong>Documentation:</strong> Even though this case is not recordable, best practice requires documenting the analysis. Complete a CCH Checkpoint Form showing the work-relatedness analysis, citing 29 CFR 1904.5(b)(2)(vi), and file it with any incident report. This documentation protects the employer if OSHA later questions why a fracture with days away was not recorded.</p>
+<p><strong>Documentation:</strong> Even though this case is not recordable, best practice requires documenting the analysis. Complete a CCHUB Checkpoint Form showing the work-relatedness analysis, citing 29 CFR 1904.5(b)(2)(vi), and file it with any incident report. This documentation protects the employer if OSHA later questions why a fracture with days away was not recorded.</p>
 
 <hr/>
 
@@ -4374,7 +4374,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <p>Days of transfer: Thursday (Day 1) through Wednesday (Day 5) = 5 days of job transfer recorded in Column M.</p>
 
 <p><strong>Checkpoint 5: Documentation</strong></p>
-<p>Complete OSHA 301 within 7 calendar days. Enter on 300 Log with check in Column I (Job Transfer) and "5" in Column M (Days of Transfer). Document in CCH Checkpoint Form, including the physician's verbal guidance, the supervisor's decision to transfer, and the rationale for the transfer duration. File clinic documentation with the 301.</p>
+<p>Complete OSHA 301 within 7 calendar days. Enter on 300 Log with check in Column I (Job Transfer) and "5" in Column M (Days of Transfer). Document in CCHUB Checkpoint Form, including the physician's verbal guidance, the supervisor's decision to transfer, and the rationale for the transfer duration. File clinic documentation with the 301.</p>
 
 <h4>Final Determination: RECORDABLE — DART Case (Job Transfer, Column I, 5 Days Transfer)</h4>
 
@@ -4453,7 +4453,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <p>Since the only recording trigger is Medical Treatment Beyond First Aid, and there are no days away, no restrictions, and no job transfer, this case is classified as an <strong>"Other Recordable Case" — Column N</strong> (also known as Column J). It is recorded on the OSHA 300 Log with a check in the "Other Recordable Cases" column. Columns K, L, and M are all zero.</p>
 
 <p><strong>Checkpoint 5: Documentation</strong></p>
-<p>Complete OSHA 301 within 7 calendar days. Enter on 300 Log — Column N (Other Recordable Case). Document in CCH Checkpoint Form. File clinic documentation and PT prescription with the 301.</p>
+<p>Complete OSHA 301 within 7 calendar days. Enter on 300 Log — Column N (Other Recordable Case). Document in CCHUB Checkpoint Form. File clinic documentation and PT prescription with the 301.</p>
 
 <h4>Final Determination: RECORDABLE — Other Recordable Case (Column N)</h4>
 
@@ -4845,7 +4845,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <p>Angela returned to full duty with no days away and no restrictions. Classification: <strong>Other Recordable Case — Column N</strong>. This is also a <strong>privacy concern case</strong>.</p>
 
 <p><strong>Checkpoint 5: Documentation</strong></p>
-<p>Complete OSHA 301 within 7 calendar days. Enter on 300 Log — Column N, with "Privacy Case" in Column B (not Angela's name). Complete the Sharps Injury Log (separate requirement under 29 CFR 1904.8(b)). File incident report, ER documentation, and CCH Checkpoint Form. Note: the Sharps Injury Log must include the type and brand of device involved (if identifiable), the department, and a description of the incident.</p>
+<p>Complete OSHA 301 within 7 calendar days. Enter on 300 Log — Column N, with "Privacy Case" in Column B (not Angela's name). Complete the Sharps Injury Log (separate requirement under 29 CFR 1904.8(b)). File incident report, ER documentation, and CCHUB Checkpoint Form. Note: the Sharps Injury Log must include the type and brand of device involved (if identifiable), the department, and a description of the incident.</p>
 
 <h4>Final Determination: RECORDABLE — Other Recordable Case (Column N), Privacy Case, Sharps Log Required</h4>
 
@@ -4994,7 +4994,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
   const mod8 = await storage.createModule({
     courseId: course.id,
     title: "Conducting an OSHA Log Audit",
-    description: "Step-by-step internal audit process with the CCH Audit Checklist to proactively identify and legally correct recordkeeping mistakes before an OSHA inspection.",
+    description: "Step-by-step internal audit process with the CCHUB Audit Checklist to proactively identify and legally correct recordkeeping mistakes before an OSHA inspection.",
     orderIndex: 7,
   });
 
@@ -5007,7 +5007,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <p>An OSHA recordkeeping audit is not a luxury or an optional best practice — it is the most powerful defensive tool available to any employer who maintains OSHA 300 Logs. The audit is your opportunity to find and fix mistakes <strong>before</strong> OSHA does. Every recordkeeping error that persists on your 300 Log is a potential citation waiting to happen, a potential TRIR/DART inflation that is costing you money, and a potential liability in any litigation involving workplace safety. The internal audit process described in this lesson is designed to be conducted annually — ideally in January, before the 300A Annual Summary is finalized and posted on February 1.</p>
 
-<p>The CCH Internal Audit Process follows a structured three-step methodology that we call the <strong>3-Step Audit Framework</strong>: Gather and Scope, Validate Entries, and Final Certification and Posting. Each step has specific tasks, deliverables, and quality checkpoints that ensure a thorough and defensible audit.</p>
+<p>The CCHUB Internal Audit Process follows a structured three-step methodology that we call the <strong>3-Step Audit Framework</strong>: Gather and Scope, Validate Entries, and Final Certification and Posting. Each step has specific tasks, deliverables, and quality checkpoints that ensure a thorough and defensible audit.</p>
 
 <h3>Why January? The Annual Audit Timeline</h3>
 
@@ -5037,7 +5037,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <tr><td>Clinic/Medical Provider Reports</td><td>Occupational health clinic / HR</td><td>Verify treatment classifications (First Aid vs. Medical Treatment), restriction details, and day counts</td></tr>
 <tr><td>First Aid Log (if maintained)</td><td>On-site nurse / Safety Dept</td><td>Verify that First Aid cases were correctly excluded from the 300 Log</td></tr>
 <tr><td>Supervisor Incident Reports</td><td>Department managers</td><td>Identify reported incidents that may not have been evaluated for recordability</td></tr>
-<tr><td>CCH Checkpoint Forms (if using the Checkpoint System)</td><td>Recordkeeper's files</td><td>Verify that each recording/non-recording decision was documented with regulatory justification</td></tr>
+<tr><td>CCHUB Checkpoint Forms (if using the Checkpoint System)</td><td>Recordkeeper's files</td><td>Verify that each recording/non-recording decision was documented with regulatory justification</td></tr>
 </table>
 
 <h4>C2: Cross-Reference Documents</h4>
@@ -5052,7 +5052,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <p><strong>Cross-Reference #1: WC FROI → 300 Log</strong></p>
 <p>For every Workers' Compensation First Report of Injury (FROI) filed during the audit year, check whether a corresponding entry exists on the OSHA 300 Log. If a WC claim was filed for a workplace injury but no 300 Log entry exists, one of two things is true:</p>
 <ul>
-<li>The case was evaluated under 29 CFR 1904 criteria and determined to be non-recordable (First Aid only, exemption applied, not work-related). This is acceptable <strong>if documented</strong> — the CCH Checkpoint Form should show the analysis and regulatory basis for non-recording.</li>
+<li>The case was evaluated under 29 CFR 1904 criteria and determined to be non-recordable (First Aid only, exemption applied, not work-related). This is acceptable <strong>if documented</strong> — the CCHUB Checkpoint Form should show the analysis and regulatory basis for non-recording.</li>
 <li>The case was missed — a recordable injury occurred, a WC claim was filed, but nobody evaluated it for OSHA recordability or the evaluation was not properly documented. This is an error of omission that must be corrected.</li>
 </ul>
 
@@ -5180,12 +5180,12 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
   await storage.createLesson({
     moduleId: mod8.id,
-    title: "8.2 The CCH OSHA Log Audit Checklist",
+    title: "8.2 The CCHUB OSHA Log Audit Checklist",
     orderIndex: 1,
     content: `<div class="lesson-content">
-<h2>The CCH OSHA Log Audit Checklist</h2>
+<h2>The CCHUB OSHA Log Audit Checklist</h2>
 
-<p>The CCH OSHA Log Audit Checklist is a structured, 15-point verification tool designed to systematically identify every category of recordkeeping error in a single pass through your records. Unlike an ad-hoc review that relies on the auditor's memory and experience, the checklist ensures that no category of error is overlooked. Each checkpoint addresses a specific type of recordkeeping requirement, with columns for Status (Pass/Fail/N/A), Verification method, and Correction needed. This checklist should be completed for every establishment's 300 Log during the annual January audit.</p>
+<p>The CCHUB OSHA Log Audit Checklist is a structured, 15-point verification tool designed to systematically identify every category of recordkeeping error in a single pass through your records. Unlike an ad-hoc review that relies on the auditor's memory and experience, the checklist ensures that no category of error is overlooked. Each checkpoint addresses a specific type of recordkeeping requirement, with columns for Status (Pass/Fail/N/A), Verification method, and Correction needed. This checklist should be completed for every establishment's 300 Log during the annual January audit.</p>
 
 <h3>Section A: Data Integrity (Checkpoints 1-5)</h3>
 
@@ -5193,7 +5193,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <table>
 <tr><th>#</th><th>Checkpoint</th><th>Verification Method</th><th>Pass Criteria</th><th>Common Failure Mode</th></tr>
-<tr><td>1</td><td>Every WC FROI has a corresponding 300 Log entry OR a documented 29 CFR 1904 non-recording justification</td><td>Cross-reference complete list of WC FROIs against 300 Log entries. For each FROI without a 300 entry, locate documented justification (CCH Checkpoint Form or equivalent).</td><td>100% of FROIs accounted for (either on 300 Log or with documented non-recording rationale)</td><td>FROIs filed by HR/Risk without notification to the recordkeeper — case never evaluated for OSHA recordability</td></tr>
+<tr><td>1</td><td>Every WC FROI has a corresponding 300 Log entry OR a documented 29 CFR 1904 non-recording justification</td><td>Cross-reference complete list of WC FROIs against 300 Log entries. For each FROI without a 300 entry, locate documented justification (CCHUB Checkpoint Form or equivalent).</td><td>100% of FROIs accounted for (either on 300 Log or with documented non-recording rationale)</td><td>FROIs filed by HR/Risk without notification to the recordkeeper — case never evaluated for OSHA recordability</td></tr>
 <tr><td>2</td><td>All clinic visits for workplace injuries have been reviewed for Medical Treatment triggers</td><td>Obtain list of all occupational health clinic visits during the audit year. Verify each visit was evaluated for treatment type (First Aid vs. Medical Treatment).</td><td>100% of clinic visits reviewed and classified</td><td>Clinic visits where only "follow-up" occurred — recordkeeper assumed follow-up = First Aid without verifying actual treatment provided</td></tr>
 <tr><td>3</td><td>Every 300 Log entry has a corresponding, complete OSHA 301 Incident Report (or equivalent)</td><td>Match every 300 Log entry to its 301 form. Verify 301 narrative is complete (what, when, where, how).</td><td>100% match with complete narratives</td><td>Missing 301s for cases entered on 300 Log; 301s with incomplete or missing narratives</td></tr>
 <tr><td>4</td><td>Records retained for full 5-year period per 29 CFR 1904.33</td><td>Verify that 300 Logs, 301s, and 300As for the past 5 years are accessible and complete.</td><td>All records for current year minus 5 through current year are on file</td><td>Records discarded during office moves or personnel changes; digital records lost due to system migrations</td></tr>
@@ -5226,14 +5226,14 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <div class="case-study">
 <h4>Case Study: The 15-Point Audit That Prevented a $125,000 Citation</h4>
-<p>A mid-size chemical manufacturing company with 280 employees completed the CCH 15-Point Audit Checklist during its January audit. The audit revealed the following findings:</p>
+<p>A mid-size chemical manufacturing company with 280 employees completed the CCHUB 15-Point Audit Checklist during its January audit. The audit revealed the following findings:</p>
 <ul>
 <li><strong>Checkpoint 1 (FROI Cross-Reference):</strong> 3 WC FROIs existed without corresponding 300 Log entries or documented non-recording justifications. Investigation revealed that 2 of the 3 were recordable cases that the recordkeeper had not been notified about (FROIs filed directly by HR without copying Safety). The third was a legitimate First Aid case with a precautionary WC filing — but no documentation existed for the non-recording decision.</li>
 <li><strong>Checkpoint 8 (Day Count):</strong> 2 of 6 DAFW entries had day counts that started on the day of injury instead of the day after, inflating each count by 1 day.</li>
 <li><strong>Checkpoint 11 (Other Recordable Verification):</strong> 1 entry classified as "Other Recordable" had only First Aid treatments documented (wound cleaning, OTC pain medication, sterile bandage). No Medical Treatment trigger was present. This case should not have been on the 300 Log.</li>
 <li><strong>Checkpoint 13 (Executive Signature):</strong> The 300A from the prior year had been signed by the Safety Manager, who was not a company officer. This was a technical violation.</li>
 </ul>
-<p>The company made all corrections before posting the 300A on February 1. Eight months later, OSHA conducted a programmed inspection of the facility. The compliance officer reviewed the 300 Log and 301 forms in detail. Because the corrections had already been made, the officer found no recordkeeping deficiencies. The officer specifically noted the CCH Checkpoint Forms and Audit Checklist as evidence of the company's recordkeeping diligence.</p>
+<p>The company made all corrections before posting the 300A on February 1. Eight months later, OSHA conducted a programmed inspection of the facility. The compliance officer reviewed the 300 Log and 301 forms in detail. Because the corrections had already been made, the officer found no recordkeeping deficiencies. The officer specifically noted the CCHUB Checkpoint Forms and Audit Checklist as evidence of the company's recordkeeping diligence.</p>
 <p>Post-inspection, the company's safety director estimated that the three missing entries and the misclassified case, if found by the OSHA compliance officer, could have generated <strong>4-5 willful citations</strong> (given the pattern of omission), with potential penalties of $125,000-$200,000. The January audit took 16 hours of staff time (approximately $1,200 in labor costs). The ROI on that 16-hour investment was incalculable.</p>
 </div>
 
@@ -5348,7 +5348,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <tr><td>How Error Was Discovered</td><td>How and when the error was identified (e.g., "Identified during annual January audit, Checkpoint 11 — Other Recordable verification")</td></tr>
 <tr><td>Correction Made</td><td>Specific description of the correction (e.g., "Entry removed from 300 Log via line-through; 300A totals updated to reduce Other Recordable count by 1")</td></tr>
 <tr><td>Regulatory Basis</td><td>The specific 29 CFR 1904 provision that supports the correction (e.g., "Under 29 CFR 1904.7(a), the treatments provided — wound cleaning, OTC ibuprofen, sterile bandage — are all listed as First Aid. No Medical Treatment Beyond First Aid trigger was present.")</td></tr>
-<tr><td>Supporting Documentation</td><td>List of attached documents (clinic report, CCH Checkpoint Form, etc.)</td></tr>
+<tr><td>Supporting Documentation</td><td>List of attached documents (clinic report, CCHUB Checkpoint Form, etc.)</td></tr>
 </table>
 
 <div class="case-study">
@@ -5466,7 +5466,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <h3>The 72-Hour Preparation Protocol</h3>
 
-<p>While your records should be inspection-ready at all times (through the ongoing CCH Checkpoint System and annual audit), the 72-Hour Preparation Protocol is a rapid-response checklist to execute when you receive notice of an upcoming inspection or believe an inspection is imminent:</p>
+<p>While your records should be inspection-ready at all times (through the ongoing CCHUB Checkpoint System and annual audit), the 72-Hour Preparation Protocol is a rapid-response checklist to execute when you receive notice of an upcoming inspection or believe an inspection is imminent:</p>
 
 <h4>Immediate (Within 24 Hours)</h4>
 <ol>
@@ -5493,7 +5493,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <h4>Case Study: The Pre-Inspection Preparation That Changed the Outcome</h4>
 <p>A plastics extrusion company with 200 employees received a phone call from OSHA indicating that a programmed SST inspection had been scheduled for the following week. The company's EHS Manager immediately activated the 72-Hour Preparation Protocol:</p>
 <p><strong>Day 1:</strong> Assembled records team, located all 300 Logs (current + 5 years), identified 2 missing 301 forms that had been misfiled — recovered them from HR's workers' compensation files. Discovered that the prior year's 300A had been signed by the Safety Coordinator (not a company executive) — the Plant Manager signed a corrected version.</p>
-<p><strong>Day 2:</strong> Cross-referenced the most recent 6 months of WC FROIs against the 300 Log. Found 1 case that had been filed with WC but never evaluated for OSHA recordability. Reviewed the case — it involved physical therapy for a work-related knee injury — and added it to the 300 Log with a complete 301 and CCH Checkpoint Form.</p>
+<p><strong>Day 2:</strong> Cross-referenced the most recent 6 months of WC FROIs against the 300 Log. Found 1 case that had been filed with WC but never evaluated for OSHA recordability. Reviewed the case — it involved physical therapy for a work-related knee injury — and added it to the 300 Log with a complete 301 and CCHUB Checkpoint Form.</p>
 <p><strong>Day 3:</strong> Organized records in presentation binders, prepared a records summary showing the company's TRIR (2.8) vs. industry average (3.5), and briefed the walkaround escort team.</p>
 <p>During the inspection, the CSHO reviewed 6 years of records. The only findings were 2 minor documentation issues (one 301 narrative lacking specificity and one Column F description that was too vague). The CSHO issued no formal citations — only a letter of recommendation to improve 301 narratives. The EHS Manager estimated that without the 72-hour preparation, the CSHO would have found the missing entry, the unsigned 300A, and the 2 misfiled 301s — generating at least 4 citations with potential penalties of $16,000-$64,000.</p>
 </div>
@@ -5509,7 +5509,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <tr><td>All prior-year 300 Logs retained and accessible</td><td>Verify quarterly</td><td>Records Manager</td></tr>
 <tr><td>Current 300A posted and signed by executive</td><td>Verify February 1 and monthly through April 30</td><td>Recordkeeper</td></tr>
 <tr><td>WC FROI cross-reference current</td><td>Monthly or quarterly</td><td>Recordkeeper + HR</td></tr>
-<tr><td>CCH Checkpoint Forms filed for all recording decisions</td><td>Ongoing</td><td>Recordkeeper</td></tr>
+<tr><td>CCHUB Checkpoint Forms filed for all recording decisions</td><td>Ongoing</td><td>Recordkeeper</td></tr>
 <tr><td>Annual audit completed and documented</td><td>January (annually)</td><td>Audit Team</td></tr>
 <tr><td>72-Hour Protocol documented and personnel assigned</td><td>Review annually; update with personnel changes</td><td>EHS Director</td></tr>
 </table>
@@ -5533,7 +5533,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     },
     {
       moduleId: mod8.id,
-      question: "What are the '3 Cs' of Step 1 in the CCH Internal Audit Process?",
+      question: "What are the '3 Cs' of Step 1 in the CCHUB Internal Audit Process?",
       options: [
         "Count, Calculate, Certify",
         "Collect (gather all source documents), Cross-Reference (compare WC FROIs to 300 Log entries and verify clinic treatments), Check (verify completeness of all fields)",
@@ -6103,7 +6103,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <div class="case-study">
 <h4>Case Study: Data-Driven Prevention Reduces Recordables by 45%</h4>
-<p>A steel fabrication company with 350 employees conducted its first comprehensive 300 Log data analysis as part of its CCH System implementation. The analysis of 2 years of data (42 total recordable cases) revealed three dominant patterns:</p>
+<p>A steel fabrication company with 350 employees conducted its first comprehensive 300 Log data analysis as part of its CCHUB System implementation. The analysis of 2 years of data (42 total recordable cases) revealed three dominant patterns:</p>
 <ol>
 <li><strong>Hand/finger lacerations:</strong> 14 cases (33%) — concentrated in the cutting and grinding departments</li>
 <li><strong>Back strains:</strong> 11 cases (26%) — distributed across material handling and assembly departments</li>
@@ -6234,37 +6234,37 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
   console.log(`OSHA Recordkeeping Module 9 seeded: ${totalLessons} lessons, ${totalQuizQuestions} quiz questions`);
 
   // ============================================================
-  // MODULE 10: Executive Capstone — Implementing the CCH System
+  // MODULE 10: Executive Capstone — Implementing the CCHUB System
   // ============================================================
   const mod10 = await storage.createModule({
     courseId: course.id,
-    title: "Executive Capstone — Implementing the CCH System",
-    description: "Synthesizes the program into the CCH Cycle of Safety Excellence with implementation roadmap and financial messaging for leadership buy-in.",
+    title: "Executive Capstone — Implementing the CCHUB System",
+    description: "Synthesizes the program into the CCHUB Cycle of Safety Excellence with implementation roadmap and financial messaging for leadership buy-in.",
     orderIndex: 9,
   });
 
   await storage.createLesson({
     moduleId: mod10.id,
-    title: "10.1 The CCH Cycle of Safety Excellence",
+    title: "10.1 The CCHUB Cycle of Safety Excellence",
     orderIndex: 0,
     content: `<div class="lesson-content">
-<h2>The CCH Cycle of Safety Excellence</h2>
+<h2>The CCHUB Cycle of Safety Excellence</h2>
 
-<p>You have now completed nine modules of intensive study covering every aspect of OSHA recordkeeping — from the foundational regulatory framework to advanced root cause analysis. You understand how the OSHA 300 Log works, how injuries are classified, how First Aid differs from Medical Treatment, how to manage clinic relationships, how to prevent the most common recordkeeping errors, how to apply your knowledge to complex real-world scenarios, how to audit your records, and how to investigate incidents to their root causes. This final module synthesizes everything you have learned into a unified, self-reinforcing system: the <strong>CCH Cycle of Safety Excellence</strong>.</p>
+<p>You have now completed nine modules of intensive study covering every aspect of OSHA recordkeeping — from the foundational regulatory framework to advanced root cause analysis. You understand how the OSHA 300 Log works, how injuries are classified, how First Aid differs from Medical Treatment, how to manage clinic relationships, how to prevent the most common recordkeeping errors, how to apply your knowledge to complex real-world scenarios, how to audit your records, and how to investigate incidents to their root causes. This final module synthesizes everything you have learned into a unified, self-reinforcing system: the <strong>CCHUB Cycle of Safety Excellence</strong>.</p>
 
-<p>The CCH Cycle is not a checklist or a one-time project — it is a <strong>continuous improvement system</strong> that, once implemented, generates compounding returns year over year. Each component of the system feeds the next, creating a virtuous cycle where accurate recordkeeping drives better investigation, better investigation drives more effective prevention, more effective prevention reduces recordable incidents, fewer recordable incidents improve your metrics, better metrics reduce your costs and improve your competitive position, and the financial savings are reinvested into the system — starting the cycle again at a higher level of performance.</p>
+<p>The CCHUB Cycle is not a checklist or a one-time project — it is a <strong>continuous improvement system</strong> that, once implemented, generates compounding returns year over year. Each component of the system feeds the next, creating a virtuous cycle where accurate recordkeeping drives better investigation, better investigation drives more effective prevention, more effective prevention reduces recordable incidents, fewer recordable incidents improve your metrics, better metrics reduce your costs and improve your competitive position, and the financial savings are reinvested into the system — starting the cycle again at a higher level of performance.</p>
 
-<h3>The Complete CCH Cycle</h3>
+<h3>The Complete CCHUB Cycle</h3>
 
-<p>The CCH Cycle of Safety Excellence consists of nine interconnected stages, each corresponding to a module in this course:</p>
+<p>The CCHUB Cycle of Safety Excellence consists of nine interconnected stages, each corresponding to a module in this course:</p>
 
 <table>
 <tr><th>Stage</th><th>Module</th><th>Function</th><th>Output</th></tr>
 <tr><td>1. Accurate Recording</td><td>Modules 1-4</td><td>Record every workplace injury and illness accurately, completely, and in compliance with 29 CFR 1904. Apply the General Recording Criteria, Work-Relatedness rules, New Case determination, and Severity Classification correctly for every case.</td><td>A defensible, accurate OSHA 300 Log that reflects the true safety performance of the organization — no over-recording, no under-recording</td></tr>
 <tr><td>2. Clinic Management</td><td>Module 5</td><td>Establish and maintain a strategic partnership with occupational health clinics to ensure that treatment decisions are informed by both clinical best practices and recordkeeping implications.</td><td>Clinic partners who understand the First Aid vs. Medical Treatment distinction and consider recordkeeping-neutral treatment alternatives when clinically appropriate</td></tr>
-<tr><td>3. Error Prevention</td><td>Module 6</td><td>Implement the CCH Five-Point Checkpoint System to eliminate the 10 most common recordkeeping errors through systematic quality assurance at the point of decision.</td><td>A documented, verified process for every recording decision, reducing classification errors by 70-85%</td></tr>
+<tr><td>3. Error Prevention</td><td>Module 6</td><td>Implement the CCHUB Five-Point Checkpoint System to eliminate the 10 most common recordkeeping errors through systematic quality assurance at the point of decision.</td><td>A documented, verified process for every recording decision, reducing classification errors by 70-85%</td></tr>
 <tr><td>4. Skill Application</td><td>Module 7</td><td>Build and maintain scenario-based decision-making competency through practice with gray-area cases and complex regulatory applications.</td><td>Recordkeepers who can accurately classify any case, including complex multi-factor scenarios</td></tr>
-<tr><td>5. Proactive Auditing</td><td>Module 8</td><td>Conduct annual internal audits using the CCH 15-Point Checklist to identify and correct errors before OSHA does, and maintain ongoing inspection readiness.</td><td>Clean, corrected records; documented audit trail; OSHA inspection readiness at all times</td></tr>
+<tr><td>5. Proactive Auditing</td><td>Module 8</td><td>Conduct annual internal audits using the CCHUB 15-Point Checklist to identify and correct errors before OSHA does, and maintain ongoing inspection readiness.</td><td>Clean, corrected records; documented audit trail; OSHA inspection readiness at all times</td></tr>
 <tr><td>6. Root Cause Prevention</td><td>Module 9</td><td>Investigate recordable incidents beyond surface causes to identify and correct the management system failures that allow injuries to occur.</td><td>Systemic corrective actions that prevent recurrence; continuous improvement of safety controls</td></tr>
 <tr><td>7. Reduced Recordables</td><td>Outcome</td><td>The combined effect of accurate recording (no over-recording) and effective prevention (fewer actual injuries) produces a measurable reduction in recordable cases.</td><td>Lower total recordable case count; lower severity (fewer DAFW/DART cases)</td></tr>
 <tr><td>8. Lower TRIR/DART/EMR</td><td>Outcome</td><td>Reduced recordable cases and reduced severity directly lower TRIR, DART, and EMR rates — the three metrics that drive financial performance and competitive positioning.</td><td>TRIR/DART below industry benchmarks; EMR below 1.0; qualification for all competitive bids</td></tr>
@@ -6273,7 +6273,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <h3>The Self-Reinforcing Nature of the Cycle</h3>
 
-<p>What makes the CCH Cycle powerful is its <strong>self-reinforcing nature</strong>. Each stage creates conditions that make the next stage more effective:</p>
+<p>What makes the CCHUB Cycle powerful is its <strong>self-reinforcing nature</strong>. Each stage creates conditions that make the next stage more effective:</p>
 
 <ul>
 <li><strong>Accurate Recording</strong> gives you reliable data. Reliable data enables meaningful trend analysis (Stage 6), which identifies the right targets for prevention.</li>
@@ -6287,25 +6287,25 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <div class="highlight-box">
 <h4>The Compounding Effect</h4>
-<p>The CCH Cycle produces <strong>compounding returns</strong> similar to compound interest in finance. In Year 1, you might reduce recordable cases by 20% through accurate classification and error prevention alone (Stages 1-5). In Year 2, as Root Cause Prevention (Stage 6) takes effect and corrective actions from Year 1 investigations prevent recurrences, you might reduce cases by an additional 15-20%. By Year 3, the combined effect of accurate recording, clinic management, error prevention, and root cause prevention produces a cumulative reduction of 40-50% from the Year 0 baseline. Each year, the gains from prior years compound with new gains, creating an accelerating improvement trajectory.</p>
+<p>The CCHUB Cycle produces <strong>compounding returns</strong> similar to compound interest in finance. In Year 1, you might reduce recordable cases by 20% through accurate classification and error prevention alone (Stages 1-5). In Year 2, as Root Cause Prevention (Stage 6) takes effect and corrective actions from Year 1 investigations prevent recurrences, you might reduce cases by an additional 15-20%. By Year 3, the combined effect of accurate recording, clinic management, error prevention, and root cause prevention produces a cumulative reduction of 40-50% from the Year 0 baseline. Each year, the gains from prior years compound with new gains, creating an accelerating improvement trajectory.</p>
 <p>This compounding effect is amplified by the EMR's three-year rolling window: improvements in Year 1 are reflected in your EMR in Years 2, 3, and 4, producing premium savings that persist long after the improvement year itself has passed.</p>
 </div>
 
 <h3>Building Capability at All Levels</h3>
 
-<p>The CCH Cycle requires capability at every organizational level:</p>
+<p>The CCHUB Cycle requires capability at every organizational level:</p>
 
 <table>
 <tr><th>Level</th><th>Role in the Cycle</th><th>Key Competencies</th><th>Training Requirement</th></tr>
 <tr><td>Front-Line Workers</td><td>Report injuries promptly and accurately; participate in investigations; follow safe work procedures</td><td>Injury reporting obligations; basic understanding of why accurate reporting matters; willingness to report near-misses</td><td>Initial orientation + annual refresher (1 hour)</td></tr>
 <tr><td>Supervisors/Managers</td><td>Facilitate immediate reporting; avoid inadvertent restrictions/transfers; support modified duty; participate in RCA</td><td>Understanding that job transfer triggers recordability; modified duty options within the current role; RCA participation; support for stop-work authority</td><td>Initial training (2 hours) + annual refresher (1 hour)</td></tr>
 <tr><td>Recordkeeper/Safety Professional</td><td>Apply Five-Point Checkpoint System; maintain 300 Log; conduct audits; perform RCA; manage clinic relationship</td><td>Complete mastery of 29 CFR 1904; Five-Point Checkpoint proficiency; RCA methodology; clinic communication; data analysis; audit process</td><td>This course (10 modules) + quarterly scenario exercises + annual audit</td></tr>
-<tr><td>Executive Leadership</td><td>Certify 300A; allocate resources for safety program; make strategic decisions based on safety data</td><td>Understanding of TRIR/DART/EMR financial impact; ability to interpret trend data; commitment to the CCH Cycle as a business strategy</td><td>Executive briefing (1 hour) + quarterly metrics review</td></tr>
+<tr><td>Executive Leadership</td><td>Certify 300A; allocate resources for safety program; make strategic decisions based on safety data</td><td>Understanding of TRIR/DART/EMR financial impact; ability to interpret trend data; commitment to the CCHUB Cycle as a business strategy</td><td>Executive briefing (1 hour) + quarterly metrics review</td></tr>
 </table>
 
 <div class="case-study">
 <h4>Case Study: The Three-Year Transformation</h4>
-<p>A mechanical contracting company with 600 employees implemented the CCH Cycle of Safety Excellence over a three-year period. Here is the timeline and results:</p>
+<p>A mechanical contracting company with 600 employees implemented the CCHUB Cycle of Safety Excellence over a three-year period. Here is the timeline and results:</p>
 <p><strong>Year 0 (Baseline):</strong> TRIR: 5.8 | DART: 3.4 | EMR: 1.32 | Annual WC Premium: $780,000 | Recordable Cases: 35 | Bid disqualifications: 4 contracts lost due to TRIR > 3.0</p>
 <p><strong>Year 1 (Foundation — Stages 1-5):</strong> Implemented accurate recording training, clinic partnership, Five-Point Checkpoint System, and conducted first annual audit. Results: 8 cases reclassified from recordable to First Aid (over-recording correction); 2 missing entries added (under-recording correction). Net: 35 - 8 + 2 = 29 recordable cases. TRIR dropped to 4.8. DART dropped to 2.7. EMR: 1.22 (beginning to improve but lagging due to 3-year window).</p>
 <p><strong>Year 2 (Integration — Stage 6 Added):</strong> Conducted RCA on top 5 highest-severity cases from Year 1. Implemented Hierarchy of Controls corrective actions: 2 engineering controls (machine guards, lift assists), 3 administrative improvements (revised SOPs, pre-task planning). Continued Checkpoint System and annual audit. Results: 21 recordable cases (additional reduction from both prevention and continued accurate classification). TRIR: 3.5. DART: 1.8. EMR: 1.08 (Year 0 starting to roll off).</p>
@@ -6320,7 +6320,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <tr><td>Annual WC Premium</td><td>$780,000</td><td>$545,000</td><td>-$235,000/year</td></tr>
 <tr><td>New Contracts Won</td><td>0</td><td>3</td><td>+$4.2M revenue</td></tr>
 </table>
-<p>Total three-year investment in CCH implementation: approximately $95,000 (training, audit time, engineering controls, clinic partnership development). Total three-year financial benefit: approximately $905,000 (premium savings + new contract revenue contribution). <strong>ROI: 853%.</strong></p>
+<p>Total three-year investment in CCHUB implementation: approximately $95,000 (training, audit time, engineering controls, clinic partnership development). Total three-year financial benefit: approximately $905,000 (premium savings + new contract revenue contribution). <strong>ROI: 853%.</strong></p>
 </div>
 </div>`,
   });
@@ -6333,19 +6333,19 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     content: `<div class="lesson-content">
 <h2>The 30/60/90 Day Implementation Roadmap</h2>
 
-<p>Understanding the CCH Cycle is the first step. Implementing it in your organization requires a structured, phased approach that builds capability progressively, avoids overwhelming your team, and produces visible results quickly enough to maintain organizational momentum and leadership support. The 30/60/90 Day Implementation Roadmap provides a step-by-step plan for launching the CCH System, with specific deliverables and milestones for each phase.</p>
+<p>Understanding the CCHUB Cycle is the first step. Implementing it in your organization requires a structured, phased approach that builds capability progressively, avoids overwhelming your team, and produces visible results quickly enough to maintain organizational momentum and leadership support. The 30/60/90 Day Implementation Roadmap provides a step-by-step plan for launching the CCHUB System, with specific deliverables and milestones for each phase.</p>
 
 <h3>Phase 1: Foundation (Days 1-30)</h3>
 
-<p>The Foundation phase establishes your baseline, identifies your most critical gaps, and implements the core recordkeeping accuracy components of the CCH System. This phase focuses on Stages 1-3 of the Cycle (Accurate Recording, Clinic Management, Error Prevention).</p>
+<p>The Foundation phase establishes your baseline, identifies your most critical gaps, and implements the core recordkeeping accuracy components of the CCHUB System. This phase focuses on Stages 1-3 of the Cycle (Accurate Recording, Clinic Management, Error Prevention).</p>
 
 <table>
 <tr><th>Week</th><th>Action Item</th><th>Deliverable</th><th>Responsible Party</th></tr>
-<tr><td>Week 1</td><td><strong>Conduct Initial Baseline Audit</strong> — Use the CCH 15-Point Checklist (Module 8) to audit the current year's 300 Log. Identify all existing errors, gaps, and documentation deficiencies.</td><td>Completed CCH Audit Checklist with all findings documented; correction list prioritized by severity</td><td>EHS Director / Safety Manager</td></tr>
+<tr><td>Week 1</td><td><strong>Conduct Initial Baseline Audit</strong> — Use the CCHUB 15-Point Checklist (Module 8) to audit the current year's 300 Log. Identify all existing errors, gaps, and documentation deficiencies.</td><td>Completed CCHUB Audit Checklist with all findings documented; correction list prioritized by severity</td><td>EHS Director / Safety Manager</td></tr>
 <tr><td>Week 1</td><td><strong>Calculate Baseline Metrics</strong> — Determine current TRIR, DART, Severity Rate, and EMR. Obtain the most recent EMR worksheet from your WC carrier. Calculate the annual financial impact of your current EMR (surcharge or credit).</td><td>Baseline Metrics Report: TRIR, DART, Severity Rate, EMR, annual premium surcharge/credit, industry benchmark comparison</td><td>EHS Director with HR/Risk Management</td></tr>
 <tr><td>Week 2</td><td><strong>Correct Identified Errors</strong> — Using the legal correction procedures (Module 8, Lesson 3), correct all errors identified in the baseline audit. Prepare Memos to File for each correction.</td><td>Corrected 300 Log; Memos to File for each correction; updated 300A if applicable</td><td>Recordkeeper / EHS Director</td></tr>
 <tr><td>Week 2</td><td><strong>Establish Clinic Partnership</strong> — Schedule a meeting with your primary occupational health clinic. Introduce the First Aid vs. Medical Treatment distinction. Discuss treatment alternatives. Establish communication protocols (Module 5).</td><td>Clinic meeting completed; Clinic Communication Protocol document signed by both parties; clinic contact card for recordkeeper</td><td>EHS Director</td></tr>
-<tr><td>Week 3</td><td><strong>Implement Five-Point Checkpoint System</strong> — Develop and distribute CCH Checkpoint Forms. Train the primary recordkeeper and QA reviewer on the Five-Point Checkpoint process (Module 6).</td><td>Checkpoint Forms printed/available digitally; Recordkeeper and QA reviewer trained and certified; process implemented for all new cases</td><td>EHS Director / Recordkeeper</td></tr>
+<tr><td>Week 3</td><td><strong>Implement Five-Point Checkpoint System</strong> — Develop and distribute CCHUB Checkpoint Forms. Train the primary recordkeeper and QA reviewer on the Five-Point Checkpoint process (Module 6).</td><td>Checkpoint Forms printed/available digitally; Recordkeeper and QA reviewer trained and certified; process implemented for all new cases</td><td>EHS Director / Recordkeeper</td></tr>
 <tr><td>Week 3-4</td><td><strong>Train Supervisors</strong> — Conduct supervisor training on injury reporting, the recordability implications of job transfers and restrictions, and modified duty options within existing roles.</td><td>All supervisors trained (documented); training acknowledgment forms signed; quick-reference cards distributed</td><td>EHS Director / Training Coordinator</td></tr>
 <tr><td>Week 4</td><td><strong>Phase 1 Review</strong> — Review all Phase 1 deliverables. Confirm baseline audit is complete, corrections are made, clinic partnership is established, Checkpoint System is operational, and supervisors are trained.</td><td>Phase 1 Completion Report: status of all deliverables, any carryover items, metrics comparison (pre- vs. post-correction)</td><td>EHS Director</td></tr>
 </table>
@@ -6364,7 +6364,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <h3>Phase 2: Integration (Days 31-60)</h3>
 
-<p>The Integration phase adds the more advanced components of the CCH System: scenario-based skill building, modified duty program optimization, and the beginning of Root Cause Analysis. This phase focuses on Stages 4-6 of the Cycle.</p>
+<p>The Integration phase adds the more advanced components of the CCHUB System: scenario-based skill building, modified duty program optimization, and the beginning of Root Cause Analysis. This phase focuses on Stages 4-6 of the Cycle.</p>
 
 <table>
 <tr><th>Week</th><th>Action Item</th><th>Deliverable</th><th>Responsible Party</th></tr>
@@ -6384,15 +6384,15 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <tr><th>Week</th><th>Action Item</th><th>Deliverable</th><th>Responsible Party</th></tr>
 <tr><td>Week 9</td><td><strong>First Quarterly Spot-Check Audit</strong> — Conduct a targeted audit of all cases recorded since the Checkpoint System was implemented. Verify checkpoint compliance, classification accuracy, and documentation completeness.</td><td>Spot-check audit report; Checkpoint compliance rate (target: 100%); classification accuracy rate (target: 95%+)</td><td>QA Reviewer / EHS Director</td></tr>
 <tr><td>Week 9-10</td><td><strong>Verify Phase 2 Corrective Actions</strong> — Conduct Implementation Verification (Stage 1) on all corrective actions from Phase 2 RCAs. Confirm that changes were physically implemented as planned.</td><td>Verification checklist completed for each corrective action; any incomplete actions escalated with revised deadlines</td><td>EHS Director</td></tr>
-<tr><td>Week 10</td><td><strong>Prepare First Metrics Report</strong> — Calculate current TRIR, DART, and project EMR trajectory. Compare to baseline. Identify improvements attributable to CCH System implementation.</td><td>Metrics comparison report (Baseline vs. Current); projected EMR improvement; estimated premium savings projection</td><td>EHS Director</td></tr>
+<tr><td>Week 10</td><td><strong>Prepare First Metrics Report</strong> — Calculate current TRIR, DART, and project EMR trajectory. Compare to baseline. Identify improvements attributable to CCHUB System implementation.</td><td>Metrics comparison report (Baseline vs. Current); projected EMR improvement; estimated premium savings projection</td><td>EHS Director</td></tr>
 <tr><td>Week 11</td><td><strong>Present to Leadership</strong> — Conduct the first quarterly leadership briefing. Present baseline vs. current metrics, corrective actions implemented, financial impact (premium savings, bid qualification), and recommended investments for continued improvement.</td><td>Leadership presentation deck; financial impact summary; resource request (if applicable)</td><td>EHS Director</td></tr>
-<tr><td>Week 11-12</td><td><strong>Build Business Case for Ongoing Investment</strong> — Using the financial framework from Lesson 10.3, prepare a formal Business Case for sustained CCH System investment, including projected 3-year ROI.</td><td>Formal Business Case document; 3-year ROI projection; comparison to cost of inaction</td><td>EHS Director with Finance/CFO</td></tr>
-<tr><td>Week 12</td><td><strong>Establish Ongoing Annual Cycle</strong> — Document the CCH System processes, responsibilities, and calendar into a formal program manual. Set the annual cycle: January audit, quarterly spot-checks, quarterly leadership reviews, annual supervisor retraining, quarterly scenario exercises.</td><td>CCH System Program Manual; annual calendar with all recurring activities; responsibility matrix</td><td>EHS Director</td></tr>
+<tr><td>Week 11-12</td><td><strong>Build Business Case for Ongoing Investment</strong> — Using the financial framework from Lesson 10.3, prepare a formal Business Case for sustained CCHUB System investment, including projected 3-year ROI.</td><td>Formal Business Case document; 3-year ROI projection; comparison to cost of inaction</td><td>EHS Director with Finance/CFO</td></tr>
+<tr><td>Week 12</td><td><strong>Establish Ongoing Annual Cycle</strong> — Document the CCHUB System processes, responsibilities, and calendar into a formal program manual. Set the annual cycle: January audit, quarterly spot-checks, quarterly leadership reviews, annual supervisor retraining, quarterly scenario exercises.</td><td>CCHUB System Program Manual; annual calendar with all recurring activities; responsibility matrix</td><td>EHS Director</td></tr>
 </table>
 
 <h3>Beyond 90 Days: The Annual Cycle</h3>
 
-<p>After the initial 90-day implementation, the CCH System transitions to an ongoing annual cycle:</p>
+<p>After the initial 90-day implementation, the CCHUB System transitions to an ongoing annual cycle:</p>
 
 <table>
 <tr><th>Month</th><th>Activity</th></tr>
@@ -6409,7 +6409,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <p>A general contracting company with 250 employees implemented the 30/60/90 Day Roadmap starting January 2. Here is what they accomplished and the results they achieved:</p>
 <p><strong>Phase 1 (Days 1-30):</strong> Baseline audit identified 6 over-recorded cases (First Aid classified as recordable) and 2 under-recorded cases. After corrections, the prior-year TRIR dropped from 4.8 to 3.2. Clinic partnership established with the company's occupational health provider — first meeting produced agreement to evaluate OTC alternatives before prescribing prescription medications for minor musculoskeletal complaints. Checkpoint System implemented; all supervisors trained.</p>
 <p><strong>Phase 2 (Days 31-60):</strong> Modified duty program formalized — 12 modified-duty task options documented across 5 job classifications, reducing the need for job transfers. RCA conducted on 3 highest-severity cases: identified inadequate fall protection anchor points (Engineering), outdated cut-resistant glove program (PPE upgrade needed), and excessive manual lifting in one department (Engineering — lift assist needed). Two corrective actions implemented immediately; third (lift assist) budgeted for Q2.</p>
-<p><strong>Phase 3 (Days 61-90):</strong> Q1 spot-check showed 100% Checkpoint compliance and 97% classification accuracy. Metrics presented to leadership: projected TRIR reduction to below 3.0 by year-end (qualifying for 2 additional contract opportunities); projected EMR improvement from 1.18 to 1.02 within 18 months, saving $56,000/year in premiums. Leadership approved $25,000 for lift assist purchase and ongoing CCH System maintenance budget.</p>
+<p><strong>Phase 3 (Days 61-90):</strong> Q1 spot-check showed 100% Checkpoint compliance and 97% classification accuracy. Metrics presented to leadership: projected TRIR reduction to below 3.0 by year-end (qualifying for 2 additional contract opportunities); projected EMR improvement from 1.18 to 1.02 within 18 months, saving $56,000/year in premiums. Leadership approved $25,000 for lift assist purchase and ongoing CCHUB System maintenance budget.</p>
 <p><strong>Key Insight:</strong> The 90-day roadmap produced measurable results fast enough to demonstrate value to leadership before organizational momentum faded. The combination of immediate metric improvements (from over-recording corrections in Phase 1) and prevention-driven improvements (from RCA corrective actions in Phase 2) created a compelling narrative: "We improved our numbers immediately by recording accurately, and we will continue improving them by preventing injuries."</p>
 </div>
 </div>`,
@@ -6461,7 +6461,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <p><strong>Key Message:</strong> "Our current EMR of 1.25 costs us $100,000/year — or $300,000 over the EMR's three-year window — in premium surcharges above what a company with average safety performance would pay."</p>
 
-<h4>Slide 2: Projected State — "What CCH Implementation Can Deliver"</h4>
+<h4>Slide 2: Projected State — "What CCHUB Implementation Can Deliver"</h4>
 
 <table>
 <tr><th>Element</th><th>Current</th><th>Year 1 Projection</th><th>Year 2 Projection</th><th>Year 3 Projection</th></tr>
@@ -6472,7 +6472,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <tr><td>Annual Savings vs. Current</td><td>—</td><td>[e.g., $40,000]</td><td>[e.g., $108,000]</td><td>[e.g., $148,000]</td></tr>
 </table>
 
-<p><strong>Key Message:</strong> "Over three years, the CCH System is projected to save $296,000 in premium costs alone — not counting avoided OSHA penalties, new contract eligibility, or reduced indirect costs."</p>
+<p><strong>Key Message:</strong> "Over three years, the CCHUB System is projected to save $296,000 in premium costs alone — not counting avoided OSHA penalties, new contract eligibility, or reduced indirect costs."</p>
 
 <h4>Slide 3: Investment vs. Return — "The ROI"</h4>
 
@@ -6504,12 +6504,12 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 
 <div class="highlight-box">
 <h4>Talking Point 3: The Inspection Risk</h4>
-<p>"If OSHA were to inspect our records today, our baseline audit identified [X] deficiencies that could generate [Y] citations at an average penalty of [$Z] each. The total potential penalty exposure is [$Total]. Our CCH System implementation costs [$Investment] — a fraction of the potential penalty, and it also produces premium savings, not just penalty avoidance."</p>
+<p>"If OSHA were to inspect our records today, our baseline audit identified [X] deficiencies that could generate [Y] citations at an average penalty of [$Z] each. The total potential penalty exposure is [$Total]. Our CCHUB System implementation costs [$Investment] — a fraction of the potential penalty, and it also produces premium savings, not just penalty avoidance."</p>
 </div>
 
 <h3>Safety as Profit Protection</h3>
 
-<p>The ultimate executive message is this: <strong>safety is not a cost center — it is profit protection</strong>. Every dollar invested in the CCH System produces measurable returns through:</p>
+<p>The ultimate executive message is this: <strong>safety is not a cost center — it is profit protection</strong>. Every dollar invested in the CCHUB System produces measurable returns through:</p>
 
 <ul>
 <li><strong>Premium Reduction:</strong> Lower EMR → lower workers' compensation premiums (quantifiable, recurring savings)</li>
@@ -6522,7 +6522,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <div class="case-study">
 <h4>Case Study: The EHS Manager Who Secured a $250,000 Safety Budget</h4>
 <p>Maria Gonzalez, EHS Manager at a mid-size industrial services company with 400 employees, had been requesting budget for safety improvements for three years. Each year, her requests were denied or significantly reduced. "Safety is important, but we need to focus on revenue," was the consistent message from the executive team.</p>
-<p>After completing the CCH Recordkeeping Master program, Maria took a different approach. Instead of leading with safety statistics and regulatory requirements, she led with financial data:</p>
+<p>After completing the CCHUB Recordkeeping Master program, Maria took a different approach. Instead of leading with safety statistics and regulatory requirements, she led with financial data:</p>
 <p><strong>The Opening Statement:</strong> "We are paying $175,000 per year in excess workers' compensation premiums because of recordkeeping errors and preventable injuries. I have a plan that costs $65,000 in the first year and will save us over $250,000 annually by Year 3."</p>
 <p><strong>The Data:</strong></p>
 <ul>
@@ -6546,7 +6546,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <p>Maria's reflection: "For three years, I talked about OSHA compliance and employee safety. The executives nodded politely and gave me nothing. The moment I talked about $175,000 in excess premiums and $1.8 million in lost contracts, I got a $250,000 budget in two weeks. The safety goals didn't change — only the language did."</p>
 </div>
 
-<h3>CCH Recordables Master Certification</h3>
+<h3>CCHUB Recordables Master Certification</h3>
 
 <p>By completing all 10 modules of the OSHA Recordkeeping Master: Compliance-to-Profit course, you have demonstrated mastery of the following competency areas:</p>
 
@@ -6558,13 +6558,13 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
 <tr><td>Applied Decision-Making</td><td>7</td><td>Complex scenario analysis; Gray-area case resolution; Regulatory citation application</td></tr>
 <tr><td>Audit & Compliance</td><td>8</td><td>15-Point Audit Checklist; Error correction procedures; Inspection readiness</td></tr>
 <tr><td>Investigation & Prevention</td><td>9</td><td>Root Cause Analysis methodologies; ISO 45001 integration; Hierarchy of Controls; Data-driven prevention</td></tr>
-<tr><td>Strategic Leadership</td><td>10</td><td>CCH Cycle of Safety Excellence; Implementation roadmap; Financial messaging; Executive communication</td></tr>
+<tr><td>Strategic Leadership</td><td>10</td><td>CCHUB Cycle of Safety Excellence; Implementation roadmap; Financial messaging; Executive communication</td></tr>
 </table>
 
 <div class="highlight-box">
-<h4>Your CCH Recordables Master Certification</h4>
-<p>You are now certified as a <strong>CCH Recordables Master</strong>. This certification recognizes your comprehensive mastery of OSHA recordkeeping from regulatory compliance through strategic financial optimization. You possess the knowledge, skills, and tools to transform your organization's recordkeeping program from a compliance burden into a competitive advantage — protecting your workers, your metrics, your premiums, and your organization's future.</p>
-<p>The CCH Cycle of Safety Excellence is now yours to implement. The 30/60/90 Day Roadmap is your blueprint. The financial messaging framework is your tool for securing the resources you need. And the knowledge you have gained across 10 modules is the foundation on which your organization's safety transformation will be built.</p>
+<h4>Your CCHUB Recordables Master Certification</h4>
+<p>You are now certified as a <strong>CCHUB Recordables Master</strong>. This certification recognizes your comprehensive mastery of OSHA recordkeeping from regulatory compliance through strategic financial optimization. You possess the knowledge, skills, and tools to transform your organization's recordkeeping program from a compliance burden into a competitive advantage — protecting your workers, your metrics, your premiums, and your organization's future.</p>
+<p>The CCHUB Cycle of Safety Excellence is now yours to implement. The 30/60/90 Day Roadmap is your blueprint. The financial messaging framework is your tool for securing the resources you need. And the knowledge you have gained across 10 modules is the foundation on which your organization's safety transformation will be built.</p>
 <p><strong>Go build excellence.</strong></p>
 </div>
 </div>`,
@@ -6574,7 +6574,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
   const mod10Questions = [
     {
       moduleId: mod10.id,
-      question: "What are the nine stages of the CCH Cycle of Safety Excellence, in order?",
+      question: "What are the nine stages of the CCHUB Cycle of Safety Excellence, in order?",
       options: [
         "Planning → Implementation → Evaluation → Improvement → Certification → Audit → Prevention → Reporting → Compliance",
         "Accurate Recording → Clinic Management → Error Prevention → Skill Application → Proactive Auditing → Root Cause Prevention → Reduced Recordables → Lower TRIR/DART/EMR → Competitive Advantage/Reinvest",
@@ -6582,7 +6582,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
         "Policy → Organization → Planning → Implementation → Measurement → Review → Improvement → Reporting → Closure"
       ],
       correctIndex: 1,
-      explanation: "The CCH Cycle stages are: (1) Accurate Recording (Modules 1-4), (2) Clinic Management (Module 5), (3) Error Prevention (Module 6), (4) Skill Application (Module 7), (5) Proactive Auditing (Module 8), (6) Root Cause Prevention (Module 9), (7) Reduced Recordables (outcome), (8) Lower TRIR/DART/EMR (outcome), (9) Competitive Advantage → Reinvest (outcome → restart cycle). Each stage feeds the next, creating a self-reinforcing continuous improvement system.",
+      explanation: "The CCHUB Cycle stages are: (1) Accurate Recording (Modules 1-4), (2) Clinic Management (Module 5), (3) Error Prevention (Module 6), (4) Skill Application (Module 7), (5) Proactive Auditing (Module 8), (6) Root Cause Prevention (Module 9), (7) Reduced Recordables (outcome), (8) Lower TRIR/DART/EMR (outcome), (9) Competitive Advantage → Reinvest (outcome → restart cycle). Each stage feeds the next, creating a self-reinforcing continuous improvement system.",
       orderIndex: 0,
     },
     {
@@ -6595,7 +6595,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
         "Develop a 3-year strategic safety plan and submit to the board of directors"
       ],
       correctIndex: 2,
-      explanation: "Phase 1 (Foundation, Days 1-30) focuses on establishing the baseline and implementing core recordkeeping accuracy components: (1) Complete baseline audit with CCH 15-Point Checklist; (2) Calculate baseline TRIR, DART, and EMR; (3) Correct all identified errors with Memos to File; (4) Establish clinic partnership with signed communication protocol; (5) Implement Five-Point Checkpoint System; (6) Train all supervisors on reporting and restriction/transfer implications.",
+      explanation: "Phase 1 (Foundation, Days 1-30) focuses on establishing the baseline and implementing core recordkeeping accuracy components: (1) Complete baseline audit with CCHUB 15-Point Checklist; (2) Calculate baseline TRIR, DART, and EMR; (3) Correct all identified errors with Memos to File; (4) Establish clinic partnership with signed communication protocol; (5) Implement Five-Point Checkpoint System; (6) Train all supervisors on reporting and restriction/transfer implications.",
       orderIndex: 1,
     },
     {
@@ -6626,7 +6626,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     },
     {
       moduleId: mod10.id,
-      question: "What is the primary purpose of the quarterly leadership review meeting in the CCH System?",
+      question: "What is the primary purpose of the quarterly leadership review meeting in the CCHUB System?",
       options: [
         "To satisfy OSHA's quarterly reporting requirements",
         "To review individual employee injury records with executives",
@@ -6639,7 +6639,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     },
     {
       moduleId: mod10.id,
-      question: "In the case study of the three-year transformation, what was the total ROI of the CCH System implementation?",
+      question: "In the case study of the three-year transformation, what was the total ROI of the CCHUB System implementation?",
       options: [
         "150% — moderate returns over three years",
         "853% — the $95,000 total investment produced approximately $905,000 in combined premium savings and new contract revenue over three years",
@@ -6652,7 +6652,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     },
     {
       moduleId: mod10.id,
-      question: "What is the self-reinforcing nature of the CCH Cycle?",
+      question: "What is the self-reinforcing nature of the CCHUB Cycle?",
       options: [
         "Each stage operates independently and produces results regardless of whether other stages are implemented",
         "Each stage creates conditions that make the next stage more effective — accurate recording provides reliable data for analysis, which identifies targets for prevention, which reduces incidents, which improves metrics, which generates savings that fund continued investment in the cycle",
@@ -6660,7 +6660,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
         "The self-reinforcing nature refers to OSHA's requirement to audit records every year"
       ],
       correctIndex: 1,
-      explanation: "The CCH Cycle is self-reinforcing because each stage feeds the next: Accurate Recording → reliable data → meaningful trend analysis → targeted prevention → fewer injuries → lower TRIR/DART/EMR → lower premiums + more contracts → savings reinvested → higher-level cycle restart. Additionally, the EMR's three-year rolling window means improvements compound over time, and corrective actions from RCA permanently prevent recurrence of specific failure modes.",
+      explanation: "The CCHUB Cycle is self-reinforcing because each stage feeds the next: Accurate Recording → reliable data → meaningful trend analysis → targeted prevention → fewer injuries → lower TRIR/DART/EMR → lower premiums + more contracts → savings reinvested → higher-level cycle restart. Additionally, the EMR's three-year rolling window means improvements compound over time, and corrective actions from RCA permanently prevent recurrence of specific failure modes.",
       orderIndex: 6,
     },
     {
@@ -6691,7 +6691,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
     },
     {
       moduleId: mod10.id,
-      question: "Upon completing all 10 modules of this course, what competency areas has the CCH Recordables Master certification validated?",
+      question: "Upon completing all 10 modules of this course, what competency areas has the CCHUB Recordables Master certification validated?",
       options: [
         "Only OSHA regulatory compliance and 300 Log maintenance",
         "Only financial analysis and executive communication",
@@ -6699,7 +6699,7 @@ export async function seedOSHARecordkeepingCourse(storage: IStorage) {
         "Only incident investigation and root cause analysis"
       ],
       correctIndex: 2,
-      explanation: "The CCH Recordables Master certification validates seven competency areas spanning the complete spectrum from technical regulatory knowledge to strategic leadership: (1) Regulatory Knowledge — 29 CFR 1904 mastery; (2) Clinical Communication — clinic partnership and treatment classification; (3) Quality Assurance — Five-Point Checkpoint System; (4) Applied Decision-Making — complex scenario resolution; (5) Audit & Compliance — 15-Point Checklist and inspection readiness; (6) Investigation & Prevention — RCA, ISO 45001, Hierarchy of Controls; (7) Strategic Leadership — CCH Cycle, implementation, financial messaging.",
+      explanation: "The CCHUB Recordables Master certification validates seven competency areas spanning the complete spectrum from technical regulatory knowledge to strategic leadership: (1) Regulatory Knowledge — 29 CFR 1904 mastery; (2) Clinical Communication — clinic partnership and treatment classification; (3) Quality Assurance — Five-Point Checkpoint System; (4) Applied Decision-Making — complex scenario resolution; (5) Audit & Compliance — 15-Point Checklist and inspection readiness; (6) Investigation & Prevention — RCA, ISO 45001, Hierarchy of Controls; (7) Strategic Leadership — CCHUB Cycle, implementation, financial messaging.",
       orderIndex: 9,
     },
   ];

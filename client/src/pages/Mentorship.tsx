@@ -129,7 +129,7 @@ export default function Mentorship() {
             <div className="text-center max-w-4xl mx-auto space-y-6">
               <Badge variant="secondary" className="text-sm px-4 py-1" data-testid="badge-exclusive">
                 <Award className="w-4 h-4 mr-2" />
-                CCH Exclusive - First of Its Kind
+                CCHUB Exclusive - First of Its Kind
               </Badge>
               <img src={mentorshipLogo} alt="ACSI Mentorship" className="h-32 md:h-40 w-auto mx-auto" data-testid="img-mentorship-hero-logo" />
               <h1 className="text-4xl md:text-5xl font-display font-bold text-primary">
@@ -137,7 +137,7 @@ export default function Mentorship() {
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Ongoing guidance and competency development for internal system owners.
-                <span className="block mt-2 font-semibold text-accent">Only available through CCH.</span>
+                <span className="block mt-2 font-semibold text-accent">Only available through CCHUB.</span>
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
@@ -405,7 +405,7 @@ export default function Mentorship() {
         <section className="py-20 bg-primary text-primary-foreground">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-block bg-white/10 text-white text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6 rounded-lg">
-              CCH Exclusive Program
+              CCHUB Exclusive Program
             </div>
             <h2 className="text-3xl font-display font-bold mb-4">
               Be Among the First to Join
@@ -422,7 +422,7 @@ export default function Mentorship() {
               </a>
               <Link href="/">
                 <Button size="lg" variant="outline" data-testid="button-mentorship-cta-explore">
-                  Explore All CCH Services
+                  Explore All CCHUB Services
                 </Button>
               </Link>
             </div>

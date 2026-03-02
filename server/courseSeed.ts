@@ -3183,7 +3183,7 @@ export async function seedDOTCourse(storage: IStorage) {
 <h3>Next Steps After Course Completion</h3>
 <ul>
 <li><strong>Apply for your certificate:</strong> Complete the final exam with a passing score to receive your DOT Medical Certification course completion certificate</li>
-<li><strong>Schedule a consultation:</strong> CCH offers a <strong>free one-on-one consultation</strong> for course completers to review your specific compliance program and provide customized recommendations</li>
+<li><strong>Schedule a consultation:</strong> CCHUB offers a <strong>free one-on-one consultation</strong> for course completers to review your specific compliance program and provide customized recommendations</li>
 <li><strong>Implement your program:</strong> Use the templates, checklists, and frameworks from this course to build or improve your DOT medical compliance program</li>
 <li><strong>Stay current:</strong> FMCSA regulations evolve — subscribe to FMCSA email updates and check the FMCSA website periodically for regulatory changes</li>
 </ul>
@@ -3191,7 +3191,7 @@ export async function seedDOTCourse(storage: IStorage) {
 <div class="highlight-box">
 <h4>Thank You</h4>
 <p>Thank you for completing this comprehensive DOT Medical Certification course. The knowledge you've gained positions you to implement a best-in-class compliance program that protects your drivers, your company, and the public. DOT medical compliance is not just a regulatory requirement — it is a fundamental safety practice that saves lives. Your commitment to excellence in this area makes a real difference.</p>
-<p>For questions, support, or to schedule your free consultation, contact CCH at the information provided in your course enrollment materials.</p>
+<p>For questions, support, or to schedule your free consultation, contact CCHUB at the information provided in your course enrollment materials.</p>
 </div>
 </div>`,
     orderIndex: 1,

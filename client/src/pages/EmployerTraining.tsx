@@ -206,7 +206,7 @@ export default function EmployerTraining() {
             </button>
           </Link>
           <Link href="/">
-            <img src={logoUrl} alt="CCH Logo" className="w-24 h-24 rounded-xl cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
+            <img src={logoUrl} alt="CCHUB Logo" className="w-24 h-24 rounded-xl cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">Employer Training Portal</h1>

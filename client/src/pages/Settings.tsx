@@ -440,7 +440,7 @@ export default function Settings() {
           <Shield className="w-8 h-8 text-primary" />
           <div>
             <h2 className="text-2xl font-bold font-display text-primary">Account & Subscription</h2>
-            <p className="text-muted-foreground">Manage your CCH plan, company profile, and compliance tools</p>
+            <p className="text-muted-foreground">Manage your CCHUB plan, company profile, and compliance tools</p>
           </div>
         </div>
 

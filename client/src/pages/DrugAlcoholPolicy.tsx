@@ -94,14 +94,14 @@ export default function DrugAlcoholPolicy() {
 
             <div className="flex items-center justify-between border-b-2 border-gray-800 pb-6 mb-8">
               <div className="flex items-center gap-4">
-                <img src={logoUrl} alt="CCH Logo" className="w-16 h-16 rounded-lg" data-testid="policy-logo" />
+                <img src={logoUrl} alt="CCHUB Logo" className="w-16 h-16 rounded-lg" data-testid="policy-logo" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">CORE COMPLIANCE HUB</h1>
                   <p className="text-sm text-gray-500 tracking-wider">Professional Compliance Solutions</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">CCH Policy Template</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider">CCHUB Policy Template</p>
                 <p className="text-xs text-gray-400">Rev. 1.0 — {today}</p>
               </div>
             </div>
@@ -317,10 +317,10 @@ export default function DrugAlcoholPolicy() {
             <div className="mt-12 pt-6 border-t-2 border-gray-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src={logoUrl} alt="CCH Logo" className="w-10 h-10 rounded-lg opacity-60" />
+                  <img src={logoUrl} alt="CCHUB Logo" className="w-10 h-10 rounded-lg opacity-60" />
                   <div>
                     <p className="text-xs font-bold text-gray-700 tracking-wider">CORE COMPLIANCE HUB</p>
-                    <p className="text-[10px] text-gray-500">A CCH Professional Compliance Product</p>
+                    <p className="text-[10px] text-gray-500">A CCHUB Professional Compliance Product</p>
                   </div>
                 </div>
                 <div className="text-right">

@@ -112,7 +112,7 @@ export async function generatePolicyDocx(companyName: string) {
           new Paragraph({
             children: [
               new TextRun({
-                text: `CCH Policy Template  •  Rev. 1.0 — ${today}`,
+                text: `CCHUB Policy Template  •  Rev. 1.0 — ${today}`,
                 size: 16,
                 font: "Calibri",
                 color: "999999",
@@ -418,7 +418,7 @@ export async function generatePolicyDocx(companyName: string) {
           new Paragraph({
             children: [
               new TextRun({
-                text: "CORE COMPLIANCE HUB — A CCH Professional Compliance Product",
+                text: "CORE COMPLIANCE HUB — A CCHUB Professional Compliance Product",
                 size: 16,
                 font: "Calibri",
                 color: "999999",

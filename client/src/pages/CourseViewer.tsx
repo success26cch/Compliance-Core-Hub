@@ -355,7 +355,7 @@ export default function CourseViewer() {
                 </button>
               </Link>
               <Link href="/">
-                <img src={logoUrl} alt="CCH" className="w-6 h-6 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
+                <img src={logoUrl} alt="CCHUB" className="w-6 h-6 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
               </Link>
               <span className="text-sm font-medium text-gray-300 truncate">{courseData.title}</span>
             </div>
@@ -445,7 +445,7 @@ export default function CourseViewer() {
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-4" data-testid="header-brand">
-            <img src={logoUrl} alt="CCH" className="w-6 h-6 rounded" />
+            <img src={logoUrl} alt="CCHUB" className="w-6 h-6 rounded" />
             <span className="text-xs font-semibold text-gray-500 hidden sm:inline">Core Compliance Hub</span>
           </div>
         </div>
@@ -510,8 +510,8 @@ export default function CourseViewer() {
               </div>
 
               <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-800/50" data-testid="lesson-footer-brand">
-                <img src={logoUrl} alt="CCH" className="w-4 h-4 rounded opacity-60" />
-                <span className="text-[11px] text-white font-bold tracking-widest">CCH PROPRIETARY TRAINING MATERIAL</span>
+                <img src={logoUrl} alt="CCHUB" className="w-4 h-4 rounded opacity-60" />
+                <span className="text-[11px] text-white font-bold tracking-widest">CCHUB PROPRIETARY TRAINING MATERIAL</span>
               </div>
             </div>
           )}
@@ -647,7 +647,7 @@ export default function CourseViewer() {
                       <div className="relative z-10 px-8 py-10 md:px-16 md:py-14 text-center">
                         <div className="flex items-center justify-center gap-4 mb-6">
                           <div className="w-12 h-0.5 bg-gradient-to-r from-transparent to-yellow-600/60" />
-                          <img src={logoUrl} alt="CCH" className="w-20 h-20 rounded-lg shadow-lg shadow-yellow-900/20" />
+                          <img src={logoUrl} alt="CCHUB" className="w-20 h-20 rounded-lg shadow-lg shadow-yellow-900/20" />
                           <div className="w-12 h-0.5 bg-gradient-to-l from-transparent to-yellow-600/60" />
                         </div>
 
@@ -688,14 +688,14 @@ export default function CourseViewer() {
                           </div>
                           <div className="text-center flex flex-col items-center justify-end">
                             <div className="w-12 h-12 rounded-full border-2 border-yellow-600/40 flex items-center justify-center mb-1">
-                              <img src={logoUrl} alt="CCH Seal" className="w-8 h-8 rounded-full" />
+                              <img src={logoUrl} alt="CCHUB Seal" className="w-8 h-8 rounded-full" />
                             </div>
                             <p className="text-[9px] text-yellow-600/60 uppercase tracking-wider">Official Seal</p>
                           </div>
                           <div className="text-center">
                             <div className="w-32 h-px bg-gray-600 mx-auto mb-2" />
                             <p className="text-[10px] text-gray-500 uppercase tracking-wider">Authorized By</p>
-                            <p className="text-xs text-white mt-1 font-medium">CCH Training Division</p>
+                            <p className="text-xs text-white mt-1 font-medium">CCHUB Training Division</p>
                           </div>
                         </div>
 

@@ -82,7 +82,7 @@ const slides: DemoSlide[] = [
       "Human interpreters cost $45–$150/hour with scheduling delays",
       "Video remote interpreters charge $1.95–$3.49/minute",
       "Phone interpreters charge $1.50–$2.75/minute",
-      "CCH BMA pays for itself in days, not months",
+      "CCHUB BMA pays for itself in days, not months",
       "AI Medical Interpreter — real-time bidirectional clinical translation",
       "Staff Command Center with text-to-speech clinic instructions",
       "Injury Reporting, New Hire Intake, Drug Screen modes + interactive body map",
@@ -188,7 +188,7 @@ const slides: DemoSlide[] = [
   {
     id: "passport",
     title: "Digital Medical Passport",
-    subtitle: "CCH Handshake - QR-Based Clinic Check-In",
+    subtitle: "CCHUB Handshake - QR-Based Clinic Check-In",
     icon: QrCode,
     color: "bg-accent",
     points: [
@@ -235,7 +235,7 @@ const slides: DemoSlide[] = [
   {
     id: "mentorship",
     title: "ACSI Mentorship Program",
-    subtitle: "CCH Exclusive - The First ISO Mentorship Program",
+    subtitle: "CCHUB Exclusive - The First ISO Mentorship Program",
     icon: Star,
     color: "bg-primary",
     points: [
@@ -274,7 +274,7 @@ const slides: DemoSlide[] = [
       "Safety Starter: FREE - 3 Corey questions/month for small teams",
       "Unlimited Safety: $99/mo - Unlimited Corey + audit prep + PDF checklists",
       "ISO Professional: $149/mo - Unlimited ISO AI + audit checklists",
-      "Integrated Enterprise: $299/mo - CCH + ACSI combined, up to 50 employees",
+      "Integrated Enterprise: $299/mo - CCHUB + ACSI combined, up to 50 employees",
       "Spanish Bilingual Medical Assistant: $199/mo per location",
     ],
     visual: "pricing",
@@ -308,9 +308,9 @@ function DemoBotChat() {
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [remaining, setRemaining] = useState(3);
-  const [trialName, setTrialName] = useState(() => localStorage.getItem("cch_trial_name") || "");
-  const [trialEmail, setTrialEmail] = useState(() => localStorage.getItem("cch_trial_email") || "");
-  const [trialGated, setTrialGated] = useState(() => !localStorage.getItem("cch_trial_email"));
+  const [trialName, setTrialName] = useState(() => localStorage.getItem("cchub_trial_name") || "");
+  const [trialEmail, setTrialEmail] = useState(() => localStorage.getItem("cchub_trial_email") || "");
+  const [trialGated, setTrialGated] = useState(() => !localStorage.getItem("cchub_trial_email"));
   const scrollRef = useRef<HTMLDivElement>(null);
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((text) => setInput(text));
 
@@ -320,8 +320,8 @@ function DemoBotChat() {
 
   const handleTrialGate = useCallback(() => {
     if (!trialName.trim() || !trialEmail.trim() || !trialEmail.includes("@")) return;
-    localStorage.setItem("cch_trial_name", trialName.trim());
-    localStorage.setItem("cch_trial_email", trialEmail.trim());
+    localStorage.setItem("cchub_trial_name", trialName.trim());
+    localStorage.setItem("cchub_trial_email", trialEmail.trim());
     setTrialGated(false);
   }, [trialName, trialEmail]);
 
@@ -558,11 +558,11 @@ export default function DemoPage() {
   const searchString = useSearch();
 
   useEffect(() => {
-    document.title = "CCH Demo - Core Compliance Hub Interactive Walkthrough";
+    document.title = "CCHUB Demo - Core Compliance Hub Interactive Walkthrough";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", "See how Core Compliance Hub transforms workplace safety compliance. Interactive demo of AI-powered OSHA, DOT, ISO, and drug testing tools.");
     const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute("content", "CCH Demo - See AI-Powered Compliance in Action");
+    if (ogTitle) ogTitle.setAttribute("content", "CCHUB Demo - See AI-Powered Compliance in Action");
     const ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc) ogDesc.setAttribute("content", "Watch how Core Compliance Hub transforms workplace safety. AI-powered OSHA 300, DOT physicals, ISO management, and more.");
     return () => { document.title = "Core Compliance Hub - THE ONE STOP EMPLOYER SHOP"; };
@@ -599,7 +599,7 @@ export default function DemoPage() {
       <div className="sticky top-0 z-50 border-b backdrop-blur" style={{ background: BG_HEADER, borderColor: "rgba(0,0,0,0.08)" }}>
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between gap-4 h-14">
           <Link href="/">
-            <img src={cchLogo} alt="CCH" className="h-8 w-8 object-contain cursor-pointer" data-testid="demo-logo" />
+            <img src={cchLogo} alt="CCHUB" className="h-8 w-8 object-contain cursor-pointer" data-testid="demo-logo" />
           </Link>
           <div className="flex items-center gap-3 text-sm" style={{ color: TEXT_SECONDARY }}>
             <span data-testid="text-slide-counter">{currentSlide + 1} / {slides.length}</span>
@@ -737,9 +737,9 @@ export default function DemoPage() {
           {slide.visual === "hero" && (
             <div className="text-center space-y-6">
               <img src={logoUrl} alt="Core Compliance Hub" className="h-36 md:h-48 lg:h-56 w-auto mx-auto" data-testid="demo-hero-logo" />
-              <img src={teamImageUrl} alt="CCH Team" className="w-full max-w-3xl h-auto object-contain mx-auto rounded-lg shadow-md" />
+              <img src={teamImageUrl} alt="CCHUB Team" className="w-full max-w-3xl h-auto object-contain mx-auto rounded-lg shadow-md" />
               <div className="flex items-center justify-center gap-6 md:gap-10 py-2">
-                <img src={cchLogo} alt="CCH" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+                <img src={cchLogo} alt="CCHUB" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
                 <img src={acsiLogo} alt="ACSI" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
                 <img src={brandNSwagLogo} alt="BrandNSwag" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
                 <img src={mentorshipLogo} alt="Mentorship" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
@@ -876,7 +876,7 @@ export default function DemoPage() {
 
               <div className="pt-6">
                 <p className="text-xs" style={{ color: TEXT_SECONDARY, opacity: 0.6 }}>
-                  Core Compliance Hub &middot; www.corecompliancehub.com &middot; Powered by CCH AI
+                  Core Compliance Hub &middot; www.corecompliancehub.com &middot; Powered by CCHUB AI
                 </p>
               </div>
             </div>

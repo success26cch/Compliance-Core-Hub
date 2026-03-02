@@ -173,7 +173,7 @@ export default function Training() {
             </button>
           </Link>
           <Link href="/">
-            <img src={logoUrl} alt="CCH Logo" className="w-16 h-16 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
+            <img src={logoUrl} alt="CCHUB Logo" className="w-16 h-16 rounded cursor-pointer hover:opacity-80 transition" data-testid="logo-home-link" />
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">Training Courses</h1>
@@ -220,7 +220,7 @@ export default function Training() {
                 <h2 className="text-xl font-bold text-white mb-2">Professional Compliance Training</h2>
                 <p className="text-gray-300 text-sm">
                   Each course includes video-style modules, comprehensive text lessons, and quizzes at the end of each module.
-                  Score 70% or higher on all module quizzes to earn your CCH Certificate of Completion.
+                  Score 70% or higher on all module quizzes to earn your CCHUB Certificate of Completion.
                 </p>
                 <p className="text-yellow-400 text-sm mt-2 font-medium">
                   Every course purchase includes a FREE one-on-one Compliance Program Consultation.

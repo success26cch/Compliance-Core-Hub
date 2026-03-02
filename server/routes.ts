@@ -349,9 +349,9 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       const stripeClient = await stripe;
 
       const planConfig: Record<string, { name: string; amount: number; interval?: string; mode: string }> = {
-        corey_pro: { name: 'CCH Unlimited Safety - Corey AI', amount: 9900, interval: 'month', mode: 'subscription' },
-        employer_platform: { name: 'CCH Employer Compliance Platform', amount: 29900, interval: 'month', mode: 'subscription' },
-        setup_fee: { name: 'CCH Platform Setup & Onboarding', amount: 49900, mode: 'payment' },
+        corey_pro: { name: 'CCHUB Unlimited Safety - Corey AI', amount: 9900, interval: 'month', mode: 'subscription' },
+        employer_platform: { name: 'CCHUB Employer Compliance Platform', amount: 29900, interval: 'month', mode: 'subscription' },
+        setup_fee: { name: 'CCHUB Platform Setup & Onboarding', amount: 49900, mode: 'payment' },
       };
 
       const config = planConfig[plan];
@@ -1120,7 +1120,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     ];
     const csv = [headers.join(","), example.join(",")].join("\n");
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", 'attachment; filename="CCH-Employee-Import-Template.csv"');
+    res.setHeader("Content-Disposition", 'attachment; filename="CCHUB-Employee-Import-Template.csv"');
     res.send(csv);
   });
 
@@ -1988,7 +1988,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
   });
 
   // ==========================================
-  // DIGITAL MEDICAL PASSPORT (CCH Handshake)
+  // DIGITAL MEDICAL PASSPORT (CCHUB Handshake)
   // ==========================================
 
   // Generate a passport token for an employee (requires auth)
@@ -2234,7 +2234,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
           const now = new Date();
           const arrivalTimeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Chicago" });
 
-          const message = `CCH Alert: Employee ${employeeName} has checked in${clinicInfo} for their ${visitLabel} at ${arrivalTimeStr}. Authorization was provided digitally via CCH Medical Passport.`;
+          const message = `CCHUB Alert: Employee ${employeeName} has checked in${clinicInfo} for their ${visitLabel} at ${arrivalTimeStr}. Authorization was provided digitally via CCHUB Medical Passport.`;
 
           const result = await sendSMS(derPhone, message);
 
@@ -2313,7 +2313,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
           const employeeName = `${employee.firstName} ${employee.lastName}`;
           const returnTimeStr = returnTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Chicago" });
 
-          const message = `CCH Alert: Employee ${employeeName} is back from their clinic visit at ${returnTimeStr}. Total time away: ${durationStr}.`;
+          const message = `CCHUB Alert: Employee ${employeeName} is back from their clinic visit at ${returnTimeStr}. Total time away: ${durationStr}.`;
 
           const result = await sendSMS(derPhone, message);
 
@@ -2390,7 +2390,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
           const companyProfile = await storage.getCompanyProfile(userId);
           const companyName = companyProfile?.companyName || "your employer";
 
-          const smsBody = `${companyName} - Medical Passport: You have a ${visitLabel} appointment. Show this link at the clinic front desk: ${qrUrl} - Powered by CCH`;
+          const smsBody = `${companyName} - Medical Passport: You have a ${visitLabel} appointment. Show this link at the clinic front desk: ${qrUrl} - Powered by CCHUB`;
 
           const smsResult = await sendSMS(phoneToUse, smsBody);
 
@@ -2975,7 +2975,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       const user = await storage.getUserById(userId);
       const userName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "Student";
 
-      const certNumber = `CCH-${course.productId.toUpperCase().replace(/[^A-Z0-9]/g, "")}-${Date.now().toString(36).toUpperCase()}`;
+      const certNumber = `CCHUB-${course.productId.toUpperCase().replace(/[^A-Z0-9]/g, "")}-${Date.now().toString(36).toUpperCase()}`;
 
       const certificate = await storage.createCertificate({
         userId,
@@ -3013,7 +3013,7 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
             const derName = companyProfile?.derName || "DER";
             if (derPhone) {
               const completedAt = new Date().toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "short", timeStyle: "short" });
-              const derMsg = `CCH Training Alert: ${userName} completed "${course.title}" on ${completedAt}. Cert #${certNumber}. View records at corecompliancehub.com – Core Compliance Hub`;
+              const derMsg = `CCHUB Training Alert: ${userName} completed "${course.title}" on ${completedAt}. Cert #${certNumber}. View records at corecompliancehub.com – Core Compliance Hub`;
               sendSMS(derPhone, derMsg).catch(err => console.error("DER completion SMS error:", err));
             }
           }

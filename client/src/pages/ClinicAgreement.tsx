@@ -128,13 +128,13 @@ export default function ClinicAgreement() {
 
       <div className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 w-full">
         <div className="text-center space-y-4">
-          <img src={cchLogo} alt="CCH" className="h-20 w-auto mx-auto" data-testid="img-agreement-logo" />
+          <img src={cchLogo} alt="CCHUB" className="h-20 w-auto mx-auto" data-testid="img-agreement-logo" />
           <Badge variant="secondary" className="text-sm px-4 py-1">
             <Handshake className="w-4 h-4 mr-2" />
             Clinic Partnership
           </Badge>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-primary" data-testid="heading-agreement">
-            CCH Spanish Bilingual Assistant — Clinic Partnership Agreement
+            CCHUB Spanish Bilingual Assistant — Clinic Partnership Agreement
           </h1>
         </div>
 
@@ -148,8 +148,8 @@ export default function ClinicAgreement() {
                 <h2 className="text-xl font-bold text-primary m-0">1. THE PARTNERSHIP</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                This agreement is between <strong>Core Compliance Hub (CCH)</strong> and the Partner clinic identified below.
-                CCH agrees to provide the <strong>Spanish Bilingual Medical Assistant (BMA)</strong> software to streamline
+                This agreement is between <strong>Core Compliance Hub (CCHUB)</strong> and the Partner clinic identified below.
+                CCHUB agrees to provide the <strong>Spanish Bilingual Medical Assistant (BMA)</strong> software to streamline
                 clinical flow and improve accuracy for Spanish-speaking patients. This tool is designed exclusively for
                 Spanish-English bilingual communication and does not currently support other languages.
               </p>
@@ -169,7 +169,7 @@ export default function ClinicAgreement() {
                 {[
                   { title: "The Command Center", desc: "One-tap Spanish medical instructions for clinical staff." },
                   { title: "Live Voice Bridge", desc: "Real-time speech-to-speech Spanish-English translation for providers." },
-                  { title: "Digital Handshake", desc: "Instant processing of CCH Employer Authorizations via QR scan." },
+                  { title: "Digital Handshake", desc: "Instant processing of CCHUB Employer Authorizations via QR scan." },
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
@@ -214,7 +214,7 @@ export default function ClinicAgreement() {
                 <h2 className="text-xl font-bold text-primary m-0">4. THE "PROFIT" PROMISE (ROI)</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                CCH provides this tool to reduce clinical communication barriers with Spanish-speaking patients.
+                CCHUB provides this tool to reduce clinical communication barriers with Spanish-speaking patients.
                 The Partner agrees that the BMA is a <strong>supplemental tool</strong> and does not replace the
                 professional judgment of a licensed medical provider. The Spanish Bilingual Medical Assistant is
                 designed for Spanish-English communication only and should not be relied upon for other language pairs.
@@ -229,8 +229,8 @@ export default function ClinicAgreement() {
                 <h2 className="text-xl font-bold text-primary m-0">5. DATA & PRIVACY (HIPAA)</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                CCH is built with <strong>HIPAA-compliant standards</strong>. All patient data processed through
-                the BMA for CCH-affiliated employers is encrypted and logged for the employer's OSHA/DOT compliance records.
+                CCHUB is built with <strong>HIPAA-compliant standards</strong>. All patient data processed through
+                the BMA for CCHUB-affiliated employers is encrypted and logged for the employer's OSHA/DOT compliance records.
                 No patient data is shared with third parties.
               </p>
             </div>
@@ -300,7 +300,7 @@ export default function ClinicAgreement() {
             />
             <Label htmlFor="agree" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
               I confirm that I am authorized to enter into this agreement on behalf of the clinic named above.
-              I have read and agree to the terms of the CCH Spanish Bilingual Assistant Clinic Partnership Agreement,
+              I have read and agree to the terms of the CCHUB Spanish Bilingual Assistant Clinic Partnership Agreement,
               including the $199.00/month subscription fee billed per location.
             </Label>
           </div>

@@ -97,7 +97,7 @@ const TOUR_SLIDES: TourSlide[] = [
       { label: "Meeting Tools (4)", detail: "Safety Meeting Agenda, Weekly Safety Brief, Toolbox Talk, Near-Miss Report Form" },
       { label: "Assessments (7)", detail: "PPE Hazard Assessment, Emergency Action Plan, Fire Prevention Plan, Fall Protection Plan, Electrical Safety Program, New Hire Orientation Checklist, PSM Overview" },
     ],
-    highlight: "Every document includes the specific 29 CFR / 49 CFR / NFPA standard reference — download as PDF with the CCH letterhead",
+    highlight: "Every document includes the specific 29 CFR / 49 CFR / NFPA standard reference — download as PDF with the CCHUB letterhead",
   },
   {
     id: "employer-platform",
@@ -157,12 +157,12 @@ const TOUR_SLIDES: TourSlide[] = [
   },
   {
     id: "digital-passport",
-    title: "CCH Handshake — Digital Medical Passport",
+    title: "CCHUB Handshake — Digital Medical Passport",
     subtitle: "QR-Based Clinic Check-In System",
     icon: QrCode,
     iconColor: "text-cyan-400",
     iconBg: "bg-cyan-500/20",
-    description: "The CCH Handshake replaces paper authorization forms with a smart digital system. Employers generate QR codes for employees, clinics scan them to check patients in, and employers get real-time notifications via SMS. Track time away from work and maintain a complete visit history.",
+    description: "The CCHUB Handshake replaces paper authorization forms with a smart digital system. Employers generate QR codes for employees, clinics scan them to check patients in, and employers get real-time notifications via SMS. Track time away from work and maintain a complete visit history.",
     features: [
       { label: "QR Code Generation", detail: "Employers generate a unique QR passport for each employee visit — contains all authorization details" },
       { label: "Smart Authorization Forms", detail: "Digital consent forms replace paper — signed on-screen at the clinic with full audit trail" },
@@ -197,7 +197,7 @@ const TOUR_SLIDES: TourSlide[] = [
     icon: Award,
     iconColor: "text-amber-400",
     iconBg: "bg-amber-500/20",
-    description: "An employee recognition platform integrated within CCH. Managers award points to employees via QR codes for safety achievements, training completion, and exemplary compliance behavior. Employees redeem points for branded merchandise and rewards.",
+    description: "An employee recognition platform integrated within CCHUB. Managers award points to employees via QR codes for safety achievements, training completion, and exemplary compliance behavior. Employees redeem points for branded merchandise and rewards.",
     features: [
       { label: "QR Recognition", detail: "Managers scan or generate QR codes to instantly award recognition points to employees" },
       { label: "Points System", detail: "Employees accumulate points for safety milestones, training completion, and peer recognition" },
@@ -214,7 +214,7 @@ const TOUR_SLIDES: TourSlide[] = [
     icon: Target,
     iconColor: "text-orange-400",
     iconBg: "bg-orange-500/20",
-    description: "ACSI provides Lead ISO Auditor AI for ISO 9001, 14001, and 45001 management systems. Gap analysis, audit preparation, and implementation support — all integrated within the CCH ecosystem. For full gap analysis engagements, users are connected directly to ACSI at acsi-quality.com.",
+    description: "ACSI provides Lead ISO Auditor AI for ISO 9001, 14001, and 45001 management systems. Gap analysis, audit preparation, and implementation support — all integrated within the CCHUB ecosystem. For full gap analysis engagements, users are connected directly to ACSI at acsi-quality.com.",
     features: [
       { label: "ISO 9001 (Quality)", detail: "Quality Management System guidance, documentation templates, and audit readiness checks" },
       { label: "ISO 14001 (Environmental)", detail: "Environmental Management System support including aspects/impacts analysis and compliance obligations" },
@@ -235,7 +235,7 @@ const TOUR_SLIDES: TourSlide[] = [
     description: "Core Compliance Hub offers two straightforward plans. Corey AI at $99/month per user for individual compliance professionals, and the full Employer Platform at $299/month for companies that need the complete suite.",
     features: [
       { label: "Corey AI — $99/month per user", detail: "Unlimited conversations, 23 document templates, all Quick Actions, voice input/output, Team Meeting Mode, Audit Mode — per user, not per company" },
-      { label: "Employer Platform — $299/month", detail: "Everything in Corey AI plus: Dashboard, Employee Management, Incident Logging, Training LMS, CCH Handshake, DOT Notifications — up to 50 employees" },
+      { label: "Employer Platform — $299/month", detail: "Everything in Corey AI plus: Dashboard, Employee Management, Incident Logging, Training LMS, CCHUB Handshake, DOT Notifications — up to 50 employees" },
       { label: "Beyond 50 Employees", detail: "+$2/employee/month for companies over 50 employees — scales affordably" },
       { label: "BMA Clinic Tool", detail: "Separate subscription for occupational health clinics — includes Bilingual Medical Assistant and Digital Passport integration" },
     ],
@@ -259,7 +259,7 @@ export default function DemoTour() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/">
-              <img src={logoUrl} alt="CCH" className="h-8 cursor-pointer" data-testid="link-tour-home" />
+              <img src={logoUrl} alt="CCHUB" className="h-8 cursor-pointer" data-testid="link-tour-home" />
             </Link>
             <div className="hidden sm:block">
               <span className="text-sm font-semibold text-white/70">Platform Tour</span>
@@ -404,7 +404,7 @@ export default function DemoTour() {
               data-testid={`nav-slide-${s.id}`}
             >
               <s.icon className={`w-5 h-5 mx-auto mb-1 ${i === currentSlide ? s.iconColor : ""}`} />
-              <span className="text-[10px] leading-tight block">{s.title.replace("Core Compliance Hub", "CCH").replace("— Your AI Compliance Expert", "").replace("— Employee Recognition", "").replace("— Digital Medical Passport", "").split("—")[0].trim()}</span>
+              <span className="text-[10px] leading-tight block">{s.title.replace("Core Compliance Hub", "CCHUB").replace("— Your AI Compliance Expert", "").replace("— Employee Recognition", "").replace("— Digital Medical Passport", "").split("—")[0].trim()}</span>
             </button>
           ))}
         </div>

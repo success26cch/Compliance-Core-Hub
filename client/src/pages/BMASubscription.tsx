@@ -83,7 +83,7 @@ export default function BMASubscription() {
     { service: "Human Interpreter (in-person)", cost: "$45–$150/hour", note: "Scheduling delays, limited availability" },
     { service: "Video Remote Interpreter", cost: "$1.95–$3.49/min", note: "Per-minute charges add up fast" },
     { service: "Phone Interpreter", cost: "$1.50–$2.75/min", note: "No visual context for medical procedures" },
-    { service: "CCH Spanish Bilingual Assistant", cost: "$199/month", note: "Unlimited use, instant access, medical-specific" },
+    { service: "CCHUB Spanish Bilingual Assistant", cost: "$199/month", note: "Unlimited use, instant access, medical-specific" },
   ];
 
   return (
@@ -121,9 +121,9 @@ export default function BMASubscription() {
                 <Stethoscope className="w-4 h-4 mr-2" />
                 For Clinics & Medical Facilities
               </Badge>
-              <img src={cchLogo} alt="CCH" className="h-24 md:h-28 w-auto mx-auto" data-testid="img-bma-hero-logo" />
+              <img src={cchLogo} alt="CCHUB" className="h-24 md:h-28 w-auto mx-auto" data-testid="img-bma-hero-logo" />
               <h1 className="text-4xl md:text-5xl font-display font-bold text-primary">
-                CCH Spanish Bilingual Medical Assistant
+                CCHUB Spanish Bilingual Medical Assistant
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Eliminate Spanish language barriers in your clinic. Instant Spanish translation, clinical commands, and
@@ -179,7 +179,7 @@ export default function BMASubscription() {
                 How We Compare
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Traditional interpreter services cost a fortune. CCH gives you unlimited access at a flat rate.
+                Traditional interpreter services cost a fortune. CCHUB gives you unlimited access at a flat rate.
               </p>
             </div>
 
@@ -401,7 +401,7 @@ export default function BMASubscription() {
             </Card>
 
             <div className="text-center mt-8">
-              <p className="text-muted-foreground mb-3">Are you a clinic interested in partnering with CCH?</p>
+              <p className="text-muted-foreground mb-3">Are you a clinic interested in partnering with CCHUB?</p>
               <Link href="/clinic-agreement">
                 <Button variant="outline" data-testid="button-clinic-agreement-link">
                   <FileText className="w-4 h-4 mr-2" />

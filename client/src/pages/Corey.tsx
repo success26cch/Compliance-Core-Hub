@@ -203,7 +203,7 @@ function CoreyLanding() {
             )}
             <Link href="/">
               <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="link-cch-home">
-                CCH Platform
+                CCHUB Platform
               </Button>
             </Link>
             <a href="/api/login">

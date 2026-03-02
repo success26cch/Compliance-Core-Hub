@@ -3,11 +3,11 @@ import { getUncachableStripeClient } from './stripeClient';
 async function createProducts() {
   const stripe = await getUncachableStripeClient();
   
-  console.log('Creating CCH products and prices...');
+  console.log('Creating CCHUB products and prices...');
   
   const cchSafetyStarter = await stripe.products.create({
     name: 'Safety Starter',
-    description: 'CCH Occupational Health - 3 Questions/month for small teams',
+    description: 'CCHUB Occupational Health - 3 Questions/month for small teams',
     metadata: {
       category: 'cch',
       tier: 'free',
@@ -24,7 +24,7 @@ async function createProducts() {
   
   const cchUnlimitedSafety = await stripe.products.create({
     name: 'Unlimited Safety',
-    description: 'CCH Occupational Health - Unlimited Questions + Audit Prep Tools',
+    description: 'CCHUB Occupational Health - Unlimited Questions + Audit Prep Tools',
     metadata: {
       category: 'cch',
       tier: 'unlimited',
@@ -77,7 +77,7 @@ async function createProducts() {
   
   const integratedEnterprise = await stripe.products.create({
     name: 'Integrated Enterprise',
-    description: 'CCH + ACSI Combined - Full Health, Safety & ISO suite',
+    description: 'CCHUB + ACSI Combined - Full Health, Safety & ISO suite',
     metadata: {
       category: 'enterprise',
       tier: 'enterprise',

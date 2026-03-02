@@ -8,7 +8,7 @@ import logoUrl from "@assets/1_1767636977932.png";
 
 const VIDEO_SCRIPT = `
 ==============================================================
-CCH — CORE COMPLIANCE HUB VIDEO SCRIPT
+CCHUB — CORE COMPLIANCE HUB VIDEO SCRIPT
 ==============================================================
 For the video producer: Read at a natural, confident, conversational pace.
 Each [SCENE] marker is a suggested visual cut or slide change.
@@ -73,11 +73,11 @@ Get automated DOT physical expiration alerts — at 60 days, 30 days, 15 days, a
 
 And with a built-in Learning Management System, assign training courses to your team, track completions, and issue professional PDF certificates with QR verification codes.
 
-[SCENE 7 — CCH HANDSHAKE & CLINIC TOOLS]
+[SCENE 7 — CCHUB HANDSHAKE & CLINIC TOOLS]
 
 We also built tools specifically for the moment an employee needs to see a doctor.
 
-The CCH Handshake is a QR-based Digital Medical Passport. Generate a QR code for each clinic visit, the employee scans in at the clinic, and you get an instant text notification the moment they arrive. No paper forms. No phone calls. Just clean, digital authorization — start to finish.
+The CCHUB Handshake is a QR-based Digital Medical Passport. Generate a QR code for each clinic visit, the employee scans in at the clinic, and you get an instant text notification the moment they arrive. No paper forms. No phone calls. Just clean, digital authorization — start to finish.
 
 And for occupational health clinics, our Bilingual Medical Assistant provides real-time AI interpretation between English-speaking providers and Spanish-speaking patients. Both directions. Hands-free. Built for the clinic floor.
 
@@ -110,14 +110,14 @@ END OF VIDEO SCRIPT
 
 const BRIEF = `
 ==========================================================
-CORE COMPLIANCE HUB (CCH) — FULL PLATFORM BRIEFING
+CORE COMPLIANCE HUB (CCHUB) — FULL PLATFORM BRIEFING
 ==========================================================
 Prepared for review — All capabilities, features, architecture, and pricing.
 ==========================================================
 
 1. WHAT IS CORE COMPLIANCE HUB?
 -------------------------------
-Core Compliance Hub (CCH) is a comprehensive AI-powered occupational health, safety, and compliance platform designed as a one-stop shop for employers. It replaces scattered spreadsheets, paper forms, and generic AI chatbots with a unified system purpose-built for OSHA, DOT, ISO, and workplace compliance.
+Core Compliance Hub (CCHUB) is a comprehensive AI-powered occupational health, safety, and compliance platform designed as a one-stop shop for employers. It replaces scattered spreadsheets, paper forms, and generic AI chatbots with a unified system purpose-built for OSHA, DOT, ISO, and workplace compliance.
 
 Target Market: Safety Directors, EHS Managers, HR Professionals, Plant Managers, Business Owners, Quality Managers, Internal Auditors, Compliance Officers across all industries — construction, manufacturing, transportation, healthcare, general industry.
 
@@ -127,7 +127,7 @@ Target Market: Safety Directors, EHS Managers, HR Professionals, Plant Managers,
   - Unlimited conversations, all Quick Actions, 23 document templates, voice input/output, Team Meeting Mode, Audit Mode
   
 - Employer Compliance Platform: $299/month
-  - Everything in Corey AI PLUS: Dashboard, Employee Management, Incident Logging, Training LMS, CCH Handshake, DOT Notifications
+  - Everything in Corey AI PLUS: Dashboard, Employee Management, Incident Logging, Training LMS, CCHUB Handshake, DOT Notifications
   - Up to 50 employees included; +$2/employee/month beyond 50
   
 - Bilingual Medical Assistant (BMA): Separate subscription for occupational health clinics
@@ -216,7 +216,7 @@ Voice Features:
 - Speech-to-text populates the chat input
 
 PDF Export:
-- Download any Corey response as a branded PDF with CCH letterhead
+- Download any Corey response as a branded PDF with CCHUB letterhead
 - Unicode character sanitization for clean rendering (handles μg/m³, degree symbols, smart quotes, etc.)
 
 Team Meeting Mode:
@@ -310,7 +310,7 @@ Multi-Step Bilingual Forms:
 Visit Type Context:
 - DOT Physical, Drug & Alcohol Testing, Injury Reporting, Work Restrictions, Respiratory/PFT, Blood Draw, General Medical Visit
 
-7. CCH HANDSHAKE — DIGITAL MEDICAL PASSPORT
+7. CCHUB HANDSHAKE — DIGITAL MEDICAL PASSPORT
 --------------------------------------------
 QR-based clinic check-in system replacing paper authorization forms:
 
@@ -344,7 +344,7 @@ Points-based employee recognition platform:
 ACSI — Assessment & Consulting Services Inc. (full legal name)
 Website: www.acsi-quality.com
 
-Provides Lead ISO Auditor AI within the CCH platform for:
+Provides Lead ISO Auditor AI within the CCHUB platform for:
 - ISO 9001 (Quality Management)
 - ISO 14001 (Environmental Management)
 - ISO 45001 (Occupational Health & Safety)
@@ -404,7 +404,7 @@ Dark Mode: Full support via next-themes with class-based toggling
 /try-corey            — Trial Corey with 3-question limit
 /qr-code              — QR code generator for Try Corey
 /decision-tree        — "Is This Recordable?" public tool
-/about                — About CCH
+/about                — About CCHUB
 /contact              — Contact form
 /corey                — Full Corey AI experience (requires login)
 /bot                  — Corey AI (alternate entry)
@@ -444,7 +444,7 @@ Dark Mode: Full support via next-themes with class-based toggling
 2. Anti-hallucination protocol — zero tolerance for non-regulatory sources
 3. One-stop shop — dashboard, employees, incidents, training, documents, AI expert, clinic integration all in one platform
 4. Bilingual Medical Assistant — only AI-powered real-time medical interpreter built for occupational health clinics
-5. CCH Handshake — replaces paper authorization forms with QR-based digital system
+5. CCHUB Handshake — replaces paper authorization forms with QR-based digital system
 6. 23 document templates — every document references exact CFR standards
 7. Proactive compliance — Corey doesn't just answer questions, he leads meetings, audits logs, conducts mock inspections, and reminds about deadlines
 8. ACSI integration — ISO management and gap analysis through a dedicated consulting division
@@ -464,8 +464,8 @@ export default function PlatformBrief() {
   const textRef = useRef<HTMLPreElement>(null);
 
   const activeContent = activeTab === "brief" ? BRIEF : VIDEO_SCRIPT;
-  const activeFilename = activeTab === "brief" ? "CCH-Technical-Brief.txt" : "CCH-Video-Script.txt";
-  const activeLabel = activeTab === "brief" ? "CCH-Technical-Brief.txt" : "CCH-Video-Script.txt";
+  const activeFilename = activeTab === "brief" ? "CCHUB-Technical-Brief.txt" : "CCHUB-Video-Script.txt";
+  const activeLabel = activeTab === "brief" ? "CCHUB-Technical-Brief.txt" : "CCHUB-Video-Script.txt";
 
   const handleCopy = async () => {
     try {
@@ -502,7 +502,7 @@ export default function PlatformBrief() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
-              <img src={logoUrl} alt="CCH" className="h-8" />
+              <img src={logoUrl} alt="CCHUB" className="h-8" />
               <span className="text-sm font-semibold text-white/70">Platform Briefing</span>
             </div>
           </Link>

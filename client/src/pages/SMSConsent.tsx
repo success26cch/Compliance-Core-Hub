@@ -21,7 +21,7 @@ export default function SMSConsent() {
               <ArrowLeft className="w-5 h-5" />
             </button>
           </Link>
-          <img src={logoUrl} alt="CCH Logo" className="w-10 h-10 rounded" data-testid="img-logo" />
+          <img src={logoUrl} alt="CCHUB Logo" className="w-10 h-10 rounded" data-testid="img-logo" />
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-page-title">Core Compliance Hub</h1>
             <p className="text-sm text-gray-400">SMS Messaging Consent & Terms</p>
@@ -36,10 +36,10 @@ export default function SMSConsent() {
             <div>
               <h2 className="text-xl font-semibold text-white mb-2" data-testid="text-consent-heading">SMS Messaging Consent</h2>
               <p className="text-gray-300 text-sm leading-relaxed">
-                Core Compliance Hub ("CCH") and its divisions, including ACSI ISO Manager and BrandNSwag, 
+                Core Compliance Hub ("CCHUB") and its divisions, including ACSI ISO Manager and BrandNSwag, 
                 offer SMS text messaging services to support occupational health compliance, employee safety, 
                 and clinic coordination. By providing your phone number and opting in to receive text messages 
-                from CCH, you agree to the terms outlined below.
+                from CCHUB, you agree to the terms outlined below.
               </p>
             </div>
           </div>
@@ -51,7 +51,7 @@ export default function SMSConsent() {
             <h2 className="text-lg font-semibold text-white" data-testid="text-types-heading">Types of Messages You May Receive</h2>
           </div>
           <p className="text-gray-300 text-sm mb-4">
-            When you opt in, you consent to receive the following types of SMS messages from CCH:
+            When you opt in, you consent to receive the following types of SMS messages from CCHUB:
           </p>
           <ul className="space-y-3 text-sm text-gray-300">
             <li className="flex items-start gap-2">
@@ -83,7 +83,7 @@ export default function SMSConsent() {
             <h2 className="text-lg font-semibold text-white" data-testid="text-how-heading">How You Opt In</h2>
           </div>
           <p className="text-gray-300 text-sm leading-relaxed mb-3">
-            You provide consent to receive SMS messages from CCH through one or more of the following actions:
+            You provide consent to receive SMS messages from CCHUB through one or more of the following actions:
           </p>
           <ul className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start gap-2">
@@ -100,7 +100,7 @@ export default function SMSConsent() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-400 font-bold">4.</span>
-              <span>Using any feature within the CCH platform that includes a <strong className="text-white">"Send SMS"</strong> or <strong className="text-white">"Text"</strong> action, which constitutes opt-in consent for that specific message.</span>
+              <span>Using any feature within the CCHUB platform that includes a <strong className="text-white">"Send SMS"</strong> or <strong className="text-white">"Text"</strong> action, which constitutes opt-in consent for that specific message.</span>
             </li>
           </ul>
           <p className="text-gray-400 text-xs mt-4">
@@ -120,11 +120,11 @@ export default function SMSConsent() {
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-              <span><strong className="text-white">Message & Data Rates:</strong> Message and data rates may apply depending on your mobile carrier and plan. CCH is not responsible for any charges incurred from your carrier.</span>
+              <span><strong className="text-white">Message & Data Rates:</strong> Message and data rates may apply depending on your mobile carrier and plan. CCHUB is not responsible for any charges incurred from your carrier.</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-              <span><strong className="text-white">No Marketing Messages:</strong> CCH does not send marketing, advertising, or promotional SMS messages. All messages are transactional and related to occupational health compliance activities.</span>
+              <span><strong className="text-white">No Marketing Messages:</strong> CCHUB does not send marketing, advertising, or promotional SMS messages. All messages are transactional and related to occupational health compliance activities.</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
@@ -144,11 +144,11 @@ export default function SMSConsent() {
           <ul className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start gap-2">
               <span className="text-red-400 font-bold">•</span>
-              <span><strong className="text-white">Reply STOP</strong> to any message received from CCH. You will receive a confirmation that you have been unsubscribed.</span>
+              <span><strong className="text-white">Reply STOP</strong> to any message received from CCHUB. You will receive a confirmation that you have been unsubscribed.</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-red-400 font-bold">•</span>
-              <span><strong className="text-white">Remove your phone number</strong> from the Company Profile settings or Employee Management page within the CCH platform.</span>
+              <span><strong className="text-white">Remove your phone number</strong> from the Company Profile settings or Employee Management page within the CCHUB platform.</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-red-400 font-bold">•</span>
@@ -156,7 +156,7 @@ export default function SMSConsent() {
             </li>
           </ul>
           <p className="text-gray-400 text-xs mt-4">
-            After opting out, you will no longer receive SMS messages from CCH. You may opt back in at any time by re-entering your phone number and initiating an SMS action within the platform.
+            After opting out, you will no longer receive SMS messages from CCHUB. You may opt back in at any time by re-entering your phone number and initiating an SMS action within the platform.
           </p>
         </Card>
 
@@ -190,16 +190,16 @@ export default function SMSConsent() {
             <h2 className="text-lg font-semibold text-white" data-testid="text-privacy-heading">Privacy & Data Use</h2>
           </div>
           <p className="text-gray-300 text-sm leading-relaxed">
-            CCH values your privacy. Phone numbers provided for SMS messaging are used solely for the purposes described above. 
+            CCHUB values your privacy. Phone numbers provided for SMS messaging are used solely for the purposes described above. 
             We do not sell, share, or distribute phone numbers to third parties for marketing purposes. 
-            Phone numbers are stored securely within the CCH platform and are only used to deliver 
+            Phone numbers are stored securely within the CCHUB platform and are only used to deliver 
             transactional messages related to occupational health compliance, clinic coordination, and employee safety.
             For more information, refer to our Privacy Policy.
           </p>
         </Card>
 
         <div className="text-center text-gray-500 text-xs mt-8 space-y-1">
-          <p>Core Compliance Hub (CCH) — Occupational Health & Safety Compliance Platform</p>
+          <p>Core Compliance Hub (CCHUB) — Occupational Health & Safety Compliance Platform</p>
           <p>Last Updated: February 2026</p>
           <p className="mt-4">
             <Link href="/">

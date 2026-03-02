@@ -390,9 +390,9 @@ export default function Landing() {
   const [botLoading, setBotLoading] = useState(false);
   const [botLimitReached, setBotLimitReached] = useState(false);
   const [botRemaining, setBotRemaining] = useState(3);
-  const [botTrialName, setBotTrialName] = useState(() => localStorage.getItem("cch_trial_name") || "");
-  const [botTrialEmail, setBotTrialEmail] = useState(() => localStorage.getItem("cch_trial_email") || "");
-  const [botTrialGated, setBotTrialGated] = useState(() => !localStorage.getItem("cch_trial_email"));
+  const [botTrialName, setBotTrialName] = useState(() => localStorage.getItem("cchub_trial_name") || "");
+  const [botTrialEmail, setBotTrialEmail] = useState(() => localStorage.getItem("cchub_trial_email") || "");
+  const [botTrialGated, setBotTrialGated] = useState(() => !localStorage.getItem("cchub_trial_email"));
   const botScrollRef = useRef<HTMLDivElement>(null);
   const { isListening: botListening, speechSupported: botSpeechSupported, toggleListening: botToggleListening, stopListening: botStopListening } = useSpeechRecognition((text) => setBotInput(text));
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
@@ -639,8 +639,8 @@ export default function Landing() {
             
             <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
               <div className="flex flex-col items-center gap-2 group" data-testid="logo-cch">
-                <img src={cchLogo} alt="CCH" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
-                <span className="text-xs md:text-sm font-semibold text-primary">CCH</span>
+                <img src={cchLogo} alt="CCHUB" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
+                <span className="text-xs md:text-sm font-semibold text-primary">CCHUB</span>
               </div>
               <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 group cursor-pointer" data-testid="logo-acsi-link">
                 <img src={acsiLogo} alt="ACSI" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:opacity-80 transition-opacity" />
@@ -742,14 +742,14 @@ export default function Landing() {
                               value={botTrialEmail}
                               onChange={(e) => setBotTrialEmail(e.target.value)}
                               placeholder="Work email"
-                              onKeyDown={(e) => { if (e.key === "Enter" && botTrialName.trim() && botTrialEmail.includes("@")) { localStorage.setItem("cch_trial_name", botTrialName.trim()); localStorage.setItem("cch_trial_email", botTrialEmail.trim()); setBotTrialGated(false); } }}
+                              onKeyDown={(e) => { if (e.key === "Enter" && botTrialName.trim() && botTrialEmail.includes("@")) { localStorage.setItem("cchub_trial_name", botTrialName.trim()); localStorage.setItem("cchub_trial_email", botTrialEmail.trim()); setBotTrialGated(false); } }}
                               data-testid="input-landing-trial-email"
                             />
                             <Button
                               className="w-full"
                               onClick={() => {
-                                localStorage.setItem("cch_trial_name", botTrialName.trim());
-                                localStorage.setItem("cch_trial_email", botTrialEmail.trim());
+                                localStorage.setItem("cchub_trial_name", botTrialName.trim());
+                                localStorage.setItem("cchub_trial_email", botTrialEmail.trim());
                                 setBotTrialGated(false);
                               }}
                               disabled={!botTrialName.trim() || !botTrialEmail.includes("@")}
@@ -993,7 +993,7 @@ export default function Landing() {
                       </form>
                     </Form>
                     <p className="text-xs text-center text-muted-foreground">
-                      Join other safety professionals trusting Core Compliance Hub - CCH.
+                      Join other safety professionals trusting Core Compliance Hub - CCHUB.
                     </p>
                   </div>
                 </Card>
@@ -1227,7 +1227,7 @@ export default function Landing() {
                   If you answered <span className="font-bold text-[#F57C00]">"no"</span> — or even <span className="font-bold text-[#F57C00]">"maybe not"</span> — to any of these questions, you're not alone. That's exactly why ACSI exists.
                 </p>
                 <p className="text-muted-foreground">
-                  With 25+ years of hands-on experience in ISO 9001, ISO 14001, ISO 45001, and IATF 16949, ACSI Services International helps companies close compliance gaps, build audit-ready systems, and develop internal teams that own the process — not just survive it. <span className="font-semibold text-foreground">This is what CCH is all about: bridging the gap between where you are and where you need to be.</span>
+                  With 25+ years of hands-on experience in ISO 9001, ISO 14001, ISO 45001, and IATF 16949, ACSI Services International helps companies close compliance gaps, build audit-ready systems, and develop internal teams that own the process — not just survive it. <span className="font-semibold text-foreground">This is what CCHUB is all about: bridging the gap between where you are and where you need to be.</span>
                 </p>
                 <a
                   href="https://acsi-quality.com/"
@@ -1298,7 +1298,7 @@ export default function Landing() {
                 "Employee tracking & medical surveillance (11 types)",
                 "OSHA 300 & 301 logging & incident management",
                 "DOT notifications at 60/30/15/7-day windows",
-                "CCH Handshake — QR-based Medical Passport",
+                "CCHUB Handshake — QR-based Medical Passport",
                 "Training LMS with PDF certificates",
                 "Corrective Action Plans (CAPA)",
                 "ISO 9001/14001/45001 AI guidance",
@@ -1401,7 +1401,7 @@ export default function Landing() {
             </Card>
 
             <Card className="p-6 flex flex-col" data-testid="card-landing-mentorship-pricing">
-              <Badge className="self-start mb-3">CCH Exclusive</Badge>
+              <Badge className="self-start mb-3">CCHUB Exclusive</Badge>
               <h3 className="text-lg font-bold text-primary mb-1">ACSI Mentorship</h3>
               <div className="flex items-baseline gap-1 mb-3">
                 <span className="text-xl font-bold text-primary">From $2,500</span>
@@ -1463,9 +1463,9 @@ export default function Landing() {
               <GraduationCap className="w-5 h-5" />
               Professional Training
             </div>
-            <h2 className="text-3xl font-display font-bold text-primary">CCH Compliance Training Courses</h2>
+            <h2 className="text-3xl font-display font-bold text-primary">CCHUB Compliance Training Courses</h2>
             <p className="text-lg text-muted-foreground">
-              Part of CCH's ongoing commitment to helping companies understand, comply, and stay compliant with federal and state regulations. Self-paced courses with certificates of completion.
+              Part of CCHUB's ongoing commitment to helping companies understand, comply, and stay compliant with federal and state regulations. Self-paced courses with certificates of completion.
             </p>
           </div>
 
@@ -1562,7 +1562,7 @@ export default function Landing() {
                 "Module 7: Real Case Scenarios — Interactive Learning",
                 "Module 8: Conducting an OSHA Log Audit",
                 "Module 9: Advanced Incident Investigation & Root Cause Analysis",
-                "Module 10: Executive Capstone — Implementing the CCH System"
+                "Module 10: Executive Capstone — Implementing the CCHUB System"
               ]}
             />
             <div
@@ -1723,7 +1723,7 @@ export default function Landing() {
 
           <div className="mt-12 text-center">
             <div className="inline-block bg-black text-accent text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6">
-              CCH: The One Stop Employer Shop
+              CCHUB: The One Stop Employer Shop
             </div>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
               Compliance. Training. Recognition. Everything your workforce needs, all in one platform.
@@ -1756,7 +1756,7 @@ export default function Landing() {
                 ))}
               </div>
               <p className="text-muted-foreground mb-6 italic">
-                "CCH saved us from a $75,000 OSHA fine. We had been logging an injury incorrectly for months. The AI caught it immediately and showed us exactly how to fix it."
+                "CCHUB saved us from a $75,000 OSHA fine. We had been logging an injury incorrectly for months. The AI caught it immediately and showed us exactly how to fix it."
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
@@ -1775,7 +1775,7 @@ export default function Landing() {
                 ))}
               </div>
               <p className="text-muted-foreground mb-6 italic">
-                "As an HR director managing DOT compliance for 50+ drivers, CCH has become indispensable. The drug testing guidance alone has saved us countless hours of confusion."
+                "As an HR director managing DOT compliance for 50+ drivers, CCHUB has become indispensable. The drug testing guidance alone has saved us countless hours of confusion."
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
@@ -1816,7 +1816,7 @@ export default function Landing() {
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl font-display font-bold text-primary">Frequently Asked Questions</h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need to know about CCH.
+              Everything you need to know about CCHUB.
             </p>
           </div>
 
@@ -1826,7 +1826,7 @@ export default function Landing() {
                 Is the AI guidance legally binding?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                CCH provides educational guidance based on OSHA 29 CFR 1904, DOT 49 CFR Part 40, and ISO standards. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, please consult with a qualified employment attorney.
+                CCHUB provides educational guidance based on OSHA 29 CFR 1904, DOT 49 CFR Part 40, and ISO standards. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, please consult with a qualified employment attorney.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2" className="bg-muted/30 rounded-lg border border-border/50 px-6">
@@ -1847,10 +1847,10 @@ export default function Landing() {
             </AccordionItem>
             <AccordionItem value="item-4" className="bg-muted/30 rounded-lg border border-border/50 px-6">
               <AccordionTrigger className="text-left font-semibold text-primary" data-testid="faq-trigger">
-                What's the difference between CCH and ACSI?
+                What's the difference between CCHUB and ACSI?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                CCH (Core Compliance Hub) focuses on occupational health compliance including OSHA recordkeeping, DOT physicals, and drug testing. ACSI (ISO Manager) specializes in ISO management system standards (9001, 14001, 45001). The Enterprise Bundle combines both for comprehensive compliance coverage.
+                CCHUB (Core Compliance Hub) focuses on occupational health compliance including OSHA recordkeeping, DOT physicals, and drug testing. ACSI (ISO Manager) specializes in ISO management system standards (9001, 14001, 45001). The Enterprise Bundle combines both for comprehensive compliance coverage.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-5" className="bg-muted/30 rounded-lg border border-border/50 px-6">

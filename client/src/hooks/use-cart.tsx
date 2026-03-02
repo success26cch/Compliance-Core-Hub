@@ -25,7 +25,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = "cch_cart";
+const CART_STORAGE_KEY = "cchub_cart";
 
 function loadCart(): CartItem[] {
   try {

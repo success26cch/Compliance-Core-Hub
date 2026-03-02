@@ -15,7 +15,7 @@ export const PRODUCTS: Record<string, ProductDefinition> = {
     unitAmount: 9900,
     currency: "usd",
     interval: "month",
-    category: "CCH Corey",
+    category: "CCHUB Corey",
     stripeProductName: "Unlimited Safety",
   },
   "iso-essentials": {

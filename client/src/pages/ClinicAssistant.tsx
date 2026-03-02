@@ -331,7 +331,7 @@ export default function ClinicAssistant() {
           <AlertCircle className="w-16 h-16 text-red-400 mx-auto" />
           <h2 className="text-xl font-bold text-white">Invalid Passport</h2>
           <p className="text-gray-400">{error}</p>
-          <p className="text-sm text-gray-500">Please ask the employee to generate a new QR code from their CCH app.</p>
+          <p className="text-sm text-gray-500">Please ask the employee to generate a new QR code from their CCHUB app.</p>
         </Card>
       </div>
     );
@@ -375,7 +375,7 @@ export default function ClinicAssistant() {
         <div className="bg-gray-800/80 border-b border-gray-700 p-3">
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <img src={cchLogo} alt="CCH" className="w-5 h-5 object-contain" />
+              <img src={cchLogo} alt="CCHUB" className="w-5 h-5 object-contain" />
               <span className="text-sm font-bold text-white">
                 {employee.firstName} {employee.lastName}
               </span>
@@ -413,8 +413,8 @@ export default function ClinicAssistant() {
       <div className="max-w-lg mx-auto space-y-4">
         <div className="text-center py-4">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src={cchLogo} alt="CCH" className="w-8 h-8 object-contain" />
-            <h1 className="text-2xl font-bold text-white" data-testid="text-clinic-title">CCH Medical Passport</h1>
+            <img src={cchLogo} alt="CCHUB" className="w-8 h-8 object-contain" />
+            <h1 className="text-2xl font-bold text-white" data-testid="text-clinic-title">CCHUB Medical Passport</h1>
           </div>
           <p className="text-sm text-gray-400">Verified Employee Check-In</p>
         </div>
@@ -589,7 +589,7 @@ export default function ClinicAssistant() {
                         `\nClick the link below to view and print the signed authorization form:\n` +
                         `${formUrl}\n\n` +
                         `On the page, click "View & Print Authorization Form" to see the complete, signed form.\n\n` +
-                        `This is a verified CCH Medical Passport.\n` +
+                        `This is a verified CCHUB Medical Passport.\n` +
                         `— Powered by Core Compliance Hub`
                       );
                       window.open(`mailto:${clinicEmail}?subject=${subject}&body=${body}`, "_self");
@@ -816,7 +816,7 @@ export default function ClinicAssistant() {
           <div className="text-center space-y-3">
             <Languages className="w-8 h-8 text-accent mx-auto" />
             <p className="text-sm font-semibold text-foreground">
-              Tired of Spanish language barriers? Get the CCH Spanish Bilingual Assistant for all your patients.
+              Tired of Spanish language barriers? Get the CCHUB Spanish Bilingual Assistant for all your patients.
             </p>
             <p className="text-xs text-muted-foreground">
               Unlimited Spanish translations, clinical commands, and bilingual summaries — $149/month per location.

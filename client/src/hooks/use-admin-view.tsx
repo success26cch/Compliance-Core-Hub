@@ -18,12 +18,12 @@ const AdminViewContext = createContext<AdminViewContextType>({
 
 export function AdminViewProvider({ children }: { children: ReactNode }) {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem("cch-admin-view-mode");
+    const saved = localStorage.getItem("cchub-admin-view-mode");
     return (saved === "test-company" ? "test-company" : "admin") as ViewMode;
   });
 
   useEffect(() => {
-    localStorage.setItem("cch-admin-view-mode", viewMode);
+    localStorage.setItem("cchub-admin-view-mode", viewMode);
   }, [viewMode]);
 
   return (
