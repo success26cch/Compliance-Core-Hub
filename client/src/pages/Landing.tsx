@@ -573,6 +573,7 @@ export default function Landing() {
           <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide flex-1">
             <Link href="/about" className="px-3 py-2 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0 animate-pulse" data-testid="nav-about">About</Link>
             <Link href="/meet-corey" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-corey">Meet Corey</Link>
+            <Link href="/iso-manager" className="px-3 py-2 text-sm font-bold text-indigo-400 hover:text-white hover:bg-indigo-500/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
             <a href="#features" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-features">Features</a>
             <a href="#pricing" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-pricing">Pricing</a>
             <Link href="/resources" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-resources">Free Resources</Link>
@@ -651,11 +652,39 @@ export default function Landing() {
                 <span className="text-xs md:text-sm font-semibold text-primary group-hover:underline">BrandNSwag</span>
               </a>
             </div>
-            
+
+            {/* Two-Expert Intro Cards */}
+            <div className="max-w-3xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
+              <div className="bg-black/40 border border-accent/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-corey">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <ShieldCheck className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-black text-lg text-accent">Corey</span>
+                    <span className="text-xs text-white/40 font-medium">OSHA · DOT · Safety · Compliance</span>
+                  </div>
+                  <p className="text-sm text-white/70 leading-snug">Your 24/7 Senior Occupational Health &amp; Safety Expert — built from the DNA of 29 CFR.</p>
+                </div>
+              </div>
+              <div className="bg-black/40 border border-indigo-500/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-isa">
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <Award className="w-5 h-5 text-indigo-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-black text-lg text-indigo-400">Isa</span>
+                    <span className="text-xs text-white/40 font-medium">ISO 9001 · 14001 · 45001 · 13485 · 27001 · AS9100 · IATF 16949</span>
+                  </div>
+                  <p className="text-sm text-white/70 leading-snug">Your Lead ISO Auditor AI — gap analysis, audit readiness, and management systems guidance.</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 text-accent font-semibold text-sm border border-accent/30">
                 <Activity className="w-4 h-4 animate-pulse" />
-                THE ONE STOP EMPLOYER SHOP
+                SAFETY. QUALITY. COMPLIANCE. ONE PLATFORM.
               </div>
             </div>
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
@@ -1024,6 +1053,38 @@ export default function Landing() {
               </a>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Meet Isa — ACSI ISO Manager Transition */}
+      <section data-testid="section-meet-isa" className="bg-[hsl(222,47%,11%)] border-t border-b border-white/10 py-10">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex flex-col items-center gap-2 shrink-0">
+              <img src={acsiLogo} alt="ACSI" className="w-20 h-20 object-contain" />
+              <span className="text-xs text-white/40 font-medium">ACSI Division</span>
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold mb-3">
+                <Sparkles className="w-3 h-3" />
+                ALSO ON THE PLATFORM
+              </div>
+              <h3 className="text-2xl font-black text-white mb-1">
+                Meet <span className="text-indigo-400">Isa</span>
+              </h3>
+              <p className="text-xs text-white/40 font-medium mb-2">
+                ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
+              </p>
+              <p className="text-sm text-white/70 leading-relaxed mb-4">
+                Isa is ACSI's Lead ISO Auditor AI — your expert for gap analysis, audit readiness, and management systems guidance across all major ISO standards.
+              </p>
+              <Link href="/iso-manager">
+                <Button className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold" data-testid="button-talk-to-isa">
+                  Talk to Isa <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
