@@ -1105,6 +1105,100 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     }
   });
 
+  // Download CSV employee import template
+  app.get("/api/employees/template", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const headers = [
+      "firstName","lastName","email","phoneNumber","department","position",
+      "hireDate","dotPhysicalDate","dotPhysicalExpiry","dotPhysicalStatus",
+      "lastDrugTest","drugTestResult","randomPoolIncluded"
+    ];
+    const example = [
+      "John","Smith","jsmith@company.com","5551234567","Operations","CDL Driver",
+      "2023-01-15","2024-03-01","2026-03-01","current",
+      "2024-09-01","negative","true"
+    ];
+    const csv = [headers.join(","), example.join(",")].join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", 'attachment; filename="CCH-Employee-Import-Template.csv"');
+    res.send(csv);
+  });
+
+  // Import employees from CSV
+  app.post("/api/employees/import", async (req, res) => {
+    if (!(await requirePlatformAccess(req, res))) return;
+    const userId = (req.user as any).claims.sub;
+
+    const memUpload = multer({ storage: multer.memoryStorage() });
+    memUpload.single("file")(req as any, res as any, async (err) => {
+      if (err) return res.status(400).json({ message: "File upload error" });
+      const file = (req as any).file;
+      if (!file) return res.status(400).json({ message: "No file provided" });
+
+      const text = file.buffer.toString("utf-8");
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) return res.status(400).json({ message: "CSV must have a header row and at least one data row" });
+
+      const parseRow = (row: string): string[] => {
+        const result: string[] = [];
+        let cur = "";
+        let inQ = false;
+        for (const ch of row) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === "," && !inQ) { result.push(cur.trim()); cur = ""; }
+          else { cur += ch; }
+        }
+        result.push(cur.trim());
+        return result;
+      };
+
+      const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, ""));
+      const idx = (name: string) => headers.indexOf(name);
+
+      const parseDate = (v: string) => {
+        if (!v || v === "" || v.toLowerCase() === "n/a") return null;
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      };
+
+      let imported = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseRow(lines[i]);
+        const get = (name: string) => cols[idx(name)]?.trim() || "";
+        const firstName = get("firstname");
+        const lastName = get("lastname");
+        if (!firstName || !lastName) { skipped++; continue; }
+
+        try {
+          await storage.createEmployee({
+            userId,
+            firstName,
+            lastName,
+            email: get("email") || null,
+            phoneNumber: get("phonenumber") || null,
+            department: get("department") || null,
+            position: get("position") || null,
+            hireDate: parseDate(get("hiredate")),
+            dotPhysicalDate: parseDate(get("dotphysicaldate")),
+            dotPhysicalExpiry: parseDate(get("dotphysicalexpiry")),
+            dotPhysicalStatus: get("dotphysicalstatus") || null,
+            lastDrugTest: parseDate(get("lastdrugtest")),
+            drugTestResult: get("drugtestresult") || null,
+            randomPoolIncluded: get("randompoolincluded")?.toLowerCase() === "true",
+          } as any);
+          imported++;
+        } catch (rowErr: any) {
+          errors.push(`Row ${i + 1} (${firstName} ${lastName}): ${rowErr.message}`);
+        }
+      }
+
+      res.json({ imported, skipped, errors: errors.slice(0, 10), total: lines.length - 1 });
+    });
+  });
+
   // Get incidents
   app.get("/api/incidents", async (req, res) => {
     if (!(await requirePlatformAccess(req, res))) return;
@@ -1271,28 +1365,35 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       ? await storage.getPendingActionItems(userId)
       : await storage.getActionItems(userId);
     
-    // Also add DOT expiration alerts as action items
+    // Also add DOT expiration alerts as action items (60/30/15/7 day windows)
     if (pending) {
       try {
         const { dotNotificationService } = await import('./dotNotificationService');
         const expiringEmployees = await dotNotificationService.checkExpiringDotPhysicals(userId);
-        
-        // Add urgent DOT expirations (15 days or less) to action queue
-        const dotActions = expiringEmployees
-          .filter(emp => emp.daysUntilExpiry <= 15)
-          .map((emp, index) => ({
-            id: -1000 - index, // Negative IDs to distinguish from regular action items
-            title: `DOT Physical Expiring: ${emp.employeeName}`,
-            description: `DOT medical card expires in ${emp.daysUntilExpiry} day${emp.daysUntilExpiry === 1 ? '' : 's'}. Contact driver immediately to avoid OOS violation.`,
-            priority: emp.daysUntilExpiry <= 7 ? 'urgent' : 'high',
-            status: 'pending',
-            dueDate: null,
-            createdAt: new Date().toISOString(),
-            userId,
-            type: 'dot_expiration',
-            employeeId: emp.employeeId,
-          }));
-        
+
+        const getPriority = (days: number) => {
+          if (days <= 7) return 'urgent';
+          if (days <= 15) return 'high';
+          if (days <= 30) return 'medium';
+          return 'low';
+        };
+
+        const dotActions = expiringEmployees.map((emp, index) => ({
+          id: -1000 - index,
+          title: `DOT Physical Expiring — ${emp.employeeName}`,
+          description: `DOT medical card expires in ${emp.daysUntilExpiry} day${emp.daysUntilExpiry === 1 ? '' : 's'}.${emp.daysUntilExpiry <= 15 ? ' Contact driver immediately to avoid OOS violation.' : ' Schedule renewal soon.'}`,
+          priority: getPriority(emp.daysUntilExpiry),
+          status: 'pending',
+          dueDate: null,
+          createdAt: new Date().toISOString(),
+          userId,
+          type: 'dot_expiration',
+          employeeId: emp.employeeId,
+          daysUntilExpiry: emp.daysUntilExpiry,
+          employeeName: emp.employeeName,
+          employeePhone: emp.employeePhone,
+        }));
+
         res.json([...dotActions, ...items]);
       } catch (error) {
         console.error('Error fetching DOT expirations for action queue:', error);
@@ -1300,6 +1401,39 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
     } else {
       res.json(items);
+    }
+  });
+
+  // Send DOT renewal SMS directly from Action Queue
+  app.post("/api/action-items/send-dot-sms/:employeeId", async (req, res) => {
+    if (!(await requirePlatformAccess(req, res))) return;
+    const userId = (req.user as any).claims.sub;
+    const employeeId = parseInt(req.params.employeeId);
+    try {
+      const { dotNotificationService } = await import('./dotNotificationService');
+      const { sendSMS, isTwilioConfigured } = await import('./twilioService');
+
+      const expiringEmployees = await dotNotificationService.checkExpiringDotPhysicals(userId);
+      const emp = expiringEmployees.find(e => e.employeeId === employeeId);
+
+      if (!emp) return res.status(404).json({ message: "Employee not found in expiring list" });
+      if (!emp.employeePhone) return res.status(400).json({ message: "No phone number on file for this employee" });
+
+      const twilioReady = await isTwilioConfigured();
+      if (!twilioReady) return res.status(503).json({ message: "SMS not configured" });
+
+      const message = dotNotificationService.generateMessage(emp);
+      const result = await sendSMS(emp.employeePhone, message);
+
+      if (result.success) {
+        await dotNotificationService.logNotification(emp.employeeId, userId, emp.notificationType, 'sms', message, emp.employeePhone, undefined, 'sent');
+        res.json({ success: true, message: `Text sent to ${emp.employeeName}` });
+      } else {
+        res.status(500).json({ message: result.error || "SMS failed" });
+      }
+    } catch (err: any) {
+      console.error("Action queue SMS error:", err);
+      res.status(500).json({ message: "Failed to send SMS" });
     }
   });
 

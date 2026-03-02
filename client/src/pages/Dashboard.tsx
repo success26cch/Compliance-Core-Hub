@@ -69,6 +69,9 @@ type ActionItem = {
   status: string;
   type?: string;
   employeeId?: number;
+  daysUntilExpiry?: number;
+  employeeName?: string;
+  employeePhone?: string | null;
 };
 
 type IncidentChartData = {
