@@ -685,7 +685,7 @@ function CoreyApp() {
               documentTemplates={DOCUMENT_TEMPLATES}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-white/40 p-6 text-center overflow-y-auto">
+            <div className="flex-1 flex flex-col items-center text-white/40 p-6 text-center overflow-y-auto pt-8">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center mb-6">
                 <Bot className="w-10 h-10 text-accent/60" />
               </div>
@@ -728,28 +728,39 @@ function CoreyApp() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 flex-wrap justify-center">
-                <Button onClick={handleNewChat} className="bg-accent hover:bg-accent/90" data-testid="button-start-first-chat">
-                  <Plus className="w-4 h-4 mr-2" /> Start a Conversation
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="bg-white/10 border border-white/20 text-white font-semibold" data-testid="button-generate-document">
-                      <FileText className="w-4 h-4 mr-2" /> Generate a Document
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-72 max-h-80 overflow-y-auto">
-                    {["Policies & Programs", "Permits & Forms", "Meeting Tools", "Assessments"].map((cat, catIdx) => {
-                      const items = DOCUMENT_TEMPLATES.filter(t => t.category === cat);
-                      if (items.length === 0) return null;
-                      return (
-                        <DropdownMenuGroup key={cat}>
-                          {catIdx > 0 && <DropdownMenuSeparator />}
-                          <DropdownMenuLabel className="text-xs text-white/50">{cat}</DropdownMenuLabel>
+              <Button onClick={handleNewChat} className="bg-accent hover:bg-accent/90 mb-8" data-testid="button-start-first-chat">
+                <Plus className="w-4 h-4 mr-2" /> Start a Conversation
+              </Button>
+
+              {/* Documents Panel */}
+              <div className="w-full max-w-2xl" data-testid="documents-panel">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-lg bg-accent/20 flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-accent" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-white/80">Generate a Document</h4>
+                  <span className="text-xs text-white/30">— click any document to generate instantly</span>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+                  {["Policies & Programs", "Permits & Forms", "Meeting Tools", "Assessments"].map((cat, catIdx) => {
+                    const items = DOCUMENT_TEMPLATES.filter(t => t.category === cat);
+                    if (items.length === 0) return null;
+                    const catColors: Record<string, string> = {
+                      "Policies & Programs": "text-blue-400",
+                      "Permits & Forms": "text-amber-400",
+                      "Meeting Tools": "text-green-400",
+                      "Assessments": "text-purple-400",
+                    };
+                    return (
+                      <div key={cat} className={catIdx > 0 ? "border-t border-white/10" : ""}>
+                        <div className="px-4 py-2 bg-white/5">
+                          <span className={`text-xs font-semibold uppercase tracking-wider ${catColors[cat] || "text-white/50"}`}>{cat}</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2">
                           {items.map((tmpl) => {
                             const globalIdx = DOCUMENT_TEMPLATES.indexOf(tmpl);
                             return (
-                              <DropdownMenuItem
+                              <button
                                 key={globalIdx}
                                 onClick={() => {
                                   createConversation(tmpl.label, {
@@ -761,18 +772,19 @@ function CoreyApp() {
                                     },
                                   });
                                 }}
-                                data-testid={`menu-doc-template-${globalIdx}`}
+                                className="flex items-center gap-2 px-4 py-2.5 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-0 group"
+                                data-testid={`doc-panel-${globalIdx}`}
                               >
-                                <FileText className="w-3.5 h-3.5 mr-2 text-accent" />
-                                {tmpl.label}
-                              </DropdownMenuItem>
+                                <FileText className="w-3.5 h-3.5 text-white/30 group-hover:text-accent shrink-0 transition-colors" />
+                                <span className="text-sm text-white/70 group-hover:text-white transition-colors">{tmpl.label}</span>
+                              </button>
                             );
                           })}
-                        </DropdownMenuGroup>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

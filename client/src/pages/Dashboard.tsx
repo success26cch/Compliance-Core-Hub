@@ -27,7 +27,12 @@ import {
   RotateCcw,
   Volume2,
   FileText,
-  QrCode
+  QrCode,
+  Search,
+  X,
+  Bot,
+  LayoutDashboard,
+  ChevronRight
 } from "lucide-react";
 import { Link } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
@@ -318,6 +323,120 @@ function RetainerSupportDialog() {
   );
 }
 
+const SEARCH_INDEX = [
+  { label: "Compliance Dashboard", description: "Your main compliance overview and metrics", href: "/dashboard", icon: LayoutDashboard, category: "Pages" },
+  { label: "Ask Corey — AI Compliance Expert", description: "Get instant OSHA, DOT, and safety answers from Corey AI", href: "/corey", icon: Bot, category: "Pages" },
+  { label: "Employee Management", description: "Add employees, track DOT physicals, drug tests, medical surveillance", href: "/employees", icon: Users, category: "Pages" },
+  { label: "Incident Log", description: "Record workplace incidents, OSHA 300 log, CAPA tracking", href: "/incidents", icon: FileWarning, category: "Pages" },
+  { label: "Employer Training Portal", description: "Assign compliance courses, track employee progress", href: "/employer-training", icon: GraduationCap, category: "Pages" },
+  { label: "My Courses", description: "Access your purchased training courses and certificates", href: "/training?tab=my-courses", icon: BookOpen, category: "Pages" },
+  { label: "Clinic Communication Letter", description: "Generate a letter for your occupational health clinic", href: "/clinic-letter", icon: FileText, category: "Tools" },
+  { label: "Digital Medical Passport (CCH Handshake)", description: "QR-based clinic authorization forms, instant employer notifications", href: "/employee-passport", icon: QrCode, category: "Tools" },
+  { label: "OSHA 300 Decision Tree", description: "Determine if an injury is OSHA recordable in minutes", href: "/decision-tree", icon: ClipboardList, category: "Tools" },
+  { label: "Account Settings", description: "Manage your subscription, billing, and account info", href: "/settings", icon: Activity, category: "Pages" },
+  { label: "Team Management", description: "Manage seats and team access for Corey AI", href: "/team", icon: Users, category: "Pages" },
+  { label: "Platform Tour", description: "Interactive walkthrough of all CCH features", href: "/demo-tour", icon: Shield, category: "Pages" },
+  { label: "Drug & Alcohol Policy", description: "Generate per 49 CFR Part 40 / FMCSA 382", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "OSHA Recordkeeping SOP", description: "Generate per 29 CFR 1904", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Respiratory Protection Program", description: "Generate per 29 CFR 1910.134", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Hearing Conservation Program", description: "Generate per 29 CFR 1910.95", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Emergency Action Plan", description: "Generate per 29 CFR 1910.38", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Bloodborne Pathogen Exposure Control Plan", description: "Generate per 29 CFR 1910.1030", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Fit for Duty (FFD) Form", description: "Employee fitness evaluation form for clinic visits", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Incident Investigation Form", description: "Root cause analysis and corrective action template", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Confined Space Entry Permit", description: "Generate per 29 CFR 1910.146", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Hot Work Permit", description: "Generate per OSHA 29 CFR 1910.252 / NFPA 51B", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Return-to-Duty Checklist", description: "DOT RTD steps per 49 CFR Part 40 Subpart O", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Job Hazard Analysis (JHA)", description: "Step-by-step hazard assessment template", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "PPE Hazard Assessment", description: "Generate per 29 CFR 1910.132", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Safety Meeting Agenda", description: "Reusable professional meeting template", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Weekly Safety Topic Brief", description: "5-10 minute toolbox talk template", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "New Employee Safety Orientation Checklist", description: "Comprehensive onboarding safety checklist", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Contractor Safety Pre-Qualification Form", description: "Vet contractors before they come on site", href: "/corey", icon: FileText, category: "Documents" },
+  { label: "Lead a Safety Meeting", description: "Corey leads a full safety meeting for your team", href: "/corey", icon: Bot, category: "Corey AI Actions" },
+  { label: "Audit My OSHA 300 Log", description: "Corey reviews your 300 log for errors and risks", href: "/corey", icon: Bot, category: "Corey AI Actions" },
+  { label: "Mock OSHA Inspection", description: "Corey walks through a mock inspection with you", href: "/corey", icon: Bot, category: "Corey AI Actions" },
+  { label: "Weekly Safety Topic", description: "Corey generates a ready-to-use 5-minute safety talk", href: "/corey", icon: Bot, category: "Corey AI Actions" },
+  { label: "Compliance Calendar Check", description: "Corey identifies upcoming deadlines for your company", href: "/corey", icon: Bot, category: "Corey AI Actions" },
+];
+
+function DashboardSearch() {
+  const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+
+  const results = query.trim().length > 1
+    ? SEARCH_INDEX.filter(item =>
+        item.label.toLowerCase().includes(query.toLowerCase()) ||
+        item.description.toLowerCase().includes(query.toLowerCase()) ||
+        item.category.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 8)
+    : [];
+
+  const categoryColors: Record<string, string> = {
+    "Pages": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    "Tools": "bg-green-500/10 text-green-600 dark:text-green-400",
+    "Documents": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    "Corey AI Actions": "bg-purple-500/10 text-purple-400",
+  };
+
+  return (
+    <div className="relative w-full" data-testid="dashboard-search-container">
+      <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all ${
+        focused ? "border-primary/50 bg-background shadow-md" : "border-border bg-muted/40"
+      }`}>
+        <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+        <input
+          type="text"
+          placeholder="Search features, tools, documents, Corey actions..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
+          data-testid="input-dashboard-search"
+        />
+        {query && (
+          <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground" data-testid="button-clear-search">
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {focused && results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-background border border-border rounded-xl shadow-xl overflow-hidden" data-testid="search-results">
+          {results.map((item, idx) => (
+            <Link key={idx} href={item.href}>
+              <div
+                className="flex items-center gap-3 px-4 py-3 hover:bg-muted/60 cursor-pointer border-b border-border/50 last:border-0 transition-colors"
+                data-testid={`search-result-${idx}`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <item.icon className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground truncate">{item.label}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${categoryColors[item.category] || "bg-muted text-muted-foreground"}`}>
+                      {item.category}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </div>
+            </Link>
+          ))}
+          {query.trim().length > 1 && results.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-muted-foreground" data-testid="search-no-results">
+              No results for "{query}" — try asking Corey directly.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
@@ -417,6 +536,9 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+
+          {/* Search Bar */}
+          <DashboardSearch />
 
           {/* Metric Cards Row */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
