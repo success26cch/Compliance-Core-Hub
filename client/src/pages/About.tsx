@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Bot, Globe, BookOpen, Phone, CheckCircle2, Sparkles, TrendingUp, Heart, Lightbulb, Shield, GraduationCap, FileText, Users, Stethoscope, ClipboardList, AlertTriangle, Target, Zap, Building2 } from "lucide-react";
+import { ArrowLeft, Bot, Globe, BookOpen, Phone, CheckCircle2, Sparkles, TrendingUp, Heart, Lightbulb, Shield, GraduationCap, FileText, Users, Stethoscope, ClipboardList, AlertTriangle, Target, Zap, Building2, Award, Smartphone, Settings2 } from "lucide-react";
 import logoUrl from "@assets/1_1767636977932.png";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import cchLogo from "@assets/1_1770683748423.png";
@@ -217,47 +217,62 @@ export default function About() {
               {
                 icon: Bot,
                 title: "Corey — AI Compliance Expert",
-                description: "Your 24/7 compliance guardian. Ask anything about OSHA recordkeeping, DOT physicals, drug testing, respiratory protection, and more. Regulation-backed answers, instantly.",
+                description: "Your 24/7 compliance guardian. Ask anything about OSHA recordkeeping, DOT physicals, drug testing, respiratory protection, and more. Corey cites exact CFR sections — never blogs, never guesses.",
               },
               {
                 icon: ClipboardList,
                 title: "OSHA 300 Decision Tool",
-                description: "The interactive 'Log It or Not' tool that walks you through OSHA's recordability criteria step by step. Learn the logic, not just the answer.",
+                description: "The interactive 'Log It or Not' tool that walks you through OSHA's recordability criteria step by step per 29 CFR 1904. Learn the logic, not just the answer.",
               },
               {
                 icon: Users,
                 title: "Employee Management",
-                description: "Track every employee's DOT physical dates, respiratory exams, drug test results, and random pool inclusion. Get alerts before anything expires.",
+                description: "Track every employee's DOT physical dates, drug test results, 11 medical surveillance types, and random pool status. Automated alerts fire at 60, 30, 15, and 7 days before anything expires.",
               },
               {
                 icon: GraduationCap,
-                title: "Professional Training",
-                description: "Video-style courses with quizzes and certificates. DOT Medical, OSHA Surveillance, Drug & Alcohol, ISO Management, and Recordkeeping Mastery.",
+                title: "Professional Training LMS",
+                description: "Video courses with chapter modules, interactive quizzes, real-time progress tracking, and professional PDF certificates with QR verification codes — for your whole team.",
               },
               {
                 icon: Stethoscope,
-                title: "Digital Medical Passport",
-                description: "QR-based clinic check-in with digital authorization forms. No phone calls, no faxes — just a scan and the clinic has everything they need.",
+                title: "CCH Handshake — Digital Medical Passport",
+                description: "QR-based clinic check-in that replaces paper authorization forms. Employee scans in, clinic sees full authorization details, and you get an instant text the moment they arrive.",
               },
               {
                 icon: FileText,
-                title: "Compliance Documents",
-                description: "Pre-built policy templates for Drug & Alcohol, Respiratory Protection, HazCom, LOTO, and more. Download and customize for your company.",
+                title: "23 Compliance Document Templates",
+                description: "Policies, permits, forms, and assessments — every one referencing the exact CFR standard it's built from. Drug & Alcohol Programs, Confined Space Permits, Emergency Action Plans, JHAs, and more.",
               },
               {
                 icon: TrendingUp,
                 title: "Compliance Dashboard",
-                description: "Real-time metrics for audit readiness, medical surveillance status, incident trends, and action queues. See your compliance posture at a glance.",
+                description: "Real-time TRIR and DART rates, incident heatmaps, action queues, and audit readiness scores. See your compliance posture at a glance — and know exactly where your gaps are.",
               },
               {
                 icon: Globe,
                 title: "Bilingual Medical Assistant",
-                description: "Spanish-English translation tool for occupational clinics. Injury reporting, new hire intake, and drug screen instructions — bridging the language gap.",
+                description: "Real-time Spanish-English AI interpretation for occupational health clinics. Hands-free, bidirectional — provider speaks English, patient hears Spanish, and vice versa. Built for the clinic floor.",
               },
               {
                 icon: Building2,
                 title: "Incident Log & CAPA",
-                description: "Full OSHA 300 log management with corrective action plans. Root cause analysis, preventive actions, and verification tracking — all in one place.",
+                description: "Full OSHA 300 and 301 log management with root cause analysis and corrective action plans. Task tracking, accountability assignments, and follow-up verification — all in one place.",
+              },
+              {
+                icon: Settings2,
+                title: "ACSI ISO Manager",
+                description: "A dedicated Lead ISO Auditor AI for ISO 9001, 14001, and 45001. Gap analysis guidance, audit preparation, and direct connection to ACSI's certified auditors when you need boots on the ground.",
+              },
+              {
+                icon: Award,
+                title: "BrandNSwag — Employee Recognition",
+                description: "Points-based recognition platform built around safety performance. QR-code recognition awards instant points for safety achievements, training completions, and compliance behavior — tied to a branded rewards catalog.",
+              },
+              {
+                icon: Smartphone,
+                title: "Corey as a Phone App",
+                description: "Corey is a Progressive Web App — install it on iPhone or Android straight from the browser. No app store, no download. One tap from your home screen and your compliance expert is with you in the field.",
               },
             ].map((item) => (
               <Card key={item.title} className="overflow-visible" data-testid={`card-platform-${item.title.toLowerCase().replace(/\s+/g, '-').slice(0, 20)}`}>
@@ -270,6 +285,29 @@ export default function About() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-10 bg-[hsl(222,47%,11%)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center flex-shrink-0">
+                <Smartphone className="w-7 h-7 text-accent" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-lg">Corey Lives on Your Phone</p>
+                <p className="text-white/60 text-sm max-w-lg">
+                  On iPhone, tap <strong className="text-white/80">Share → Add to Home Screen.</strong> On Android, tap <strong className="text-white/80">Install.</strong> Corey appears as a native app — no App Store, no Google Play. Compliance answers, one tap away, on any job site.
+                </p>
+              </div>
+            </div>
+            <Link href="/corey">
+              <Button className="bg-accent text-black font-semibold whitespace-nowrap flex-shrink-0" data-testid="button-pwa-try-corey">
+                <Bot className="w-4 h-4 mr-2" /> Try Corey Free
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
