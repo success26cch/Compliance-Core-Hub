@@ -907,6 +907,7 @@ function CoreyChatInterface({
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
   const { toast } = useToast();
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [emailTo, setEmailTo] = useState("");
@@ -917,8 +918,15 @@ function CoreyChatInterface({
     setInput(transcript);
   });
 
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUp.current = distanceFromBottom > 80;
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !userScrolledUp.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
@@ -927,6 +935,7 @@ function CoreyChatInterface({
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.prompt) {
+        userScrolledUp.current = false;
         sendMessage(detail.prompt);
         if (onMessageSent) setTimeout(() => onMessageSent(), 500);
       }
@@ -952,6 +961,7 @@ function CoreyChatInterface({
     if (isListening) {
       stopListening();
     }
+    userScrolledUp.current = false;
     sendMessage(input);
     setInput("");
     if (onMessageSent) {
@@ -1280,6 +1290,7 @@ function CoreyChatInterface({
                           <DropdownMenuItem
                             key={globalIdx}
                             onClick={() => {
+                              userScrolledUp.current = false;
                               sendMessage(tmpl.prompt);
                               if (onMessageSent) setTimeout(() => onMessageSent(), 500);
                             }}
@@ -1320,7 +1331,7 @@ function CoreyChatInterface({
         </DialogContent>
       </Dialog>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="space-y-6 max-w-3xl mx-auto">
           {messages.length === 0 && (
             <div className="text-center py-16">
