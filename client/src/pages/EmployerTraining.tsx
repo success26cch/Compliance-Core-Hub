@@ -240,18 +240,18 @@ export default function EmployerTraining() {
                   <div>
                     <p className="text-white font-semibold text-sm">Assign a Course</p>
                     <p className="text-gray-400 text-xs mt-1">
-                      Click "Assign Course" above. Select one or more employees and the courses you want them to complete, then hit Assign.
+                      Click "Assign Course". Select one or more employees and the courses you want them to complete, then hit Assign.
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-blue-400 font-bold text-sm">2</span>
+                  <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-green-400 font-bold text-sm">2</span>
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-sm">Share the Link</p>
+                    <p className="text-white font-semibold text-sm">Employee is Automatically Texted</p>
                     <p className="text-gray-400 text-xs mt-1">
-                      Each assignment gets a unique access link. Click the <LinkIcon className="w-3 h-3 inline text-blue-400" /> copy button next to any assignment to get the link, then send it to your employee via email or text.
+                      The employee receives an automatic text message with their unique training link the moment you assign a course — no copying or pasting required. Make sure each employee has a phone number saved.
                     </p>
                   </div>
                 </div>
@@ -260,15 +260,15 @@ export default function EmployerTraining() {
                     <span className="text-blue-400 font-bold text-sm">3</span>
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-sm">Track Progress</p>
+                    <p className="text-white font-semibold text-sm">DER Notified on Completion</p>
                     <p className="text-gray-400 text-xs mt-1">
-                      Your employees open the link and start training right away — no account needed. You'll see their progress update in real time on this dashboard.
+                      When an employee finishes a course, your Designated Employer Representative (DER) is automatically texted the employee's name, course, completion time, and certificate number. Set your DER phone in Account Settings.
                     </p>
                   </div>
                 </div>
               </div>
               <p className="text-xs text-gray-500 border-t border-gray-700/50 pt-3">
-                Employees must first be added in your <Link href="/employees"><span className="text-blue-400 hover:text-blue-300 underline cursor-pointer">Employee Management</span></Link> page before you can assign them courses.
+                Employees must first be added in your <Link href="/employees"><span className="text-blue-400 hover:text-blue-300 underline cursor-pointer">Employee Management</span></Link> page (with a phone number) before you can assign them courses. Set your DER phone number in <Link href="/settings"><span className="text-blue-400 hover:text-blue-300 underline cursor-pointer">Account Settings</span></Link>.
               </p>
             </div>
           )}
@@ -392,6 +392,12 @@ export default function EmployerTraining() {
                       <p className="text-sm text-gray-500">
                         Select new hires to assign all 6 BrandNSwag safety courses. Each employee gets a 24-hour deadline and earns 100 points + a QR reward upon completion.
                       </p>
+                      <div className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                        <p className="text-xs text-green-300">
+                          Each new hire with a phone number on file will be <strong>automatically texted all 6 course links</strong> — one text per course, sent seconds apart.
+                        </p>
+                      </div>
                       <div>
                         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                           <Users className="w-4 h-4" />
@@ -576,6 +582,12 @@ export default function EmployerTraining() {
               <DialogHeader>
                 <DialogTitle>Assign Courses to Employees</DialogTitle>
               </DialogHeader>
+              <div className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 rounded-lg p-3 mt-2">
+                <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-green-300">
+                  Employees with a phone number on file will be <strong>automatically texted their training link</strong> the moment you assign a course. No manual sharing required.
+                </p>
+              </div>
               <div className="space-y-6 mt-4">
                 <div>
                   <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">

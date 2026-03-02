@@ -2858,6 +2858,36 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
         completedAt: new Date(),
       });
 
+      // Notify DER via SMS when employee completes a training course
+      try {
+        const { sendSMS, isTwilioConfigured } = await import('./twilioService');
+        const twilioReady = await isTwilioConfigured();
+        if (twilioReady) {
+          // Try to find the assignment to get the employer user ID
+          const trainingToken = req.headers['x-training-token'] as string || req.body?.trainingToken;
+          let employerUserId: string | null = null;
+          if (trainingToken) {
+            const assignment = await storage.getTrainingAssignmentByToken(trainingToken);
+            employerUserId = assignment?.employerUserId || null;
+          }
+          if (!employerUserId && req.isAuthenticated()) {
+            employerUserId = (req.user as any).claims.sub;
+          }
+          if (employerUserId) {
+            const companyProfile = await storage.getCompanyProfile(employerUserId);
+            const derPhone = companyProfile?.derPhone;
+            const derName = companyProfile?.derName || "DER";
+            if (derPhone) {
+              const completedAt = new Date().toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "short", timeStyle: "short" });
+              const derMsg = `CCH Training Alert: ${userName} completed "${course.title}" on ${completedAt}. Cert #${certNumber}. View records at corecompliancehub.com – Core Compliance Hub`;
+              sendSMS(derPhone, derMsg).catch(err => console.error("DER completion SMS error:", err));
+            }
+          }
+        }
+      } catch (smsErr) {
+        console.error("DER SMS notification error (non-fatal):", smsErr);
+      }
+
       res.json(certificate);
     } catch (error: any) {
       console.error("Error completing course:", error);
@@ -2948,6 +2978,13 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     try {
       const created: any[] = [];
       const crypto = await import("crypto");
+      const { sendSMS, isTwilioConfigured } = await import('./twilioService');
+      const twilioReady = await isTwilioConfigured();
+
+      const companyProfile = await storage.getCompanyProfile(userId);
+      const companyName = companyProfile?.companyName || "Your employer";
+
+      const baseUrl = `${req.protocol}://${req.headers.host}`;
 
       for (const employeeId of employeeIds) {
         const employee = await storage.getEmployeeById(employeeId, userId);
@@ -2970,6 +3007,15 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
             progress: 0,
           });
           created.push(assignment);
+
+          if (twilioReady && employee.phoneNumber) {
+            const course = await storage.getCourseById(courseId);
+            const trainingUrl = `${baseUrl}/employee-training?token=${accessToken}`;
+            const empName = `${employee.firstName}`;
+            const courseName = course?.title || "Safety Training";
+            const smsBody = `Hi ${empName}, ${companyName} has assigned you a safety training course: "${courseName}". Start here (no login needed): ${trainingUrl} – Core Compliance Hub`;
+            sendSMS(employee.phoneNumber, smsBody).catch(err => console.error("Training SMS error:", err));
+          }
         }
       }
 
@@ -3217,12 +3263,21 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
 
       const crypto = await import("crypto");
-      const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+      const { sendSMS, isTwilioConfigured } = await import('./twilioService');
+      const twilioReady = await isTwilioConfigured();
+
+      const companyProfile = await storage.getCompanyProfile(userId);
+      const companyName = companyProfile?.companyName || "Your employer";
+      const baseUrl = `${req.protocol}://${req.headers.host}`;
+
+      const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const created: any[] = [];
 
       for (const employeeId of employeeIds) {
         const employee = await storage.getEmployeeById(employeeId, userId);
         if (!employee) continue;
+
+        const newAssignments: Array<{ course: any; accessToken: string }> = [];
 
         for (const course of newHireCourses) {
           const existing = await storage.getTrainingAssignmentByEmployeeAndCourse(userId, employeeId, course.id);
@@ -3243,6 +3298,22 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
             deadline,
           });
           created.push(assignment);
+          newAssignments.push({ course, accessToken });
+        }
+
+        if (twilioReady && employee.phoneNumber && newAssignments.length > 0) {
+          const empName = employee.firstName;
+          const total = newAssignments.length;
+          const introMsg = `Hi ${empName}! ${companyName} has started your New Hire Safety Onboarding. You have ${total} courses to complete within 24 hours. Each course link follows: – Core Compliance Hub`;
+          sendSMS(employee.phoneNumber, introMsg).catch(err => console.error("New hire intro SMS error:", err));
+
+          newAssignments.forEach(({ course, accessToken }, idx) => {
+            const url = `${baseUrl}/employee-training?token=${accessToken}`;
+            const msg = `Course ${idx + 1} of ${total}: "${course.title}" – ${url}`;
+            setTimeout(() => {
+              sendSMS(employee.phoneNumber!, msg).catch(err => console.error(`New hire course ${idx + 1} SMS error:`, err));
+            }, (idx + 1) * 2000);
+          });
         }
       }
 
