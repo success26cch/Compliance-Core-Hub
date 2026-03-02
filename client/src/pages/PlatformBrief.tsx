@@ -1,10 +1,112 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Copy, CheckCircle2, Download, ArrowLeft } from "lucide-react";
+import { Copy, CheckCircle2, Download, ArrowLeft, FileText, Video } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/1_1767636977932.png";
+
+const VIDEO_SCRIPT = `
+==============================================================
+CCH — CORE COMPLIANCE HUB VIDEO SCRIPT
+==============================================================
+For the video producer: Read at a natural, confident, conversational pace.
+Each [SCENE] marker is a suggested visual cut or slide change.
+Total runtime: approximately 3–4 minutes.
+==============================================================
+
+[SCENE 1 — HOOK]
+
+If you're an employer, a safety director, or anyone responsible for keeping a workplace compliant with OSHA, DOT, or federal regulations — this is for you.
+
+Because right now, there is a better way to handle compliance. And it starts with one platform.
+
+[SCENE 2 — THE PROBLEM]
+
+Every year, companies pay millions in OSHA fines. Not because they didn't care — but because compliance is complicated, time-consuming, and scattered across binders, spreadsheets, and phone calls to consultants.
+
+You need a compliance officer, a safety trainer, a DOT specialist, and a medical liaison — all at once, all day long.
+
+What if you had all of that in your pocket?
+
+[SCENE 3 — INTRODUCING COREY]
+
+Meet Corey.
+
+The world's first AI built from the DNA of 29 CFR.
+
+Corey is not a generic chatbot with a compliance wrapper. Corey is a Senior Occupational Health, Safety and Compliance Expert — built exclusively from official regulatory sources: OSHA, DOT, ISO, MSHA, EPA, NFPA, and ANSI.
+
+He never cites a blog post. He never guesses at a regulation number. When he gives you an answer, it comes with the exact CFR citation to back it up.
+
+Ask Corey anything — OSHA recordkeeping, DOT drug testing, respirator compliance, forklift safety, bloodborne pathogens — and you get a precise, regulation-backed answer in seconds.
+
+[SCENE 4 — QUICK ACTIONS]
+
+Corey doesn't just answer questions. He takes action.
+
+With seven one-click Quick Actions, you can have Corey lead a full safety meeting — complete with an agenda, discussion questions, and a real-world scenario — all built around the topic you choose.
+
+Ask him to audit your OSHA 300 Log. He'll walk you through every column, check for errors, and flag anything that puts you at risk.
+
+Need to prepare for an OSHA inspection? Corey runs a complete mock inspection — opening conference, walkaround, document review — just like a real compliance officer would.
+
+[SCENE 5 — DOCUMENT TEMPLATES]
+
+And when you need documents, Corey generates them.
+
+Twenty-three professional compliance documents, organized by category: policies and programs, permits and forms, meeting tools, and assessments.
+
+Emergency Action Plans. Confined Space Entry Permits. Hot Work Permits. Respiratory Protection Programs. Job Hazard Analysis templates. All referencing exact CFR standards. All ready to customize and use.
+
+[SCENE 6 — THE EMPLOYER PLATFORM]
+
+Corey is just the beginning.
+
+The Core Compliance Hub Employer Platform gives you a complete compliance command center.
+
+Track your employees' medical surveillance, drug screens, certifications, and work restrictions — all in one place.
+
+Log workplace incidents, generate OSHA 300 and 301 reports, and build Corrective Action Plans with real accountability and follow-up tracking.
+
+Get automated DOT physical expiration alerts — at 60 days, 30 days, 15 days, and 7 days — sent directly to your phone by text.
+
+And with a built-in Learning Management System, assign training courses to your team, track completions, and issue professional PDF certificates with QR verification codes.
+
+[SCENE 7 — CCH HANDSHAKE & CLINIC TOOLS]
+
+We also built tools specifically for the moment an employee needs to see a doctor.
+
+The CCH Handshake is a QR-based Digital Medical Passport. Generate a QR code for each clinic visit, the employee scans in at the clinic, and you get an instant text notification the moment they arrive. No paper forms. No phone calls. Just clean, digital authorization — start to finish.
+
+And for occupational health clinics, our Bilingual Medical Assistant provides real-time AI interpretation between English-speaking providers and Spanish-speaking patients. Both directions. Hands-free. Built for the clinic floor.
+
+[SCENE 8 — PHONE APP]
+
+Corey is also a downloadable app.
+
+On an iPhone, tap Share and Add to Home Screen. On Android, tap Install. Corey appears on your home screen like a native app — no app store required.
+
+Compliance answers, one tap away, wherever you are.
+
+[SCENE 9 — PRICING]
+
+Corey AI is ninety-nine dollars per month, per user. No contracts. Cancel anytime.
+
+The full Employer Compliance Platform is two hundred ninety-nine dollars per month — covering up to fifty employees, with everything included.
+
+[SCENE 10 — CALL TO ACTION]
+
+This is Core Compliance Hub. One platform. Everything you need.
+
+Visit corecompliancehub.com to get started today.
+
+Corey is ready when you are.
+
+==============================================================
+END OF VIDEO SCRIPT
+==============================================================
+`.trim();
 
 const BRIEF = `
 ==========================================================
@@ -353,16 +455,23 @@ END OF BRIEFING
 ==========================================================
 `.trim();
 
+type TabType = "brief" | "script";
+
 export default function PlatformBrief() {
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("brief");
   const { toast } = useToast();
   const textRef = useRef<HTMLPreElement>(null);
 
+  const activeContent = activeTab === "brief" ? BRIEF : VIDEO_SCRIPT;
+  const activeFilename = activeTab === "brief" ? "CCH-Technical-Brief.txt" : "CCH-Video-Script.txt";
+  const activeLabel = activeTab === "brief" ? "CCH-Technical-Brief.txt" : "CCH-Video-Script.txt";
+
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(BRIEF);
+      await navigator.clipboard.writeText(activeContent);
       setCopied(true);
-      toast({ title: "Copied to clipboard — paste it into Gemini!" });
+      toast({ title: activeTab === "brief" ? "Copied — paste it into Gemini!" : "Video script copied — paste it into HeyGen!" });
       setTimeout(() => setCopied(false), 3000);
     } catch {
       if (textRef.current) {
@@ -377,14 +486,14 @@ export default function PlatformBrief() {
   };
 
   const handleDownload = () => {
-    const blob = new Blob([BRIEF], { type: "text/plain" });
+    const blob = new Blob([activeContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "CCH-Platform-Briefing.txt";
+    a.download = activeFilename;
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: "Briefing downloaded" });
+    toast({ title: `${activeFilename} downloaded` });
   };
 
   return (
@@ -425,13 +534,50 @@ export default function PlatformBrief() {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Full Platform Briefing</h1>
-          <p className="text-white/60">Copy this entire document and paste it into Gemini, ChatGPT, or any AI for a comprehensive review of the platform.</p>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Platform Documents</h1>
+          <p className="text-white/60">Two documents — one for AI review, one ready for your video producer.</p>
         </div>
+
+        {/* Tab Toggle */}
+        <div className="flex gap-2 mb-5 p-1 bg-white/5 rounded-xl border border-white/10 max-w-sm mx-auto" data-testid="tab-toggle">
+          <button
+            onClick={() => { setActiveTab("brief"); setCopied(false); }}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === "brief"
+                ? "bg-[#FFC107] text-black shadow-md"
+                : "text-white/50 hover:text-white"
+            }`}
+            data-testid="tab-button-brief"
+          >
+            <FileText className="w-4 h-4" /> Technical Brief
+          </button>
+          <button
+            onClick={() => { setActiveTab("script"); setCopied(false); }}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === "script"
+                ? "bg-[#FFC107] text-black shadow-md"
+                : "text-white/50 hover:text-white"
+            }`}
+            data-testid="tab-button-script"
+          >
+            <Video className="w-4 h-4" /> Video Script
+          </button>
+        </div>
+
+        {/* Tab Description */}
+        {activeTab === "brief" ? (
+          <p className="text-center text-sm text-white/50 mb-5">
+            Copy and paste into Gemini, ChatGPT, or any AI for a comprehensive review of the platform.
+          </p>
+        ) : (
+          <p className="text-center text-sm text-white/50 mb-5">
+            Ready-to-use narration script for HeyGen, Synthesia, or any AI video tool. ~3–4 minutes. 10 scenes with visual cue markers.
+          </p>
+        )}
 
         <Card className="bg-white/5 border-white/10 p-1">
           <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-white/5 rounded-t-lg">
-            <span className="text-xs text-white/40 font-mono">CCH-Platform-Briefing.txt</span>
+            <span className="text-xs text-white/40 font-mono">{activeLabel}</span>
             <div className="flex gap-2">
               <button onClick={handleDownload} className="text-xs text-white/50 hover:text-white flex items-center gap-1" data-testid="button-download-brief-inline">
                 <Download className="w-3 h-3" /> .txt
@@ -446,14 +592,20 @@ export default function PlatformBrief() {
             className="p-4 md:p-6 text-sm text-white/80 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto max-h-[70vh] overflow-y-auto"
             data-testid="text-platform-brief"
           >
-            {BRIEF}
+            {activeContent}
           </pre>
         </Card>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-white/40 mb-4">
-            Tip: Click "Copy All" above, then open Gemini and paste the full briefing. Ask it to review for completeness, identify any gaps, or suggest improvements.
-          </p>
+          {activeTab === "brief" ? (
+            <p className="text-sm text-white/40 mb-4">
+              Tip: Click "Copy All" above, then open Gemini and paste the full briefing. Ask it to review for completeness, identify any gaps, or suggest improvements.
+            </p>
+          ) : (
+            <p className="text-sm text-white/40 mb-4">
+              Tip: Copy this script, open HeyGen or Synthesia, paste it as your narration, select an AI avatar, and your video is ready to render.
+            </p>
+          )}
           <Link href="/demo-tour">
             <Button variant="outline" className="border-white/20 text-white" data-testid="link-to-tour">
               <ArrowLeft className="w-4 h-4 mr-1" /> Back to Platform Tour
