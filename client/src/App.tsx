@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
 import { CartDrawer } from "@/components/CartDrawer";
+import { AdminViewProvider } from "@/hooks/use-admin-view";
 import { ThemeProvider } from "next-themes";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
@@ -117,10 +118,12 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <CartProvider>
-            <Toaster />
-            <CartDrawer />
-            <PageTracker />
-            <Router />
+            <AdminViewProvider>
+              <Toaster />
+              <CartDrawer />
+              <PageTracker />
+              <Router />
+            </AdminViewProvider>
           </CartProvider>
         </TooltipProvider>
       </QueryClientProvider>

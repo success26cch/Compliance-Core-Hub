@@ -24,13 +24,16 @@ import {
   FileText,
   BookOpen,
   Sun,
-  Moon
+  Moon,
+  ArrowLeftRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import { useTheme } from "next-themes";
+import { useAdminView } from "@/hooks/use-admin-view";
 import hubLogo from "@assets/6_1770259909295.png";
 
 export function ThemeToggle() {
@@ -46,6 +49,63 @@ export function ThemeToggle() {
       <Moon className="absolute w-5 h-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       <span className="sr-only">Toggle theme</span>
     </Button>
+  );
+}
+
+function ViewModeToggle() {
+  const { viewMode, setViewMode } = useAdminView();
+  const isAdmin = viewMode === "admin";
+
+  return (
+    <button
+      onClick={() => setViewMode(isAdmin ? "test-company" : "admin")}
+      className={`
+        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+        ${isAdmin
+          ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400"
+          : "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 dark:text-blue-400"}
+      `}
+      data-testid="button-toggle-view-mode"
+    >
+      <ArrowLeftRight className="w-5 h-5" />
+      {isAdmin ? "Switch to Test Co." : "Switch to Admin"}
+    </button>
+  );
+}
+
+export function ViewModeBadge() {
+  const { viewMode } = useAdminView();
+  const { data: superadminCheck } = useQuery<{ isSuperadmin: boolean }>({
+    queryKey: ['/api/superadmin/check'],
+  });
+
+  if (!superadminCheck?.isSuperadmin) return null;
+
+  const isAdmin = viewMode === "admin";
+
+  return (
+    <Badge
+      className={`
+        gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-wider cursor-default select-none
+        ${isAdmin
+          ? "bg-red-500/15 text-red-600 border-red-500/30 dark:text-red-400 dark:border-red-400/30"
+          : "bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400 dark:border-blue-400/30"}
+      `}
+      variant="outline"
+      data-testid="badge-view-mode"
+    >
+      {isAdmin ? (
+        <>
+          <Crown className="w-3.5 h-3.5" />
+          ADMIN
+        </>
+      ) : (
+        <>
+          <Building2 className="w-3.5 h-3.5" />
+          TEST COMPANY
+        </>
+      )}
+    </Badge>
   );
 }
 
@@ -120,6 +180,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
       <div className="p-4 border-t border-border/50 space-y-2">
         {superadminCheck?.isSuperadmin && (
           <>
+            <ViewModeToggle />
             <Link href="/superadmin" className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
               ${location === '/superadmin' 
@@ -180,6 +241,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
             </div>
           </Link>
           <div className="flex items-center gap-1">
+            <ViewModeBadge />
             <ThemeToggle />
             <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
               <SheetTrigger asChild>
@@ -206,6 +268,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
                 <p className="text-muted-foreground mt-1">Here's your compliance overview.</p>
               </div>
               <div className="hidden md:flex items-center gap-3">
+                <ViewModeBadge />
                 <ThemeToggle />
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                   {user?.firstName?.[0] || <User className="w-5 h-5" />}
