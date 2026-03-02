@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   ArrowUpRight, 
   Activity, 
@@ -32,7 +33,10 @@ import {
   X,
   Bot,
   LayoutDashboard,
-  ChevronRight
+  ChevronRight,
+  HelpCircle,
+  Lightbulb,
+  ListChecks
 } from "lucide-react";
 import { Link } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
@@ -323,6 +327,243 @@ function RetainerSupportDialog() {
   );
 }
 
+type HelpContent = {
+  title: string;
+  what: string;
+  how: string[];
+  nextStep: string;
+  nextHref?: string;
+};
+
+const HELP_CONTENT: Record<string, HelpContent> = {
+  isoAuditReadiness: {
+    title: "ISO Audit Readiness",
+    what: "This gauge shows what percentage of your ISO compliance checklist items are marked complete. It covers ISO 9001 (Quality), ISO 14001 (Environmental), and ISO 45001 (Safety) standards.",
+    how: [
+      "Navigate to the ISO section via ACSI Mentorship to complete checklist items.",
+      "Ask Corey to run a 'Gap Analysis' for any ISO standard — it will tell you exactly what's missing.",
+      "Use the ACSI ISO Manager for guided audit prep and mock audits.",
+      "Each completed item raises your readiness percentage in real time.",
+    ],
+    nextStep: "Ask Corey to run an ISO gap analysis now",
+    nextHref: "/corey",
+  },
+  medicalSurveillance: {
+    title: "Medical Surveillance",
+    what: "Tracks the percentage of your employees with current DOT physicals and respiratory medical evaluations on file. OSHA and DOT require these to stay current for safety-sensitive roles.",
+    how: [
+      "Go to Employee Management and add or update each employee's exam dates.",
+      "Track DOT physicals (required every 2 years for CDL drivers), respirator evaluations, hearing tests, PFTs, TB tests, Hep A/B/C, Tetanus, and vision tests.",
+      "When an employee's exam is expiring, the Action Queue will alert you automatically.",
+      "Use the DOT Notifications tool to send reminder texts to employees.",
+    ],
+    nextStep: "Update employee medical records",
+    nextHref: "/employees",
+  },
+  drugScreen: {
+    title: "Drug Screen Status",
+    what: "Shows how many employees are cleared (passed their drug screen) vs. pending (test ordered but result not yet entered). FMCSA and DOT require drug screening for safety-sensitive positions.",
+    how: [
+      "When an employee is tested, log the result in Employee Management under their profile.",
+      "Cleared = negative result entered. Pending = test ordered, awaiting result.",
+      "For DOT random pools, make sure every CDL driver is enrolled in your random selection program.",
+      "Ask Corey to generate a Drug & Alcohol Policy per 49 CFR Part 40 if you don't have one.",
+    ],
+    nextStep: "Manage employee drug screen records",
+    nextHref: "/employees",
+  },
+  quickStats: {
+    title: "Quick Stats",
+    what: "A real-time snapshot of your compliance health: total employees in the system, open action items requiring your attention, and recordable OSHA incidents logged in the past 6 months.",
+    how: [
+      "Add all employees to keep your stats accurate — the system can't track what it doesn't know about.",
+      "Work down the Action Queue regularly to keep pending actions at zero.",
+      "Recordables (6mo) should trend toward zero — even one recordable can impact your OSHA 300 report.",
+      "A high number of pending actions is a signal to review your compliance calendar.",
+    ],
+    nextStep: "View your Action Queue",
+    nextHref: "/dashboard",
+  },
+  incidentChart: {
+    title: "Incident Trend Chart",
+    what: "A 6-month bar chart showing total workplace incidents (blue) vs. OSHA-recordable incidents (red). This is the data that feeds your OSHA 300 Log — required for employers with 10+ employees.",
+    how: [
+      "Log every workplace injury or illness in the Incident Log — even if it ends up not being recordable.",
+      "Use Corey's 'Audit My OSHA 300' action to spot errors before an OSHA inspection.",
+      "Use the OSHA 300 Decision Tree to determine recordability for any incident in seconds.",
+      "Keep recordables as low as possible — OSHA uses this data for inspection targeting.",
+    ],
+    nextStep: "Log a workplace incident",
+    nextHref: "/incidents",
+  },
+  actionQueue: {
+    title: "Action Queue",
+    what: "Your prioritized to-do list of compliance tasks. Items are auto-generated when DOT physicals are expiring, drug tests are pending, incidents need review, or you manually add action items. Urgent items appear at the top.",
+    how: [
+      "Work through urgent (red) items first — these represent the highest compliance risk.",
+      "Click the checkmark to mark items complete and remove them from the queue.",
+      "DOT expiration alerts include a 'Notify' button that sends a reminder text to your employee.",
+      "Action items can be added manually under the Incident Log or Employee Management pages.",
+    ],
+    nextStep: "Clear your open action items",
+    nextHref: "/dashboard",
+  },
+  employeeManagement: {
+    title: "Employee Management",
+    what: "Your central employee database. Store contact info, job roles, hire dates, and all medical surveillance records including DOT physicals, drug screens, hearing tests, respirator fit tests, vaccines, and more.",
+    how: [
+      "Add every employee before assigning training or generating passports.",
+      "Enter each employee's phone number — the system uses it for automatic SMS notifications.",
+      "Fill in medical surveillance dates for each employee to power the Medical Surveillance metric.",
+      "Use the DER Phone field in Account Settings so you receive training completion alerts.",
+    ],
+    nextStep: "Add or update your employees",
+    nextHref: "/employees",
+  },
+  incidentLog: {
+    title: "Incident Log (OSHA 300)",
+    what: "Record and track every workplace injury and illness. The log automatically applies OSHA 29 CFR 1904 recordability criteria and feeds your OSHA 300 report. Each entry can include a Corrective Action Plan (CAPA).",
+    how: [
+      "Log incidents within 24 hours of occurrence to stay compliant.",
+      "Use the OSHA 300 Decision Tree first if you're unsure whether an injury is recordable.",
+      "For every recordable, complete a CAPA to document corrective actions taken.",
+      "At year-end, use Corey to audit your OSHA 300 log before the posting deadline (Feb 1).",
+    ],
+    nextStep: "Log a new incident",
+    nextHref: "/incidents",
+  },
+  employerTraining: {
+    title: "Employer Training Portal",
+    what: "Assign OSHA compliance training courses to your employees and track their progress in real time. Employees receive an automatic text with their training link the moment you assign a course. The DER is notified by text when each course is completed.",
+    how: [
+      "Click 'Assign Course' and pick the employee(s) and course(s) — they're texted immediately.",
+      "Use 'New Hire Onboarding' to bundle all 6 BrandNSwag safety courses with a 24-hour deadline.",
+      "Employees complete training in their browser — no login or app download needed.",
+      "Completion certificates are generated automatically and stored in their profile.",
+    ],
+    nextStep: "Open the Training Portal",
+    nextHref: "/employer-training",
+  },
+  myCourses: {
+    title: "My Courses",
+    what: "Access any courses you've personally purchased or been assigned. Complete video modules and quizzes at your own pace, and download your certificate of completion when finished.",
+    how: [
+      "Courses are broken into video modules with a quiz at the end of each module.",
+      "You must pass each quiz to advance to the next module.",
+      "Your certificate includes a unique QR verification code — share it with your employer or regulatory body.",
+      "Completed courses and certificates are stored here permanently for your records.",
+    ],
+    nextStep: "Continue or start a course",
+    nextHref: "/training?tab=my-courses",
+  },
+  askCorey: {
+    title: "Ask Corey — AI Compliance Expert",
+    what: "Corey is the World's First AI built from the DNA of 29 CFR — a Senior Occupational Health, Safety & Compliance Expert. Ask any OSHA, DOT, or ISO question and get a precise, regulation-cited answer in seconds.",
+    how: [
+      "Use Quick Action cards: Lead a Safety Meeting, Audit My OSHA 300, Mock OSHA Inspection, Weekly Safety Topic.",
+      "Open the Documents Panel to generate any of 24 compliance documents instantly.",
+      "For ISO work, ask Corey to connect you with the ACSI ISO Manager for a gap analysis.",
+      "Corey never hallucinates — it cites only official regulatory sources (OSHA, DOT, CFR).",
+    ],
+    nextStep: "Open Corey AI now",
+    nextHref: "/corey",
+  },
+  decisionTree: {
+    title: "OSHA 300 Decision Tree",
+    what: "A 5-question interactive tool that determines in minutes whether a workplace injury or illness is OSHA recordable under 29 CFR 1904. No login required — share it with supervisors or HR.",
+    how: [
+      "Answer the 5 questions about the injury: work-related? new case? one of the general recording criteria?",
+      "The tool gives you a clear YES/NO recordability determination with the regulatory citation.",
+      "Use it immediately after any incident before deciding whether to log it on the OSHA 300.",
+      "If you're still unsure, bring the scenario to Corey for a deeper analysis.",
+    ],
+    nextStep: "Start the decision tree",
+    nextHref: "/decision-tree",
+  },
+  clinicLetter: {
+    title: "Clinic Communication Letter",
+    what: "Generate a professional letter that instructs your occupational health clinic on your company's treatment preferences — light duty policies, first-aid-only treatment, OTC medication authorization, and restriction language per 29 CFR 1904.7(a).",
+    how: [
+      "Fill in your company name, DER contact, and specific treatment preferences.",
+      "The generated letter can be faxed or emailed to your clinic before your employee arrives.",
+      "Update the letter whenever your policies change — especially after an OSHA inspection.",
+      "Giving your clinic clear instructions upfront reduces recordable incidents from unnecessary prescription treatment.",
+    ],
+    nextStep: "Generate a clinic letter",
+    nextHref: "/clinic-letter",
+  },
+  digitalPassport: {
+    title: "Digital Medical Passport (CCH Handshake)",
+    what: "Generate a QR code for each employee that links to their digital clinic authorization form. When the employee arrives at the clinic, staff scan the QR code to access the pre-filled form — and you're instantly notified by text.",
+    how: [
+      "Generate a passport for each employee in the Digital Medical Passport section.",
+      "Print or text the QR code to the employee before their clinic visit.",
+      "When the clinic scans the code, you'll receive an automatic 'I'm Here' notification.",
+      "The form captures treatment authorizations, emergency contacts, and employer notifications — all HIPAA-compliant.",
+    ],
+    nextStep: "Generate an employee passport",
+    nextHref: "/employee-passport",
+  },
+};
+
+function HelpTip({ id }: { id: keyof typeof HELP_CONTENT }) {
+  const content = HELP_CONTENT[id];
+  if (!content) return null;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted hover:bg-accent/20 text-muted-foreground hover:text-accent transition-colors shrink-0"
+          data-testid={`help-tip-${id}`}
+          aria-label={`Help: ${content.title}`}
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0 shadow-xl" side="bottom" align="start">
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2 border-b pb-2">
+            <HelpCircle className="w-4 h-4 text-accent shrink-0" />
+            <h3 className="font-semibold text-sm">{content.title}</h3>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground leading-relaxed">{content.what}</p>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Lightbulb className="w-3.5 h-3.5 text-accent shrink-0" />
+              <span className="text-xs font-semibold text-foreground">How to maximize it</span>
+            </div>
+            <ul className="space-y-1.5">
+              {content.how.map((tip, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                  <span className="text-accent font-bold mt-0.5 shrink-0">›</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {content.nextHref && (
+            <div className="border-t pt-2">
+              <Link href={content.nextHref}>
+                <button className="flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline">
+                  <ListChecks className="w-3.5 h-3.5" />
+                  Next step: {content.nextStep}
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const SEARCH_INDEX = [
   { label: "Compliance Dashboard", description: "Your main compliance overview and metrics", href: "/dashboard", icon: LayoutDashboard, category: "Pages" },
   { label: "Ask Corey — AI Compliance Expert", description: "Get instant OSHA, DOT, and safety answers from Corey AI", href: "/corey", icon: Bot, category: "Pages" },
@@ -358,6 +599,20 @@ const SEARCH_INDEX = [
   { label: "Mock OSHA Inspection", description: "Corey walks through a mock inspection with you", href: "/corey", icon: Bot, category: "Corey AI Actions" },
   { label: "Weekly Safety Topic", description: "Corey generates a ready-to-use 5-minute safety talk", href: "/corey", icon: Bot, category: "Corey AI Actions" },
   { label: "Compliance Calendar Check", description: "Corey identifies upcoming deadlines for your company", href: "/corey", icon: Bot, category: "Corey AI Actions" },
+  { label: "How does ISO Audit Readiness work?", description: "Your ISO readiness gauge shows % of checklist items complete. Ask Corey for a gap analysis to raise your score. Covers ISO 9001, 14001, and 45001.", href: "/corey", icon: HelpCircle, category: "How it Works" },
+  { label: "How does Medical Surveillance tracking work?", description: "Track DOT physicals, hearing tests, fit tests, vaccines, and more per employee. Expiring exams trigger automatic Action Queue alerts.", href: "/employees", icon: HelpCircle, category: "How it Works" },
+  { label: "How does Drug Screen Status work?", description: "Log test results in Employee Management. Cleared = negative result on file. Pending = test ordered but result not yet entered.", href: "/employees", icon: HelpCircle, category: "How it Works" },
+  { label: "How does the Action Queue work?", description: "Auto-generated compliance to-do list. DOT expirations, pending drug tests, and incident reviews appear here automatically by priority.", href: "/dashboard", icon: HelpCircle, category: "How it Works" },
+  { label: "How does the Incident Chart work?", description: "Tracks recordable vs. total incidents over 6 months. Data feeds your OSHA 300 Log. Use the Decision Tree to determine recordability.", href: "/incidents", icon: HelpCircle, category: "How it Works" },
+  { label: "How does Employee Management work?", description: "Central database for all employees. Store contact info, DOT physical dates, drug screen results, vaccine records, and medical surveillance data.", href: "/employees", icon: HelpCircle, category: "How it Works" },
+  { label: "How does the Incident Log work?", description: "Record every workplace injury or illness. System applies 29 CFR 1904 recordability criteria and generates OSHA 300 entries and CAPA forms.", href: "/incidents", icon: HelpCircle, category: "How it Works" },
+  { label: "How does the Employer Training Portal work?", description: "Assign OSHA courses to employees. They get an auto-text with their unique training link. You and DER are notified upon completion.", href: "/employer-training", icon: HelpCircle, category: "How it Works" },
+  { label: "How does Corey AI work?", description: "Ask OSHA, DOT, or ISO questions. Use Quick Actions, generate 24 compliance documents, run mock inspections, lead safety meetings, and audit your OSHA 300.", href: "/corey", icon: HelpCircle, category: "How it Works" },
+  { label: "How does the OSHA Decision Tree work?", description: "Answer 5 questions about any injury to get an immediate recordability determination under 29 CFR 1904 with the exact regulation cited.", href: "/decision-tree", icon: HelpCircle, category: "How it Works" },
+  { label: "How does the Clinic Communication Letter work?", description: "Generate a letter instructing your clinic on treatment preferences, first-aid-only policies, and restriction wording to avoid unnecessary recordables.", href: "/clinic-letter", icon: HelpCircle, category: "How it Works" },
+  { label: "How does the Digital Medical Passport work?", description: "Generate a QR code for each employee. Clinic scans it at check-in to pull up their authorization form. You get an immediate text notification.", href: "/employee-passport", icon: HelpCircle, category: "How it Works" },
+  { label: "How do training notifications work?", description: "Employees are automatically texted their course link when assigned. Your DER receives a text with the certificate number when training is complete.", href: "/employer-training", icon: HelpCircle, category: "How it Works" },
+  { label: "How does BrandNSwag new hire onboarding work?", description: "Assign all 6 OSHA safety courses as a bundle with a 24-hour deadline. Employees earn 100 points and a QR reward code upon completion.", href: "/employer-training", icon: HelpCircle, category: "How it Works" },
 ];
 
 function DashboardSearch() {
@@ -377,6 +632,7 @@ function DashboardSearch() {
     "Tools": "bg-green-500/10 text-green-600 dark:text-green-400",
     "Documents": "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     "Corey AI Actions": "bg-purple-500/10 text-purple-400",
+    "How it Works": "bg-teal-500/10 text-teal-600 dark:text-teal-400",
   };
 
   return (
@@ -557,6 +813,7 @@ export default function Dashboard() {
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Shield className="w-4 h-4 text-accent" />
                   ISO Audit Readiness
+                  <HelpTip id="isoAuditReadiness" />
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex justify-center pt-2">
@@ -578,6 +835,7 @@ export default function Dashboard() {
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Stethoscope className="w-4 h-4 text-primary" />
                   Medical Surveillance
+                  <HelpTip id="medicalSurveillance" />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -608,6 +866,7 @@ export default function Dashboard() {
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <TestTube className="w-4 h-4 text-accent" />
                   Drug Screen Status
+                  <HelpTip id="drugScreen" />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -634,6 +893,7 @@ export default function Dashboard() {
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" />
                   Quick Stats
+                  <HelpTip id="quickStats" />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -673,6 +933,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="w-5 h-5 text-primary" />
                   Incidents (Last 6 Months)
+                  <HelpTip id="incidentChart" />
                 </CardTitle>
                 <CardDescription>
                   Track recordable vs. non-recordable incidents
@@ -693,6 +954,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <ClipboardList className="w-5 h-5 text-accent" />
                   Action Queue
+                  <HelpTip id="actionQueue" />
                 </CardTitle>
                 <CardDescription>
                   Urgent tasks requiring your attention
@@ -722,6 +984,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
                   Employee Management
+                  <HelpTip id="employeeManagement" />
                 </CardTitle>
                 <CardDescription>
                   Add employees, track DOT physicals, drug tests, and medical surveillance.
@@ -741,6 +1004,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <FileWarning className="w-5 h-5 text-destructive" />
                   Incident Log
+                  <HelpTip id="incidentLog" />
                 </CardTitle>
                 <CardDescription>
                   Record workplace incidents for OSHA 300 compliance tracking.
@@ -763,9 +1027,10 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <GraduationCap className="w-5 h-5 text-blue-500" />
                   Employer Training Portal
+                  <HelpTip id="employerTraining" />
                 </CardTitle>
                 <CardDescription>
-                  Assign compliance courses to your employees, send them access links, and track their progress.
+                  Assign compliance courses to your employees — they're automatically texted their link. DER is notified on completion.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -783,6 +1048,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-green-500" />
                   My Courses
+                  <HelpTip id="myCourses" />
                 </CardTitle>
                 <CardDescription>
                   Access your purchased courses, continue where you left off, and view your certificates of completion.
@@ -805,6 +1071,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   Ask Corey
                   <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">Your AI Compliance Expert</span>
+                  <HelpTip id="askCorey" />
                 </CardTitle>
                 <CardDescription>
                   Get instant answers for OSHA 1904 and DOT regulations.
@@ -821,7 +1088,10 @@ export default function Dashboard() {
 
             <Card className="hover:shadow-lg transition-shadow border-primary/10">
               <CardHeader>
-                <CardTitle>OSHA 300, Log it or Not, Decision Tree</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  OSHA 300, Log it or Not, Decision Tree
+                  <HelpTip id="decisionTree" />
+                </CardTitle>
                 <CardDescription>
                   Determine if an injury is OSHA recordable in minutes.
                 </CardDescription>
@@ -843,6 +1113,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-blue-500" />
                   Clinic Communication Letter
+                  <HelpTip id="clinicLetter" />
                 </CardTitle>
                 <CardDescription>
                   Set expectations with your occupational health clinic — first-aid treatment preferences, OTC medication requests, and restriction wording guidance per 29 CFR 1904.7(a).
@@ -862,6 +1133,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <QrCode className="w-5 h-5 text-[#FFC107]" />
                   Digital Medical Passport
+                  <HelpTip id="digitalPassport" />
                 </CardTitle>
                 <CardDescription>
                   Generate QR-based clinic authorization forms for your employees. Clinics scan the code, you get notified instantly.
