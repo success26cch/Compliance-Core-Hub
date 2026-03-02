@@ -116,10 +116,44 @@ export const employees = pgTable("employees", {
   dotPhysicalDate: timestamp("dot_physical_date"),
   dotPhysicalExpiry: timestamp("dot_physical_expiry"),
   dotPhysicalStatus: text("dot_physical_status").default("pending"), // 'current', 'expiring', 'expired', 'pending', 'na'
-  // Respiratory/Medical Surveillance
+  // Respiratory Medical Evaluation (29 CFR 1910.134)
   respiratoryExamDate: timestamp("respiratory_exam_date"),
   respiratoryExamExpiry: timestamp("respiratory_exam_expiry"),
   respiratoryStatus: text("respiratory_status").default("pending"), // 'current', 'expiring', 'expired', 'pending', 'na'
+  // Respirator Fit Test (29 CFR 1910.134 — annual)
+  fitTestDate: timestamp("fit_test_date"),
+  fitTestExpiry: timestamp("fit_test_expiry"),
+  fitTestStatus: text("fit_test_status").default("pending"),
+  // Annual Audiometric Exam / Hearing Test (29 CFR 1910.95)
+  hearingTestDate: timestamp("hearing_test_date"),
+  hearingTestExpiry: timestamp("hearing_test_expiry"),
+  hearingTestStatus: text("hearing_test_status").default("pending"),
+  // Pulmonary Function Test / PFT (annual for respirator users)
+  pftDate: timestamp("pft_date"),
+  pftExpiry: timestamp("pft_expiry"),
+  pftStatus: text("pft_status").default("pending"),
+  // TB Test (Tuberculin Skin Test or IGRA)
+  tbTestDate: timestamp("tb_test_date"),
+  tbTestResult: text("tb_test_result"), // 'negative', 'positive', 'pending', 'na'
+  // Hepatitis B Vaccine Series (29 CFR 1910.1030 — 3-dose: 0, 1 month, 6 months)
+  hepBDose1Date: timestamp("hep_b_dose1_date"),
+  hepBDose2Date: timestamp("hep_b_dose2_date"),
+  hepBDose3Date: timestamp("hep_b_dose3_date"),
+  hepBStatus: text("hep_b_status").default("pending"), // 'series_complete', 'in_progress', 'declined', 'pending', 'immune'
+  // Hepatitis A Vaccine (2-dose series: 0, 6-12 months)
+  hepADose1Date: timestamp("hep_a_dose1_date"),
+  hepADose2Date: timestamp("hep_a_dose2_date"),
+  hepAStatus: text("hep_a_status").default("pending"),
+  // Hepatitis C Screening
+  hepCScreenDate: timestamp("hep_c_screen_date"),
+  hepCScreenResult: text("hep_c_screen_result"), // 'negative', 'positive', 'pending', 'na'
+  // Tetanus / Tdap (every 10 years)
+  tetanusDate: timestamp("tetanus_date"),
+  tetanusExpiry: timestamp("tetanus_expiry"),
+  // Vision Test
+  visionTestDate: timestamp("vision_test_date"),
+  visionTestExpiry: timestamp("vision_test_expiry"),
+  visionTestStatus: text("vision_test_status").default("pending"),
   // Drug Testing
   lastDrugTest: timestamp("last_drug_test"),
   drugTestResult: text("drug_test_result"), // 'cleared', 'pending', 'failed', 'scheduled'
@@ -148,6 +182,23 @@ export const insertEmployeeSchema = createInsertSchema(employees, {
   dotPhysicalExpiry: dateOrStringToDate,
   respiratoryExamDate: dateOrStringToDate,
   respiratoryExamExpiry: dateOrStringToDate,
+  fitTestDate: dateOrStringToDate,
+  fitTestExpiry: dateOrStringToDate,
+  hearingTestDate: dateOrStringToDate,
+  hearingTestExpiry: dateOrStringToDate,
+  pftDate: dateOrStringToDate,
+  pftExpiry: dateOrStringToDate,
+  tbTestDate: dateOrStringToDate,
+  hepBDose1Date: dateOrStringToDate,
+  hepBDose2Date: dateOrStringToDate,
+  hepBDose3Date: dateOrStringToDate,
+  hepADose1Date: dateOrStringToDate,
+  hepADose2Date: dateOrStringToDate,
+  hepCScreenDate: dateOrStringToDate,
+  tetanusDate: dateOrStringToDate,
+  tetanusExpiry: dateOrStringToDate,
+  visionTestDate: dateOrStringToDate,
+  visionTestExpiry: dateOrStringToDate,
   lastDrugTest: dateOrStringToDate,
   dotCardUploadedAt: dateOrStringToDate,
   lastNotificationSent: dateOrStringToDate,

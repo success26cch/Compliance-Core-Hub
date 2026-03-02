@@ -381,25 +381,34 @@ function DashboardSearch() {
 
   return (
     <div className="relative w-full" data-testid="dashboard-search-container">
-      <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all ${
-        focused ? "border-primary/50 bg-background shadow-md" : "border-border bg-muted/40"
-      }`}>
-        <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-        <input
-          type="text"
-          placeholder="Search features, tools, documents, Corey actions..."
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setTimeout(() => setFocused(false), 150)}
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
-          data-testid="input-dashboard-search"
-        />
-        {query && (
-          <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground" data-testid="button-clear-search">
-            <X className="w-4 h-4" />
-          </button>
-        )}
+      <div className="rounded-xl bg-gradient-to-r from-[#FFC107]/15 to-primary/10 border-2 border-[#FFC107]/50 p-1 shadow-sm">
+        <div className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+          focused ? "bg-background shadow-inner" : "bg-background/70"
+        }`}>
+          <div className="w-8 h-8 rounded-lg bg-[#FFC107] flex items-center justify-center shrink-0 shadow-sm">
+            <Search className="w-4 h-4 text-black" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#FFC107] leading-none mb-0.5">Quick Find</p>
+            <input
+              type="text"
+              placeholder="Search features, tools, documents, Corey actions..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setTimeout(() => setFocused(false), 150)}
+              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground font-medium"
+              data-testid="input-dashboard-search"
+            />
+          </div>
+          {query ? (
+            <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground shrink-0" data-testid="button-clear-search">
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">Type anything...</span>
+          )}
+        </div>
       </div>
 
       {focused && results.length > 0 && (
