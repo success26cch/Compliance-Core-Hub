@@ -725,7 +725,7 @@ export default function Landing() {
                     <span className="font-black text-lg text-accent">Corey</span>
                     <span className="text-xs text-white/40 font-medium">OSHA · DOT · Safety · Compliance</span>
                   </div>
-                  <p className="text-sm text-white/70 leading-snug">Your 24/7 Senior Occupational Health &amp; Safety Expert — built from the DNA of 29 CFR.</p>
+                  <p className="text-sm text-white/70 leading-snug">The world's first AI built directly from 29 CFR — not trained on opinions, not citing blogs. Corey <em>is</em> the regulation. 24/7. Every standard. Non-negotiable.</p>
                 </div>
               </div>
               <div className="bg-black border border-indigo-500/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-isa">
