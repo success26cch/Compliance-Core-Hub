@@ -50,49 +50,49 @@ const QUICK_PROMPTS = [
   {
     icon: FileSearch,
     label: "Gap Analysis",
-    iconColor: "text-indigo-600",
-    iconBg: "bg-indigo-50 dark:bg-indigo-900/30",
-    border: "border-indigo-100 dark:border-indigo-800/40 hover:border-indigo-300",
+    iconColor: "text-accent",
+    iconBg: "bg-accent/10",
+    border: "border-accent/20 hover:border-accent/50",
     prompt: "I need a gap analysis for ISO 9001:2015. Walk me through each clause and ask me questions to assess my current state.",
   },
   {
     icon: ClipboardCheck,
     label: "Audit Readiness",
-    iconColor: "text-violet-600",
-    iconBg: "bg-violet-50 dark:bg-violet-900/30",
-    border: "border-violet-100 dark:border-violet-800/40 hover:border-violet-300",
+    iconColor: "text-accent",
+    iconBg: "bg-accent/10",
+    border: "border-accent/20 hover:border-accent/50",
     prompt: "Help me prepare for an upcoming ISO certification audit. What should I have ready and what are the most common nonconformances?",
   },
   {
     icon: Layers,
     label: "IATF 16949",
-    iconColor: "text-blue-600",
-    iconBg: "bg-blue-50 dark:bg-blue-900/30",
-    border: "border-blue-100 dark:border-blue-800/40 hover:border-blue-300",
+    iconColor: "text-accent",
+    iconBg: "bg-accent/10",
+    border: "border-accent/20 hover:border-accent/50",
     prompt: "Explain the three types of internal audits required by IATF 16949 and what evidence I need for each.",
   },
   {
     icon: BookOpen,
     label: "Quality Manual",
-    iconColor: "text-teal-600",
-    iconBg: "bg-teal-50 dark:bg-teal-900/30",
-    border: "border-teal-100 dark:border-teal-800/40 hover:border-teal-300",
+    iconColor: "text-accent",
+    iconBg: "bg-accent/10",
+    border: "border-accent/20 hover:border-accent/50",
     prompt: "Help me draft the scope section and context of the organization (Clause 4) for my ISO 9001 Quality Manual.",
   },
   {
     icon: Shield,
     label: "OH&S 45001",
-    iconColor: "text-emerald-600",
-    iconBg: "bg-emerald-50 dark:bg-emerald-900/30",
-    border: "border-emerald-100 dark:border-emerald-800/40 hover:border-emerald-300",
+    iconColor: "text-accent",
+    iconBg: "bg-accent/10",
+    border: "border-accent/20 hover:border-accent/50",
     prompt: "What are the most common ISO 45001:2018 gaps for a manufacturing company that is new to the standard?",
   },
   {
     icon: AlertTriangle,
     label: "NC Response",
-    iconColor: "text-amber-600",
-    iconBg: "bg-amber-50 dark:bg-amber-900/30",
-    border: "border-amber-100 dark:border-amber-800/40 hover:border-amber-300",
+    iconColor: "text-accent",
+    iconBg: "bg-accent/10",
+    border: "border-accent/20 hover:border-accent/50",
     prompt: "I received a major nonconformance against Clause 6.1 (Risk Analysis) during my IATF audit. Help me write a corrective action response.",
   },
 ];
@@ -145,16 +145,16 @@ export default function ISOManager() {
             <div className="p-5 border-b border-border/60">
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
                     <img src={acsiLogo} alt="ACSI" className="w-7 h-7 object-contain" />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-indigo-500 rounded-full border-2 border-white dark:border-card" />
+                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-accent rounded-full border-2 border-white dark:border-card" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-black text-primary text-base">Isa</span>
                     {isPro ? (
-                      <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-[10px] px-1.5 py-0 font-bold dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700">Pro</Badge>
+                      <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px] px-1.5 py-0 font-bold">Pro</Badge>
                     ) : (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">Free</Badge>
                     )}
@@ -175,7 +175,7 @@ export default function ISOManager() {
                       title={`ISO ${s.code} — ${s.label}`}
                       className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold transition-colors ${
                         active
-                          ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700"
+                          ? "bg-accent/10 text-accent border-accent/30"
                           : "bg-muted text-muted-foreground/40 border-border/50"
                       }`}
                     >
@@ -188,7 +188,7 @@ export default function ISOManager() {
               <Button
                 onClick={() => handleNewChat()}
                 disabled={isCreating}
-                className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="w-full gap-2 bg-accent hover:bg-accent/90 text-white"
                 data-testid="button-new-iso-chat"
               >
                 <Plus className="w-4 h-4" />
@@ -204,14 +204,14 @@ export default function ISOManager() {
               <ul className="space-y-1.5">
                 {(isPro ? ISA_PRO_CAPABILITIES : ISA_CAPABILITIES).map((cap) => (
                   <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-indigo-500 shrink-0" />
+                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
                     {cap}
                   </li>
                 ))}
               </ul>
               {!isPro && (
                 <Link href="/settings">
-                  <button className="mt-3 w-full text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 flex items-center gap-1 font-medium transition-colors">
+                  <button className="mt-3 w-full text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors">
                     <Zap className="w-3 h-3" />
                     Unlock Isa Pro — $149/mo
                     <ChevronRight className="w-3 h-3 ml-auto" />
@@ -235,7 +235,7 @@ export default function ISOManager() {
                       data-testid={`button-iso-conversation-${conv.id}`}
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-2 truncate ${
                         activeConversationId === conv.id
-                          ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/30 dark:text-indigo-300"
+                          ? "bg-accent/10 text-accent font-medium"
                           : "text-muted-foreground hover:bg-muted"
                       }`}
                     >
@@ -256,7 +256,7 @@ export default function ISOManager() {
                 </div>
                 <div className="w-full bg-muted rounded-full h-1.5">
                   <div
-                    className="bg-indigo-500 h-1.5 rounded-full transition-all"
+                    className="bg-accent h-1.5 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (usageData.questionCount / usageData.freeLimit) * 100)}%` }}
                   />
                 </div>
@@ -279,7 +279,7 @@ export default function ISOManager() {
             </button>
 
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-md bg-accent/10 border border-accent/20 flex items-center justify-center">
                 <img src={acsiLogo} alt="Isa" className="w-4 h-4 object-contain" />
               </div>
               <span className="text-sm font-bold text-primary">Isa</span>
@@ -287,17 +287,17 @@ export default function ISOManager() {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground hidden sm:flex">
-                <Activity className="w-3 h-3 text-indigo-500" />
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Activity className="w-3 h-3 text-accent" />
                 <span>Online</span>
               </div>
               {isPro ? (
-                <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-xs gap-1 dark:bg-violet-900/30 dark:text-violet-300">
+                <Badge className="bg-accent/10 text-accent border-accent/30 text-xs gap-1">
                   <Star className="w-3 h-3" /> Isa Pro
                 </Badge>
               ) : (
                 <Link href="/settings">
-                  <Button size="sm" variant="outline" className="h-7 text-xs text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-400">
+                  <Button size="sm" variant="outline" className="h-7 text-xs text-accent border-accent/30 hover:bg-accent/10">
                     Upgrade
                   </Button>
                 </Link>
@@ -313,8 +313,8 @@ export default function ISOManager() {
               <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-muted/60 backdrop-blur-sm">
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                   <Card className="max-w-md w-full p-8 text-center space-y-5 shadow-xl">
-                    <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-full flex items-center justify-center mx-auto">
-                      <Lock className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                    <div className="w-14 h-14 bg-accent/10 border border-accent/20 rounded-full flex items-center justify-center mx-auto">
+                      <Lock className="w-6 h-6 text-accent" />
                     </div>
                     <div>
                       <h3 className="text-xl font-black text-primary mb-2">Unlock Full ISO Guidance</h3>
@@ -323,27 +323,27 @@ export default function ISOManager() {
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 pt-1">
-                      <div className="border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 text-left">
+                      <div className="border border-accent/20 rounded-xl p-4 text-left">
                         <div className="flex items-center gap-1.5 mb-1">
-                          <Award className="w-4 h-4 text-indigo-600" />
+                          <Award className="w-4 h-4 text-accent" />
                           <span className="font-bold text-primary text-sm">Isa</span>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">9001 · 14001 · 45001</p>
-                        <p className="text-indigo-600 font-black text-lg mb-3">$49<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
+                        <p className="text-accent font-black text-lg mb-3">$49<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
                         <Link href="/settings">
-                          <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs" data-testid="button-upgrade-isa">Get Isa</Button>
+                          <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white text-xs" data-testid="button-upgrade-isa">Get Isa</Button>
                         </Link>
                       </div>
-                      <div className="border-2 border-violet-300 dark:border-violet-700 rounded-xl p-4 text-left relative bg-violet-50/50 dark:bg-violet-900/10">
-                        <div className="absolute -top-2.5 right-3 bg-violet-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">BEST</div>
+                      <div className="border-2 border-primary/30 rounded-xl p-4 text-left relative bg-primary/5">
+                        <div className="absolute -top-2.5 right-3 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">BEST</div>
                         <div className="flex items-center gap-1.5 mb-1">
-                          <Star className="w-4 h-4 text-violet-600" />
+                          <Star className="w-4 h-4 text-primary dark:text-accent" />
                           <span className="font-bold text-primary text-sm">Isa Pro</span>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">All 7 standards</p>
-                        <p className="text-violet-600 font-black text-lg mb-3">$149<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
+                        <p className="text-primary font-black text-lg mb-3 dark:text-accent">$149<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
                         <Link href="/settings">
-                          <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-700 text-white text-xs" data-testid="button-upgrade-isa-pro">Get Isa Pro</Button>
+                          <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs" data-testid="button-upgrade-isa-pro">Get Isa Pro</Button>
                         </Link>
                       </div>
                     </div>
@@ -386,27 +386,27 @@ function IsaEmptyState({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          <Card className="mb-8 overflow-hidden border-indigo-100 dark:border-indigo-900/50 shadow-sm">
-            {/* Indigo header strip */}
-            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-5 flex items-center gap-5">
-              <div className="w-16 h-16 bg-white/15 rounded-2xl flex items-center justify-center flex-shrink-0 border border-white/20">
+          <Card className="mb-8 overflow-hidden border-border/60 shadow-sm">
+            {/* Header strip — dark primary with orange accent */}
+            <div className="bg-primary px-6 py-5 flex items-center gap-5">
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center flex-shrink-0 border border-white/20">
                 <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
                   <h1 className="text-2xl font-black text-white">Isa</h1>
-                  <span className="text-xs bg-white/20 text-white border border-white/30 rounded-full px-2 py-0.5 font-semibold flex items-center gap-1">
+                  <span className="text-xs bg-accent/20 text-accent border border-accent/40 rounded-full px-2 py-0.5 font-semibold flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> ACSI ISO Manager
                   </span>
                 </div>
-                <p className="text-indigo-100 text-sm">Lead ISO Auditor AI — trained on ACSI's field-proven audit methodology</p>
+                <p className="text-white/60 text-sm">Lead ISO Auditor AI — trained on ACSI's field-proven audit methodology</p>
               </div>
             </div>
 
             {/* Standards bar */}
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 px-6 py-3 border-b border-indigo-100 dark:border-indigo-900/40 flex flex-wrap gap-2">
+            <div className="bg-muted/50 px-6 py-3 border-b border-border/60 flex flex-wrap gap-2">
               {ISA_STANDARDS.map((s) => (
-                <span key={s.code} className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 shadow-sm">
+                <span key={s.code} className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white dark:bg-muted text-primary border border-border/60 shadow-sm">
                   ISO {s.code} · {s.label}
                 </span>
               ))}
@@ -420,7 +420,7 @@ function IsaEmptyState({
               <Button
                 onClick={onNewChat}
                 disabled={isCreating}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-semibold"
+                className="bg-accent hover:bg-accent/90 text-white gap-2 font-semibold"
                 data-testid="button-start-iso-chat"
               >
                 <MessageSquare className="w-4 h-4" />
@@ -448,7 +448,7 @@ function IsaEmptyState({
                 <div className={`w-8 h-8 rounded-lg ${item.iconBg} flex items-center justify-center mb-3`}>
                   <item.icon className={`w-4 h-4 ${item.iconColor}`} />
                 </div>
-                <p className={`text-sm font-bold text-primary mb-1`}>{item.label}</p>
+                <p className="text-sm font-bold text-primary mb-1">{item.label}</p>
                 <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.prompt}</p>
               </motion.button>
             ))}
@@ -461,11 +461,11 @@ function IsaEmptyState({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             {/* Isa */}
-            <Card className="p-5 border-indigo-100 dark:border-indigo-900/40 bg-white dark:bg-card">
+            <Card className="p-5 border-border/60 bg-white dark:bg-card">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-100 dark:border-indigo-800">
-                    <Award className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20">
+                    <Award className="w-4 h-4 text-accent" />
                   </div>
                   <div>
                     <p className="font-black text-primary text-sm">Isa</p>
@@ -473,41 +473,41 @@ function IsaEmptyState({
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-indigo-600 dark:text-indigo-400">$49</p>
+                  <p className="font-black text-accent">$49</p>
                   <p className="text-xs text-muted-foreground">/mo</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {ISA_TIER_STANDARDS.essentials.map((s) => (
-                  <span key={s} className="text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded font-semibold">ISO {s}</span>
+                  <span key={s} className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent border border-accent/20 rounded font-semibold">ISO {s}</span>
                 ))}
               </div>
               <ul className="space-y-1.5 mb-4">
                 {ISA_CAPABILITIES.map((cap) => (
                   <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-indigo-500 shrink-0" />
+                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
                     {cap}
                   </li>
                 ))}
               </ul>
               <Link href="/settings">
-                <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold" data-testid="button-plan-isa">
+                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold" data-testid="button-plan-isa">
                   Get Isa
                 </Button>
               </Link>
             </Card>
 
             {/* Isa Pro */}
-            <Card className="p-5 border-2 border-violet-200 dark:border-violet-800 bg-white dark:bg-card relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-violet-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">
+            <Card className="p-5 border-2 border-primary/20 bg-white dark:bg-card relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-xl">
                 BEST VALUE
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-50/60 to-transparent dark:from-violet-900/10 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
               <div className="relative">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center border border-violet-100 dark:border-violet-800">
-                      <Star className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                      <Star className="w-4 h-4 text-primary dark:text-accent" />
                     </div>
                     <div>
                       <p className="font-black text-primary text-sm">Isa Pro</p>
@@ -515,25 +515,25 @@ function IsaEmptyState({
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-black text-violet-600 dark:text-violet-400">$149</p>
+                    <p className="font-black text-primary dark:text-accent">$149</p>
                     <p className="text-xs text-muted-foreground">/mo</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {ISA_TIER_STANDARDS.professional.map((s) => (
-                    <span key={s} className="text-[10px] px-1.5 py-0.5 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-800 rounded font-semibold">ISO {s}</span>
+                    <span key={s} className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary dark:text-accent border border-primary/20 rounded font-semibold">ISO {s}</span>
                   ))}
                 </div>
                 <ul className="space-y-1.5 mb-4">
                   {ISA_PRO_CAPABILITIES.map((cap) => (
                     <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3 h-3 text-violet-500 shrink-0" />
+                      <CheckCircle2 className="w-3 h-3 text-primary dark:text-accent shrink-0" />
                       {cap}
                     </li>
                   ))}
                 </ul>
                 <Link href="/settings">
-                  <Button size="sm" className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold" data-testid="button-plan-isa-pro">
+                  <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" data-testid="button-plan-isa-pro">
                     Get Isa Pro
                   </Button>
                 </Link>
@@ -590,7 +590,7 @@ function ISOChatInterface({
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border ${
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground border-primary/20"
-                    : "bg-white dark:bg-card border-indigo-100 dark:border-indigo-900"
+                    : "bg-white dark:bg-card border-border/60"
                 }`}>
                   {msg.role === "user" ? (
                     <span className="text-[10px] font-bold">You</span>
@@ -603,16 +603,16 @@ function ISOChatInterface({
                 <div className={`flex-1 max-w-[85%] ${msg.role === "user" ? "ml-auto" : ""}`}>
                   {msg.role === "assistant" && (
                     <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Isa</span>
+                      <span className="text-xs font-bold text-primary">Isa</span>
                       <span className="text-[10px] text-muted-foreground">Lead ISO Auditor AI</span>
                       {isPro && (
-                        <span className="text-[10px] bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800 rounded px-1 font-semibold">Pro</span>
+                        <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 rounded px-1 font-semibold">Pro</span>
                       )}
                     </div>
                   )}
                   <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
                     msg.role === "user"
-                      ? "bg-indigo-600 text-white rounded-tr-sm"
+                      ? "bg-primary text-primary-foreground rounded-tr-sm"
                       : "bg-white dark:bg-card border border-border/60 text-primary rounded-tl-sm"
                   }`}>
                     {msg.content}
@@ -625,12 +625,12 @@ function ISOChatInterface({
           {/* Streaming */}
           {isStreaming && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-white dark:bg-card border border-indigo-100 dark:border-indigo-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-card border border-border/60 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <img src={acsiLogo} alt="Isa" className="w-5 h-5 object-contain animate-pulse" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Isa</span>
+                  <span className="text-xs font-bold text-primary">Isa</span>
                   <span className="text-[10px] text-muted-foreground">auditing your question…</span>
                 </div>
                 <div className="p-4 rounded-2xl rounded-tl-sm bg-white dark:bg-card border border-border/60 shadow-sm">
@@ -638,7 +638,7 @@ function ISOChatInterface({
                     {[0, 1, 2].map((i) => (
                       <motion.div
                         key={i}
-                        className="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                        className="w-1.5 h-1.5 rounded-full bg-accent"
                         animate={{ y: [-2, 2, -2] }}
                         transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.15 }}
                       />
@@ -652,20 +652,20 @@ function ISOChatInterface({
           {/* Upgrade nudge in-chat */}
           {limitReached && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Card className="p-6 text-center border-indigo-100 dark:border-indigo-900 shadow-sm">
-                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-3 border border-indigo-100 dark:border-indigo-800">
-                  <Lock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <Card className="p-6 text-center border-border/60 shadow-sm">
+                <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-accent/20">
+                  <Lock className="w-5 h-5 text-accent" />
                 </div>
                 <p className="text-sm font-bold text-primary mb-1">Free preview complete</p>
                 <p className="text-xs text-muted-foreground mb-4">Upgrade to continue your ISO consultation with Isa</p>
                 <div className="flex gap-3 justify-center">
                   <Link href="/settings">
-                    <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs" data-testid="button-upgrade-from-chat">
+                    <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-upgrade-from-chat">
                       Get Isa — $49/mo
                     </Button>
                   </Link>
                   <Link href="/settings">
-                    <Button size="sm" variant="outline" className="border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-xs font-semibold">
+                    <Button size="sm" variant="outline" className="border-primary/20 text-primary hover:bg-primary/5 text-xs font-semibold">
                       Isa Pro — $149/mo
                     </Button>
                   </Link>
@@ -692,13 +692,13 @@ function ISOChatInterface({
                 : "Ask about gap analysis, audit readiness, clause requirements, NCs…"
             }
             disabled={isStreaming || limitReached}
-            className="flex-1 bg-muted/40 border-border/70 focus:border-indigo-400 focus:ring-indigo-400/20 h-11"
+            className="flex-1 bg-muted/40 border-border/70 focus:border-accent focus:ring-accent/20 h-11"
             data-testid="input-iso-message"
           />
           <Button
             type="submit"
             disabled={isStreaming || limitReached || !input.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white h-11 px-4 gap-1.5 font-semibold"
+            className="bg-accent hover:bg-accent/90 text-white h-11 px-4 gap-1.5 font-semibold"
             data-testid="button-send-iso-message"
           >
             <Send className="w-4 h-4" />
