@@ -1077,7 +1077,7 @@ export default function Dashboard() {
                   <HelpTip id="askCorey" />
                 </CardTitle>
                 <CardDescription>
-                  Get instant answers for OSHA 1904 and DOT regulations.
+                  Get instant answers for OSHA 1904 and DOT regulations. Get quick access to Corey's 42 Documents.
                 </CardDescription>
               </CardHeader>
               <CardContent>
