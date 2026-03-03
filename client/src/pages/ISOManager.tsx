@@ -471,8 +471,11 @@ function IsaEmptyState({
                   </div>
                 </div>
                 <div className="mb-4 pb-3 border-b border-border/60">
-                  <p className="font-black text-accent text-3xl leading-none">$3,588</p>
-                  <p className="text-xs text-muted-foreground">per year · $299/mo</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-black text-accent text-3xl leading-none">$299</p>
+                    <span className="text-sm text-muted-foreground font-medium">/mo</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">billed annually · $3,588/yr</p>
                 </div>
                 <div className="mb-3">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Standards + Vault</p>
@@ -515,8 +518,11 @@ function IsaEmptyState({
                   </div>
                 </div>
                 <div className="mb-4 pb-3 border-b border-border/60">
-                  <p className="font-black text-accent text-3xl leading-none">$7,988<span className="text-lg">+</span></p>
-                  <p className="text-xs text-muted-foreground">per year · varies by standard</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-black text-accent text-3xl leading-none">$666<span className="text-lg">+</span></p>
+                    <span className="text-sm text-muted-foreground font-medium">/mo</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">billed annually · from $7,988/yr</p>
                 </div>
                 <div className="mb-3">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Choose One Standard</p>
@@ -531,7 +537,7 @@ function IsaEmptyState({
                   <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>AI document generation</span></li>
                   <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Secure document vault</span></li>
                   <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Version control &amp; audit trail</span></li>
-                  <li className="flex items-start gap-1.5 text-xs font-semibold text-primary"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>IATF 16949: $9,988/yr</span></li>
+                  <li className="flex items-start gap-1.5 text-xs font-semibold text-primary"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>IATF 16949: $832/mo ($9,988/yr)</span></li>
                 </ul>
                 <Link href="/settings">
                   <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-plan-iso-manager-custom">
@@ -558,8 +564,11 @@ function IsaEmptyState({
                   </div>
                 </div>
                 <div className="mb-4 pb-3 border-b border-white/15">
-                  <p className="font-black text-accent text-3xl leading-none">$14,988</p>
-                  <p className="text-xs text-white/50">per year</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-black text-accent text-3xl leading-none">$1,249</p>
+                    <span className="text-sm text-white/50 font-medium">/mo</span>
+                  </div>
+                  <p className="text-xs text-white/50 mt-0.5">billed annually · $14,988/yr</p>
                 </div>
                 <div className="mb-3">
                   <p className="text-[10px] font-bold text-white/50 uppercase tracking-wide mb-2">All 7 Standards + Full Vault</p>
