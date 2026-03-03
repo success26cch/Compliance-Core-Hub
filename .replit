@@ -45,4 +45,4 @@ integrations = ["javascript_log_in_with_replit:2.0.0", "javascript_anthropic_ai_
 [userenv]
 
 [userenv.shared]
-ADMIN_USERS = "raulv9471@gmail.com"
+ADMIN_USERS = "raulv9471@gmail.com,evillarreal@acsi-quality.com"
