@@ -235,7 +235,7 @@ function CoreyLanding() {
               In our world, <span className="text-white font-semibold">"close enough" is a liability.</span> You don't need an AI that knows a little bit about everything; you need an expert that knows everything about 29 CFR.
             </p>
             <p className="text-white/70 text-base md:text-lg leading-relaxed">
-              Corey is the first specialized AI engine built from the actual DNA of <span className="text-white font-semibold">29 CFR and DOT 49 CFR</span>. He isn't just searching the web — he is processing two decades of field-tested logic to give you the exact answer you need, exactly when you need it.
+              Corey is the first specialized AI engine built from the actual DNA of <span className="text-white font-semibold">29 CFR and DOT 49 CFR</span>. He isn't just searching the web — Corey is different. He wasn't just "programmed"; he was built using a proprietary logic bridge that connects the literal text of the Federal Regulations. Corey gives you the exact answer you need, exactly when you need it. Give him a shot, ask him anything.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
