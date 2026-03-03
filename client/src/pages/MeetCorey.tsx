@@ -575,8 +575,6 @@ export default function MeetCorey() {
               { role: "HR Professionals", desc: "Navigate OSHA recordkeeping, workers' comp, DOT compliance, and return-to-work programs." },
               { role: "Plant Managers & Operations VPs", desc: "Understand your exposure, track deadlines, and run compliance programs that actually work." },
               { role: "Business Owners & Presidents", desc: "Know your OSHA citation exposure, understand penalty structures, and protect your workforce." },
-              { role: "Quality Managers & Internal Auditors", desc: "ISO gap analysis, audit preparation, integrated management system guidance." },
-              { role: "Compliance Officers", desc: "The expert in your pocket — 25+ years of regulatory knowledge, available 24/7." },
             ].map((item, i) => (
               <motion.div key={i} variants={fadeUp} className="p-6 rounded-xl bg-white/[0.03] border border-white/5" data-testid={`audience-card-${i}`}>
                 <h3 className="text-base font-bold text-white mb-2">{item.role}</h3>
