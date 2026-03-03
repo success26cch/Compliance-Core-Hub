@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import jsPDF from "jspdf";
@@ -104,6 +104,7 @@ function RecordabilityDecisionTree() {
   const [result, setResult] = useState<"recordable" | "not-recordable" | "likely-not-recordable" | null>(null);
   const [resultReason, setResultReason] = useState<string>("");
   const [resultCitation, setResultCitation] = useState<string>("");
+  const [stepHistory, setStepHistory] = useState<number[]>([]);
   const [usageCount, setUsageCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -124,6 +125,7 @@ function RecordabilityDecisionTree() {
     const q = RECORDABILITY_QUESTIONS[currentStep];
     if (answer === "yes") {
       if (q.yesResult) {
+        setStepHistory(prev => [...prev, currentStep]);
         setResult(q.yesResult);
         setResultReason((q as any).yesReason || "");
         setResultCitation((q as any).yescitation || "");
@@ -132,10 +134,12 @@ function RecordabilityDecisionTree() {
           .then(data => setUsageCount(data.count))
           .catch(() => {});
       } else if (q.yesNext) {
+        setStepHistory(prev => [...prev, currentStep]);
         setCurrentStep(q.yesNext - 1);
       }
     } else {
       if (q.noResult) {
+        setStepHistory(prev => [...prev, currentStep]);
         setResult(q.noResult);
         setResultReason((q as any).noReason || "");
         setResultCitation((q as any).nocitation || (q as any).noReason2 || "");
@@ -144,9 +148,20 @@ function RecordabilityDecisionTree() {
           .then(data => setUsageCount(data.count))
           .catch(() => {});
       } else if (q.noNext) {
+        setStepHistory(prev => [...prev, currentStep]);
         setCurrentStep(q.noNext - 1);
       }
     }
+  };
+
+  const handleBack = () => {
+    if (stepHistory.length === 0) return;
+    const prev = stepHistory[stepHistory.length - 1];
+    setStepHistory(h => h.slice(0, -1));
+    setResult(null);
+    setResultReason("");
+    setResultCitation("");
+    setCurrentStep(prev);
   };
 
   const handleStartOver = () => {
@@ -158,6 +173,7 @@ function RecordabilityDecisionTree() {
     setResult(null);
     setResultReason("");
     setResultCitation("");
+    setStepHistory([]);
   };
 
   const resultConfig = {
@@ -241,8 +257,20 @@ function RecordabilityDecisionTree() {
                 ))}
               </div>
               <div className="flex items-center justify-between mb-2">
-                <div className="text-sm text-accent font-semibold" data-testid="text-step-indicator">
-                  Question {currentStep + 1} of {totalSteps}
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-accent font-semibold" data-testid="text-step-indicator">
+                    Question {currentStep + 1} of {totalSteps}
+                  </div>
+                  {stepHistory.length > 0 && (
+                    <button
+                      onClick={handleBack}
+                      className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors"
+                      data-testid="button-recordability-back"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      Back
+                    </button>
+                  )}
                 </div>
                 <div className="text-xs text-white/40" data-testid="text-uses-remaining">
                   {MAX_FREE_USES - usageCount} free {MAX_FREE_USES - usageCount === 1 ? "use" : "uses"} remaining
@@ -317,6 +345,15 @@ function RecordabilityDecisionTree() {
                     Get Unlimited Guidance — $99/mo
                   </Button>
                 </Link>
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  className="border-white/20 text-white/70 hover:text-white font-semibold"
+                  data-testid="button-recordability-back-result"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Change Answer
+                </Button>
                 <Button
                   variant="outline"
                   onClick={handleStartOver}
