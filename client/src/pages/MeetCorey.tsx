@@ -568,17 +568,20 @@ export default function MeetCorey() {
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
           >
             {[
-              { role: "Safety Directors & EHS Managers", desc: "Lead meetings, audit logs, prepare for inspections, generate documents — all in one place." },
-              { role: "HR Professionals", desc: "Navigate OSHA recordkeeping, workers' comp, DOT compliance, and return-to-work programs." },
-              { role: "Plant Managers & Operations VPs", desc: "Understand your exposure, track deadlines, and run compliance programs that actually work." },
-              { role: "Business Owners & Presidents", desc: "Know your OSHA citation exposure, understand penalty structures, and protect your workforce." },
+              { icon: HardHat, role: "Safety Directors & EHS Managers", desc: "Lead meetings, audit logs, prepare for inspections, generate documents — all in one place." },
+              { icon: Users, role: "HR Professionals", desc: "Navigate OSHA recordkeeping, workers' comp, DOT compliance, and return-to-work programs." },
+              { icon: BarChart3, role: "Plant Managers & Operations VPs", desc: "Understand your exposure, track deadlines, and run compliance programs that actually work." },
+              { icon: Scale, role: "Business Owners & Presidents", desc: "Know your OSHA citation exposure, understand penalty structures, and protect your workforce." },
             ].map((item, i) => (
-              <motion.div key={i} variants={fadeUp} className="p-6 rounded-xl bg-white/[0.03] border border-white/5" data-testid={`audience-card-${i}`}>
-                <h3 className="text-base font-bold text-white mb-2">{item.role}</h3>
-                <p className="text-sm text-white/50">{item.desc}</p>
+              <motion.div key={i} variants={fadeUp} className="flex flex-col p-6 rounded-xl bg-white/[0.04] border border-white/8 hover:bg-white/[0.07] hover:border-accent/30 transition-all duration-200" data-testid={`audience-card-${i}`}>
+                <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
+                  <item.icon className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="text-sm font-bold text-white mb-2 leading-snug">{item.role}</h3>
+                <p className="text-xs text-white/50 leading-relaxed">{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>
