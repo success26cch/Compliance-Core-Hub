@@ -182,10 +182,6 @@ export default function MeetCorey() {
       a: "Corey will tell you honestly. If a question involves state-specific regulations, emerging standards, or areas outside its regulatory expertise, Corey clearly states that and recommends consulting a specialist or your state OSHA plan. It will never make something up.",
     },
     {
-      q: "Can Corey help with ISO management?",
-      a: "Corey handles ISO gap analysis and can walk through standards clause by clause. For full ISO implementation, audit preparation, and ongoing management system support, Corey directs you to ACSI (Assessment & Consulting Services Inc.) — the dedicated ISO management AI within the Core Compliance Hub ecosystem.",
-    },
-    {
       q: "Is there a free trial?",
       a: "Yes! You can try Corey with 3 free questions on our homepage — no credit card required. You can also scan our Try Corey QR code for the same trial experience. Once you see the difference, upgrading to the full $99/month subscription unlocks unlimited access.",
     },
