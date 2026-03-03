@@ -246,7 +246,7 @@ function CoreyLanding() {
             )}
             {!isInstallable && (
               <Link href="/">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6" data-testid="button-corey-learn-more">
+                <Button size="lg" variant="outline" className="bg-white border-white text-gray-900 hover:bg-gray-100 hover:text-black text-lg px-8 py-6" data-testid="button-corey-learn-more">
                   Learn More <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
