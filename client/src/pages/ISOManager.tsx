@@ -145,8 +145,8 @@ export default function ISOManager() {
             <div className="p-5 border-b border-border/60">
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                    <img src={acsiLogo} alt="ACSI" className="w-7 h-7 object-contain" />
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
+                    <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-accent rounded-full border-2 border-white dark:border-card" />
                 </div>
@@ -279,8 +279,8 @@ export default function ISOManager() {
             </button>
 
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-accent/10 border border-accent/20 flex items-center justify-center">
-                <img src={acsiLogo} alt="Isa" className="w-4 h-4 object-contain" />
+              <div className="w-7 h-7 rounded-md bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
+                <img src={acsiLogo} alt="Isa" className="w-5 h-5 object-contain" />
               </div>
               <span className="text-sm font-bold text-primary">Isa</span>
               <span className="text-xs text-muted-foreground hidden sm:block">· ACSI Lead ISO Auditor AI</span>
@@ -389,8 +389,8 @@ function IsaEmptyState({
           <Card className="mb-8 overflow-hidden border-border/60 shadow-sm">
             {/* Header strip — dark primary with orange accent */}
             <div className="bg-primary px-6 py-5 flex items-center gap-5">
-              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center flex-shrink-0 border border-white/20">
-                <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" />
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md">
+                <img src={acsiLogo} alt="ACSI" className="w-12 h-12 object-contain" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
