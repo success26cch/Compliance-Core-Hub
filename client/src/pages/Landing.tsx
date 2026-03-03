@@ -92,7 +92,7 @@ const RECORDABILITY_QUESTIONS = [
     yesReason: "A physician or licensed health care professional (PLHCP) diagnosed a significant injury or illness. This criterion applies even if the case did not result in days away from work, restricted duty, medical treatment, or loss of consciousness.",
     yescitation: "29 CFR 1904.7(a)(1) — 'You must consider an injury or illness to be recordable if it results in... a significant injury or illness diagnosed by a physician or other licensed health care professional, even if it does not result in death, days away from work, restricted work or job transfer, medical treatment beyond first aid, or loss of consciousness.'",
     noResult: "likely-not-recordable" as const,
-    noReason: "Based on your answers, this incident does not appear to meet any of the six OSHA general recording criteria. However, complex cases should always be reviewed by a compliance expert.",
+    noReason: "Based on your answers, this incident does not meet any of the six OSHA general recording criteria under 29 CFR 1904.7(a)(1).",
     noReason2: "29 CFR 1904.7(a)(1) — none of the six general recording criteria were met.",
   },
 ];
@@ -178,22 +178,22 @@ function RecordabilityDecisionTree() {
 
   const resultConfig = {
     recordable: {
-      title: "Likely OSHA Recordable",
-      description: "Based on your answers, this incident likely meets OSHA 29 CFR 1904 recordability criteria and should be recorded on your OSHA 300 Log.",
+      title: "Yes — OSHA Recordable",
+      description: "Based on your answers: Yes. This incident meets OSHA 29 CFR 1904 recordability criteria and must be recorded on your OSHA 300 Log.",
       color: "text-red-400",
       bgColor: "bg-red-500/10 border-red-500/30",
       icon: AlertTriangle,
     },
     "not-recordable": {
-      title: "Not Recordable",
-      description: "Based on your answers, this incident does not appear to be work-related and is likely not OSHA recordable.",
+      title: "No — Not Recordable",
+      description: "Based on your answers: No. This incident is not work-related and does not meet OSHA 29 CFR 1904 recordability criteria.",
       color: "text-green-400",
       bgColor: "bg-green-500/10 border-green-500/30",
       icon: ShieldCheck,
     },
     "likely-not-recordable": {
-      title: "Likely Not Recordable",
-      description: "Based on your answers, this incident likely does not meet OSHA 29 CFR 1904 recordability criteria. However, always consult a compliance expert for complex cases.",
+      title: "No — Not Recordable",
+      description: "Based on your answers: No. This incident does not meet OSHA 29 CFR 1904 recordability criteria.",
       color: "text-green-400",
       bgColor: "bg-green-500/10 border-green-500/30",
       icon: ShieldCheck,
