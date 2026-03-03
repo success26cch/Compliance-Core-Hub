@@ -464,7 +464,7 @@ const HELP_CONTENT: Record<string, HelpContent> = {
     what: "Corey is the World's First AI built from the DNA of 29 CFR — a Senior Occupational Health, Safety & Compliance Expert. Ask any OSHA, DOT, or ISO question and get a precise, regulation-cited answer in seconds.",
     how: [
       "Use Quick Action cards: Lead a Safety Meeting, Audit My OSHA 300, Mock OSHA Inspection, Weekly Safety Topic.",
-      "Open the Documents Panel to generate any of 24 compliance documents instantly.",
+      "Open the Documents Panel to generate any of 42 compliance documents instantly.",
       "For ISO work, ask Corey to connect you with the ACSI ISO Manager for a gap analysis.",
       "Corey never hallucinates — it cites only official regulatory sources (OSHA, DOT, CFR).",
     ],
@@ -610,7 +610,7 @@ const SEARCH_INDEX = [
   { label: "How does Employee Management work?", description: "Central database for all employees. Store contact info, DOT physical dates, drug screen results, vaccine records, and medical surveillance data.", href: "/employees", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Incident Log work?", description: "Record every workplace injury or illness. System applies 29 CFR 1904 recordability criteria and generates OSHA 300 entries and CAPA forms.", href: "/incidents", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Employer Training Portal work?", description: "Assign OSHA courses to employees. They get an auto-text with their unique training link. You and DER are notified upon completion.", href: "/employer-training", icon: HelpCircle, category: "How it Works" },
-  { label: "How does Corey AI work?", description: "Ask OSHA, DOT, or ISO questions. Use Quick Actions, generate 24 compliance documents, run mock inspections, lead safety meetings, and audit your OSHA 300.", href: "/corey", icon: HelpCircle, category: "How it Works" },
+  { label: "How does Corey AI work?", description: "Ask OSHA, DOT, or ISO questions. Use Quick Actions, generate 42 compliance documents, run mock inspections, lead safety meetings, and audit your OSHA 300.", href: "/corey", icon: HelpCircle, category: "How it Works" },
   { label: "How does the OSHA Decision Tree work?", description: "Answer 5 questions about any injury to get an immediate recordability determination under 29 CFR 1904 with the exact regulation cited.", href: "/decision-tree", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Clinic Communication Letter work?", description: "Generate a letter instructing your clinic on treatment preferences, first-aid-only policies, and restriction wording to avoid unnecessary recordables.", href: "/clinic-letter", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Digital Medical Passport work?", description: "Generate a QR code for each employee. Clinic scans it at check-in to pull up their authorization form. You get an immediate text notification.", href: "/employee-passport", icon: HelpCircle, category: "How it Works" },
