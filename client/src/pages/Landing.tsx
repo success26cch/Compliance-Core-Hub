@@ -716,7 +716,7 @@ export default function Landing() {
 
             {/* Two-Expert Intro Cards */}
             <div className="max-w-3xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-              <div className="bg-black/40 border border-accent/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-corey">
+              <div className="bg-black border border-accent/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-corey">
                 <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
                   <ShieldCheck className="w-5 h-5 text-accent" />
                 </div>
@@ -728,7 +728,7 @@ export default function Landing() {
                   <p className="text-sm text-white/70 leading-snug">Your 24/7 Senior Occupational Health &amp; Safety Expert — built from the DNA of 29 CFR.</p>
                 </div>
               </div>
-              <div className="bg-black/40 border border-indigo-500/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-isa">
+              <div className="bg-black border border-indigo-500/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-isa">
                 <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
                   <Award className="w-5 h-5 text-indigo-400" />
                 </div>
