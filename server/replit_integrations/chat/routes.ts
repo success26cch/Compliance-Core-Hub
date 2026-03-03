@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { chatStorage } from "./storage";
 import { storage } from "../../storage";
 import { CCH_SYSTEM_PROMPT, CCH_TRIAL_SYSTEM_PROMPT, CCH_LANDING_SYSTEM_PROMPT } from "./systemPrompt";
+import { ISA_SYSTEM_PROMPT } from "./isaSystemPrompt";
 
 const anthropic = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
@@ -345,7 +346,179 @@ export function registerChatRoutes(app: Express): void {
       res.end();
     } catch (error) {
       console.error("Error sending message:", error);
-      // Check if headers already sent (SSE streaming started)
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed to send message" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: "Failed to send message" });
+      }
+    }
+  });
+
+  // ─── ISA (ISO MANAGER) ROUTES ────────────────────────────────────────────
+  // Separate from Corey — uses ISA_SYSTEM_PROMPT exclusively
+
+  app.get("/api/isa-conversations", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const conversations = await chatStorage.getAllConversations(userId + ":isa");
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching Isa conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  app.post("/api/isa-conversations", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const { title } = req.body;
+      const conversation = await chatStorage.createConversation(title || "New ISO Chat", userId + ":isa");
+      res.status(201).json(conversation);
+    } catch (error) {
+      console.error("Error creating Isa conversation:", error);
+      res.status(500).json({ error: "Failed to create conversation" });
+    }
+  });
+
+  app.get("/api/isa-conversations/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      const conversation = await chatStorage.getConversation(id, userId + ":isa");
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      const messages = await chatStorage.getMessagesByConversation(id);
+      res.json({ ...conversation, messages });
+    } catch (error) {
+      console.error("Error fetching Isa conversation:", error);
+      res.status(500).json({ error: "Failed to fetch conversation" });
+    }
+  });
+
+  app.patch("/api/isa-conversations/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      const { title } = req.body;
+      if (!title || typeof title !== "string") {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      await chatStorage.updateConversationTitle(id, title, userId + ":isa");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error renaming Isa conversation:", error);
+      res.status(500).json({ error: "Failed to rename conversation" });
+    }
+  });
+
+  app.delete("/api/isa-conversations/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      await chatStorage.deleteConversation(id, userId + ":isa");
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting Isa conversation:", error);
+      res.status(500).json({ error: "Failed to delete conversation" });
+    }
+  });
+
+  app.post("/api/isa-conversations/:id/messages", async (req: Request, res: Response) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const { content } = req.body;
+
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+
+      const userId = (req.user as any).claims.sub;
+      const conversation = await chatStorage.getConversation(conversationId, userId + ":isa");
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      const sub = await storage.getSubscription(userId);
+      const isPro = sub?.status === "active";
+      const userIsAdmin = await isAdminOrSuperadmin(req.user);
+
+      let isTeamMember = false;
+      if (!isPro && !userIsAdmin) {
+        const membership = await storage.getTeamMembership(userId);
+        if (membership) isTeamMember = true;
+      }
+      const hasAccess = isPro || userIsAdmin || isTeamMember;
+
+      if (!hasAccess) {
+        const usage = await storage.getQuestionUsage(userId);
+        if ((usage?.questionCount || 0) >= FREE_QUESTION_LIMIT) {
+          return res.status(403).json({
+            error: "Free question limit reached",
+            limitReached: true,
+            questionCount: usage?.questionCount || 0,
+            freeLimit: FREE_QUESTION_LIMIT
+          });
+        }
+      }
+
+      if (!hasAccess) {
+        await storage.incrementQuestionCount(userId);
+      }
+
+      await chatStorage.createMessage(conversationId, "user", content);
+
+      const messages = await chatStorage.getMessagesByConversation(conversationId);
+      const chatMessages = messages.map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = anthropic.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 2048,
+        system: ISA_SYSTEM_PROMPT,
+        messages: chatMessages,
+      });
+
+      let fullResponse = "";
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) {
+            fullResponse += text;
+            res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          }
+        }
+      }
+
+      await chatStorage.createMessage(conversationId, "assistant", fullResponse);
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Error sending Isa message:", error);
       if (res.headersSent) {
         res.write(`data: ${JSON.stringify({ error: "Failed to send message" })}\n\n`);
         res.end();

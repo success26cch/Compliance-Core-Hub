@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useConversations, useCreateConversation, useChatStream } from "@/hooks/use-chat";
+import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from "@/hooks/use-isa-chat";
 import { useQuestionUsage } from "@/hooks/use-subscriptions";
 import { Link } from "wouter";
 import { 
@@ -20,8 +20,8 @@ import {
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 
 export default function ISOManager() {
-  const { data: conversations, isLoading } = useConversations();
-  const { mutate: createConversation } = useCreateConversation();
+  const { data: conversations, isLoading } = useIsaConversations();
+  const { mutate: createConversation } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
 
@@ -146,7 +146,7 @@ export default function ISOManager() {
 }
 
 function ISOChatInterface({ conversationId, onMessageSent }: { conversationId: number; onMessageSent?: () => void }) {
-  const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
+  const { messages, sendMessage, isStreaming, limitReached } = useIsaChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
