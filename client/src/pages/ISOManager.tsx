@@ -28,6 +28,9 @@ import {
   Activity,
   AlertTriangle,
   Menu,
+  Vault,
+  FileText,
+  Car,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 
@@ -50,49 +53,31 @@ const QUICK_PROMPTS = [
   {
     icon: FileSearch,
     label: "Gap Analysis",
-    iconColor: "text-accent",
-    iconBg: "bg-accent/10",
-    border: "border-accent/20 hover:border-accent/50",
     prompt: "I need a gap analysis for ISO 9001:2015. Walk me through each clause and ask me questions to assess my current state.",
   },
   {
     icon: ClipboardCheck,
     label: "Audit Readiness",
-    iconColor: "text-accent",
-    iconBg: "bg-accent/10",
-    border: "border-accent/20 hover:border-accent/50",
     prompt: "Help me prepare for an upcoming ISO certification audit. What should I have ready and what are the most common nonconformances?",
   },
   {
     icon: Layers,
     label: "IATF 16949",
-    iconColor: "text-accent",
-    iconBg: "bg-accent/10",
-    border: "border-accent/20 hover:border-accent/50",
     prompt: "Explain the three types of internal audits required by IATF 16949 and what evidence I need for each.",
   },
   {
     icon: BookOpen,
     label: "Quality Manual",
-    iconColor: "text-accent",
-    iconBg: "bg-accent/10",
-    border: "border-accent/20 hover:border-accent/50",
     prompt: "Help me draft the scope section and context of the organization (Clause 4) for my ISO 9001 Quality Manual.",
   },
   {
     icon: Shield,
     label: "OH&S 45001",
-    iconColor: "text-accent",
-    iconBg: "bg-accent/10",
-    border: "border-accent/20 hover:border-accent/50",
     prompt: "What are the most common ISO 45001:2018 gaps for a manufacturing company that is new to the standard?",
   },
   {
     icon: AlertTriangle,
     label: "NC Response",
-    iconColor: "text-accent",
-    iconBg: "bg-accent/10",
-    border: "border-accent/20 hover:border-accent/50",
     prompt: "I received a major nonconformance against Clause 6.1 (Risk Analysis) during my IATF audit. Help me write a corrective action response.",
   },
 ];
@@ -113,7 +98,24 @@ const ISA_PRO_CAPABILITIES = [
   "ISO/IEC 27001 InfoSec",
   "AS9100 aerospace auditing",
   "Second-party audit support",
-  "Custom document templates",
+];
+
+const ISO_MANAGER_CAPABILITIES = [
+  "Everything in Isa",
+  "AI document generation",
+  "Secure document vault",
+  "Version control & revision history",
+  "Audit-ready document library",
+  "Organization profile storage",
+];
+
+const ISO_MANAGER_PRO_CAPABILITIES = [
+  "Everything in ISO Manager",
+  "All 7 specialized standards",
+  "Full document library — all standards",
+  "Cross-standard integration guidance",
+  "Second-party audit support",
+  "Priority ACSI consulting access",
 ];
 
 export default function ISOManager() {
@@ -175,8 +177,8 @@ export default function ISOManager() {
                       title={`ISO ${s.code} — ${s.label}`}
                       className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold transition-colors ${
                         active
-                          ? "bg-accent/10 text-accent border-accent/30"
-                          : "bg-muted text-muted-foreground/40 border-border/50"
+                          ? "bg-muted text-primary border-border"
+                          : "bg-muted text-muted-foreground/40 border-border/40"
                       }`}
                     >
                       {s.code}
@@ -213,7 +215,7 @@ export default function ISOManager() {
                 <Link href="/settings">
                   <button className="mt-3 w-full text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors">
                     <Zap className="w-3 h-3" />
-                    Unlock Isa Pro — $149/mo
+                    Upgrade to Isa Pro — $199/mo
                     <ChevronRight className="w-3 h-3 ml-auto" />
                   </button>
                 </Link>
@@ -307,7 +309,6 @@ export default function ISOManager() {
 
           {/* Content */}
           <div className="flex-1 overflow-hidden flex flex-col relative">
-
             {/* Paywall overlay */}
             {usageData && !canAsk && !activeConversationId && (
               <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-muted/60 backdrop-blur-sm">
@@ -319,29 +320,25 @@ export default function ISOManager() {
                     <div>
                       <h3 className="text-xl font-black text-primary mb-2">Unlock Full ISO Guidance</h3>
                       <p className="text-muted-foreground text-sm leading-relaxed">
-                        You've used your free preview with Isa. Choose a plan to continue with full gap analysis, audit readiness, and management systems guidance.
+                        You've used your free preview with Isa. Choose a plan to continue.
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 pt-1">
                       <div className="border border-accent/20 rounded-xl p-4 text-left">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Award className="w-4 h-4 text-accent" />
-                          <span className="font-bold text-primary text-sm">Isa</span>
-                        </div>
+                        <Award className="w-4 h-4 text-accent mb-2" />
+                        <p className="font-bold text-primary text-sm">Isa</p>
                         <p className="text-xs text-muted-foreground mb-2">9001 · 14001 · 45001</p>
-                        <p className="text-accent font-black text-lg mb-3">$49<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
+                        <p className="text-accent font-black text-lg mb-3">$99<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
                         <Link href="/settings">
                           <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white text-xs" data-testid="button-upgrade-isa">Get Isa</Button>
                         </Link>
                       </div>
                       <div className="border-2 border-primary/30 rounded-xl p-4 text-left relative bg-primary/5">
                         <div className="absolute -top-2.5 right-3 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">BEST</div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Star className="w-4 h-4 text-primary dark:text-accent" />
-                          <span className="font-bold text-primary text-sm">Isa Pro</span>
-                        </div>
+                        <Star className="w-4 h-4 text-primary dark:text-accent mb-2" />
+                        <p className="font-bold text-primary text-sm">Isa Pro</p>
                         <p className="text-xs text-muted-foreground mb-2">All 7 standards</p>
-                        <p className="text-primary font-black text-lg mb-3 dark:text-accent">$149<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
+                        <p className="text-primary font-black text-lg mb-3 dark:text-accent">$199<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
                         <Link href="/settings">
                           <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs" data-testid="button-upgrade-isa-pro">Get Isa Pro</Button>
                         </Link>
@@ -378,139 +375,91 @@ function IsaEmptyState({
 }) {
   return (
     <ScrollArea className="flex-1">
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-5xl mx-auto px-6 py-8">
 
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          <Card className="mb-8 overflow-hidden border-border/60 shadow-sm">
-            {/* Header strip — dark primary with orange accent */}
-            <div className="bg-primary px-6 py-5 flex items-center gap-5">
-              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md">
-                <img src={acsiLogo} alt="ACSI" className="w-12 h-12 object-contain" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h1 className="text-2xl font-black text-white">Isa</h1>
-                  <span className="text-xs bg-accent/20 text-accent border border-accent/40 rounded-full px-2 py-0.5 font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> ACSI ISO Manager
-                  </span>
-                </div>
-                <p className="text-white/60 text-sm">Lead ISO Auditor AI — trained on ACSI's field-proven audit methodology</p>
-              </div>
+        {/* Compact hero */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <div className="bg-primary rounded-2xl px-6 py-5 flex items-center gap-5 mb-6 shadow-sm">
+            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+              <img src={acsiLogo} alt="ACSI" className="w-11 h-11 object-contain" />
             </div>
-
-            {/* Standards bar */}
-            <div className="bg-muted/50 px-6 py-3 border-b border-border/60 flex flex-wrap gap-2">
-              {ISA_STANDARDS.map((s) => (
-                <span key={s.code} className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white dark:bg-muted text-primary border border-border/60 shadow-sm">
-                  ISO {s.code} · {s.label}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <h1 className="text-xl font-black text-white">Isa</h1>
+                <span className="text-xs bg-accent/20 text-accent border border-accent/40 rounded-full px-2 py-0.5 font-semibold flex items-center gap-1 shrink-0">
+                  <Sparkles className="w-3 h-3" /> ACSI ISO Manager
                 </span>
-              ))}
-            </div>
-
-            {/* Description */}
-            <div className="px-6 py-5 bg-white dark:bg-card">
-              <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                I think like an auditor, not a search engine. I cite clause numbers, identify gaps with objective evidence language, and guide your team from assessment through certification readiness — across all major ISO management system standards.
+              </div>
+              <p className="text-white/60 text-xs leading-relaxed">
+                Lead ISO Auditor AI — cites clause numbers, identifies gaps with objective evidence language, and guides your team from assessment through certification readiness.
               </p>
-              <Button
-                onClick={onNewChat}
-                disabled={isCreating}
-                className="bg-accent hover:bg-accent/90 text-white gap-2 font-semibold"
-                data-testid="button-start-iso-chat"
-              >
-                <MessageSquare className="w-4 h-4" />
-                {isCreating ? "Starting..." : "Start ISO Consultation"}
-              </Button>
             </div>
-          </Card>
+            <Button
+              onClick={onNewChat}
+              disabled={isCreating}
+              className="bg-accent hover:bg-accent/90 text-white gap-2 font-semibold shrink-0 hidden sm:flex"
+              data-testid="button-start-iso-chat"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {isCreating ? "Starting…" : "Start Consultation"}
+            </Button>
+          </div>
         </motion.div>
 
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-sm font-bold text-primary mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* Quick Actions — horizontal scroll */}
+        <div className="mb-7">
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {QUICK_PROMPTS.map((item, i) => (
               <motion.button
                 key={item.label}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.04 * i, duration: 0.3 }}
+                transition={{ delay: 0.04 * i, duration: 0.25 }}
                 onClick={() => onQuickPrompt(item.prompt)}
                 disabled={isCreating}
                 data-testid={`button-quick-prompt-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-                className={`text-left p-4 rounded-xl bg-white dark:bg-card border transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 group ${item.border} disabled:opacity-50`}
+                className="text-left p-3 rounded-xl bg-white dark:bg-card border border-border/60 hover:border-accent/40 hover:shadow-sm transition-all duration-150 group disabled:opacity-50"
               >
-                <div className={`w-8 h-8 rounded-lg ${item.iconBg} flex items-center justify-center mb-3`}>
-                  <item.icon className={`w-4 h-4 ${item.iconColor}`} />
+                <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center mb-2 group-hover:bg-accent/10 transition-colors">
+                  <item.icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-accent transition-colors" />
                 </div>
-                <p className="text-sm font-bold text-primary mb-1">{item.label}</p>
-                <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.prompt}</p>
+                <p className="text-xs font-bold text-primary leading-tight">{item.label}</p>
               </motion.button>
             ))}
           </div>
         </div>
 
-        {/* CESAR callout */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-          className="mb-8"
-        >
-          <Card className="border-border/60 bg-white dark:bg-card overflow-hidden shadow-sm" data-testid="card-cesar-callout">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5">
-              <div className="w-12 h-12 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center flex-shrink-0 shadow-sm">
-                <img src={acsiLogo} alt="ACSI" className="w-9 h-9 object-contain" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:bg-accent/10 dark:text-accent border border-primary/20 dark:border-accent/20 uppercase tracking-wide">IATF 16949</span>
-                </div>
-                <h3 className="text-sm font-black text-primary mb-0.5">Need CSR Management?</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Customer Specific Requirements are handled by <strong className="text-primary">CESAR</strong> — ACSI's purpose-built platform for automotive suppliers under IATF 16949. Covers CSR assignment, employee training, and compliance self-assessments.
-                </p>
-              </div>
-              <Link href="/cesar" className="shrink-0">
-                <Button variant="outline" size="sm" className="gap-1.5 border-border/60 hover:border-accent/40 hover:text-accent text-xs font-semibold whitespace-nowrap" data-testid="button-meet-cesar">
-                  Meet CESAR <ChevronRight className="w-3 h-3" />
-                </Button>
-              </Link>
+        {/* ── PRODUCT SUITE ── */}
+        <div className="mb-7">
+
+          {/* Section 1: AI Guidance Only */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-bold text-primary">AI Guidance</h2>
             </div>
-          </Card>
-        </motion.div>
+            <div className="flex-1 h-px bg-border/60" />
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Q&A · No Vault</span>
+          </div>
 
-        {/* Plans comparison */}
-        <div>
-          <h2 className="text-sm font-bold text-primary mb-3">Plans</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {/* Isa */}
-            <Card className="p-5 border-border/60 bg-white dark:bg-card">
+            <Card className="p-5 border-border/60 bg-white dark:bg-card hover:shadow-md transition-shadow" data-testid="card-plan-isa">
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center border border-accent/20">
-                    <Award className="w-4 h-4 text-accent" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
+                    <img src={acsiLogo} alt="Isa" className="w-6 h-6 object-contain" />
                   </div>
                   <div>
-                    <p className="font-black text-primary text-sm">Isa</p>
-                    <p className="text-xs text-muted-foreground">ISO Quality, Environmental & Safety</p>
+                    <p className="font-black text-primary">Isa</p>
+                    <p className="text-[10px] text-muted-foreground">ISO 9001 · 14001 · 45001</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-accent">$49</p>
-                  <p className="text-xs text-muted-foreground">/mo</p>
+                  <p className="font-black text-accent text-lg leading-none">$99</p>
+                  <p className="text-[10px] text-muted-foreground">/mo</p>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {ISA_TIER_STANDARDS.essentials.map((s) => (
-                  <span key={s} className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent border border-accent/20 rounded font-semibold">ISO {s}</span>
-                ))}
               </div>
               <ul className="space-y-1.5 mb-4">
                 {ISA_CAPABILITIES.map((cap) => (
@@ -528,49 +477,159 @@ function IsaEmptyState({
             </Card>
 
             {/* Isa Pro */}
-            <Card className="p-5 border-2 border-primary/20 bg-white dark:bg-card relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-xl">
-                BEST VALUE
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-              <div className="relative">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                      <Star className="w-4 h-4 text-primary dark:text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-black text-primary text-sm">Isa Pro</p>
-                      <p className="text-xs text-muted-foreground">All 7 standards — specialized industries</p>
-                    </div>
+            <Card className="p-5 border-2 border-primary/20 bg-white dark:bg-card hover:shadow-md transition-shadow relative overflow-hidden" data-testid="card-plan-isa-pro">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-xl">ALL STANDARDS</div>
+              <div className="flex items-start justify-between mb-3 pr-20">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
+                    <img src={acsiLogo} alt="Isa" className="w-6 h-6 object-contain" />
                   </div>
-                  <div className="text-right">
-                    <p className="font-black text-primary dark:text-accent">$149</p>
-                    <p className="text-xs text-muted-foreground">/mo</p>
+                  <div>
+                    <p className="font-black text-primary">Isa Pro</p>
+                    <p className="text-[10px] text-muted-foreground">All 7 specialized standards</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {ISA_TIER_STANDARDS.professional.map((s) => (
-                    <span key={s} className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary dark:text-accent border border-primary/20 rounded font-semibold">ISO {s}</span>
-                  ))}
+                <div className="text-right shrink-0">
+                  <p className="font-black text-primary dark:text-accent text-lg leading-none">$199</p>
+                  <p className="text-[10px] text-muted-foreground">/mo</p>
                 </div>
-                <ul className="space-y-1.5 mb-4">
-                  {ISA_PRO_CAPABILITIES.map((cap) => (
-                    <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3 h-3 text-primary dark:text-accent shrink-0" />
-                      {cap}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/settings">
-                  <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" data-testid="button-plan-isa-pro">
-                    Get Isa Pro
-                  </Button>
-                </Link>
               </div>
+              <ul className="space-y-1.5 mb-4">
+                {ISA_PRO_CAPABILITIES.map((cap) => (
+                  <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-primary dark:text-accent shrink-0" />
+                    {cap}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/settings">
+                <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" data-testid="button-plan-isa-pro">
+                  Get Isa Pro
+                </Button>
+              </Link>
+            </Card>
+          </div>
+
+          {/* Section 2: Full Platform with Vault */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <Vault className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-bold text-primary">ACSI ISO Manager</h2>
+            </div>
+            <div className="flex-1 h-px bg-border/60" />
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Isa Included · Documents · Vault · Annual</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            {/* ISO Manager */}
+            <Card className="p-5 border-border/60 bg-white dark:bg-card hover:shadow-md transition-shadow" data-testid="card-plan-iso-manager">
+              <div className="flex items-center gap-2 mb-1">
+                <FileText className="w-4 h-4 text-accent" />
+                <p className="font-black text-primary text-sm">ISO Manager</p>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-3">ISO 9001 · 14001 · 45001 + Vault</p>
+              <div className="mb-3">
+                <p className="font-black text-accent text-xl leading-none">$3,588</p>
+                <p className="text-[10px] text-muted-foreground">/year · $299/mo equivalent</p>
+              </div>
+              <ul className="space-y-1.5 mb-4">
+                {ISO_MANAGER_CAPABILITIES.map((cap) => (
+                  <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
+                    {cap}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/settings">
+                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager">
+                  Get ISO Manager
+                </Button>
+              </Link>
+            </Card>
+
+            {/* ISO Manager Custom */}
+            <Card className="p-5 border-2 border-accent/30 bg-white dark:bg-card hover:shadow-md transition-shadow relative overflow-hidden" data-testid="card-plan-iso-manager-custom">
+              <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">CUSTOM</div>
+              <div className="flex items-center gap-2 mb-1">
+                <Layers className="w-4 h-4 text-accent" />
+                <p className="font-black text-primary text-sm">ISO Manager Custom</p>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-3">Choose one specialized standard</p>
+              <div className="mb-3">
+                <p className="font-black text-accent text-xl leading-none">$7,988+</p>
+                <p className="text-[10px] text-muted-foreground">/year · varies by standard</p>
+              </div>
+              <div className="flex flex-wrap gap-1 mb-3">
+                {["IATF 16949", "ISO 13485", "AS9100", "ISO 27001"].map((s) => (
+                  <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-primary border border-border/60 font-semibold">{s}</span>
+                ))}
+              </div>
+              <ul className="space-y-1.5 mb-4">
+                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />Isa Pro for your chosen standard</li>
+                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />Document generation for that standard</li>
+                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />Secure document vault</li>
+                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />IATF 16949: $9,988/yr</li>
+              </ul>
+              <Link href="/settings">
+                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager-custom">
+                  Get Custom
+                </Button>
+              </Link>
+            </Card>
+
+            {/* ISO Manager Pro */}
+            <Card className="p-5 border-2 border-primary/30 bg-primary text-white hover:shadow-xl transition-shadow relative overflow-hidden" data-testid="card-plan-iso-manager-pro">
+              <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">FULL PLATFORM</div>
+              <div className="flex items-center gap-2 mb-1">
+                <Star className="w-4 h-4 text-accent" />
+                <p className="font-black text-white text-sm">ISO Manager Pro</p>
+              </div>
+              <p className="text-[10px] text-white/60 mb-3">All 7 standards · Complete Vault</p>
+              <div className="mb-3">
+                <p className="font-black text-accent text-xl leading-none">$14,988</p>
+                <p className="text-[10px] text-white/50">/year</p>
+              </div>
+              <ul className="space-y-1.5 mb-4">
+                {ISO_MANAGER_PRO_CAPABILITIES.map((cap) => (
+                  <li key={cap} className="flex items-center gap-2 text-xs text-white/70">
+                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
+                    {cap}
+                  </li>
+                ))}
+              </ul>
+              <a href="mailto:info@acsi-quality.com">
+                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager-pro">
+                  Contact ACSI
+                </Button>
+              </a>
             </Card>
           </div>
         </div>
+
+        {/* CESAR callout — compact */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+          <Card className="border-border/60 bg-white dark:bg-card shadow-sm" data-testid="card-cesar-callout">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4">
+              <div className="w-10 h-10 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <img src={acsiLogo} alt="ACSI" className="w-8 h-8 object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <Car className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">IATF 16949 · CSR Management</span>
+                </div>
+                <p className="text-xs text-primary font-bold">Need CSR Management? <span className="text-muted-foreground font-normal">Customer Specific Requirements are handled by <strong className="text-primary">CESAR</strong> — ACSI's purpose-built platform for automotive suppliers.</span></p>
+              </div>
+              <Link href="/cesar" className="shrink-0">
+                <Button variant="outline" size="sm" className="gap-1.5 border-border/60 hover:border-accent/40 hover:text-accent text-xs font-semibold whitespace-nowrap" data-testid="button-meet-cesar">
+                  Meet CESAR <ChevronRight className="w-3 h-3" />
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        </motion.div>
+
       </div>
     </ScrollArea>
   );
@@ -604,7 +663,6 @@ function ISOChatInterface({
 
   return (
     <div className="flex flex-col h-full bg-muted/20">
-      {/* Messages */}
       <ScrollArea className="flex-1 px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-5">
           <AnimatePresence initial={false}>
@@ -616,7 +674,6 @@ function ISOChatInterface({
                 transition={{ duration: 0.2 }}
                 className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
               >
-                {/* Avatar */}
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border ${
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground border-primary/20"
@@ -629,7 +686,6 @@ function ISOChatInterface({
                   )}
                 </div>
 
-                {/* Bubble */}
                 <div className={`flex-1 max-w-[85%] ${msg.role === "user" ? "ml-auto" : ""}`}>
                   {msg.role === "assistant" && (
                     <div className="flex items-center gap-1.5 mb-1">
@@ -652,7 +708,6 @@ function ISOChatInterface({
             ))}
           </AnimatePresence>
 
-          {/* Streaming */}
           {isStreaming && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-white dark:bg-card border border-border/60 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -679,7 +734,6 @@ function ISOChatInterface({
             </motion.div>
           )}
 
-          {/* Upgrade nudge in-chat */}
           {limitReached && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Card className="p-6 text-center border-border/60 shadow-sm">
@@ -691,12 +745,12 @@ function ISOChatInterface({
                 <div className="flex gap-3 justify-center">
                   <Link href="/settings">
                     <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-upgrade-from-chat">
-                      Get Isa — $49/mo
+                      Get Isa — $99/mo
                     </Button>
                   </Link>
                   <Link href="/settings">
                     <Button size="sm" variant="outline" className="border-primary/20 text-primary hover:bg-primary/5 text-xs font-semibold">
-                      Isa Pro — $149/mo
+                      Isa Pro — $199/mo
                     </Button>
                   </Link>
                 </div>
@@ -708,17 +762,14 @@ function ISOChatInterface({
         </div>
       </ScrollArea>
 
-      {/* Input */}
       <div className="shrink-0 bg-white dark:bg-card border-t border-border/60 px-4 py-4 shadow-sm">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              limitReached
-                ? "Upgrade to continue with Isa…"
-                : isStreaming
-                ? "Isa is analyzing…"
+              limitReached ? "Upgrade to continue…"
+                : isStreaming ? "Isa is analyzing…"
                 : "Ask about gap analysis, audit readiness, clause requirements, NCs…"
             }
             disabled={isStreaming || limitReached}
