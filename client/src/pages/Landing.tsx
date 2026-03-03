@@ -57,31 +57,43 @@ const RECORDABILITY_QUESTIONS = [
     id: 1,
     question: "Did the incident happen at work or in a work environment?",
     noResult: "not-recordable" as const,
+    noReason: "The incident did not occur at work or in a work environment. Work-relatedness is required for OSHA recordability.",
+    nocitation: "29 CFR 1904.5(a)",
     yesNext: 2,
   },
   {
     id: 2,
     question: "Did it result in death, days away from work, restricted work, or job transfer?",
     yesResult: "recordable" as const,
+    yesReason: "The injury or illness resulted in death, days away from work, restricted work, or job transfer — each of which independently satisfies OSHA's general recording criteria.",
+    yescitation: "29 CFR 1904.7(a)(1) — 'You must consider an injury or illness to meet the general recording criteria if it results in death, days away from work, restricted work or transfer to another job, medical treatment beyond first aid, loss of consciousness, or a significant injury or illness diagnosed by a physician or other licensed health care professional.'",
     noNext: 3,
   },
   {
     id: 3,
     question: "Did it require medical treatment beyond first aid?",
     yesResult: "recordable" as const,
+    yesReason: "The injury or illness required medical treatment beyond first aid. Under 29 CFR 1904.7(a)(5), first aid is limited to a specific list of treatments — anything beyond that list (stitches, prescription medications, physical therapy, etc.) constitutes medical treatment and makes the case recordable.",
+    yescitation: "29 CFR 1904.7(a)(1) — medical treatment beyond first aid; 29 CFR 1904.7(a)(5) — definition of first aid",
     noNext: 4,
   },
   {
     id: 4,
     question: "Did it result in loss of consciousness?",
     yesResult: "recordable" as const,
+    yesReason: "The injury or illness resulted in loss of consciousness, even if the employee returned to work the same day and received no medical treatment.",
+    yescitation: "29 CFR 1904.7(a)(1) — 'You must consider an injury or illness to be recordable if it results in... loss of consciousness.'",
     noNext: 5,
   },
   {
     id: 5,
     question: "Was there a significant injury or illness diagnosed by a physician or licensed healthcare professional?",
     yesResult: "recordable" as const,
+    yesReason: "A physician or licensed health care professional (PLHCP) diagnosed a significant injury or illness. This criterion applies even if the case did not result in days away from work, restricted duty, medical treatment, or loss of consciousness.",
+    yescitation: "29 CFR 1904.7(a)(1) — 'You must consider an injury or illness to be recordable if it results in... a significant injury or illness diagnosed by a physician or other licensed health care professional, even if it does not result in death, days away from work, restricted work or job transfer, medical treatment beyond first aid, or loss of consciousness.'",
     noResult: "likely-not-recordable" as const,
+    noReason: "Based on your answers, this incident does not appear to meet any of the six OSHA general recording criteria. However, complex cases should always be reviewed by a compliance expert.",
+    noReason2: "29 CFR 1904.7(a)(1) — none of the six general recording criteria were met.",
   },
 ];
 
@@ -90,6 +102,8 @@ const MAX_FREE_USES = 3;
 function RecordabilityDecisionTree() {
   const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<"recordable" | "not-recordable" | "likely-not-recordable" | null>(null);
+  const [resultReason, setResultReason] = useState<string>("");
+  const [resultCitation, setResultCitation] = useState<string>("");
   const [usageCount, setUsageCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -111,6 +125,8 @@ function RecordabilityDecisionTree() {
     if (answer === "yes") {
       if (q.yesResult) {
         setResult(q.yesResult);
+        setResultReason((q as any).yesReason || "");
+        setResultCitation((q as any).yescitation || "");
         fetch("/api/recordability/usage", { method: "POST" })
           .then(res => res.json())
           .then(data => setUsageCount(data.count))
@@ -121,6 +137,8 @@ function RecordabilityDecisionTree() {
     } else {
       if (q.noResult) {
         setResult(q.noResult);
+        setResultReason((q as any).noReason || "");
+        setResultCitation((q as any).nocitation || (q as any).noReason2 || "");
         fetch("/api/recordability/usage", { method: "POST" })
           .then(res => res.json())
           .then(data => setUsageCount(data.count))
@@ -138,6 +156,8 @@ function RecordabilityDecisionTree() {
     }
     setCurrentStep(0);
     setResult(null);
+    setResultReason("");
+    setResultCitation("");
   };
 
   const resultConfig = {
@@ -262,7 +282,7 @@ function RecordabilityDecisionTree() {
               transition={{ duration: 0.3 }}
               className="p-8"
             >
-              <div className={`rounded-md border p-6 mb-6 ${resultConfig[result].bgColor}`} data-testid="card-recordability-result">
+              <div className={`rounded-md border p-6 mb-4 ${resultConfig[result].bgColor}`} data-testid="card-recordability-result">
                 <div className="flex items-center gap-3 mb-3">
                   {(() => {
                     const Icon = resultConfig[result].icon;
@@ -276,6 +296,20 @@ function RecordabilityDecisionTree() {
                   {resultConfig[result].description}
                 </p>
               </div>
+
+              {/* Reason why — always shown */}
+              {resultReason && (
+                <div className="rounded-md border border-white/10 bg-white/5 p-4 mb-4" data-testid="card-recordability-reason">
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-2">Why This Determination</p>
+                  <p className="text-white/85 text-sm leading-relaxed mb-3">{resultReason}</p>
+                  {resultCitation && (
+                    <div className="border-t border-white/10 pt-3">
+                      <p className="text-xs font-bold text-accent/80 uppercase tracking-wider mb-1">📋 Regulatory Citation</p>
+                      <p className="text-accent/70 text-xs font-mono leading-relaxed">{resultCitation}</p>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/get-started" className="flex-1">
                   <Button className="w-full bg-accent text-white font-bold" data-testid="button-recordability-cta">
