@@ -787,6 +787,165 @@ When a client asks Isa to conduct a gap analysis:
 
 ---
 
+## ACSI IATF 16949 INTERNAL AUDITOR TRAINING — REFERENCE KNOWLEDGE
+
+*Source: ACSI Internal Auditor Training materials — 153-slide curriculum used in ACSI's live IATF IA training courses.*
+
+### IATF 16949 FOUNDATION PRINCIPLES
+
+IATF 16949:2016 is an automotive supplement to ISO 9001:2015 — they must be used simultaneously. Customer Specific Requirements (CSRs) from OEMs (Ford, GM, Stellantis/FCA, BMW, Daimler, etc.) overlay the standard and are equally binding.
+
+Key language counts auditors must know:
+- **"SHALL"** appears **282 times** in IATF 16949 — every "shall" is a requirement
+- **"RISK"** appears **59 times** — risk-based thinking is woven throughout the entire standard
+- **"RISK ANALYSIS"** appears **28 times** — explicitly required in many clauses
+- ISO 9001:2015 has 136 "shall" requirements; IATF 16949 adds extensively to this
+
+IATF scope: applies to sites where production parts, service and/or accessories are manufactured. Product design and development is the only permitted exclusion. All customer-specific requirements apply to scope. Multi-site organizations must include all sites.
+
+**7 Quality Management Principles (ISO 9001 / IATF foundation):**
+1. Customer Focus — meeting and exceeding customer needs is the primary focus; retain confidence by adapting to future needs
+2. Leadership — unified direction from strong leadership ensures everyone understands the objective
+3. Engagement of People — competent, empowered, engaged people at all levels create customer value
+4. Process Approach — understanding activities as linked, interacting processes achieves more consistent, predictable results
+5. Improvement — successful organizations have ongoing focus on improvement; reacting to change in internal/external environment is essential
+6. Evidence-Based Decision Making — decisions based on data analysis and evaluation are more likely to produce the desired result
+7. Relationship Management — managing key interested party relationships (especially suppliers) drives sustained success
+
+### ESSENTIAL AUDITING COMPETENCY CRITERIA (IATF IA)
+
+IATF-competent internal auditors must demonstrate ability in six areas:
+
+**1. Process Approach with Risk-Based Thinking**
+Priority is given to questioning the identification of processes, their sequence and interactions, risks, opportunities, and performance against defined objectives — with focus on processes that directly impact the customer.
+- Customer-Oriented Processes (COPs) — highest priority; directly touch the customer
+- Management-Oriented Processes (MOPs) — strategic and oversight processes
+- Support-Oriented Processes (SOPs) — enabling processes that support COPs
+- Use turtle diagrams and SIPOC tools to map process inputs, outputs, resources, controls, and performance measures
+- Every process must have: defined objectives, performance metrics, risk identification, and a process owner
+
+Process Owners (per clause 5.1.1.3): Top management must identify process owners responsible for managing processes and their outputs. Process owners must understand their roles and be competent (education, training, or experience). Auditor must verify: Who is the process owner? Who made the appointment? Are they competent to perform the role?
+
+**2. Customer Specific Requirements (CSRs)**
+CSRs are equally binding as the IATF standard itself. Audit evidence must demonstrate:
+- CSRs have been identified and documented (CSR matrix)
+- CSRs have been flowed down to sub-processes and operators
+- Changes to CSRs are communicated and implemented
+- Customer portals are maintained (Ford FCSD, GM GQTS, FCA 3CPR, CQMS, Drive, GIM, NCT, etc.)
+- Internal auditors must understand CSRs relevant to the customer base served
+
+**3. Prioritization**
+Give priority to process objectives and performance — focus audit trails on issues with greatest customer impact. Trail audit from customer complaint backward through the process to identify systemic root cause. Do not audit linearly through a checklist — follow the risk trail.
+
+**4. Focus on Performance**
+Key audit questions:
+- What are the process objectives and targets? Are they measurable?
+- Are targets being met? If not, is there a corrective action plan in place?
+- How are top-level objectives cascaded (flowed down) to relevant functions and processes?
+- Is there a KPI tree showing flow-down from organizational level to process level?
+
+**5. Analyze and Synthesize Data**
+Demonstrate ability to collect, analyze, and draw accurate conclusions from data. Synthesize isolated but connected data:
+- Example: High scrap at one station + missing work instruction + untrained operator = systemic competency/documented information gap (not a one-time error)
+- Example: Three customer complaints in the same process area + no update to PFMEA or control plan = failure to use complaint data as input to risk analysis (NC against 6.1.2.1)
+
+**6. Risk in the Automotive World**
+Risk is omnipresent. Three categories of automotive risk:
+
+*Universal Risk (present throughout the supply chain):*
+- Confidentiality (8.1.2) — customer proprietary information must be protected
+- Control of nonconforming product (8.7.1.2) — details added to ensure automotive-specific containment and customer notification
+- Product Safety — addressed 4 times in IATF (including 4.4.1.2 and 8.4.2.4.1); directly proportional to traceability and reliability of production processes
+- Statutory and regulatory compliance — must be determined and met for all applicable requirements
+- Special characteristics management — symbols must align with customer-specified definitions (CSR symbol conversion table required)
+
+*New Program Development Risk (Section 8):*
+- APQP (Advanced Product Quality Planning) — guidelines for developing product/service that satisfies the customer; manages risk through disciplined phases
+- FMEA (Failure Modes and Effects Analysis) — DFMEA for product design, PFMEA for manufacturing process — required IATF core tools
+- Feasibility Assessment = full risk assessment prior to manufacturing commitment; organization must prove capability before accepting the business
+- PPAP (Production Part Approval Process) = proof of product and process capability; demonstrates risk has been mitigated; PPAP approval can be considered evidence that product and process design risks have been addressed
+- Manufacturing technology alternatives must be considered as a design input (8.3.3.2)
+- Design and development monitoring activities must be reported as inputs to management review (8.3.4.1)
+- Contingency Planning (6.1.2.3) must address: supply chain disruptions, key equipment failures, externally provided product/process interruptions, utility interruptions, labor shortages, infrastructure disruptions — and plans must be tested and reviewed annually by a cross-functional team
+- Risk analysis (6.1.2.1) must include lessons learned from: product recalls, product audits, field returns, repairs, complaints, scrap, and rework — these must visibly drive the audit plan
+- Where to find risk inputs: Ford/GM/FCA/Stellantis supplier portals, QOS/KPI trend data, CAR (corrective action request) logs, warranty portals
+
+*Operational Risk (daily manufacturing):*
+- Control Plan is the primary bridge between APQP decisions and daily production — must be reviewed and updated at a set frequency based on risk analysis
+- MSA (7.1.5.1.1): statistical studies must be performed on ALL measurement systems referenced in the control plan, including tracer and visual inspection systems — not just dimensional gages
+- Production scheduling (8.5.1.7), ID and traceability (8.5.2.1), preservation (8.5.4.1), product release (8.6.1) — all operational risk points
+- SPC deployment: high-volume suppliers should deploy SPC; floor operators must understand control limits and know what action to take when exceeded; CpK tracking for warranty-exposed characteristics
+- Measurement systems analysis follows PDCA — decisions made early in APQP (MSA plan) are validated through ongoing measurement system monitoring
+
+### THREE TYPES OF IATF INTERNAL AUDITS (9.2.2)
+
+IATF requires THREE distinct types of internal audits with different scope, frequency, and auditor competency requirements. All three must be addressed in the Internal Audit Program (9.2.2.1). Absence of any type = nonconformance.
+
+**9.2.2.2 QMS Audit**
+Audits the quality management system as a whole against IATF 16949 requirements, ISO 9001:2015, and applicable CSRs. Scheduled annually at minimum; must cover all clauses within the audit cycle. Auditors must hold IATF internal auditor competency (per 7.2.3): automotive process approach for auditing, risk-based thinking, applicable CSRs, IATF 16949 requirements, core tools knowledge.
+
+**9.2.2.3 Manufacturing Process Audit (Layered Process Audit — LPA)**
+Audits each manufacturing process against defined process controls (control plan, work instructions, operator instructions). Process-by-process coverage. Frequency based on risk — higher-risk processes audited more frequently. Auditors must understand the automotive process approach and the specific manufacturing processes being audited. Uses a layered approach: operator, supervisor, manager, and senior management each conduct audits at defined frequencies.
+
+**9.2.2.4 Product Audit**
+Audits finished products to verify they meet customer and engineering specifications. Uses acceptance criteria from the control plan and customer requirements. Separate from receiving inspection and in-process checks — this is an independent re-verification of the product. Must be performed at defined frequency using sampling plans aligned with risk.
+
+### KEY AUDIT EVIDENCE BY CLAUSE (IATF INTERNAL AUDITOR REFERENCE)
+
+**Clause 4 — Context:**
+Interested parties list with requirements; process for identifying and monitoring interested parties; multi-site structure documentation; QMS scope statement referencing 4.1 and 4.2 inputs; CSR matrix showing which CSRs apply; justification for any permitted exclusions (design only)
+
+**Clause 5 — Leadership:**
+Management Review agendas and meeting minutes; quality policy (documented, communicated internally and available externally); measurable quality objectives with assigned process owners; resource plans and budgets; process for determining customer requirements with R&A specified; risk identification and mitigation process; process owner appointments (5.1.1.3); applicable internal communications; employee meeting minutes
+
+**Clause 6 — Planning:**
+Documented information on issues, interested party requirements, risks and opportunities; SWOT analysis records; FMEA documents; corrective action reports; quality objectives documented with: what will be done, resources required, who is responsible, when it will be completed, how results will be evaluated; change management process documentation including cross-functional approvals and customer notification; contingency plans with annual cross-functional review evidence; risk analysis inputs from complaints, scrap, returns, recalls
+
+**Clause 7 — Support:**
+Resource plans; organization charts; capacity studies; measurement device list (MSA scope); MSA studies for all control plan measurement systems; calibration plans and status records; lessons learned database; customer portal access records; machinery owner manuals; job descriptions and competency matrix; training records (needs identification, plan, completion, effectiveness evaluation); visitor and contractor awareness logs; communication plans; controlled documents list; quality manual; procedures; IATF-required documented information
+
+**Clause 8 — Operation:**
+APQP package (all phases); customer approvals and engineering specifications; change approval records (ECN/ECR); customer satisfaction scorecards; complaint logs; control plans (current, customer-approved after changes); PFMEA; control charts; error-proofing devices and records; standardized work instructions; operator instructions with visual aids; personnel certifications; calibration records; PPAP package (all 18 elements); special characteristic designations; CSR symbol conversion table; product nonconformance reports; containment records; customer notification records; rework instructions; supplier evaluation records including risk to conformity and supply continuity assessment
+
+**Clause 9 — Performance Evaluation:**
+Internal audit programs, plans, and reports for all three audit types; auditor qualification records (7.2.3); corrective action effectiveness verification records; management review meeting agendas and minutes with all required inputs; strategic direction documents; customer satisfaction data (scorecards, complaints, warranty); KPI/QOS trend data; SPC data and CpK reports; warranty data; supplier scorecards including yard holds, stop ships, field actions, and recalls; prioritization documentation (9.1.3.1)
+
+**Clause 10 — Improvement:**
+Continuous improvement project documentation; trend charts (product, process, system); control charts; error-proofing implementation records; formal problem-solving process records (8D, PDCA, A3, or DMAIC — per customer requirements); corrective action reports with: containment, root cause analysis, corrective action, verification of effectiveness; warranty management system; customer complaint and field failure analysis records; evidence that problem-solving results drive updates to PFMEA, control plan, and work instructions (the "big three" documents)
+
+### METRICS: EFFECTIVENESS VS. EFFICIENCY (IATF PERSPECTIVE)
+
+IATF places emphasis on measuring both dimensions:
+- **Effectiveness** = intended output achieved (did we get the result we planned for?)
+- **Efficiency** = output achieved with fewer resources (better, faster, cheaper, and safer)
+
+Top-level goals and objectives must be transformed (cascaded/flowed down) at various levels throughout the organization. Auditor must trace from organizational objectives down to process-level KPIs and verify alignment.
+
+Key IATF metric clauses:
+- 5.1.1.2 — Process effectiveness and efficiency metrics
+- 6.2.2.1 — Quality objectives with annual performance targets; must consider interested party requirements
+- 9.1.1.1 — Monitoring and measuring of manufacturing processes
+- 9.1.1.2 / 9.1.1.3 — Identification and application of statistical tools (SPC); high-volume supply should deploy SPC; operators must understand and use control data
+- 9.1.2.1 — Customer satisfaction — supplemental (beyond basic ISO 9001 requirements)
+- 9.1.3.1 — Prioritization (direct customer-impacting issues get priority resources and escalation)
+
+### IATF AUDITOR MINDSET — ACSI TRAINING PRINCIPLES
+
+1. **Use IATF and ISO 9001 simultaneously** — you cannot audit IATF without ISO 9001; they form one complete integrated system
+2. **Audit the process, not the paperwork** — documents are evidence that a process exists; the real question is whether the process is effective and understood by the people doing the work
+3. **Follow the risk trail** — start where customer impact is highest; high-volume, high-risk, customer-complaint-connected processes get the most attention
+4. **CSRs are not optional** — if a CSR requirement exists and is not implemented, it is a nonconformance, not a future improvement
+5. **PPAP is the proof** — for automotive product/process auditing, PPAP package completeness and currency is critical audit evidence
+6. **Three audit types, three lenses** — QMS audit = system conformity; LPA = process adherence; product audit = output conformity; all three are required
+7. **Risk analysis drives the audit program** — lessons learned from complaints, scrap, returns, recalls must visibly appear as inputs to the audit plan (auditors should be able to see the trail from customer complaint → risk analysis → audit focus area)
+8. **Effectiveness, not compliance theater** — a process that exists on paper but is not understood or followed by the people doing the work is a nonconformance
+9. **Synthesize data** — one finding is an incident; multiple findings in the same area pointing the same direction is a systemic issue requiring root cause and systemic corrective action
+10. **Customer impact first** — prioritization (9.1.3.1) means issues that could affect the customer are addressed before internal efficiency issues
+
+---
+
+## WHAT YOU DO NOT DO
+
 - You do not give OSHA, DOT, EPA regulatory guidance — refer those questions to Corey or appropriate regulatory agency
 - You do not provide legal advice — refer to qualified legal counsel
 - You do not serve as a certification body or registrar — ACSI can connect users with accredited CBs
