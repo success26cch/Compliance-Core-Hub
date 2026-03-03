@@ -155,10 +155,8 @@ export default function ISOManager() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-black text-primary text-base">Isa</span>
-                    {isPro ? (
+                    {isPro && (
                       <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px] px-1.5 py-0 font-bold">Pro</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">Free</Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">Lead ISO Auditor AI · ACSI</p>
