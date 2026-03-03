@@ -669,12 +669,15 @@ function ISOChatInterface({
                       {isPro && <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 rounded px-1 font-semibold">Pro</span>}
                     </div>
                   )}
-                  <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
+                  <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-tr-sm"
+                      ? "bg-primary text-primary-foreground rounded-tr-sm whitespace-pre-wrap"
                       : "bg-white dark:bg-card border border-border/60 text-primary rounded-tl-sm"
                   }`}>
-                    {msg.content}
+                    {msg.role === "user"
+                      ? msg.content
+                      : <IsaMarkdown content={msg.content} />
+                    }
                   </div>
                 </div>
               </motion.div>
@@ -751,4 +754,77 @@ function ISOChatInterface({
       </div>
     </div>
   );
+}
+
+/* ─── MARKDOWN RENDERER ───────────────────────────────── */
+function inlineFormat(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={i} className="font-semibold text-primary">{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*"))
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    if (part.startsWith("`") && part.endsWith("`"))
+      return <code key={i} className="bg-muted px-1 py-0.5 rounded text-xs font-mono text-accent">{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
+
+function IsaMarkdown({ content }: { content: string }) {
+  const lines = content.split("\n");
+  const nodes: React.ReactNode[] = [];
+  let listItems: string[] = [];
+
+  const flushList = (key: string) => {
+    if (listItems.length === 0) return;
+    nodes.push(
+      <ul key={key} className="my-2 space-y-1 pl-1">
+        {listItems.map((item, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+            <span>{inlineFormat(item)}</span>
+          </li>
+        ))}
+      </ul>
+    );
+    listItems = [];
+  };
+
+  lines.forEach((line, i) => {
+    const trimmed = line.trim();
+
+    if (/^---+$|^\*\*\*+$/.test(trimmed)) {
+      flushList(`pre-hr-${i}`);
+      nodes.push(<hr key={i} className="my-3 border-border/30" />);
+      return;
+    }
+
+    const h3 = trimmed.match(/^###\s+(.*)/);
+    if (h3) { flushList(`pre-h3-${i}`); nodes.push(<p key={i} className="font-bold text-sm mt-3 mb-1 text-primary">{inlineFormat(h3[1])}</p>); return; }
+
+    const h2 = trimmed.match(/^##\s+(.*)/);
+    if (h2) { flushList(`pre-h2-${i}`); nodes.push(<p key={i} className="font-bold text-sm mt-3 mb-1 text-primary">{inlineFormat(h2[1])}</p>); return; }
+
+    const h1 = trimmed.match(/^#\s+(.*)/);
+    if (h1) { flushList(`pre-h1-${i}`); nodes.push(<p key={i} className="font-bold text-base mt-3 mb-1 text-primary">{inlineFormat(h1[1])}</p>); return; }
+
+    const bullet = trimmed.match(/^[-*•]\s+(.*)/);
+    if (bullet) { listItems.push(bullet[1]); return; }
+
+    const numbered = trimmed.match(/^\d+\.\s+(.*)/);
+    if (numbered) { listItems.push(numbered[1]); return; }
+
+    if (trimmed === "") {
+      flushList(`pre-empty-${i}`);
+      nodes.push(<div key={i} className="h-1.5" />);
+      return;
+    }
+
+    flushList(`pre-p-${i}`);
+    nodes.push(<p key={i} className="leading-relaxed">{inlineFormat(trimmed)}</p>);
+  });
+
+  flushList("final");
+
+  return <div className="space-y-0.5 text-sm">{nodes}</div>;
 }
