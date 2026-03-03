@@ -83,7 +83,7 @@ export default function ISOManager() {
   const { mutate: createConversation, isPending: isCreating } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isPro = !!usageData?.isPro;
   const canAsk = !!usageData?.canAsk;
@@ -91,7 +91,10 @@ export default function ISOManager() {
   const handleNewChat = (initialPrompt?: string) => {
     const title = initialPrompt ? initialPrompt.slice(0, 50) + "…" : "New ISO Consultation";
     createConversation(title, {
-      onSuccess: (data: any) => setActiveConversationId(data.id),
+      onSuccess: (data: any) => {
+        setActiveConversationId(data.id);
+        setSidebarOpen(true);
+      },
     });
   };
 
