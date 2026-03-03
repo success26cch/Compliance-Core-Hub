@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, FormEvent, ReactNode } from "react";
 import { ProtectedLayout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -602,7 +602,7 @@ function ISOChatInterface({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStreaming]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!input.trim() || limitReached || isStreaming) return;
     sendMessage(input);
@@ -731,7 +731,7 @@ const CUSTOM_STANDARDS = [
 ];
 
 function CustomPlanCard() {
-  const [selected, setSelected] = React.useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="h-full">
@@ -802,7 +802,7 @@ function CustomPlanCard() {
 }
 
 /* ─── MARKDOWN RENDERER ───────────────────────────────── */
-function inlineFormat(text: string): React.ReactNode[] {
+function inlineFormat(text: string): ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**"))
@@ -817,7 +817,7 @@ function inlineFormat(text: string): React.ReactNode[] {
 
 function IsaMarkdown({ content }: { content: string }) {
   const lines = content.split("\n");
-  const nodes: React.ReactNode[] = [];
+  const nodes: ReactNode[] = [];
   let listItems: string[] = [];
 
   const flushList = (key: string) => {
