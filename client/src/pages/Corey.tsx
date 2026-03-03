@@ -221,12 +221,23 @@ function CoreyLanding() {
             <Sparkles className="w-4 h-4" />
             THE ONLY AI BUILT FOR OCC-HEALTH
           </div>
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight" data-testid="text-corey-hero">
-            Meet <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">COREY</span>
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black mb-3 leading-tight" data-testid="text-corey-hero">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">COREY</span>
           </h2>
-          <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed">
-            Your 24/7 AI compliance expert. OSHA recordkeeping, DOT regulations, drug testing, respirator compliance — instant answers backed by regulation.
+          <p className="text-lg md:text-xl text-accent font-bold uppercase tracking-widest mb-4">
+            The Intelligence Behind the Compliance
           </p>
+          <p className="text-xl md:text-2xl text-white font-semibold max-w-2xl mx-auto mb-6">
+            Your 24/7 AI Compliance Expert.
+          </p>
+          <div className="max-w-2xl mx-auto mb-12 space-y-4 text-left">
+            <p className="text-white/70 text-base md:text-lg leading-relaxed">
+              In our world, <span className="text-white font-semibold">"close enough" is a liability.</span> You don't need an AI that knows a little bit about everything; you need an expert that knows everything about 29 CFR.
+            </p>
+            <p className="text-white/70 text-base md:text-lg leading-relaxed">
+              Corey is the first specialized AI engine built from the actual DNA of <span className="text-white font-semibold">29 CFR and DOT 49 CFR</span>. He isn't just searching the web — he is processing two decades of field-tested logic to give you the exact answer you need, exactly when you need it.
+            </p>
+          </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="/api/login">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-lg px-8 py-6 shadow-xl shadow-accent/25" data-testid="button-corey-get-started">
