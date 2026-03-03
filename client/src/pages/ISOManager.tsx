@@ -108,7 +108,7 @@ const ISA_CAPABILITIES = [
 
 const ISA_PRO_CAPABILITIES = [
   "Everything in Isa",
-  "IATF 16949 + CSR mapping",
+  "IATF 16949 internal auditing",
   "ISO 13485 medical device",
   "ISO/IEC 27001 InfoSec",
   "AS9100 aerospace auditing",
@@ -455,6 +455,36 @@ function IsaEmptyState({
           </div>
         </div>
 
+        {/* CESAR callout */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+          className="mb-8"
+        >
+          <Card className="border-border/60 bg-white dark:bg-card overflow-hidden shadow-sm" data-testid="card-cesar-callout">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5">
+              <div className="w-12 h-12 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <img src={acsiLogo} alt="ACSI" className="w-9 h-9 object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:bg-accent/10 dark:text-accent border border-primary/20 dark:border-accent/20 uppercase tracking-wide">IATF 16949</span>
+                </div>
+                <h3 className="text-sm font-black text-primary mb-0.5">Need CSR Management?</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Customer Specific Requirements are handled by <strong className="text-primary">CESAR</strong> — ACSI's purpose-built platform for automotive suppliers under IATF 16949. Covers CSR assignment, employee training, and compliance self-assessments.
+                </p>
+              </div>
+              <Link href="/cesar" className="shrink-0">
+                <Button variant="outline" size="sm" className="gap-1.5 border-border/60 hover:border-accent/40 hover:text-accent text-xs font-semibold whitespace-nowrap" data-testid="button-meet-cesar">
+                  Meet CESAR <ChevronRight className="w-3 h-3" />
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        </motion.div>
+
         {/* Plans comparison */}
         <div>
           <h2 className="text-sm font-bold text-primary mb-3">Plans</h2>
@@ -511,7 +541,7 @@ function IsaEmptyState({
                     </div>
                     <div>
                       <p className="font-black text-primary text-sm">Isa Pro</p>
-                      <p className="text-xs text-muted-foreground">All standards + Automotive CSRs</p>
+                      <p className="text-xs text-muted-foreground">All 7 standards — specialized industries</p>
                     </div>
                   </div>
                   <div className="text-right">
