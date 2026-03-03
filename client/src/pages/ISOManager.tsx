@@ -430,180 +430,187 @@ function IsaEmptyState({
           </div>
         </div>
 
-        {/* ── PRODUCT SUITE ── */}
+        {/* ── PRODUCT SUITE — side-by-side columns ── */}
         <div className="mb-7">
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Plans &amp; Pricing</h2>
 
-          {/* Section 1: AI Guidance Only */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-sm font-bold text-primary">AI Guidance</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-5">
+
+            {/* LEFT COLUMN: AI Guidance */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 px-1">
+                <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">AI Guidance · Q&amp;A Only</span>
+              </div>
+
+              {/* Isa */}
+              <Card className="p-4 border-border/60 bg-white dark:bg-card hover:shadow-md transition-shadow flex flex-col" data-testid="card-plan-isa">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
+                      <img src={acsiLogo} alt="Isa" className="w-6 h-6 object-contain" />
+                    </div>
+                    <div>
+                      <p className="font-black text-primary text-sm leading-none">Isa</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">9001 · 14001 · 45001</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-accent text-lg leading-none">$99</p>
+                    <p className="text-[10px] text-muted-foreground">/mo</p>
+                  </div>
+                </div>
+                <ul className="space-y-1.5 mb-4 flex-1">
+                  {ISA_CAPABILITIES.map((cap) => (
+                    <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
+                      {cap}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/settings">
+                  <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-isa">
+                    Get Isa
+                  </Button>
+                </Link>
+              </Card>
+
+              {/* Isa Pro */}
+              <Card className="p-4 border-2 border-primary/20 bg-white dark:bg-card hover:shadow-md transition-shadow relative overflow-hidden flex flex-col" data-testid="card-plan-isa-pro">
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2.5 py-1 rounded-bl-lg">ALL STANDARDS</div>
+                <div className="flex items-center justify-between mb-3 pr-16">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
+                      <img src={acsiLogo} alt="Isa" className="w-6 h-6 object-contain" />
+                    </div>
+                    <div>
+                      <p className="font-black text-primary text-sm leading-none">Isa Pro</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">All 7 specialized standards</p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-black text-primary dark:text-accent text-lg leading-none">$199</p>
+                    <p className="text-[10px] text-muted-foreground">/mo</p>
+                  </div>
+                </div>
+                <ul className="space-y-1.5 mb-4 flex-1">
+                  {ISA_PRO_CAPABILITIES.map((cap) => (
+                    <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="w-3 h-3 text-primary dark:text-accent shrink-0" />
+                      {cap}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/settings">
+                  <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs" data-testid="button-plan-isa-pro">
+                    Get Isa Pro
+                  </Button>
+                </Link>
+              </Card>
             </div>
-            <div className="flex-1 h-px bg-border/60" />
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Q&A · No Vault</span>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {/* Isa */}
-            <Card className="p-5 border-border/60 bg-white dark:bg-card hover:shadow-md transition-shadow" data-testid="card-plan-isa">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
-                    <img src={acsiLogo} alt="Isa" className="w-6 h-6 object-contain" />
-                  </div>
-                  <div>
-                    <p className="font-black text-primary">Isa</p>
-                    <p className="text-[10px] text-muted-foreground">ISO 9001 · 14001 · 45001</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-black text-accent text-lg leading-none">$99</p>
-                  <p className="text-[10px] text-muted-foreground">/mo</p>
-                </div>
+            {/* RIGHT COLUMN: ACSI ISO Manager */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 px-1">
+                <Vault className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">ACSI ISO Manager · Isa Included + Docs + Vault</span>
               </div>
-              <ul className="space-y-1.5 mb-4">
-                {ISA_CAPABILITIES.map((cap) => (
-                  <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
-                    {cap}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/settings">
-                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold" data-testid="button-plan-isa">
-                  Get Isa
-                </Button>
-              </Link>
-            </Card>
 
-            {/* Isa Pro */}
-            <Card className="p-5 border-2 border-primary/20 bg-white dark:bg-card hover:shadow-md transition-shadow relative overflow-hidden" data-testid="card-plan-isa-pro">
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-xl">ALL STANDARDS</div>
-              <div className="flex items-start justify-between mb-3 pr-20">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
-                    <img src={acsiLogo} alt="Isa" className="w-6 h-6 object-contain" />
+              {/* Three ISO Manager cards — horizontal row inside the right column */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+
+                {/* ISO Manager */}
+                <Card className="p-4 border-border/60 bg-white dark:bg-card hover:shadow-md transition-shadow flex flex-col" data-testid="card-plan-iso-manager">
+                  <div className="mb-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <FileText className="w-3.5 h-3.5 text-accent" />
+                      <p className="font-black text-primary text-sm leading-none">ISO Manager</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">9001 · 14001 · 45001</p>
                   </div>
-                  <div>
-                    <p className="font-black text-primary">Isa Pro</p>
-                    <p className="text-[10px] text-muted-foreground">All 7 specialized standards</p>
+                  <div className="my-3 pb-3 border-b border-border/60">
+                    <p className="font-black text-accent text-xl leading-none">$3,588</p>
+                    <p className="text-[10px] text-muted-foreground">per year · $299/mo</p>
                   </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="font-black text-primary dark:text-accent text-lg leading-none">$199</p>
-                  <p className="text-[10px] text-muted-foreground">/mo</p>
-                </div>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    {ISO_MANAGER_CAPABILITIES.map((cap) => (
+                      <li key={cap} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />
+                        {cap}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/settings">
+                    <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager">
+                      Get ISO Manager
+                    </Button>
+                  </Link>
+                </Card>
+
+                {/* ISO Manager Custom */}
+                <Card className="p-4 border-2 border-accent/30 bg-white dark:bg-card hover:shadow-md transition-shadow relative overflow-hidden flex flex-col" data-testid="card-plan-iso-manager-custom">
+                  <div className="absolute top-0 right-0 bg-accent text-white text-[9px] font-bold px-2.5 py-1 rounded-bl-lg">CUSTOM</div>
+                  <div className="mb-1 pr-12">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Layers className="w-3.5 h-3.5 text-accent" />
+                      <p className="font-black text-primary text-sm leading-none">ISO Manager Custom</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">One specialized standard</p>
+                  </div>
+                  <div className="my-3 pb-3 border-b border-border/60">
+                    <p className="font-black text-accent text-xl leading-none">$7,988+</p>
+                    <p className="text-[10px] text-muted-foreground">per year · varies</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {["IATF 16949", "ISO 13485", "AS9100", "ISO 27001"].map((s) => (
+                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-primary border border-border/60 font-bold">{s}</span>
+                    ))}
+                  </div>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    <li className="flex items-start gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />Isa Pro for your standard</li>
+                    <li className="flex items-start gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />Document generation</li>
+                    <li className="flex items-start gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />Secure vault</li>
+                    <li className="flex items-start gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />IATF 16949: $9,988/yr</li>
+                  </ul>
+                  <Link href="/settings">
+                    <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager-custom">
+                      Get Custom
+                    </Button>
+                  </Link>
+                </Card>
+
+                {/* ISO Manager Pro */}
+                <Card className="p-4 bg-primary hover:shadow-xl transition-shadow relative overflow-hidden flex flex-col" data-testid="card-plan-iso-manager-pro">
+                  <div className="absolute top-0 right-0 bg-accent text-white text-[9px] font-bold px-2.5 py-1 rounded-bl-lg">FULL PLATFORM</div>
+                  <div className="mb-1 pr-12">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Star className="w-3.5 h-3.5 text-accent" />
+                      <p className="font-black text-white text-sm leading-none">ISO Manager Pro</p>
+                    </div>
+                    <p className="text-[10px] text-white/50">All 7 · Complete Vault</p>
+                  </div>
+                  <div className="my-3 pb-3 border-b border-white/10">
+                    <p className="font-black text-accent text-xl leading-none">$14,988</p>
+                    <p className="text-[10px] text-white/50">per year</p>
+                  </div>
+                  <ul className="space-y-1.5 mb-4 flex-1">
+                    {ISO_MANAGER_PRO_CAPABILITIES.map((cap) => (
+                      <li key={cap} className="flex items-start gap-2 text-xs text-white/70">
+                        <CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />
+                        {cap}
+                      </li>
+                    ))}
+                  </ul>
+                  <a href="mailto:info@acsi-quality.com">
+                    <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager-pro">
+                      Contact ACSI
+                    </Button>
+                  </a>
+                </Card>
+
               </div>
-              <ul className="space-y-1.5 mb-4">
-                {ISA_PRO_CAPABILITIES.map((cap) => (
-                  <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-primary dark:text-accent shrink-0" />
-                    {cap}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/settings">
-                <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" data-testid="button-plan-isa-pro">
-                  Get Isa Pro
-                </Button>
-              </Link>
-            </Card>
-          </div>
-
-          {/* Section 2: Full Platform with Vault */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <Vault className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-sm font-bold text-primary">ACSI ISO Manager</h2>
             </div>
-            <div className="flex-1 h-px bg-border/60" />
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Isa Included · Documents · Vault · Annual</span>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-            {/* ISO Manager */}
-            <Card className="p-5 border-border/60 bg-white dark:bg-card hover:shadow-md transition-shadow" data-testid="card-plan-iso-manager">
-              <div className="flex items-center gap-2 mb-1">
-                <FileText className="w-4 h-4 text-accent" />
-                <p className="font-black text-primary text-sm">ISO Manager</p>
-              </div>
-              <p className="text-[10px] text-muted-foreground mb-3">ISO 9001 · 14001 · 45001 + Vault</p>
-              <div className="mb-3">
-                <p className="font-black text-accent text-xl leading-none">$3,588</p>
-                <p className="text-[10px] text-muted-foreground">/year · $299/mo equivalent</p>
-              </div>
-              <ul className="space-y-1.5 mb-4">
-                {ISO_MANAGER_CAPABILITIES.map((cap) => (
-                  <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
-                    {cap}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/settings">
-                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager">
-                  Get ISO Manager
-                </Button>
-              </Link>
-            </Card>
-
-            {/* ISO Manager Custom */}
-            <Card className="p-5 border-2 border-accent/30 bg-white dark:bg-card hover:shadow-md transition-shadow relative overflow-hidden" data-testid="card-plan-iso-manager-custom">
-              <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">CUSTOM</div>
-              <div className="flex items-center gap-2 mb-1">
-                <Layers className="w-4 h-4 text-accent" />
-                <p className="font-black text-primary text-sm">ISO Manager Custom</p>
-              </div>
-              <p className="text-[10px] text-muted-foreground mb-3">Choose one specialized standard</p>
-              <div className="mb-3">
-                <p className="font-black text-accent text-xl leading-none">$7,988+</p>
-                <p className="text-[10px] text-muted-foreground">/year · varies by standard</p>
-              </div>
-              <div className="flex flex-wrap gap-1 mb-3">
-                {["IATF 16949", "ISO 13485", "AS9100", "ISO 27001"].map((s) => (
-                  <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-primary border border-border/60 font-semibold">{s}</span>
-                ))}
-              </div>
-              <ul className="space-y-1.5 mb-4">
-                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />Isa Pro for your chosen standard</li>
-                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />Document generation for that standard</li>
-                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />Secure document vault</li>
-                <li className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0" />IATF 16949: $9,988/yr</li>
-              </ul>
-              <Link href="/settings">
-                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager-custom">
-                  Get Custom
-                </Button>
-              </Link>
-            </Card>
-
-            {/* ISO Manager Pro */}
-            <Card className="p-5 border-2 border-primary/30 bg-primary text-white hover:shadow-xl transition-shadow relative overflow-hidden" data-testid="card-plan-iso-manager-pro">
-              <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">FULL PLATFORM</div>
-              <div className="flex items-center gap-2 mb-1">
-                <Star className="w-4 h-4 text-accent" />
-                <p className="font-black text-white text-sm">ISO Manager Pro</p>
-              </div>
-              <p className="text-[10px] text-white/60 mb-3">All 7 standards · Complete Vault</p>
-              <div className="mb-3">
-                <p className="font-black text-accent text-xl leading-none">$14,988</p>
-                <p className="text-[10px] text-white/50">/year</p>
-              </div>
-              <ul className="space-y-1.5 mb-4">
-                {ISO_MANAGER_PRO_CAPABILITIES.map((cap) => (
-                  <li key={cap} className="flex items-center gap-2 text-xs text-white/70">
-                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
-                    {cap}
-                  </li>
-                ))}
-              </ul>
-              <a href="mailto:info@acsi-quality.com">
-                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-plan-iso-manager-pro">
-                  Contact ACSI
-                </Button>
-              </a>
-            </Card>
           </div>
         </div>
 
