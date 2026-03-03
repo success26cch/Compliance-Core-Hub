@@ -124,7 +124,7 @@ Target Market: Safety Directors, EHS Managers, HR Professionals, Plant Managers,
 2. PRICING
 ----------
 - Corey AI: $99/month PER USER (not per company)
-  - Unlimited conversations, all Quick Actions, 23 document templates, voice input/output, Team Meeting Mode, Audit Mode
+  - Unlimited conversations, all Quick Actions, 42 document templates, voice input/output, Team Meeting Mode, Audit Mode
   
 - Employer Compliance Platform: $299/month
   - Everything in Corey AI PLUS: Dashboard, Employee Management, Incident Logging, Training LMS, CCHUB Handshake, DOT Notifications
@@ -178,37 +178,56 @@ Regulatory Coverage (18+ standards):
 6. Gap Analysis — ACSI — Explains gap analysis and connects users directly to ACSI (Assessment & Consulting Services Inc.) at acsi-quality.com
 7. Is This Recordable? — Step-by-step OSHA recordability determination per 29 CFR 1904.7; distinguishes first aid vs. medical treatment; identifies correct OSHA 300 Log column
 
-23 Document Templates (organized by category):
-POLICIES & PROGRAMS (8):
+42 Document Templates (organized by category):
+POLICIES & PROGRAMS (14):
   - Drug & Alcohol Policy (49 CFR Part 40 / 49 CFR Part 382)
   - OSHA Recordkeeping SOP (29 CFR 1904)
   - Respiratory Protection Program (29 CFR 1910.134)
   - Hearing Conservation Program (29 CFR 1910.95)
   - Hazard Communication Program (29 CFR 1910.1200)
   - Lockout/Tagout Program (29 CFR 1910.147)
-  - Bloodborne Pathogen Exposure Control Plan (29 CFR 1910.1030)
-  - Forklift/PIT Safety Program (29 CFR 1910.178)
-
-PERMITS & FORMS (4):
-  - Confined Space Entry Permit (29 CFR 1910.146)
-  - Hot Work Permit Template
-  - Job Hazard Analysis (JHA) Template
-  - Contractor Safety Pre-Qualification Form
-
-MEETING TOOLS (4):
-  - Safety Meeting Agenda Template
-  - Weekly Safety Topic Brief
-  - Toolbox Talk Template
-  - Near-Miss Reporting Form
-
-ASSESSMENTS (7):
-  - PPE Hazard Assessment (29 CFR 1910.132)
   - Emergency Action Plan (29 CFR 1910.38)
   - Fire Prevention Plan (29 CFR 1910.39)
+  - Bloodborne Pathogen Exposure Control Plan (29 CFR 1910.1030)
+  - Forklift/PIT Safety Program (29 CFR 1910.178)
+  - Fit for Duty Policy
   - Fall Protection Plan (29 CFR 1926.502)
   - Electrical Safety Program (NFPA 70E / 29 CFR 1910 Subpart S)
-  - New Employee Safety Orientation Checklist
   - Process Safety Management Overview (29 CFR 1910.119)
+
+PERMITS & FORMS (16):
+  - Fit for Duty (FFD) Form
+  - Return-to-Duty Checklist (49 CFR Part 40)
+  - Incident Investigation Form (29 CFR 1904.7)
+  - Confined Space Entry Permit (29 CFR 1910.146)
+  - Hot Work Permit Template
+  - Contractor Safety Pre-Qualification Form
+  - Letter to the Clinic (Occupational Health Referral Letter)
+  - Digital Medical Passport Authorization
+  - Near Miss Report Form
+  - Corrective Action Plan (CAPA) Form
+  - Return-to-Work Authorization Letter
+  - Reasonable Suspicion Documentation Form (49 CFR Part 382.307)
+  - Supervisor First Report of Injury
+  - Respirator Medical Evaluation Questionnaire (29 CFR 1910.134 Appendix C)
+  - DOT Driver Qualification File Checklist (49 CFR Part 391)
+  - Medical Surveillance Consent Form
+
+MEETING TOOLS (5):
+  - Safety Meeting Agenda Template
+  - Incident Review Meeting Agenda
+  - Toolbox Talk Sign-In Sheet
+  - Workplace Injury Debriefing Guide
+  - Weekly Safety Topic Brief
+
+ASSESSMENTS (7):
+  - Job Hazard Analysis (JHA) (OSHA 3071)
+  - New Employee Safety Orientation Checklist
+  - OSHA 300 Log Recordability Audit (29 CFR 1904)
+  - Safety Program Gap Assessment (OSHA Recommended Practices)
+  - DOT Compliance Self-Assessment (49 CFR Parts 380-399)
+  - Drug Testing Program Compliance Audit (49 CFR Part 40 / Part 382)
+  - PPE Hazard Assessment (29 CFR 1910.132)
 
 Voice Features:
 - Floating mic button for hands-free voice input from anywhere in a conversation
@@ -359,7 +378,7 @@ Dedicated dark-themed sales page at /meet-corey:
 - 8 capability cards showcasing Corey's features
 - Anti-hallucination protocol section
 - Proactive compliance section
-- 23 document templates grid organized by category
+- 42 document templates grid organized by category
 - Regulatory coverage list (18+ standards)
 - Audience targeting section
 - FAQ accordion
@@ -445,7 +464,7 @@ Dark Mode: Full support via next-themes with class-based toggling
 3. One-stop shop — dashboard, employees, incidents, training, documents, AI expert, clinic integration all in one platform
 4. Bilingual Medical Assistant — only AI-powered real-time medical interpreter built for occupational health clinics
 5. CCHUB Handshake — replaces paper authorization forms with QR-based digital system
-6. 23 document templates — every document references exact CFR standards
+6. 42 document templates — every document references exact CFR standards
 7. Proactive compliance — Corey doesn't just answer questions, he leads meetings, audits logs, conducts mock inspections, and reminds about deadlines
 8. ACSI integration — ISO management and gap analysis through a dedicated consulting division
 9. Employee recognition — BrandNSwag ties safety performance to rewards

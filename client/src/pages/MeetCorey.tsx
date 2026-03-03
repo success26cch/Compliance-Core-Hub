@@ -65,7 +65,7 @@ const CAPABILITIES = [
   },
   {
     icon: FileText,
-    title: "23 Document Templates",
+    title: "42 Document Templates",
     description: "Generate policies, permits, checklists, and assessments with one click — from Emergency Action Plans to Confined Space Entry Permits, all referencing exact CFR standards.",
     color: "text-cyan-400",
     bg: "bg-cyan-500/10",
@@ -91,34 +91,45 @@ const DOCUMENT_CATEGORIES = [
     category: "Policies & Programs",
     icon: Shield,
     templates: [
-      "Hazard Communication Program", "Lockout/Tagout (LOTO) Program",
+      "Drug & Alcohol Policy", "OSHA Recordkeeping SOP",
       "Respiratory Protection Program", "Hearing Conservation Program",
+      "Hazard Communication Program", "Lockout/Tagout (LOTO) Program",
       "Emergency Action Plan", "Fire Prevention Plan",
       "Bloodborne Pathogen Exposure Control Plan", "Forklift/PIT Safety Program",
-      "Fall Protection Plan", "Electrical Safety Program",
-      "Process Safety Management Overview", "Drug & Alcohol Policy",
-      "Return-to-Work Program",
+      "Fit for Duty Policy", "Fall Protection Plan",
+      "Electrical Safety Program", "Process Safety Management Overview",
     ],
   },
   {
     category: "Permits & Forms",
     icon: FileCheck,
     templates: [
-      "Confined Space Entry Permit", "Hot Work Permit",
-      "Incident Investigation Report", "OSHA 300/300A Log Assistance",
-      "Contractor Safety Pre-Qualification Form",
+      "Fit for Duty (FFD) Form", "Return-to-Duty Checklist",
+      "Incident Investigation Form", "Confined Space Entry Permit",
+      "Hot Work Permit", "Contractor Safety Pre-Qualification Form",
+      "Letter to the Clinic", "Digital Medical Passport Authorization",
+      "Near Miss Report Form", "Corrective Action Plan (CAPA) Form",
+      "Return-to-Work Authorization Letter", "Reasonable Suspicion Documentation Form",
+      "Supervisor First Report of Injury", "Respirator Medical Evaluation Questionnaire",
+      "DOT Driver Qualification File Checklist", "Medical Surveillance Consent Form",
     ],
   },
   {
     category: "Meeting Tools",
     icon: Users,
-    templates: ["Safety Meeting Agenda Template", "Weekly Safety Topic Brief"],
+    templates: [
+      "Safety Meeting Agenda Template", "Incident Review Meeting Agenda",
+      "Toolbox Talk Sign-In Sheet", "Workplace Injury Debriefing Guide",
+      "Weekly Safety Topic Brief",
+    ],
   },
   {
     category: "Assessments",
     icon: BarChart3,
     templates: [
       "Job Hazard Analysis (JHA)", "New Employee Safety Orientation Checklist",
+      "OSHA 300 Log Recordability Audit", "Safety Program Gap Assessment",
+      "DOT Compliance Self-Assessment", "Drug Testing Program Compliance Audit",
       "PPE Hazard Assessment",
     ],
   },
@@ -156,7 +167,7 @@ const REGULATIONS_COVERED = [
 
 const TESTIMONIAL_STATS = [
   { value: "29 CFR", label: "Built from the DNA of federal regulations" },
-  { value: "23", label: "Ready-to-generate document templates" },
+  { value: "42", label: "Ready-to-generate document templates" },
   { value: "24/7", label: "Available whenever you need compliance guidance" },
   { value: "18+", label: "Major regulatory standards covered" },
 ];
@@ -175,7 +186,7 @@ export default function MeetCorey() {
     },
     {
       q: "How does the $99/month per user pricing work?",
-      a: "Each Corey subscription is per individual user. Every user gets their own private conversation history, unlimited questions, all 23 document templates, Quick Actions (safety meetings, audits, inspections), and the full regulatory knowledge base. Team seats are managed through the Team Seats dashboard.",
+      a: "Each Corey subscription is per individual user. Every user gets their own private conversation history, unlimited questions, all 42 document templates, Quick Actions (safety meetings, audits, inspections), and the full regulatory knowledge base. Team seats are managed through the Team Seats dashboard.",
     },
     {
       q: "What if Corey doesn't know the answer?",
@@ -449,7 +460,7 @@ export default function MeetCorey() {
           >
             <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20 mb-4">Document Generation</Badge>
             <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-4" data-testid="text-documents-title">
-              23 Templates. <span className="text-accent">One Click.</span>
+              42 Templates. <span className="text-accent">One Click.</span>
             </h2>
             <p className="text-lg text-white/50 max-w-2xl mx-auto">
               Every template references the exact CFR standard. Generate policies, permits, checklists, and assessments instantly — then download as PDF.
