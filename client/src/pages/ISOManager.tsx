@@ -348,23 +348,27 @@ function IsaEmptyState({
         {/* ── Plans & Pricing ── 5 cards side by side ── */}
         <div className="mb-7">
 
-          {/* Section headers — aligned above the 5-card grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-2">
-            <div className="lg:col-span-2 flex items-center gap-2">
-              <MessageSquare className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">AI Guidance Only</span>
-              <div className="flex-1 h-px bg-border/60" />
-            </div>
-            <div className="lg:col-span-3 flex items-center gap-2">
-              <div className="flex-1 h-px bg-accent/50 hidden lg:block" />
-              <Vault className="w-3.5 h-3.5 text-accent shrink-0" />
-              <span className="text-[11px] font-bold text-accent uppercase tracking-wider whitespace-nowrap">ACSI ISO Manager — Isa + Documents + Vault</span>
-              <div className="flex-1 h-px bg-accent/50 hidden lg:block" />
-            </div>
-          </div>
+          {/* Horizontal scroll wrapper — always shows all 5 cards */}
+          <div className="overflow-x-auto -mx-6 px-6 pb-2">
+            <div style={{ minWidth: "900px" }}>
 
-          {/* 5-card grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Section headers — 5-column, aligned above cards */}
+            <div className="grid grid-cols-5 gap-4 mb-2">
+              <div className="col-span-2 flex items-center gap-2">
+                <MessageSquare className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">AI Guidance Only</span>
+                <div className="flex-1 h-px bg-border/60" />
+              </div>
+              <div className="col-span-3 flex items-center gap-2">
+                <div className="flex-1 h-px bg-accent/50" />
+                <Vault className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span className="text-[11px] font-bold text-accent uppercase tracking-wider whitespace-nowrap">ACSI ISO Manager — Isa + Documents + Vault</span>
+                <div className="flex-1 h-px bg-accent/50" />
+              </div>
+            </div>
+
+          {/* 5-card grid — always 5 columns */}
+          <div className="grid grid-cols-5 gap-4">
 
             {/* Card 1 — Isa */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
@@ -578,6 +582,8 @@ function IsaEmptyState({
               </Card>
             </motion.div>
 
+          </div>
+            </div>
           </div>
         </div>
 
