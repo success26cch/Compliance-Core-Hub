@@ -326,7 +326,6 @@ export default function Landing() {
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const bmaRef = useRef<HTMLDivElement>(null);
-  const [hasUsedBmaDemo, setHasUsedBmaDemo] = useState(false);
   const [showBmaSticky, setShowBmaSticky] = useState(false);
 
   useEffect(() => {
@@ -354,21 +353,12 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
-    if (localStorage.getItem('bma_demo_visited') === 'true') {
-      setHasUsedBmaDemo(true);
-    }
-  }, []);
-
-  useEffect(() => {
     const section = bmaRef.current;
     if (!section) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setShowBmaSticky(true);
-          if (!localStorage.getItem('bma_demo_visited')) {
-            localStorage.setItem('bma_demo_visited', 'true');
-          }
         }
       },
       { threshold: 0.1 }
@@ -1108,59 +1098,10 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* First visit: full BMA — Returning visit: pricing gate */}
-        {hasUsedBmaDemo ? (
-          <div className="py-24 bg-muted/30 border-b border-border/50">
-            <div className="max-w-lg mx-auto px-4 text-center space-y-6">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
-                <Stethoscope className="w-8 h-8 text-accent" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground">You've Seen It in Action</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                The Bilingual Medical Assistant is a subscription tool for occupational health clinics. Get unlimited translations, clinical commands, body map injury reporting, and full bilingual form support — all for one flat rate.
-              </p>
-              <Card className="text-left p-6 space-y-4">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-primary">$199</span>
-                  <span className="text-muted-foreground">/mo per clinic location</span>
-                </div>
-                <ul className="space-y-2">
-                  {[
-                    "Unlimited Spanish ↔ English translations",
-                    "Clinical quick commands (Vision, PFT, Drug Screen & more)",
-                    "Interactive body map for injury reporting",
-                    "Multi-step bilingual forms (Injury, New Hire, Drug Screen)",
-                    "Text-to-speech in English and Spanish",
-                    "Printable clinical summaries",
-                  ].map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/bma-subscription">
-                  <Button className="w-full" size="lg" data-testid="button-bma-gate-subscribe">
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Subscribe — $199/mo
-                  </Button>
-                </Link>
-                <button
-                  onClick={() => { localStorage.removeItem('bma_demo_visited'); setHasUsedBmaDemo(false); }}
-                  className="text-xs text-muted-foreground hover:text-foreground underline w-full text-center pt-1"
-                  data-testid="button-bma-preview-again"
-                >
-                  Preview the demo again
-                </button>
-              </Card>
-            </div>
-          </div>
-        ) : (
-          <BilingualAssistant />
-        )}
+        <BilingualAssistant />
 
-        {/* Sticky subscribe bar — appears on scroll, first visit only */}
-        {!hasUsedBmaDemo && showBmaSticky && (
+        {/* Sticky subscribe bar — appears when BMA section is in view */}
+        {showBmaSticky && (
           <div className="sticky bottom-0 z-30 bg-[hsl(222,47%,11%)] border-t border-white/10 py-3 px-4 shadow-2xl" data-testid="banner-bma-sticky">
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
               <p className="text-white text-sm font-medium text-center sm:text-left">
