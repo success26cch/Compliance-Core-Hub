@@ -502,50 +502,7 @@ function IsaEmptyState({
             </motion.div>
 
             {/* Card 4 — ISO Manager Custom */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <Card className="h-full p-5 border-2 border-accent/50 bg-white dark:bg-card hover:shadow-lg transition-all relative overflow-hidden flex flex-col" data-testid="card-plan-iso-manager-custom">
-                <div className="absolute top-0 inset-x-0 h-1 bg-accent rounded-t" />
-                <div className="absolute top-3 right-3">
-                  <span className="text-[9px] bg-accent text-white font-bold px-2 py-0.5 rounded-full">CUSTOM</span>
-                </div>
-                <div className="flex items-center gap-2.5 mb-4 pr-14">
-                  <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shadow-sm shrink-0">
-                    <Layers className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-black text-primary leading-none text-sm">ISO Manager Custom</p>
-                    <p className="text-[10px] text-accent font-semibold mt-0.5">Isa Pro Included</p>
-                  </div>
-                </div>
-                <div className="mb-4 pb-3 border-b border-border/60">
-                  <div className="flex items-baseline gap-1">
-                    <p className="font-black text-accent text-3xl leading-none">$666<span className="text-lg">+</span></p>
-                    <span className="text-sm text-muted-foreground font-medium">/mo</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">billed annually · from $7,998/yr</p>
-                </div>
-                <div className="mb-3">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Choose One Standard</p>
-                  <div className="flex flex-wrap gap-1">
-                    {["IATF 16949", "ISO 13485", "AS9100", "ISO 27001"].map(s => (
-                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-bold">{s}</span>
-                    ))}
-                  </div>
-                </div>
-                <ul className="space-y-1.5 mb-4 flex-1">
-                  <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Isa Pro for your chosen standard</span></li>
-                  <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>AI document generation</span></li>
-                  <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Secure document vault</span></li>
-                  <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Version control &amp; audit trail</span></li>
-                  <li className="flex items-start gap-1.5 text-xs font-semibold text-primary"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>IATF 16949: $832/mo ($9,988/yr)</span></li>
-                </ul>
-                <Link href="/settings">
-                  <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-plan-iso-manager-custom">
-                    Get Custom
-                  </Button>
-                </Link>
-              </Card>
-            </motion.div>
+            <CustomPlanCard />
 
             {/* Card 5 — ISO Manager Pro */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
@@ -762,6 +719,85 @@ function ISOChatInterface({
         </p>
       </div>
     </div>
+  );
+}
+
+/* ─── CUSTOM PLAN CARD ────────────────────────────────── */
+const CUSTOM_STANDARDS = [
+  { code: "IATF 16949", label: "Automotive" },
+  { code: "ISO 13485", label: "Medical Devices" },
+  { code: "AS9100", label: "Aerospace" },
+  { code: "ISO 27001", label: "InfoSec" },
+];
+
+function CustomPlanCard() {
+  const [selected, setSelected] = React.useState<string | null>(null);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="h-full">
+      <Card className="h-full p-5 border-2 border-accent/50 bg-white dark:bg-card hover:shadow-lg transition-all relative overflow-hidden flex flex-col" data-testid="card-plan-iso-manager-custom">
+        <div className="absolute top-0 inset-x-0 h-1 bg-accent rounded-t" />
+        <div className="absolute top-3 right-3">
+          <span className="text-[9px] bg-accent text-white font-bold px-2 py-0.5 rounded-full">CUSTOM</span>
+        </div>
+
+        <div className="flex items-center gap-2.5 mb-4 pr-14">
+          <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shadow-sm shrink-0">
+            <Layers className="w-5 h-5 text-accent" />
+          </div>
+          <div>
+            <p className="font-black text-primary leading-none text-sm">ISO Manager Custom</p>
+            <p className="text-[10px] text-accent font-semibold mt-0.5">Isa Pro Included</p>
+          </div>
+        </div>
+
+        <div className="mb-4 pb-3 border-b border-border/60">
+          <div className="flex items-baseline gap-1">
+            <p className="font-black text-accent text-3xl leading-none">Custom</p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">pricing varies by standard · billed annually</p>
+        </div>
+
+        <div className="mb-4 pb-3 border-b border-border/40">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Select Your Standard</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {CUSTOM_STANDARDS.map(s => (
+              <button
+                key={s.code}
+                onClick={() => setSelected(prev => prev === s.code ? null : s.code)}
+                className={`text-left px-2.5 py-2 rounded-lg border text-[10px] font-bold transition-all ${
+                  selected === s.code
+                    ? "bg-accent text-white border-accent shadow-sm"
+                    : "bg-muted/40 text-primary border-border/60 hover:border-accent/40 hover:bg-accent/5"
+                }`}
+                data-testid={`button-standard-${s.code.replace(/\s/g, "-").toLowerCase()}`}
+              >
+                <span className="block leading-tight">{s.code}</span>
+                <span className={`block font-normal mt-0.5 ${selected === s.code ? "text-white/80" : "text-muted-foreground"}`}>{s.label}</span>
+              </button>
+            ))}
+          </div>
+          {selected && (
+            <p className="mt-2 text-[10px] text-accent font-semibold flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> {selected} selected — contact us for pricing
+            </p>
+          )}
+        </div>
+
+        <ul className="space-y-1.5 mb-4 flex-1">
+          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Isa Pro for your chosen standard</span></li>
+          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>AI document generation</span></li>
+          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Secure document vault</span></li>
+          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Version control &amp; audit trail</span></li>
+        </ul>
+
+        <Link href="/settings">
+          <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-plan-iso-manager-custom">
+            {selected ? `Get ${selected} Custom` : "Get Custom"}
+          </Button>
+        </Link>
+      </Card>
+    </motion.div>
   );
 }
 
