@@ -123,7 +123,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/corey", label: "Ask Corey", icon: Bot },
     { href: "/team-seats", label: "Team Seats", icon: Users },
-    { href: "https://acsi-quality.com/", label: "ACSI ISO Manager", icon: FileCheck, external: true },
+    { href: "/iso-manager", label: "ACSI ISO Manager", icon: FileCheck },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
     { href: "/compliance-checklists", label: "Compliance Checklists", icon: FileText },
     { href: "/audit-prep", label: "Audit Prep Tools", icon: ClipboardCheck },
