@@ -522,7 +522,7 @@ function IsaEmptyState({
                     <p className="font-black text-accent text-3xl leading-none">$666<span className="text-lg">+</span></p>
                     <span className="text-sm text-muted-foreground font-medium">/mo</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">billed annually · from $7,988/yr</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">billed annually · from $7,998/yr</p>
                 </div>
                 <div className="mb-3">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Choose One Standard</p>
