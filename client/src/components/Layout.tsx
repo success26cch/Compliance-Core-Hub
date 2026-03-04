@@ -117,20 +117,25 @@ export function Sidebar({ className = "" }: { className?: string }) {
     queryKey: ['/api/superadmin/check'],
   });
   
-  const links = [
+  const utilityLinks = [
     { href: "/settings", label: "Settings", icon: Settings },
     { href: "/company-profile", label: "Company Profile", icon: Building2 },
+  ];
+
+  const safetyLinks = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/corey", label: "Ask Corey", icon: Bot },
     { href: "/team-seats", label: "Team Seats", icon: Users },
-    { href: "/iso-manager", label: "ACSI ISO Manager", icon: FileCheck },
     { href: "/decision-tree", label: "OSHA 300, Log it or Not", icon: GitBranch },
     { href: "/compliance-checklists", label: "Compliance Checklists", icon: FileText },
     { href: "/audit-prep", label: "Audit Prep Tools", icon: ClipboardCheck },
     { href: "/compliance-glossary", label: "Compliance Glossary", icon: BookOpen },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
     { href: "/employee-passport", label: "Medical Passport", icon: QrCode },
-    { href: "/contact", label: "Contact Us", icon: MessageSquare },
+  ];
+
+  const isoLinks = [
+    { href: "/iso-manager", label: "ACSI ISO Manager", icon: FileCheck },
   ];
 
   const LinkItem = ({ href, label, icon: Icon, external }: any) => {
@@ -160,6 +165,18 @@ export function Sidebar({ className = "" }: { className?: string }) {
     );
   };
 
+  const SectionLabel = ({ label, accent = false }: { label: string; accent?: boolean }) => (
+    <div className="pt-3 pb-1">
+      <div className={`flex items-center gap-2 px-1`}>
+        <div className={`h-px flex-1 ${accent ? "bg-accent/30" : "bg-border/60"}`} />
+        <span className={`text-[9px] font-black uppercase tracking-widest shrink-0 ${accent ? "text-accent" : "text-muted-foreground/60"}`}>
+          {label}
+        </span>
+        <div className={`h-px flex-1 ${accent ? "bg-accent/30" : "bg-border/60"}`} />
+      </div>
+    </div>
+  );
+
   return (
     <div className={`flex flex-col h-full bg-card border-r border-border/50 ${className}`}>
       <div className="px-4 py-2 border-b border-border/50">
@@ -170,11 +187,34 @@ export function Sidebar({ className = "" }: { className?: string }) {
         </Link>
       </div>
 
-      <div className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        {links.map((link) => (
-          <LinkItem key={link.href} {...link} />
-        ))}
-        
+      <div className="flex-1 px-4 py-4 overflow-y-auto">
+        {/* Utility links */}
+        <div className="space-y-1 mb-1">
+          {utilityLinks.map((link) => (
+            <LinkItem key={link.href} {...link} />
+          ))}
+        </div>
+
+        {/* Safety & Occ Med section */}
+        <SectionLabel label="Safety & Occ Med" />
+        <div className="space-y-1">
+          {safetyLinks.map((link) => (
+            <LinkItem key={link.href} {...link} />
+          ))}
+        </div>
+
+        {/* ACSI ISO Manager section */}
+        <SectionLabel label="ACSI ISO Manager" accent />
+        <div className="space-y-1 mb-2">
+          {isoLinks.map((link) => (
+            <LinkItem key={link.href} {...link} />
+          ))}
+        </div>
+
+        {/* Contact */}
+        <div className="space-y-1 pt-2 border-t border-border/40">
+          <LinkItem href="/contact" label="Contact Us" icon={MessageSquare} />
+        </div>
       </div>
 
       <div className="p-4 border-t border-border/50 space-y-2">

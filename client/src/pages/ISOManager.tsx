@@ -327,6 +327,33 @@ function IsaEmptyState({
           </div>
         </motion.div>
 
+        {/* ── Workspace Status ── */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.3 }}>
+          <div className="mb-6" data-testid="section-iso-workspace-header">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[9px] font-black uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 rounded px-2 py-0.5">ISO Workspace</span>
+              <div className="flex-1 h-px bg-border/40" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-active-standards">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Active Standards</p>
+                <p className="text-2xl font-black text-primary leading-none">—</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Set up your first project</p>
+              </div>
+              <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-open-cas">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Open Actions</p>
+                <p className="text-2xl font-black text-primary leading-none">0</p>
+                <p className="text-[10px] text-muted-foreground mt-1">No corrective actions open</p>
+              </div>
+              <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-next-audit">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Next Audit</p>
+                <p className="text-sm font-black text-primary leading-none mt-1">Not scheduled</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Ask Isa to help plan</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* ── Quick Actions ── */}
         <div className="mb-8">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Quick Actions — click to start a consultation</p>

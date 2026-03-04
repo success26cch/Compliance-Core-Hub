@@ -38,11 +38,11 @@ import {
   Lightbulb,
   ListChecks
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -744,9 +744,24 @@ export default function Dashboard() {
   });
 
   // Determine user tier
+  const [, setLocation] = useLocation();
   const plan = subStatus?.plan;
   const isPro = subStatus?.isPro;
   const isUnlimited = plan === 'unlimited_monthly'; // $99 plan
+
+  // ISO Manager-only subscribers land on /iso-manager, not the Occ Med dashboard
+  const isIsoOnlyPlan = !subLoading && plan != null &&
+    plan.includes('iso') &&
+    !plan.includes('employer_platform') &&
+    plan !== 'unlimited_monthly';
+
+  useEffect(() => {
+    if (isIsoOnlyPlan) {
+      setLocation('/iso-manager');
+    }
+  }, [isIsoOnlyPlan, setLocation]);
+
+  if (isIsoOnlyPlan) return null;
 
   return (
     <PlatformGate featureName="Compliance Dashboard">
