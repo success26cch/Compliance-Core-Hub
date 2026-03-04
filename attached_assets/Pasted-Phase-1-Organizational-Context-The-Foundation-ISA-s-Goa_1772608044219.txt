@@ -1,0 +1,31 @@
+Phase 1: Organizational Context (The Foundation)
+ISA's Goal: Establish the Scope and Complexity of the QMS.
+1.	Identity: What is the legal name of the organization and the primary site address(es)?
+2.	Scale: How many total employees are within the scope of certification? (Include a breakdown of Production vs. Admin).
+3.	The "What": What are your primary products or services? (This defines the Scope Statement).
+4.	Manufacturing DNA: What are your core manufacturing technologies? (e.g., Injection Molding, CNC Machining, Assembly, Heat Treating).
+o	Note: This helps ISA identify "Special Processes" required by IATF/ISO.
+5.	Exclusions: Are you responsible for Product Design? (This determines if Clause 8.3 is in or out).
+________________________________________
+Phase 2: Process Architecture (The "Force-Function")
+ISA's Goal: Force the user to define the "How" instead of just giving them a template.
+For each department or value stream, ISA will ask:
+1.	Process Name: (e.g., "Purchasing," "Receiving Inspection," "Final Assembly").
+2.	The Owner: Who is the individual (Job Title) responsible for this process's performance?
+3.	The KPI (The Pulse): How do you measure success for this process? (e.g., Supplier OTD, Scrap Rate, First Pass Yield).
+4.	Inputs & Outputs: * What do you need to start this process? (e.g., Raw Material, Purchase Order).
+o	What is the final result? (e.g., Finished Goods, Shipping Documents).
+5.	The "IATF Link": Which standard clauses apply here?
+o	ISA Logic: If the user says "Maintenance," ISA automatically suggests mapping Clause 8.5.1.5 (Total Productive Maintenance).
+________________________________________
+Phase 3: The Quality Manual "Gap Filler"
+ISA's Goal: Extract the unique "Policy" decisions that templates usually ignore.
+1.	Leadership Commitment: What are the three core values of your organization? (Used to draft the Quality Policy).
+2.	Risk Philosophy: How do you identify risks? (e.g., SWOT analysis, FMEA, or periodic management meetings).
+3.	Customer Specific Requirements (CSRs): (Specifically for IATF) Which OEMs do you supply? (Ford, GM, Stellantis, etc.).
+________________________________________
+🛠️ How this looks in the "ACSI ISO Manager" (Replit)
+Instead of a long, boring form, we set this up as a Conversational UI.
+•	Progress Bar: A visual bar at the top showing "Context > Mapping > Policy."
+•	The "Drafting" Pane: On the right side of the screen, the Process Map starts to draw itself in real-time as the user answers questions.
+•	The Linkage: When the user selects "IATF 16949" in the setup, ISA pulls the clauses from your Unified Matrix CSV and starts auto-tagging the processes.
