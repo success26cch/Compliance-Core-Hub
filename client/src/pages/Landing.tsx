@@ -1118,42 +1118,70 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Meet Isa — ACSI ISO Manager Transition */}
-      <section data-testid="section-meet-isa" className="bg-[hsl(222,47%,11%)] border-t border-b border-white/10 py-10">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="flex flex-col items-center gap-2 shrink-0">
-              <img src={acsiLogo} alt="ACSI" className="w-20 h-20 object-contain" />
-              <span className="text-xs text-white/40 font-medium">ACSI Division</span>
+      {/* Meet Isa — ACSI ISO Manager Spotlight */}
+      <section data-testid="section-meet-isa" className="relative overflow-hidden border-t-4 border-accent py-16">
+        {/* Warm amber gradient background — distinctly different from the navy BMA section */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,16%)] via-[hsl(20,50%,10%)] to-[hsl(222,47%,10%)]" />
+        {/* Accent glow at top center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-accent/10 blur-3xl rounded-full pointer-events-none" />
+        {/* Bottom separator line */}
+        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
+        <div className="relative max-w-5xl mx-auto px-4">
+
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-bold uppercase tracking-widest mb-5">
+              <Sparkles className="w-3 h-3" />
+              ACSI ISO Management Platform
             </div>
-            <div className="flex-1 text-center sm:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-semibold mb-3">
-                <Sparkles className="w-3 h-3" />
-                ALSO ON THE PLATFORM
+            <div className="flex justify-center mb-5">
+              <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
+                <img src={acsiLogo} alt="ACSI" className="w-16 h-16 object-contain" />
               </div>
-              <h3 className="text-2xl font-black text-white mb-1">
-                Meet <span className="text-accent">Isa</span> &amp; the ACSI ISO Manager
-              </h3>
-              <p className="text-xs text-white/40 font-medium mb-2">
-                ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
-              </p>
-              <p className="text-sm text-white/70 leading-relaxed mb-4">
-                Isa is ACSI's Lead ISO Auditor AI — your expert for gap analysis, audit readiness, and management systems guidance. Ready for the full platform? The ISO Manager includes Isa AI, document generation, a secure vault, and KPI tracking.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link href="/meet-isa">
-                  <Button className="bg-accent hover:bg-accent/90 text-white font-semibold" data-testid="button-talk-to-isa">
-                    Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
-                <Link href="/iso-manager">
-                  <Button variant="outline" className="border-accent/40 text-accent hover:bg-accent/10 hover:text-accent font-semibold" data-testid="button-iso-manager-plans">
-                    ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
-              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
+              Meet <span className="text-accent">Isa</span> &amp; the ACSI ISO Manager
+            </h2>
+            <p className="text-sm text-white/40 font-medium mb-4 tracking-wide">
+              ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
+            </p>
+            <p className="text-base text-white/60 max-w-2xl mx-auto leading-relaxed mb-7">
+              Isa is ACSI's Lead ISO Auditor AI — built for gap analysis, audit readiness, and management system guidance. The ISO Manager gives you the full platform: Isa AI, document generation, a secure vault, and KPI tracking.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link href="/meet-isa">
+                <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-6" data-testid="button-talk-to-isa">
+                  Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+              <Link href="/iso-manager">
+                <Button variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-bold px-6" data-testid="button-iso-manager-plans">
+                  ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
             </div>
           </div>
+
+          {/* 3-column feature highlights */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <Sparkles className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Isa AI Guidance</p>
+              <p className="text-xs text-white/40 leading-relaxed">Clause-by-clause gap analysis, internal audit checklists, and corrective action guidance across 7 major standards.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <FileText className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Document Generation</p>
+              <p className="text-xs text-white/40 leading-relaxed">AI-powered quality manuals, procedures, and an audit-ready document library built to your management system.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <Shield className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Secure Vault &amp; Tracking</p>
+              <p className="text-xs text-white/40 leading-relaxed">Version-controlled document storage with audit trail, KPI tracking, and evidence management for certification readiness.</p>
+            </div>
+          </div>
+
         </div>
       </section>
 
