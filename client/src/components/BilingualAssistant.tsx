@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import {
   Volume2,
+  VolumeX,
   Mic,
   MicOff,
   ClipboardCheck,
@@ -354,14 +355,56 @@ interface InjuryData {
 }
 
 function speakSpanish(text: string) {
-  if ("speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "es-MX";
-    utterance.rate = 0.85;
-    utterance.pitch = 1;
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "es-MX";
+  utterance.rate = 0.85;
+  utterance.pitch = 1;
+
+  const trySpeak = () => {
+    const voices = window.speechSynthesis.getVoices();
+    const esVoices = voices.filter(v => v.lang.startsWith("es"));
+    const preferred =
+      esVoices.find(v => /google/i.test(v.name)) ||
+      esVoices.find(v => /paulina|sabina|dalia|lupe|monica|jorge|juan|diego/i.test(v.name)) ||
+      esVoices.find(v => /natural|neural|premium/i.test(v.name)) ||
+      esVoices[0];
+    if (preferred) utterance.voice = preferred;
     window.speechSynthesis.speak(utterance);
+  };
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    trySpeak();
+  } else {
+    window.speechSynthesis.addEventListener("voiceschanged", trySpeak, { once: true });
   }
+}
+
+function StopReadingButton() {
+  const [speaking, setSpeaking] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSpeaking(window.speechSynthesis?.speaking ?? false);
+    }, 250);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!speaking) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => window.speechSynthesis.cancel()}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-red-500/20 border-red-500/50 animate-pulse transition-colors hover:bg-red-500/30"
+      data-testid="btn-stop-reading"
+    >
+      <VolumeX className="w-4 h-4 text-red-400" />
+      <span className="text-xs font-bold text-red-400 tracking-wide">Stop Reading</span>
+    </button>
+  );
 }
 
 function speakEnglish(text: string) {
@@ -910,7 +953,7 @@ function CommandCenterMode() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
         <Languages className="w-5 h-5 text-[#FFC107]" />
         <h3 className="text-lg font-bold text-white">Staff Command Center</h3>
         <Badge className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">
@@ -919,6 +962,7 @@ function CommandCenterMode() {
         <Badge className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">
           <Mic className="w-3 h-3 mr-1" /> Speech-to-Text
         </Badge>
+        <StopReadingButton />
       </div>
       <p className="text-sm text-gray-100">Click any button to speak the instruction in Spanish to the patient, or use the microphone to listen to the patient and see the English translation.</p>
 
@@ -1012,8 +1056,7 @@ function CommandCenterMode() {
               <Volume2 className="w-4 h-4 text-[#FFC107]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#FFC107]">{cmd.es}</p>
-              <p className="text-xs text-gray-100 mt-0.5">{cmd.en}</p>
+              <p className="text-sm font-semibold text-white">{cmd.en}</p>
             </div>
           </button>
         ))}
@@ -1372,6 +1415,7 @@ function InjuryReportingMode() {
               <Volume2 className="w-4 h-4 text-[#FFC107]" />
               <span className="text-xs font-bold text-[#FFC107] tracking-wide">Text-to-Speech</span>
             </button>
+            <StopReadingButton />
           </div>
         </div>
         <Textarea
@@ -1747,15 +1791,11 @@ function StepList({ steps, tabKey }: { steps: typeof DRUG_SCREEN_STEPS; tabKey: 
               {s.stepNum}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="font-semibold text-white text-sm">{s.title}</span>
-                <span className="text-xs text-gray-500">/ {s.titleEs}</span>
-              </div>
-              <p className="text-sm text-white mb-1">{s.en}</p>
-              <p className="text-xs text-[#FFC107]/80 italic">{s.es}</p>
+              <span className="font-semibold text-white text-sm block mb-1">{s.title}</span>
+              <p className="text-sm text-white mb-2">{s.en}</p>
               <button
                 onClick={() => speakSpanish(s.es)}
-                className="flex items-center gap-1 mt-2 text-xs text-[#FFC107] hover:text-[#FFC107]/80 transition-colors"
+                className="flex items-center gap-1 text-xs text-[#FFC107] hover:text-[#FFC107]/80 transition-colors"
                 data-testid={`btn-speak-${tabKey}-step-${s.stepNum}`}
               >
                 <Volume2 className="w-3 h-3" /> Read in Spanish
@@ -1844,6 +1884,7 @@ function DrugScreenMode() {
         <FlaskConical className="w-5 h-5 text-[#FFC107]" />
         <h3 className="text-lg font-bold text-white">Drug & Alcohol Testing</h3>
         <span className="text-sm text-gray-100">/ Pruebas de Drogas y Alcohol</span>
+        <StopReadingButton />
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
@@ -1890,10 +1931,7 @@ function DrugScreenMode() {
               data-testid={`btn-quick-cmd-${activeTab}-${i}`}
             >
               <Volume2 className="w-3.5 h-3.5 text-[#FFC107] shrink-0" />
-              <div>
-                <span className="text-xs font-medium text-[#FFC107]">{cmd.es}</span>
-                <span className="text-xs text-gray-500 block">{cmd.en}</span>
-              </div>
+              <span className="text-xs font-medium text-white">{cmd.en}</span>
             </button>
           ))}
         </div>
