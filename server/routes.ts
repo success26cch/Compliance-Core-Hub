@@ -19,7 +19,7 @@ import { randomUUID } from "crypto";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { textToSpeech } from "./replit_integrations/audio/client";
+import { textToSpeech, openai } from "./replit_integrations/audio/client";
 
 async function requirePlatformAccess(req: any, res: any): Promise<boolean> {
   if (!req.isAuthenticated()) {
@@ -141,15 +141,18 @@ IMPORTANT: You are NOT a doctor. You are a communication facilitator. Do not dia
 
   const BMA_STRUCTURED_PROMPT = BMA_SYSTEM_PROMPT + `
 
-CRITICAL RESPONSE FORMAT: You MUST respond in valid JSON with these fields:
+CRITICAL RESPONSE FORMAT: You MUST respond in valid JSON with ONLY these fields:
 {
-  "spanish": "The Spanish text to speak to the patient (when provider is speaking). Leave empty string if patient is speaking.",
-  "english": "The English text for the provider (when patient is speaking). Leave empty string if provider is speaking.",
-  "display": "Your full formatted response for the chat display, including translations, clinical notes, follow-up questions, and summaries. Use **bold** for section headers.",
-  "followUp": "A suggested follow-up question or clarification for either party, or empty string if none needed."
+  "spanish": "The Spanish translation to speak to the patient. Plain Spanish text only — no quotes, no labels, no markdown, no symbols. Empty string if patient is speaking.",
+  "english": "The English translation for the provider to read. Plain English text only — no quotes, no labels, no markdown, no symbols. Empty string if provider is speaking.",
+  "followUp": "One brief suggested follow-up question in English, or empty string if none needed."
 }
 
-Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
+Rules:
+- No display field. No verbose headers. No 'Provider asked:' or 'Translation to Patient:' labels.
+- No arrow symbols (→), no escaped quotes, no markdown formatting.
+- spanish and english fields must contain ONLY the clean translated text, nothing else.
+- Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   app.post("/api/bma-chat", async (req, res) => {
     try {
@@ -177,11 +180,14 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
       try {
         const parsed = JSON.parse(rawReply);
+        const spanish = (parsed.spanish || "").replace(/[→←↑↓►◄▶◀"""\\]/g, "").replace(/\n+/g, " ").trim();
+        const english = (parsed.english || "").replace(/[→←↑↓►◄▶◀"""\\]/g, "").replace(/\n+/g, " ").trim();
+        const followUp = (parsed.followUp || "").replace(/\n+/g, " ").trim();
         res.json({
-          reply: parsed.display || rawReply,
-          spanish: parsed.spanish || "",
-          english: parsed.english || "",
-          followUp: parsed.followUp || "",
+          reply: spanish || english || rawReply,
+          spanish,
+          english,
+          followUp,
         });
       } catch {
         res.json({ reply: rawReply, spanish: "", english: "", followUp: "" });
@@ -189,6 +195,36 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
     } catch (error) {
       console.error("BMA chat error:", error);
       res.status(500).json({ error: "BMA chat failed" });
+    }
+  });
+
+  app.post("/api/bma-tts", async (req, res) => {
+    try {
+      const { text } = req.body;
+      if (!text || typeof text !== "string") {
+        return res.status(400).json({ error: "Text required" });
+      }
+      const clean = text
+        .replace(/[→←↑↓►◄▶◀"""\\]/g, "")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/\*([^*]+)\*/g, "$1")
+        .replace(/\n+/g, " ")
+        .replace(/\s{2,}/g, " ")
+        .trim()
+        .slice(0, 4096);
+      const mp3Response = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: "nova",
+        input: clean,
+        response_format: "mp3",
+      } as any);
+      const buffer = Buffer.from(await mp3Response.arrayBuffer());
+      res.setHeader("Content-Type", "audio/mpeg");
+      res.setHeader("Cache-Control", "no-cache");
+      res.send(buffer);
+    } catch (error) {
+      console.error("BMA TTS error:", error);
+      res.status(500).json({ error: "TTS failed" });
     }
   });
 

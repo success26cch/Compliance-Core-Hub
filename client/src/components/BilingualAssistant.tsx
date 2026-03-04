@@ -354,50 +354,78 @@ interface InjuryData {
   witnessed: string;
 }
 
-function speakSpanish(text: string) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "es-MX";
-  utterance.rate = 0.85;
-  utterance.pitch = 1;
+let _currentAudio: HTMLAudioElement | null = null;
 
-  const trySpeak = () => {
-    const voices = window.speechSynthesis.getVoices();
-    const esVoices = voices.filter(v => v.lang.startsWith("es"));
-    const preferred =
-      esVoices.find(v => /google/i.test(v.name)) ||
-      esVoices.find(v => /paulina|sabina|dalia|lupe|monica|jorge|juan|diego/i.test(v.name)) ||
-      esVoices.find(v => /natural|neural|premium/i.test(v.name)) ||
-      esVoices[0];
-    if (preferred) utterance.voice = preferred;
+function stopAllAudio() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio.currentTime = 0;
+    _currentAudio = null;
+  }
+}
+
+function cleanTextForTTS(text: string): string {
+  return text
+    .replace(/[→←↑↓►◄▶◀"""\\]/g, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+async function playSpanishAudio(text: string) {
+  stopAllAudio();
+  const clean = cleanTextForTTS(text);
+  if (!clean) return;
+  try {
+    const res = await fetch("/api/bma-tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: clean }),
+    });
+    if (!res.ok) throw new Error("TTS failed");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    _currentAudio = audio;
+    audio.onended = () => {
+      URL.revokeObjectURL(url);
+      if (_currentAudio === audio) _currentAudio = null;
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      if (_currentAudio === audio) _currentAudio = null;
+    };
+    audio.play();
+  } catch {
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = "es-MX";
+    utterance.rate = 0.85;
     window.speechSynthesis.speak(utterance);
-  };
-
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    trySpeak();
-  } else {
-    window.speechSynthesis.addEventListener("voiceschanged", trySpeak, { once: true });
   }
 }
 
 function StopReadingButton() {
-  const [speaking, setSpeaking] = useState(false);
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSpeaking(window.speechSynthesis?.speaking ?? false);
+      const webSpeaking = window.speechSynthesis?.speaking ?? false;
+      const audioPlaying = _currentAudio !== null && !_currentAudio.paused;
+      setActive(webSpeaking || audioPlaying);
     }, 250);
     return () => clearInterval(interval);
   }, []);
 
-  if (!speaking) return null;
+  if (!active) return null;
 
   return (
     <button
       type="button"
-      onClick={() => window.speechSynthesis.cancel()}
+      onClick={stopAllAudio}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-red-500/20 border-red-500/50 animate-pulse transition-colors hover:bg-red-500/30"
       data-testid="btn-stop-reading"
     >
@@ -487,13 +515,13 @@ function BmaInteractiveChatMode() {
         const data = await res.json();
         const assistantMsg: BmaChatMessage = {
           role: "assistant",
-          content: data.reply,
+          content: data.reply || data.spanish || data.english || "",
           spanish: data.spanish || "",
         };
         setMessages(prev => [...prev, assistantMsg]);
 
         if (speaker === "provider" && data.spanish) {
-          speakSpanish(data.spanish);
+          playSpanishAudio(data.spanish);
         }
       }
     } catch {
@@ -719,7 +747,7 @@ function BmaInteractiveChatMode() {
                 {msg.spanish && (
                   <button
                     type="button"
-                    onClick={() => speakSpanish(msg.spanish!)}
+                    onClick={() => playSpanishAudio(msg.spanish!)}
                     className="p-1.5 rounded-md bg-gray-800/60 border border-[#FFC107]/30 opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
                     title="Listen in Spanish"
                     data-testid={`btn-bma-listen-es-${i}`}
@@ -1048,7 +1076,7 @@ function CommandCenterMode() {
         {CLINIC_INSTRUCTIONS[activeCategory].commands.map((cmd, j) => (
           <button
             key={j}
-            onClick={() => speakSpanish(cmd.es)}
+            onClick={() => playSpanishAudio(cmd.es)}
             className="flex items-start gap-3 p-3 rounded-md bg-gray-800/60 border border-[#FFC107]/50 hover:bg-gray-800 transition-all text-left group"
             data-testid={`btn-speak-${activeCategory}-${j}`}
           >
@@ -1403,7 +1431,7 @@ function InjuryReportingMode() {
             <button
               type="button"
               onClick={() => {
-                if (data.description.trim()) speakSpanish(data.description);
+                if (data.description.trim()) playSpanishAudio(data.description);
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-colors ${
                 data.description.trim()
@@ -1679,7 +1707,7 @@ function NewHireIntakeMode() {
             onChange={(e) => setData({ ...data, medications: e.target.value })}
             data-testid="textarea-intake-medications"
           />
-          <button onClick={() => speakSpanish("¿Está tomando algún medicamento actualmente? Por favor indique el nombre y la dosis.")} className="flex items-center gap-2 text-sm text-[#FFC107] hover:text-[#FFC107]/80 transition-colors" data-testid="btn-speak-medications">
+          <button onClick={() => playSpanishAudio("¿Está tomando algún medicamento actualmente? Por favor indique el nombre y la dosis.")} className="flex items-center gap-2 text-sm text-[#FFC107] hover:text-[#FFC107]/80 transition-colors" data-testid="btn-speak-medications">
             <Volume2 className="w-4 h-4" /> Ask in Spanish
           </button>
         </div>
@@ -1699,7 +1727,7 @@ function NewHireIntakeMode() {
             onChange={(e) => setData({ ...data, surgeries: e.target.value })}
             data-testid="textarea-intake-surgeries"
           />
-          <button onClick={() => speakSpanish("¿Ha tenido alguna cirugía? Por favor indique el tipo y la fecha.")} className="flex items-center gap-2 text-sm text-[#FFC107] hover:text-[#FFC107]/80 transition-colors" data-testid="btn-speak-surgeries">
+          <button onClick={() => playSpanishAudio("¿Ha tenido alguna cirugía? Por favor indique el tipo y la fecha.")} className="flex items-center gap-2 text-sm text-[#FFC107] hover:text-[#FFC107]/80 transition-colors" data-testid="btn-speak-surgeries">
             <Volume2 className="w-4 h-4" /> Ask in Spanish
           </button>
         </div>
@@ -1739,7 +1767,7 @@ function NewHireIntakeMode() {
               data-testid="textarea-intake-notes"
             />
           </div>
-          <button onClick={() => speakSpanish("¿Tiene alguna de las siguientes condiciones? Diabetes, hipertensión, asma, enfermedad del corazón.")} className="flex items-center gap-2 text-sm text-[#FFC107] hover:text-[#FFC107]/80 transition-colors" data-testid="btn-speak-conditions">
+          <button onClick={() => playSpanishAudio("¿Tiene alguna de las siguientes condiciones? Diabetes, hipertensión, asma, enfermedad del corazón.")} className="flex items-center gap-2 text-sm text-[#FFC107] hover:text-[#FFC107]/80 transition-colors" data-testid="btn-speak-conditions">
             <Volume2 className="w-4 h-4" /> Ask in Spanish
           </button>
         </div>
@@ -1794,7 +1822,7 @@ function StepList({ steps, tabKey }: { steps: typeof DRUG_SCREEN_STEPS; tabKey: 
               <span className="font-semibold text-white text-sm block mb-1">{s.title}</span>
               <p className="text-sm text-white mb-2">{s.en}</p>
               <button
-                onClick={() => speakSpanish(s.es)}
+                onClick={() => playSpanishAudio(s.es)}
                 className="flex items-center gap-1 text-xs text-[#FFC107] hover:text-[#FFC107]/80 transition-colors"
                 data-testid={`btn-speak-${tabKey}-step-${s.stepNum}`}
               >
@@ -1926,7 +1954,7 @@ function DrugScreenMode() {
           {quickCommandsByTab[activeTab].map((cmd, i) => (
             <button
               key={i}
-              onClick={() => speakSpanish(cmd.es)}
+              onClick={() => playSpanishAudio(cmd.es)}
               className="flex items-center gap-2 p-2 rounded-md bg-gray-900/50 border border-[#FFC107]/40 hover:border-[#FFC107]/60 transition-all text-left"
               data-testid={`btn-quick-cmd-${activeTab}-${i}`}
             >
