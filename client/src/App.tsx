@@ -47,6 +47,7 @@ import TryCorey from "@/pages/TryCorey";
 import QRCodePage from "@/pages/QRCode";
 import ComplianceGlossary from "@/pages/ComplianceGlossary";
 import MeetCorey from "@/pages/MeetCorey";
+import MeetIsa from "@/pages/MeetIsa";
 import DemoTour from "@/pages/DemoTour";
 import PlatformBrief from "@/pages/PlatformBrief";
 import Cesar from "@/pages/Cesar";
@@ -106,6 +107,7 @@ function Router() {
       <Route path="/audit-prep" component={AuditPrep} />
       <Route path="/compliance-glossary" component={ComplianceGlossary} />
       <Route path="/meet-corey" component={MeetCorey} />
+      <Route path="/meet-isa" component={MeetIsa} />
       <Route path="/demo-tour" component={DemoTour} />
       <Route path="/platform-brief" component={PlatformBrief} />
       <Route path="/cesar" component={Cesar} />

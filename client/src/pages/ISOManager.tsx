@@ -59,23 +59,179 @@ const ISA_PRO_CAPABILITIES = [
   "Second-party audit support",
 ];
 
-const ISO_MANAGER_CAPABILITIES = [
-  "Everything in Isa (included)",
+const ISO_CORE_CAPABILITIES = [
+  "Pick 1 standard: 9001, 14001, or 45001",
+  "Isa AI guidance (clause-by-clause)",
   "AI document generation",
   "Secure document vault",
-  "Version control & revision history",
-  "Audit-ready document library",
-  "Organization profile storage",
+  "Internal audit checklists",
+  "Knowledge Architecture setup included",
 ];
 
-const ISO_MANAGER_PRO_CAPABILITIES = [
-  "Everything in ISO Manager",
-  "All 7 specialized standards",
-  "Full document library — all standards",
-  "Cross-standard integration guidance",
+const ISO_INTEGRATED_CAPABILITIES = [
+  "All three core standards in one IMS",
+  "Isa AI guidance across all 3 standards",
+  "Integrated Management System design",
+  "Cross-standard process mapping",
+  "Full IMS document library",
+  "Knowledge Architecture setup included",
+];
+
+const ISO_SPECIALIST_CAPABILITIES = [
+  "Pick 1: IATF 16949, AS9100, or ISO 13485",
+  "Isa Pro AI for your chosen standard",
+  "Industry-specific process mapping",
+  "Standard-specific document generation",
   "Second-party audit support",
+  "Knowledge Architecture setup included",
+];
+
+const ISO_PRO_CAPABILITIES = [
+  "9001 + 14001 + 45001 + 1 Specialist standard",
+  "Isa Pro across all standards",
+  "Full QMS/OMS/EMS design",
+  "Cross-standard document library",
+  "KPI tracking & audit evidence",
   "Priority ACSI consulting access",
 ];
+
+/* ─── ISO TIER CARD ───────────────────────────────────── */
+function ISOTierCard({
+  "data-testid": testId, delay, badge, title, subtitle, price, annual, setup,
+  capabilities, cardClass, topBarClass, capIconClass, picker, badges, coreBadges, dark, cta,
+}: {
+  "data-testid": string;
+  delay: number;
+  badge: string;
+  title: string;
+  subtitle: string;
+  price: string;
+  annual: string;
+  setup: string;
+  capabilities: string[];
+  cardClass: string;
+  topBarClass: string;
+  capIconClass: string;
+  picker?: { options: string[]; label: string };
+  badges?: string[];
+  coreBadges?: string[];
+  dark?: boolean;
+  cta: { label: string; href: string; testId: string; style: "accent" | "primary"; external?: boolean };
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const textBase = dark ? "text-white" : "text-primary";
+  const textMuted = dark ? "text-white/60" : "text-muted-foreground";
+  const borderMuted = dark ? "border-white/15" : "border-border/60";
+  const badgeBg = dark ? "bg-white/10 text-white/80 border-white/20" : "bg-muted text-primary border-border/60";
+  const selectedBg = dark ? "bg-accent/20 text-accent border-accent/40" : "bg-accent text-white border-accent";
+  const unselectedBg = dark ? "bg-white/5 text-white/70 border-white/20 hover:border-accent/40" : "bg-muted/40 text-primary border-border/60 hover:border-accent/40 hover:bg-accent/5";
+
+  const ctaClass = cta.style === "accent"
+    ? "w-full bg-accent hover:bg-accent/90 text-white font-bold"
+    : "w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold";
+
+  const ctaEl = cta.external ? (
+    <a href={cta.href}>
+      <Button size="sm" className={ctaClass} data-testid={cta.testId}>{cta.label}</Button>
+    </a>
+  ) : (
+    <Link href={cta.href}>
+      <Button size="sm" className={ctaClass} data-testid={cta.testId}>{cta.label}</Button>
+    </Link>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="h-full">
+      <Card className={`h-full p-5 hover:shadow-lg transition-all relative overflow-hidden flex flex-col ${cardClass}`} data-testid={testId}>
+        <div className={`absolute top-0 inset-x-0 h-1 rounded-t ${topBarClass}`} />
+        <div className="absolute top-3 right-3">
+          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${dark ? "bg-accent text-white" : "bg-accent/10 text-accent border border-accent/30"}`}>{badge}</span>
+        </div>
+
+        <div className="mb-4 pr-20">
+          <p className={`font-black leading-tight text-sm ${textBase}`}>{title}</p>
+          <p className="text-[10px] text-accent font-semibold mt-0.5">{subtitle}</p>
+        </div>
+
+        <div className={`mb-4 pb-3 border-b ${borderMuted}`}>
+          <div className="flex items-baseline gap-1">
+            <p className={`font-black text-accent text-3xl leading-none`}>{price}</p>
+            <span className={`text-sm font-medium ${textMuted}`}>/mo</span>
+          </div>
+          <p className={`text-xs mt-0.5 ${textMuted}`}>{annual}</p>
+          <p className={`text-[10px] font-semibold mt-1 ${dark ? "text-white/50" : "text-muted-foreground"}`}>{setup}</p>
+        </div>
+
+        {/* Fixed badges (Integrated — all 3 included) */}
+        {badges && (
+          <div className="mb-3">
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-2 ${textMuted}`}>Standards Included</p>
+            <div className="flex flex-wrap gap-1">
+              {badges.map(s => (
+                <span key={s} className={`text-[9px] px-1.5 py-0.5 rounded border font-bold ${badgeBg}`}>{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PRO card — core badges + specialist picker */}
+        {coreBadges && picker && (
+          <div className="mb-3 space-y-2">
+            <div>
+              <p className={`text-[10px] font-bold uppercase tracking-wide mb-1.5 ${textMuted}`}>Core Standards</p>
+              <div className="flex flex-wrap gap-1">
+                {coreBadges.map(s => (
+                  <span key={s} className={`text-[9px] px-1.5 py-0.5 rounded border font-bold ${badgeBg}`}>{s}</span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className={`text-[10px] font-bold uppercase tracking-wide mb-1.5 ${textMuted}`}>+ {picker.label}</p>
+              <div className="grid grid-cols-3 gap-1">
+                {picker.options.map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setSelected(prev => prev === opt ? null : opt)}
+                    className={`text-[9px] px-1.5 py-1.5 rounded border font-bold transition-all leading-tight text-center ${selected === opt ? selectedBg : unselectedBg}`}
+                    data-testid={`button-standard-pro-${opt.replace(/\s/g, "-").toLowerCase()}`}
+                  >{opt}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Single standard picker (Core and Specialist cards) */}
+        {picker && !coreBadges && (
+          <div className="mb-3">
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-1.5 ${textMuted}`}>{picker.label}</p>
+            <div className="grid grid-cols-1 gap-1">
+              {picker.options.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSelected(prev => prev === opt ? null : opt)}
+                  className={`text-left px-2.5 py-1.5 rounded border text-[10px] font-bold transition-all ${selected === opt ? selectedBg : unselectedBg}`}
+                  data-testid={`button-standard-${opt.replace(/\s/g, "-").toLowerCase()}`}
+                >{opt}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <ul className="space-y-1.5 mb-4 flex-1">
+          {capabilities.map((cap) => (
+            <li key={cap} className={`flex items-start gap-1.5 text-xs ${textMuted}`}>
+              <CheckCircle2 className={`w-3 h-3 shrink-0 mt-0.5 ${capIconClass}`} />
+              <span>{cap}</span>
+            </li>
+          ))}
+        </ul>
+
+        {ctaEl}
+      </Card>
+    </motion.div>
+  );
+}
 
 /* ─────────────────────────────────────────────────────── */
 export default function ISOManager() {
@@ -375,210 +531,97 @@ function IsaEmptyState({
           </div>
         </div>
 
-        {/* ── Plans & Pricing ── 5 cards side by side ── */}
+        {/* ── Plans & Pricing ── 4-tier ISO Manager ── */}
         <div className="mb-7">
 
-          {/* Horizontal scroll wrapper — always shows all 5 cards */}
+          {/* Section header */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex-1 h-px bg-accent/50" />
+            <Vault className="w-3.5 h-3.5 text-accent shrink-0" />
+            <span className="text-[11px] font-bold text-accent uppercase tracking-wider whitespace-nowrap">ACSI ISO Manager — Choose Your Tier</span>
+            <div className="flex-1 h-px bg-accent/50" />
+          </div>
+
+          {/* Horizontal scroll wrapper */}
           <div className="overflow-x-auto -mx-6 px-6 pb-2">
             <div style={{ minWidth: "900px" }}>
+              <div className="grid grid-cols-4 gap-4">
 
-            {/* Section headers — 5-column, aligned above cards */}
-            <div className="grid grid-cols-5 gap-4 mb-2">
-              <div className="col-span-2 flex items-center gap-2">
-                <MessageSquare className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">AI Guidance Only</span>
-                <div className="flex-1 h-px bg-border/60" />
+                {/* Card 1 — ISO Manager Core */}
+                <ISOTierCard
+                  data-testid="card-plan-iso-core"
+                  delay={0.05}
+                  badge="TIER 1"
+                  title="ISO Manager Core"
+                  subtitle="Isa Included"
+                  price="$299"
+                  annual="billed annually · $3,588/yr"
+                  setup="+ $1,000–$1,500 one-time setup fee"
+                  capabilities={ISO_CORE_CAPABILITIES}
+                  cardClass="border-border/60 bg-white dark:bg-card"
+                  topBarClass="bg-accent"
+                  capIconClass="text-accent"
+                  picker={{ options: ["ISO 9001", "ISO 14001", "ISO 45001"], label: "Choose Standard" }}
+                  cta={{ label: "Get Core", href: "/settings", testId: "button-plan-iso-core", style: "accent" }}
+                />
+
+                {/* Card 2 — ISO Manager Integrated */}
+                <ISOTierCard
+                  data-testid="card-plan-iso-integrated"
+                  delay={0.1}
+                  badge="TIER 2 · MOST POPULAR"
+                  title="ISO Manager Integrated"
+                  subtitle="Isa Included"
+                  price="$499"
+                  annual="billed annually · $5,988/yr"
+                  setup="+ $1,500 one-time setup fee"
+                  capabilities={ISO_INTEGRATED_CAPABILITIES}
+                  cardClass="border-2 border-primary/25 bg-white dark:bg-card"
+                  topBarClass="bg-primary"
+                  capIconClass="text-primary dark:text-accent"
+                  badges={["ISO 9001", "ISO 14001", "ISO 45001"]}
+                  cta={{ label: "Get Integrated", href: "/settings", testId: "button-plan-iso-integrated", style: "primary" }}
+                />
+
+                {/* Card 3 — ISO Manager Specialist */}
+                <ISOTierCard
+                  data-testid="card-plan-iso-specialist"
+                  delay={0.15}
+                  badge="TIER 3"
+                  title="ISO Manager Specialist"
+                  subtitle="Isa Pro Included"
+                  price="$699"
+                  annual="billed annually · $8,388/yr"
+                  setup="+ $2,500–$5,000 one-time setup fee"
+                  capabilities={ISO_SPECIALIST_CAPABILITIES}
+                  cardClass="border border-accent/30 bg-white dark:bg-card"
+                  topBarClass="bg-accent"
+                  capIconClass="text-accent"
+                  picker={{ options: ["IATF 16949", "AS9100 Rev D", "ISO 13485"], label: "Choose Standard" }}
+                  cta={{ label: "Talk to ACSI", href: "mailto:info@acsi-quality.com", testId: "button-plan-iso-specialist", style: "accent", external: true }}
+                />
+
+                {/* Card 4 — ISO Manager PRO */}
+                <ISOTierCard
+                  data-testid="card-plan-iso-pro"
+                  delay={0.2}
+                  badge="TIER 4 · FULL PLATFORM"
+                  title="ISO Manager PRO"
+                  subtitle="Isa Pro Included"
+                  price="$899"
+                  annual="billed annually · $10,788/yr"
+                  setup="+ $5,000 one-time setup fee"
+                  capabilities={ISO_PRO_CAPABILITIES}
+                  cardClass="bg-primary"
+                  topBarClass="bg-accent"
+                  capIconClass="text-accent"
+                  dark
+                  coreBadges={["9001", "14001", "45001"]}
+                  picker={{ options: ["IATF 16949", "AS9100 Rev D", "ISO 13485"], label: "Choose Specialist" }}
+                  cta={{ label: "Talk to ACSI", href: "mailto:info@acsi-quality.com", testId: "button-plan-iso-pro", style: "accent", external: true }}
+                />
+
               </div>
-              <div className="col-span-3 flex items-center gap-2">
-                <div className="flex-1 h-px bg-accent/50" />
-                <Vault className="w-3.5 h-3.5 text-accent shrink-0" />
-                <span className="text-[11px] font-bold text-accent uppercase tracking-wider whitespace-nowrap">ACSI ISO Manager — Isa + Documents + Vault</span>
-                <div className="flex-1 h-px bg-accent/50" />
-              </div>
-            </div>
-
-          {/* 5-card grid — always 5 columns */}
-          <div className="grid grid-cols-5 gap-4">
-
-            {/* Card 1 — Isa */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-              <Card className="h-full p-5 border-border/60 bg-white dark:bg-card hover:shadow-lg transition-all flex flex-col" data-testid="card-plan-isa">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm shrink-0">
-                    <img src={acsiLogo} alt="Isa" className="w-7 h-7 object-contain" />
-                  </div>
-                  <div>
-                    <p className="font-black text-primary leading-none">Isa</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">AI Guidance</p>
-                  </div>
-                </div>
-                <div className="mb-4 pb-3 border-b border-border/60">
-                  <p className="font-black text-accent text-3xl leading-none">$99</p>
-                  <p className="text-xs text-muted-foreground">per month</p>
-                </div>
-                <div className="mb-3">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Standards</p>
-                  <div className="flex flex-wrap gap-1">
-                    {["ISO 9001", "ISO 14001", "ISO 45001"].map(s => (
-                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-primary border border-border/60 font-bold">{s}</span>
-                    ))}
-                  </div>
-                </div>
-                <ul className="space-y-1.5 mb-4 flex-1">
-                  {ISA_CAPABILITIES.map((cap) => (
-                    <li key={cap} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />
-                      <span>{cap}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/settings">
-                  <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-plan-isa">
-                    Get Isa
-                  </Button>
-                </Link>
-              </Card>
-            </motion.div>
-
-            {/* Card 2 — Isa Pro */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <Card className="h-full p-5 border-2 border-primary/25 bg-white dark:bg-card hover:shadow-lg transition-all relative overflow-hidden flex flex-col" data-testid="card-plan-isa-pro">
-                <div className="absolute top-0 inset-x-0 h-1 bg-primary rounded-t" />
-                <div className="absolute top-3 right-3">
-                  <span className="text-[9px] bg-primary text-primary-foreground font-bold px-2 py-0.5 rounded-full">ALL STANDARDS</span>
-                </div>
-                <div className="flex items-center gap-2.5 mb-4 pr-16">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm shrink-0">
-                    <img src={acsiLogo} alt="Isa" className="w-7 h-7 object-contain" />
-                  </div>
-                  <div>
-                    <p className="font-black text-primary leading-none">Isa Pro</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">AI Guidance</p>
-                  </div>
-                </div>
-                <div className="mb-4 pb-3 border-b border-border/60">
-                  <p className="font-black text-primary dark:text-accent text-3xl leading-none">$199</p>
-                  <p className="text-xs text-muted-foreground">per month</p>
-                </div>
-                <div className="mb-3">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">All 7 Standards</p>
-                  <div className="flex flex-wrap gap-1">
-                    {["9001", "14001", "45001", "13485", "27001", "AS9100", "IATF"].map(s => (
-                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-primary border border-border/60 font-bold">{s}</span>
-                    ))}
-                  </div>
-                </div>
-                <ul className="space-y-1.5 mb-4 flex-1">
-                  {ISA_PRO_CAPABILITIES.map((cap) => (
-                    <li key={cap} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3 h-3 text-primary dark:text-accent shrink-0 mt-0.5" />
-                      <span>{cap}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/settings">
-                  <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold" data-testid="button-plan-isa-pro">
-                    Get Isa Pro
-                  </Button>
-                </Link>
-              </Card>
-            </motion.div>
-
-            {/* Card 3 — ISO Manager */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              <Card className="h-full p-5 border border-accent/30 bg-white dark:bg-card hover:shadow-lg transition-all relative overflow-hidden flex flex-col" data-testid="card-plan-iso-manager">
-                <div className="absolute top-0 inset-x-0 h-1 bg-accent rounded-t" />
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shadow-sm shrink-0">
-                    <FileText className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-black text-primary leading-none text-sm">ISO Manager</p>
-                    <p className="text-[10px] text-accent font-semibold mt-0.5">Isa Included</p>
-                  </div>
-                </div>
-                <div className="mb-4 pb-3 border-b border-border/60">
-                  <div className="flex items-baseline gap-1">
-                    <p className="font-black text-accent text-3xl leading-none">$299</p>
-                    <span className="text-sm text-muted-foreground font-medium">/mo</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">billed annually · $3,588/yr</p>
-                </div>
-                <div className="mb-3">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Standards + Vault</p>
-                  <div className="flex flex-wrap gap-1">
-                    {["ISO 9001", "ISO 14001", "ISO 45001"].map(s => (
-                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-bold">{s}</span>
-                    ))}
-                  </div>
-                </div>
-                <ul className="space-y-1.5 mb-4 flex-1">
-                  {ISO_MANAGER_CAPABILITIES.map((cap) => (
-                    <li key={cap} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />
-                      <span>{cap}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/settings">
-                  <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-plan-iso-manager">
-                    Get ISO Manager
-                  </Button>
-                </Link>
-              </Card>
-            </motion.div>
-
-            {/* Card 4 — ISO Manager Custom */}
-            <CustomPlanCard />
-
-            {/* Card 5 — ISO Manager Pro */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-              <Card className="h-full p-5 bg-primary hover:shadow-xl transition-all relative overflow-hidden flex flex-col" data-testid="card-plan-iso-manager-pro">
-                <div className="absolute top-0 inset-x-0 h-1 bg-accent rounded-t" />
-                <div className="absolute top-3 right-3">
-                  <span className="text-[9px] bg-accent text-white font-bold px-2 py-0.5 rounded-full">FULL PLATFORM</span>
-                </div>
-                <div className="flex items-center gap-2.5 mb-4 pr-16">
-                  <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shadow-sm shrink-0">
-                    <Star className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-black text-white leading-none text-sm">ISO Manager Pro</p>
-                    <p className="text-[10px] text-accent font-semibold mt-0.5">Isa Pro Included</p>
-                  </div>
-                </div>
-                <div className="mb-4 pb-3 border-b border-white/15">
-                  <div className="flex items-baseline gap-1">
-                    <p className="font-black text-accent text-3xl leading-none">$1,249</p>
-                    <span className="text-sm text-white/50 font-medium">/mo</span>
-                  </div>
-                  <p className="text-xs text-white/50 mt-0.5">billed annually · $14,988/yr</p>
-                </div>
-                <div className="mb-3">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-wide mb-2">All 7 Standards + Full Vault</p>
-                  <div className="flex flex-wrap gap-1">
-                    {["9001", "14001", "45001", "13485", "27001", "AS9100", "IATF"].map(s => (
-                      <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30 font-bold">{s}</span>
-                    ))}
-                  </div>
-                </div>
-                <ul className="space-y-1.5 mb-4 flex-1">
-                  {ISO_MANAGER_PRO_CAPABILITIES.map((cap) => (
-                    <li key={cap} className="flex items-start gap-1.5 text-xs text-white/70">
-                      <CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" />
-                      <span>{cap}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a href="mailto:info@acsi-quality.com">
-                  <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-plan-iso-manager-pro">
-                    Contact ACSI
-                  </Button>
-                </a>
-              </Card>
-            </motion.div>
-
-          </div>
             </div>
           </div>
         </div>
@@ -749,84 +792,6 @@ function ISOChatInterface({
   );
 }
 
-/* ─── CUSTOM PLAN CARD ────────────────────────────────── */
-const CUSTOM_STANDARDS = [
-  { code: "IATF 16949", label: "Automotive" },
-  { code: "ISO 13485", label: "Medical Devices" },
-  { code: "AS9100", label: "Aerospace" },
-  { code: "ISO 27001", label: "InfoSec" },
-];
-
-function CustomPlanCard() {
-  const [selected, setSelected] = useState<string | null>(null);
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="h-full">
-      <Card className="h-full p-5 border-2 border-accent/50 bg-white dark:bg-card hover:shadow-lg transition-all relative overflow-hidden flex flex-col" data-testid="card-plan-iso-manager-custom">
-        <div className="absolute top-0 inset-x-0 h-1 bg-accent rounded-t" />
-        <div className="absolute top-3 right-3">
-          <span className="text-[9px] bg-accent text-white font-bold px-2 py-0.5 rounded-full">CUSTOM</span>
-        </div>
-
-        <div className="flex items-center gap-2.5 mb-4 pr-14">
-          <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shadow-sm shrink-0">
-            <Layers className="w-5 h-5 text-accent" />
-          </div>
-          <div>
-            <p className="font-black text-primary leading-none text-sm">ISO Manager Custom</p>
-            <p className="text-[10px] text-accent font-semibold mt-0.5">Isa Pro Included</p>
-          </div>
-        </div>
-
-        <div className="mb-4 pb-3 border-b border-border/60">
-          <div className="flex items-baseline gap-1">
-            <p className="font-black text-accent text-3xl leading-none">Custom</p>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">pricing varies by standard · billed annually</p>
-        </div>
-
-        <div className="mb-4 pb-3 border-b border-border/40">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Select Your Standard</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {CUSTOM_STANDARDS.map(s => (
-              <button
-                key={s.code}
-                onClick={() => setSelected(prev => prev === s.code ? null : s.code)}
-                className={`text-left px-2.5 py-2 rounded-lg border text-[10px] font-bold transition-all ${
-                  selected === s.code
-                    ? "bg-accent text-white border-accent shadow-sm"
-                    : "bg-muted/40 text-primary border-border/60 hover:border-accent/40 hover:bg-accent/5"
-                }`}
-                data-testid={`button-standard-${s.code.replace(/\s/g, "-").toLowerCase()}`}
-              >
-                <span className="block leading-tight">{s.code}</span>
-                <span className={`block font-normal mt-0.5 ${selected === s.code ? "text-white/80" : "text-muted-foreground"}`}>{s.label}</span>
-              </button>
-            ))}
-          </div>
-          {selected && (
-            <p className="mt-2 text-[10px] text-accent font-semibold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> {selected} selected — contact us for pricing
-            </p>
-          )}
-        </div>
-
-        <ul className="space-y-1.5 mb-4 flex-1">
-          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Isa Pro for your chosen standard</span></li>
-          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>AI document generation</span></li>
-          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Secure document vault</span></li>
-          <li className="flex items-start gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="w-3 h-3 text-accent shrink-0 mt-0.5" /><span>Version control &amp; audit trail</span></li>
-        </ul>
-
-        <Link href="/settings">
-          <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-plan-iso-manager-custom">
-            {selected ? `Get ${selected} Custom` : "Get Custom"}
-          </Button>
-        </Link>
-      </Card>
-    </motion.div>
-  );
-}
 
 /* ─── MARKDOWN RENDERER ───────────────────────────────── */
 function inlineFormat(text: string): ReactNode[] {
