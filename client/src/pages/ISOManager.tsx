@@ -569,7 +569,7 @@ function IsaEmptyState({
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">IATF 16949 · CSR Management</span>
                 </div>
                 <p className="text-xs text-primary font-bold">Need CSR Management?{" "}
-                  <span className="text-muted-foreground font-normal">Customer Specific Requirements are handled by <strong className="text-primary">CESAR</strong> — ACSI's purpose-built platform for automotive suppliers.</span>
+                  <span className="text-muted-foreground font-normal">Customer Specific Requirements are handled by <strong className="text-primary">CESAR</strong> — ACSI's purpose-built platform for automotive suppliers under IATF 16949. Covers CSR assignment, employee training, and compliance self-assessments.</span>
                 </p>
               </div>
               <Link href="/cesar" className="shrink-0">

@@ -73,7 +73,7 @@ const OEMS = ["Ford Q1", "GM SQ", "Stellantis SQM", "BMW Group", "VW Formel Q", 
 
 export default function Cesar() {
   return (
-    <div className="min-h-screen bg-[hsl(222,47%,7%)] text-white">
+    <div className="min-h-screen bg-[hsl(222,47%,7%)] text-white" data-testid="page-cesar">
 
       {/* Minimal nav */}
       <nav className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
