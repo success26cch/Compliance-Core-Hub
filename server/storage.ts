@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -173,6 +173,12 @@ export interface IStorage {
   getActiveTeamMemberCount(teamId: number): Promise<number>;
   getRecordabilityUsageCount(ipAddress: string): Promise<number>;
   addRecordabilityUsage(ipAddress: string): Promise<void>;
+
+  // ISO Projects (Wizard)
+  getIsoProject(userId: string): Promise<IsoProject | undefined>;
+  createIsoProject(data: InsertIsoProject): Promise<IsoProject>;
+  updateIsoProject(userId: string, data: Partial<InsertIsoProject>): Promise<IsoProject>;
+  deleteIsoProject(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1081,6 +1087,29 @@ export class DatabaseStorage implements IStorage {
 
   async addRecordabilityUsage(ipAddress: string): Promise<void> {
     await db.insert(recordabilityUsage).values({ ipAddress });
+  }
+
+  async getIsoProject(userId: string): Promise<IsoProject | undefined> {
+    const [project] = await db.select().from(isoProjects).where(eq(isoProjects.userId, userId));
+    return project;
+  }
+
+  async createIsoProject(data: InsertIsoProject): Promise<IsoProject> {
+    const [project] = await db.insert(isoProjects).values(data).returning();
+    return project;
+  }
+
+  async updateIsoProject(userId: string, data: Partial<InsertIsoProject>): Promise<IsoProject> {
+    const [project] = await db
+      .update(isoProjects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(isoProjects.userId, userId))
+      .returning();
+    return project;
+  }
+
+  async deleteIsoProject(userId: string): Promise<void> {
+    await db.delete(isoProjects).where(eq(isoProjects.userId, userId));
   }
 }
 

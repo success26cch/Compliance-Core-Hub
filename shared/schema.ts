@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -389,6 +389,47 @@ export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).om
 });
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;
+
+// ISO Project — stores the 3-phase onboarding wizard state for the ISO Manager
+export const isoProjects = pgTable("iso_projects", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  standard: text("standard").notNull().default("ISO 9001"),
+  phase: integer("phase").notNull().default(1),
+  status: text("status").notNull().default("in_progress"),
+  // Phase 1 — Organizational Context
+  orgName: text("org_name"),
+  orgAddress: text("org_address"),
+  totalEmployees: integer("total_employees"),
+  productionEmployees: integer("production_employees"),
+  adminEmployees: integer("admin_employees"),
+  productsServices: text("products_services"),
+  manufacturingTech: text("manufacturing_tech").array(),
+  hasDesignResponsibility: boolean("has_design_responsibility"),
+  // Phase 2 — Process Architecture (JSON array)
+  processes: jsonb("processes").$type<Array<{
+    name: string;
+    owner: string;
+    kpi: string;
+    inputs: string;
+    outputs: string;
+    clauses: string[];
+  }>>(),
+  // Phase 3 — Quality Manual Gap Filler
+  coreValues: text("core_values").array(),
+  riskPhilosophy: text("risk_philosophy").array(),
+  oemSuppliers: text("oem_suppliers").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoProjectSchema = createInsertSchema(isoProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type IsoProject = typeof isoProjects.$inferSelect;
+export type InsertIsoProject = z.infer<typeof insertIsoProjectSchema>;
 
 // DOT Notification Log - tracks all notifications sent
 export const dotNotifications = pgTable("dot_notifications", {

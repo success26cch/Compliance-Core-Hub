@@ -522,9 +522,41 @@ Do not apologize excessively. Be brief, professional, and redirect clearly. Then
 
 `;
 
-      const systemPrompt = (isPro || userIsAdmin || isTeamMember)
+      const isoProject = await storage.getIsoProject(userId);
+      let projectContext = "";
+      if (isoProject && isoProject.status === "complete") {
+        const processList = (isoProject.processes || [])
+          .map((p) => `  - ${p.name} | Owner: ${p.owner} | KPI: ${p.kpi} | Inputs: ${p.inputs} | Outputs: ${p.outputs} | Clauses: ${p.clauses.join(", ")}`)
+          .join("\n");
+        projectContext = `
+## CLIENT ORGANIZATION CONTEXT (Active ISO Project — Use This as Your Baseline)
+Standard: ${isoProject.standard}
+Organization: ${isoProject.orgName || "Not specified"}
+Address: ${isoProject.orgAddress || "Not specified"}
+Total Employees: ${isoProject.totalEmployees || "?"} (${isoProject.productionEmployees || "?"} production / ${isoProject.adminEmployees || "?"} admin)
+Products & Services: ${isoProject.productsServices || "Not specified"}
+Manufacturing Technologies: ${(isoProject.manufacturingTech || []).join(", ") || "Not specified"}
+Design Responsibility: ${isoProject.hasDesignResponsibility ? "Yes — Clause 8.3 is IN scope" : "No — Clause 8.3 is EXCLUDED from scope"}
+
+## PROCESS ARCHITECTURE
+${processList || "No processes defined yet."}
+
+## QUALITY POLICY CONTEXT
+Core Values: ${(isoProject.coreValues || []).join(", ") || "Not specified"}
+Risk Philosophy: ${(isoProject.riskPhilosophy || []).join(", ") || "Not specified"}
+OEM Suppliers (scope identification only): ${(isoProject.oemSuppliers || []).join(", ") || "N/A"}
+
+## CRITICAL CSR RULE
+The OEM supplier data above is for scope identification ONLY. Customer Specific Requirements (CSRs) are managed exclusively by CESAR — ACSI's dedicated CSR platform. Do NOT answer any CSR compliance questions. If asked about CSRs, redirect immediately to CESAR.
+
+---
+`;
+      }
+
+      const baseSystemPrompt = (isPro || userIsAdmin || isTeamMember)
         ? ISA_SYSTEM_PROMPT
         : ISA_BASE_RESTRICTION + ISA_SYSTEM_PROMPT;
+      const systemPrompt = projectContext + baseSystemPrompt;
 
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",

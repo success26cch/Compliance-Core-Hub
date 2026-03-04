@@ -13,7 +13,7 @@ import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
 import { generateClinicLetterDocx, getAvailableInjuryTypes } from "./generateClinicLetter";
-import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
 import multer from "multer";
@@ -3967,6 +3967,55 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
       await storage.addRecordabilityUsage(ip);
       res.json({ count: currentCount + 1, limit: 3 });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── ISO PROJECTS (Setup Wizard) ─────────────────────────────────────────
+  app.get("/api/iso-projects", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const project = await storage.getIsoProject(userId);
+      if (!project) return res.status(404).json({ message: "No project found" });
+      res.json(project);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/iso-projects", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const existing = await storage.getIsoProject(userId);
+      if (existing) return res.status(409).json({ message: "Project already exists", project: existing });
+      const parsed = insertIsoProjectSchema.partial().parse({ ...req.body, userId });
+      const project = await storage.createIsoProject({ userId, standard: parsed.standard || "ISO 9001" });
+      res.status(201).json(project);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/iso-projects", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const project = await storage.updateIsoProject(userId, req.body);
+      res.json(project);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/iso-projects", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      await storage.deleteIsoProject(userId);
+      res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

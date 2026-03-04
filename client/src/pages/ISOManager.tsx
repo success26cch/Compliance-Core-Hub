@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from "@/hooks/use-isa-chat";
 import { useQuestionUsage } from "@/hooks/use-subscriptions";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,8 +16,12 @@ import {
   ClipboardCheck, FileSearch, BookOpen, Shield, Layers,
   CheckCircle2, MessageSquare, Zap, Star, Activity,
   AlertTriangle, Menu, FileText, Car, Vault,
+  Building2, Users, Factory, ArrowRight, ArrowLeft,
+  X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
+import { apiRequest } from "@/lib/queryClient";
+import type { IsoProject } from "@shared/schema";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -235,11 +241,67 @@ function ISOTierCard({
 
 /* ─────────────────────────────────────────────────────── */
 export default function ISOManager() {
+  const qc = useQueryClient();
   const { data: conversations } = useIsaConversations();
   const { mutate: createConversation, isPending: isCreating } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+
+  const { data: project } = useQuery<IsoProject | null>({
+    queryKey: ["/api/iso-projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/iso-projects", { credentials: "include" });
+      if (res.status === 404) return null;
+      if (!res.ok) return null;
+      return res.json();
+    },
+    retry: false,
+  });
+
+  const createProjectMut = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/iso-projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+        credentials: "include",
+      });
+      if (res.status === 409) {
+        const data = await res.json();
+        return data.project;
+      }
+      if (!res.ok) throw new Error("Failed to create project");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      setShowWizard(true);
+    },
+    onError: () => {},
+  });
+
+  const deleteProjectMut = useMutation({
+    mutationFn: async () => {
+      await fetch("/api/iso-projects", { method: "DELETE", credentials: "include" });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      setShowWizard(false);
+    },
+    onError: () => {},
+  });
+
+  const handleStartWizard = () => {
+    if (project) {
+      setShowWizard(true);
+    } else {
+      createProjectMut.mutate();
+    }
+  };
+
+  const handleResetProject = () => deleteProjectMut.mutate();
 
   const isPro = !!usageData?.isPro;
   const canAsk = !!usageData?.canAsk;
@@ -250,9 +312,12 @@ export default function ISOManager() {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
         setSidebarOpen(true);
+        setShowWizard(false);
       },
     });
   };
+
+  const isWizardActive = showWizard || (project && project.status === "in_progress" && !activeConversationId);
 
   return (
     <ProtectedLayout>
@@ -277,7 +342,14 @@ export default function ISOManager() {
                       <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px] px-1.5 py-0 font-bold">Isa Pro</Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">Lead ISO Auditor AI · ACSI</p>
+                  {project?.status === "complete" && project.orgName ? (
+                    <div>
+                      <p className="text-xs font-semibold text-accent truncate">{project.orgName}</p>
+                      <p className="text-[10px] text-muted-foreground">{project.standard}</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Lead ISO Auditor AI · ACSI</p>
+                  )}
                 </div>
               </div>
 
@@ -434,8 +506,19 @@ export default function ISOManager() {
 
             {activeConversationId ? (
               <ISOChatInterface conversationId={activeConversationId} onMessageSent={() => refetchUsage()} isPro={isPro} />
+            ) : isWizardActive && project ? (
+              <ISOSetupWizard project={project} onComplete={() => { setShowWizard(false); qc.invalidateQueries({ queryKey: ["/api/iso-projects"] }); }} />
             ) : (
-              <IsaEmptyState onQuickPrompt={(p) => handleNewChat(p)} onNewChat={() => handleNewChat()} isCreating={isCreating} isPro={isPro} />
+              <IsaEmptyState
+                onQuickPrompt={(p) => handleNewChat(p)}
+                onNewChat={() => handleNewChat()}
+                isCreating={isCreating}
+                isPro={isPro}
+                project={project ?? null}
+                onStartWizard={handleStartWizard}
+                onResetProject={handleResetProject}
+                isResetting={deleteProjectMut.isPending}
+              />
             )}
           </div>
         </div>
@@ -444,14 +527,627 @@ export default function ISOManager() {
   );
 }
 
+/* ─── ISO SETUP WIZARD ──────────────────────────────────── */
+type ProcessEntry = { name: string; owner: string; kpi: string; inputs: string; outputs: string; clauses: string[] };
+
+const WIZARD_STANDARDS = ["ISO 9001", "ISO 14001", "ISO 45001", "IATF 16949", "AS9100 Rev D", "ISO 13485", "ISO 27001"];
+const TECH_OPTIONS = ["Injection Molding", "CNC Machining", "Metal Stamping", "Assembly", "Heat Treating", "Fabrication / Welding", "Software Development", "Service Delivery", "Other"];
+const RISK_OPTIONS = ["SWOT Analysis", "FMEA / PFMEA", "Internal Audit Findings", "Management Review", "Customer Feedback / Complaints", "Supplier Performance Reviews", "Other"];
+const OEM_OPTIONS = ["Ford", "GM", "Stellantis", "BMW", "VW Group", "Toyota", "Honda", "FCA", "Tier 1 Supplier Only", "Other"];
+const PROCESS_SUGGESTIONS = ["Purchasing", "Sales / Quoting", "Receiving Inspection", "Production Planning", "Manufacturing", "Final Inspection", "Shipping", "Corrective Action", "Internal Audit", "Management Review", "Maintenance", "Training", "Customer Satisfaction"];
+
+function suggestClauses(name: string, standard: string): string[] {
+  const n = name.toLowerCase();
+  const cs: string[] = [];
+  if (n.includes("purchas") || n.includes("procure") || n.includes("supplier")) cs.push("8.4 — External Providers");
+  if ((n.includes("receiv") && n.includes("inspect")) || n.includes("incoming")) cs.push("8.6 — Release of Products");
+  if (n.includes("internal audit")) cs.push("9.2 — Internal Audit");
+  if (n.includes("management review")) cs.push("9.3 — Management Review");
+  if (n.includes("corrective") || n.includes("capa")) cs.push("10.2 — Corrective Actions");
+  if (n.includes("mainten")) {
+    cs.push("8.5.1 — Production Control");
+    if (standard.includes("IATF")) cs.push("8.5.1.5 — TPM");
+  }
+  if (n.includes("train") || n.includes("competen")) cs.push("7.2 — Competence");
+  if (n.includes("customer") || n.includes("sales") || n.includes("quot")) cs.push("8.2 — Customer Requirements");
+  if (n.includes("design")) cs.push("8.3 — Design & Development");
+  if (n.includes("ship") || n.includes("deliver") || n.includes("logistic")) cs.push("8.5.5 — Post-Delivery");
+  if (n.includes("document") || n.includes("record")) cs.push("7.5 — Documented Information");
+  if ((n.includes("final") && n.includes("inspect")) || n.includes("quality control")) cs.push("8.6 — Release of Products");
+  return cs;
+}
+
+function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComplete: () => void }) {
+  const qc = useQueryClient();
+
+  const [standard, setStandard] = useState(project.standard || "");
+  const [orgName, setOrgName] = useState(project.orgName || "");
+  const [orgAddress, setOrgAddress] = useState(project.orgAddress || "");
+  const [totalEmp, setTotalEmp] = useState(project.totalEmployees?.toString() || "");
+  const [prodEmp, setProdEmp] = useState(project.productionEmployees?.toString() || "");
+  const [adminEmp, setAdminEmp] = useState(project.adminEmployees?.toString() || "");
+  const [products, setProducts] = useState(project.productsServices || "");
+  const [mfgTech, setMfgTech] = useState<string[]>(project.manufacturingTech || []);
+  const [otherTech, setOtherTech] = useState("");
+  const [hasDesign, setHasDesign] = useState<boolean | null>(project.hasDesignResponsibility ?? null);
+
+  const [processes, setProcesses] = useState<ProcessEntry[]>((project.processes as ProcessEntry[]) || []);
+  const [addingProc, setAddingProc] = useState(false);
+  const [procName, setProcName] = useState("");
+  const [procOwner, setProcOwner] = useState("");
+  const [procKPI, setProcKPI] = useState("");
+  const [procInputs, setProcInputs] = useState("");
+  const [procOutputs, setProcOutputs] = useState("");
+  const [procClauses, setProcClauses] = useState<string[]>([]);
+
+  const [coreValues, setCoreValues] = useState<string[]>(project.coreValues?.length ? project.coreValues : ["", "", ""]);
+  const [riskPhil, setRiskPhil] = useState<string[]>(project.riskPhilosophy || []);
+  const [oems, setOems] = useState<string[]>(project.oemSuppliers || []);
+
+  const [phase, setPhase] = useState<1 | 2 | 3>((project.phase as 1 | 2 | 3) || 1);
+  const [p1Step, setP1Step] = useState(0);
+  const [p3Step, setP3Step] = useState(0);
+
+  const showOEM = standard === "IATF 16949" || standard === "AS9100 Rev D";
+
+  const patchMut = useMutation({
+    mutationFn: async (data: Partial<IsoProject>) => {
+      const res = await fetch("/api/iso-projects", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/iso-projects"] }),
+    onError: () => {},
+  });
+
+  const saveP1 = async (goNext = false) => {
+    await patchMut.mutateAsync({
+      standard, orgName, orgAddress,
+      totalEmployees: parseInt(totalEmp) || undefined,
+      productionEmployees: parseInt(prodEmp) || undefined,
+      adminEmployees: parseInt(adminEmp) || undefined,
+      productsServices: products,
+      manufacturingTech: mfgTech,
+      hasDesignResponsibility: hasDesign ?? undefined,
+      phase: goNext ? 2 : 1,
+    });
+  };
+
+  const p1Next = async () => {
+    if (p1Step === 5) { await saveP1(true); setPhase(2); }
+    else { await saveP1(); setP1Step(s => s + 1); }
+  };
+
+  const addProcess = () => {
+    if (!procName.trim()) return;
+    setProcesses(prev => [...prev, { name: procName, owner: procOwner, kpi: procKPI, inputs: procInputs, outputs: procOutputs, clauses: procClauses }]);
+    setProcName(""); setProcOwner(""); setProcKPI(""); setProcInputs(""); setProcOutputs(""); setProcClauses([]);
+    setAddingProc(false);
+  };
+
+  const goToPhase3 = async () => {
+    await patchMut.mutateAsync({ processes, phase: 3 });
+    setPhase(3);
+  };
+
+  const completeSetup = async () => {
+    await patchMut.mutateAsync({
+      coreValues: coreValues.filter(v => v.trim()),
+      riskPhilosophy: riskPhil,
+      oemSuppliers: showOEM ? oems : [],
+      phase: 3, status: "complete",
+    });
+    onComplete();
+  };
+
+  const p3Advance = () => {
+    if (p3Step === 0) setP3Step(1);
+    else if (p3Step === 1 && showOEM) setP3Step(2);
+    else completeSetup();
+  };
+
+  const toggleTech = (t: string) => setMfgTech(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  const toggleRisk = (r: string) => setRiskPhil(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
+  const toggleOEM = (o: string) => setOems(prev => prev.includes(o) ? prev.filter(x => x !== o) : [...prev, o]);
+
+  const phaseLabels = ["Phase 1: Context", "Phase 2: Processes", "Phase 3: Policy"];
+  const p1CanAdvance = [
+    !!standard,
+    !!(orgName.trim()),
+    !!(totalEmp),
+    !!(products.trim()),
+    mfgTech.length > 0,
+    hasDesign !== null,
+  ][p1Step];
+
+  return (
+    <div className="flex h-full overflow-hidden" data-testid="wizard-iso-setup">
+      {/* ── LEFT: Questions Pane ── */}
+      <div className="w-[55%] flex flex-col border-r border-border/60 bg-white dark:bg-card overflow-hidden" data-testid="wizard-questions-pane">
+        {/* Progress Bar */}
+        <div className="shrink-0 px-6 py-4 border-b border-border/60 bg-muted/30">
+          <div className="flex gap-2 mb-2">
+            {phaseLabels.map((label, i) => (
+              <div key={label} className="flex-1">
+                <div className={`h-1.5 rounded-full transition-all duration-500 ${phase === i + 1 ? "bg-accent" : phase > i + 1 ? "bg-accent/40" : "bg-border/40"}`} />
+                <p className={`text-[10px] font-bold mt-1 truncate ${phase === i + 1 ? "text-accent" : "text-muted-foreground/50"}`}>{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Isa Avatar */}
+        <div className="shrink-0 flex items-center gap-3 px-6 pt-5 pb-2">
+          <div className="w-9 h-9 rounded-full bg-primary border-2 border-accent/30 flex items-center justify-center shadow-md flex-shrink-0">
+            <img src={acsiLogo} alt="Isa" className="w-7 h-7 object-contain" />
+          </div>
+          <div>
+            <span className="text-xs font-black text-primary">Isa</span>
+            <span className="text-[10px] text-muted-foreground ml-1">· Lead ISO Auditor AI</span>
+          </div>
+        </div>
+
+        {/* Question Area */}
+        <ScrollArea className="flex-1">
+          <div className="px-6 py-4">
+            <AnimatePresence mode="wait">
+              {phase === 1 && (
+                <motion.div key={`p1-${p1Step}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                  {p1Step === 0 && (
+                    <div>
+                      <p className="text-lg font-black text-primary mb-1">Which ISO standard are you building toward?</p>
+                      <p className="text-sm text-muted-foreground mb-5">This determines which clauses and requirements we'll map your organization to.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {WIZARD_STANDARDS.map(s => (
+                          <button key={s} onClick={() => setStandard(s)}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${standard === s ? "border-accent bg-accent/5 text-accent" : "border-border/60 text-primary hover:border-accent/40"}`}
+                            data-testid={`button-wizard-standard-${s.replace(/[\s/]/g, "-").toLowerCase()}`}>
+                            <span className="text-sm font-bold">{s}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {p1Step === 1 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">What is the legal name of your organization?</p>
+                        <p className="text-sm text-muted-foreground mb-4">And your primary site address. I'll use this to anchor your scope statement.</p>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1"><Building2 className="w-3 h-3" /> Organization Name</label>
+                          <Input value={orgName} onChange={e => setOrgName(e.target.value)} placeholder="e.g., Acme Manufacturing, Inc." data-testid="input-wizard-org-name" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> Primary Site Address</label>
+                          <Input value={orgAddress} onChange={e => setOrgAddress(e.target.value)} placeholder="e.g., 123 Industrial Blvd, Detroit, MI 48201" data-testid="input-wizard-org-address" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {p1Step === 2 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">How many employees are within scope?</p>
+                        <p className="text-sm text-muted-foreground mb-4">Give me a breakdown. This helps define the scale and complexity of your management system.</p>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Total Employees in Scope</label>
+                          <Input type="number" value={totalEmp} onChange={e => setTotalEmp(e.target.value)} placeholder="e.g., 75" data-testid="input-wizard-total-emp" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Production</label>
+                            <Input type="number" value={prodEmp} onChange={e => setProdEmp(e.target.value)} placeholder="e.g., 55" data-testid="input-wizard-prod-emp" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Administrative</label>
+                            <Input type="number" value={adminEmp} onChange={e => setAdminEmp(e.target.value)} placeholder="e.g., 20" data-testid="input-wizard-admin-emp" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {p1Step === 3 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">What are your primary products or services?</p>
+                        <p className="text-sm text-muted-foreground mb-4">Be specific. I'll use this to draft your Scope Statement — the most scrutinized clause in any certification audit.</p>
+                      </div>
+                      <Textarea value={products} onChange={e => setProducts(e.target.value)}
+                        placeholder="e.g., Precision CNC-machined aluminum components for the automotive industry, including engine housings, transmission brackets, and structural assemblies."
+                        className="min-h-[120px]" data-testid="input-wizard-products" />
+                    </div>
+                  )}
+                  {p1Step === 4 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">What are your core manufacturing technologies?</p>
+                        <p className="text-sm text-muted-foreground mb-4">Select all that apply — this helps me identify Special Processes that require additional controls under your standard.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {TECH_OPTIONS.filter(t => t !== "Other").map(t => (
+                          <button key={t} onClick={() => toggleTech(t)}
+                            className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${mfgTech.includes(t) ? "bg-accent text-white border-accent" : "border-border/60 text-primary hover:border-accent/40"}`}
+                            data-testid={`button-wizard-tech-${t.replace(/[\s/]/g, "-").toLowerCase()}`}>{t}</button>
+                        ))}
+                        <button onClick={() => toggleTech("Other")}
+                          className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${mfgTech.includes("Other") ? "bg-accent text-white border-accent" : "border-border/60 text-primary hover:border-accent/40"}`}
+                          data-testid="button-wizard-tech-other">Other</button>
+                      </div>
+                      {mfgTech.includes("Other") && (
+                        <div className="mt-2">
+                          <Input value={otherTech} onChange={e => setOtherTech(e.target.value)}
+                            onBlur={() => { if (otherTech.trim()) { setMfgTech(prev => [...prev.filter(t => t !== "Other"), otherTech.trim(), "Other"]); }}}
+                            placeholder="Describe your other technology…" data-testid="input-wizard-tech-other" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {p1Step === 5 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">Are you responsible for Product Design?</p>
+                        <p className="text-sm text-muted-foreground mb-4">Do you engineer the product, or do you manufacture to a customer's design? This determines whether Clause 8.3 (Design & Development) is in or out of scope.</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button onClick={() => setHasDesign(true)}
+                          className={`p-4 rounded-xl border-2 transition-all ${hasDesign === true ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/40"}`}
+                          data-testid="button-wizard-design-yes">
+                          <p className={`font-bold text-sm ${hasDesign === true ? "text-accent" : "text-primary"}`}>Yes — We Design It</p>
+                          <p className="text-xs text-muted-foreground mt-1">Clause 8.3 in scope</p>
+                        </button>
+                        <button onClick={() => setHasDesign(false)}
+                          className={`p-4 rounded-xl border-2 transition-all ${hasDesign === false ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/40"}`}
+                          data-testid="button-wizard-design-no">
+                          <p className={`font-bold text-sm ${hasDesign === false ? "text-accent" : "text-primary"}`}>No — We Build to Spec</p>
+                          <p className="text-xs text-muted-foreground mt-1">Clause 8.3 excluded</p>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {phase === 2 && (
+                <motion.div key="phase2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                  <p className="text-lg font-black text-primary mb-1">Let's map your processes.</p>
+                  <p className="text-sm text-muted-foreground mb-4">These become the backbone of your management system. Add each department or value stream — Isa will auto-tag the relevant clauses.</p>
+
+                  {!addingProc && (
+                    <div className="mb-4">
+                      <p className="text-xs font-bold text-muted-foreground mb-2">Quick-add a common process:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {PROCESS_SUGGESTIONS.map(s => (
+                          <button key={s} onClick={() => { setProcName(s); setProcClauses(suggestClauses(s, standard)); setAddingProc(true); }}
+                            className="text-xs px-2.5 py-1 rounded-full border border-border/60 text-muted-foreground hover:border-accent/40 hover:text-accent transition-colors"
+                            data-testid={`button-wizard-proc-suggest-${s.replace(/[\s/]/g, "-").toLowerCase()}`}>{s}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {addingProc && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                      <Card className="p-4 border-accent/20 bg-accent/5 mb-4 space-y-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-bold text-primary">Define This Process</p>
+                          <button onClick={() => setAddingProc(false)} className="text-muted-foreground hover:text-primary"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-muted-foreground mb-1 block">Process Name</label>
+                          <Input value={procName} onChange={e => { setProcName(e.target.value); setProcClauses(suggestClauses(e.target.value, standard)); }}
+                            placeholder="e.g., Purchasing, Final Assembly, Maintenance" data-testid="input-wizard-proc-name" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Process Owner (Job Title)</label>
+                            <Input value={procOwner} onChange={e => setProcOwner(e.target.value)} placeholder="e.g., Purchasing Manager" data-testid="input-wizard-proc-owner" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">KPI — How do you measure success?</label>
+                            <Input value={procKPI} onChange={e => setProcKPI(e.target.value)} placeholder="e.g., Supplier OTD %, Scrap Rate" data-testid="input-wizard-proc-kpi" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Inputs — What starts this process?</label>
+                            <Input value={procInputs} onChange={e => setProcInputs(e.target.value)} placeholder="e.g., Purchase Order, Raw Material" data-testid="input-wizard-proc-inputs" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Outputs — What is the final result?</label>
+                            <Input value={procOutputs} onChange={e => setProcOutputs(e.target.value)} placeholder="e.g., Approved Supplier, Finished Goods" data-testid="input-wizard-proc-outputs" />
+                          </div>
+                        </div>
+                        {procClauses.length > 0 && (
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1.5 flex items-center gap-1"><Tag className="w-3 h-3" /> Auto-tagged Clauses</label>
+                            <div className="flex flex-wrap gap-1">
+                              {procClauses.map(c => (
+                                <span key={c} className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-semibold flex items-center gap-1">
+                                  {c}
+                                  <button onClick={() => setProcClauses(prev => prev.filter(x => x !== c))} className="hover:text-accent/60"><X className="w-2.5 h-2.5" /></button>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <Button onClick={addProcess} disabled={!procName.trim()} className="w-full bg-accent hover:bg-accent/90 text-white" data-testid="button-wizard-save-process">
+                          Save Process →
+                        </Button>
+                      </Card>
+                    </motion.div>
+                  )}
+
+                  {processes.length > 0 && (
+                    <div className="space-y-1.5 mb-4">
+                      {processes.map((p, i) => (
+                        <div key={i} className="flex items-center gap-2 p-2.5 bg-muted/40 rounded-lg border border-border/60 text-xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0" />
+                          <span className="font-semibold text-primary flex-1">{p.name}</span>
+                          <span className="text-muted-foreground">{p.owner}</span>
+                          <button onClick={() => setProcesses(prev => prev.filter((_, j) => j !== i))} className="text-muted-foreground/50 hover:text-destructive ml-1" data-testid={`button-wizard-remove-proc-${i}`}>
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {phase === 3 && (
+                <motion.div key={`phase3-${p3Step}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                  {p3Step === 0 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">What are the three core values of your organization?</p>
+                        <p className="text-sm text-muted-foreground mb-4">These will anchor your Quality Policy — the statement of intent that opens every great management system.</p>
+                      </div>
+                      <div className="space-y-2">
+                        {[0, 1, 2].map(i => (
+                          <div key={i}>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Core Value {i + 1}</label>
+                            <Input value={coreValues[i] || ""} onChange={e => setCoreValues(prev => { const n = [...prev]; n[i] = e.target.value; return n; })}
+                              placeholder={["e.g., Customer First", "e.g., Continuous Improvement", "e.g., Safety Above All"][i]}
+                              data-testid={`input-wizard-value-${i}`} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {p3Step === 1 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">How does your organization identify and assess risks?</p>
+                        <p className="text-sm text-muted-foreground mb-4">Select all methods you currently use — or plan to use. This defines your Risk Framework under Clause 6.1.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {RISK_OPTIONS.map(r => (
+                          <button key={r} onClick={() => toggleRisk(r)}
+                            className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${riskPhil.includes(r) ? "bg-accent text-white border-accent" : "border-border/60 text-primary hover:border-accent/40"}`}
+                            data-testid={`button-wizard-risk-${r.replace(/[\s/]/g, "-").toLowerCase()}`}>{r}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {p3Step === 2 && showOEM && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-black text-primary mb-1">Which OEMs do you supply to?</p>
+                        <p className="text-sm text-muted-foreground mb-3">This identifies the scope of your customer base. I'll use this to set context — not to interpret CSRs.</p>
+                        <p className="text-xs italic text-muted-foreground/60 bg-muted/40 rounded-lg px-3 py-2 border border-border/40 mb-4">
+                          Note: Customer Specific Requirements (CSRs) are managed through CESAR — ACSI's dedicated CSR platform. Isa does not handle CSR compliance.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {OEM_OPTIONS.map(o => (
+                          <button key={o} onClick={() => toggleOEM(o)}
+                            className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${oems.includes(o) ? "bg-accent text-white border-accent" : "border-border/60 text-primary hover:border-accent/40"}`}
+                            data-testid={`button-wizard-oem-${o.replace(/[\s/]/g, "-").toLowerCase()}`}>{o}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </ScrollArea>
+
+        {/* Navigation Buttons */}
+        <div className="shrink-0 px-6 py-4 border-t border-border/60 bg-muted/20 flex items-center gap-3">
+          {phase === 1 && p1Step > 0 && (
+            <Button variant="outline" onClick={() => setP1Step(s => s - 1)} className="gap-1.5" data-testid="button-wizard-back">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
+          )}
+          {phase === 3 && p3Step > 0 && (
+            <Button variant="outline" onClick={() => setP3Step(s => s - 1)} className="gap-1.5" data-testid="button-wizard-back-p3">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
+          )}
+          {phase === 2 && (
+            <Button variant="outline" onClick={() => setPhase(1)} className="gap-1.5" data-testid="button-wizard-back-p2">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
+          )}
+          <div className="flex-1" />
+          {phase === 1 && (
+            <Button onClick={p1Next} disabled={!p1CanAdvance || patchMut.isPending} className="bg-accent hover:bg-accent/90 text-white gap-1.5" data-testid="button-wizard-next-p1">
+              {patchMut.isPending ? "Saving…" : p1Step === 5 ? "Next Phase →" : "Next →"}
+              {!patchMut.isPending && <ArrowRight className="w-4 h-4" />}
+            </Button>
+          )}
+          {phase === 2 && !addingProc && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setProcName(""); setProcOwner(""); setProcKPI(""); setProcInputs(""); setProcOutputs(""); setProcClauses([]); setAddingProc(true); }}
+                className="gap-1.5 border-accent/30 text-accent hover:bg-accent/5" data-testid="button-wizard-add-process">
+                <Plus className="w-4 h-4" /> Add Process
+              </Button>
+              <Button onClick={goToPhase3} disabled={patchMut.isPending} className="bg-accent hover:bg-accent/90 text-white gap-1.5" data-testid="button-wizard-done-processes">
+                {patchMut.isPending ? "Saving…" : "Done with Processes →"}
+                {!patchMut.isPending && <ArrowRight className="w-4 h-4" />}
+              </Button>
+            </div>
+          )}
+          {phase === 3 && (
+            <Button onClick={p3Advance} disabled={patchMut.isPending}
+              className="bg-accent hover:bg-accent/90 text-white gap-1.5" data-testid="button-wizard-next-p3">
+              {patchMut.isPending ? "Saving…" : (p3Step === (showOEM ? 2 : 1)) ? "Complete Setup ✓" : "Next →"}
+              {!patchMut.isPending && <ArrowRight className="w-4 h-4" />}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* ── RIGHT: Drafting Pane ── */}
+      <div className="flex-1 flex flex-col bg-muted/20 overflow-hidden" data-testid="wizard-drafting-pane">
+        <div className="shrink-0 px-5 py-4 border-b border-border/60 bg-white dark:bg-card">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-4 h-4 text-accent" />
+            <p className="text-sm font-black text-primary">Your Management System</p>
+            <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 rounded px-1.5 py-0.5 font-bold ml-auto">Building in Real Time</span>
+          </div>
+        </div>
+
+        <ScrollArea className="flex-1">
+          <div className="p-5 space-y-4" data-testid="drafting-pane-content">
+
+            {/* Organization Profile */}
+            <DraftSection title="Organization Profile" icon={<Building2 className="w-3.5 h-3.5" />}>
+              {orgName || orgAddress || totalEmp ? (
+                <div className="space-y-1.5 text-xs">
+                  {orgName && <DraftRow label="Organization" value={orgName} />}
+                  {orgAddress && <DraftRow label="Address" value={orgAddress} />}
+                  {standard && <DraftRow label="Standard" value={standard} highlight />}
+                  {totalEmp && <DraftRow label="Employees" value={`${totalEmp} total${prodEmp ? ` (${prodEmp} prod. / ${adminEmp} admin)` : ""}`} />}
+                </div>
+              ) : <DraftEmpty />}
+            </DraftSection>
+
+            {/* Scope Statement */}
+            <DraftSection title="Scope Statement" icon={<Target className="w-3.5 h-3.5" />}>
+              {products ? (
+                <div className="space-y-2 text-xs">
+                  <p className="text-primary/80 leading-relaxed italic">"{products}"</p>
+                  {mfgTech.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {mfgTech.filter(t => t !== "Other").map(t => (
+                        <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-muted border border-border/60 text-muted-foreground font-medium">{t}</span>
+                      ))}
+                    </div>
+                  )}
+                  {hasDesign !== null && (
+                    <p className={`text-[10px] font-bold ${hasDesign ? "text-accent" : "text-muted-foreground"}`}>
+                      Design & Development (Cl. 8.3): {hasDesign ? "In Scope" : "Excluded"}
+                    </p>
+                  )}
+                </div>
+              ) : <DraftEmpty />}
+            </DraftSection>
+
+            {/* Process Architecture */}
+            <DraftSection title="Process Architecture" icon={<Factory className="w-3.5 h-3.5" />}>
+              {processes.length > 0 ? (
+                <div className="space-y-2">
+                  {processes.map((p, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-card rounded-lg border border-border/60 p-2.5">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-xs font-bold text-primary">{p.name}</span>
+                        <span className="text-[10px] text-muted-foreground">· {p.owner}</span>
+                      </div>
+                      {p.kpi && <p className="text-[10px] text-muted-foreground mb-1"><span className="font-semibold">KPI:</span> {p.kpi}</p>}
+                      {p.clauses.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {p.clauses.map(c => (
+                            <span key={c} className="text-[9px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-bold">{c}</span>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              ) : <DraftEmpty />}
+            </DraftSection>
+
+            {/* Quality Policy */}
+            <DraftSection title="Quality Policy Draft" icon={<Award className="w-3.5 h-3.5" />}>
+              {coreValues.some(v => v.trim()) ? (
+                <div className="space-y-1.5">
+                  {coreValues.filter(v => v.trim()).map((v, i) => (
+                    <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-xs">
+                      <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
+                      <span className="font-semibold text-primary">{v}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : <DraftEmpty />}
+            </DraftSection>
+
+            {/* Risk Framework */}
+            <DraftSection title="Risk Framework" icon={<Shield className="w-3.5 h-3.5" />}>
+              {riskPhil.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {riskPhil.map(r => (
+                    <motion.span key={r} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-muted border border-border/60 text-muted-foreground font-medium">{r}</motion.span>
+                  ))}
+                </div>
+              ) : <DraftEmpty />}
+            </DraftSection>
+
+          </div>
+        </ScrollArea>
+      </div>
+    </div>
+  );
+}
+
+function DraftSection({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
+  return (
+    <div className="bg-white dark:bg-card rounded-xl border border-border/60 overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40 bg-muted/30">
+        <span className="text-accent">{icon}</span>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{title}</p>
+      </div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+}
+
+function DraftRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="flex gap-2">
+      <span className="text-muted-foreground/60 w-20 shrink-0">{label}</span>
+      <span className={`font-semibold flex-1 ${highlight ? "text-accent" : "text-primary"}`}>{value}</span>
+    </div>
+  );
+}
+
+function DraftEmpty() {
+  return <p className="text-xs text-muted-foreground/40 italic">Waiting for your answers…</p>;
+}
+
 /* ─── EMPTY STATE ─────────────────────────────────────── */
 function IsaEmptyState({
-  onQuickPrompt, onNewChat, isCreating, isPro,
+  onQuickPrompt, onNewChat, isCreating, isPro, project, onStartWizard, onResetProject, isResetting,
 }: {
   onQuickPrompt: (p: string) => void;
   onNewChat: () => void;
   isCreating: boolean;
   isPro: boolean;
+  project: IsoProject | null | undefined;
+  onStartWizard: () => void;
+  onResetProject: () => void;
+  isResetting: boolean;
 }) {
   return (
     <ScrollArea className="flex-1">
@@ -482,6 +1178,71 @@ function IsaEmptyState({
             </Button>
           </div>
         </motion.div>
+
+        {/* ── Project Summary (complete) or CTA (no project) ── */}
+        {project?.status === "complete" ? (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6" data-testid="card-project-summary">
+            <div className="bg-white dark:bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-green-50 border border-green-200 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-sm font-black text-primary">Management System Profile — Active</p>
+                    <span className="text-[10px] bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5 font-bold">All 3 Phases Complete</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">Standard</p>
+                      <p className="text-xs font-bold text-accent">{project.standard}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">Organization</p>
+                      <p className="text-xs font-semibold text-primary truncate">{project.orgName || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">Employees</p>
+                      <p className="text-xs font-semibold text-primary">{project.totalEmployees || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">Processes Mapped</p>
+                      <p className="text-xs font-semibold text-primary">{(project.processes as any[])?.length || 0}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Isa now has full context of your organization — start a consultation and she'll reference your processes, employees, and scope automatically.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={onResetProject} disabled={isResetting}
+                  className="shrink-0 text-xs border-border/60 text-muted-foreground hover:text-destructive hover:border-destructive/40 gap-1"
+                  data-testid="button-reset-project">
+                  <RotateCcw className="w-3 h-3" />{isResetting ? "Resetting…" : "Reset"}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        ) : !project ? (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6">
+            <div className="bg-primary/5 border-2 border-dashed border-accent/30 rounded-2xl p-6 text-center">
+              <div className="w-12 h-12 bg-accent/10 border border-accent/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <img src={acsiLogo} alt="ACSI" className="w-9 h-9 object-contain" />
+              </div>
+              <h3 className="text-base font-black text-primary mb-1">Build Your Management System</h3>
+              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                Isa guides you through a 3-phase setup that maps your organization, processes, and quality policy — giving her full context before your first consultation.
+              </p>
+              <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mb-5">
+                <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center">1</span> Org Context</span>
+                <ArrowRight className="w-3 h-3 text-muted-foreground/40" />
+                <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-accent/60 text-white text-[10px] font-bold flex items-center justify-center">2</span> Process Map</span>
+                <ArrowRight className="w-3 h-3 text-muted-foreground/40" />
+                <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-accent/30 text-white text-[10px] font-bold flex items-center justify-center">3</span> Policy</span>
+              </div>
+              <Button onClick={onStartWizard} className="bg-accent hover:bg-accent/90 text-white gap-2 font-bold" data-testid="button-start-wizard">
+                <ArrowRight className="w-4 h-4" /> Start Setup — Build My System
+              </Button>
+            </div>
+          </motion.div>
+        ) : null}
 
         {/* ── Workspace Status ── */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.3 }}>
