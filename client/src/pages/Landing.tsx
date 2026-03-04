@@ -72,29 +72,37 @@ const RECORDABILITY_QUESTIONS = [
   },
   {
     id: 3,
-    question: "Did it require medical treatment beyond first aid?",
+    question: "Was prescription-strength medication given — or was an over-the-counter medication used at prescription strength (e.g., 800 mg ibuprofen)?",
     yesResult: "recordable" as const,
-    yesReason: "The injury or illness required medical treatment beyond first aid. Under 29 CFR 1904.7(a)(5), first aid is limited to a specific list of treatments — anything beyond that list (stitches, prescription medications, physical therapy, etc.) constitutes medical treatment and makes the case recordable.",
-    yescitation: "29 CFR 1904.7(a)(1) — medical treatment beyond first aid; 29 CFR 1904.7(a)(5) — definition of first aid",
+    yesReason: "Prescription-strength medication is medical treatment beyond first aid. OSHA's first aid list only permits 'use of nonprescription medications at nonprescription strength.' Administering or recommending a prescription medication — or directing an employee to take an OTC medication at a prescription-level dose (such as 800 mg ibuprofen) — exceeds first aid and makes the case recordable.",
+    yescitation: "29 CFR 1904.7(a)(5)(ii) — First aid includes: 'Use of nonprescription medications at nonprescription strength.' Any medication given at prescription strength, whether originally prescription or OTC, does NOT qualify as first aid and constitutes recordable medical treatment.",
     noNext: 4,
   },
   {
     id: 4,
-    question: "Did it result in loss of consciousness?",
+    question: "Did it require other medical treatment beyond first aid (e.g., stitches, physical therapy, drainage of blisters, prescription devices)?",
     yesResult: "recordable" as const,
-    yesReason: "The injury or illness resulted in loss of consciousness, even if the employee returned to work the same day and received no medical treatment.",
-    yescitation: "29 CFR 1904.7(a)(1) — 'You must consider an injury or illness to be recordable if it results in... loss of consciousness.'",
+    yesReason: "The injury or illness required medical treatment beyond first aid. Under 29 CFR 1904.7(a)(5), first aid is limited to a specific list of treatments — anything beyond that list (stitches, prescription medications, physical therapy, etc.) constitutes medical treatment and makes the case recordable.",
+    yescitation: "29 CFR 1904.7(a)(1) — medical treatment beyond first aid; 29 CFR 1904.7(a)(5) — definition of first aid",
     noNext: 5,
   },
   {
     id: 5,
+    question: "Did it result in loss of consciousness?",
+    yesResult: "recordable" as const,
+    yesReason: "The injury or illness resulted in loss of consciousness, even if the employee returned to work the same day and received no medical treatment.",
+    yescitation: "29 CFR 1904.7(a)(1) — 'You must consider an injury or illness to be recordable if it results in... loss of consciousness.'",
+    noNext: 6,
+  },
+  {
+    id: 6,
     question: "Was there a significant injury or illness diagnosed by a physician or licensed healthcare professional?",
     yesResult: "recordable" as const,
     yesReason: "A physician or licensed health care professional (PLHCP) diagnosed a significant injury or illness. This criterion applies even if the case did not result in days away from work, restricted duty, medical treatment, or loss of consciousness.",
     yescitation: "29 CFR 1904.7(a)(1) — 'You must consider an injury or illness to be recordable if it results in... a significant injury or illness diagnosed by a physician or other licensed health care professional, even if it does not result in death, days away from work, restricted work or job transfer, medical treatment beyond first aid, or loss of consciousness.'",
     noResult: "likely-not-recordable" as const,
-    noReason: "Based on your answers, this incident does not meet any of the six OSHA general recording criteria under 29 CFR 1904.7(a)(1).",
-    noReason2: "29 CFR 1904.7(a)(1) — none of the six general recording criteria were met.",
+    noReason: "Based on your answers, this incident does not meet any of the OSHA general recording criteria under 29 CFR 1904.7(a)(1).",
+    noReason2: "29 CFR 1904.7(a)(1) — none of the general recording criteria were met.",
   },
 ];
 
@@ -213,7 +221,7 @@ function RecordabilityDecisionTree() {
             Is This <span className="text-accent">Recordable?</span>
           </h2>
           <p className="text-white/70 text-lg max-w-xl mx-auto">
-            Use this quick 5-question tool based on OSHA 29 CFR 1904 to determine if your workplace incident needs to be recorded.
+            Use this quick 6-question tool based on OSHA 29 CFR 1904 to determine if your workplace incident needs to be recorded.
           </p>
         </div>
 
