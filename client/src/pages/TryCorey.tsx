@@ -34,14 +34,24 @@ export default function TryCorey() {
   const [error, setError] = useState("");
   const [speakingMsgIdx, setSpeakingMsgIdx] = useState<number | null>(null);
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
 
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
     setMessage(transcript);
   });
 
+  const handleScroll = () => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUp.current = distanceFromBottom > 80;
+  };
+
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatScrollRef.current && !userScrolledUp.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -63,6 +73,7 @@ export default function TryCorey() {
   const handleSend = async () => {
     if (!message.trim() || isStreaming) return;
     if (isListening) stopListening();
+    userScrolledUp.current = false;
     const userMsg = message.trim();
     setMessage("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
@@ -255,7 +266,7 @@ export default function TryCorey() {
               animate={{ opacity: 1 }}
               className="flex-1 flex flex-col"
             >
-              <div className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="section-trial-chat">
+              <div ref={chatScrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="section-trial-chat">
                 <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center">
                   <p className="text-accent text-sm font-medium">
                     {remaining} free {remaining === 1 ? "question" : "questions"} remaining
@@ -303,7 +314,6 @@ export default function TryCorey() {
                     </div>
                   </div>
                 ))}
-                <div ref={chatEndRef} />
               </div>
 
               <div className="p-4 border-t border-white/10">

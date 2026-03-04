@@ -312,10 +312,20 @@ function DemoBotChat() {
   const [trialEmail, setTrialEmail] = useState(() => localStorage.getItem("cchub_trial_email") || "");
   const [trialGated, setTrialGated] = useState(() => !localStorage.getItem("cchub_trial_email"));
   const scrollRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((text) => setInput(text));
 
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUp.current = distanceFromBottom > 80;
+  };
+
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollRef.current && !userScrolledUp.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const handleTrialGate = useCallback(() => {
@@ -328,6 +338,7 @@ function DemoBotChat() {
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || loading || limitReached) return;
     stopListening();
+    userScrolledUp.current = false;
     const userMsg = input.trim();
     setInput("");
     const newMessages: BotMessage[] = [...messages, { role: "user", content: userMsg }];
@@ -411,7 +422,7 @@ function DemoBotChat() {
         </div>
       ) : (
       <>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {messages.length === 0 && (
           <div className="text-center py-6" style={{ color: TEXT_SECONDARY }}>
             <Bot className="w-10 h-10 mx-auto mb-2 opacity-50" />

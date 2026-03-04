@@ -114,7 +114,22 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
   const { toast } = useToast();
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUp.current = distanceFromBottom > 80;
+  };
+
+  useEffect(() => {
+    if (scrollRef.current && !userScrolledUp.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -184,6 +199,7 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
       recognitionRef.current.stop();
       setIsListening(false);
     }
+    userScrolledUp.current = false;
     sendMessage(input);
     setInput("");
     if (onMessageSent) {
@@ -196,7 +212,7 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
 
   return (
     <>
-      <ScrollArea className="flex-1 p-6">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-6">
         <div className="space-y-6 max-w-3xl mx-auto">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -219,7 +235,7 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
             </div>
           ))}
         </div>
-      </ScrollArea>
+      </div>
 
       <div className="p-4 bg-white border-t border-border/50">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3 items-end">

@@ -456,12 +456,20 @@ export default function Landing() {
   const [botTrialEmail, setBotTrialEmail] = useState(() => localStorage.getItem("cchub_trial_email") || "");
   const [botTrialGated, setBotTrialGated] = useState(() => !localStorage.getItem("cchub_trial_email"));
   const botScrollRef = useRef<HTMLDivElement>(null);
+  const botUserScrolledUp = useRef(false);
   const { isListening: botListening, speechSupported: botSpeechSupported, toggleListening: botToggleListening, stopListening: botStopListening } = useSpeechRecognition((text) => setBotInput(text));
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  const handleBotScroll = () => {
+    const el = botScrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    botUserScrolledUp.current = distanceFromBottom > 80;
+  };
+
   useEffect(() => {
-    if (botScrollRef.current) {
+    if (botScrollRef.current && !botUserScrolledUp.current) {
       botScrollRef.current.scrollTop = botScrollRef.current.scrollHeight;
     }
   }, [botMessages]);
@@ -550,6 +558,7 @@ export default function Landing() {
   const handleBotSubmit = useCallback(async () => {
     if (!botInput.trim() || botLoading || botLimitReached) return;
     botStopListening();
+    botUserScrolledUp.current = false;
     const userMsg = botInput.trim();
     setBotInput("");
     const newMessages: BotMessage[] = [...botMessages, { role: "user", content: userMsg }];
@@ -855,6 +864,7 @@ export default function Landing() {
                       <>
                       <div
                         ref={botScrollRef}
+                        onScroll={handleBotScroll}
                         className="h-80 overflow-y-auto p-4 space-y-4 bg-muted/30"
                         data-testid="bot-messages"
                       >
