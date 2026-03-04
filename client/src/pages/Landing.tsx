@@ -635,6 +635,7 @@ export default function Landing() {
             <Link href="/about" className="px-3 py-2 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0 animate-pulse" data-testid="nav-about">About</Link>
             <Link href="/meet-corey" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-corey">Meet Corey</Link>
             <Link href="/meet-isa" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
+            <Link href="/iso-manager" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
             <a href="#features" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-features">Features</a>
             <a href="#pricing" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-pricing">Pricing</a>
             <Link href="/resources" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-resources">Free Resources</Link>
@@ -1126,24 +1127,31 @@ export default function Landing() {
               <span className="text-xs text-white/40 font-medium">ACSI Division</span>
             </div>
             <div className="flex-1 text-center sm:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-semibold mb-3">
                 <Sparkles className="w-3 h-3" />
                 ALSO ON THE PLATFORM
               </div>
               <h3 className="text-2xl font-black text-white mb-1">
-                Meet <span className="text-indigo-400">Isa</span>
+                Meet <span className="text-accent">Isa</span> &amp; the ACSI ISO Manager
               </h3>
               <p className="text-xs text-white/40 font-medium mb-2">
                 ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
               </p>
               <p className="text-sm text-white/70 leading-relaxed mb-4">
-                Isa is ACSI's Lead ISO Auditor AI — your expert for gap analysis, audit readiness, and management systems guidance across all major ISO standards.
+                Isa is ACSI's Lead ISO Auditor AI — your expert for gap analysis, audit readiness, and management systems guidance. Ready for the full platform? The ISO Manager includes Isa AI, document generation, a secure vault, and KPI tracking.
               </p>
-              <Link href="/iso-manager">
-                <Button className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold" data-testid="button-talk-to-isa">
-                  Talk to Isa <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/meet-isa">
+                  <Button className="bg-accent hover:bg-accent/90 text-white font-semibold" data-testid="button-talk-to-isa">
+                    Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+                <Link href="/iso-manager">
+                  <Button variant="outline" className="border-accent/40 text-accent hover:bg-accent/10 hover:text-accent font-semibold" data-testid="button-iso-manager-plans">
+                    ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -1262,6 +1270,8 @@ export default function Landing() {
               imageSrc={acsiLogo}
               title="ACSI ISO Manager"
               description="Powered by ACSI Services Intl. — your expert partner for ISO 9001, 14001, 45001, IATF 16949 and more. From gap analysis to audit-ready preparation, ACSI brings 25+ years of real-world consulting, training, and auditing experience to help you get certified, stay certified, and keep your logs and decisions documented for any surprise inspection."
+              href="/iso-manager"
+              testId="link-feature-iso-manager"
             />
           </div>
 
@@ -1980,9 +1990,9 @@ export default function Landing() {
   );
 }
 
-function FeatureCard({ icon: Icon, imageSrc, title, description }: any) {
-  return (
-    <div className="p-8 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
+function FeatureCard({ icon: Icon, imageSrc, title, description, href, testId }: any) {
+  const inner = (
+    <div className={`p-8 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors h-full flex flex-col ${href ? "cursor-pointer hover:border-accent/40 hover:shadow-md" : ""}`}>
       {imageSrc ? (
         <div className="w-20 h-20 rounded-xl flex items-center justify-center mb-6">
           <img src={imageSrc} alt={title} className="w-20 h-20 object-contain" data-testid={`img-feature-${title?.toLowerCase().replace(/\s+/g, '-')}`} />
@@ -1993,11 +2003,27 @@ function FeatureCard({ icon: Icon, imageSrc, title, description }: any) {
         </div>
       )}
       <h3 className="text-xl font-bold text-primary mb-3">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed">
+      <p className="text-muted-foreground leading-relaxed flex-1">
         {description}
       </p>
+      {href && (
+        <p className="mt-5 text-sm font-bold text-accent flex items-center gap-1">
+          Explore ISO Manager <ArrowRight className="w-3.5 h-3.5" />
+        </p>
+      )}
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href}>
+        <div data-testid={testId} className="h-full">
+          {inner}
+        </div>
+      </Link>
+    );
+  }
+  return inner;
 }
 
 function PricingCard({ tier, price, period, features, bestFor, buttonText, buttonHref, highlighted, external, productId, onAddToCart }: {
