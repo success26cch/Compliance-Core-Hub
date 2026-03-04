@@ -1,13 +1,27 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, Send, ArrowRight, Lock, User, Mail } from "lucide-react";
+import { Bot, Send, ArrowRight, Lock, User, Mail, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import coreyImg from "@assets/9_1771983400638.png";
 
 const MAX_TRIAL_QUESTIONS = 3;
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/`{1,3}[^`]*`{1,3}/g, "")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 export default function TryCorey() {
   const [stage, setStage] = useState<"intro" | "chat" | "limit">("intro");
@@ -18,11 +32,23 @@ export default function TryCorey() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [remaining, setRemaining] = useState(MAX_TRIAL_QUESTIONS);
   const [error, setError] = useState("");
+  const [speakingMsgIdx, setSpeakingMsgIdx] = useState<number | null>(null);
+  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
+    setMessage(transcript);
+  });
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +62,7 @@ export default function TryCorey() {
 
   const handleSend = async () => {
     if (!message.trim() || isStreaming) return;
+    if (isListening) stopListening();
     const userMsg = message.trim();
     setMessage("");
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
@@ -100,6 +127,54 @@ export default function TryCorey() {
     setIsStreaming(false);
   };
 
+  const handleSpeak = useCallback((text: string, msgIdx: number) => {
+    if (!('speechSynthesis' in window)) return;
+
+    if (speakingMsgIdx === msgIdx) {
+      window.speechSynthesis.cancel();
+      setSpeakingMsgIdx(null);
+      speechSynthRef.current = null;
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const cleanText = stripMarkdown(text);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+    const naturalVoiceNames = [
+      'Samantha', 'Karen', 'Daniel', 'Moira', 'Tessa', 'Rishi',
+      'Google UK English Female', 'Google UK English Male',
+      'Google US English', 'Microsoft Aria', 'Microsoft Guy',
+      'Microsoft Jenny', 'Microsoft Davis', 'Microsoft Sara',
+      'English (America)+Aria', 'en-US-AriaNeural', 'en-US-JennyNeural',
+    ];
+    const enVoices = voices.filter(v => v.lang.startsWith('en'));
+    const preferred = enVoices.find(v => naturalVoiceNames.some(n => v.name.includes(n)))
+      || enVoices.find(v => v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Premium'))
+      || enVoices.find(v => v.name.includes('Google'))
+      || enVoices.find(v => v.name.includes('Microsoft'))
+      || enVoices[0];
+    if (preferred) utterance.voice = preferred;
+
+    utterance.onend = () => {
+      setSpeakingMsgIdx(null);
+      speechSynthRef.current = null;
+    };
+    utterance.onerror = () => {
+      setSpeakingMsgIdx(null);
+      speechSynthRef.current = null;
+    };
+
+    speechSynthRef.current = utterance;
+    setSpeakingMsgIdx(msgIdx);
+    window.speechSynthesis.speak(utterance);
+  }, [speakingMsgIdx]);
+
   return (
     <div className="min-h-screen bg-[hsl(222,47%,11%)] flex flex-col" data-testid="page-try-corey">
       <div className="flex items-center gap-3 p-4 border-b border-white/10">
@@ -108,6 +183,15 @@ export default function TryCorey() {
           <h1 className="text-white font-bold text-lg" data-testid="text-try-corey-title">Ask Corey</h1>
           <p className="text-white/50 text-xs">AI-Powered Compliance Expert · OSHA 29 CFR · DOT 49 CFR Part 40</p>
         </div>
+        {speakingMsgIdx !== null && (
+          <button
+            onClick={() => { window.speechSynthesis.cancel(); setSpeakingMsgIdx(null); speechSynthRef.current = null; }}
+            className="ml-auto flex items-center gap-1 text-xs text-accent animate-pulse"
+            data-testid="button-stop-all-speaking"
+          >
+            <VolumeX className="w-3 h-3" /> Stop audio
+          </button>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full">
@@ -182,20 +266,40 @@ export default function TryCorey() {
                   <div className="text-center py-8">
                     <Bot className="w-12 h-12 text-accent/40 mx-auto mb-3" />
                     <p className="text-white/40 text-sm">Ask Corey anything about OSHA compliance, DOT regulations, or workplace safety.</p>
+                    {speechSupported && (
+                      <p className="text-white/30 text-xs mt-2">Tap the mic to ask by voice.</p>
+                    )}
                   </div>
                 )}
 
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        msg.role === "user"
-                          ? "bg-accent text-white"
-                          : "bg-white/5 text-white/90 border border-white/10"
-                      }`}
-                      data-testid={`message-${msg.role}-${i}`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    <div className="flex flex-col max-w-[80%]">
+                      <div
+                        className={`rounded-lg p-3 ${
+                          msg.role === "user"
+                            ? "bg-accent text-white"
+                            : "bg-white/5 text-white/90 border border-white/10"
+                        }`}
+                        data-testid={`message-${msg.role}-${i}`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                      {msg.role === "assistant" && msg.content && !isStreaming && (
+                        <div className="mt-1 ml-1 flex items-center gap-3">
+                          <button
+                            onClick={() => handleSpeak(msg.content, i)}
+                            className={`flex items-center gap-1 text-xs ${speakingMsgIdx === i ? 'text-accent' : 'text-white/50 hover:text-white'}`}
+                            data-testid={`button-speak-msg-${i}`}
+                          >
+                            {speakingMsgIdx === i ? (
+                              <><VolumeX className="w-3 h-3" /> Stop</>
+                            ) : (
+                              <><Volume2 className="w-3 h-3" /> Listen</>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -204,21 +308,36 @@ export default function TryCorey() {
 
               <div className="p-4 border-t border-white/10">
                 <div className="flex gap-2 items-end">
-                  <Textarea
-                    placeholder="Ask Corey a compliance question..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 resize-none max-h-[130px] overflow-y-auto"
-                    rows={2}
-                    disabled={isStreaming}
-                    data-testid="input-trial-message"
-                  />
+                  <div className="relative flex-1">
+                    <Textarea
+                      placeholder={isListening ? "Listening... click mic to stop" : "Ask Corey a compliance question..."}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      className={`pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 resize-none max-h-[130px] overflow-y-auto ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+                      rows={2}
+                      disabled={isStreaming}
+                      data-testid="input-trial-message"
+                    />
+                    {speechSupported && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={toggleListening}
+                        disabled={isStreaming}
+                        className={`absolute right-1 bottom-2 ${isListening ? "text-accent" : "text-white/40 hover:text-white/70"}`}
+                        data-testid="button-trial-voice"
+                      >
+                        {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      </Button>
+                    )}
+                  </div>
                   <Button
                     onClick={handleSend}
                     disabled={isStreaming || !message.trim()}
@@ -228,6 +347,11 @@ export default function TryCorey() {
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
+                {isListening && (
+                  <p className="text-xs text-accent text-center mt-2 animate-pulse">
+                    Listening... take your time. Click the mic to stop.
+                  </p>
+                )}
               </div>
             </motion.div>
           )}
