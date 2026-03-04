@@ -11,6 +11,22 @@ export class StripeService {
     });
   }
 
+  async ensureCustomerExists(existingId: string | null | undefined, email: string, userId: string): Promise<string> {
+    if (existingId) {
+      try {
+        const stripe = await getUncachableStripeClient();
+        const customer = await stripe.customers.retrieve(existingId);
+        if (!(customer as any).deleted) {
+          return existingId;
+        }
+      } catch (e: any) {
+        if (e.code !== 'resource_missing') throw e;
+      }
+    }
+    const customer = await this.createCustomer(email, userId);
+    return customer.id;
+  }
+
   async createCheckoutSession(
     customerId: string, 
     priceId: string, 

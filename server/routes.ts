@@ -289,17 +289,12 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
       
       let sub = await storage.getSubscription(userId);
-      let customerId = sub?.stripeCustomerId;
-      
-      if (!customerId) {
-        const customer = await stripeService.createCustomer(userEmail, userId);
-        customerId = customer.id;
-        await storage.upsertSubscription({
-          userId,
-          status: "inactive",
-          stripeCustomerId: customerId,
-        });
+      const verifiedCId = await stripeService.ensureCustomerExists(sub?.stripeCustomerId, userEmail, userId);
+      if (verifiedCId !== sub?.stripeCustomerId) {
+        await storage.upsertSubscription({ userId, status: sub?.status || "inactive", stripeCustomerId: verifiedCId });
+        sub = await storage.getSubscription(userId);
       }
+      const customerId = verifiedCId;
       
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const session = await stripeService.createCheckoutSession(
@@ -332,17 +327,11 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
 
       let sub = await storage.getSubscription(userId);
-      let customerId = sub?.stripeCustomerId;
-      
-      if (!customerId) {
-        const customer = await stripeService.createCustomer(userEmail, userId);
-        customerId = customer.id;
-        await storage.upsertSubscription({
-          userId,
-          status: "inactive",
-          stripeCustomerId: customerId,
-        });
+      const verifiedCId2 = await stripeService.ensureCustomerExists(sub?.stripeCustomerId, userEmail, userId);
+      if (verifiedCId2 !== sub?.stripeCustomerId) {
+        await storage.upsertSubscription({ userId, status: sub?.status || "inactive", stripeCustomerId: verifiedCId2 });
       }
+      const customerId = verifiedCId2;
       
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const stripe = (await import('./stripeClient')).getUncachableStripeClient();
@@ -572,17 +561,19 @@ Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
       }
 
       let sub = await storage.getSubscription(userId);
-      let customerId = sub?.stripeCustomerId;
-
-      if (!customerId) {
-        const customer = await stripeService.createCustomer(userEmail, userId);
-        customerId = customer.id;
+      const verifiedCustomerId = await stripeService.ensureCustomerExists(
+        sub?.stripeCustomerId,
+        userEmail,
+        userId
+      );
+      if (verifiedCustomerId !== sub?.stripeCustomerId) {
         await storage.upsertSubscription({
           userId,
-          status: "inactive",
-          stripeCustomerId: customerId,
+          status: sub?.status || "inactive",
+          stripeCustomerId: verifiedCustomerId,
         });
       }
+      const customerId = verifiedCustomerId;
 
       const hasSubscription = items.some((i: any) => i.mode === "subscription");
       const hasOneTime = items.some((i: any) => i.mode === "payment");
