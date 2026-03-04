@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCreateLead } from "@/hooks/use-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle } from "lucide-react";
@@ -953,15 +954,21 @@ export default function Landing() {
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-end">
                               <div className="relative flex-1">
-                                <Input
+                                <Textarea
                                   value={botInput}
                                   onChange={(e) => setBotInput(e.target.value)}
                                   placeholder={botListening ? "Listening..." : "Ask Corey a compliance question..."}
                                   disabled={botLoading}
-                                  onKeyDown={(e) => e.key === "Enter" && handleBotSubmit()}
-                                  className={`pr-9 ${botListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleBotSubmit();
+                                    }
+                                  }}
+                                  className={`pr-9 resize-none max-h-[130px] overflow-y-auto ${botListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
+                                  rows={2}
                                   data-testid="input-bot-question"
                                 />
                                 {botSpeechSupported && (
@@ -971,7 +978,7 @@ export default function Landing() {
                                     variant="ghost"
                                     onClick={botToggleListening}
                                     disabled={botLoading}
-                                    className={`absolute right-0.5 top-1/2 -translate-y-1/2 ${botListening ? "text-accent" : "text-muted-foreground"}`}
+                                    className={`absolute right-0.5 bottom-1 ${botListening ? "text-accent" : "text-muted-foreground"}`}
                                     data-testid="button-bot-mic"
                                   >
                                     {botListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -981,6 +988,7 @@ export default function Landing() {
                               <Button
                                 onClick={handleBotSubmit}
                                 disabled={!botInput.trim() || botLoading}
+                                className="mb-0.5"
                                 data-testid="button-bot-submit"
                               >
                                 {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

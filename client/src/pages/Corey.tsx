@@ -4,6 +4,7 @@ import { useQuestionUsage } from "@/hooks/use-subscriptions";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1461,13 +1462,20 @@ function CoreyChatInterface({
       </div>
 
       <div className="flex-shrink-0 p-4 border-t border-white/10 bg-slate-950/50">
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-2">
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-2 items-end">
           <div className="relative flex-1">
-            <Input
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e as any);
+                }
+              }}
               placeholder={limitReached ? "Free limit reached — upgrade for unlimited access" : isListening ? "Listening... click mic to stop" : "Ask Corey a compliance question..."}
-              className={`flex-1 pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50 ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+              className={`pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50 resize-none max-h-[130px] overflow-y-auto ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+              rows={2}
               disabled={isStreaming || limitReached}
               data-testid="input-corey-message"
             />
@@ -1478,7 +1486,7 @@ function CoreyChatInterface({
                 variant="ghost"
                 onClick={toggleListening}
                 disabled={isStreaming || limitReached}
-                className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? "text-accent" : "text-white/40 hover:text-white/70"}`}
+                className={`absolute right-1 bottom-2 ${isListening ? "text-accent" : "text-white/40 hover:text-white/70"}`}
                 data-testid="button-corey-voice"
               >
                 {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -1489,7 +1497,7 @@ function CoreyChatInterface({
             type="submit"
             size="icon"
             disabled={isStreaming || limitReached || !input.trim()}
-            className="bg-accent hover:bg-accent/90"
+            className="bg-accent hover:bg-accent/90 mb-0.5"
             data-testid="button-corey-send"
           >
             <Send className="w-4 h-4" />

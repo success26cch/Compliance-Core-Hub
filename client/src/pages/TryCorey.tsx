@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Bot, Send, ArrowRight, Lock, User, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import coreyImg from "@assets/9_1771983400638.png";
@@ -202,20 +203,26 @@ export default function TryCorey() {
               </div>
 
               <div className="p-4 border-t border-white/10">
-                <div className="flex gap-2">
-                  <Input
+                <div className="flex gap-2 items-end">
+                  <Textarea
                     placeholder="Ask Corey a compliance question..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 resize-none max-h-[130px] overflow-y-auto"
+                    rows={2}
                     disabled={isStreaming}
                     data-testid="input-trial-message"
                   />
                   <Button
                     onClick={handleSend}
                     disabled={isStreaming || !message.trim()}
-                    className="bg-accent hover:bg-accent/90 text-white"
+                    className="bg-accent hover:bg-accent/90 text-white mb-0.5"
                     data-testid="button-trial-send"
                   >
                     <Send className="w-4 h-4" />

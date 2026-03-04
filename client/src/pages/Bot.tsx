@@ -4,6 +4,7 @@ import { useChatStream, useConversations, useCreateConversation } from "@/hooks/
 import { useQuestionUsage } from "@/hooks/use-subscriptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot as BotIcon, User, Plus, Lock, Mic, MicOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -221,13 +222,20 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
       </ScrollArea>
 
       <div className="p-4 bg-white border-t border-border/50">
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3">
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3 items-end">
           <div className="relative flex-1">
-            <Input 
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e as any);
+                }
+              }}
               placeholder={limitReached ? "Free limit reached - subscribe for more" : isListening ? "Listening..." : "Ask about OSHA 1904 regulations..."}
-              className={`flex-1 pr-10 ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+              className={`pr-10 resize-none max-h-[130px] overflow-y-auto ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+              rows={2}
               disabled={isStreaming || limitReached}
               data-testid="input-chat-message"
             />
@@ -238,14 +246,14 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
                 variant="ghost"
                 onClick={toggleListening}
                 disabled={isStreaming || limitReached}
-                className={`absolute right-1 top-1/2 -translate-y-1/2 ${isListening ? "text-accent" : "text-muted-foreground"}`}
+                className={`absolute right-1 bottom-2 ${isListening ? "text-accent" : "text-muted-foreground"}`}
                 data-testid="button-voice-input"
               >
                 {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
             )}
           </div>
-          <Button type="submit" size="icon" disabled={isStreaming || limitReached || !input.trim()} data-testid="button-send-message">
+          <Button type="submit" size="icon" disabled={isStreaming || limitReached || !input.trim()} className="mb-0.5" data-testid="button-send-message">
             <Send className="w-4 h-4" />
           </Button>
         </form>

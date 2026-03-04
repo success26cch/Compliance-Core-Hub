@@ -439,17 +439,22 @@ function DemoBotChat() {
           </div>
         )}
       </div>
-      <div className="border-t p-2 flex items-center gap-2" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+      <div className="border-t p-2 flex items-end gap-2" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
         <div className="relative flex-1">
-          <input
-            type="text"
+          <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
             placeholder={limitReached ? "Demo limit reached" : isListening ? "Listening..." : "Ask a compliance question..."}
             disabled={limitReached || loading}
+            rows={2}
             className={`w-full text-sm px-3 py-2 pr-9 rounded-md border bg-white/60 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 ${isListening ? "ring-2 ring-accent/30 border-accent" : ""}`}
-            style={{ borderColor: isListening ? undefined : "rgba(0,0,0,0.1)", color: TEXT_PRIMARY }}
+            style={{ borderColor: isListening ? undefined : "rgba(0,0,0,0.1)", color: TEXT_PRIMARY, resize: "none", maxHeight: "130px", overflowY: "auto" }}
             data-testid="input-demo-bot"
           />
           {speechSupported && (
@@ -459,14 +464,14 @@ function DemoBotChat() {
               variant="ghost"
               onClick={toggleListening}
               disabled={loading || limitReached}
-              className={`absolute right-0.5 top-1/2 -translate-y-1/2 ${isListening ? "text-accent" : "text-muted-foreground"}`}
+              className={`absolute right-0.5 bottom-1 ${isListening ? "text-accent" : "text-muted-foreground"}`}
               data-testid="button-demo-bot-mic"
             >
               {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
             </Button>
           )}
         </div>
-        <Button size="icon" onClick={handleSubmit} disabled={!input.trim() || loading || limitReached} data-testid="button-demo-bot-send">
+        <Button size="icon" onClick={handleSubmit} disabled={!input.trim() || loading || limitReached} className="mb-0.5" data-testid="button-demo-bot-send">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </div>
