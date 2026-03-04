@@ -11,6 +11,7 @@ type SubQuestion = {
   question: string;
   recordable: string;
   notRecordable: string;
+  yesIsRecordable?: boolean; // false = "Yes" answer means first aid / not recordable
 };
 
 type SeverityCriterion = {
@@ -84,23 +85,27 @@ const SEVERITY_CRITERIA: SeverityCriterion[] = [
     subQuestions: [
       {
         question: "Were any medications given or recommended for the injury/illness?",
-        recordable: "Continue to the next questions to determine if the medication triggers recordability.",
-        notRecordable: "If no medications were given at all and only observation was provided, this criterion alone does not apply. Check other criteria."
+        recordable: "Medications were given — continue answering the questions below to determine if the type of medication triggers recordability. Not all medications make a case recordable.",
+        notRecordable: "If no medications were given and only observation was provided, this criterion alone does not apply. Check other criteria.",
+        yesIsRecordable: false
       },
       {
         question: "Was the medication a prescription drug (e.g., prescription-strength ibuprofen, antibiotics, muscle relaxers, opioid pain medication)?",
-        recordable: "Prescription medications are considered medical treatment beyond first aid and make the case RECORDABLE. This includes prescription-strength NSAIDs, antibiotics for infection, narcotic pain relievers, and prescription muscle relaxers.",
-        notRecordable: "Over-the-counter medications at non-prescription strength (e.g., regular Advil, Tylenol, Aspirin, topical antibiotic cream like Neosporin) are considered first aid and do NOT make the case recordable by themselves."
+        recordable: "Prescription medications are medical treatment beyond first aid — this case IS RECORDABLE. This includes prescription-strength NSAIDs, antibiotics for infection, narcotic pain relievers, and prescription muscle relaxers.",
+        notRecordable: "Over-the-counter medications at non-prescription strength (e.g., regular Advil, Tylenol, Aspirin, topical antibiotic cream like Neosporin) are considered first aid and do NOT make the case recordable by themselves.",
+        yesIsRecordable: true
       },
       {
         question: "Was an antibiotic prescribed (oral or injection, not just topical OTC cream)?",
-        recordable: "Prescribed oral or injectable antibiotics are medical treatment beyond first aid — this is RECORDABLE. Note: OTC topical antibiotics like Neosporin or Bacitracin are first aid.",
-        notRecordable: "Using an OTC topical antibiotic ointment (Neosporin, Bacitracin) on a wound is considered first aid and is NOT recordable."
+        recordable: "Prescribed oral or injectable antibiotics are medical treatment beyond first aid — this IS RECORDABLE. Note: OTC topical antibiotics like Neosporin or Bacitracin are first aid.",
+        notRecordable: "Using an OTC topical antibiotic ointment (Neosporin, Bacitracin) on a wound is considered first aid and is NOT recordable.",
+        yesIsRecordable: true
       },
       {
         question: "Was a tetanus shot given as a preventive measure?",
-        recordable: "This alone does not make it recordable — tetanus immunizations are specifically listed as first aid under OSHA.",
-        notRecordable: "Tetanus shots are considered first aid regardless of whether they are given at a clinic, ER, or doctor's office. This does NOT trigger recordability."
+        recordable: "Tetanus immunizations are specifically listed as FIRST AID under 29 CFR 1904.7(a)(5)(xiv). A tetanus shot alone does NOT make this case recordable — this is NOT recordable on its own.",
+        notRecordable: "Tetanus shots are considered first aid regardless of whether given at a clinic, ER, or doctor's office. This does NOT trigger recordability.",
+        yesIsRecordable: false
       }
     ]
   },
@@ -145,23 +150,27 @@ const SEVERITY_CRITERIA: SeverityCriterion[] = [
     subQuestions: [
       {
         question: "Was the eye flushed or irrigated with plain water or saline solution?",
-        recordable: "Eye flushing with plain water or saline is first aid — this alone is NOT recordable.",
-        notRecordable: "Simple irrigation is first aid. However, check what happened after the flush — was additional treatment needed?"
+        recordable: "Eye flushing with plain water or saline is FIRST AID — this alone does NOT make the case recordable. Check the follow-up questions to see if additional treatment was given.",
+        notRecordable: "Simple irrigation is first aid. However, check what happened after the flush — was additional treatment needed?",
+        yesIsRecordable: false
       },
       {
         question: "Were prescription eye drops or prescription antibiotic ointment used (e.g., Erythromycin, Ciprofloxacin, Tobramycin)?",
-        recordable: "Prescription eye medications (antibiotic drops, steroid drops, prescription anti-inflammatory drops) are medical treatment beyond first aid — RECORDABLE.",
-        notRecordable: "OTC eye drops like Visine, artificial tears, or OTC lubricating drops are first aid and NOT recordable."
+        recordable: "Prescription eye medications (antibiotic drops, steroid drops, prescription anti-inflammatory drops) are medical treatment beyond first aid — this IS RECORDABLE.",
+        notRecordable: "OTC eye drops like Visine, artificial tears, or OTC lubricating drops are first aid and NOT recordable.",
+        yesIsRecordable: true
       },
       {
         question: "Was a foreign body removed from the eye using specialized instruments (slit lamp, needle, burr)?",
-        recordable: "Instrument-based removal of a foreign body from the eye is medical treatment — RECORDABLE. This is common with metal shavings, grinding debris, or embedded particles.",
-        notRecordable: "If the object was removed by simple irrigation or flushing alone, it is first aid."
+        recordable: "Instrument-based removal of a foreign body from the eye is medical treatment — this IS RECORDABLE. This is common with metal shavings, grinding debris, or embedded particles.",
+        notRecordable: "If the object was removed by simple irrigation or flushing alone, it is first aid.",
+        yesIsRecordable: true
       },
       {
         question: "Was an eye patch applied after treatment?",
-        recordable: "An eye patch applied by a physician as part of treatment for a significant eye injury may indicate medical treatment — evaluate the overall treatment. If combined with prescription medication, it is RECORDABLE.",
-        notRecordable: "An eye patch alone, without other medical treatment, is generally considered first aid."
+        recordable: "An eye patch applied by a physician as part of treatment for a significant eye injury may indicate medical treatment — evaluate the overall treatment. If combined with prescription medication, it IS RECORDABLE.",
+        notRecordable: "An eye patch alone, without other medical treatment, is generally considered first aid.",
+        yesIsRecordable: true
       }
     ]
   },
@@ -289,13 +298,21 @@ function SubQuestionPanel({ subQuestions, criterionId, onSelect, answers, onAnsw
   answers: Record<number, 'yes' | 'no'>;
   onAnswer: (criterionId: string, index: number, answer: 'yes' | 'no') => void;
 }) {
-  const hasAnyYes = Object.values(answers).some(a => a === 'yes');
+  // Only count "Yes" answers where the question actually triggers recordability
+  const hasRecordableYes = subQuestions.some((sq, idx) =>
+    answers[idx] === 'yes' && sq.yesIsRecordable !== false
+  );
 
   return (
     <div className="space-y-3 mt-3" data-testid={`subquestions-${criterionId}`}>
       <p className="text-xs font-semibold text-primary uppercase tracking-wide">Follow-up Questions</p>
       {subQuestions.map((sq, idx) => {
         const answered = answers[idx];
+        // A "Yes" on a non-recordable question (e.g. tetanus, eye flush) shows green, not red
+        const yesTriggersRecordable = sq.yesIsRecordable !== false;
+        const showsRecordableAlert = answered === 'yes' && yesTriggersRecordable;
+        const showsFirstAidNote = answered === 'yes' && !yesTriggersRecordable;
+
         return (
           <div key={idx} className="bg-background rounded-md border p-3" data-testid={`subq-${criterionId}-${idx}`}>
             <p className="text-sm font-medium text-primary mb-2">{sq.question}</p>
@@ -327,17 +344,19 @@ function SubQuestionPanel({ subQuestions, criterionId, onSelect, answers, onAnsw
                 transition={{ duration: 0.2 }}
               >
                 <div className={`rounded-md p-3 text-sm leading-relaxed ${
-                  answered === 'yes' 
-                    ? 'bg-destructive/10 border border-destructive/20 text-destructive' 
+                  showsRecordableAlert
+                    ? 'bg-destructive/10 border border-destructive/20 text-destructive'
                     : 'bg-primary/5 border border-primary/15 text-foreground'
                 }`} data-testid={`result-subq-${criterionId}-${idx}`}>
                   <div className="flex items-start gap-2">
-                    {answered === 'yes' ? (
+                    {showsRecordableAlert ? (
                       <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
                     ) : (
                       <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     )}
-                    <span>{answered === 'yes' ? sq.recordable : sq.notRecordable}</span>
+                    <span>
+                      {showsFirstAidNote ? sq.recordable : answered === 'yes' ? sq.recordable : sq.notRecordable}
+                    </span>
                   </div>
                 </div>
               </motion.div>
@@ -348,10 +367,10 @@ function SubQuestionPanel({ subQuestions, criterionId, onSelect, answers, onAnsw
       <Button
         onClick={() => onSelect(criterionId)}
         className="w-full mt-2"
-        disabled={!hasAnyYes}
+        disabled={!hasRecordableYes}
         data-testid={`button-select-${criterionId}`}
       >
-        {hasAnyYes ? "Yes, this criterion applies — Mark as Recordable" : "Answer the questions above to continue"}
+        {hasRecordableYes ? "Yes, this criterion applies — Mark as Recordable" : "Answer the questions above to continue"}
         <ArrowRight className="w-4 h-4 ml-2" />
       </Button>
     </div>
