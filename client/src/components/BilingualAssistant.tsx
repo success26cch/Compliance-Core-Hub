@@ -376,6 +376,24 @@ function cleanTextForTTS(text: string): string {
     .trim();
 }
 
+function safeStopRecognition(ref: React.MutableRefObject<any>) {
+  if (ref.current) {
+    try { ref.current.stop(); } catch { /* already stopped */ }
+    ref.current = null;
+  }
+}
+
+function createRecognition(lang: string, continuous: boolean) {
+  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+  const r = new SpeechRecognition();
+  r.lang = lang;
+  r.continuous = continuous;
+  r.interimResults = true;
+  r.maxAlternatives = 1;
+  return r;
+}
+
 async function playSpanishAudio(text: string) {
   stopAllAudio();
   const clean = cleanTextForTTS(text);
@@ -532,19 +550,14 @@ function BmaInteractiveChatMode() {
   }, [messages, isLoading, context]);
 
   const togglePatientListening = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
+    if (isListening) {
+      safeStopRecognition(recognitionRef);
       setIsListening(false);
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "es-MX";
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    const recognition = createRecognition("es-MX", true);
+    if (!recognition) return;
     recognitionRef.current = recognition;
 
     let finalTranscript = patientSpoken;
@@ -570,29 +583,33 @@ function BmaInteractiveChatMode() {
       recognitionRef.current = null;
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      const ignorable = ["no-speech", "aborted"];
+      if (!ignorable.includes(event.error)) {
+        console.warn("Speech recognition error:", event.error);
+      }
       setIsListening(false);
       recognitionRef.current = null;
     };
 
-    recognition.start();
-    setIsListening(true);
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (err) {
+      console.warn("Could not start speech recognition:", err);
+      recognitionRef.current = null;
+    }
   }, [isListening, patientSpoken]);
 
   const toggleProviderListening = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    if (isProviderListening && providerRecognitionRef.current) {
-      providerRecognitionRef.current.stop();
+    if (isProviderListening) {
+      safeStopRecognition(providerRecognitionRef);
       setIsProviderListening(false);
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    const recognition = createRecognition("en-US", true);
+    if (!recognition) return;
     providerRecognitionRef.current = recognition;
 
     let finalTranscript = providerInput;
@@ -618,19 +635,28 @@ function BmaInteractiveChatMode() {
       providerRecognitionRef.current = null;
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      const ignorable = ["no-speech", "aborted"];
+      if (!ignorable.includes(event.error)) {
+        console.warn("Provider speech recognition error:", event.error);
+      }
       setIsProviderListening(false);
       providerRecognitionRef.current = null;
     };
 
-    recognition.start();
-    setIsProviderListening(true);
+    try {
+      recognition.start();
+      setIsProviderListening(true);
+    } catch (err) {
+      console.warn("Could not start provider speech recognition:", err);
+      providerRecognitionRef.current = null;
+    }
   }, [isProviderListening, providerInput]);
 
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      if (providerRecognitionRef.current) providerRecognitionRef.current.stop();
+      safeStopRecognition(recognitionRef);
+      safeStopRecognition(providerRecognitionRef);
     };
   }, []);
 
@@ -923,19 +949,14 @@ function CommandCenterMode() {
   }, []);
 
   const toggleListening = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
+    if (isListening) {
+      safeStopRecognition(recognitionRef);
       setIsListening(false);
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "es-MX";
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    const recognition = createRecognition("es-MX", true);
+    if (!recognition) return;
     recognitionRef.current = recognition;
 
     let finalTranscript = spokenText;
@@ -963,19 +984,28 @@ function CommandCenterMode() {
       recognitionRef.current = null;
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      const ignorable = ["no-speech", "aborted"];
+      if (!ignorable.includes(event.error)) {
+        console.warn("Speech recognition error:", event.error);
+      }
       setIsListening(false);
       recognitionRef.current = null;
     };
 
-    recognition.start();
-    setIsListening(true);
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (err) {
+      console.warn("Could not start speech recognition:", err);
+      recognitionRef.current = null;
+    }
   }, [isListening, spokenText, translateText]);
 
   useEffect(() => {
     return () => {
       if (translateTimerRef.current) clearTimeout(translateTimerRef.current);
-      if (recognitionRef.current) recognitionRef.current.stop();
+      safeStopRecognition(recognitionRef);
     };
   }, []);
 
@@ -1141,19 +1171,14 @@ function InjuryReportingMode() {
   }, [translateText]);
 
   const toggleSpeechToText = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
+    if (isListening) {
+      safeStopRecognition(recognitionRef);
       setIsListening(false);
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "es-MX";
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    const recognition = createRecognition("es-MX", true);
+    if (!recognition) return;
     recognitionRef.current = recognition;
 
     let finalTranscript = data.description;
@@ -1179,19 +1204,28 @@ function InjuryReportingMode() {
       recognitionRef.current = null;
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      const ignorable = ["no-speech", "aborted"];
+      if (!ignorable.includes(event.error)) {
+        console.warn("Injury report speech recognition error:", event.error);
+      }
       setIsListening(false);
       recognitionRef.current = null;
     };
 
-    recognition.start();
-    setIsListening(true);
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (err) {
+      console.warn("Could not start speech recognition:", err);
+      recognitionRef.current = null;
+    }
   }, [isListening, data.description, handleDescriptionChange]);
 
   useEffect(() => {
     return () => {
       if (translateTimerRef.current) clearTimeout(translateTimerRef.current);
-      if (recognitionRef.current) recognitionRef.current.stop();
+      safeStopRecognition(recognitionRef);
     };
   }, []);
 
