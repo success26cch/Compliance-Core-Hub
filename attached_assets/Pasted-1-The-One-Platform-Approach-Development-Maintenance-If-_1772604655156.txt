@@ -1,0 +1,28 @@
+1. The One-Platform Approach (Development + Maintenance)
+If you split them, you create a "finish line" where the customer thinks, "Okay, I'm developed, I'm done with the expensive part, let me switch to a cheap tracker." By keeping them in one platform, you sell the "Continuous Compliance" story.
+•	Development Phase: ISA acts as the "Architect," doing the heavy lifting of process mapping and document drafting.
+•	Maintenance Phase: ISA shifts into "Lead Auditor" mode—tracking KPIs, alerting owners when a review is due, and hosting the evidence for the next surveillance audit.
+2. The Pricing Breakdown: "The Setup + The Stay"
+To make the "Development" phase profitable without scaring them off, use this structure:
+A. The Knowledge Architecture Fee (One-Time)
+This is for the "Development" heavy lifting. It covers the 30–90 days where ISA is interviewing them to build that "DNA" process map.
+•	Core (9k/14k/45k): $1,000 – $1,500 setup.
+•	Pro (IATF/13485/AS9100): $2,500 – $5,000 setup (because the complexity of mapping those "uniques" is much higher).
+B. The Monthly Subscription (Annual Commitment)
+This covers the "Maintenance," the LMS, and the Document Vault. Do not offer a month-to-month option.
+•	ISO Manager Core: $299/mo (Billed annually).
+•	ISO Manager PRO: $699 - $899/mo (Billed annually, depending on the industry).
+________________________________________
+3. Why this solves your "Too Much" feeling:
+•	Predictability: You get a large chunk of cash upfront (the setup fee) to cover the "work" ISA does to develop the system.
+•	Stickiness: Once their documents are "housed" and their staff is taking courses in the LMS, they aren't going to leave.
+•	Value Realization: The customer doesn't see it as "paying for a bot"; they see it as "paying for a Quality Department."
+🛠️ The Replit "Logic" for these phases:
+You can tell the Replit Agent to change ISA's personality based on their stage:
+"If the client is in the first 90 days (Development), ISA should be in 'Interview Mode'—constantly asking questions to build the Process Map. After 90 days (Maintenance), ISA switches to 'Monitor Mode'—only speaking up if a KPI is missed or a document is expiring."
+________________________________________
+📊 Summary Table for your CCCH Platform
+Phase	ISA’s Role	Feature Focus	Revenue
+Development	Architect	Process Mapping & Doc Drafting	Setup Fee + Sub
+Maintenance	Auditor	KPI Tracking & LMS Training	Monthly Sub
+Audit Prep	Coach	Gap Analysis & Mock Audits	Built-in Value
