@@ -169,7 +169,15 @@ export default function CoreyStandalone() {
   }
 
   if (!isAuthenticated) {
-    return <CoreyLanding />;
+    window.location.href = "/api/login";
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <Bot className="w-12 h-12 text-accent" />
+          <p className="text-white/60">Redirecting to sign in...</p>
+        </div>
+      </div>
+    );
   }
 
   return <CoreyApp />;
