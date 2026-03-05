@@ -264,28 +264,36 @@ const TREE_DATA = [
     question: "Did the employee experience an injury or illness?",
     yes: "work_related",
     no: "not_recordable",
-    citation: "OSHA 1904.7(a)"
+    citation: "29 CFR 1904.7(a)",
+    noCitation: "29 CFR 1904.7(a)",
+    noReason: "No injury or illness occurred. OSHA's recording requirements under 29 CFR Part 1904 only apply to work-related injuries and illnesses — there is nothing to record."
   },
   {
     id: "work_related",
     question: "Is the injury or illness work-related?",
     yes: "new_case",
     no: "not_recordable",
-    citation: "OSHA 1904.5"
+    citation: "29 CFR 1904.5",
+    noCitation: "29 CFR 1904.5(a)",
+    noReason: "The injury or illness is not work-related. Under 29 CFR 1904.5(a), only work-related injuries and illnesses must be recorded. An event is work-related if it was caused or contributed to by events or exposures in the work environment."
   },
   {
     id: "new_case",
     question: "Is this a new case?",
     yes: "severity",
     no: "update_prev",
-    citation: "OSHA 1904.6"
+    citation: "29 CFR 1904.6",
+    noCitation: "29 CFR 1904.6",
+    noReason: "This is not a new case. Under 29 CFR 1904.6, if the employee previously experienced a recorded injury or illness of the same type in the same body part, and the new event is a recurrence (not an independently caused new case), the original entry should be updated rather than a new one created."
   },
   {
     id: "severity",
     question: "Did it result in any of the following?",
     yes: "recordable",
     no: "not_recordable",
-    citation: "OSHA 1904.7(b)"
+    citation: "29 CFR 1904.7(b)",
+    noCitation: "29 CFR 1904.7(b)(1)",
+    noReason: "None of the general recording criteria under 29 CFR 1904.7(b)(1) were met — no death, no days away from work, no restricted work or job transfer, no medical treatment beyond first aid, no loss of consciousness, and no significant injury or illness diagnosed by a physician."
   }
 ];
 
@@ -384,21 +392,33 @@ export default function DecisionTree() {
   const [expandedCriteria, setExpandedCriteria] = useState<string | null>(null);
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(null);
   const [subAnswers, setSubAnswers] = useState<SubAnswers>({});
+  const [resultCitation, setResultCitation] = useState<string>("");
+  const [resultCitationReason, setResultCitationReason] = useState<string>("");
 
-  const currentNode = TREE_DATA.find(n => n.id === currentNodeId);
+  const currentNode = TREE_DATA.find(n => n.id === currentNodeId) as any;
 
   const handleAnswer = (nextId: string) => {
+    // Capture the citation for terminal outcomes
+    if (nextId === "not_recordable" || nextId === "update_prev") {
+      setResultCitation((currentNode as any)?.noCitation || (currentNode as any)?.citation || "");
+      setResultCitationReason((currentNode as any)?.noReason || "");
+    }
     setHistory([...history, currentNodeId]);
     setCurrentNodeId(nextId);
   };
 
   const handleCriteriaSelect = (criterionId: string) => {
+    const criterion = SEVERITY_CRITERIA.find(c => c.id === criterionId);
+    setResultCitation(criterion?.citation || "29 CFR 1904.7(b)");
+    setResultCitationReason(criterion?.explanation || "");
     setSelectedCriterion(criterionId);
     setHistory([...history, currentNodeId]);
     setCurrentNodeId("recordable");
   };
 
   const handleNoneApply = () => {
+    setResultCitation("29 CFR 1904.7(b)(1)");
+    setResultCitationReason("None of the general recording criteria under 29 CFR 1904.7(b)(1) were met — no death, no days away from work, no restricted work or job transfer, no medical treatment beyond first aid, no loss of consciousness, and no significant injury or illness diagnosed by a physician.");
     setSelectedCriterion(null);
     setHistory([...history, currentNodeId]);
     setCurrentNodeId("not_recordable");
@@ -417,6 +437,8 @@ export default function DecisionTree() {
     setExpandedCriteria(null);
     setSelectedCriterion(null);
     setSubAnswers({});
+    setResultCitation("");
+    setResultCitationReason("");
   };
 
   if (isLoading) return null;
@@ -455,12 +477,12 @@ export default function DecisionTree() {
               <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-accent/10">
                 <AlertCircle className="w-10 h-10 text-accent" />
               </div>
-              <h2 className="text-3xl font-bold mb-4 text-accent" data-testid="text-result-title">OSHA Recordable</h2>
+              <h2 className="text-3xl font-bold mb-2 text-accent" data-testid="text-result-title">OSHA Recordable</h2>
               <p className="text-lg text-muted-foreground mb-6">
-                This case meets the general recording criteria under OSHA 1904.7.
+                This case meets the general recording criteria under 29 CFR 1904.7.
               </p>
               {criterion && (
-                <div className="bg-accent/5 border border-accent/20 rounded-lg p-5 text-left mb-8" data-testid="card-reason-explanation">
+                <div className="bg-accent/5 border border-accent/20 rounded-lg p-5 text-left mb-4" data-testid="card-reason-explanation">
                   <div className="flex items-start gap-3">
                     <Info className="w-5 h-5 text-accent mt-0.5 shrink-0" />
                     <div>
@@ -470,13 +492,19 @@ export default function DecisionTree() {
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {criterion.explanation}
                       </p>
-                      <p className="text-xs text-muted-foreground font-mono mt-2">
-                        Ref: {criterion.citation}
-                      </p>
                     </div>
                   </div>
                 </div>
               )}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-left mb-8" data-testid="card-result-citation">
+                <p className="text-xs font-bold text-primary/60 uppercase tracking-wider mb-1">Regulatory Citation</p>
+                <p className="text-sm font-mono font-semibold text-primary" data-testid="text-result-citation">
+                  {resultCitation || criterion?.citation || "29 CFR 1904.7(b)"}
+                </p>
+                {resultCitationReason && (
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{resultCitationReason}</p>
+                )}
+              </div>
               <Button onClick={reset} size="lg" className="w-full sm:w-auto" data-testid="button-start-new">
                 Start New Assessment
               </Button>
@@ -494,6 +522,8 @@ export default function DecisionTree() {
           title="Not Recordable"
           description="Based on your answers, this case does not need to be recorded on the OSHA 300 Log."
           type="not_recordable"
+          citation={resultCitation}
+          citationReason={resultCitationReason}
           onReset={reset}
         />
       </ProtectedLayout>
@@ -505,8 +535,10 @@ export default function DecisionTree() {
       <ProtectedLayout>
         <ResultCard 
           title="Update Previous Case"
-          description="Update the entry for the previous injury or illness if necessary."
+          description="This is not a new case. Update the existing OSHA 300 Log entry for the previous injury or illness if necessary."
           type="info"
+          citation={resultCitation}
+          citationReason={resultCitationReason}
           onReset={reset}
         />
       </ProtectedLayout>
@@ -673,22 +705,36 @@ export default function DecisionTree() {
   );
 }
 
-function ResultCard({ title, description, type, onReset }: any) {
+function ResultCard({ title, description, type, citation, citationReason, onReset }: any) {
   const isRecordable = type === 'recordable';
-  const colorClass = isRecordable ? 'text-accent' : 'text-green-600';
+  const isInfo = type === 'info';
+  const colorClass = isRecordable ? 'text-accent' : isInfo ? 'text-primary' : 'text-green-600';
+  const borderClass = isRecordable ? 'border-t-accent' : isInfo ? 'border-t-primary' : 'border-t-green-600';
+  const iconBgClass = isRecordable ? 'bg-accent/10' : isInfo ? 'bg-primary/10' : 'bg-green-100';
   const Icon = isRecordable ? AlertCircle : CheckCircle;
 
   return (
     <div className="max-w-2xl mx-auto py-10">
-      <Card className={`shadow-xl text-center p-8 border-t-4 ${isRecordable ? 'border-t-accent' : 'border-t-green-600'}`} data-testid={`card-result-${type}`}>
-        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isRecordable ? 'bg-accent/10' : 'bg-green-100'}`}>
-          <Icon className={`w-10 h-10 ${colorClass}`} />
-        </div>
-        <h2 className={`text-3xl font-bold mb-4 ${colorClass}`} data-testid="text-result-title">{title}</h2>
-        <p className="text-xl text-muted-foreground mb-8" data-testid="text-result-description">{description}</p>
-        <Button onClick={onReset} size="lg" className="w-full sm:w-auto" data-testid="button-start-new">
-          Start New Assessment
-        </Button>
+      <Card className={`shadow-xl border-t-4 ${borderClass}`} data-testid={`card-result-${type}`}>
+        <CardContent className="p-8 text-center">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${iconBgClass}`}>
+            <Icon className={`w-10 h-10 ${colorClass}`} />
+          </div>
+          <h2 className={`text-3xl font-bold mb-2 ${colorClass}`} data-testid="text-result-title">{title}</h2>
+          <p className="text-lg text-muted-foreground mb-6" data-testid="text-result-description">{description}</p>
+          {citation && (
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-left mb-8" data-testid="card-result-citation">
+              <p className="text-xs font-bold text-primary/60 uppercase tracking-wider mb-1">Regulatory Citation</p>
+              <p className="text-sm font-mono font-semibold text-primary" data-testid="text-result-citation">{citation}</p>
+              {citationReason && (
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{citationReason}</p>
+              )}
+            </div>
+          )}
+          <Button onClick={onReset} size="lg" className="w-full sm:w-auto" data-testid="button-start-new">
+            Start New Assessment
+          </Button>
+        </CardContent>
       </Card>
     </div>
   );
