@@ -282,30 +282,43 @@ function EmployeePassportContent() {
   };
 
   const handleGenerate = () => {
-    if (!selectedEmployee || !visitType) {
+    if (!selectedEmployee) {
       toast({
-        title: "Missing Information",
-        description: "Please select an employee and visit type.",
+        title: "Employee Required",
+        description: "Please select an employee at the top of the form (Patient Information section).",
         variant: "destructive",
       });
+      document.querySelector<HTMLElement>("[data-testid='select-employee-trigger']")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    if (!visitType) {
+      toast({
+        title: "Visit Type Required",
+        description: "Please select a visit type in the Services Requested section.",
+        variant: "destructive",
+      });
+      document.querySelector<HTMLElement>("[data-testid='select-visit-type-trigger']")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     if (!authName) {
       toast({
-        title: "Missing Authorization",
-        description: "Please enter your name as the authorizer.",
+        title: "Authorizer Name Required",
+        description: "Please enter your name in the Digital Authorization section.",
         variant: "destructive",
       });
+      document.querySelector<HTMLElement>("[data-testid='input-auth-name']")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     if (!signatureDataUrl) {
       toast({
         title: "Signature Required",
-        description: "Please sign the authorization with your digital signature.",
+        description: "Please sign the authorization form with your digital signature before generating.",
         variant: "destructive",
       });
+      document.querySelector<HTMLElement>("[data-testid='canvas-signature']")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -474,7 +487,10 @@ function EmployeePassportContent() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label>Select Employee</Label>
+                <Label className="flex items-center gap-2">
+                  Select Employee
+                  <span className="text-xs font-semibold text-red-500 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">Required</span>
+                </Label>
                 {loadingEmployees ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading employees...
@@ -564,7 +580,10 @@ function EmployeePassportContent() {
             </div>
 
             <div className="space-y-2">
-              <Label>Primary Visit Type</Label>
+              <Label className="flex items-center gap-2">
+                Primary Visit Type
+                <span className="text-xs font-semibold text-red-500 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">Required</span>
+              </Label>
               <Select onValueChange={handleVisitTypeChange} value={visitType} data-testid="select-visit-type">
                 <SelectTrigger data-testid="select-visit-type-trigger">
                   <SelectValue placeholder="What is this visit for?" />
@@ -714,7 +733,7 @@ function EmployeePassportContent() {
             <Button
               className="w-full bg-[#FFC107] text-black font-bold"
               onClick={handleGenerate}
-              disabled={!selectedEmployee || !visitType || !authName || !signatureDataUrl || generateMutation.isPending}
+              disabled={generateMutation.isPending}
               data-testid="btn-generate-qr"
             >
               {generateMutation.isPending ? (
