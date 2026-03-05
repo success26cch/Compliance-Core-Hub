@@ -417,15 +417,11 @@ export default function Landing() {
       ([entry]) => {
         if (entry.isIntersecting) {
           video.play().catch(() => {});
-          video.muted = false;
-          setVideoMuted(false);
         } else {
           video.pause();
-          video.muted = true;
-          setVideoMuted(true);
         }
       },
-      { threshold: 0.6 }
+      { threshold: 0.3 }
     );
 
     observer.observe(container);
