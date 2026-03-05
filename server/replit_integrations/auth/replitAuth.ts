@@ -7,6 +7,14 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { authStorage } from "./storage";
+import { db } from "../../db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
+
+const ADMIN_EMAILS = (process.env.ADMIN_USERS || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 
 const getOidcConfig = memoize(
   async () => {
@@ -51,6 +59,7 @@ function updateUserSession(
 }
 
 async function upsertUser(claims: any) {
+  const email = (claims["email"] || "").toLowerCase();
   await authStorage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
@@ -58,6 +67,12 @@ async function upsertUser(claims: any) {
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
   });
+  if (ADMIN_EMAILS.includes(email)) {
+    await db
+      .update(users)
+      .set({ isSuperadmin: true, updatedAt: new Date() })
+      .where(eq(users.id, claims["sub"]));
+  }
 }
 
 export async function setupAuth(app: Express) {
