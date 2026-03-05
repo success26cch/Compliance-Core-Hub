@@ -381,6 +381,10 @@ export default function Settings() {
             if (data.success) {
               toast({ title: "Subscription Activated!", description: "Your plan is now active." });
               queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/status'] });
+              if (plan === 'corey_pro') {
+                window.location.href = "/welcome-corey";
+                return;
+              }
             }
           })
           .catch(() => {});

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChatStream, useConversations, useCreateConversation } from "@/hooks/use-chat";
-import { useQuestionUsage } from "@/hooks/use-subscriptions";
+import { useQuestionUsage, useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -344,12 +344,29 @@ function CoreyApp() {
   const { data: conversations, isLoading: isLoadingConvos } = useConversations();
   const { mutate: createConversation } = useCreateConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
+  const { data: subStatus } = useSubscriptionStatus();
   const { user } = useAuth();
   const { isInstallable, isInstalled, promptInstall } = usePwaInstall();
   const { toast } = useToast();
 
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [welcomePlatform, setWelcomePlatform] = useState<"ios" | "android-prompt" | "android-manual" | "desktop">("desktop");
+
+  useEffect(() => {
+    if (subStatus?.isPro && !localStorage.getItem("corey-welcomed")) {
+      setShowWelcomeModal(true);
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+      const isAndroid = /Android/.test(ua);
+      if (isIOS) setWelcomePlatform("ios");
+      else if (isAndroid && isInstallable) setWelcomePlatform("android-prompt");
+      else if (isAndroid) setWelcomePlatform("android-manual");
+      else setWelcomePlatform("desktop");
+    }
+  }, [subStatus, isInstallable]);
+
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [topicPickerOpen, setTopicPickerOpen] = useState(false);
@@ -1511,6 +1528,75 @@ function CoreyChatInterface({
           </p>
         )}
       </div>
+
+      <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
+        <DialogContent className="bg-slate-900 border-blue-500/20 text-white max-w-sm mx-auto rounded-2xl" data-testid="dialog-corey-welcome">
+          <DialogHeader className="items-center text-center gap-2">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500/30 shadow-lg shadow-blue-500/20 mx-auto">
+              <img src={logoUrl} alt="Corey" className="w-full h-full object-cover" />
+            </div>
+            <DialogTitle className="text-white text-xl font-black">Welcome to Corey!</DialogTitle>
+            <DialogDescription className="text-white/60 text-sm leading-relaxed">
+              You're all set. Add Corey to your phone for one-tap access from the field — no app store needed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-2">
+            {welcomePlatform === "ios" && (
+              <div className="space-y-2">
+                {[
+                  { icon: <Share2 className="w-4 h-4 text-blue-400" />, text: 'Tap the Share button in Safari' },
+                  { icon: <Smartphone className="w-4 h-4 text-blue-400" />, text: 'Tap "Add to Home Screen"' },
+                  { icon: <CheckCircle2 className="w-4 h-4 text-green-400" />, text: 'Tap "Add" to finish' },
+                ].map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
+                    {s.icon}
+                    <p className="text-white/80 text-xs">{s.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {welcomePlatform === "android-prompt" && (
+              <Button
+                onClick={promptInstall}
+                className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold gap-2"
+                data-testid="button-welcome-install-android"
+              >
+                <Download className="w-4 h-4" />
+                Install Corey on Your Phone
+              </Button>
+            )}
+            {welcomePlatform === "android-manual" && (
+              <div className="space-y-2">
+                {[
+                  { icon: <MoreVertical className="w-4 h-4 text-blue-400" />, text: 'Tap the ⋮ menu in Chrome' },
+                  { icon: <Smartphone className="w-4 h-4 text-blue-400" />, text: 'Tap "Add to Home Screen"' },
+                  { icon: <CheckCircle2 className="w-4 h-4 text-green-400" />, text: 'Tap "Add" to finish' },
+                ].map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
+                    {s.icon}
+                    <p className="text-white/80 text-xs">{s.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {welcomePlatform === "desktop" && (
+              <p className="text-white/50 text-xs text-center leading-relaxed px-2">
+                Open <span className="text-blue-400">corecompliancehub.com/corey</span> on your phone to install Corey there.
+              </p>
+            )}
+          </div>
+
+          <Button
+            onClick={() => { localStorage.setItem("corey-welcomed", "1"); setShowWelcomeModal(false); }}
+            className="w-full mt-2 bg-white/10 hover:bg-white/20 text-white font-semibold border border-white/10"
+            variant="ghost"
+            data-testid="button-welcome-dismiss"
+          >
+            Got it, let's go!
+          </Button>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

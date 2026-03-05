@@ -51,6 +51,7 @@ import MeetIsa from "@/pages/MeetIsa";
 import DemoTour from "@/pages/DemoTour";
 import PlatformBrief from "@/pages/PlatformBrief";
 import Cesar from "@/pages/Cesar";
+import WelcomeCorey from "@/pages/WelcomeCorey";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -112,6 +113,7 @@ function Router() {
       <Route path="/drug-alcohol-policy" component={DrugAlcoholPolicy} />
       <Route path="/clinic-letter" component={ClinicLetter} />
       <Route path="/corey" component={CoreyStandalone} />
+      <Route path="/welcome-corey" component={WelcomeCorey} />
       <Route path="/try-corey" component={TryCorey} />
       <Route path="/qr-code" component={QRCodePage} />
       <Route path="/team-seats" component={TeamSeats} />
