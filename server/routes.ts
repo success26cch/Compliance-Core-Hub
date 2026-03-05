@@ -21,12 +21,25 @@ import path from "path";
 import fs from "fs";
 import { textToSpeech, openai } from "./replit_integrations/audio/client";
 
+const PLATFORM_ADMIN_EMAILS = (process.env.ADMIN_USERS || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+function isEmailAdmin(claims: any): boolean {
+  const email = (claims?.email || "").toLowerCase();
+  const sub = (claims?.sub || "").toLowerCase();
+  return PLATFORM_ADMIN_EMAILS.includes(email) || PLATFORM_ADMIN_EMAILS.includes(sub);
+}
+
 async function requirePlatformAccess(req: any, res: any): Promise<boolean> {
   if (!req.isAuthenticated()) {
     res.status(401).json({ message: "Unauthorized" });
     return false;
   }
-  const userId = (req.user as any).claims.sub;
+  const claims = (req.user as any).claims;
+  if (isEmailAdmin(claims)) return true;
+  const userId = claims.sub;
   const user = await storage.getUserById(userId);
   if (user?.isSuperadmin) return true;
   const sub = await storage.getSubscription(userId);
@@ -259,10 +272,11 @@ Rules:
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const userId = (req.user as any).claims.sub; // Replit Auth ID
+    const claims = (req.user as any).claims;
+    const userId = claims.sub; // Replit Auth ID
     const sub = await storage.getSubscription(userId);
     const user = await storage.getUserById(userId);
-    const isAdmin = user?.isSuperadmin === true;
+    const isAdmin = user?.isSuperadmin === true || isEmailAdmin(claims);
     const isPro = sub?.status === "active";
     const hasPlatform = isAdmin || (isPro && (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise'));
     
