@@ -225,12 +225,13 @@ function EmployeePassportContent() {
         description: "QR code is ready with your signed digital authorization form.",
       });
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to generate passport. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      let description = "Failed to generate passport. Please try again.";
+      try {
+        const body = JSON.parse(error.message.replace(/^\d+:\s*/, ""));
+        if (body.message) description = body.message;
+      } catch {}
+      toast({ title: "Error", description, variant: "destructive" });
     },
   });
 
@@ -330,6 +331,16 @@ function EmployeePassportContent() {
         variant: "destructive",
       });
       document.querySelector<HTMLElement>("[data-testid='canvas-signature']")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    if (ssnLast4 && ssnLast4.length !== 4) {
+      toast({
+        title: "Invalid SSN Entry",
+        description: "SSN must be exactly 4 digits, or leave it blank.",
+        variant: "destructive",
+      });
+      document.querySelector<HTMLElement>("[data-testid='input-ssn-last4']")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
