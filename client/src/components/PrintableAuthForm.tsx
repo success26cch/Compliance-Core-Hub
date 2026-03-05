@@ -101,9 +101,212 @@ function CheckBox({ checked, label }: { checked: boolean; label: string }) {
   );
 }
 
+function ClinicalCommunicationLetter({
+  visit,
+  employee,
+  company,
+  authorization,
+}: {
+  visit: PrintableAuthFormProps["data"]["visit"];
+  employee: PrintableAuthFormProps["data"]["employee"];
+  company: PrintableAuthFormProps["data"]["company"];
+  authorization: PrintableAuthFormProps["data"]["authorization"];
+}) {
+  const injuryDate = new Date(visit.checkedInAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const todayDate = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const employeeFullName = `${employee.firstName} ${employee.lastName}`;
+  const companyName = company?.companyName || "_______________";
+  const companyAddress = [company?.address, company?.city, company?.state, company?.zipCode].filter(Boolean).join(", ") || "_______________";
+  const companyPhone = company?.phone || "_______________";
+  const authContact = authorization.name || "_______________";
+  const authTitle = authorization.title || "Authorized Representative";
+  const authPhone = authorization.phone || company?.derPhone || "_______________";
+  const clinicName = company?.clinicName || "To the Treating Provider";
+
+  return (
+    <div
+      className="bg-white text-black p-8 max-w-[700px] mx-auto print:max-w-none print:p-6"
+      style={{ pageBreakBefore: "always" }}
+      data-testid="clinical-communication-letter"
+    >
+      <div className="border-b-2 border-gray-700 pb-4 mb-6">
+        {company?.logoUrl && (
+          <div className="mb-3">
+            <img
+              src={company.logoUrl}
+              alt={companyName}
+              className="h-14 max-w-[200px] object-contain"
+            />
+          </div>
+        )}
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="font-bold text-sm">{companyName}</p>
+            {companyAddress !== "_______________" && (
+              <p className="text-xs text-gray-600">{companyAddress}</p>
+            )}
+            {companyPhone !== "_______________" && (
+              <p className="text-xs text-gray-600">Tel: {companyPhone}</p>
+            )}
+          </div>
+          <div className="text-right text-xs text-gray-600">
+            <p className="font-semibold text-gray-800">Date: {todayDate}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-5 text-center">
+        <h2 className="text-base font-bold uppercase tracking-wide border border-gray-400 inline-block px-6 py-1">
+          EMPLOYER CLINICAL COMMUNICATION LETTER
+        </h2>
+        <p className="text-[10px] text-gray-500 mt-1">Workplace Injury — First-Aid Treatment Request per 29 CFR 1904.7(a)</p>
+      </div>
+
+      <div className="mb-4 space-y-1 text-xs">
+        <p><span className="font-semibold">To:</span> {clinicName}</p>
+        <p><span className="font-semibold">Re:</span> {employeeFullName} — Workplace Injury Evaluation</p>
+        <p><span className="font-semibold">Date of Injury:</span> {injuryDate}</p>
+        {employee.position && (
+          <p><span className="font-semibold">Employee Position:</span> {employee.position}</p>
+        )}
+        {employee.department && (
+          <p><span className="font-semibold">Department:</span> {employee.department}</p>
+        )}
+      </div>
+
+      <div className="mb-4 text-xs leading-relaxed text-gray-800">
+        <p className="mb-2">Dear Medical Provider,</p>
+        <p className="mb-2">
+          This letter serves as our employer authorization and communication for the above-referenced employee presenting
+          to your facility for a work-related injury evaluation on {injuryDate}. We appreciate your partnership in
+          providing quality occupational health services to our workforce.
+        </p>
+        <p className="mb-2">
+          As the employer of record, <strong>{companyName}</strong> respectfully requests that, where clinically
+          appropriate and consistent with your professional medical judgment, treatment be limited to first-aid-level
+          care as defined under <strong>29 CFR 1904.7(a)</strong>. This request is made solely to assist with accurate
+          OSHA recordkeeping — the final treatment decision remains entirely at the discretion of the treating provider.
+        </p>
+      </div>
+
+      <div className="mb-4">
+        <div className="bg-gray-50 border border-gray-300 rounded p-3">
+          <p className="text-[10px] font-bold uppercase text-gray-700 mb-2 tracking-wide">
+            First-Aid Treatments per 29 CFR 1904.7(a) — Non-Recordable When Used Exclusively:
+          </p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[10px] text-gray-700">
+            <p>• Use of non-prescription medications at non-prescription strength</p>
+            <p>• Tetanus immunizations</p>
+            <p>• Cleaning, flushing, or soaking wounds on the skin surface</p>
+            <p>• Wound closures with butterfly bandages or Steri-strips</p>
+            <p>• Hot or cold therapy</p>
+            <p>• Non-rigid means of support (elastic bandages, wraps, non-rigid back belt)</p>
+            <p>• Temporary immobilization device for transport (splint, sling, neck collar)</p>
+            <p>• Drilling of fingernail/toenail to relieve pressure</p>
+            <p>• Draining fluid from blister</p>
+            <p>• Eye patches</p>
+            <p>• Removing splinters or foreign material from areas other than the eye by irrigation, tweezers, cotton swabs, or other simple means</p>
+            <p>• Finger guards</p>
+            <p>• Massages</p>
+            <p>• Drinking fluids for relief of heat stress</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <div className="border border-gray-400 rounded p-3">
+          <p className="text-[10px] font-bold uppercase text-gray-700 mb-2 tracking-wide">
+            Treatments That Trigger OSHA Recordability — Please Notify Employer Before Administering:
+          </p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[10px] text-gray-700">
+            <p>• Prescription medication (any)</p>
+            <p>• Sutures / stitches (staples included)</p>
+            <p>• Physical therapy or chiropractic treatment beyond first visit</p>
+            <p>• Rigid splints, casts, or orthotics</p>
+            <p>• Days away from work / restricted duty (if medically necessary)</p>
+            <p>• Transfer to another job due to injury</p>
+            <p>• Diagnosis of a significant injury or illness by a healthcare professional</p>
+            <p>• Loss of consciousness</p>
+          </div>
+          <p className="text-[10px] text-gray-500 mt-2 italic">
+            Please contact our office prior to administering any of the above if alternatives exist.
+            Contact: {authContact} — {authPhone}
+          </p>
+        </div>
+      </div>
+
+      {visit.specialInstructions && (
+        <div className="mb-4 text-xs">
+          <p className="font-semibold text-gray-700 mb-1">Additional Employer Instructions:</p>
+          <p className="border border-gray-300 rounded p-2 text-gray-800">{visit.specialInstructions}</p>
+        </div>
+      )}
+
+      <div className="mb-4 text-xs leading-relaxed text-gray-800">
+        <p>
+          We understand that medical treatment decisions are made by qualified healthcare professionals based on the
+          patient's clinical presentation. This letter does not restrict, limit, or interfere with medically necessary
+          care. We simply ask that you communicate with us before providing treatments listed above as recordable
+          triggers, so we may be aware of the employee's condition and coordinate care appropriately.
+        </p>
+      </div>
+
+      <div className="border-t-2 border-gray-600 pt-4 mt-4">
+        <p className="text-xs font-semibold mb-3 text-gray-700">Employer Authorization:</p>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+          <div className="flex gap-1">
+            <span className="font-semibold text-xs whitespace-nowrap">Authorized By:</span>
+            <span className="text-xs border-b border-gray-400 flex-1 pb-0.5">{authContact}</span>
+          </div>
+          <div className="flex gap-1">
+            <span className="font-semibold text-xs whitespace-nowrap">Title:</span>
+            <span className="text-xs border-b border-gray-400 flex-1 pb-0.5">{authTitle}</span>
+          </div>
+          <div className="flex gap-1">
+            <span className="font-semibold text-xs whitespace-nowrap">Phone:</span>
+            <span className="text-xs border-b border-gray-400 flex-1 pb-0.5">{authPhone}</span>
+          </div>
+          <div className="flex gap-1">
+            <span className="font-semibold text-xs whitespace-nowrap">Date:</span>
+            <span className="text-xs border-b border-gray-400 flex-1 pb-0.5">{todayDate}</span>
+          </div>
+        </div>
+        {authorization.signatureDataUrl && (
+          <div className="mt-3 flex items-end gap-3">
+            <span className="font-semibold text-xs">Signature:</span>
+            <img
+              src={authorization.signatureDataUrl}
+              alt="Digital Signature"
+              className="h-12 max-w-[200px] object-contain"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 text-center text-[9px] text-gray-400 border-t border-gray-200 pt-2">
+        <p className="font-medium">
+          This letter is for informational purposes only and does not constitute legal or medical advice.
+          All treatment decisions remain at the sole discretion of the treating healthcare provider.
+        </p>
+        <p className="mt-1">Digitally generated by Core Compliance Hub (CCHUB) — The One Stop Employer Shop | A DBA of ACSI</p>
+        <p>www.corecompliancehub.com | Generated: {new Date(visit.checkedInAt).toLocaleString()}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function PrintableAuthForm({ data }: PrintableAuthFormProps) {
   const { visit, employee, company, authorization } = data;
   const services = visit.additionalServices || [];
+  const isInjury = visit.visitType === "injury";
 
   const handlePrint = () => {
     window.print();
@@ -117,8 +320,14 @@ export default function PrintableAuthForm({ data }: PrintableAuthFormProps) {
           className="bg-[#FFC107] text-black font-bold"
           data-testid="btn-print-auth-form"
         >
-          <Printer className="w-4 h-4 mr-2" /> Print Authorization Form
+          <Printer className="w-4 h-4 mr-2" />
+          {isInjury ? "Print Authorization + Clinical Letter" : "Print Authorization Form"}
         </Button>
+        {isInjury && (
+          <p className="text-xs text-amber-700 mt-1 font-medium">
+            Injury visit — Clinical Communication Letter will print automatically on page 2.
+          </p>
+        )}
       </div>
 
       <div
@@ -136,7 +345,7 @@ export default function PrintableAuthForm({ data }: PrintableAuthFormProps) {
               />
             </div>
           )}
-          <h1 className="text-base font-bold uppercase tracking-wide">Authorization for Examination or Treatment</h1>
+          <h1 className="text-base font-bold uppercase tracking-wide">Authorization for Examination or Treatment and Payment</h1>
           <p className="text-[10px] text-gray-500 mt-1">(patient must present authorization and photo ID at the time of service)</p>
         </div>
 
@@ -333,6 +542,24 @@ export default function PrintableAuthForm({ data }: PrintableAuthFormProps) {
           <p>Visit Type: {VISIT_TYPE_LABELS[visit.visitType] || visit.visitType} | Generated: {new Date(visit.checkedInAt).toLocaleString()}</p>
         </div>
       </div>
+
+      {isInjury && (
+        <>
+          <div className="mt-8 mb-4 print:hidden max-w-[700px] mx-auto">
+            <div className="border-t-4 border-dashed border-amber-400 pt-4">
+              <p className="text-sm font-bold text-amber-700 text-center">
+                — Page 2: Clinical Communication Letter (Injury Care Only — prints automatically) —
+              </p>
+            </div>
+          </div>
+          <ClinicalCommunicationLetter
+            visit={visit}
+            employee={employee}
+            company={company}
+            authorization={authorization}
+          />
+        </>
+      )}
     </div>
   );
 }
