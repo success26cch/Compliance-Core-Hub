@@ -1320,7 +1320,7 @@ function CoreyChatInterface({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [speakingMsgIdx, setSpeakingMsgIdx] = useState<number | null>(null);
-  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
     setInput(transcript);
@@ -1562,66 +1562,67 @@ function CoreyChatInterface({
     printWindow.print();
   }, [messages, toast]);
 
-  const handleSpeak = useCallback((text: string, msgIdx: number) => {
-    if (!('speechSynthesis' in window)) {
-      toast({ title: "Text-to-speech is not supported in this browser", variant: "destructive" });
-      return;
-    }
-
+  const handleSpeak = useCallback(async (text: string, msgIdx: number) => {
     if (speakingMsgIdx === msgIdx) {
-      window.speechSynthesis.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       setSpeakingMsgIdx(null);
-      speechSynthRef.current = null;
       return;
     }
 
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
 
-    const cleanText = stripMarkdown(text);
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    const voices = window.speechSynthesis.getVoices();
-    const naturalVoiceNames = [
-      'Samantha', 'Karen', 'Daniel', 'Moira', 'Tessa', 'Rishi',
-      'Google UK English Female', 'Google UK English Male',
-      'Google US English', 'Microsoft Aria', 'Microsoft Guy',
-      'Microsoft Jenny', 'Microsoft Davis', 'Microsoft Sara',
-      'English (America)+Aria', 'en-US-AriaNeural', 'en-US-JennyNeural',
-    ];
-    const enVoices = voices.filter(v => v.lang.startsWith('en'));
-    const preferred = enVoices.find(v => naturalVoiceNames.some(n => v.name.includes(n)))
-      || enVoices.find(v => v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Premium'))
-      || enVoices.find(v => v.name.includes('Google'))
-      || enVoices.find(v => v.name.includes('Microsoft'))
-      || enVoices[0];
-    if (preferred) utterance.voice = preferred;
-
-    utterance.onend = () => {
-      setSpeakingMsgIdx(null);
-      speechSynthRef.current = null;
-    };
-    utterance.onerror = () => {
-      setSpeakingMsgIdx(null);
-      speechSynthRef.current = null;
-    };
-
-    speechSynthRef.current = utterance;
     setSpeakingMsgIdx(msgIdx);
-    window.speechSynthesis.speak(utterance);
+
+    try {
+      const cleanText = stripMarkdown(text).slice(0, 4000);
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ text: cleanText, voice: "onyx" }),
+      });
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setSpeakingMsgIdx(null);
+        audioRef.current = null;
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setSpeakingMsgIdx(null);
+        audioRef.current = null;
+        URL.revokeObjectURL(url);
+      };
+      audio.play();
+    } catch {
+      setSpeakingMsgIdx(null);
+      toast({ title: "Voice playback unavailable", description: "Could not generate audio. Please try again.", variant: "destructive" });
+    }
   }, [speakingMsgIdx, toast]);
 
   const handleStopSpeaking = useCallback(() => {
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     setSpeakingMsgIdx(null);
-    speechSynthRef.current = null;
   }, []);
 
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
@@ -1915,9 +1916,9 @@ function CoreyChatInterface({
             {welcomePlatform === "android-manual" && (
               <div className="space-y-2">
                 {[
-                  { icon: <MoreVertical className="w-4 h-4 text-blue-400" />, text: 'Tap the ⋮ menu in Chrome' },
-                  { icon: <Smartphone className="w-4 h-4 text-blue-400" />, text: 'Tap "Add to Home Screen"' },
-                  { icon: <CheckCircle2 className="w-4 h-4 text-green-400" />, text: 'Tap "Add" to finish' },
+                  { icon: <MoreVertical className="w-4 h-4 text-blue-400" />, text: 'Look for an install icon (⊕) in the Chrome address bar and tap it' },
+                  { icon: <Smartphone className="w-4 h-4 text-blue-400" />, text: 'Or tap ⋮ menu → "Install app" or "Add to Home Screen"' },
+                  { icon: <CheckCircle2 className="w-4 h-4 text-green-400" />, text: 'Tap "Install" to finish' },
                 ].map((s, i) => (
                   <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
                     {s.icon}

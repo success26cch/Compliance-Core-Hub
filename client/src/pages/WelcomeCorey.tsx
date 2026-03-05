@@ -65,12 +65,12 @@ function InstallInstructions({ platform, onInstall }: { platform: Platform; onIn
   if (platform === "android-manual") {
     return (
       <div className="space-y-3">
-        <p className="text-white/70 text-sm text-center mb-4">Add Corey to your Android home screen:</p>
+        <p className="text-white/70 text-sm text-center mb-4">Add Corey to your Android home screen in Chrome:</p>
         <div className="space-y-3">
           {[
-            { icon: <MoreVertical className="w-5 h-5 text-blue-400" />, step: "1", text: 'Tap the ⋮ menu in the top-right corner of Chrome' },
-            { icon: <Smartphone className="w-5 h-5 text-blue-400" />, step: "2", text: 'Tap "Add to Home Screen"' },
-            { icon: <CheckCircle2 className="w-5 h-5 text-green-400" />, step: "3", text: 'Tap "Add" — Corey will appear on your home screen' },
+            { icon: <MoreVertical className="w-5 h-5 text-blue-400" />, step: "1", text: 'Look for a download/install icon (⊕) in the Chrome address bar — tap it to install instantly' },
+            { icon: <Smartphone className="w-5 h-5 text-blue-400" />, step: "2", text: 'Or tap the ⋮ menu (top-right) and select "Install app" or "Add to Home Screen"' },
+            { icon: <CheckCircle2 className="w-5 h-5 text-green-400" />, step: "3", text: 'Tap "Install" — Corey will appear on your home screen like a native app' },
           ].map(({ icon, step, text }) => (
             <div key={step} className="flex items-start gap-3 bg-white/5 rounded-lg px-4 py-3">
               <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
