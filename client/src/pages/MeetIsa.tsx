@@ -5,7 +5,7 @@ import {
   CheckCircle2, ArrowLeft, ChevronRight, Sparkles, Zap, Shield,
   FileCheck, ClipboardList, BookOpen, MessageSquare, BarChart3, Award,
 } from "lucide-react";
-import acsiLogo from "@assets/Transp1_1768928785892.png";
+import acsiLogo from "@assets/42_1772589582132.png";
 
 const ISA_CAPABILITIES = [
   "Clause-by-clause gap analysis",
@@ -100,14 +100,11 @@ export default function MeetIsa() {
               Back to CCHUB
             </button>
           </Link>
-          <div className="overflow-hidden relative h-8 w-20" style={{ mixBlendMode: "multiply" }}>
-            <img
-              src={acsiLogo}
-              alt="ACSI"
-              className="absolute"
-              style={{ width: "100px", top: "50%", left: "50%", transform: "translate(-73%, -50%)" }}
-            />
-          </div>
+          <img
+            src={acsiLogo}
+            alt="ACSI"
+            style={{ height: "36px", mixBlendMode: "multiply" }}
+          />
         </nav>
 
         {/* ── Hero ── */}
@@ -118,23 +115,13 @@ export default function MeetIsa() {
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            {/* Big logo — black bg drops out with multiply on white */}
+            {/* Logo — multiply blend drops the black background on white */}
             <div className="flex justify-center mb-4">
-              <div className="w-56 h-36 overflow-hidden relative" style={{ mixBlendMode: "multiply" }}>
-                {/* Crop to just the flame symbol: shift image left so symbol is centered */}
-                <img
-                  src={acsiLogo}
-                  alt="ACSI"
-                  className="absolute"
-                  style={{
-                    width: "280px",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-72%, -50%)",
-                    objectFit: "none",
-                  }}
-                />
-              </div>
+              <img
+                src={acsiLogo}
+                alt="ACSI"
+                style={{ width: "180px", mixBlendMode: "multiply" }}
+              />
             </div>
 
             {/* Pill badge */}
