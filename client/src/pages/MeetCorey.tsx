@@ -13,7 +13,7 @@ import {
 import { useState } from "react";
 import { motion } from "framer-motion";
 import coreyImg from "@assets/9_1771983400638.png";
-import logoUrl from "@assets/1_1770683748423.png";
+import logoUrl from "@assets/7_1772719327857.png";
 import { CartTrigger } from "@/components/CartDrawer";
 import { ThemeToggle } from "@/components/Layout";
 
@@ -204,8 +204,7 @@ export default function MeetCorey() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoUrl} alt="CCHUB" className="h-9 w-auto" />
-              <span className="text-base font-bold text-white hidden sm:block">Core Compliance Hub</span>
+              <img src={logoUrl} alt="CCHUB" className="h-14 w-auto" />
             </div>
           </Link>
           <div className="flex items-center gap-3">
@@ -263,9 +262,6 @@ export default function MeetCorey() {
                   className="relative w-64 h-64 md:w-80 md:h-80 rounded-full object-cover border-4 border-accent/30 shadow-2xl shadow-accent/20"
                   data-testid="img-corey-hero"
                 />
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-accent text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg" data-testid="badge-pricing">
-                  $99/mo per user
-                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -653,7 +649,12 @@ export default function MeetCorey() {
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeUp}
           >
-            <img src={coreyImg} alt="Corey" className="w-24 h-24 rounded-full mx-auto mb-8 border-2 border-accent/30" data-testid="img-corey-cta" />
+            <div className="relative inline-block mb-8">
+              <img src={coreyImg} alt="Corey" className="w-24 h-24 rounded-full border-2 border-accent/30" data-testid="img-corey-cta" />
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-accent text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap" data-testid="badge-pricing">
+                $99/mo per user
+              </div>
+            </div>
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-cta-title">
               Ready to Meet Your New <span className="text-accent">Compliance Expert?</span>
             </h2>

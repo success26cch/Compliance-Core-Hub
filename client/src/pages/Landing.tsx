@@ -647,7 +647,7 @@ export default function Landing() {
         <div className="flex items-center justify-between h-12 px-4 gap-2">
           <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide flex-1">
             <Link href="/about" className="px-3 py-2 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0 animate-pulse" data-testid="nav-about">About</Link>
-            <Link href="/meet-corey" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-corey">Meet Corey</Link>
+            <Link href="/meet-corey" className="px-3 py-2 text-sm font-bold text-blue-400 hover:text-white hover:bg-blue-400/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-corey">Meet Corey</Link>
             <Link href="/meet-isa" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
             <Link href="/iso-manager" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
             <a href="#features" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-features">Features</a>
