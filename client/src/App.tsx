@@ -56,6 +56,7 @@ import NotFound from "@/pages/not-found";
 function PageTracker() {
   const [location] = useLocation();
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetch("/api/track-visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
