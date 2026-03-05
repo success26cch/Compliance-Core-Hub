@@ -3440,12 +3440,12 @@ Rules:
 
   app.post("/api/tts", async (req, res) => {
     try {
-      const { text, voice = "nova" } = req.body;
+      const { text, voice = "onyx" } = req.body;
       if (!text || typeof text !== "string") {
         return res.status(400).json({ message: "Text is required" });
       }
       const trimmed = text.slice(0, 4000);
-      const audioBuffer = await textToSpeech(trimmed, voice, "mp3");
+      const audioBuffer = await textToSpeech(trimmed, voice as any, "mp3");
       res.set({
         "Content-Type": "audio/mpeg",
         "Content-Length": audioBuffer.length.toString(),
