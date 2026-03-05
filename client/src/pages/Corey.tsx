@@ -1052,6 +1052,12 @@ function CoreyApp() {
               conversationId={activeConversationId}
               onMessageSent={() => refetchUsage()}
               documentTemplates={DOCUMENT_TEMPLATES}
+              showWelcomeModal={showWelcomeModal}
+              setShowWelcomeModal={setShowWelcomeModal}
+              welcomePlatform={welcomePlatform}
+              setWelcomePlatform={setWelcomePlatform}
+              isInstallable={isInstallable}
+              promptInstall={promptInstall}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center text-white/40 p-6 text-center overflow-y-auto pt-8">
@@ -1280,11 +1286,23 @@ interface DocumentTemplate {
 function CoreyChatInterface({
   conversationId,
   onMessageSent,
-  documentTemplates
+  documentTemplates,
+  showWelcomeModal,
+  setShowWelcomeModal,
+  welcomePlatform,
+  setWelcomePlatform,
+  isInstallable,
+  promptInstall,
 }: {
   conversationId: number;
   onMessageSent?: () => void;
   documentTemplates?: DocumentTemplate[];
+  showWelcomeModal: boolean;
+  setShowWelcomeModal: (v: boolean) => void;
+  welcomePlatform: "ios" | "android-prompt" | "android-manual" | "desktop";
+  setWelcomePlatform: (v: "ios" | "android-prompt" | "android-manual" | "desktop") => void;
+  isInstallable: boolean;
+  promptInstall: () => void;
 }) {
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
