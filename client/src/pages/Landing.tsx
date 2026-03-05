@@ -1127,7 +1127,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/get-started">
                 <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/25" data-testid="button-hero-get-started">
-                  Get Started Free
+                  Get Started
                 </Button>
               </Link>
               <a href="#features">
@@ -1992,12 +1992,12 @@ export default function Landing() {
             Ready to Build Your Perfectly Safe Workplace?
           </h2>
           <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
-            Join hundreds of companies using Core Compliance Hub to protect their employees, reduce fines, and stay audit-ready. Start free today.
+            Join hundreds of companies using Core Compliance Hub to protect their employees, reduce fines, and stay audit-ready.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/get-started">
               <Button size="lg" variant="secondary" className="px-10 text-lg font-semibold" data-testid="button-cta-get-started">
-                Get Started Free
+                Get Started
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>

@@ -71,7 +71,7 @@ export default function GetStarted() {
             </div>
           </div>
 
-          <div className="max-w-sm">
+          <div className="max-w-2xl mx-auto">
             <Card className="flex flex-col border-accent ring-2 ring-accent" data-testid="card-plan-unlimited">
               <CardHeader>
                 <div className="flex items-center justify-between">
