@@ -193,8 +193,8 @@ export default function MeetCorey() {
       a: "Corey will tell you honestly. If a question involves state-specific regulations, emerging standards, or areas outside its regulatory expertise, Corey clearly states that and recommends consulting a specialist or your state OSHA plan. It will never make something up.",
     },
     {
-      q: "Is there a free trial?",
-      a: "Yes! You can try Corey with 3 free questions on our homepage — no credit card required. You can also scan our Try Corey QR code for the same trial experience. Once you see the difference, upgrading to the full $99/month subscription unlocks unlimited access.",
+      q: "How do I get started?",
+      a: "Subscribe at $99/month per user and you'll have full access from day one — unlimited questions, all 42 document templates, every Quick Action, and the complete regulatory knowledge base. No hidden fees, no usage caps.",
     },
   ];
 
@@ -662,22 +662,19 @@ export default function MeetCorey() {
               Stop googling regulations. Stop second-guessing recordability. Stop scrambling before inspections. Corey is ready.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/corey">
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-try-free">
+              <Link href="/get-started">
+                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-subscribe">
                   <Bot className="w-5 h-5" />
-                  Try Corey Free
+                  Subscribe — $99/mo
                 </Button>
               </Link>
-              <Link href="/get-started">
-                <Button size="lg" className="bg-white/10 border-2 border-white/30 text-white font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-subscribe">
-                  Subscribe — $99/mo
+              <a href="/api/login">
+                <Button size="lg" className="bg-white/10 border-2 border-white/30 text-white font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-signin">
+                  Sign In
                   <ArrowRight className="w-5 h-5" />
                 </Button>
-              </Link>
+              </a>
             </div>
-            <p className="text-xs text-white/30 mt-6">
-              3 free questions included. No credit card required to start.
-            </p>
           </motion.div>
         </div>
       </section>
