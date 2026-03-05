@@ -3,26 +3,26 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import {
   CheckCircle2, ArrowLeft, ChevronRight, Sparkles, Zap, Shield,
-  FileCheck, ClipboardList, BookOpen, MessageSquare, BarChart3, Award,
+  BookOpen, MessageSquare, AlertTriangle, HelpCircle, GitMerge, Search,
 } from "lucide-react";
 import acsiLogo from "@assets/42_1772589582132.png";
 
 const ISA_CAPABILITIES = [
-  "Clause-by-clause gap analysis",
-  "Internal audit checklists",
-  "Corrective action guidance",
-  "Quality manual drafting",
-  "Management review prep",
-  "Audit finding responses",
+  "Clause-by-clause standard interpretation",
+  "Scenario compliance assessment — 'Will this pass an audit?'",
+  "Nonconformance risk explanation with clause citations",
+  "Implementation guidance for specific requirements",
+  "Practical Q&A on real workplace situations",
+  "Cross-clause impact analysis",
 ];
 
 const ISA_PRO_CAPABILITIES = [
   "Everything in Isa",
-  "IATF 16949 internal auditing",
-  "ISO 13485 medical device",
-  "ISO/IEC 27001 InfoSec",
-  "AS9100 aerospace auditing",
-  "Second-party audit support",
+  "IATF 16949 customer-specific requirements context",
+  "ISO 13485 medical device regulatory interpretation",
+  "ISO/IEC 27001 information security risk guidance",
+  "AS9100 aerospace compliance scenario analysis",
+  "Cross-standard regulatory harmonization",
 ];
 
 const ISA_STANDARDS = ["ISO 9001", "ISO 14001", "ISO 45001"];
@@ -30,7 +30,7 @@ const ISA_PRO_STANDARDS = ["ISO 9001", "ISO 14001", "ISO 45001", "IATF 16949", "
 
 const STATS = [
   { value: "7", label: "ISO Standards" },
-  { value: "100+", label: "Audit Checklists" },
+  { value: "Instant", label: "Clause Answers" },
   { value: "24/7", label: "Expert Access" },
   { value: "0", label: "Scheduling Required" },
 ];
@@ -39,27 +39,27 @@ const ISA_FEATURES = [
   {
     icon: Sparkles,
     title: "Thinks Like an Auditor",
-    body: "Isa cites exact clause numbers, not general advice. She asks the questions a real auditor would ask.",
+    body: "Isa cites exact clause numbers, not general advice. She frames answers the way a third-party auditor would — traceable, defensible, and standard-referenced.",
   },
   {
     icon: Shield,
-    title: "Objective Evidence Language",
-    body: "Isa identifies gaps the way a third-party auditor documents them — traceable, defensible, audit-ready.",
+    title: "Scenario Compliance Guidance",
+    body: "Describe what you're doing and Isa tells you whether it aligns with the standard and why — with specific clause references and risk context.",
   },
   {
-    icon: Zap,
-    title: "Assessment to Certification",
-    body: "From initial gap analysis through internal audit, Isa guides your team at every stage of the certification journey.",
+    icon: GitMerge,
+    title: "Regulatory Harmonization",
+    body: "For integrated standards like ISO 45001 and ISO 13485, Isa applies cross-standard logic to identify overlapping requirements and shared compliance pathways.",
   },
 ];
 
 const WHAT_ISA_DOES = [
-  { icon: FileCheck, label: "Gap Analysis" },
-  { icon: ClipboardList, label: "Audit Checklists" },
-  { icon: BookOpen, label: "Manual Drafting" },
-  { icon: MessageSquare, label: "Corrective Actions" },
-  { icon: BarChart3, label: "Management Review" },
-  { icon: Award, label: "Certification Prep" },
+  { icon: BookOpen, label: "Clause Interpretation" },
+  { icon: Search, label: "Scenario Analysis" },
+  { icon: AlertTriangle, label: "Risk Explanation" },
+  { icon: HelpCircle, label: "Compliance Q&A" },
+  { icon: MessageSquare, label: "Requirement Guidance" },
+  { icon: GitMerge, label: "Standard Harmonization" },
 ];
 
 const ORANGE = "hsl(24,95%,53%)";
@@ -151,11 +151,20 @@ export default function MeetIsa() {
 
             {/* Standard badges */}
             <div className="flex flex-wrap justify-center gap-2 mb-10">
-              {["ISO 9001", "ISO 14001", "ISO 45001", "IATF 16949", "AS9100", "ISO 13485", "ISO 27001"].map((s) => (
+              {ISA_STANDARDS.map((s) => (
                 <span
                   key={s}
                   className="text-xs font-bold px-3 py-1.5 rounded-full"
-                  style={{ background: "#111", color: "#fff" }}
+                  style={{ background: ORANGE, color: "#fff" }}
+                >
+                  {s}
+                </span>
+              ))}
+              {["IATF 16949", "AS9100", "ISO 13485", "ISO 27001"].map((s) => (
+                <span
+                  key={s}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full border-2"
+                  style={{ borderColor: "#111", background: "#fff", color: "#111" }}
                 >
                   {s}
                 </span>
@@ -256,7 +265,7 @@ export default function MeetIsa() {
             transition={{ delay: 0.3, duration: 0.4 }}
             className="mb-16"
           >
-            <p className="text-center text-xs font-bold text-white/35 uppercase tracking-widest mb-6">
+            <p className="text-center text-xs font-bold text-white/60 uppercase tracking-widest mb-6">
               What Isa Handles
             </p>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
@@ -264,10 +273,10 @@ export default function MeetIsa() {
                 <div
                   key={item.label}
                   className="flex flex-col items-center gap-2 rounded-xl py-4 px-2"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+                  style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${ORANGE}40` }}
                 >
                   <item.icon className="w-5 h-5" style={{ color: ORANGE }} />
-                  <span className="text-[11px] font-semibold text-white/60 text-center leading-tight">{item.label}</span>
+                  <span className="text-[11px] font-bold text-white text-center leading-tight">{item.label}</span>
                 </div>
               ))}
             </div>
@@ -316,8 +325,8 @@ export default function MeetIsa() {
                       {ISA_STANDARDS.map(s => (
                         <span
                           key={s}
-                          className="text-xs px-2.5 py-1 rounded-lg font-semibold text-white/75"
-                          style={{ border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)" }}
+                          className="text-xs px-2.5 py-1 rounded-lg font-bold"
+                          style={{ background: ORANGE, color: "#fff" }}
                         >
                           {s}
                         </span>
@@ -384,15 +393,15 @@ export default function MeetIsa() {
                   <div className="mb-6">
                     <p className="text-[10px] font-bold text-white/35 uppercase tracking-wide mb-3">All Standards Covered</p>
                     <div className="flex flex-wrap gap-2">
-                      {ISA_PRO_STANDARDS.map(s => (
+                      {ISA_PRO_STANDARDS.map((s, i) => (
                         <span
                           key={s}
-                          className="text-xs px-2.5 py-1 rounded-lg font-semibold"
-                          style={{
-                            border: "1px solid hsl(24,95%,53%,0.35)",
-                            background: "hsl(24,95%,53%,0.1)",
-                            color: "hsl(24,95%,75%)",
-                          }}
+                          className="text-xs px-2.5 py-1 rounded-lg font-bold"
+                          style={
+                            i < 3
+                              ? { background: ORANGE, color: "#fff" }
+                              : { background: "#fff", color: "#111", border: `2px solid ${ORANGE}` }
+                          }
                         >
                           {s}
                         </span>
