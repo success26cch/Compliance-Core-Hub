@@ -78,21 +78,23 @@ function PwaInstallBanner({ onInstallClick }: { onInstallClick?: () => Promise<b
   const [dismissed, setDismissed] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(true);
 
   useEffect(() => {
     const ua = navigator.userAgent || "";
-    setIsIos(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
-    setIsAndroid(/Android/.test(ua));
+    const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const android = /Android/.test(ua);
+    setIsIos(ios);
+    setIsAndroid(android);
     setIsStandalone(
       window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true
     );
-
     const wasDismissed = sessionStorage.getItem("pwa-banner-dismissed");
     if (wasDismissed) setDismissed(true);
   }, []);
 
   if (isStandalone || dismissed) return null;
+  if (!isIos && !isAndroid) return null;
 
   const handleDismiss = () => {
     setDismissed(true);
@@ -110,15 +112,15 @@ function PwaInstallBanner({ onInstallClick }: { onInstallClick?: () => Promise<b
             <p className="text-sm font-semibold text-white">Install Corey on Your Phone</p>
             {isIos ? (
               <p className="text-xs text-white/60 leading-relaxed">
-                Tap the <span className="inline-flex items-center gap-0.5 text-accent font-medium"><ExternalLink className="w-3 h-3" /> Share</span> button below, then tap <span className="text-accent font-medium">"Add to Home Screen"</span>
+                Tap the <span className="inline-flex items-center gap-0.5 text-accent font-medium"><ExternalLink className="w-3 h-3" /> Share</span> button, then tap <span className="text-accent font-medium">"Add to Home Screen"</span>
               </p>
-            ) : isAndroid ? (
+            ) : onInstallClick ? (
               <p className="text-xs text-white/60">
-                Tap <span className="text-accent font-medium">"Install"</span> to add Corey to your home screen — instant access, no app store needed.
+                Tap <span className="text-accent font-medium">Install</span> to add Corey to your home screen — no app store needed.
               </p>
             ) : (
               <p className="text-xs text-white/60">
-                Add Corey to your home screen for instant access — works like a native app, no download needed.
+                Tap the <span className="text-accent font-medium">⋮ menu</span>, then <span className="text-accent font-medium">"Add to Home Screen"</span>
               </p>
             )}
           </div>
