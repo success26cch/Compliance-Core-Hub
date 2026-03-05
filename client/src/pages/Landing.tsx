@@ -1021,7 +1021,7 @@ export default function Landing() {
                     </Card>
 
                     <div className="flex justify-center gap-3 mt-4">
-                      <Link href="/corey">
+                      <Link href="/meet-corey">
                         <Button size="lg" className="shadow-lg shadow-primary/25" data-testid="button-try-corey-standalone">
                           <Bot className="w-5 h-5 mr-2" /> Try Corey — Standalone App
                         </Button>
