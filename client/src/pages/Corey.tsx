@@ -399,8 +399,14 @@ function CoreyLanding() {
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/30">
                     <Bot className="w-9 h-9 text-white" />
                   </div>
-                  <h2 className="text-2xl font-black text-white">Ask Corey Anything</h2>
-                  <p className="text-white/50 text-sm mt-1 max-w-sm mx-auto">OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers.</p>
+                  <h2 className="text-2xl font-black text-white">
+                    {chatProfile?.preferredName ? `Hi ${chatProfile.preferredName}! What can I help you with?` : "Ask Corey Anything"}
+                  </h2>
+                  <p className="text-white/50 text-sm mt-1 max-w-sm mx-auto">
+                    {chatProfile?.preferredName
+                      ? `I know your company, your industry, and your compliance priorities — every answer is tailored to you.`
+                      : "OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers."}
+                  </p>
                 </div>
 
                 {/* Quick Action Cards — ALL LOCKED */}
@@ -1072,8 +1078,14 @@ function CoreyApp() {
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center mb-6">
                 <Bot className="w-10 h-10 text-accent/60" />
               </div>
-              <h3 className="text-lg font-semibold text-white/60 mb-2">Ask Corey Anything</h3>
-              <p className="text-sm max-w-md mb-6">OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers.</p>
+              <h3 className="text-lg font-semibold text-white/60 mb-2">
+                {coreyProfile?.preferredName ? `Hi ${coreyProfile.preferredName}! What can I help you with?` : "Ask Corey Anything"}
+              </h3>
+              <p className="text-sm max-w-md mb-6">
+                {coreyProfile?.preferredName
+                  ? `I know your company, your industry, and your compliance priorities — every answer is tailored to you.`
+                  : "OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers."}
+              </p>
 
               <div className="w-full max-w-2xl mb-6">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Quick Actions</h4>
@@ -1313,6 +1325,7 @@ function CoreyChatInterface({
   promptInstall: () => void;
 }) {
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
+  const { data: chatProfile } = useQuery<any>({ queryKey: ["/api/corey-profile"] });
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);

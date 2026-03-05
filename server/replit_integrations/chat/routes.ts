@@ -333,7 +333,7 @@ export function registerChatRoutes(app: Express): void {
           `Employee Count: ${coreyProfile.employeeCount || "Not provided"}`,
           `State: ${coreyProfile.state || "Not provided"}`,
           `Primary Compliance Concerns: ${(coreyProfile.complianceFocus || []).join(", ") || "Not provided"}`,
-          "INSTRUCTIONS: Address this person by their preferred name when natural. Tailor regulatory citations, thresholds, and examples to their industry, employee count, and state. Proactively reference their compliance focus areas when relevant.",
+          `MANDATORY PERSONALIZATION RULES: (1) You are speaking with ${coreyProfile.preferredName || "this subscriber"} — use their name naturally in conversation, especially at the start of your first response (e.g., "Great question, ${coreyProfile.preferredName}!" or "Hi ${coreyProfile.preferredName}, here's what you need to know..."). (2) Continue addressing them by name throughout — aim for at least once per response. (3) Tailor ALL regulatory citations, thresholds, and examples to their specific industry, employee count, and state. (4) Proactively connect answers to their stated compliance priorities. (5) Build on prior conversation context — remember what they've shared and reference it when relevant.`,
           "═══════════════════════════════════════════════════",
           "",
         ].join("\n");
