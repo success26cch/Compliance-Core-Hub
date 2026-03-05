@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useChatStream, useConversations, useCreateConversation } from "@/hooks/use-chat";
 import { useQuestionUsage, useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +17,7 @@ import {
   CheckCircle2, Sparkles, ArrowRight, Download, Smartphone, MoreVertical,
   Copy, Mail, FileText, Trash2, Pencil, Share2, FileDown, ClipboardCopy,
   Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle, Target, Scale,
-  X, ExternalLink
+  X, ExternalLink, UserCircle
 } from "lucide-react";
 import { Link } from "wouter";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -349,6 +350,18 @@ function CoreyApp() {
   const { isInstallable, isInstalled, promptInstall } = usePwaInstall();
   const { toast } = useToast();
 
+  const { data: coreyProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ["/api/corey-profile"],
+    queryFn: async () => {
+      const res = await fetch("/api/corey-profile", { credentials: "include" });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("Failed to load profile");
+      return res.json();
+    },
+    retry: false,
+    enabled: subStatus?.isPro === true,
+  });
+
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -569,6 +582,51 @@ function CoreyApp() {
     { category: "Assessments", label: "Drug Testing Program Compliance Audit", prompt: "Generate a Drug Testing Program Compliance Audit checklist for employers — covering both DOT-regulated programs (49 CFR Part 40) and non-DOT workplace drug-free programs. Include separate sections for each:\n\nPART 1 — DOT-REGULATED PROGRAM AUDIT (49 CFR Part 382 / Part 40):\nPOLICY: Written policy addresses all 5 testing circumstances (pre-employment, random, reasonable suspicion, post-accident, return-to-duty/follow-up), policy distributed to all covered employees, policy acknowledgment signatures on file.\nTESTING RATES: Current calendar year random testing rate at or above required minimums (50% for drugs, 10% for alcohol — verify current FMCSA-specified rate), random selections made by scientifically valid random process, selection records retained.\nCOLLECTION SITES: Using HHS-certified laboratory, using qualified collector, using approved chain-of-custody forms (CCF), collection site uses split specimen collection.\nMRO: Using qualified Medical Review Officer, MRO reviews all non-negative results, cancelled tests documented.\nSAP PROCESS: SAP referrals made for all violations, SAP is qualified and on the DOT SAP list, return-to-duty and follow-up testing plan obtained from SAP.\nCLEARINGHOUSE: Registered as employer, conducting annual limited queries, full queries for new hires, reporting violations within required timeframe.\nRECORDS: All required records retained per 49 CFR Part 382.401 retention schedule (5 years for positives/refusals, 2 years for negatives, 1 year for calibration records).\n\nPART 2 — NON-DOT WORKPLACE PROGRAM AUDIT:\nPOLICY: Written policy covers all substances and testing circumstances, defines 'reasonable suspicion,' addresses prescription medication disclosure, consequences clearly stated.\nTESTING: Using certified collection sites, SAMHSA-certified laboratory for confirmation, split specimen or retest option available.\nSUPERVISOR TRAINING: Reasonable suspicion training completed and documented for all supervisors.\nCONFIDENTIALITY: Test results disclosed only on need-to-know basis, records kept separately from personnel files.\nSTATE LAW COMPLIANCE: State-specific marijuana/cannabis laws reviewed, state drug testing law requirements met (varies by state).\n\nFormat as a professional audit checklist with compliance ratings and action plan section. Reference applicable CFR sections throughout." },
     { category: "Assessments", label: "PPE Hazard Assessment", prompt: "Generate a complete PPE Hazard Assessment template per OSHA 29 CFR 1910.132. Include: workplace/job area identification, assessment date and certifying person, survey of workplace for hazards (impact, penetration, compression, chemical, heat, harmful dust, light/radiation, electrical, fall, noise), hazard sources identified by body area (head, eyes/face, hands, feet, body, hearing, respiratory), PPE selection for each identified hazard with specific standards referenced (ANSI Z87.1 for eye, ANSI Z89.1 for head, ASTM F2412/F2413 for foot, etc.), certification statement that the workplace hazard assessment has been performed per 29 CFR 1910.132(d)(2), employee training documentation, and periodic reassessment schedule. Format as a professional assessment form." },
   ];
+
+  // Profile gate: Pro subscribers without a profile see a setup prompt
+  if (subStatus?.isPro && !profileLoading && coreyProfile === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex items-center justify-center px-4">
+        <div className="max-w-md w-full flex flex-col items-center gap-6 text-center">
+          <div className="w-20 h-20 rounded-full bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <UserCircle className="w-10 h-10 text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">One quick step before we start.</h1>
+            <p className="text-white/60 mt-2 text-sm leading-relaxed">
+              Tell Corey a little about yourself and your company. It takes 2 minutes — and from that point on, every answer will be tailored to <em>your</em> industry, your state, and your team.
+            </p>
+          </div>
+          <div className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-left space-y-3">
+            <p className="text-white/50 text-xs font-semibold uppercase tracking-widest">What Corey learns about you</p>
+            {[
+              "Your company name and your role",
+              "Your industry and employee count",
+              "Your state (for state-specific OSHA plans)",
+              "Your top compliance priorities",
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                <p className="text-white/80 text-sm">{item}</p>
+              </div>
+            ))}
+          </div>
+          <Link href="/corey-profile" className="w-full">
+            <Button
+              className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold text-base py-4 gap-2 rounded-xl shadow-lg shadow-blue-500/30"
+              data-testid="button-setup-profile"
+            >
+              Set Up My Corey Profile
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </Link>
+          <p className="text-white/30 text-xs">
+            You can update your profile anytime in Settings.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">

@@ -382,7 +382,7 @@ export default function Settings() {
               toast({ title: "Subscription Activated!", description: "Your plan is now active." });
               queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/status'] });
               if (plan === 'corey_pro') {
-                window.location.href = "/welcome-corey";
+                window.location.href = "/corey-profile";
                 return;
               }
             }

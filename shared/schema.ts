@@ -804,3 +804,21 @@ export const recordabilityUsage = pgTable("recordability_usage", {
 });
 
 export type RecordabilityUsage = typeof recordabilityUsage.$inferSelect;
+
+// Corey subscriber profile — used to personalize AI conversations
+export const coreyProfiles = pgTable("corey_profiles", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  preferredName: text("preferred_name"),
+  companyName: text("company_name"),
+  role: text("role"),
+  industry: text("industry"),
+  employeeCount: text("employee_count"),
+  state: text("state"),
+  complianceFocus: text("compliance_focus").array(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCoreyProfileSchema = createInsertSchema(coreyProfiles).omit({ id: true, updatedAt: true });
+export type CoreyProfile = typeof coreyProfiles.$inferSelect;
+export type InsertCoreyProfile = z.infer<typeof insertCoreyProfileSchema>;

@@ -4087,5 +4087,28 @@ Rules:
     }
   });
 
+  app.get("/api/corey-profile", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const profile = await storage.getCoreyProfile(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/corey-profile", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const profile = await storage.upsertCoreyProfile(userId, req.body);
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   return httpServer;
 }

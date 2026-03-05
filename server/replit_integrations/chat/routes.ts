@@ -319,11 +319,32 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
+      // Build personalized system prompt with subscriber profile context
+      const coreyProfile = await storage.getCoreyProfile(userId);
+      let finalSystemPrompt = CCH_SYSTEM_PROMPT;
+      if (coreyProfile && (coreyProfile.companyName || coreyProfile.preferredName)) {
+        const profileBlock = [
+          "═══════════════════════════════════════════════════",
+          "SUBSCRIBER PROFILE — Personalize every response using this context:",
+          `Preferred Name: ${coreyProfile.preferredName || "Not provided"}`,
+          `Company: ${coreyProfile.companyName || "Not provided"}`,
+          `Role: ${coreyProfile.role || "Not provided"}`,
+          `Industry: ${coreyProfile.industry || "Not provided"}`,
+          `Employee Count: ${coreyProfile.employeeCount || "Not provided"}`,
+          `State: ${coreyProfile.state || "Not provided"}`,
+          `Primary Compliance Concerns: ${(coreyProfile.complianceFocus || []).join(", ") || "Not provided"}`,
+          "INSTRUCTIONS: Address this person by their preferred name when natural. Tailor regulatory citations, thresholds, and examples to their industry, employee count, and state. Proactively reference their compliance focus areas when relevant.",
+          "═══════════════════════════════════════════════════",
+          "",
+        ].join("\n");
+        finalSystemPrompt = profileBlock + CCH_SYSTEM_PROMPT;
+      }
+
       // Stream response from Anthropic
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",
         max_tokens: 2048,
-        system: CCH_SYSTEM_PROMPT,
+        system: finalSystemPrompt,
         messages: chatMessages,
       });
 
