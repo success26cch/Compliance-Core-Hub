@@ -176,167 +176,429 @@ export default function CoreyStandalone() {
 }
 
 function CoreyLanding() {
-  const { isInstallable, isInstalled, promptInstall } = usePwaInstall();
+  // Trial state
+  const [stage, setStage] = useState<"gate" | "chat" | "limit">("gate");
+  const [trialName, setTrialName] = useState("");
+  const [trialEmail, setTrialEmail] = useState("");
+  const [gateError, setGateError] = useState("");
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [remaining, setRemaining] = useState(3);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
+    setMessage(transcript);
+  });
+
+  useEffect(() => {
+    if (chatScrollRef.current && !userScrolledUp.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleStart = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trialName.trim()) { setGateError("Please enter your name."); return; }
+    if (!trialEmail.trim() || !trialEmail.includes("@")) { setGateError("Please enter a valid work email."); return; }
+    setGateError("");
+    setStage("chat");
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const handleSend = async () => {
+    if (!message.trim() || isStreaming || stage !== "chat") return;
+    if (isListening) stopListening();
+    userScrolledUp.current = false;
+    const userMsg = message.trim();
+    setMessage("");
+    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setIsStreaming(true);
+
+    try {
+      const res = await fetch("/api/landing-bot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: userMsg, name: trialName, email: trialEmail, history: messages }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        if (data.limitReached) { setStage("limit"); setIsStreaming(false); return; }
+        throw new Error(data.error || "Failed");
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = "";
+      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split("\n").filter(l => l.startsWith("data: "))) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.content) {
+              assistantText += data.content;
+              setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText }; return u; });
+            }
+            if (data.remaining !== undefined) {
+              setRemaining(data.remaining);
+              if (data.remaining <= 0 && data.done) setStage("limit");
+            }
+          } catch {}
+        }
+      }
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
+    }
+    setIsStreaming(false);
+  };
+
+  const TRIAL_QUICK_ACTIONS = [
+    { title: "Lead a Safety Meeting", description: "Choose a topic and let Corey build your full safety meeting agenda.", icon: ClipboardList, iconBg: "bg-accent/20", iconColor: "text-accent" },
+    { title: "Audit My OSHA 300", description: "Walk through a guided audit of your OSHA 300 Log for accuracy and compliance.", icon: Search, iconBg: "bg-blue-500/20", iconColor: "text-blue-400" },
+    { title: "Mock OSHA Inspection", description: "Simulate what an OSHA compliance officer would ask during an inspection.", icon: AlertTriangle, iconBg: "bg-yellow-500/20", iconColor: "text-yellow-400" },
+    { title: "Weekly Safety Topic", description: "Pick a topic and get a ready-to-present 5-minute safety talk.", icon: BookOpen, iconBg: "bg-green-500/20", iconColor: "text-green-400" },
+    { title: "Compliance Calendar Check", description: "Review upcoming regulatory deadlines and required submissions.", icon: Calendar, iconBg: "bg-blue-500/20", iconColor: "text-blue-400" },
+    { title: "Gap Analysis — ACSI", description: "Full gap analysis is an ACSI service. Let Corey connect you.", icon: Target, iconBg: "bg-accent/20", iconColor: "text-accent" },
+  ];
+
+  const TRIAL_DOCS = [
+    "Written HazCom Program", "Respiratory Protection Program", "LOTO Program",
+    "Drug & Alcohol Policy", "Emergency Action Plan", "Fit for Duty (FFD) Form",
+    "23 more document templates...",
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      <PwaInstallBanner onInstallClick={isInstallable ? promptInstall : undefined} />
-      <header className="border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-accent/25">
-              <Bot className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tight">COREY</h1>
-              <p className="text-xs text-white/50">by Core Compliance Hub</p>
-            </div>
+    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
+
+      {/* Header */}
+      <header className="border-b border-white/10 flex-shrink-0 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/70 hover:text-white">
+            <MessageSquare className="w-4 h-4" />
+          </button>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-accent/25 shrink-0">
+            <Bot className="w-5 h-5 text-white" />
           </div>
-          <div className="flex items-center gap-3">
-            {isInstallable && !isInstalled && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={promptInstall}
-                className="border-accent/50 text-accent hover:bg-accent/10 gap-1.5"
-                data-testid="button-pwa-install-header"
-              >
-                <Download className="w-4 h-4" />
-                Install App
-              </Button>
-            )}
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10" data-testid="link-cch-home">
-                CCHUB Platform
-              </Button>
-            </Link>
-            <a href="/api/login">
-              <Button size="sm" className="bg-accent hover:bg-accent/90 shadow-lg shadow-accent/25" data-testid="button-corey-login">
-                Sign In
-              </Button>
-            </a>
+          <div>
+            <span className="font-black text-base tracking-tight">COREY</span>
+            <span className="text-white/40 text-xs ml-2 hidden sm:inline">by Core Compliance Hub</span>
           </div>
+          {stage === "chat" && (
+            <Badge className="bg-accent/20 text-accent border-accent/30 text-xs ml-1">
+              {remaining} free question{remaining !== 1 ? "s" : ""} left
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/meet-corey">
+            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white text-xs hidden sm:flex" data-testid="link-learn-more">
+              Learn More
+            </Button>
+          </Link>
+          <a href="/api/login">
+            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white text-xs" data-testid="button-trial-signin">
+              Sign In
+            </Button>
+          </a>
+          <Link href="/get-started">
+            <Button size="sm" className="bg-accent hover:bg-accent/90 text-xs font-bold shadow-lg shadow-accent/25" data-testid="button-trial-subscribe">
+              Subscribe $99/mo
+            </Button>
+          </Link>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4">
-        <section className="py-20 md:py-32 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm border border-accent/20 mb-8">
-            <Sparkles className="w-4 h-4" />
-            THE ONLY AI BUILT FOR OCC-HEALTH
+      {/* Body */}
+      <div className="flex flex-1 overflow-hidden relative">
+
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? "flex" : "hidden"} lg:flex flex-col w-64 border-r border-white/10 bg-slate-950/50 shrink-0 absolute lg:relative inset-y-0 left-0 z-20 lg:z-auto`}>
+          {/* Locked New Question */}
+          <div className="p-3 border-b border-white/10">
+            <button
+              onClick={() => setShowProModal(true)}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-white/15 bg-white/5 text-white/40 text-sm cursor-pointer hover:bg-white/10 transition-colors"
+              data-testid="button-trial-new-question"
+            >
+              <Lock className="w-4 h-4 text-white/30" />
+              <span>+ New Question</span>
+              <Badge className="ml-auto bg-accent/20 text-accent border-0 text-[10px] px-1.5 py-0">Pro</Badge>
+            </button>
           </div>
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black mb-3 leading-tight" data-testid="text-corey-hero">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">COREY</span>
-          </h2>
-          <p className="text-lg md:text-xl text-accent font-bold uppercase tracking-widest mb-4">
-            The Intelligence Behind the Compliance
-          </p>
-          <p className="text-xl md:text-2xl text-white font-semibold max-w-2xl mx-auto mb-6">
-            Your 24/7 AI Compliance Expert.
-          </p>
-          <div className="max-w-2xl mx-auto mb-12 space-y-4 text-left">
-            <p className="text-white/70 text-base md:text-lg leading-relaxed">
-              In our world, <span className="text-white font-semibold">"close enough" is a liability.</span> You don't need an AI that knows a little bit about everything; you need an expert that knows everything about 29 CFR.
-            </p>
-            <p className="text-white/70 text-base md:text-lg leading-relaxed">
-              Corey is the first specialized AI engine built from the actual DNA of <span className="text-white font-semibold">29 CFR and DOT 49 CFR</span>. He isn't just searching the web — Corey is different. He wasn't just "programmed"; he was built using a proprietary logic bridge that connects the literal text of the Federal Regulations. Corey gives you the exact answer you need, exactly when you need it. Give him a shot, ask him anything.
-            </p>
+
+          {/* Demo conversation history */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {messages.length > 0 ? (
+              <div className="px-2 py-2 rounded-lg bg-white/10 text-white/80 text-xs truncate">
+                Demo Session
+              </div>
+            ) : (
+              <div className="px-3 py-8 text-center">
+                <Lock className="w-8 h-8 text-white/15 mx-auto mb-3" />
+                <p className="text-white/30 text-xs leading-relaxed">Sign in to save and revisit your conversations.</p>
+              </div>
+            )}
           </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/try-corey">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-lg px-8 py-6 shadow-xl shadow-accent/25" data-testid="button-corey-get-started">
-                <Bot className="w-5 h-5 mr-2" /> Get Started Free
+
+          {/* Sidebar footer */}
+          <div className="p-3 border-t border-white/10 space-y-2">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10">
+              <Lock className="w-3.5 h-3.5 text-white/30 shrink-0" />
+              <div>
+                <p className="text-white/40 text-xs">Documents & Templates</p>
+                <p className="text-white/20 text-[10px]">23 templates — Pro only</p>
+              </div>
+            </div>
+            <Link href="/get-started">
+              <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-xs font-bold" data-testid="button-sidebar-subscribe">
+                Subscribe — $99/mo
               </Button>
             </Link>
-            {isInstallable && !isInstalled && (
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={promptInstall}
-                className="border-accent/40 text-accent hover:bg-accent/10 text-lg px-8 py-6 gap-2"
-                data-testid="button-pwa-install-hero"
+          </div>
+        </aside>
+
+        {/* Sidebar backdrop on mobile */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 bg-black/50 z-10 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+
+        {/* Main content */}
+        <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+
+          {/* Messages or Welcome */}
+          <div
+            ref={chatScrollRef}
+            className="flex-1 overflow-y-auto"
+            onScroll={() => {
+              const el = chatScrollRef.current;
+              if (!el) return;
+              userScrolledUp.current = el.scrollHeight - el.scrollTop - el.clientHeight > 80;
+            }}
+          >
+            {messages.length === 0 ? (
+              /* Welcome / Demo State */
+              <div className="flex flex-col items-center py-10 px-4 gap-8 max-w-3xl mx-auto w-full">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/30">
+                    <Bot className="w-9 h-9 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-black text-white">Ask Corey Anything</h2>
+                  <p className="text-white/50 text-sm mt-1 max-w-sm mx-auto">OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers.</p>
+                </div>
+
+                {/* Quick Action Cards — ALL LOCKED */}
+                <div className="w-full">
+                  <p className="text-white/30 text-xs font-semibold uppercase tracking-widest mb-3 text-center">QUICK ACTIONS — Pro Features</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {TRIAL_QUICK_ACTIONS.map((action) => {
+                      const Icon = action.icon;
+                      return (
+                        <button
+                          key={action.title}
+                          onClick={() => setShowProModal(true)}
+                          className="relative group text-left p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/8 hover:border-white/20 transition-all cursor-pointer"
+                          data-testid={`card-trial-action-${action.title.replace(/\s+/g, "-").toLowerCase()}`}
+                        >
+                          <div className={`w-9 h-9 rounded-lg ${action.iconBg} flex items-center justify-center mb-3`}>
+                            <Icon className={`w-5 h-5 ${action.iconColor}`} />
+                          </div>
+                          <p className="text-white font-semibold text-sm">{action.title}</p>
+                          <p className="text-white/40 text-xs mt-1 leading-snug">{action.description}</p>
+                          {/* Lock badge */}
+                          <div className="absolute top-3 right-3 flex items-center gap-1 bg-accent/20 rounded-full px-1.5 py-0.5">
+                            <Lock className="w-2.5 h-2.5 text-accent" />
+                            <span className="text-accent text-[9px] font-bold">PRO</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Document templates — locked preview */}
+                <div className="w-full border border-white/10 rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-white/40" />
+                      <span className="text-white/60 text-sm font-semibold">Document Templates</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-accent/20 rounded-full px-2 py-0.5">
+                      <Lock className="w-3 h-3 text-accent" />
+                      <span className="text-accent text-xs font-bold">Pro Only</span>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {TRIAL_DOCS.map((doc, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setShowProModal(true)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors text-left"
+                        data-testid={`trial-doc-${i}`}
+                      >
+                        <span className="text-white/40 text-sm">{doc}</span>
+                        <Lock className="w-3.5 h-3.5 text-white/20 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Chat messages */
+              <div className="max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
+                {messages.map((msg, i) => (
+                  <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "user" ? "bg-accent/20" : "bg-gradient-to-br from-accent to-primary"}`}>
+                      {msg.role === "user" ? <User className="w-4 h-4 text-accent" /> : <Bot className="w-4 h-4 text-white" />}
+                    </div>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "user" ? "bg-accent/15 text-white rounded-tr-none" : "bg-white/8 text-white/90 rounded-tl-none"}`}>
+                      {msg.content || (msg.role === "assistant" && isStreaming ? <span className="animate-pulse text-white/40">Corey is thinking...</span> : "")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom input area */}
+          <div className="flex-shrink-0 border-t border-white/10 p-4">
+            {stage === "gate" ? (
+              /* Name + email gate */
+              <form onSubmit={handleStart} className="max-w-2xl mx-auto">
+                <div className="bg-white/5 border border-white/15 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-7 h-7 rounded-lg bg-accent/20 flex items-center justify-center">
+                      <Bot className="w-4 h-4 text-accent" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Try Corey Free</p>
+                      <p className="text-white/40 text-xs">Enter your info to ask up to 3 compliance questions</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      value={trialName}
+                      onChange={e => setTrialName(e.target.value)}
+                      placeholder="Your name"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50 text-sm"
+                      data-testid="input-trial-name"
+                    />
+                    <Input
+                      type="email"
+                      value={trialEmail}
+                      onChange={e => setTrialEmail(e.target.value)}
+                      placeholder="Work email"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50 text-sm"
+                      data-testid="input-trial-email"
+                    />
+                    <Button type="submit" className="bg-accent hover:bg-accent/90 font-bold shrink-0" data-testid="button-trial-start">
+                      Start Free Trial
+                    </Button>
+                  </div>
+                  {gateError && <p className="text-red-400 text-xs mt-2">{gateError}</p>}
+                </div>
+              </form>
+            ) : stage === "limit" ? (
+              /* Limit reached */
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-accent/10 border border-accent/30 rounded-2xl p-5 text-center">
+                  <Sparkles className="w-8 h-8 text-accent mx-auto mb-2" />
+                  <p className="text-white font-bold">You've used all 3 free questions.</p>
+                  <p className="text-white/50 text-sm mt-1 mb-4">Subscribe for unlimited Corey access — plus all Pro features.</p>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <Link href="/get-started">
+                      <Button className="bg-accent hover:bg-accent/90 font-bold gap-2" data-testid="button-limit-subscribe">
+                        Subscribe — $99/mo <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                    <a href="/api/login">
+                      <Button variant="ghost" className="text-white/60 hover:text-white border border-white/10" data-testid="button-limit-signin">
+                        Sign In
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Chat input */
+              <form
+                onSubmit={e => { e.preventDefault(); handleSend(); }}
+                className="max-w-3xl mx-auto flex gap-2 items-end"
               >
-                <Smartphone className="w-5 h-5" /> Install App
-              </Button>
-            )}
-            {!isInstallable && (
-              <Link href="/">
-                <Button size="lg" variant="outline" className="bg-white border-white text-gray-900 hover:bg-gray-100 hover:text-black text-lg px-8 py-6" data-testid="button-corey-learn-more">
-                  Learn More <ArrowRight className="w-4 h-4 ml-2" />
+                <div className="flex-1 relative">
+                  <Textarea
+                    ref={inputRef}
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                    placeholder="Ask Corey a compliance question..."
+                    className="pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50 resize-none max-h-[130px] overflow-y-auto"
+                    rows={2}
+                    disabled={isStreaming}
+                    data-testid="input-trial-chat"
+                  />
+                  {speechSupported && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={toggleListening}
+                      disabled={isStreaming}
+                      className={`absolute right-1 bottom-2 ${isListening ? "text-accent" : "text-white/40 hover:text-white/70"}`}
+                    >
+                      {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isStreaming || !message.trim()}
+                  className="bg-accent hover:bg-accent/90 mb-0.5"
+                  data-testid="button-trial-send"
+                >
+                  <Send className="w-4 h-4" />
                 </Button>
-              </Link>
+              </form>
             )}
           </div>
-        </section>
+        </main>
+      </div>
 
-        <section className="pb-20">
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="bg-white/5 border-white/10 p-6 text-center" data-testid="card-corey-feature-1">
-              <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="font-bold text-white mb-2">OSHA Expert</h3>
-              <p className="text-sm text-white/60">Instant recordability guidance citing OSHA 29 CFR 1904. Never second-guess a call again.</p>
-            </Card>
-            <Card className="bg-white/5 border-white/10 p-6 text-center" data-testid="card-corey-feature-2">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="font-bold text-white mb-2">DOT Compliance</h3>
-              <p className="text-sm text-white/60">DOT physicals, drug testing, Clearinghouse — answers backed by 49 CFR Part 40.</p>
-            </Card>
-            <Card className="bg-white/5 border-white/10 p-6 text-center" data-testid="card-corey-feature-3">
-              <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center mx-auto mb-4">
-                <Mic className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="font-bold text-white mb-2">Voice Enabled</h3>
-              <p className="text-sm text-white/60">Ask your question by voice. Corey listens as long as you need — no interruptions.</p>
-            </Card>
-          </div>
-        </section>
-
-        <section className="pb-20">
-          <div className="max-w-3xl mx-auto text-center">
-            <h3 className="text-2xl font-bold mb-8">Simple Pricing</h3>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <Card className="bg-white/5 border-white/10 p-6" data-testid="card-corey-pricing-free">
-                <Badge variant="secondary" className="mb-4">Free</Badge>
-                <h4 className="text-3xl font-black text-white mb-2">$0</h4>
-                <p className="text-white/50 text-sm mb-6">3 Corey questions per month</p>
-                <ul className="space-y-3 text-sm text-white/70 text-left">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> OSHA recordability guidance</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Basic DOT compliance help</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Voice input</li>
-                </ul>
-              </Card>
-              <Card className="bg-accent/10 border-accent/30 p-6 relative" data-testid="card-corey-pricing-unlimited">
-                <Badge className="mb-4 bg-accent">Most Popular</Badge>
-                <h4 className="text-3xl font-black text-white mb-2">$99<span className="text-lg font-normal text-white/50">/mo</span></h4>
-                <p className="text-white/50 text-sm mb-6">Unlimited Corey interactions</p>
-                <ul className="space-y-3 text-sm text-white/70 text-left">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Everything in Free</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Unlimited questions</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Document generation</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Export & share conversations</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" /> Priority support</li>
-                </ul>
-              </Card>
+      {/* Pro Feature Modal */}
+      <Dialog open={showProModal} onOpenChange={setShowProModal}>
+        <DialogContent className="bg-slate-900 border-accent/20 text-white max-w-sm rounded-2xl" data-testid="dialog-pro-feature">
+          <DialogHeader className="text-center items-center gap-2">
+            <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center">
+              <Lock className="w-6 h-6 text-accent" />
             </div>
+            <DialogTitle className="text-white font-black">Pro Feature</DialogTitle>
+            <DialogDescription className="text-white/60 text-sm leading-relaxed text-center">
+              This feature is available with a Corey subscription. Quick Actions, Document Templates, and saved conversations are all included at $99/mo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 mt-2">
+            <Link href="/get-started" onClick={() => setShowProModal(false)}>
+              <Button className="w-full bg-accent hover:bg-accent/90 font-bold gap-2" data-testid="button-pro-modal-subscribe">
+                Subscribe — $99/mo <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <a href="/api/login">
+              <Button variant="ghost" className="w-full text-white/60 hover:text-white border border-white/10">
+                Already subscribed? Sign In
+              </Button>
+            </a>
           </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-white/10 py-8">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-8 w-auto brightness-0 invert opacity-50" />
-          </div>
-          <p className="text-xs text-white/40">Powered by Core Compliance Hub</p>
-          <Link href="/">
-            <span className="text-xs text-white/40 hover:text-white/60 cursor-pointer">Visit Full Platform</span>
-          </Link>
-        </div>
-      </footer>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
