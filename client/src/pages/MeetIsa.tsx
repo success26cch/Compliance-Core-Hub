@@ -100,28 +100,40 @@ export default function MeetIsa() {
               Back to CCHUB
             </button>
           </Link>
-          <img src={acsiLogo} alt="ACSI" className="h-8 object-contain" style={{ filter: "brightness(0)" }} />
+          <div className="overflow-hidden relative h-8 w-20" style={{ mixBlendMode: "multiply" }}>
+            <img
+              src={acsiLogo}
+              alt="ACSI"
+              className="absolute"
+              style={{ width: "100px", top: "50%", left: "50%", transform: "translate(-73%, -50%)" }}
+            />
+          </div>
         </nav>
 
         {/* ── Hero ── */}
-        <div className="relative z-10 max-w-5xl mx-auto px-6 pt-14 pb-16">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 pt-10 pb-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            {/* Logo icon */}
-            <div className="flex justify-center mb-6">
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg"
-                style={{
-                  background: "linear-gradient(135deg, #fff 0%, #f5f5f5 100%)",
-                  border: `2px solid ${ORANGE}`,
-                  boxShadow: `0 8px 32px ${ORANGE}30`,
-                }}
-              >
-                <img src={acsiLogo} alt="ACSI" className="w-13 h-13 object-contain" />
+            {/* Big logo — black bg drops out with multiply on white */}
+            <div className="flex justify-center mb-4">
+              <div className="w-56 h-36 overflow-hidden relative" style={{ mixBlendMode: "multiply" }}>
+                {/* Crop to just the flame symbol: shift image left so symbol is centered */}
+                <img
+                  src={acsiLogo}
+                  alt="ACSI"
+                  className="absolute"
+                  style={{
+                    width: "280px",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-72%, -50%)",
+                    objectFit: "none",
+                  }}
+                />
               </div>
             </div>
 
