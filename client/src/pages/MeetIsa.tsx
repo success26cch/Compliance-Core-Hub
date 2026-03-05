@@ -38,56 +38,56 @@ const CAPABILITIES = [
   {
     icon: FileSearch,
     title: "Clause-by-Clause Gap Analysis",
-    description: "Tell Isa where you are, and she walks through every clause of your chosen standard — asking targeted questions to map gaps, assign risk levels, and prioritize your path to certification.",
+    description: "Tell Isa where you stand and she walks through every clause conversationally — asking targeted questions, identifying gaps, explaining risk, and telling you exactly what you need to address before a certification audit.",
     color: "text-blue-400",
     bg: "bg-blue-500/10",
   },
   {
     icon: ClipboardCheck,
-    title: "Audit Readiness Assessment",
-    description: "Prepare for third-party certification audits with Isa's guided readiness review. She identifies the most common nonconformances, verifies your documentation, and walks you through mock auditor questions.",
+    title: "Audit Readiness Coaching",
+    description: "Isa asks you the exact questions a third-party auditor would ask — clause by clause. She tells you what objective evidence you need, flags common nonconformance triggers, and explains what auditors look for in each area.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
   },
   {
     icon: AlertTriangle,
-    title: "Nonconformance Response",
-    description: "Received a major or minor NC? Isa writes a defensible corrective action response — with root cause analysis, containment actions, and permanent corrective measures tied to the exact clause.",
+    title: "Nonconformance Response Guidance",
+    description: "Received a major or minor NC? Isa coaches you through writing a defensible corrective action response — explaining root cause methodology, containment options, and what the auditor needs to see to close the finding.",
     color: "text-red-400",
     bg: "bg-red-500/10",
   },
   {
     icon: BookOpen,
-    title: "Quality Manual Drafting",
-    description: "Isa builds your Quality Manual section by section — Scope, Context of the Organization, Leadership, Risk, and more — tailored to your processes, industry, and certification standard.",
+    title: "Quality Manual Coaching",
+    description: "Isa explains what your Quality Manual must address clause by clause and why — asking about your scope, context, and processes, then telling you exactly what the standard requires your manual to say. You write it; Isa makes sure it's right.",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
   },
   {
     icon: GitMerge,
     title: "Integrated Management Systems",
-    description: "Running ISO 9001, 14001, and 45001 together? Isa maps shared clauses, identifies integration opportunities, and helps you build one unified IMS instead of three separate systems.",
+    description: "Running ISO 9001, 14001, and 45001 together? Isa identifies which clauses overlap, explains where one system satisfies another, and guides you toward one unified IMS rather than three separate programs.",
     color: "text-purple-400",
     bg: "bg-purple-500/10",
   },
   {
     icon: Layers,
-    title: "Internal Audit Checklists",
-    description: "Generate clause-specific internal audit checklists with objective evidence prompts, auditor questions, and conformance/nonconformance decision criteria — ready to use on your next internal audit.",
+    title: "Internal Audit Preparation",
+    description: "Isa walks you through the questions an auditor would ask for each clause — with objective evidence requirements and common nonconformance triggers — so your internal auditors know exactly what to look for and what records to verify.",
     color: "text-cyan-400",
     bg: "bg-cyan-500/10",
   },
   {
     icon: Target,
-    title: "Corrective Action Plans",
-    description: "Isa structures your CAPA using 8D, 5-Why, or fishbone methodology — whichever fits your NC. She documents the problem, root cause, corrective actions, and verification steps.",
+    title: "Corrective Action Coaching",
+    description: "Isa coaches you through structuring your CAPA response using 8D, 5-Why, or fishbone methodology — explaining the difference between correction and corrective action, and what the standard requires for verification of effectiveness.",
     color: "text-orange-400",
     bg: "bg-orange-500/10",
   },
   {
     icon: FileText,
-    title: "Management Review Preparation",
-    description: "Pull together your management review inputs — KPIs, audit results, customer feedback, NC trends, objectives status — and Isa helps structure a compliant review agenda and output record.",
+    title: "Management Review Guidance",
+    description: "Isa explains what Clause 9.3 requires for management review — what inputs must be discussed, who must attend, what outputs must be recorded, and what evidence an auditor would ask to see for your last review.",
     color: "text-pink-400",
     bg: "bg-pink-500/10",
   },
@@ -497,6 +497,87 @@ export default function MeetIsa() {
             </div>
           </motion.div>
 
+          {/* ── Isa vs ISO Manager disambiguation ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp} className="text-center mb-8">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">Understanding the Difference</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Isa is Your AI Advisor. <span style={{ color: ORANGE }}>ISO Manager is the Platform.</span></h2>
+              <p className="text-white/55 max-w-2xl mx-auto text-base">Two separate products. One cohesive system. Know which one you need.</p>
+            </motion.div>
+            <div className="grid md:grid-cols-2 gap-5">
+              {/* Isa card */}
+              <motion.div variants={fadeUp}>
+                <div className="rounded-2xl p-6 h-full border-2 bg-white/[0.05]" style={{ borderColor: `${ORANGE}60` }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${ORANGE}20`, border: `1px solid ${ORANGE}40` }}>
+                      <MessageSquare className="w-5 h-5" style={{ color: ORANGE }} />
+                    </div>
+                    <div>
+                      <p className="font-black text-white text-base">Isa — AI Guidance</p>
+                      <p className="text-xs text-white/45">Conversational ISO expert · $99–$199/mo</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-white/65 leading-relaxed mb-4">
+                    Isa is an <strong className="text-white/85">AI conversation partner</strong> — you ask questions, she answers with clause citations. She coaches you through audits, explains standards, guides your corrective actions, and helps you understand what your documentation needs to say.
+                  </p>
+                  <ul className="space-y-2">
+                    {[
+                      "Ask questions, get clause-cited answers instantly",
+                      "Coached gap analysis through conversation",
+                      "Mock auditor Q&A to prepare your team",
+                      "NC response coaching and CAPA methodology",
+                      "Explains what your documents must say",
+                    ].map(item => (
+                      <li key={item} className="flex items-start gap-2 text-xs text-white/60">
+                        <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: ORANGE }} />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+
+              {/* ISO Manager card */}
+              <motion.div variants={fadeUp}>
+                <div className="rounded-2xl p-6 h-full bg-white/[0.04] border border-white/15">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 border border-white/20">
+                      <Layers className="w-5 h-5 text-white/70" />
+                    </div>
+                    <div>
+                      <p className="font-black text-white text-base">ISO Manager — The Platform</p>
+                      <p className="text-xs text-white/45">Full IMS workspace · $299–$899/mo</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-white/65 leading-relaxed mb-4">
+                    ISO Manager is a <strong className="text-white/85">complete IMS management platform</strong> — it stores your documents, tracks KPIs, maps your processes, and gives you a structured workspace to build and manage your entire management system. Isa AI is included with every plan.
+                  </p>
+                  <ul className="space-y-2">
+                    {[
+                      "Document vault — store and manage IMS records",
+                      "Process map builder with clause tagging",
+                      "KPI tracking and audit evidence management",
+                      "Setup wizard that feeds Isa your org context",
+                      "Full document library for your chosen standards",
+                    ].map(item => (
+                      <li key={item} className="flex items-start gap-2 text-xs text-white/60">
+                        <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-white/40" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <Link href="/iso-manager">
+                      <button className="flex items-center gap-1.5 text-xs font-bold text-white/50 hover:text-white transition-colors" data-testid="link-iso-manager-from-disambig">
+                        Explore ISO Manager Plans <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+
           {/* ── Pricing Section ── */}
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
             <motion.div variants={fadeUp}>
@@ -534,12 +615,12 @@ export default function MeetIsa() {
                     </div>
                     <ul className="space-y-2.5 mb-8 flex-1">
                       {[
-                        "Clause-by-clause standard interpretation",
-                        "Scenario compliance assessment",
-                        "Nonconformance risk explanation",
-                        "Implementation guidance",
-                        "Internal audit checklist generation",
-                        "Document & procedure drafting",
+                        "Clause-by-clause Q&A and interpretation",
+                        "Audit readiness coaching (mock auditor questions)",
+                        "Gap analysis via AI conversation",
+                        "Nonconformance response coaching",
+                        "Internal audit preparation guidance",
+                        "Management review requirement explanation",
                       ].map(cap => (
                         <li key={cap} className="flex items-start gap-2.5 text-sm text-white/70">
                           <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: ORANGE }} />
