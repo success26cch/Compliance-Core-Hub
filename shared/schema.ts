@@ -456,7 +456,8 @@ export type InsertDotNotification = z.infer<typeof insertDotNotificationSchema>;
 // Clinic Visits - tracks QR-based clinic check-ins (Digital Medical Passport)
 export const clinicVisits = pgTable("clinic_visits", {
   id: serial("id").primaryKey(),
-  employeeId: integer("employee_id").notNull(),
+  employeeId: integer("employee_id"), // null for walk-in employees not in the system
+  walkInName: text("walk_in_name"), // full name for walk-in employees
   userId: text("user_id").notNull(),
   passportToken: text("passport_token").notNull(),
   visitType: text("visit_type").notNull(), // 'dot_physical', 'drug_screen', 'respiratory_exam', 'injury', 'new_hire', 'other'

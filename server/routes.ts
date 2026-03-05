@@ -2024,11 +2024,16 @@ Rules:
     const userId = (req.user as any).claims.sub;
 
     try {
-      const { employeeId, visitType, authorizationName, authorizationTitle, authorizationPhone,
+      const { employeeId, walkInName, visitType, authorizationName, authorizationTitle, authorizationPhone,
         billingPreference, specialInstructions, additionalServices, ssnLast4, employeeDob,
         employeeAddress, employeeLocation, staffingAgency, signatureDataUrl } = req.body;
-      if (!employeeId || !visitType) {
-        return res.status(400).json({ message: "Employee ID and visit type required" });
+
+      // Must have either a registered employee ID or a walk-in name
+      if (!visitType) {
+        return res.status(400).json({ message: "Visit type is required" });
+      }
+      if (!employeeId && !walkInName) {
+        return res.status(400).json({ message: "Either select a registered employee or enter a walk-in name" });
       }
 
       if (ssnLast4 && (!/^\d{4}$/.test(ssnLast4))) {
@@ -2039,16 +2044,28 @@ Rules:
         return res.status(400).json({ message: "Signature image too large" });
       }
 
-      const employee = await storage.getEmployeeById(parseInt(employeeId), userId);
-      if (!employee) {
-        return res.status(404).json({ message: "Employee not found" });
+      // Resolve employee — either from DB or walk-in
+      let employee: { id: number | null; firstName: string; lastName: string; position: string | null; department: string | null; email?: string | null } | null = null;
+      if (employeeId) {
+        const dbEmployee = await storage.getEmployeeById(parseInt(employeeId), userId);
+        if (!dbEmployee) {
+          return res.status(404).json({ message: "Employee not found" });
+        }
+        employee = { id: dbEmployee.id, firstName: dbEmployee.firstName, lastName: dbEmployee.lastName, position: dbEmployee.position || null, department: dbEmployee.department || null, email: (dbEmployee as any).email || null };
+      } else {
+        // Walk-in: split the name into first/last
+        const parts = (walkInName as string).trim().split(/\s+/);
+        const firstName = parts[0] || walkInName;
+        const lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
+        employee = { id: null, firstName, lastName, position: null, department: null, email: null };
       }
 
       const { nanoid } = await import("nanoid");
       const passportToken = nanoid(16);
 
       const visit = await storage.createClinicVisit({
-        employeeId: employee.id,
+        employeeId: employee.id as any,
+        walkInName: employee.id ? null : (walkInName as string),
         userId,
         passportToken,
         visitType,
@@ -2107,8 +2124,18 @@ Rules:
         return res.status(410).json({ message: "This passport has expired. Please generate a new one." });
       }
 
-      const employee = await storage.getEmployeeByIdPublic(visit.employeeId);
-      if (!employee) {
+      // Resolve employee — registered or walk-in
+      let employee: { id: number | null; firstName: string; lastName: string; position: string | null; department: string | null; email?: string | null } | null = null;
+      if (visit.walkInName) {
+        const parts = visit.walkInName.trim().split(/\s+/);
+        employee = { id: null, firstName: parts[0] || visit.walkInName, lastName: parts.slice(1).join(" ") || "", position: null, department: null, email: null };
+      } else if (visit.employeeId) {
+        const dbEmp = await storage.getEmployeeByIdPublic(visit.employeeId);
+        if (!dbEmp) {
+          return res.status(404).json({ message: "Employee not found" });
+        }
+        employee = { id: dbEmp.id, firstName: dbEmp.firstName, lastName: dbEmp.lastName, position: dbEmp.position || null, department: dbEmp.department || null, email: (dbEmp as any).email || null };
+      } else {
         return res.status(404).json({ message: "Employee not found" });
       }
 
@@ -2448,7 +2475,10 @@ Rules:
       const visits = await storage.getClinicVisitsByUser(userId);
       const visitsWithNames = await Promise.all(
         visits.map(async (visit) => {
-          const employee = await storage.getEmployeeByIdPublic(visit.employeeId);
+          if (visit.walkInName) {
+            return { ...visit, employeeName: visit.walkInName };
+          }
+          const employee = visit.employeeId ? await storage.getEmployeeByIdPublic(visit.employeeId) : null;
           return {
             ...visit,
             employeeName: employee ? `${employee.firstName} ${employee.lastName}` : "Unknown Employee",

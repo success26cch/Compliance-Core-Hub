@@ -117,6 +117,8 @@ function getAutoServices(visitType: string): string[] {
 
 function EmployeePassportContent() {
   const { toast } = useToast();
+  const [walkInMode, setWalkInMode] = useState(false);
+  const [walkInName, setWalkInName] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [visitType, setVisitType] = useState("");
   const [authName, setAuthName] = useState("");
@@ -282,10 +284,19 @@ function EmployeePassportContent() {
   };
 
   const handleGenerate = () => {
-    if (!selectedEmployee) {
+    if (walkInMode && !walkInName.trim()) {
+      toast({
+        title: "Employee Name Required",
+        description: "Please enter the employee's full name.",
+        variant: "destructive",
+      });
+      document.querySelector<HTMLElement>("[data-testid='input-walkin-name']")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (!walkInMode && !selectedEmployee) {
       toast({
         title: "Employee Required",
-        description: "Please select an employee at the top of the form (Patient Information section).",
+        description: "Please select an employee, or switch to Walk-In mode to enter a name manually.",
         variant: "destructive",
       });
       document.querySelector<HTMLElement>("[data-testid='select-employee-trigger']")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -325,7 +336,7 @@ function EmployeePassportContent() {
     const selectedClinic = selectedClinicLocationId ? clinicLocations.find(c => c.id === parseInt(selectedClinicLocationId)) : null;
 
     generateMutation.mutate({
-      employeeId: selectedEmployee.id,
+      ...(walkInMode ? { walkInName: walkInName.trim() } : { employeeId: selectedEmployee!.id }),
       visitType,
       authorizationName: authName,
       authorizationTitle: authTitle,
@@ -486,17 +497,52 @@ function EmployeePassportContent() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
+              {/* Employee mode toggle */}
+              <div className="sm:col-span-2 space-y-3">
                 <Label className="flex items-center gap-2">
-                  Select Employee
+                  Patient / Employee
                   <span className="text-xs font-semibold text-red-500 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">Required</span>
                 </Label>
-                {loadingEmployees ? (
+                <div className="flex rounded-lg border border-border overflow-hidden" data-testid="toggle-employee-mode">
+                  <button
+                    type="button"
+                    onClick={() => { setWalkInMode(false); setWalkInName(""); }}
+                    className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${!walkInMode ? "bg-[#FFC107] text-black" : "bg-transparent text-muted-foreground hover:bg-muted"}`}
+                    data-testid="button-mode-registered"
+                  >
+                    Select from System
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setWalkInMode(true); setSelectedEmployee(null); }}
+                    className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${walkInMode ? "bg-[#FFC107] text-black" : "bg-transparent text-muted-foreground hover:bg-muted"}`}
+                    data-testid="button-mode-walkin"
+                  >
+                    Walk-In (Not in System)
+                  </button>
+                </div>
+
+                {walkInMode ? (
+                  <div className="space-y-1">
+                    <Input
+                      placeholder="Employee full name (e.g. John Smith)"
+                      value={walkInName}
+                      onChange={(e) => setWalkInName(e.target.value)}
+                      data-testid="input-walkin-name"
+                    />
+                    <p className="text-xs text-muted-foreground">This employee will appear on the passport but will not be added to Employee Management.</p>
+                  </div>
+                ) : loadingEmployees ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading employees...
                   </div>
                 ) : employees.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No employees found. Add employees in the Employee Management section first.</p>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">No employees found in the system.</p>
+                    <button type="button" onClick={() => { setWalkInMode(true); }} className="text-sm text-[#FFC107] underline underline-offset-2" data-testid="button-switch-to-walkin">
+                      Switch to Walk-In mode to enter a name manually
+                    </button>
+                  </div>
                 ) : (
                   <Select
                     value={selectedEmployee ? String(selectedEmployee.id) : undefined}
