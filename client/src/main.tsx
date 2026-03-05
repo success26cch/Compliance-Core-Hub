@@ -2,6 +2,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {});

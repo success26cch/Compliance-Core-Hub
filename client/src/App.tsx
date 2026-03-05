@@ -56,7 +56,12 @@ import NotFound from "@/pages/not-found";
 function PageTracker() {
   const [location] = useLocation();
   useEffect(() => {
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
     window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     fetch("/api/track-visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
