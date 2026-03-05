@@ -1,32 +1,31 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import {
   CheckCircle2, ArrowLeft, ChevronRight, Sparkles, Zap, Shield,
   BookOpen, MessageSquare, AlertTriangle, HelpCircle, GitMerge, Search,
+  ChevronDown, Target, Award, FileText, Users, Factory,
+  BarChart3, Building2, Layers, ClipboardCheck, FileSearch,
+  Scale, Lock, Brain, ShieldCheck, ArrowRight, Star,
 } from "lucide-react";
 import acsiLogo from "@assets/42_1772589582132.png";
 
-const ISA_CAPABILITIES = [
-  "Clause-by-clause standard interpretation",
-  "Scenario compliance assessment — 'Will this pass an audit?'",
-  "Nonconformance risk explanation with clause citations",
-  "Implementation guidance for specific requirements",
-  "Practical Q&A on real workplace situations",
-  "Cross-clause impact analysis",
-];
+const ORANGE = "hsl(24,95%,53%)";
+const ORANGE_DARK = "hsl(24,95%,42%)";
 
-const ISA_PRO_CAPABILITIES = [
-  "Everything in Isa",
-  "IATF 16949 customer-specific requirements context",
-  "ISO 13485 medical device regulatory interpretation",
-  "ISO/IEC 27001 information security risk guidance",
-  "AS9100 aerospace compliance scenario analysis",
-  "Cross-standard regulatory harmonization",
-];
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
 
-const ISA_STANDARDS = ["ISO 9001", "ISO 14001", "ISO 45001"];
-const ISA_PRO_STANDARDS = ["ISO 9001", "ISO 14001", "ISO 45001", "IATF 16949", "AS9100", "ISO 13485", "ISO 27001"];
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
+
+const ISA_STANDARDS_CORE = ["ISO 9001:2015", "ISO 14001:2015", "ISO 45001:2018"];
+const ISA_STANDARDS_PRO = ["IATF 16949:2016", "AS9100 Rev D", "ISO 13485:2016", "ISO/IEC 27001:2022"];
 
 const STATS = [
   { value: "7", label: "ISO Standards" },
@@ -35,25 +34,150 @@ const STATS = [
   { value: "0", label: "Scheduling Required" },
 ];
 
-const ISA_FEATURES = [
+const CAPABILITIES = [
   {
-    icon: Sparkles,
-    title: "Thinks Like an Auditor",
-    body: "Isa cites exact clause numbers, not general advice. She frames answers the way a third-party auditor would — traceable, defensible, and standard-referenced.",
+    icon: FileSearch,
+    title: "Clause-by-Clause Gap Analysis",
+    description: "Tell Isa where you are, and she walks through every clause of your chosen standard — asking targeted questions to map gaps, assign risk levels, and prioritize your path to certification.",
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
   },
   {
-    icon: Shield,
-    title: "Scenario Compliance Guidance",
-    body: "Describe what you're doing and Isa tells you whether it aligns with the standard and why — with specific clause references and risk context.",
+    icon: ClipboardCheck,
+    title: "Audit Readiness Assessment",
+    description: "Prepare for third-party certification audits with Isa's guided readiness review. She identifies the most common nonconformances, verifies your documentation, and walks you through mock auditor questions.",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+  },
+  {
+    icon: AlertTriangle,
+    title: "Nonconformance Response",
+    description: "Received a major or minor NC? Isa writes a defensible corrective action response — with root cause analysis, containment actions, and permanent corrective measures tied to the exact clause.",
+    color: "text-red-400",
+    bg: "bg-red-500/10",
+  },
+  {
+    icon: BookOpen,
+    title: "Quality Manual Drafting",
+    description: "Isa builds your Quality Manual section by section — Scope, Context of the Organization, Leadership, Risk, and more — tailored to your processes, industry, and certification standard.",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
   },
   {
     icon: GitMerge,
-    title: "Regulatory Harmonization",
-    body: "For integrated standards like ISO 45001 and ISO 13485, Isa applies cross-standard logic to identify overlapping requirements and shared compliance pathways.",
+    title: "Integrated Management Systems",
+    description: "Running ISO 9001, 14001, and 45001 together? Isa maps shared clauses, identifies integration opportunities, and helps you build one unified IMS instead of three separate systems.",
+    color: "text-purple-400",
+    bg: "bg-purple-500/10",
+  },
+  {
+    icon: Layers,
+    title: "Internal Audit Checklists",
+    description: "Generate clause-specific internal audit checklists with objective evidence prompts, auditor questions, and conformance/nonconformance decision criteria — ready to use on your next internal audit.",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+  },
+  {
+    icon: Target,
+    title: "Corrective Action Plans",
+    description: "Isa structures your CAPA using 8D, 5-Why, or fishbone methodology — whichever fits your NC. She documents the problem, root cause, corrective actions, and verification steps.",
+    color: "text-orange-400",
+    bg: "bg-orange-500/10",
+  },
+  {
+    icon: FileText,
+    title: "Management Review Preparation",
+    description: "Pull together your management review inputs — KPIs, audit results, customer feedback, NC trends, objectives status — and Isa helps structure a compliant review agenda and output record.",
+    color: "text-pink-400",
+    bg: "bg-pink-500/10",
   },
 ];
 
-const WHAT_ISA_DOES = [
+const STANDARDS_DETAIL = [
+  {
+    code: "ISO 9001:2015",
+    label: "Quality Management",
+    tier: "core",
+    focus: "Customer satisfaction, process control, continual improvement",
+    industries: "Manufacturing, services, healthcare, aerospace, automotive",
+  },
+  {
+    code: "ISO 14001:2015",
+    label: "Environmental Management",
+    tier: "core",
+    focus: "Environmental impact, legal compliance, sustainability objectives",
+    industries: "All industries with environmental aspects and impacts",
+  },
+  {
+    code: "ISO 45001:2018",
+    label: "OH&S Management",
+    tier: "core",
+    focus: "Worker health & safety, hazard identification, incident prevention",
+    industries: "All industries — replaces OHSAS 18001",
+  },
+  {
+    code: "IATF 16949:2016",
+    label: "Automotive Quality",
+    tier: "pro",
+    focus: "Automotive production, CSRs, PPAP, APQP, core tools",
+    industries: "Automotive OEM suppliers and Tier 1/2/3 manufacturers",
+  },
+  {
+    code: "AS9100 Rev D",
+    label: "Aerospace Quality",
+    tier: "pro",
+    focus: "Design risk, configuration management, AS9100 special requirements",
+    industries: "Aerospace, defense, and space manufacturing",
+  },
+  {
+    code: "ISO 13485:2016",
+    label: "Medical Devices",
+    tier: "pro",
+    focus: "Design controls, risk management, sterility, regulatory requirements",
+    industries: "Medical device manufacturers and suppliers",
+  },
+  {
+    code: "ISO/IEC 27001:2022",
+    label: "Information Security",
+    tier: "pro",
+    focus: "Risk assessment, security controls, ISMS, data protection",
+    industries: "Technology, finance, healthcare, any data-handling organization",
+  },
+];
+
+const ACCURACY_POINTS = [
+  { icon: Lock, text: "Only cites ISO standard clause numbers and annex references — no blog posts, no third-party interpretations" },
+  { icon: Shield, text: "Clearly distinguishes between SHALL (mandatory), SHOULD (recommended), and MAY (permitted) requirements" },
+  { icon: Target, text: "Identifies conformance evidence objectively — what an auditor would accept, not what sounds good" },
+  { icon: AlertTriangle, text: "Flags when questions touch Customer Specific Requirements (CSRs) and redirects to CESAR" },
+  { icon: Brain, text: "Acknowledges genuine standard ambiguity and explains how certification bodies typically interpret requirements" },
+  { icon: Scale, text: "Never guesses what an auditor will or won't find — Isa states what the standard requires, not what might slide" },
+];
+
+const AUDIENCE = [
+  {
+    icon: Award,
+    role: "Quality Managers & ISO Coordinators",
+    desc: "Run gap analyses, prep for audits, draft procedures, and manage corrective actions — all backed by exact clause references.",
+  },
+  {
+    icon: Factory,
+    role: "Operations & Plant Managers",
+    desc: "Understand what your certification really requires, where your gaps are, and what's at risk before your auditor shows up.",
+  },
+  {
+    icon: Building2,
+    role: "Business Owners Pursuing Certification",
+    desc: "Navigate the path to ISO certification without a full-time consultant. Isa guides you from scope to certification-ready.",
+  },
+  {
+    icon: Users,
+    role: "Internal Auditors",
+    desc: "Generate clause-specific audit checklists, understand objective evidence requirements, and write compliant audit findings.",
+  },
+];
+
+const ISA_CAPABILITIES_QUICK = [
   { icon: BookOpen, label: "Clause Interpretation" },
   { icon: Search, label: "Scenario Analysis" },
   { icon: AlertTriangle, label: "Risk Explanation" },
@@ -62,25 +186,43 @@ const WHAT_ISA_DOES = [
   { icon: GitMerge, label: "Standard Harmonization" },
 ];
 
-const ORANGE = "hsl(24,95%,53%)";
-const ORANGE_DARK = "hsl(24,95%,42%)";
-const DARK_BG = "hsl(222,47%,8%)";
-
 export default function MeetIsa() {
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      q: "What makes Isa different from ChatGPT or a consultant?",
+      a: "Isa's knowledge base is built from the actual text of 7 ISO standards and ISO guidance documents. Unlike general AI tools that might paraphrase requirements inaccurately, Isa cites exact clause numbers and uses the same objective evidence language a third-party auditor would use. And unlike a consultant, Isa is available 24/7 at a fraction of the cost.",
+    },
+    {
+      q: "Can Isa replace my ISO consultant?",
+      a: "Isa is designed to be a powerful tool for your quality team — reducing consultant dependency while keeping you audit-ready year-round. For initial certification, implementation support, and complex industry-specific questions, a qualified consultant still adds value. But for daily clause questions, gap prep, and document drafting, Isa handles it immediately.",
+    },
+    {
+      q: "What's the difference between Isa and Isa Pro?",
+      a: "Isa covers the three core management system standards: ISO 9001 (Quality), ISO 14001 (Environmental), and ISO 45001 (OH&S). Isa Pro adds all four specialist standards: IATF 16949 (Automotive), AS9100 Rev D (Aerospace), ISO 13485 (Medical Devices), and ISO/IEC 27001 (Information Security). Both include unlimited questions and full AI guidance.",
+    },
+    {
+      q: "What are Customer Specific Requirements (CSRs) and does Isa handle them?",
+      a: "CSRs are OEM-specific requirements that supplement IATF 16949 — each automotive customer (Ford, GM, Stellantis, etc.) publishes their own. Because CSRs change frequently and require live OEM portal access, Isa does not cover them. She redirects all CSR questions to CESAR, our dedicated CSR Connect Hub built specifically for that purpose.",
+    },
+    {
+      q: "How does Isa integrate with the ISO Manager platform?",
+      a: "Isa is the AI brain behind the ISO Manager workspace. When you complete the setup wizard, Isa uses your organization's profile — processes, standards, industry, scope — to personalize every answer. The ISO Manager adds document storage, process maps, a document vault, and KPI tracking on top of Isa's AI guidance.",
+    },
+  ];
+
   return (
     <div className="min-h-screen overflow-x-hidden" data-testid="page-meet-isa">
 
-      {/* ════════════════════════════════════════
-          WHITE TOP SECTION  (nav + hero + stats)
-      ════════════════════════════════════════ */}
+      {/* ══════════════════════════════
+          WHITE TOP SECTION
+      ══════════════════════════════ */}
       <div className="relative overflow-hidden bg-white">
-
-        {/* Subtle orange wash top-right */}
         <div
           className="pointer-events-none absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.12] blur-[100px]"
           style={{ background: ORANGE }}
         />
-        {/* Light gray grid texture overlay */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
@@ -89,105 +231,69 @@ export default function MeetIsa() {
           }}
         />
 
-        {/* ── Nav ── */}
+        {/* Nav */}
         <nav className="relative z-10 border-b border-black/8 px-6 py-4 flex items-center justify-between">
           <Link href="/">
-            <button
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm font-medium"
-              data-testid="link-back-home"
-            >
+            <button className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm font-medium" data-testid="link-back-home">
               <ArrowLeft className="w-4 h-4" />
               Back to CCHUB
             </button>
           </Link>
-          <img
-            src={acsiLogo}
-            alt="ACSI"
-            style={{ height: "36px", mixBlendMode: "multiply" }}
-          />
+          <img src={acsiLogo} alt="ACSI" style={{ height: "36px", mixBlendMode: "multiply" }} />
+          <Link href="/settings">
+            <Button
+              className="font-bold text-white px-5 py-2 text-sm"
+              style={{ background: ORANGE }}
+              data-testid="button-nav-get-isa"
+            >
+              Get Isa
+            </Button>
+          </Link>
         </nav>
 
-        {/* ── Hero ── */}
+        {/* Hero */}
         <div className="relative z-10 max-w-5xl mx-auto px-6 pt-10 pb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            {/* Logo — multiply blend drops the black background on white */}
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
             <div className="flex justify-center mb-4">
-              <img
-                src={acsiLogo}
-                alt="ACSI"
-                style={{ width: "180px", mixBlendMode: "multiply" }}
-              />
+              <img src={acsiLogo} alt="ACSI" style={{ width: "180px", mixBlendMode: "multiply" }} />
             </div>
-
-            {/* Pill badge */}
             <div className="flex justify-center mb-5">
               <span
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white"
                 style={{ background: "linear-gradient(90deg, #111 0%, #333 100%)" }}
               >
-                ACSI ISO Manager · AI Guidance
+                ACSI ISO Manager · Lead AI Auditor
               </span>
             </div>
-
-            {/* Heading */}
             <h1 className="text-6xl md:text-7xl font-black tracking-tight mb-4 text-gray-900 leading-none">
-              Meet{" "}
-              <span style={{ color: ORANGE }}>Isa</span>
+              Meet <span style={{ color: ORANGE }}>Isa</span>
             </h1>
-
-            {/* Sub */}
             <p className="text-lg font-semibold text-gray-600 mb-4">
               Lead ISO Auditor AI — built from the DNA of 7 ISO standards
             </p>
-            <p className="text-base text-gray-500 max-w-2xl mx-auto leading-relaxed mb-10">
-              Isa thinks like an auditor, not a search engine. She cites clause numbers, identifies gaps with
-              objective evidence language, and guides teams from assessment through certification.
+            <p className="text-base text-gray-500 max-w-2xl mx-auto leading-relaxed mb-8">
+              Isa thinks like a third-party auditor, not a search engine. She cites clause numbers, identifies gaps with objective evidence language, builds your documentation, and guides teams from first assessment through certification — and beyond.
             </p>
 
-            {/* Standard badges */}
-            <div className="flex flex-wrap justify-center gap-2 mb-10">
-              {ISA_STANDARDS.map((s) => (
-                <span
-                  key={s}
-                  className="text-xs font-bold px-3 py-1.5 rounded-full"
-                  style={{ background: ORANGE, color: "#fff" }}
-                >
-                  {s}
-                </span>
+            {/* Standards badges — core orange, pro dark outlined */}
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {ISA_STANDARDS_CORE.map((s) => (
+                <span key={s} className="text-xs font-bold px-3 py-1.5 rounded-full text-white" style={{ background: ORANGE }}>{s}</span>
               ))}
-              {["IATF 16949", "AS9100", "ISO 13485", "ISO 27001"].map((s) => (
-                <span
-                  key={s}
-                  className="text-xs font-bold px-3 py-1.5 rounded-full border-2"
-                  style={{ borderColor: "#111", background: "#fff", color: "#111" }}
-                >
-                  {s}
-                </span>
+              {ISA_STANDARDS_PRO.map((s) => (
+                <span key={s} className="text-xs font-bold px-3 py-1.5 rounded-full border-2" style={{ borderColor: "#111", background: "#fff", color: "#111" }}>{s}</span>
               ))}
             </div>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/settings">
-                <Button
-                  className="font-bold text-white px-8 py-5 text-base shadow-lg hover:opacity-90 transition-opacity"
-                  style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, ${ORANGE_DARK} 100%)` }}
-                  data-testid="button-hero-get-isa"
-                >
+                <Button className="font-bold text-white px-8 py-5 text-base shadow-lg hover:opacity-90 transition-opacity" style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, ${ORANGE_DARK} 100%)` }} data-testid="button-hero-get-isa">
                   Get Started with Isa
                 </Button>
               </Link>
               <Link href="/iso-manager">
-                <Button
-                  variant="outline"
-                  className="font-bold px-8 py-5 text-base border-2 border-gray-900 text-gray-900 bg-transparent hover:bg-gray-900 hover:text-white transition-all"
-                  data-testid="button-hero-iso-manager"
-                >
+                <Button variant="outline" className="font-bold px-8 py-5 text-base border-2 border-gray-900 text-gray-900 bg-transparent hover:bg-gray-900 hover:text-white transition-all" data-testid="button-hero-iso-manager">
                   See Full ISO Manager
                 </Button>
               </Link>
@@ -195,18 +301,12 @@ export default function MeetIsa() {
           </motion.div>
         </div>
 
-        {/* ── Stats bar — white bg, orange numbers, black labels ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="relative z-10 border-t border-black/8"
-          style={{ background: "#111" }}
-        >
+        {/* Stats bar */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.4 }} className="relative z-10 border-t border-black/8" style={{ background: "#111" }}>
           <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 divide-x divide-white/10">
             {STATS.map((s, i) => (
               <div key={s.label} className="py-5 text-center" data-testid={`stat-isa-${i}`}>
-                <p className="text-2xl font-black text-white mb-0.5" style={{ color: ORANGE }}>{s.value}</p>
+                <p className="text-2xl font-black mb-0.5" style={{ color: ORANGE }}>{s.value}</p>
                 <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wide">{s.label}</p>
               </div>
             ))}
@@ -214,66 +314,22 @@ export default function MeetIsa() {
         </motion.div>
       </div>
 
-      {/* ════════════════════════════════════════
-          DARK BOTTOM SECTION
-      ════════════════════════════════════════ */}
-      <div
-        className="relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg, hsl(222,47%,9%) 0%, hsl(222,60%,6%) 100%)", color: "white" }}
-      >
-        {/* Subtle glow */}
-        <div
-          className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.06] blur-[100px]"
-          style={{ background: ORANGE }}
-        />
+      {/* ══════════════════════════════
+          DARK SECTION — everything below
+      ══════════════════════════════ */}
+      <div className="relative overflow-hidden" style={{ background: "linear-gradient(160deg, hsl(222,47%,9%) 0%, hsl(222,60%,6%) 100%)", color: "white" }}>
+        <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-[0.06] blur-[100px]" style={{ background: ORANGE }} />
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 py-16">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 py-16 space-y-24">
 
-          {/* ── Feature Cards ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16"
-          >
-            {ISA_FEATURES.map((f, i) => (
-              <div
-                key={f.title}
-                className="rounded-2xl p-6"
-                style={{
-                  background: "linear-gradient(145deg, hsl(222,47%,13%) 0%, hsl(222,47%,10%) 100%)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                }}
-                data-testid={`card-feature-isa-${i}`}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: "hsl(24,95%,53%,0.12)", border: "1px solid hsl(24,95%,53%,0.25)" }}
-                >
-                  <f.icon className="w-5 h-5" style={{ color: ORANGE }} />
-                </div>
-                <p className="font-black text-white text-sm mb-2">{f.title}</p>
-                <p className="text-sm text-white/60 leading-relaxed">{f.body}</p>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* ── What Isa Handles ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className="mb-16"
-          >
-            <p className="text-center text-xs font-bold text-white/60 uppercase tracking-widest mb-6">
-              What Isa Handles
-            </p>
+          {/* ── What Isa Handles (quick pills) ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeUp}>
+            <p className="text-center text-xs font-bold text-white/50 uppercase tracking-widest mb-6">What Isa Handles</p>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-              {WHAT_ISA_DOES.map((item) => (
+              {ISA_CAPABILITIES_QUICK.map((item) => (
                 <div
                   key={item.label}
-                  className="flex flex-col items-center gap-2 rounded-xl py-4 px-2"
-                  style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${ORANGE}40` }}
+                  className="flex flex-col items-center gap-2 rounded-xl py-4 px-2 bg-white/10 border border-white/20"
                 >
                   <item.icon className="w-5 h-5" style={{ color: ORANGE }} />
                   <span className="text-[11px] font-bold text-white text-center leading-tight">{item.label}</span>
@@ -282,239 +338,395 @@ export default function MeetIsa() {
             </div>
           </motion.div>
 
-          {/* ── Section Divider ── */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest whitespace-nowrap">AI Guidance Plans</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
-
-          {/* ── Product Cards ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
-            {/* Isa */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.34 }}
-              data-testid="card-meet-isa-core"
-            >
-              <div
-                className="rounded-2xl overflow-hidden h-full flex flex-col"
-                style={{
-                  background: "linear-gradient(160deg, hsl(222,47%,13%) 0%, hsl(222,47%,10%) 100%)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
-              >
-                <div className="h-1" style={{ background: ORANGE }} />
-                <div className="p-8 flex flex-col flex-1">
-                  <div className="mb-6">
-                    <p className="font-black text-white text-xl mb-1">Isa</p>
-                    <p className="text-sm text-white/50">Core Standards · AI Guidance</p>
-                  </div>
-                  <div className="mb-6 pb-6 border-b border-white/10">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black" style={{ color: ORANGE }}>$99</span>
-                      <span className="text-white/40 font-medium">/mo</span>
+          {/* ── Core Feature Cards ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp} className="text-center mb-10">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">How Isa Thinks</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Built to Think Like an Auditor</h2>
+              <p className="text-white/55 max-w-2xl mx-auto text-base">Isa doesn't give generic advice. She cites clauses, distinguishes SHALL from SHOULD, and frames answers the way a certification body would evaluate them.</p>
+            </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                {
+                  icon: Sparkles,
+                  title: "Thinks Like an Auditor",
+                  body: "Isa cites exact clause numbers, not general advice. She frames answers the way a third-party auditor would — traceable, defensible, and standard-referenced.",
+                },
+                {
+                  icon: Shield,
+                  title: "Scenario Compliance Guidance",
+                  body: "Describe what you're doing and Isa tells you whether it aligns with the standard and why — with specific clause references and risk context for gaps.",
+                },
+                {
+                  icon: GitMerge,
+                  title: "Regulatory Harmonization",
+                  body: "For integrated management systems, Isa applies cross-standard logic to identify overlapping requirements and shared compliance pathways across ISO 9001, 14001, and 45001.",
+                },
+              ].map((f, i) => (
+                <motion.div key={f.title} variants={fadeUp}>
+                  <div className="rounded-2xl p-6 h-full bg-white/[0.06] border border-white/15" data-testid={`card-feature-isa-${i}`}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 bg-white/10 border border-white/20">
+                      <f.icon className="w-5 h-5 text-white" style={{ color: ORANGE }} />
                     </div>
-                    <p className="text-xs text-white/30 mt-1">per month · cancel anytime</p>
+                    <p className="font-black text-white text-sm mb-2">{f.title}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{f.body}</p>
                   </div>
-                  <div className="mb-6">
-                    <p className="text-[10px] font-bold text-white/35 uppercase tracking-wide mb-3">Standards Covered</p>
-                    <div className="flex flex-wrap gap-2">
-                      {ISA_STANDARDS.map(s => (
-                        <span
-                          key={s}
-                          className="text-xs px-2.5 py-1 rounded-lg font-bold"
-                          style={{ background: ORANGE, color: "#fff" }}
-                        >
-                          {s}
-                        </span>
-                      ))}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ── Capabilities Grid (8 cards) ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp} className="text-center mb-10">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">What Isa Can Do</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">More Than Answers. <span style={{ color: ORANGE }}>Actions.</span></h2>
+              <p className="text-white/55 max-w-2xl mx-auto text-base">Isa doesn't just answer questions. She leads gap analyses, builds your documents, prepares you for audits, and writes your corrective actions.</p>
+            </motion.div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {CAPABILITIES.map((cap, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <div className="rounded-xl p-5 h-full bg-white/[0.05] border border-white/10 hover:border-white/25 transition-colors" data-testid={`card-capability-isa-${i}`}>
+                    <div className={`w-10 h-10 rounded-lg ${cap.bg} flex items-center justify-center mb-3`}>
+                      <cap.icon className={`w-5 h-5 ${cap.color}`} />
                     </div>
+                    <h3 className="text-sm font-bold text-white mb-1.5">{cap.title}</h3>
+                    <p className="text-xs text-white/55 leading-relaxed">{cap.description}</p>
                   </div>
-                  <ul className="space-y-2.5 mb-8 flex-1">
-                    {ISA_CAPABILITIES.map(cap => (
-                      <li key={cap} className="flex items-start gap-2.5 text-sm text-white/65">
-                        <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: ORANGE }} />
-                        <span>{cap}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/settings">
-                    <Button
-                      className="w-full font-bold text-white hover:opacity-90 transition-opacity"
-                      style={{ background: ORANGE }}
-                      data-testid="button-get-isa"
-                    >
-                      Get Isa
-                    </Button>
-                  </Link>
-                </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ── Accuracy Protocol ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp} className="text-center mb-10">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4" style={{ background: "hsl(0,72%,51%,0.15)", color: "#f87171", border: "1px solid hsl(0,72%,51%,0.3)" }}>Accuracy Protocol</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Zero Tolerance for <span className="text-red-400">Guessing.</span></h2>
+              <p className="text-white/55 max-w-2xl mx-auto text-base">When certification is on the line, accuracy isn't optional. Isa cites the standard — not blog posts, not opinions, not assumptions.</p>
+            </motion.div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              {ACCURACY_POINTS.map((point, i) => (
+                <motion.div key={i} variants={fadeUp} className="flex items-start gap-4 p-5 rounded-xl bg-white/[0.05] border border-white/10" data-testid={`accuracy-point-${i}`}>
+                  <div className="w-9 h-9 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                    <point.icon className="w-4 h-4 text-red-400" />
+                  </div>
+                  <p className="text-sm text-white/70 leading-relaxed">{point.text}</p>
+                </motion.div>
+              ))}
+            </div>
+            <motion.div variants={fadeUp} className="mt-8 text-center">
+              <div className="inline-flex items-center gap-3 bg-white/[0.07] border border-white/15 rounded-full px-6 py-3">
+                <ShieldCheck className="w-5 h-5" style={{ color: ORANGE }} />
+                <span className="text-sm text-white/65">When Isa doesn't know — Isa tells you. No fabrication. No guessing. Ever.</span>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* ── Standards Coverage ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp} className="text-center mb-10">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">Standards Coverage</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Built From <span style={{ color: ORANGE }}>Standards.</span> Not Opinions.</h2>
+              <p className="text-white/55 max-w-2xl mx-auto text-base">Every answer Isa gives traces back to the actual standard text — not interpretations, not paraphrases, not third-party guidance.</p>
+            </motion.div>
+
+            {/* Core standards */}
+            <motion.div variants={fadeUp} className="mb-3">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-white" style={{ background: ORANGE }}>Core — Included in Isa ($99/mo)</span>
+              </div>
+            </motion.div>
+            <div className="grid md:grid-cols-3 gap-3 mb-6">
+              {STANDARDS_DETAIL.filter(s => s.tier === "core").map((s, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <div className="rounded-xl p-5 bg-white/[0.07] border border-white/20 h-full" data-testid={`standard-core-${i}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="text-sm font-black text-white">{s.code}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: ORANGE }}>{s.tier === "core" ? "CORE" : "PRO"}</span>
+                    </div>
+                    <p className="text-xs font-bold text-white/50 uppercase tracking-wide mb-1">{s.label}</p>
+                    <p className="text-xs text-white/65 leading-relaxed mb-2">{s.focus}</p>
+                    <p className="text-[11px] text-white/40 italic">{s.industries}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Pro standards */}
+            <motion.div variants={fadeUp} className="mb-3">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white text-gray-900 border border-white/30">Pro — Included in Isa Pro ($199/mo)</span>
+              </div>
+            </motion.div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {STANDARDS_DETAIL.filter(s => s.tier === "pro").map((s, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <div className="rounded-xl p-5 bg-white/[0.04] border border-white/15 h-full" data-testid={`standard-pro-${i}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="text-sm font-black text-white">{s.code}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-gray-900">PRO</span>
+                    </div>
+                    <p className="text-xs font-bold text-white/50 uppercase tracking-wide mb-1">{s.label}</p>
+                    <p className="text-xs text-white/60 leading-relaxed mb-2">{s.focus}</p>
+                    <p className="text-[11px] text-white/35 italic">{s.industries}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ── Who Is Isa For? ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp} className="text-center mb-10">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">Who Is Isa For?</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Every Quality Team <span style={{ color: ORANGE }}>Needs Isa.</span></h2>
+            </motion.div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {AUDIENCE.map((item, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <div className="flex flex-col p-6 rounded-xl bg-white/[0.05] border border-white/12 hover:border-white/25 transition-all duration-200 h-full" data-testid={`audience-card-isa-${i}`}>
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 bg-white/10 border border-white/20">
+                      <item.icon className="w-5 h-5 text-white" style={{ color: ORANGE }} />
+                    </div>
+                    <h3 className="text-sm font-bold text-white mb-2 leading-snug">{item.role}</h3>
+                    <p className="text-xs text-white/55 leading-relaxed">{item.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ── Pricing Section ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp}>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="flex-1 h-px bg-white/15" />
+                <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest whitespace-nowrap">AI Guidance Plans</span>
+                <div className="flex-1 h-px bg-white/15" />
               </div>
             </motion.div>
 
-            {/* Isa Pro */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              data-testid="card-meet-isa-pro"
-            >
-              <div
-                className="rounded-2xl overflow-hidden h-full flex flex-col"
-                style={{
-                  background: "linear-gradient(160deg, hsl(222,47%,15%) 0%, hsl(222,47%,11%) 100%)",
-                  border: `2px solid hsl(24,95%,53%,0.4)`,
-                  boxShadow: `0 0 40px hsl(24,95%,53%,0.08)`,
-                }}
-              >
-                <div className="h-1" style={{ background: `linear-gradient(90deg, ${ORANGE}, hsl(24,95%,70%))` }} />
-                <div className="p-8 flex flex-col flex-1">
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <p className="font-black text-white text-xl mb-1">Isa Pro</p>
-                      <p className="text-sm text-white/50">All 7 Standards · Full AI Coverage</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Isa */}
+              <motion.div variants={fadeUp} data-testid="card-meet-isa-core">
+                <div className="rounded-2xl overflow-hidden h-full flex flex-col bg-white/[0.06] border border-white/15">
+                  <div className="h-1" style={{ background: ORANGE }} />
+                  <div className="p-8 flex flex-col flex-1">
+                    <div className="mb-6">
+                      <p className="font-black text-white text-xl mb-1">Isa</p>
+                      <p className="text-sm text-white/50">Core Standards · AI Guidance</p>
                     </div>
-                    <span
-                      className="text-[9px] font-bold px-2.5 py-1 rounded-full text-white whitespace-nowrap"
-                      style={{ background: ORANGE }}
-                    >
-                      ALL 7 STANDARDS
-                    </span>
-                  </div>
-                  <div className="mb-6 pb-6 border-b border-white/10">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black" style={{ color: ORANGE }}>$199</span>
-                      <span className="text-white/40 font-medium">/mo</span>
+                    <div className="mb-6 pb-6 border-b border-white/10">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black" style={{ color: ORANGE }}>$99</span>
+                        <span className="text-white/40 font-medium">/mo</span>
+                      </div>
+                      <p className="text-xs text-white/30 mt-1">per month · cancel anytime</p>
                     </div>
-                    <p className="text-xs text-white/30 mt-1">per month · cancel anytime</p>
-                  </div>
-                  <div className="mb-6">
-                    <p className="text-[10px] font-bold text-white/35 uppercase tracking-wide mb-3">All Standards Covered</p>
-                    <div className="flex flex-wrap gap-2">
-                      {ISA_PRO_STANDARDS.map((s, i) => (
-                        <span
-                          key={s}
-                          className="text-xs px-2.5 py-1 rounded-lg font-bold"
-                          style={
-                            i < 3
-                              ? { background: ORANGE, color: "#fff" }
-                              : { background: "#fff", color: "#111", border: `2px solid ${ORANGE}` }
-                          }
-                        >
-                          {s}
-                        </span>
+                    <div className="mb-6">
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wide mb-3">Standards Covered</p>
+                      <div className="flex flex-wrap gap-2">
+                        {ISA_STANDARDS_CORE.map(s => (
+                          <span key={s} className="text-xs px-2.5 py-1 rounded-lg font-bold text-white" style={{ background: ORANGE }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <ul className="space-y-2.5 mb-8 flex-1">
+                      {[
+                        "Clause-by-clause standard interpretation",
+                        "Scenario compliance assessment",
+                        "Nonconformance risk explanation",
+                        "Implementation guidance",
+                        "Internal audit checklist generation",
+                        "Document & procedure drafting",
+                      ].map(cap => (
+                        <li key={cap} className="flex items-start gap-2.5 text-sm text-white/70">
+                          <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: ORANGE }} />
+                          <span>{cap}</span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
+                    <Link href="/settings">
+                      <Button className="w-full font-bold text-white hover:opacity-90 transition-opacity" style={{ background: ORANGE }} data-testid="button-get-isa">
+                        Get Isa — $99/mo
+                      </Button>
+                    </Link>
                   </div>
-                  <ul className="space-y-2.5 mb-8 flex-1">
-                    {ISA_PRO_CAPABILITIES.map(cap => (
-                      <li key={cap} className="flex items-start gap-2.5 text-sm text-white/65">
-                        <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: ORANGE }} />
-                        <span>{cap}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/settings">
-                    <Button
-                      className="w-full font-bold text-white hover:opacity-90 transition-opacity"
-                      style={{ background: ORANGE }}
-                      data-testid="button-get-isa-pro"
-                    >
-                      Get Isa Pro
-                    </Button>
-                  </Link>
                 </div>
+              </motion.div>
+
+              {/* Isa Pro */}
+              <motion.div variants={fadeUp} data-testid="card-meet-isa-pro">
+                <div className="rounded-2xl overflow-hidden h-full flex flex-col border-2" style={{ background: "linear-gradient(160deg, hsl(222,47%,13%) 0%, hsl(222,47%,10%) 100%)", borderColor: `hsl(24,95%,53%,0.45)`, boxShadow: `0 0 40px hsl(24,95%,53%,0.1)` }}>
+                  <div className="h-1" style={{ background: `linear-gradient(90deg, ${ORANGE}, hsl(24,95%,70%))` }} />
+                  <div className="p-8 flex flex-col flex-1">
+                    <div className="flex items-start justify-between mb-6">
+                      <div>
+                        <p className="font-black text-white text-xl mb-1">Isa Pro</p>
+                        <p className="text-sm text-white/50">All 7 Standards · Full AI Coverage</p>
+                      </div>
+                      <span className="text-[9px] font-bold px-2.5 py-1 rounded-full text-white whitespace-nowrap" style={{ background: ORANGE }}>ALL 7 STANDARDS</span>
+                    </div>
+                    <div className="mb-6 pb-6 border-b border-white/10">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black" style={{ color: ORANGE }}>$199</span>
+                        <span className="text-white/40 font-medium">/mo</span>
+                      </div>
+                      <p className="text-xs text-white/30 mt-1">per month · cancel anytime</p>
+                    </div>
+                    <div className="mb-6">
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wide mb-3">All Standards Covered</p>
+                      <div className="flex flex-wrap gap-2">
+                        {ISA_STANDARDS_CORE.map(s => (
+                          <span key={s} className="text-xs px-2.5 py-1 rounded-lg font-bold text-white" style={{ background: ORANGE }}>{s}</span>
+                        ))}
+                        {ISA_STANDARDS_PRO.map(s => (
+                          <span key={s} className="text-xs px-2.5 py-1 rounded-lg font-bold bg-white text-gray-900">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <ul className="space-y-2.5 mb-8 flex-1">
+                      {[
+                        "Everything in Isa",
+                        "IATF 16949 automotive quality guidance",
+                        "ISO 13485 medical device regulatory interpretation",
+                        "ISO/IEC 27001 information security risk guidance",
+                        "AS9100 Rev D aerospace compliance analysis",
+                        "Cross-standard regulatory harmonization",
+                        "Specialist industry scenario guidance",
+                      ].map(cap => (
+                        <li key={cap} className="flex items-start gap-2.5 text-sm text-white/70">
+                          <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: ORANGE }} />
+                          <span>{cap}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/settings">
+                      <Button className="w-full font-bold text-white hover:opacity-90 transition-opacity" style={{ background: ORANGE }} data-testid="button-get-isa-pro">
+                        Get Isa Pro — $199/mo
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Bundle Callout */}
+            <motion.div variants={fadeUp} className="mb-4" data-testid="card-bundle-corey-isa">
+              <div className="rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6" style={{ background: "linear-gradient(135deg, hsl(24,95%,53%,0.12) 0%, hsl(24,95%,53%,0.04) 100%)", border: `1px solid hsl(24,95%,53%,0.35)` }}>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white" style={{ background: ORANGE }}>Save $49/mo · $588/yr</span>
+                  </div>
+                  <p className="font-black text-white text-lg mb-1">The Dual AI Advisor Bundle</p>
+                  <p className="text-sm text-white/65 leading-relaxed">
+                    Get both <strong className="text-white/90">Corey</strong> (OSHA · DOT · Safety) and{" "}
+                    <strong className="text-white/90">Isa</strong> (ISO 9001 · 14001 · 45001) for one price.
+                    Individually $198/mo — together <strong style={{ color: ORANGE }}>$149/mo</strong>.
+                  </p>
+                </div>
+                <Link href="/settings" className="shrink-0">
+                  <Button className="font-bold text-white gap-2 px-6 hover:opacity-90 transition-opacity" style={{ background: ORANGE }} data-testid="button-get-bundle">
+                    Get the Bundle <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </Link>
               </div>
             </motion.div>
-          </div>
 
-          {/* ── Bundle Callout ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.46 }}
-            className="mb-6"
-            data-testid="card-bundle-corey-isa"
-          >
-            <div
-              className="rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6"
-              style={{
-                background: "linear-gradient(135deg, hsl(24,95%,53%,0.12) 0%, hsl(24,95%,53%,0.04) 100%)",
-                border: "1px solid hsl(24,95%,53%,0.35)",
-              }}
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-xs font-bold px-2.5 py-1 rounded-full text-white"
-                    style={{ background: ORANGE }}
+            {/* ISO Manager Reference */}
+            <motion.div variants={fadeUp}>
+              <div className="rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6 bg-white/[0.04] border border-white/12">
+                <div className="flex-1">
+                  <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>Also available with ISO Manager</p>
+                  <p className="text-sm text-white/60 leading-relaxed">
+                    Isa is included with all ISO Manager subscriptions. If you're ready to build and manage your full management system — documentation, vault, KPI tracking — explore the ISO Manager.
+                  </p>
+                </div>
+                <Link href="/iso-manager" className="shrink-0">
+                  <button className="flex items-center gap-1.5 text-sm font-bold text-white/60 hover:text-white transition-colors whitespace-nowrap" data-testid="link-iso-manager-plans">
+                    See ISO Manager Plans <ChevronRight className="w-4 h-4" />
+                  </button>
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* ── FAQ ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger} className="max-w-3xl mx-auto">
+            <motion.div variants={fadeUp} className="text-center mb-10">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">FAQ</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Common Questions</h2>
+            </motion.div>
+            <div className="space-y-3">
+              {faqs.map((faq, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <button
+                    onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
+                    className="w-full text-left p-5 rounded-xl bg-white/[0.05] border border-white/10 hover:border-white/20 transition-colors"
+                    data-testid={`faq-isa-${i}`}
                   >
-                    Save $49/mo · $588/yr
-                  </span>
-                </div>
-                <p className="font-black text-white text-lg mb-1">The Dual AI Advisor Bundle</p>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  Get both <strong className="text-white/85">Corey</strong> (OSHA · DOT · Safety) and{" "}
-                  <strong className="text-white/85">Isa</strong> (ISO 9001 · 14001 · 45001) for one price.
-                  Individually $198/mo — together{" "}
-                  <strong style={{ color: ORANGE }}>$149/mo</strong>.
-                </p>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-base font-semibold text-white">{faq.q}</span>
+                      <ChevronDown className={`w-5 h-5 text-white/40 flex-shrink-0 transition-transform ${expandedFaq === i ? "rotate-180" : ""}`} />
+                    </div>
+                    {expandedFaq === i && (
+                      <p className="mt-4 text-sm text-white/60 leading-relaxed">{faq.a}</p>
+                    )}
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ── Final CTA ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeUp} className="text-center relative overflow-hidden">
+            <div className="absolute inset-0 -z-10">
+              <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, hsl(24,95%,53%,0.08) 0%, transparent 70%)" }} />
+            </div>
+            <div className="mb-6">
+              <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-4 border border-white/20" style={{ background: `hsl(24,95%,53%,0.15)` }}>
+                <Star className="w-8 h-8" style={{ color: ORANGE }} />
               </div>
-              <Link href="/settings" className="shrink-0">
-                <Button
-                  className="font-bold text-white gap-2 px-6 hover:opacity-90 transition-opacity"
-                  style={{ background: ORANGE }}
-                  data-testid="button-get-bundle"
-                >
-                  Get the Bundle <ChevronRight className="w-4 h-4" />
+              <div className="inline-block px-4 py-1.5 rounded-full text-sm font-bold text-white mb-4" style={{ background: ORANGE }}>
+                $99/mo · cancel anytime
+              </div>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+              Ready to Meet Your New <span style={{ color: ORANGE }}>ISO Auditor?</span>
+            </h2>
+            <p className="text-lg text-white/55 mb-8 max-w-2xl mx-auto">
+              Stop chasing consultants. Stop guessing at clause interpretations. Stop scrambling before audits. Isa is ready — 24/7, instant, clause-cited.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/settings">
+                <Button size="lg" className="font-bold text-white px-10 py-6 text-lg gap-2 hover:opacity-90 transition-opacity" style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, ${ORANGE_DARK} 100%)` }} data-testid="button-cta-get-isa">
+                  <Sparkles className="w-5 h-5" />
+                  Get Isa — $99/mo
+                </Button>
+              </Link>
+              <Link href="/iso-manager">
+                <Button size="lg" className="bg-white/10 border-2 border-white/25 text-white font-bold px-10 py-6 text-lg gap-2 hover:bg-white/15 transition-all" data-testid="button-cta-iso-manager">
+                  Explore ISO Manager
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
             </div>
           </motion.div>
 
-          {/* ── ISO Manager Reference ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.52 }}
-            className="mb-16"
-          >
-            <div
-              className="rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6"
-              style={{
-                background: "linear-gradient(145deg, hsl(222,47%,13%) 0%, hsl(222,47%,10%) 100%)",
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            >
-              <div className="flex-1">
-                <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>
-                  Also available with ISO Manager
-                </p>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  Isa is included with all ISO Manager subscriptions. If you're ready to build and manage your full
-                  management system — documentation, vault, KPI tracking — explore the ISO Manager.
-                </p>
-              </div>
-              <Link href="/iso-manager" className="shrink-0">
-                <button
-                  className="flex items-center gap-1.5 text-sm font-bold text-white/60 hover:text-white transition-colors"
-                  data-testid="link-iso-manager-plans"
-                >
-                  See ISO Manager Plans <ChevronRight className="w-4 h-4" />
-                </button>
-              </Link>
-            </div>
-          </motion.div>
-
           {/* ── Footer ── */}
-          <p className="text-center text-xs text-white/30 pb-8">
-            Isa is an ACSI product. For OSHA & safety compliance, see{" "}
-            <Link href="/meet-corey">
-              <span className="underline hover:text-white/60 transition-colors cursor-pointer">Corey on CCHUB</span>
-            </Link>.
-          </p>
+          <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img src={acsiLogo} alt="ACSI" style={{ height: "24px", filter: "brightness(0) invert(1)", opacity: 0.5 }} />
+              <span className="text-sm text-white/40">ACSI ISO Manager</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <Link href="/" className="text-sm text-white/40 hover:text-white/60 transition-colors">Home</Link>
+              <Link href="/iso-manager" className="text-sm text-white/40 hover:text-white/60 transition-colors">ISO Manager</Link>
+              <Link href="/meet-corey" className="text-sm text-white/40 hover:text-white/60 transition-colors">Meet Corey</Link>
+              <Link href="/cesar" className="text-sm text-white/40 hover:text-white/60 transition-colors">CESAR</Link>
+            </div>
+          </div>
 
         </div>
       </div>
