@@ -250,6 +250,84 @@ function ClinicalCommunicationLetter({
         </div>
       )}
 
+      <div className="mb-4">
+        <div className="border-2 border-gray-500 rounded p-3">
+          <p className="text-[10px] font-bold uppercase text-gray-800 mb-2 tracking-wide text-center">
+            Restriction Wording Guide — For Physician Use
+          </p>
+          <p className="text-[10px] text-gray-600 mb-2 italic">
+            To help us accommodate your patient's work restrictions, please use specific, measurable language when documenting
+            limitations. Vague restrictions (e.g., "light duty") are difficult to implement. The examples below are provided
+            as a guide — please document all restrictions that apply based on your clinical findings.
+          </p>
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px]">
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Lifting / Carrying</p>
+              <p className="text-gray-600">• "No lifting over ___ lbs"</p>
+              <p className="text-gray-600">• "No carrying over ___ lbs"</p>
+              <p className="text-gray-600">• "No lifting above shoulder height"</p>
+              <p className="text-gray-600">• "No lifting from floor level"</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Pushing / Pulling</p>
+              <p className="text-gray-600">• "No pushing/pulling over ___ lbs of force"</p>
+              <p className="text-gray-600">• "No use of affected extremity for pushing or pulling"</p>
+              <p className="text-gray-600">• "Avoid repetitive pushing/pulling tasks"</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Posture / Position</p>
+              <p className="text-gray-600">• "No prolonged standing greater than ___ minutes"</p>
+              <p className="text-gray-600">• "No bending or stooping at waist"</p>
+              <p className="text-gray-600">• "No kneeling or squatting"</p>
+              <p className="text-gray-600">• "No overhead reaching or work above shoulder"</p>
+              <p className="text-gray-600">• "Sit/stand option required every ___ minutes"</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Hand / Upper Extremity</p>
+              <p className="text-gray-600">• "No use of right/left hand for gripping"</p>
+              <p className="text-gray-600">• "No repetitive hand/wrist motion (typing, tools)"</p>
+              <p className="text-gray-600">• "No vibrating tools or equipment"</p>
+              <p className="text-gray-600">• "No fine motor tasks requiring finger dexterity"</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Hours / Schedule</p>
+              <p className="text-gray-600">• "Maximum ___ hours per day / ___ days per week"</p>
+              <p className="text-gray-600">• "No overtime — standard shift only"</p>
+              <p className="text-gray-600">• "Rest break every ___ minutes required"</p>
+              <p className="text-gray-600">• "No night shift / rotating shift"</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Environment / Exposure</p>
+              <p className="text-gray-600">• "No exposure to extreme heat or cold"</p>
+              <p className="text-gray-600">• "No wet or slippery surface work"</p>
+              <p className="text-gray-600">• "No exposure to dust, fumes, or chemicals"</p>
+              <p className="text-gray-600">• "No driving or operating heavy machinery"</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Lower Extremity / Ambulation</p>
+              <p className="text-gray-600">• "No climbing ladders or stairs"</p>
+              <p className="text-gray-600">• "No walking on uneven terrain"</p>
+              <p className="text-gray-600">• "No prolonged walking greater than ___ minutes"</p>
+              <p className="text-gray-600">• "Must use assistive device (cane/crutches)"</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 mb-0.5 uppercase">Work Status</p>
+              <p className="text-gray-600">• "Released to full duty without restriction"</p>
+              <p className="text-gray-600">• "Released to modified duty with restrictions listed above"</p>
+              <p className="text-gray-600">• "Off work — unable to perform any job duties"</p>
+              <p className="text-gray-600">• "Off work from ___ to ___ ; re-evaluate on ___"</p>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-gray-500 mt-2 italic border-t border-gray-300 pt-1">
+            Note to Provider: If this employee cannot be accommodated within these restrictions and must remain off work,
+            please document "Unable to work" with expected return-to-work date. If modified duty is possible, we will make
+            every effort to provide suitable alternative tasks. Contact: {authContact} — {authPhone}
+          </p>
+        </div>
+      </div>
+
       <div className="mb-4 text-xs leading-relaxed text-gray-800">
         <p>
           We understand that medical treatment decisions are made by qualified healthcare professionals based on the
