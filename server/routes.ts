@@ -1294,6 +1294,33 @@ Rules:
     }
   });
 
+  // Update incident
+  app.patch("/api/incidents/:id", async (req, res) => {
+    if (!(await requirePlatformAccess(req, res))) return;
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid incident ID" });
+    try {
+      const updates: Record<string, any> = {};
+      const allowed = [
+        'description', 'incidentType', 'employeeName', 'jobTitle', 'department',
+        'location', 'bodyPart', 'natureOfInjury', 'objectOrSubstance',
+        'isRecordable', 'resultedInDeath', 'daysAway', 'daysRestricted',
+        'daysJobTransfer', 'isOtherRecordable', 'status', 'incidentDate',
+      ];
+      for (const key of allowed) {
+        if (req.body[key] !== undefined) updates[key] = req.body[key];
+      }
+      if (updates.incidentDate) updates.incidentDate = new Date(updates.incidentDate);
+      const updated = await storage.updateIncident(id, userId, updates);
+      if (!updated) return res.status(404).json({ message: "Incident not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating incident:', error);
+      res.status(500).json({ message: "Failed to update incident" });
+    }
+  });
+
   // Corrective Action Plans (CAPA)
   app.get("/api/corrective-actions", async (req, res) => {
     if (!req.isAuthenticated()) {

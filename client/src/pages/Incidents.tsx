@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type CorrectiveAction = {
@@ -1270,8 +1270,304 @@ function CorrectiveActionPlans({ incidents }: { incidents: Incident[] }) {
   );
 }
 
+function IncidentDetailDialog({
+  incident,
+  open,
+  onOpenChange,
+  onSave,
+  isSaving,
+}: {
+  incident: Incident | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (id: number, data: Partial<IncidentFormData>) => void;
+  isSaving: boolean;
+}) {
+  const [formData, setFormData] = useState<IncidentFormData>(defaultFormData);
+
+  useEffect(() => {
+    if (incident) {
+      setFormData({
+        incidentDate: new Date(incident.incidentDate).toISOString().split('T')[0],
+        description: incident.description,
+        incidentType: incident.incidentType,
+        employeeName: incident.employeeName || '',
+        jobTitle: incident.jobTitle || '',
+        department: incident.department || '',
+        location: incident.location || '',
+        bodyPart: incident.bodyPart || '',
+        natureOfInjury: incident.natureOfInjury || '',
+        objectOrSubstance: incident.objectOrSubstance || '',
+        isRecordable: incident.isRecordable,
+        resultedInDeath: incident.resultedInDeath,
+        daysAway: incident.daysAway,
+        daysRestricted: incident.daysRestricted,
+        daysJobTransfer: incident.daysJobTransfer,
+        isOtherRecordable: incident.isOtherRecordable,
+        status: incident.status,
+      });
+    }
+  }, [incident]);
+
+  if (!incident) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(incident.id, formData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileWarning className="w-5 h-5" />
+            Review Incident — {incident.caseNumber || `#${incident.id}`}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+          {/* Review Status — most prominent, at top */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <Label htmlFor="detail-status" className="text-base font-semibold mb-2 block">Review Status</Label>
+            <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
+              <SelectTrigger id="detail-status" data-testid="select-detail-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending_review">Pending Review</SelectItem>
+                <SelectItem value="reviewed">Reviewed</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Incident Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="detail-date">Date of Incident</Label>
+                <Input
+                  id="detail-date"
+                  type="date"
+                  value={formData.incidentDate}
+                  onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
+                  data-testid="input-detail-date"
+                />
+              </div>
+              <div>
+                <Label htmlFor="detail-type">Incident Type</Label>
+                <Select value={formData.incidentType} onValueChange={(v) => setFormData({ ...formData, incidentType: v })}>
+                  <SelectTrigger id="detail-type" data-testid="select-detail-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="injury">Injury</SelectItem>
+                    <SelectItem value="illness">Illness</SelectItem>
+                    <SelectItem value="near_miss">Near Miss</SelectItem>
+                    <SelectItem value="property_damage">Property Damage</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="detail-description">Description of Event</Label>
+              <Textarea
+                id="detail-description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                required
+                data-testid="input-detail-description"
+              />
+            </div>
+          </div>
+
+          {/* Employee Info */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Employee Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="detail-employee">Employee Name</Label>
+                <Input
+                  id="detail-employee"
+                  value={formData.employeeName}
+                  onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
+                  data-testid="input-detail-employee"
+                />
+              </div>
+              <div>
+                <Label htmlFor="detail-job">Job Title</Label>
+                <Input
+                  id="detail-job"
+                  value={formData.jobTitle}
+                  onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                  data-testid="input-detail-job"
+                />
+              </div>
+              <div>
+                <Label htmlFor="detail-dept">Department</Label>
+                <Input
+                  id="detail-dept"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  data-testid="input-detail-dept"
+                />
+              </div>
+              <div>
+                <Label htmlFor="detail-location">Location of Event</Label>
+                <Input
+                  id="detail-location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  data-testid="input-detail-location"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Injury Details */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Injury / Illness Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="detail-body">Body Part Affected</Label>
+                <Input
+                  id="detail-body"
+                  value={formData.bodyPart}
+                  onChange={(e) => setFormData({ ...formData, bodyPart: e.target.value })}
+                  data-testid="input-detail-body"
+                />
+              </div>
+              <div>
+                <Label htmlFor="detail-nature">Nature of Injury / Illness</Label>
+                <Input
+                  id="detail-nature"
+                  value={formData.natureOfInjury}
+                  onChange={(e) => setFormData({ ...formData, natureOfInjury: e.target.value })}
+                  data-testid="input-detail-nature"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="detail-object">Object / Substance That Harmed Employee</Label>
+              <Input
+                id="detail-object"
+                value={formData.objectOrSubstance}
+                onChange={(e) => setFormData({ ...formData, objectOrSubstance: e.target.value })}
+                data-testid="input-detail-object"
+              />
+            </div>
+          </div>
+
+          {/* OSHA Classification */}
+          <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
+            <h4 className="font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              OSHA 300 Classification
+            </h4>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isRecordable}
+                onChange={(e) => setFormData({ ...formData, isRecordable: e.target.checked })}
+                className="w-4 h-4"
+                data-testid="checkbox-detail-recordable"
+              />
+              <span className="text-sm font-medium">This is an OSHA recordable incident</span>
+            </label>
+
+            {formData.isRecordable && (
+              <div className="space-y-4 pl-6 border-l-2 border-destructive/30">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.resultedInDeath}
+                      onChange={(e) => setFormData({ ...formData, resultedInDeath: e.target.checked })}
+                      className="w-4 h-4"
+                      data-testid="checkbox-detail-death"
+                    />
+                    <span className="text-sm flex items-center gap-1">
+                      <Skull className="w-4 h-4 text-destructive" />
+                      Resulted in Death
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isOtherRecordable}
+                      onChange={(e) => setFormData({ ...formData, isOtherRecordable: e.target.checked })}
+                      className="w-4 h-4"
+                      data-testid="checkbox-detail-other"
+                    />
+                    <span className="text-sm flex items-center gap-1">
+                      <Stethoscope className="w-4 h-4 text-orange-500" />
+                      Other Recordable Case
+                    </span>
+                  </label>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="flex items-center gap-1 text-xs">
+                      <BedDouble className="w-3 h-3" />Days Away
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.daysAway}
+                      onChange={(e) => setFormData({ ...formData, daysAway: parseInt(e.target.value) || 0 })}
+                      data-testid="input-detail-days-away"
+                    />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1 text-xs">
+                      <Construction className="w-3 h-3" />Days Restricted
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.daysRestricted}
+                      onChange={(e) => setFormData({ ...formData, daysRestricted: parseInt(e.target.value) || 0 })}
+                      data-testid="input-detail-days-restricted"
+                    />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1 text-xs">
+                      <ClipboardList className="w-3 h-3" />Days Transfer
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.daysJobTransfer}
+                      onChange={(e) => setFormData({ ...formData, daysJobTransfer: parseInt(e.target.value) || 0 })}
+                      data-testid="input-detail-days-transfer"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving} data-testid="button-save-incident-detail">
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function Incidents() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: incidents = [], isLoading } = useQuery<Incident[]>({
@@ -1293,6 +1589,28 @@ export default function Incidents() {
       toast({ title: "Error", description: "Failed to log incident.", variant: "destructive" });
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<IncidentFormData> }) => {
+      return apiRequest('PATCH', `/api/incidents/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/incidents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/incidents/chart'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
+      setDetailOpen(false);
+      setSelectedIncident(null);
+      toast({ title: "Incident Updated", description: "Incident record has been saved." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update incident.", variant: "destructive" });
+    },
+  });
+
+  const handleOpenIncident = (incident: Incident) => {
+    setSelectedIncident(incident);
+    setDetailOpen(true);
+  };
 
   const recordableCount = incidents.filter(i => i.isRecordable).length;
   const pendingReviewCount = incidents.filter(i => i.status === 'pending_review').length;
@@ -1412,11 +1730,17 @@ export default function Incidents() {
                           <TableHead>Recordable</TableHead>
                           <TableHead>Days Away/Restricted</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {incidents.map((incident) => (
-                          <TableRow key={incident.id} data-testid={`incident-row-${incident.id}`}>
+                          <TableRow
+                            key={incident.id}
+                            data-testid={`incident-row-${incident.id}`}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleOpenIncident(incident)}
+                          >
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -1427,7 +1751,9 @@ export default function Incidents() {
                               {incident.employeeName || <span className="text-muted-foreground">—</span>}
                             </TableCell>
                             <TableCell>{getTypeBadge(incident.incidentType)}</TableCell>
-                            <TableCell className="max-w-xs truncate">{incident.description}</TableCell>
+                            <TableCell className="max-w-xs">
+                              <span className="truncate block max-w-[200px]">{incident.description}</span>
+                            </TableCell>
                             <TableCell>
                               {incident.isRecordable ? (
                                 <Badge className="bg-destructive text-destructive-foreground">Yes</Badge>
@@ -1445,6 +1771,18 @@ export default function Incidents() {
                               )}
                             </TableCell>
                             <TableCell>{getStatusBadge(incident.status)}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="gap-1 text-xs"
+                                onClick={(e) => { e.stopPropagation(); handleOpenIncident(incident); }}
+                                data-testid={`button-open-incident-${incident.id}`}
+                              >
+                                <Eye className="w-3 h-3" />
+                                Open
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -1468,6 +1806,17 @@ export default function Incidents() {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           onSave={(data) => createMutation.mutate(data)}
+        />
+
+        <IncidentDetailDialog
+          incident={selectedIncident}
+          open={detailOpen}
+          onOpenChange={(open) => {
+            setDetailOpen(open);
+            if (!open) setSelectedIncident(null);
+          }}
+          onSave={(id, data) => updateMutation.mutate({ id, data })}
+          isSaving={updateMutation.isPending}
         />
       </div>
     </ProtectedLayout>
