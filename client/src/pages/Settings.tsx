@@ -434,7 +434,7 @@ export default function Settings() {
   const getPlanLabel = () => {
     if (hasPlatform) return 'Employer Compliance Platform';
     if (subStatus?.isPro) return 'Unlimited Safety (Corey AI)';
-    return 'Safety Starter (Free)';
+    return 'No Active Subscription';
   };
 
   return (
@@ -505,23 +505,7 @@ export default function Settings() {
 
         <div>
           <h3 className="text-lg font-bold mb-4 text-primary">Choose Your Plan</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card className={`border-2 relative ${!subStatus?.isPro ? 'border-primary bg-primary/5' : 'border-border'}`} data-testid="card-plan-free">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Safety Starter</CardTitle>
-                  {!subStatus?.isPro && <Badge variant="default" className="text-xs">Current</Badge>}
-                </div>
-                <div className="text-3xl font-bold text-primary">Free</div>
-                <CardDescription>No credit card required</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>3 Corey Questions / month</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA Recordability Guidance</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Basic DOT Compliance Help</span></div>
-              </CardContent>
-            </Card>
-
+          <div className="grid md:grid-cols-2 gap-4">
             <Card className={`border-2 relative ${isCoreyPro ? 'border-primary bg-primary/5' : 'border-border'}`} data-testid="card-plan-corey">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -532,7 +516,6 @@ export default function Settings() {
                 <CardDescription>Unlimited Corey AI access</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Everything in Safety Starter</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey Interactions</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Checklist Library (downloadable PDFs)</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Interactive Audit Prep Tools with progress tracking</span></div>

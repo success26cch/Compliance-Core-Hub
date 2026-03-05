@@ -821,7 +821,7 @@ export default function Landing() {
                         </h3>
                       </div>
                       <p className="text-white/70 text-sm">
-                        Your AI Occ-Health Expert &middot; {botRemaining} free question{botRemaining !== 1 ? "s" : ""} remaining
+                        Your AI Occ-Health Expert &middot; {botRemaining} sample question{botRemaining !== 1 ? "s" : ""} remaining
                       </p>
                     </div>
 
@@ -832,7 +832,7 @@ export default function Landing() {
                             <Bot className="w-8 h-8 text-accent" />
                           </div>
                           <div className="text-center">
-                            <p className="font-semibold text-foreground">Try Corey Free</p>
+                            <p className="font-semibold text-foreground">Ask Corey a Question</p>
                             <p className="text-sm mt-1 text-muted-foreground">Enter your info to ask up to 3 compliance questions</p>
                           </div>
                           <div className="w-full max-w-xs space-y-2">
@@ -953,14 +953,14 @@ export default function Landing() {
                         {botLimitReached ? (
                           <div className="text-center space-y-3 py-2">
                             <p className="text-sm font-medium text-muted-foreground">
-                              You've used your free questions. Sign up to unlock unlimited access!
+                              You've used your sample questions. Subscribe to Corey for unlimited access.
                             </p>
                             <div className="flex items-center justify-center gap-3 flex-wrap">
-                              <a href="/api/login">
+                              <Link href="/get-started">
                                 <Button data-testid="button-bot-signup">
-                                  Sign Up Free <ArrowRight className="w-4 h-4 ml-1" />
+                                  Subscribe — $99/mo <ArrowRight className="w-4 h-4 ml-1" />
                                 </Button>
-                              </a>
+                              </Link>
                               <a href="#pricing">
                                 <Button variant="outline" data-testid="button-bot-pricing">View Plans</Button>
                               </a>
@@ -1385,26 +1385,12 @@ export default function Landing() {
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <PricingCard 
-              tier="Safety Starter"
-              price="Free"
-              period=""
-              features={[
-                "3 Corey Questions / month",
-                "OSHA Recordability Guidance — Ask 'Is this a recordable?' and get clear, regulation-backed answers based on OSHA 29 CFR 1904",
-                "Basic DOT Compliance Help — Quick answers on DOT physical requirements, drug testing basics, and Clearinghouse essentials",
-              ]}
-              bestFor="Small teams or one-off compliance checks. No credit card required."
-              buttonText="Get Started"
-              buttonHref="/get-started"
-            />
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <PricingCard 
               tier="Unlimited Safety"
               price="$99"
               period="/mo"
               features={[
-                "Everything in Safety Starter",
                 "Unlimited Corey Interactions",
                 "Compliance Checklist Library (downloadable PDFs)",
                 "Interactive Audit Prep Tools with progress tracking",

@@ -808,7 +808,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant={isPro ? "default" : "secondary"}>
-                {isUnlimited ? 'Unlimited Safety' : 'Safety Starter'}
+                {isUnlimited ? 'Unlimited Safety' : 'Corey AI'}
               </Badge>
               {!isPro && (
                 <Link href="/settings">

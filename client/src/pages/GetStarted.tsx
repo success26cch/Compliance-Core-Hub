@@ -71,35 +71,7 @@ export default function GetStarted() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
-            <Card className="flex flex-col" data-testid="card-plan-free">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl">Safety Starter</CardTitle>
-                  <Badge variant="secondary">Free</Badge>
-                </div>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-4xl font-bold text-primary">$0</span>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ul className="space-y-3 mb-6 flex-1">
-                  {["3 Corey Questions / month", "OSHA Recordability Guidance", "Basic DOT Compliance Help"].map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-sm text-muted-foreground italic mb-4">Best for small teams or one-off compliance checks. No credit card required.</p>
-                <Link href="/api/login">
-                  <Button className="w-full" variant="outline" data-testid="button-free-signup">
-                    Sign Up Free
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
+          <div className="max-w-sm">
             <Card className="flex flex-col border-accent ring-2 ring-accent" data-testid="card-plan-unlimited">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -114,7 +86,6 @@ export default function GetStarted() {
               <CardContent className="flex-1 flex flex-col">
                 <ul className="space-y-3 mb-6 flex-1">
                   {[
-                    "Everything in Safety Starter",
                     "Unlimited Corey Interactions",
                     "Compliance Checklist Library (downloadable PDFs)",
                     "Interactive Audit Prep Tools with progress tracking",
@@ -383,12 +354,6 @@ export default function GetStarted() {
               <thead className="sticky top-0 z-10">
                 <tr>
                   <th className="text-left p-4 bg-muted/50 dark:bg-muted/20 rounded-tl-md font-semibold text-foreground" data-testid="th-feature">Feature</th>
-                  <th className="text-center p-4 bg-muted/50 dark:bg-muted/20 font-semibold text-foreground" data-testid="th-free">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>Free</span>
-                      <span className="text-lg font-bold text-primary">$0</span>
-                    </div>
-                  </th>
                   <th className="text-center p-4 bg-accent/10 dark:bg-accent/20 border-x-2 border-accent font-semibold text-foreground" data-testid="th-corey-ai">
                     <div className="flex flex-col items-center gap-1">
                       <Badge className="bg-accent text-white">Most Popular</Badge>
@@ -406,35 +371,26 @@ export default function GetStarted() {
               </thead>
               <tbody>
                 {[
-                  { feature: "Corey AI Questions", free: "3/month", corey: "Unlimited", employer: "Unlimited" },
-                  { feature: "OSHA Recordability Guidance", free: true, corey: true, employer: true },
-                  { feature: "Basic DOT Help", free: true, corey: true, employer: true },
-                  { feature: "Compliance Checklists", free: false, corey: true, employer: true },
-                  { feature: "Audit Prep & Templates", free: false, corey: true, employer: true },
-                  { feature: "Workers' Comp Guidance", free: false, corey: true, employer: true },
-                  { feature: "Custom Reports", free: false, corey: true, employer: true },
-                  { feature: "Priority Support", free: false, corey: true, employer: true },
-                  { feature: "DOT Compliance Alerts", free: false, corey: true, employer: true },
-                  { feature: "Employee Management", free: false, corey: false, employer: true },
-                  { feature: "OSHA 300 Log & Reporting", free: false, corey: false, employer: true },
-                  { feature: "Medical Passport (CCHUB Handshake)", free: false, corey: false, employer: true },
-                  { feature: "Incident Management & CAPA", free: false, corey: false, employer: true },
-                  { feature: "ISO Audit Readiness (ACSI)", free: false, corey: false, employer: true },
-                  { feature: "Compliance Glossary", free: false, corey: false, employer: true },
-                  { feature: "DOT Random Pool Notifications", free: false, corey: false, employer: true },
-                  { feature: "Bilingual Medical Assistant", free: false, corey: false, employer: true },
+                  { feature: "Corey AI Questions", corey: "Unlimited", employer: "Unlimited" },
+                  { feature: "OSHA Recordability Guidance", corey: true, employer: true },
+                  { feature: "Basic DOT Help", corey: true, employer: true },
+                  { feature: "Compliance Checklists", corey: true, employer: true },
+                  { feature: "Audit Prep & Templates", corey: true, employer: true },
+                  { feature: "Workers' Comp Guidance", corey: true, employer: true },
+                  { feature: "Custom Reports", corey: true, employer: true },
+                  { feature: "Priority Support", corey: true, employer: true },
+                  { feature: "DOT Compliance Alerts", corey: true, employer: true },
+                  { feature: "Employee Management", corey: false, employer: true },
+                  { feature: "OSHA 300 Log & Reporting", corey: false, employer: true },
+                  { feature: "Medical Passport (CCHUB Handshake)", corey: false, employer: true },
+                  { feature: "Incident Management & CAPA", corey: false, employer: true },
+                  { feature: "ISO Audit Readiness (ACSI)", corey: false, employer: true },
+                  { feature: "Compliance Glossary", corey: false, employer: true },
+                  { feature: "DOT Random Pool Notifications", corey: false, employer: true },
+                  { feature: "Bilingual Medical Assistant", corey: false, employer: true },
                 ].map((row, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-muted/20 dark:bg-muted/10" : ""} data-testid={`row-feature-${idx}`}>
                     <td className="p-4 text-sm font-medium text-foreground" data-testid={`text-feature-${idx}`}>{row.feature}</td>
-                    <td className="p-4 text-center" data-testid={`cell-free-${idx}`}>
-                      {typeof row.free === "string" ? (
-                        <span className="text-sm text-muted-foreground">{row.free}</span>
-                      ) : row.free ? (
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-muted-foreground/40 mx-auto" />
-                      )}
-                    </td>
                     <td className="p-4 text-center border-x-2 border-accent/30" data-testid={`cell-corey-${idx}`}>
                       {typeof row.corey === "string" ? (
                         <span className="text-sm font-medium text-accent">{row.corey}</span>
@@ -457,13 +413,6 @@ export default function GetStarted() {
                 ))}
                 <tr>
                   <td className="p-4"></td>
-                  <td className="p-4 text-center">
-                    <Link href="/api/login">
-                      <Button variant="outline" className="w-full max-w-[160px]" data-testid="button-compare-free-signup">
-                        Sign Up Free
-                      </Button>
-                    </Link>
-                  </td>
                   <td className="p-4 text-center border-x-2 border-accent/30">
                     <Button className="w-full max-w-[160px]" onClick={() => handleAddToCart("cch-unlimited-safety")} data-testid="button-compare-add-corey">
                       <ShoppingCart className="w-4 h-4 mr-2" />
@@ -493,12 +442,12 @@ export default function GetStarted() {
                 Contact Us
               </Button>
             </Link>
-            <Link href="/corey">
+            <a href="/api/login">
               <Button size="lg" data-testid="button-try-corey">
-                Try Corey Free
+                Sign In to Get Started
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
-            </Link>
+            </a>
           </div>
         </section>
       </div>

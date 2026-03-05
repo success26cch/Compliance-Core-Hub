@@ -248,7 +248,7 @@ export default function MeetCorey() {
               <div className="flex items-center gap-3 justify-center lg:justify-start">
                 <Badge className="bg-white/10 text-white/70 border-white/20 text-sm px-4 py-2">
                   <ShieldCheck className="w-4 h-4 mr-2 inline" />
-                  3 free questions — no credit card required
+                  $99/mo — cancel anytime
                 </Badge>
               </div>
             </motion.div>

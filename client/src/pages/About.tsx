@@ -303,9 +303,9 @@ export default function About() {
                 </p>
               </div>
             </div>
-            <Link href="/corey">
+            <Link href="/get-started">
               <Button className="bg-accent text-black font-semibold whitespace-nowrap flex-shrink-0" data-testid="button-pwa-try-corey">
-                <Bot className="w-4 h-4 mr-2" /> Try Corey Free
+                <Bot className="w-4 h-4 mr-2" /> Get Corey — $99/mo
               </Button>
             </Link>
           </div>
