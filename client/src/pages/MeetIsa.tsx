@@ -221,7 +221,7 @@ export default function MeetIsa() {
   const faqs = [
     {
       q: "What makes Isa different from ChatGPT or a consultant?",
-      a: "Isa's knowledge base is built from the actual text of 7 ISO standards and ISO guidance documents. Unlike general AI tools that might paraphrase requirements inaccurately, Isa cites exact clause numbers and uses the same objective evidence language a third-party auditor would use. And unlike a consultant, Isa is available 24/7 at a fraction of the cost.",
+      a: "Isa is built from the knowledge and methodology of a certified 3rd party ISO auditor — the kind that actually certifies organizations. That means she doesn't just summarize the standard; she applies it the way an auditor sitting across the table from you would. She cites exact clause numbers, uses objective evidence language, and tells you what would and wouldn't satisfy a certification body. Unlike general AI tools that paraphrase requirements, and unlike a consultant billing by the hour, Isa gives you auditor-grade answers on demand.",
     },
     {
       q: "Can Isa replace my ISO consultant?",
@@ -291,17 +291,17 @@ export default function MeetIsa() {
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white"
                 style={{ background: "linear-gradient(90deg, #111 0%, #333 100%)" }}
               >
-                ACSI ISO Manager · Lead AI Auditor
+                ACSI · Built from a Certified 3rd Party Auditor's Perspective
               </span>
             </div>
             <h1 className="text-6xl md:text-7xl font-black tracking-tight mb-4 text-gray-900 leading-none">
               Meet <span style={{ color: ORANGE }}>Isa</span>
             </h1>
             <p className="text-lg font-semibold text-gray-600 mb-4">
-              Lead ISO Auditor AI — built from the DNA of 7 ISO standards
+              Lead ISO Auditor AI — built from the knowledge of a certified 3rd party auditor
             </p>
             <p className="text-base text-gray-500 max-w-2xl mx-auto leading-relaxed mb-8">
-              Isa thinks like a third-party auditor, not a search engine. She cites clause numbers, identifies gaps with objective evidence language, builds your documentation, and guides teams from first assessment through certification — and beyond.
+              Isa doesn't just read the standard — she applies it the way a 3rd party certification auditor would. She cites exact clause numbers, frames answers around objective evidence, coaches your team through audit readiness, and tells you whether your corrective actions will actually hold up under scrutiny.
             </p>
 
             {/* Standards badges — core orange, pro dark outlined */}
@@ -371,15 +371,15 @@ export default function MeetIsa() {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
             <motion.div variants={fadeUp} className="text-center mb-10">
               <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">How Isa Thinks</span>
-              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Built to Think Like an Auditor</h2>
-              <p className="text-white/55 max-w-2xl mx-auto text-base">Isa doesn't give generic advice. She cites clauses, distinguishes SHALL from SHOULD, and frames answers the way a certification body would evaluate them.</p>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Built from a Certified 3rd Party Auditor's Perspective</h2>
+              <p className="text-white/55 max-w-2xl mx-auto text-base">Most AI tools read the standard. Isa applies it the way a certification body auditor would — citing exact clauses, distinguishing SHALL from SHOULD, and evaluating conformance against what objective evidence actually looks like.</p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 {
                   icon: Sparkles,
-                  title: "Thinks Like an Auditor",
-                  body: "Isa cites exact clause numbers, not general advice. She frames answers the way a third-party auditor would — traceable, defensible, and standard-referenced.",
+                  title: "3rd Party Auditor Perspective",
+                  body: "Isa was built from the knowledge and methodology of a certified 3rd party ISO auditor — the type who certifies organizations. She frames answers the way that auditor thinks: what clause applies, what evidence is required, what would trigger a nonconformance.",
                 },
                 {
                   icon: Shield,

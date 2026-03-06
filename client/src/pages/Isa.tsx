@@ -162,7 +162,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
           <div className="flex flex-col items-center justify-center h-full pb-8 text-center">
             <IsaAvatar size={56} />
             <p className="text-white/70 font-semibold mt-3 text-base">Hi, I'm Isa.</p>
-            <p className="text-white/40 text-sm mt-1 max-w-xs">Your ACSI Lead ISO Auditor AI. Ask me anything about your management system standards.</p>
+            <p className="text-white/40 text-sm mt-1 max-w-xs">Your ACSI Lead ISO Auditor AI — built from the perspective of a certified 3rd party auditor. I approach every question the way a certification body would evaluate it.</p>
             <div className="grid grid-cols-2 gap-2 mt-6 w-full max-w-sm">
               {QUICK_PROMPTS.map((qp, i) => (
                 <button
@@ -426,7 +426,7 @@ export default function IsaApp() {
               <IsaAvatar size={56} />
               <h2 className="text-white font-black text-xl mt-4 mb-2">Hi {displayName}, I'm Isa.</h2>
               <p className="text-white/45 text-sm mb-6 max-w-xs">
-                Your ACSI Lead ISO Auditor AI. Clause-cited answers, audit coaching, and corrective action guidance.
+                Your ACSI Lead ISO Auditor AI — built from the perspective of a certified 3rd party auditor. I'll tell you what would actually hold up under certification scrutiny.
               </p>
               <Button
                 onClick={handleNewChat}
