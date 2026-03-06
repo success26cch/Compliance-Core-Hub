@@ -34,6 +34,7 @@ The CCHUB platform is built with a modern web stack, utilizing React, Vite, Tail
 - **Corey Subscriber Profile & Onboarding Flow:** A 5-step intake form that collects user information to personalize Corey AI conversations, followed by a welcome flow with PWA installation instructions. A trial page is available via QR code.
 - **Meet Corey Marketing Page:** A dedicated sales page showcasing Corey's capabilities, document templates, regulatory coverage, and FAQs.
 - **Meet Isa Marketing Page:** A dedicated sales page for Isa and Isa Pro standalone AI products, including bundle options.
+- **ISO Manager Marketing Page (`/meet-iso-manager`):** A public-facing marketing page for the ISO Manager platform showing the 9-module suite (3 live, 6 coming soon), 7 standards coverage, 3-phase setup wizard overview, 4-tier pricing, and FAQ. The top nav "ISO Manager" link points here; the actual app is at `/iso-manager`.
 - **ISO Manager Pricing:** A 4-tier pricing structure for the ISO Manager platform, including various ISO standards and features.
 - **ISO Manager Setup Wizard:** A guided 3-phase onboarding wizard to collect organizational context (organizational context, process architecture, quality policy fundamentals) for personalized Isa consultations.
 - **PWA (Progressive Web App):** The standalone Corey application is designed as a PWA, offering an installable, dark-themed experience with offline caching.

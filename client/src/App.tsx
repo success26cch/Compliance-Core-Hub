@@ -51,6 +51,7 @@ import MeetIsa from "@/pages/MeetIsa";
 import DemoTour from "@/pages/DemoTour";
 import PlatformBrief from "@/pages/PlatformBrief";
 import Cesar from "@/pages/Cesar";
+import ISOManagerMarketing from "@/pages/ISOManagerMarketing";
 import WelcomeCorey from "@/pages/WelcomeCorey";
 import CoreyProfile from "@/pages/CoreyProfile";
 import IsaStandalone from "@/pages/Isa";
@@ -133,6 +134,7 @@ function Router() {
       <Route path="/compliance-glossary" component={ComplianceGlossary} />
       <Route path="/meet-corey" component={MeetCorey} />
       <Route path="/meet-isa" component={MeetIsa} />
+      <Route path="/meet-iso-manager" component={ISOManagerMarketing} />
       <Route path="/demo-tour" component={DemoTour} />
       <Route path="/platform-brief" component={PlatformBrief} />
       <Route path="/cesar" component={Cesar} />
