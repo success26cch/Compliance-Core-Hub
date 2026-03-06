@@ -197,7 +197,7 @@ const AUDIENCE = [
   {
     icon: Building2,
     role: "Business Owners Pursuing Certification",
-    desc: "Navigate the path to ISO certification without a full-time consultant. Isa guides you from scope to certification-ready.",
+    desc: "Get clause-cited guidance and audit coaching between consultant engagements — so your team arrives prepared and your investment goes further.",
   },
   {
     icon: Users,
@@ -221,11 +221,11 @@ export default function MeetIsa() {
   const faqs = [
     {
       q: "What makes Isa different from ChatGPT or a consultant?",
-      a: "Isa is built from the knowledge and methodology of a certified 3rd party ISO auditor — the kind that actually certifies organizations. That means she doesn't just summarize the standard; she applies it the way an auditor sitting across the table from you would. She cites exact clause numbers, uses objective evidence language, and tells you what would and wouldn't satisfy a certification body. Unlike general AI tools that paraphrase requirements, and unlike a consultant billing by the hour, Isa gives you auditor-grade answers on demand.",
+      a: "Isa is built from the knowledge and methodology of a certified 3rd party ISO auditor — the kind that actually certifies organizations. That means she doesn't just summarize the standard; she applies it the way an auditor sitting across the table from you would. She cites exact clause numbers, uses objective evidence language, and tells you what would and wouldn't satisfy a certification body. Unlike general AI tools that paraphrase requirements, Isa gives you auditor-grade answers on demand — and works alongside your ACSI consultant or auditor, not in place of them.",
     },
     {
-      q: "Can Isa replace my ISO consultant?",
-      a: "Isa is designed to be a powerful tool for your quality team — reducing consultant dependency while keeping you audit-ready year-round. For initial certification, implementation support, and complex industry-specific questions, a qualified consultant still adds value. But for daily clause questions, gap analysis coaching, audit prep, and corrective action guidance, Isa handles it immediately.",
+      q: "Does Isa work alongside a consultant or auditor?",
+      a: "Absolutely — Isa is designed to complement your consultant or auditor relationship, not replace it. She keeps your team informed and prepared between engagements, so when you do work with an ACSI consultant or bring in an auditor, you're not starting from zero. Think of Isa as the always-available resource that handles daily questions, audit prep, and corrective action coaching — so your consultant time can be focused on implementation, decisions, and confirmation.",
     },
     {
       q: "What's the difference between Isa and Isa Pro?",
@@ -806,7 +806,7 @@ export default function MeetIsa() {
               Ready to Meet Your New <span style={{ color: ORANGE }}>ISO Auditor?</span>
             </h2>
             <p className="text-lg text-white/55 mb-8 max-w-2xl mx-auto">
-              Stop chasing consultants. Stop guessing at clause interpretations. Stop scrambling before audits. Isa is ready — 24/7, instant, clause-cited.
+              Stop guessing at clause interpretations. Stop scrambling before audits. Isa is ready — 24/7, instant, and built from the perspective of a certified 3rd party auditor.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/settings">
