@@ -738,7 +738,7 @@ export default function DecisionTree() {
   );
 }
 
-function ResultCard({ title, description, type, citation, citationReason, onReset }: any) {
+function ResultCard({ title, description, type, citation, citationReason, onReset, onBack }: any) {
   const isRecordable = type === 'recordable';
   const isInfo = type === 'info';
   const colorClass = isRecordable ? 'text-accent' : isInfo ? 'text-primary' : 'text-green-600';
