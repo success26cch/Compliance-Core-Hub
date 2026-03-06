@@ -1076,6 +1076,7 @@ function FreqBar({ label, count, max, color = "bg-accent" }: { label: string; co
 
 function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
   const [selectedFacility, setSelectedFacility] = useState<string | null>(null);
+  const [breakdownCategory, setBreakdownCategory] = useState<keyof Incident>('natureOfInjury');
 
   // Collect unique named facilities
   const facilities = Array.from(
@@ -1120,6 +1121,23 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
     };
   }).sort((a, b) => b.total - a.total);
   const maxSiteTotal = siteRows.reduce((m, r) => Math.max(m, r.total), 0);
+
+  // ── Cross-site breakdown helpers ────────────────────────────────────────────
+  const SITE_COLORS = [
+    'bg-accent', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500',
+    'bg-yellow-500', 'bg-pink-500', 'bg-cyan-500', 'bg-orange-400',
+  ];
+  const SITE_DOT_COLORS = [
+    'bg-accent', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500',
+    'bg-yellow-500', 'bg-pink-500', 'bg-cyan-500', 'bg-orange-400',
+  ];
+
+  const breakdownCategories = [
+    { key: 'natureOfInjury' as keyof Incident, label: 'Injury Type' },
+    { key: 'bodyPart'       as keyof Incident, label: 'Body Part' },
+    { key: 'location'       as keyof Incident, label: 'Work Area' },
+    { key: 'objectOrSubstance' as keyof Incident, label: 'Source of Harm' },
+  ];
 
   if (incidents.length === 0) {
     return (
@@ -1206,6 +1224,97 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-accent inline-block" /> Non-Recordable</span>
               <span className="text-xs ml-auto italic">Click a site name to drill down</span>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cross-Site Breakdown — which sites had what */}
+      {multiSite && !selectedFacility && (
+        <Card className="border-blue-500/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Construction className="w-4 h-4 text-blue-500" />
+                  Cross-Site Breakdown
+                </CardTitle>
+                <CardDescription>Which facilities had each category — e.g., "Which plants had Strains?"</CardDescription>
+              </div>
+              <div className="flex gap-1 flex-wrap">
+                {breakdownCategories.map(({ key, label }) => (
+                  <Button
+                    key={key as string}
+                    size="sm"
+                    variant={breakdownCategory === key ? "default" : "outline"}
+                    onClick={() => setBreakdownCategory(key)}
+                    className="h-7 text-xs"
+                    data-testid={`breakdown-cat-${key as string}`}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {(() => {
+              // Build matrix: for each category value, count per facility
+              const allValues = Array.from(
+                new Set(incidents.map(i => (i[breakdownCategory] as string | null)?.trim() || '(Not Specified)'))
+              );
+              const matrix = allValues.map(val => {
+                const siteCounts = facilities.map(f =>
+                  incidents.filter(i =>
+                    i.facility?.trim() === f &&
+                    ((i[breakdownCategory] as string | null)?.trim() || '(Not Specified)') === val
+                  ).length
+                );
+                return { val, siteCounts, total: siteCounts.reduce((a, b) => a + b, 0) };
+              })
+                .filter(r => r.total > 0)
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10);
+
+              const maxTotal = matrix.reduce((m, r) => Math.max(m, r.total), 0);
+
+              if (matrix.length === 0) {
+                return <p className="text-xs text-muted-foreground">No data logged for this category yet.</p>;
+              }
+
+              return (
+                <>
+                  {matrix.map(({ val, siteCounts, total: t }) => (
+                    <div key={val} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{val}</span>
+                        <span className="text-xs text-muted-foreground">{t} total</span>
+                      </div>
+                      {facilities.map((f, fi) => siteCounts[fi] > 0 && (
+                        <div key={f} className="flex items-center gap-2 text-xs">
+                          <span className="w-40 truncate text-muted-foreground shrink-0" title={f}>{f}</span>
+                          <div className="flex-1 bg-muted/40 rounded-full h-2 min-w-0">
+                            <div
+                              className={`${SITE_COLORS[fi % SITE_COLORS.length]} h-2 rounded-full transition-all duration-500`}
+                              style={{ width: `${maxTotal > 0 ? (siteCounts[fi] / maxTotal) * 100 : 0}%` }}
+                            />
+                          </div>
+                          <span className="w-5 text-right font-medium shrink-0">{siteCounts[fi]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  {/* Site color legend */}
+                  <div className="flex flex-wrap gap-3 pt-1 border-t">
+                    {facilities.map((f, fi) => (
+                      <span key={f} className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span className={`w-3 h-3 rounded-sm ${SITE_DOT_COLORS[fi % SITE_DOT_COLORS.length]} inline-block shrink-0`} />
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
