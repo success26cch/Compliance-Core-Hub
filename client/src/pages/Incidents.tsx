@@ -1149,8 +1149,27 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
     );
   }
 
+  // How many incidents are missing a facility name
+  const untaggedCount = incidents.filter(i => !i.facility?.trim()).length;
+
   return (
     <div className="space-y-6 pt-2" data-testid="incident-analytics">
+
+      {/* Cross-site unlock prompt — shown when < 2 named facilities */}
+      {!multiSite && (
+        <div className="rounded-lg border border-accent/40 bg-accent/5 p-4 flex items-start gap-3">
+          <Target className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-sm">Cross-site graphs are one step away</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {facilities.length === 0
+                ? 'Tag your incidents with a Facility / Site Name when logging them (or edit existing ones) and the Cross-Site Overview and Breakdown charts will appear here automatically.'
+                : `${untaggedCount > 0 ? `${untaggedCount} incident${untaggedCount !== 1 ? 's are' : ' is'} missing a facility name. ` : ''}Add a second facility name to unlock side-by-side plant comparisons.`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Go to <strong>All Incidents</strong> tab → click an incident → fill in <strong>Facility / Site Name</strong>.</p>
+          </div>
+        </div>
+      )}
 
       {/* Site filter — only shown when multiple named facilities exist */}
       {multiSite && (
