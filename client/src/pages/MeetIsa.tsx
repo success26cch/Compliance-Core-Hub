@@ -8,6 +8,7 @@ import {
   ChevronDown, Target, Award, FileText, Users, Factory,
   BarChart3, Building2, Layers, ClipboardCheck, FileSearch,
   Scale, Lock, Brain, ShieldCheck, ArrowRight, Star,
+  ClipboardList, ArrowRightLeft, CheckSquare, MessageCircle,
 } from "lucide-react";
 import acsiLogo from "@assets/42_1772589582132.png";
 
@@ -90,6 +91,34 @@ const CAPABILITIES = [
     description: "Isa explains what Clause 9.3 requires for management review — what inputs must be discussed, who must attend, what outputs must be recorded, and what evidence an auditor would ask to see for your last review.",
     color: "text-pink-400",
     bg: "bg-pink-500/10",
+  },
+  {
+    icon: CheckSquare,
+    title: '"Would You Pass?" Scenario Assessment',
+    description: "Describe exactly what your organization does and Isa tells you whether it conforms — with clause references, risk level, and what an auditor would expect to see as objective evidence.",
+    color: "text-teal-400",
+    bg: "bg-teal-500/10",
+  },
+  {
+    icon: ArrowRightLeft,
+    title: "Standard Transition Coaching",
+    description: "Moving from OHSAS 18001 to ISO 45001? Upgrading a legacy QMS? Isa walks you through what changed between editions, what your existing system already covers, and what gaps need to be closed before re-certification.",
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+  },
+  {
+    icon: ClipboardList,
+    title: "Post-Audit Report Debrief",
+    description: "Got your audit report? Isa interprets your nonconformances and observations — explaining what each finding really means, whether it's major or minor risk, and how to prioritize your 30-day response plan.",
+    color: "text-sky-400",
+    bg: "bg-sky-500/10",
+  },
+  {
+    icon: MessageCircle,
+    title: "Corrective Action Response Review",
+    description: "Wrote your corrective action response and not sure the auditor will accept it? Describe what you did and Isa tells you whether the root cause, containment, and corrective action are sufficient to close the finding.",
+    color: "text-lime-400",
+    bg: "bg-lime-500/10",
   },
 ];
 
@@ -196,7 +225,7 @@ export default function MeetIsa() {
     },
     {
       q: "Can Isa replace my ISO consultant?",
-      a: "Isa is designed to be a powerful tool for your quality team — reducing consultant dependency while keeping you audit-ready year-round. For initial certification, implementation support, and complex industry-specific questions, a qualified consultant still adds value. But for daily clause questions, gap prep, and document drafting, Isa handles it immediately.",
+      a: "Isa is designed to be a powerful tool for your quality team — reducing consultant dependency while keeping you audit-ready year-round. For initial certification, implementation support, and complex industry-specific questions, a qualified consultant still adds value. But for daily clause questions, gap analysis coaching, audit prep, and corrective action guidance, Isa handles it immediately.",
     },
     {
       q: "What's the difference between Isa and Isa Pro?",
@@ -381,7 +410,7 @@ export default function MeetIsa() {
             <motion.div variants={fadeUp} className="text-center mb-10">
               <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full bg-white/10 text-white/70 border border-white/20 mb-4">What Isa Can Do</span>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-3">More Than Answers. <span style={{ color: ORANGE }}>Actions.</span></h2>
-              <p className="text-white/55 max-w-2xl mx-auto text-base">Isa doesn't just answer questions. She leads gap analyses, builds your documents, prepares you for audits, and writes your corrective actions.</p>
+              <p className="text-white/55 max-w-2xl mx-auto text-base">Isa doesn't just answer questions. She walks you through gap analyses, coaches audit readiness, interprets your findings, and tells you whether your corrective actions will hold up.</p>
             </motion.div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {CAPABILITIES.map((cap, i) => (
