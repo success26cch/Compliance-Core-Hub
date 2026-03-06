@@ -40,6 +40,52 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
+// ── Standardized OSHA-aligned dropdown options ──────────────────────────────
+export const BODY_PARTS = [
+  "Head / Scalp", "Eye(s)", "Ear(s)", "Face / Nose / Mouth", "Neck / Throat",
+  "Shoulder", "Upper Arm / Elbow", "Forearm / Lower Arm", "Wrist",
+  "Hand / Palm", "Finger(s) / Thumb", "Chest / Ribs",
+  "Upper Back / Spine", "Lower Back / Spine", "Abdomen",
+  "Hip / Pelvis", "Thigh / Upper Leg", "Knee",
+  "Lower Leg / Shin / Calf", "Ankle", "Foot / Heel", "Toe(s)",
+  "Multiple Body Parts", "Body System (Respiratory/Circulatory)", "Other",
+];
+
+export const INJURY_TYPES = [
+  "Strain / Sprain", "Laceration / Cut", "Puncture / Bite",
+  "Contusion / Bruise", "Fracture / Break", "Abrasion / Scrape",
+  "Burn (Thermal)", "Burn (Chemical)", "Amputation",
+  "Crush / Compression Injury", "Concussion / Head Trauma", "Dislocation",
+  "Electrical Shock", "Heat-related Illness", "Cold-related Illness / Frostbite",
+  "Hearing Loss (Standard Threshold Shift)", "Respiratory Illness / Inhalation",
+  "Dermatitis / Skin Condition", "Eye Injury / Irritation",
+  "Chemical Exposure / Poisoning", "Ergonomic / Repetitive Motion",
+  "Infectious Disease", "Near Miss – No Physical Injury", "Other",
+];
+
+export const WORK_AREAS = [
+  "Production Floor", "Assembly Line / Work Cell",
+  "Warehouse / Stockroom", "Shipping / Receiving", "Loading Dock",
+  "Maintenance / Tool Crib", "Welding / Fabrication", "Paint / Finishing",
+  "Quality / Lab / Testing", "Office / Administrative",
+  "Cafeteria / Break Room", "Restroom / Locker Room",
+  "Parking Lot / Entrance", "Yard / Outdoor Area",
+  "Rooftop / Elevated Work Area", "Construction Zone",
+  "Client / Customer Site", "Vehicle / In-Transit", "Other",
+];
+
+export const OBJECTS_SOURCES = [
+  "Hand Tool (Wrench, Hammer, etc.)", "Power Tool (Drill, Grinder, Saw, etc.)",
+  "Machinery / Equipment", "Vehicle / Forklift / PIT Equipment",
+  "Chemical / Hazardous Substance", "Falling / Flying Object",
+  "Floor / Ground (Slip, Trip, Fall)", "Ladder / Scaffolding / Platform",
+  "Container / Bin / Packaging", "Sharp Object / Edge",
+  "Hot Surface / Steam / Flame", "Electrical Equipment / Wiring",
+  "Material / Product Being Handled", "Body Motion / Overexertion",
+  "Coworker / Another Person", "Animal / Insect",
+  "PPE Failure or Absence", "Environmental Condition", "Other",
+];
+
 type CorrectiveAction = {
   id: number;
   incidentId: number | null;
@@ -289,14 +335,15 @@ function IncidentFormDialog({
                 />
               </div>
               <div>
-                <Label htmlFor="location">Location of Event</Label>
-                <Input 
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  placeholder="e.g., Loading Dock A"
-                  data-testid="input-location"
-                />
+                <Label htmlFor="location">Work Area / Location</Label>
+                <Select value={formData.location} onValueChange={(v) => setFormData({...formData, location: v})}>
+                  <SelectTrigger id="location" data-testid="select-location">
+                    <SelectValue placeholder="Select work area..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -307,34 +354,37 @@ function IncidentFormDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="bodyPart">Body Part Affected</Label>
-                <Input 
-                  id="bodyPart"
-                  value={formData.bodyPart}
-                  onChange={(e) => setFormData({...formData, bodyPart: e.target.value})}
-                  placeholder="e.g., Lower back, Left hand"
-                  data-testid="input-body-part"
-                />
+                <Select value={formData.bodyPart} onValueChange={(v) => setFormData({...formData, bodyPart: v})}>
+                  <SelectTrigger id="bodyPart" data-testid="select-body-part">
+                    <SelectValue placeholder="Select body part..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BODY_PARTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="natureOfInjury">Nature of Injury/Illness</Label>
-                <Input 
-                  id="natureOfInjury"
-                  value={formData.natureOfInjury}
-                  onChange={(e) => setFormData({...formData, natureOfInjury: e.target.value})}
-                  placeholder="e.g., Strain, Laceration, Burn"
-                  data-testid="input-nature-injury"
-                />
+                <Select value={formData.natureOfInjury} onValueChange={(v) => setFormData({...formData, natureOfInjury: v})}>
+                  <SelectTrigger id="natureOfInjury" data-testid="select-nature-injury">
+                    <SelectValue placeholder="Select injury type..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INJURY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>
-              <Label htmlFor="objectOrSubstance">Object/Substance That Harmed Employee</Label>
-              <Input 
-                id="objectOrSubstance"
-                value={formData.objectOrSubstance}
-                onChange={(e) => setFormData({...formData, objectOrSubstance: e.target.value})}
-                placeholder="e.g., Forklift, Chemical spill, Slippery floor"
-                data-testid="input-object-substance"
-              />
+              <Label htmlFor="objectOrSubstance">Source / Object That Caused Harm</Label>
+              <Select value={formData.objectOrSubstance} onValueChange={(v) => setFormData({...formData, objectOrSubstance: v})}>
+                <SelectTrigger id="objectOrSubstance" data-testid="select-object-substance">
+                  <SelectValue placeholder="Select source of harm..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {OBJECTS_SOURCES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="description">Description of Event *</Label>
@@ -967,6 +1017,139 @@ function getCAPAStatusBadge(status: string) {
   }
 }
 
+function FreqBar({ label, count, max, color = "bg-accent" }: { label: string; count: number; max: number; color?: string }) {
+  const pct = max > 0 ? Math.round((count / max) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="w-48 text-xs truncate shrink-0 text-muted-foreground" title={label}>{label}</span>
+      <div className="flex-1 bg-muted/40 rounded-full h-2 min-w-0">
+        <div className={`${color} h-2 rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs font-medium w-6 text-right shrink-0">{count}</span>
+    </div>
+  );
+}
+
+function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
+  const total = incidents.length;
+  const recordable = incidents.filter(i => i.isRecordable).length;
+  const nearMiss = incidents.filter(i => i.incidentType === 'near_miss').length;
+  const injury = incidents.filter(i => i.incidentType === 'injury').length;
+  const illness = incidents.filter(i => i.incidentType === 'illness').length;
+
+  const tally = (field: keyof Incident) => {
+    const counts: Record<string, number> = {};
+    for (const inc of incidents) {
+      const val = (inc[field] as string | null) || '(Not Specified)';
+      counts[val] = (counts[val] || 0) + 1;
+    }
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  };
+
+  const bodyParts = tally('bodyPart');
+  const injuryTypes = tally('natureOfInjury');
+  const workAreas = tally('location');
+  const objects = tally('objectOrSubstance');
+
+  const maxOf = (rows: [string, number][]) => rows.reduce((m, r) => Math.max(m, r[1]), 0);
+
+  if (total === 0) {
+    return (
+      <div className="text-center py-16">
+        <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+        <p className="font-medium text-muted-foreground">No incident data to analyze yet.</p>
+        <p className="text-sm text-muted-foreground mt-1">Log incidents and this view will show distribution trends.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 pt-2" data-testid="incident-analytics">
+      {/* Summary row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Total Incidents", value: total, color: "text-primary" },
+          { label: "Recordable", value: recordable, color: "text-destructive" },
+          { label: "Injuries", value: injury, color: "text-orange-500" },
+          { label: "Near Misses", value: nearMiss, color: "text-yellow-500" },
+        ].map(({ label, value, color }) => (
+          <Card key={label} className="text-center py-4">
+            <p className={`text-3xl font-bold ${color}`}>{value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{label}</p>
+            {total > 0 && <p className="text-xs text-muted-foreground">{Math.round((value / total) * 100)}% of total</p>}
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Body Part Distribution */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="w-4 h-4 text-accent" />
+              Body Part Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {bodyParts.map(([label, count]) => (
+              <FreqBar key={label} label={label} count={count} max={maxOf(bodyParts)} color="bg-accent" />
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Injury Type Distribution */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              Injury / Illness Type
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {injuryTypes.map(([label, count]) => (
+              <FreqBar key={label} label={label} count={count} max={maxOf(injuryTypes)} color="bg-destructive" />
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Work Area Distribution */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileWarning className="w-4 h-4 text-blue-500" />
+              Work Area / Location
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {workAreas.map(([label, count]) => (
+              <FreqBar key={label} label={label} count={count} max={maxOf(workAreas)} color="bg-blue-500" />
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Object / Source Distribution */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Construction className="w-4 h-4 text-yellow-500" />
+              Source / Object of Harm
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {objects.map(([label, count]) => (
+              <FreqBar key={label} label={label} count={count} max={maxOf(objects)} color="bg-yellow-500" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <p className="text-xs text-muted-foreground text-center">
+        Showing top 8 entries per category · {total} total incident{total !== 1 ? 's' : ''} analyzed
+      </p>
+    </div>
+  );
+}
+
 function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Incident[]; autoOpen?: boolean }) {
   const [capaDialogOpen, setCAPADialogOpen] = useState(false);
   const [selectedCAPA, setSelectedCAPA] = useState<CorrectiveAction | null>(null);
@@ -1430,13 +1613,15 @@ function IncidentDetailDialog({
                 />
               </div>
               <div>
-                <Label htmlFor="detail-location">Location of Event</Label>
-                <Input
-                  id="detail-location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  data-testid="input-detail-location"
-                />
+                <Label htmlFor="detail-location">Work Area / Location</Label>
+                <Select value={formData.location} onValueChange={(v) => setFormData({ ...formData, location: v })}>
+                  <SelectTrigger id="detail-location" data-testid="select-detail-location">
+                    <SelectValue placeholder="Select work area..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WORK_AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -1447,31 +1632,37 @@ function IncidentDetailDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="detail-body">Body Part Affected</Label>
-                <Input
-                  id="detail-body"
-                  value={formData.bodyPart}
-                  onChange={(e) => setFormData({ ...formData, bodyPart: e.target.value })}
-                  data-testid="input-detail-body"
-                />
+                <Select value={formData.bodyPart} onValueChange={(v) => setFormData({ ...formData, bodyPart: v })}>
+                  <SelectTrigger id="detail-body" data-testid="select-detail-body">
+                    <SelectValue placeholder="Select body part..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BODY_PARTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="detail-nature">Nature of Injury / Illness</Label>
-                <Input
-                  id="detail-nature"
-                  value={formData.natureOfInjury}
-                  onChange={(e) => setFormData({ ...formData, natureOfInjury: e.target.value })}
-                  data-testid="input-detail-nature"
-                />
+                <Select value={formData.natureOfInjury} onValueChange={(v) => setFormData({ ...formData, natureOfInjury: v })}>
+                  <SelectTrigger id="detail-nature" data-testid="select-detail-nature">
+                    <SelectValue placeholder="Select injury type..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INJURY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>
-              <Label htmlFor="detail-object">Object / Substance That Harmed Employee</Label>
-              <Input
-                id="detail-object"
-                value={formData.objectOrSubstance}
-                onChange={(e) => setFormData({ ...formData, objectOrSubstance: e.target.value })}
-                data-testid="input-detail-object"
-              />
+              <Label htmlFor="detail-object">Source / Object That Caused Harm</Label>
+              <Select value={formData.objectOrSubstance} onValueChange={(v) => setFormData({ ...formData, objectOrSubstance: v })}>
+                <SelectTrigger id="detail-object" data-testid="select-detail-object">
+                  <SelectValue placeholder="Select source of harm..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {OBJECTS_SOURCES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -1720,6 +1911,10 @@ export default function Incidents() {
               <ShieldCheck className="w-4 h-4" />
               Corrective Actions
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2" data-testid="tab-analytics">
+              <Target className="w-4 h-4" />
+              Analytics
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="incidents">
@@ -1828,6 +2023,23 @@ export default function Incidents() {
 
           <TabsContent value="capa">
             <CorrectiveActionPlans incidents={incidents} autoOpen={autoOpenCapa} />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-accent" />
+                  Incident Analytics
+                </CardTitle>
+                <CardDescription>
+                  Frequency distribution by body part, injury type, work area, and source of harm. Use standardized dropdown values when logging incidents for meaningful analysis.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <IncidentAnalytics incidents={incidents} />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
