@@ -222,6 +222,7 @@ export const incidents = pgTable("incidents", {
   // OSHA 300 Required Fields
   employeeName: text("employee_name"), // Name of injured/ill employee
   jobTitle: text("job_title"), // Job title at time of incident
+  facility: text("facility"), // Site / Facility name (e.g., "Plant 1 – Detroit")
   department: text("department"), // Department/location where incident occurred
   location: text("location"), // Specific location of event
   bodyPart: text("body_part"), // Part of body affected

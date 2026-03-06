@@ -41,7 +41,7 @@ import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 // ── Standardized OSHA-aligned dropdown options ──────────────────────────────
-export const BODY_PARTS = [
+const BODY_PARTS = [
   "Head / Scalp", "Eye(s)", "Ear(s)", "Face / Nose / Mouth", "Neck / Throat",
   "Shoulder", "Upper Arm / Elbow", "Forearm / Lower Arm", "Wrist",
   "Hand / Palm", "Finger(s) / Thumb", "Chest / Ribs",
@@ -51,7 +51,7 @@ export const BODY_PARTS = [
   "Multiple Body Parts", "Body System (Respiratory/Circulatory)", "Other",
 ];
 
-export const INJURY_TYPES = [
+const INJURY_TYPES = [
   "Strain / Sprain", "Laceration / Cut", "Puncture / Bite",
   "Contusion / Bruise", "Fracture / Break", "Abrasion / Scrape",
   "Burn (Thermal)", "Burn (Chemical)", "Amputation",
@@ -63,7 +63,7 @@ export const INJURY_TYPES = [
   "Infectious Disease", "Near Miss – No Physical Injury", "Other",
 ];
 
-export const WORK_AREAS = [
+const WORK_AREAS = [
   "Production Floor", "Assembly Line / Work Cell",
   "Warehouse / Stockroom", "Shipping / Receiving", "Loading Dock",
   "Maintenance / Tool Crib", "Welding / Fabrication", "Paint / Finishing",
@@ -74,7 +74,7 @@ export const WORK_AREAS = [
   "Client / Customer Site", "Vehicle / In-Transit", "Other",
 ];
 
-export const OBJECTS_SOURCES = [
+const OBJECTS_SOURCES = [
   "Hand Tool (Wrench, Hammer, etc.)", "Power Tool (Drill, Grinder, Saw, etc.)",
   "Machinery / Equipment", "Vehicle / Forklift / PIT Equipment",
   "Chemical / Hazardous Substance", "Falling / Flying Object",
@@ -145,6 +145,7 @@ type Incident = {
   incidentDate: string;
   description: string;
   incidentType: string;
+  facility: string | null;
   employeeName: string | null;
   jobTitle: string | null;
   department: string | null;
@@ -166,6 +167,7 @@ type IncidentFormData = {
   incidentDate: string;
   description: string;
   incidentType: string;
+  facility: string;
   employeeName: string;
   jobTitle: string;
   department: string;
@@ -186,6 +188,7 @@ const defaultFormData: IncidentFormData = {
   incidentDate: new Date().toISOString().split('T')[0],
   description: '',
   incidentType: 'injury',
+  facility: '',
   employeeName: '',
   jobTitle: '',
   department: '',
@@ -303,6 +306,16 @@ function IncidentFormDialog({
           {/* Employee Information */}
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Employee Information</h3>
+            <div>
+              <Label htmlFor="facility">Facility / Site Name</Label>
+              <Input
+                id="facility"
+                value={formData.facility}
+                onChange={(e) => setFormData({...formData, facility: e.target.value})}
+                placeholder="e.g., Plant 1 – Detroit, Warehouse North, Corporate Office"
+                data-testid="input-facility"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="employeeName">Employee Name</Label>
@@ -1031,15 +1044,27 @@ function FreqBar({ label, count, max, color = "bg-accent" }: { label: string; co
 }
 
 function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
-  const total = incidents.length;
-  const recordable = incidents.filter(i => i.isRecordable).length;
-  const nearMiss = incidents.filter(i => i.incidentType === 'near_miss').length;
-  const injury = incidents.filter(i => i.incidentType === 'injury').length;
-  const illness = incidents.filter(i => i.incidentType === 'illness').length;
+  const [selectedFacility, setSelectedFacility] = useState<string | null>(null);
+
+  // Collect unique named facilities
+  const facilities = Array.from(
+    new Set(incidents.map(i => i.facility?.trim()).filter(Boolean) as string[])
+  ).sort();
+  const multiSite = facilities.length > 1;
+
+  // Filter incidents to the selected facility (or all)
+  const viewed = selectedFacility
+    ? incidents.filter(i => i.facility?.trim() === selectedFacility)
+    : incidents;
+
+  const total = viewed.length;
+  const recordable = viewed.filter(i => i.isRecordable).length;
+  const nearMiss = viewed.filter(i => i.incidentType === 'near_miss').length;
+  const injury = viewed.filter(i => i.incidentType === 'injury').length;
 
   const tally = (field: keyof Incident) => {
     const counts: Record<string, number> = {};
-    for (const inc of incidents) {
+    for (const inc of viewed) {
       const val = (inc[field] as string | null) || '(Not Specified)';
       counts[val] = (counts[val] || 0) + 1;
     }
@@ -1050,10 +1075,22 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
   const injuryTypes = tally('natureOfInjury');
   const workAreas = tally('location');
   const objects = tally('objectOrSubstance');
-
   const maxOf = (rows: [string, number][]) => rows.reduce((m, r) => Math.max(m, r[1]), 0);
 
-  if (total === 0) {
+  // Cross-site data (only used when "All Sites" is active and multiple sites exist)
+  const siteRows = facilities.map(f => {
+    const siteIncs = incidents.filter(i => i.facility?.trim() === f);
+    return {
+      name: f,
+      total: siteIncs.length,
+      recordable: siteIncs.filter(i => i.isRecordable).length,
+      injury: siteIncs.filter(i => i.incidentType === 'injury').length,
+      nearMiss: siteIncs.filter(i => i.incidentType === 'near_miss').length,
+    };
+  }).sort((a, b) => b.total - a.total);
+  const maxSiteTotal = siteRows.reduce((m, r) => Math.max(m, r.total), 0);
+
+  if (incidents.length === 0) {
     return (
       <div className="text-center py-16">
         <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
@@ -1065,7 +1102,84 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
 
   return (
     <div className="space-y-6 pt-2" data-testid="incident-analytics">
-      {/* Summary row */}
+
+      {/* Site filter — only shown when multiple named facilities exist */}
+      {multiSite && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm font-medium text-muted-foreground mr-1">Filter by site:</span>
+          <Button
+            size="sm"
+            variant={selectedFacility === null ? "default" : "outline"}
+            onClick={() => setSelectedFacility(null)}
+            data-testid="filter-all-sites"
+            className="h-7 text-xs"
+          >
+            All Sites ({incidents.length})
+          </Button>
+          {facilities.map(f => (
+            <Button
+              key={f}
+              size="sm"
+              variant={selectedFacility === f ? "default" : "outline"}
+              onClick={() => setSelectedFacility(f)}
+              data-testid={`filter-site-${f}`}
+              className="h-7 text-xs"
+            >
+              {f} ({incidents.filter(i => i.facility?.trim() === f).length})
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* Cross-Site Overview — shown only when "All Sites" active + multiple sites */}
+      {multiSite && !selectedFacility && (
+        <Card className="border-accent/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target className="w-4 h-4 text-accent" />
+              Cross-Site Overview
+            </CardTitle>
+            <CardDescription>Incident totals and recordable counts by facility</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {siteRows.map(({ name, total: t, recordable: r, nearMiss: nm }) => (
+              <div key={name} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <button
+                    className="font-medium hover:text-accent transition-colors text-left"
+                    onClick={() => setSelectedFacility(name)}
+                  >
+                    {name}
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    {t} total · {r} recordable · {nm} near miss
+                  </span>
+                </div>
+                {/* Stacked bar: recordable (red) + non-recordable (orange) */}
+                <div className="w-full bg-muted/40 rounded-full h-3 overflow-hidden flex">
+                  <div
+                    className="bg-destructive h-3 transition-all duration-500"
+                    style={{ width: `${maxSiteTotal > 0 ? (r / maxSiteTotal) * 100 : 0}%` }}
+                    title={`${r} recordable`}
+                  />
+                  <div
+                    className="bg-accent h-3 transition-all duration-500"
+                    style={{ width: `${maxSiteTotal > 0 ? ((t - r) / maxSiteTotal) * 100 : 0}%` }}
+                    title={`${t - r} non-recordable`}
+                  />
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-destructive inline-block" /> Recordable</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-accent inline-block" /> Non-Recordable</span>
+              <span className="text-xs ml-auto italic">Click a site name to drill down</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Summary stats for current view */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Total Incidents", value: total, color: "text-primary" },
@@ -1081,8 +1195,8 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
         ))}
       </div>
 
+      {/* Distribution charts */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Body Part Distribution */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1091,13 +1205,14 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {bodyParts.map(([label, count]) => (
-              <FreqBar key={label} label={label} count={count} max={maxOf(bodyParts)} color="bg-accent" />
-            ))}
+            {bodyParts.length > 0
+              ? bodyParts.map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(bodyParts)} color="bg-accent" />
+                ))
+              : <p className="text-xs text-muted-foreground">No data for this selection.</p>}
           </CardContent>
         </Card>
 
-        {/* Injury Type Distribution */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1106,13 +1221,14 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {injuryTypes.map(([label, count]) => (
-              <FreqBar key={label} label={label} count={count} max={maxOf(injuryTypes)} color="bg-destructive" />
-            ))}
+            {injuryTypes.length > 0
+              ? injuryTypes.map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(injuryTypes)} color="bg-destructive" />
+                ))
+              : <p className="text-xs text-muted-foreground">No data for this selection.</p>}
           </CardContent>
         </Card>
 
-        {/* Work Area Distribution */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1121,13 +1237,14 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {workAreas.map(([label, count]) => (
-              <FreqBar key={label} label={label} count={count} max={maxOf(workAreas)} color="bg-blue-500" />
-            ))}
+            {workAreas.length > 0
+              ? workAreas.map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(workAreas)} color="bg-blue-500" />
+                ))
+              : <p className="text-xs text-muted-foreground">No data for this selection.</p>}
           </CardContent>
         </Card>
 
-        {/* Object / Source Distribution */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1136,15 +1253,20 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {objects.map(([label, count]) => (
-              <FreqBar key={label} label={label} count={count} max={maxOf(objects)} color="bg-yellow-500" />
-            ))}
+            {objects.length > 0
+              ? objects.map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(objects)} color="bg-yellow-500" />
+                ))
+              : <p className="text-xs text-muted-foreground">No data for this selection.</p>}
           </CardContent>
         </Card>
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        Showing top 8 entries per category · {total} total incident{total !== 1 ? 's' : ''} analyzed
+        {selectedFacility
+          ? `Showing data for: ${selectedFacility} · ${total} incident${total !== 1 ? 's' : ''}`
+          : `All ${facilities.length > 0 ? `${facilities.length} site${facilities.length !== 1 ? 's' : ''} · ` : ''}${total} total incident${total !== 1 ? 's' : ''} analyzed`}
+        {multiSite && !selectedFacility && ' · top 8 per category'}
       </p>
     </div>
   );
@@ -1488,6 +1610,7 @@ function IncidentDetailDialog({
         incidentDate: new Date(incident.incidentDate).toISOString().split('T')[0],
         description: incident.description,
         incidentType: incident.incidentType,
+        facility: incident.facility || '',
         employeeName: incident.employeeName || '',
         jobTitle: incident.jobTitle || '',
         department: incident.department || '',
@@ -1584,6 +1707,16 @@ function IncidentDetailDialog({
           {/* Employee Info */}
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Employee Information</h3>
+            <div>
+              <Label htmlFor="detail-facility">Facility / Site Name</Label>
+              <Input
+                id="detail-facility"
+                value={formData.facility}
+                onChange={(e) => setFormData({ ...formData, facility: e.target.value })}
+                placeholder="e.g., Plant 1 – Detroit"
+                data-testid="input-detail-facility"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="detail-employee">Employee Name</Label>
