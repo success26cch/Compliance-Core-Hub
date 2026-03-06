@@ -638,7 +638,11 @@ function CoreyApp() {
     enabled: subStatus?.isPro === true,
   });
 
-  const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<number | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get("c");
+    return c ? parseInt(c, 10) : null;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomePlatform, setWelcomePlatform] = useState<"ios" | "android-prompt" | "android-manual" | "desktop">("desktop");

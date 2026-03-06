@@ -874,7 +874,7 @@ function DashboardCoreyChat() {
         </Button>
       </form>
       {conversationId && (
-        <Link href="/corey">
+        <Link href={`/corey?c=${conversationId}`}>
           <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-accent gap-1 h-7 px-2 -mt-1">
             <ExternalLink className="w-3 h-3" /> Open full conversation in Corey
           </Button>
