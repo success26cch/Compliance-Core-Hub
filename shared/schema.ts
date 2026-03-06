@@ -805,6 +805,22 @@ export const recordabilityUsage = pgTable("recordability_usage", {
 
 export type RecordabilityUsage = typeof recordabilityUsage.$inferSelect;
 
+// Isa subscriber profile — used to personalize standalone Isa AI conversations
+export const isaProfiles = pgTable("isa_profiles", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  preferredName: text("preferred_name"),
+  companyName: text("company_name"),
+  role: text("role"),
+  selectedStandards: text("selected_standards").array(),
+  focusAreas: text("focus_areas").array(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsaProfileSchema = createInsertSchema(isaProfiles).omit({ id: true, updatedAt: true });
+export type IsaProfile = typeof isaProfiles.$inferSelect;
+export type InsertIsaProfile = z.infer<typeof insertIsaProfileSchema>;
+
 // Corey subscriber profile — used to personalize AI conversations
 export const coreyProfiles = pgTable("corey_profiles", {
   id: serial("id").primaryKey(),

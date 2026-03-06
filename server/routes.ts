@@ -312,12 +312,17 @@ Rules:
       }
     }
 
+    const isIsaSubscriber = isAdmin || (isPro && (sub?.plan === 'isa' || sub?.plan === 'isa_pro' || sub?.plan === 'employer_platform' || sub?.plan === 'enterprise'));
+    const isIsaPro = isAdmin || (isPro && (sub?.plan === 'isa_pro'));
+
     res.json({
       status: sub?.status || "inactive",
       plan: sub?.plan,
       isPro: isPro || isAdmin || !!teamMembership,
       hasPlatform,
       isAdmin,
+      isIsaSubscriber,
+      isIsaPro,
       teamMembership,
       joinDate,
       nextPaymentDate,
@@ -391,6 +396,8 @@ Rules:
         corey_pro: { name: 'CCHUB Unlimited Safety - Corey AI', amount: 9900, interval: 'month', mode: 'subscription' },
         employer_platform: { name: 'CCHUB Employer Compliance Platform', amount: 29900, interval: 'month', mode: 'subscription' },
         setup_fee: { name: 'CCHUB Platform Setup & Onboarding', amount: 49900, mode: 'payment' },
+        isa: { name: 'ACSI Isa — ISO AI Advisor (Core)', amount: 9900, interval: 'month', mode: 'subscription' },
+        isa_pro: { name: 'ACSI Isa Pro — Full ISO AI Advisor', amount: 19900, interval: 'month', mode: 'subscription' },
       };
 
       const config = planConfig[plan];
@@ -4145,6 +4152,29 @@ Rules:
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
       const profile = await storage.upsertCoreyProfile(userId, req.body);
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/isa-profile", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const profile = await storage.getIsaProfile(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/isa-profile", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const profile = await storage.upsertIsaProfile(userId, req.body);
       res.json(profile);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

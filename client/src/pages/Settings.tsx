@@ -385,6 +385,10 @@ export default function Settings() {
                 window.location.href = "/corey-profile";
                 return;
               }
+              if (plan === 'isa' || plan === 'isa_pro') {
+                window.location.href = "/isa-profile";
+                return;
+              }
             }
           })
           .catch(() => {});

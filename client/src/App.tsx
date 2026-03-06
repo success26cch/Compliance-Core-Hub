@@ -53,6 +53,9 @@ import PlatformBrief from "@/pages/PlatformBrief";
 import Cesar from "@/pages/Cesar";
 import WelcomeCorey from "@/pages/WelcomeCorey";
 import CoreyProfile from "@/pages/CoreyProfile";
+import IsaStandalone from "@/pages/Isa";
+import IsaProfile from "@/pages/IsaProfile";
+import WelcomeIsa from "@/pages/WelcomeIsa";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -116,6 +119,9 @@ function Router() {
       <Route path="/corey" component={CoreyStandalone} />
       <Route path="/corey-profile" component={CoreyProfile} />
       <Route path="/welcome-corey" component={WelcomeCorey} />
+      <Route path="/isa" component={IsaStandalone} />
+      <Route path="/isa-profile" component={IsaProfile} />
+      <Route path="/welcome-isa" component={WelcomeIsa} />
       <Route path="/try-corey" component={TryCorey} />
       <Route path="/qr-code" component={QRCodePage} />
       <Route path="/team-seats" component={TeamSeats} />

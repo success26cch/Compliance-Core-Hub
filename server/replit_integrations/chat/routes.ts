@@ -544,7 +544,23 @@ Do not apologize excessively. Be brief, professional, and redirect clearly. Then
 `;
 
       const isoProject = await storage.getIsoProject(userId);
+      const isaProfile = await storage.getIsaProfile(userId);
       let projectContext = "";
+      if (isaProfile && !isoProject && (isaProfile.companyName || isaProfile.preferredName)) {
+        projectContext = `
+## ISA SUBSCRIBER PROFILE (Use this to personalize every response)
+Preferred Name: ${isaProfile.preferredName || "Not provided"}
+Company: ${isaProfile.companyName || "Not provided"}
+Role: ${isaProfile.role || "Not provided"}
+Selected Standards: ${(isaProfile.selectedStandards || []).join(", ") || "Not provided"}
+Top Focus Areas: ${(isaProfile.focusAreas || []).join(", ") || "Not provided"}
+
+MANDATORY PERSONALIZATION RULES: (1) You are speaking with ${isaProfile.preferredName || "this subscriber"} — use their name naturally, especially at the start of your first response. (2) Tailor all clause citations, examples, and audit scenarios to their selected standards. (3) Connect answers to their stated focus areas whenever relevant. (4) Build on prior conversation context.
+
+---
+
+`;
+      }
       if (isoProject && isoProject.status === "complete") {
         const processList = (isoProject.processes || [])
           .map((p) => `  - ${p.name} | Owner: ${p.owner} | KPI: ${p.kpi} | Inputs: ${p.inputs} | Outputs: ${p.outputs} | Clauses: ${p.clauses.join(", ")}`)
