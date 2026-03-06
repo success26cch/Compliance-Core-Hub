@@ -13,7 +13,7 @@ import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
 import { generateClinicLetterDocx, getAvailableInjuryTypes } from "./generateClinicLetter";
-import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
 import multer from "multer";
@@ -4236,6 +4236,93 @@ Rules:
       res.json({ filename: originalname, text, chars: text.length });
     } catch (error: any) {
       res.status(500).json({ message: "Failed to parse document: " + error.message });
+    }
+  });
+
+  // ─── NONCONFORMANCES ────────────────────────────────────────────────────────
+  app.get("/api/nonconformances", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const ncs = await storage.getNonconformances(userId);
+      res.json(ncs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/nonconformances", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const parsed = insertNonconformanceSchema.parse({ ...req.body, userId });
+      const nc = await storage.createNonconformance(parsed);
+      res.status(201).json(nc);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/nonconformances/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      const nc = await storage.updateNonconformance(id, userId, req.body);
+      if (!nc) return res.status(404).json({ message: "Nonconformance not found" });
+      res.json(nc);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/nonconformances/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      await storage.deleteNonconformance(id, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/corrective-actions/:id/notify-sms", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      const capa = await storage.getCorrectiveActionById(id, userId);
+      if (!capa) return res.status(404).json({ message: "Corrective Action not found" });
+
+      if (!capa.responsiblePhone) {
+        return res.status(400).json({ message: "No responsible phone number set for this CAPA" });
+      }
+
+      const { sendSMS, isTwilioConfigured } = await import('./twilioService');
+      const configured = await isTwilioConfigured();
+      if (!configured) {
+        return res.status(503).json({ message: "SMS service not configured" });
+      }
+
+      const dueDateStr = capa.targetDate ? new Date(capa.targetDate).toLocaleDateString() : 'no date set';
+      const message = `CCHUB ALERT: You have been assigned as the responsible person for Corrective Action "${capa.title}". Target Completion Date: ${dueDateStr}. Please review in the platform.`;
+
+      const result = await sendSMS(capa.responsiblePhone, message);
+      if (result.success) {
+        res.json({ message: "SMS notification sent successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to send SMS: " + result.error });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 

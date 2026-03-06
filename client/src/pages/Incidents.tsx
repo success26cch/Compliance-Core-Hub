@@ -33,12 +33,16 @@ import {
   Search,
   Trash2,
   Edit,
-  Eye
+  Eye,
+  MessageSquare,
+  Sparkles,
+  AlertCircle
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 // ── Standardized OSHA-aligned dropdown options ──────────────────────────────
 const BODY_PARTS = [
@@ -96,12 +100,14 @@ type CorrectiveAction = {
   correctiveActions: string | null;
   preventiveActions: string | null;
   responsiblePerson: string | null;
+  responsiblePhone: string | null;
   responsibleDepartment: string | null;
   targetDate: string | null;
   completionDate: string | null;
   verificationMethod: string | null;
   verificationDate: string | null;
   verificationNotes: string | null;
+  effectivenessResult: string | null;
   priority: string;
   status: string;
   createdAt: string;
@@ -116,6 +122,7 @@ type CAPAFormData = {
   correctiveActions: string;
   preventiveActions: string;
   responsiblePerson: string;
+  responsiblePhone: string;
   responsibleDepartment: string;
   targetDate: string;
   verificationMethod: string;
@@ -132,6 +139,7 @@ const defaultCAPAFormData: CAPAFormData = {
   correctiveActions: '',
   preventiveActions: '',
   responsiblePerson: '',
+  responsiblePhone: '',
   responsibleDepartment: '',
   targetDate: '',
   verificationMethod: '',
@@ -817,14 +825,32 @@ function CAPAFormDialog({
   open, 
   onOpenChange, 
   onSave,
-  incidents 
+  incidents,
+  incidentId
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void;
   onSave: (data: CAPAFormData) => void;
   incidents: Incident[];
+  incidentId?: number;
 }) {
   const [formData, setFormData] = useState<CAPAFormData>(defaultCAPAFormData);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (open) {
+      if (incidentId) {
+        const incident = incidents.find(i => i.id === incidentId);
+        setFormData({ 
+          ...defaultCAPAFormData, 
+          incidentId,
+          title: incident ? `CAPA for ${incident.caseNumber || 'Incident #' + incident.id}` : ''
+        });
+      } else {
+        setFormData(defaultCAPAFormData);
+      }
+    }
+  }, [open, incidentId, incidents]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -832,15 +858,53 @@ function CAPAFormDialog({
     setFormData(defaultCAPAFormData);
   };
 
+  const handleAskCorey = () => {
+    const incident = incidents.find(i => i.id === formData.incidentId);
+    const context = `I am working on a Corrective Action Plan (CAPA).
+Incident Details: ${incident ? incident.description : 'N/A'}
+Injury: ${incident?.natureOfInjury || 'N/A'} on ${incident?.bodyPart || 'N/A'}
+Current CAPA Progress:
+Title: ${formData.title}
+Problem Statement: ${formData.problemStatement}
+Current Root Cause Analysis: ${formData.rootCause}
+
+Please provide suggestions for a more thorough root cause analysis and potential corrective/preventive actions.`;
+    
+    sessionStorage.setItem("corey-seed-prompt", context);
+    setLocation("/corey");
+  };
+
+  const similarIncidentsCount = formData.incidentId ? incidents.filter(i => {
+    const currentIncident = incidents.find(inc => inc.id === formData.incidentId);
+    if (!currentIncident) return false;
+    return i.id !== formData.incidentId && (
+      (i.natureOfInjury && i.natureOfInjury === currentIncident.natureOfInjury) ||
+      (i.bodyPart && i.bodyPart === currentIncident.bodyPart)
+    );
+  }).length : 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-accent">
             <ShieldCheck className="w-5 h-5" />
-            Create Corrective Action Plan
+            {formData.incidentId ? 'Create Incident CAPA' : 'New Corrective Action Plan'}
           </DialogTitle>
         </DialogHeader>
+
+        {formData.incidentId && similarIncidentsCount >= 2 && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg flex items-start gap-3 mb-4">
+            <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-yellow-800 dark:text-yellow-400">⚠️ Recurrence Alert</p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                {similarIncidentsCount} similar incidents logged. Prior corrective actions may not have been effective.
+              </p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Link to Incident (Optional) */}
           <div className="space-y-4">
@@ -893,7 +957,20 @@ function CAPAFormDialog({
               />
             </div>
             <div>
-              <Label htmlFor="rootCause">Root Cause Analysis</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="rootCause">Root Cause Analysis</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 gap-2 text-xs border-accent text-accent hover:bg-accent/10"
+                  onClick={handleAskCorey}
+                  data-testid="button-ask-corey-suggestions"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Ask Corey for Suggestions
+                </Button>
+              </div>
               <Textarea 
                 id="rootCause"
                 value={formData.rootCause}
@@ -958,6 +1035,16 @@ function CAPAFormDialog({
                 />
               </div>
               <div>
+                <Label htmlFor="responsiblePhone">Responsible Phone (SMS)</Label>
+                <Input 
+                  id="responsiblePhone"
+                  value={formData.responsiblePhone}
+                  onChange={(e) => setFormData({...formData, responsiblePhone: e.target.value})}
+                  placeholder="+15551234567"
+                  data-testid="input-responsible-phone"
+                />
+              </div>
+              <div>
                 <Label htmlFor="responsibleDepartment">Department</Label>
                 <Input 
                   id="responsibleDepartment"
@@ -967,8 +1054,6 @@ function CAPAFormDialog({
                   data-testid="input-responsible-dept"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="targetDate">Target Completion Date</Label>
                 <Input 
@@ -979,6 +1064,8 @@ function CAPAFormDialog({
                   data-testid="input-target-date"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="priority">Priority</Label>
                 <Select 
@@ -1566,82 +1653,93 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
             </div>
           ) : (
             <div className="space-y-4">
-              {capaList.map((capa) => (
-                <div 
-                  key={capa.id} 
-                  className="border rounded-lg p-4 bg-muted/20 hover:bg-muted/30 transition-colors"
-                  data-testid={`capa-item-${capa.id}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold truncate">{capa.title}</h4>
-                        {getPriorityBadge(capa.priority)}
-                        {getCAPAStatusBadge(capa.status)}
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {capa.problemStatement}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        {capa.responsiblePerson && (
+              {capaList.map((capa) => {
+                const isOverdue = capa.targetDate && 
+                                 new Date(capa.targetDate) < new Date() && 
+                                 !['completed', 'verified', 'closed'].includes(capa.status);
+                return (
+                  <div 
+                    key={capa.id} 
+                    className="border rounded-lg p-4 bg-muted/20 hover:bg-muted/30 transition-colors"
+                    data-testid={`capa-item-${capa.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-semibold truncate">{capa.title}</h4>
+                          {getPriorityBadge(capa.priority)}
+                          {getCAPAStatusBadge(capa.status)}
+                          {isOverdue && (
+                            <Badge variant="destructive" className="gap-1 px-1 h-5">
+                              <Clock className="w-3 h-3" />
+                              Overdue
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {capa.problemStatement}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {capa.responsiblePerson && (
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {capa.responsiblePerson}
+                            </span>
+                          )}
+                          {capa.targetDate && (
+                            <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive font-medium' : ''}`}>
+                              <Calendar className="w-3 h-3" />
+                              Due: {new Date(capa.targetDate).toLocaleDateString()}
+                            </span>
+                          )}
                           <span className="flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            {capa.responsiblePerson}
+                            <Clock className="w-3 h-3" />
+                            Created: {new Date(capa.createdAt).toLocaleDateString()}
                           </span>
-                        )}
-                        {capa.targetDate && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            Due: {new Date(capa.targetDate).toLocaleDateString()}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          Created: {new Date(capa.createdAt).toLocaleDateString()}
-                        </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select 
-                        value={capa.status} 
-                        onValueChange={(v) => updateStatusMutation.mutate({ id: capa.id, status: v })}
-                      >
-                        <SelectTrigger className="w-32 h-8" data-testid={`select-capa-status-${capa.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="verified">Verified</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        onClick={() => setSelectedCAPA(capa)}
-                        data-testid={`button-view-capa-${capa.id}`}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="icon" 
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this action plan?')) {
-                            deleteMutation.mutate(capa.id);
-                          }
-                        }}
-                        data-testid={`button-delete-capa-${capa.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Select 
+                          value={capa.status} 
+                          onValueChange={(v) => updateStatusMutation.mutate({ id: capa.id, status: v })}
+                        >
+                          <SelectTrigger className="w-32 h-8" data-testid={`select-capa-status-${capa.id}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="open">Open</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="verified">Verified</SelectItem>
+                            <SelectItem value="closed">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => setSelectedCAPA(capa)}
+                          data-testid={`button-view-capa-${capa.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="icon" 
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this action plan?')) {
+                              deleteMutation.mutate(capa.id);
+                            }
+                          }}
+                          data-testid={`button-delete-capa-${capa.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -1661,6 +1759,29 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
               <div className="flex items-center gap-2">
                 {getPriorityBadge(selectedCAPA.priority)}
                 {getCAPAStatusBadge(selectedCAPA.status)}
+                {selectedCAPA.responsiblePhone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs ml-auto"
+                    onClick={async () => {
+                      try {
+                        await apiRequest('POST', `/api/corrective-actions/${selectedCAPA.id}/notify-sms`);
+                        toast({ title: "Notification Sent", description: `SMS sent to ${selectedCAPA.responsiblePerson}` });
+                      } catch (err) {
+                        toast({ 
+                          title: "SMS Failed", 
+                          description: "Could not send notification. Check Twilio configuration.",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    data-testid="button-send-capa-sms"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Send SMS Notification
+                  </Button>
+                )}
               </div>
 
               <div>
@@ -1720,6 +1841,7 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
                   <p className="text-xs text-muted-foreground">Responsible</p>
                   <p className="font-medium">{selectedCAPA.responsiblePerson || '—'}</p>
                   <p className="text-sm text-muted-foreground">{selectedCAPA.responsibleDepartment || ''}</p>
+                  {selectedCAPA.responsiblePhone && <p className="text-xs text-muted-foreground">{selectedCAPA.responsiblePhone}</p>}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Target Date</p>
@@ -1728,6 +1850,65 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
                   </p>
                 </div>
               </div>
+
+              {(selectedCAPA.status === 'completed' || selectedCAPA.status === 'verified') && (
+                <div className="mt-6 border-t pt-4 space-y-4">
+                  <h4 className="font-bold flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-accent" />
+                    Effectiveness Verification
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Effectiveness Result</Label>
+                      <Select 
+                        defaultValue={selectedCAPA.effectivenessResult || 'pending'}
+                        onValueChange={async (val) => {
+                          await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { effectivenessResult: val });
+                          queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-effectiveness-result">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="effective">Effective</SelectItem>
+                          <SelectItem value="not_effective">Not Effective</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Verification Notes</Label>
+                      <Textarea 
+                        placeholder="Enter verification details..."
+                        defaultValue={selectedCAPA.verificationNotes || ''}
+                        onBlur={async (e) => {
+                          await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { verificationNotes: e.target.value });
+                          queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                        }}
+                        data-testid="textarea-verification-notes"
+                      />
+                    </div>
+                  </div>
+                  {selectedCAPA.status !== 'verified' && (
+                    <Button 
+                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={async () => {
+                        await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { 
+                          status: 'verified',
+                          completionDate: new Date().toISOString()
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                        setSelectedCAPA(null);
+                        toast({ title: "CAPA Verified", description: "The action plan has been marked as verified and completed." });
+                      }}
+                      data-testid="button-mark-verified"
+                    >
+                      Mark Verified & Close
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedCAPA(null)}>
@@ -2068,6 +2249,8 @@ export default function Incidents() {
   const [initialRecordable, setInitialRecordable] = useState(false);
   const [autoOpenCapa, setAutoOpenCapa] = useState(false);
   const [activeTab, setActiveTab] = useState('incidents');
+  const [capaFormOpen, setCAPAFormOpen] = useState(false);
+  const [selectedCAPAForPlan, setSelectedCAPAForPlan] = useState<number | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -2116,6 +2299,22 @@ export default function Incidents() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to update incident.", variant: "destructive" });
+    },
+  });
+
+  const createCAPAMutation = useMutation({
+    mutationFn: async (data: CAPAFormData) => {
+      return apiRequest('POST', '/api/corrective-actions', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+      setCAPAFormOpen(false);
+      setSelectedCAPAForPlan(undefined);
+      toast({ title: "Action Plan Created", description: "Corrective action plan has been created successfully." });
+      setActiveTab('capa');
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create action plan.", variant: "destructive" });
     },
   });
 
@@ -2288,16 +2487,32 @@ export default function Incidents() {
                             </TableCell>
                             <TableCell>{getStatusBadge(incident.status)}</TableCell>
                             <TableCell>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="gap-1 text-xs"
-                                onClick={(e) => { e.stopPropagation(); handleOpenIncident(incident); }}
-                                data-testid={`button-open-incident-${incident.id}`}
-                              >
-                                <Eye className="w-3 h-3" />
-                                Open
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-2 border-accent text-accent hover:bg-accent/10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCAPAForPlan(incident.id);
+                                    setCAPAFormOpen(true);
+                                  }}
+                                  data-testid={`button-incident-capa-${incident.id}`}
+                                >
+                                  <ShieldCheck className="w-3.5 h-3.5" />
+                                  CAPA
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="gap-1 text-xs"
+                                  onClick={(e) => { e.stopPropagation(); handleOpenIncident(incident); }}
+                                  data-testid={`button-open-incident-${incident.id}`}
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  Open
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -2351,6 +2566,16 @@ export default function Incidents() {
           }}
           onSave={(id, data) => updateMutation.mutate({ id, data })}
           isSaving={updateMutation.isPending}
+        />
+
+        <CAPAFormDialog
+          open={capaFormOpen}
+          onOpenChange={setCAPAFormOpen}
+          onSave={(data) => {
+            createCAPAMutation.mutate(data);
+          }}
+          incidents={incidents}
+          incidentId={selectedCAPAForPlan}
         />
       </div>
     </ProtectedLayout>

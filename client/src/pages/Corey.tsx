@@ -400,10 +400,10 @@ function CoreyLanding() {
                     <Bot className="w-9 h-9 text-white" />
                   </div>
                   <h2 className="text-2xl font-black text-white">
-                    {chatProfile?.preferredName ? `Hi ${chatProfile.preferredName}! What can I help you with?` : "Ask Corey Anything"}
+                    {coreyProfile?.preferredName ? `Hi ${coreyProfile.preferredName}! What can I help you with?` : "Ask Corey Anything"}
                   </h2>
                   <p className="text-white/50 text-sm mt-1 max-w-sm mx-auto">
-                    {chatProfile?.preferredName
+                    {coreyProfile?.preferredName
                       ? `I know your company, your industry, and your compliance priorities — every answer is tailored to you.`
                       : "OSHA recordkeeping, DOT physicals, drug testing, respirator compliance — get instant, regulation-backed answers."}
                   </p>
@@ -643,6 +643,21 @@ function CoreyApp() {
     const c = params.get("c");
     return c ? parseInt(c, 10) : null;
   });
+
+  useEffect(() => {
+    const seedPrompt = sessionStorage.getItem("corey-seed-prompt");
+    if (seedPrompt && !activeConversationId) {
+      sessionStorage.removeItem("corey-seed-prompt");
+      createConversation("New Analysis", {
+        onSuccess: (data) => {
+          setActiveConversationId(data.id);
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: seedPrompt } }));
+          }, 500);
+        },
+      });
+    }
+  }, [createConversation, activeConversationId]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomePlatform, setWelcomePlatform] = useState<"ios" | "android-prompt" | "android-manual" | "desktop">("desktop");

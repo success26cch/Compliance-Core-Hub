@@ -267,12 +267,14 @@ export const correctiveActions = pgTable("corrective_actions", {
   correctiveActions: text("corrective_actions"), // Long-term fixes
   preventiveActions: text("preventive_actions"), // Prevent recurrence
   responsiblePerson: text("responsible_person"),
+  responsiblePhone: text("responsible_phone"), // phone number of responsible person for SMS
   responsibleDepartment: text("responsible_department"),
   targetDate: timestamp("target_date"),
   completionDate: timestamp("completion_date"),
   verificationMethod: text("verification_method"), // How to verify effectiveness
   verificationDate: timestamp("verification_date"),
   verificationNotes: text("verification_notes"),
+  effectivenessResult: text("effectiveness_result"), // values: 'pending', 'effective', 'not_effective'
   priority: text("priority").notNull().default("medium"), // 'critical', 'high', 'medium', 'low'
   status: text("status").notNull().default("open"), // 'open', 'in_progress', 'completed', 'verified', 'closed'
   createdAt: timestamp("created_at").defaultNow(),
@@ -290,6 +292,45 @@ export const insertCorrectiveActionSchema = createInsertSchema(correctiveActions
 });
 export type CorrectiveAction = typeof correctiveActions.$inferSelect;
 export type InsertCorrectiveAction = z.infer<typeof insertCorrectiveActionSchema>;
+
+// Nonconformances Table
+export const nonconformances = pgTable("nonconformances", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"), // optional FK to iso_projects
+  title: text("title").notNull(),
+  sourceType: text("source_type").notNull(), // 'customer_complaint', 'internal_audit', 'external_audit', 'supplier', 'process_observation', 'management_review', 'other'
+  description: text("description").notNull(),
+  isoClause: text("iso_clause"), // e.g. "ISO 9001:2015 Clause 8.7"
+  severity: text("severity").notNull().default('minor'), // 'critical', 'major', 'minor', 'observation'
+  detectedBy: text("detected_by"),
+  detectedDate: timestamp("detected_date").notNull().defaultNow(),
+  responsiblePerson: text("responsible_person"),
+  responsiblePhone: text("responsible_phone"),
+  targetDate: timestamp("target_date"),
+  status: text("status").notNull().default('open'), // 'open', 'root_cause_identified', 'action_in_progress', 'effectiveness_pending', 'closed'
+  rootCause: text("root_cause"),
+  immediateContainment: text("immediate_containment"),
+  correctiveAction: text("corrective_action"),
+  preventiveAction: text("preventive_action"),
+  verificationMethod: text("verification_method"),
+  closureDate: timestamp("closure_date"),
+  closureNotes: text("closure_notes"),
+  effectivenessResult: text("effectiveness_result"), // 'pending', 'effective', 'not_effective'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNonconformanceSchema = createInsertSchema(nonconformances, {
+  detectedDate: dateOrStringToDate,
+  targetDate: dateOrStringToDate,
+  closureDate: dateOrStringToDate,
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Nonconformance = typeof nonconformances.$inferSelect;
+export type InsertNonconformance = z.infer<typeof insertNonconformanceSchema>;
 
 // Action Items (urgent tasks for managers)
 export const actionItems = pgTable("action_items", {

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from "@/hooks/use-isa-chat";
 import { useQuestionUsage } from "@/hooks/use-subscriptions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Send, Lock, Sparkles, ChevronRight, Award,
@@ -22,6 +22,7 @@ import {
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
 import type { IsoProject } from "@shared/schema";
+import { NonconformanceManager } from "./NonconformanceManager";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -242,12 +243,14 @@ function ISOTierCard({
 /* ─────────────────────────────────────────────────────── */
 export default function ISOManager() {
   const qc = useQueryClient();
+  const [, setLocation] = useLocation();
   const { data: conversations } = useIsaConversations();
   const { mutate: createConversation, isPending: isCreating } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [activeSection, setActiveSection] = useState<'chat' | 'nc'>('chat');
 
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
@@ -311,9 +314,22 @@ export default function ISOManager() {
     createConversation(title, {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
+        setActiveSection('chat');
         setSidebarOpen(true);
         setShowWizard(false);
       },
+    });
+  };
+
+  const handleAskIsa = (prompt: string) => {
+    createConversation("NC Guidance: " + prompt.slice(0, 30), {
+      onSuccess: (data: any) => {
+        setActiveConversationId(data.id);
+        setActiveSection('chat');
+        setSidebarOpen(true);
+        // Pre-seed would happen via a useEffect or by passing initialPrompt to a state
+        // For now, using the title as a proxy or we can implement the message sending
+      }
     });
   };
 
@@ -373,6 +389,15 @@ export default function ISOManager() {
                 className="w-full gap-2 bg-accent hover:bg-accent/90 text-white" data-testid="button-new-iso-chat">
                 <Plus className="w-4 h-4" /> New Consultation
               </Button>
+
+              <Button 
+                variant="ghost" 
+                onClick={() => setActiveSection('nc')}
+                className={`w-full mt-2 gap-2 border border-accent/20 ${activeSection === 'nc' ? 'bg-accent/10 text-accent font-bold' : 'text-muted-foreground'}`}
+                data-testid="button-iso-nc-capa"
+              >
+                <Shield className="w-4 h-4" /> NC & CAPA
+              </Button>
             </div>
 
             <div className="p-4 border-b border-border/60 bg-muted/20">
@@ -404,10 +429,13 @@ export default function ISOManager() {
                     <p className="text-xs text-muted-foreground/50 text-center py-4">No sessions yet</p>
                   )}
                   {conversations?.map((conv: any) => (
-                    <button key={conv.id} onClick={() => setActiveConversationId(conv.id)}
+                    <button key={conv.id} onClick={() => {
+                      setActiveConversationId(conv.id);
+                      setActiveSection('chat');
+                    }}
                       data-testid={`button-iso-conversation-${conv.id}`}
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-2 truncate ${
-                        activeConversationId === conv.id ? "bg-accent/10 text-accent font-medium" : "text-muted-foreground hover:bg-muted"
+                        activeConversationId === conv.id && activeSection === 'chat' ? "bg-accent/10 text-accent font-medium" : "text-muted-foreground hover:bg-muted"
                       }`}>
                       <MessageSquare className="w-3 h-3 shrink-0 opacity-50" />
                       <span className="truncate">{conv.title}</span>
@@ -467,6 +495,10 @@ export default function ISOManager() {
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col relative">
+            {activeSection === 'nc' ? (
+              <NonconformanceManager onAskIsa={handleAskIsa} />
+            ) : (
+              <>
             {usageData && !canAsk && !activeConversationId && (
               <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-muted/60 backdrop-blur-sm">
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
@@ -519,6 +551,8 @@ export default function ISOManager() {
                 onResetProject={handleResetProject}
                 isResetting={deleteProjectMut.isPending}
               />
+            )}
+            </>
             )}
           </div>
         </div>
