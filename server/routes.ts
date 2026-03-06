@@ -4181,5 +4181,52 @@ Rules:
     }
   });
 
+  const docUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowed = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+      ];
+      if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only PDF, DOCX, and TXT files are supported"));
+      }
+    },
+  });
+
+  app.post("/api/upload-document", docUpload.single("file"), async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+      const { mimetype, originalname, buffer } = req.file;
+      let text = "";
+
+      if (mimetype === "application/pdf") {
+        const pdfParse = (await import("pdf-parse")).default;
+        const data = await pdfParse(buffer);
+        text = data.text;
+      } else if (mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ buffer });
+        text = result.value;
+      } else {
+        text = buffer.toString("utf-8");
+      }
+
+      if (text.length > 50000) {
+        text = text.substring(0, 50000) + "\n\n[Document truncated at 50,000 characters due to length]";
+      }
+
+      res.json({ filename: originalname, text, chars: text.length });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to parse document: " + error.message });
+    }
+  });
+
   return httpServer;
 }

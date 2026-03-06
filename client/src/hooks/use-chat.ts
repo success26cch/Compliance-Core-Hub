@@ -61,10 +61,11 @@ export function useChatStream(conversationId: number, onLimitReached?: () => voi
     }
   }, [conversationData]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, displayContent?: string) => {
     if (!content.trim() || isStreaming || limitReached) return;
 
-    const userMessage = { role: 'user', content, createdAt: new Date().toISOString() };
+    const shownContent = displayContent ?? content;
+    const userMessage = { role: 'user', content: shownContent, createdAt: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
     setIsStreaming(true);
 

@@ -17,7 +17,7 @@ import {
   CheckCircle2, Sparkles, ArrowRight, Download, Smartphone, MoreVertical,
   Copy, Mail, FileText, Trash2, Pencil, Share2, FileDown, ClipboardCopy,
   Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle, Target, Scale,
-  X, ExternalLink, UserCircle
+  X, ExternalLink, UserCircle, Paperclip, Loader2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
@@ -1327,6 +1327,9 @@ function CoreyChatInterface({
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const { data: chatProfile } = useQuery<any>({ queryKey: ["/api/corey-profile"] });
   const [input, setInput] = useState("");
+  const [attachedDoc, setAttachedDoc] = useState<{ filename: string; text: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
   const { toast } = useToast();
@@ -1376,14 +1379,51 @@ function CoreyChatInterface({
     return () => window.removeEventListener("corey-floating-mic", handler);
   }, []);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload-document", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Upload failed");
+      }
+      const data = await res.json();
+      setAttachedDoc({ filename: data.filename, text: data.text });
+      toast({ title: `📎 ${data.filename} attached`, description: `${data.chars.toLocaleString()} characters extracted and ready for Corey to review.` });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || limitReached) return;
+    if ((!input.trim() && !attachedDoc) || limitReached) return;
     if (isListening) {
       stopListening();
     }
     userScrolledUp.current = false;
-    sendMessage(input);
+
+    if (attachedDoc) {
+      const userQuestion = input.trim() || "Please review this document.";
+      const apiContent = `[UPLOADED DOCUMENT: ${attachedDoc.filename}]\n\n${attachedDoc.text}\n\n---\n\n${userQuestion}`;
+      const displayContent = `📎 ${attachedDoc.filename}\n\n${userQuestion}`;
+      sendMessage(apiContent, displayContent);
+      setAttachedDoc(null);
+    } else {
+      sendMessage(input);
+    }
+
     setInput("");
     if (onMessageSent) {
       setTimeout(() => onMessageSent(), 500);
@@ -1841,6 +1881,30 @@ function CoreyChatInterface({
       </div>
 
       <div className="flex-shrink-0 p-4 border-t border-white/10 bg-slate-950/50">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.txt"
+          className="hidden"
+          onChange={handleFileChange}
+          data-testid="input-corey-file"
+        />
+        {attachedDoc && (
+          <div className="max-w-3xl mx-auto mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium">
+              <Paperclip className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate max-w-[220px]">{attachedDoc.filename}</span>
+              <button
+                type="button"
+                onClick={() => setAttachedDoc(null)}
+                className="ml-1 text-accent/60 hover:text-accent transition-colors"
+                data-testid="button-remove-attachment"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-2 items-end">
           <div className="relative flex-1">
             <Textarea
@@ -1852,8 +1916,8 @@ function CoreyChatInterface({
                   handleSubmit(e as any);
                 }
               }}
-              placeholder={limitReached ? "Free limit reached — upgrade for unlimited access" : isListening ? "Listening... click mic to stop" : "Ask Corey a compliance question..."}
-              className={`pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50 resize-none max-h-[130px] overflow-y-auto ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+              placeholder={limitReached ? "Free limit reached — upgrade for unlimited access" : isListening ? "Listening... click mic to stop" : attachedDoc ? "Ask Corey about this document, or just hit send..." : "Ask Corey a compliance question..."}
+              className={`pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-accent/50 resize-none max-h-[130px] overflow-y-auto ${isListening ? "border-accent ring-2 ring-accent/20" : ""} ${attachedDoc ? "border-accent/40" : ""}`}
               rows={2}
               disabled={isStreaming || limitReached}
               data-testid="input-corey-message"
@@ -1873,9 +1937,21 @@ function CoreyChatInterface({
             )}
           </div>
           <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isStreaming || limitReached || isUploading}
+            className="text-white/40 hover:text-accent hover:bg-accent/10 mb-0.5 transition-colors"
+            title="Attach a document for Corey to review (PDF, DOCX, TXT)"
+            data-testid="button-corey-upload"
+          >
+            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+          </Button>
+          <Button
             type="submit"
             size="icon"
-            disabled={isStreaming || limitReached || !input.trim()}
+            disabled={isStreaming || limitReached || (!input.trim() && !attachedDoc)}
             className="bg-accent hover:bg-accent/90 mb-0.5"
             data-testid="button-corey-send"
           >
