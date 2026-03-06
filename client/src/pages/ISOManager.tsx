@@ -248,7 +248,7 @@ export default function ISOManager() {
   const { mutate: createConversation, isPending: isCreating } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
   const [activeSection, setActiveSection] = useState<'chat' | 'nc'>('chat');
 
@@ -476,6 +476,15 @@ export default function ISOManager() {
               <span className="text-sm font-bold text-primary">Isa</span>
               <span className="text-xs text-muted-foreground hidden sm:block">· ACSI Lead ISO Auditor AI</span>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveSection(activeSection === 'nc' ? 'chat' : 'nc')}
+              className={`h-7 gap-1.5 text-xs ml-2 border ${activeSection === 'nc' ? 'bg-accent/10 text-accent border-accent/40 font-bold' : 'text-muted-foreground border-border/40 hover:border-accent/30 hover:text-accent'}`}
+              data-testid="button-header-nc-capa"
+            >
+              <Shield className="w-3 h-3" /> NC & CAPA
+            </Button>
             <div className="ml-auto flex items-center gap-2">
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Activity className="w-3 h-3 text-accent" /><span>Online</span>
