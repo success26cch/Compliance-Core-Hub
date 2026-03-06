@@ -473,6 +473,37 @@ export const insertIsoProjectSchema = createInsertSchema(isoProjects).omit({
 export type IsoProject = typeof isoProjects.$inferSelect;
 export type InsertIsoProject = z.infer<typeof insertIsoProjectSchema>;
 
+// ISO Documents table
+export const isoDocuments = pgTable("iso_documents", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  docType: text("doc_type").notNull(), // 'quality_manual', 'process_map', 'procedure', 'work_instruction', 'template', 'other'
+  title: text("title").notNull(),
+  content: text("content"),
+  isoClause: text("iso_clause"),
+  status: text("status").notNull().default('draft'), // 'draft', 'in_review', 'approved', 'obsolete'
+  version: text("version").notNull().default('1.0'),
+  approvedBy: text("approved_by"),
+  approvalDate: timestamp("approval_date"),
+  reviewDate: timestamp("review_date"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoDocumentSchema = createInsertSchema(isoDocuments, {
+  approvalDate: dateOrStringToDate,
+  reviewDate: dateOrStringToDate,
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type IsoDocument = typeof isoDocuments.$inferSelect;
+export type InsertIsoDocument = z.infer<typeof insertIsoDocumentSchema>;
+
 // DOT Notification Log - tracks all notifications sent
 export const dotNotifications = pgTable("dot_notifications", {
   id: serial("id").primaryKey(),

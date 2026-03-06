@@ -13,7 +13,7 @@ import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
 import { generateClinicLetterDocx, getAvailableInjuryTypes } from "./generateClinicLetter";
-import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema, insertIsoDocumentSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
 import multer from "multer";
@@ -4286,6 +4286,66 @@ Rules:
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
       await storage.deleteNonconformance(id, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── ISO DOCUMENTS ──────────────────────────────────────────────────────────
+  app.get("/api/iso-documents", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      
+      let docs;
+      if (isoProjectId && !isNaN(isoProjectId)) {
+        docs = await storage.getIsoDocumentsByProject(userId, isoProjectId);
+      } else {
+        docs = await storage.getIsoDocuments(userId);
+      }
+      res.json(docs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/iso-documents", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const parsed = insertIsoDocumentSchema.parse({ ...req.body, userId });
+      const doc = await storage.createIsoDocument(parsed);
+      res.status(201).json(doc);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/iso-documents/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      const doc = await storage.updateIsoDocument(id, userId, req.body);
+      if (!doc) return res.status(404).json({ message: "Document not found" });
+      res.json(doc);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/iso-documents/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      await storage.deleteIsoDocument(id, userId);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });

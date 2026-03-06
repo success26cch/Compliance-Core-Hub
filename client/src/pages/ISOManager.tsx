@@ -18,11 +18,13 @@ import {
   AlertTriangle, Menu, FileText, Car, Vault,
   Building2, Users, Factory, ArrowRight, ArrowLeft,
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
+  Mail, BarChart2, GraduationCap,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
 import type { IsoProject } from "@shared/schema";
 import { NonconformanceManager } from "./NonconformanceManager";
+import { DocumentationModule } from "./DocumentationModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -250,7 +252,7 @@ export default function ISOManager() {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
-  const [activeSection, setActiveSection] = useState<'chat' | 'nc'>('chat');
+  const [activeSection, setActiveSection] = useState<'chat' | 'nc' | 'documentation' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement'>('chat');
 
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
@@ -335,6 +337,32 @@ export default function ISOManager() {
 
   const isWizardActive = showWizard || (project && project.status === "in_progress" && !activeConversationId);
 
+  const ComingSoonModule = ({ moduleName, icon: Icon }: { moduleName: string; icon: any }) => (
+    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-muted/10">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md space-y-6"
+      >
+        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+          <Icon className="w-10 h-10 text-muted-foreground/40" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-primary mb-2">{moduleName}</h2>
+          <p className="text-muted-foreground">
+            This module is coming soon. Isa will coach you through each step when it's ready.
+          </p>
+        </div>
+        <Button 
+          onClick={() => handleAskIsa(`Can you explain what the ${moduleName} module will cover and how ISO requires it?`)}
+          className="bg-accent hover:bg-accent/90 text-white gap-2"
+        >
+          <MessageSquare className="w-4 h-4" /> Ask Isa About {moduleName}
+        </Button>
+      </motion.div>
+    </div>
+  );
+
   return (
     <ProtectedLayout>
       <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-muted/30">
@@ -385,19 +413,90 @@ export default function ISOManager() {
                 })}
               </div>
 
-              <Button onClick={() => handleNewChat()} disabled={isCreating}
+              <Button onClick={() => {
+                setActiveSection('chat');
+                setActiveConversationId(null);
+                handleNewChat();
+              }} disabled={isCreating}
                 className="w-full gap-2 bg-accent hover:bg-accent/90 text-white" data-testid="button-new-iso-chat">
                 <Plus className="w-4 h-4" /> New Consultation
               </Button>
 
-              <Button 
-                variant="ghost" 
-                onClick={() => setActiveSection('nc')}
-                className={`w-full mt-2 gap-2 border border-accent/20 ${activeSection === 'nc' ? 'bg-accent/10 text-accent font-bold' : 'text-muted-foreground'}`}
-                data-testid="button-iso-nc-capa"
-              >
-                <Shield className="w-4 h-4" /> NC & CAPA
-              </Button>
+              <div className="mt-6 space-y-1">
+                <p className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Modules</p>
+                
+                <ModuleNavButton 
+                  active={activeSection === 'chat'} 
+                  onClick={() => setActiveSection('chat')}
+                  icon={MessageSquare}
+                  label="AI Consultation"
+                  testId="nav-chat"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'nc'} 
+                  onClick={() => setActiveSection('nc')}
+                  icon={Shield}
+                  label="NC & CAPA"
+                  testId="nav-nc"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'documentation'} 
+                  onClick={() => setActiveSection('documentation')}
+                  icon={FileText}
+                  label="Documentation"
+                  testId="nav-documentation"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'communication'} 
+                  onClick={() => setActiveSection('communication')}
+                  icon={Mail}
+                  label="Communication"
+                  testId="nav-communication"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'risk'} 
+                  onClick={() => setActiveSection('risk')}
+                  icon={AlertTriangle}
+                  label="Risk Assessment"
+                  testId="nav-risk"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'management_review'} 
+                  onClick={() => setActiveSection('management_review')}
+                  icon={BarChart2}
+                  label="Management Review"
+                  testId="nav-management-review"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'internal_audit'} 
+                  onClick={() => setActiveSection('internal_audit')}
+                  icon={ClipboardCheck}
+                  label="Internal Audits"
+                  testId="nav-internal-audit"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'training'} 
+                  onClick={() => setActiveSection('training')}
+                  icon={GraduationCap}
+                  label="Training"
+                  testId="nav-training"
+                />
+
+                <ModuleNavButton 
+                  active={activeSection === 'measurement'} 
+                  onClick={() => setActiveSection('measurement')}
+                  icon={Activity}
+                  label="Measurement & Monitoring"
+                  testId="nav-measurement"
+                />
+              </div>
             </div>
 
             <div className="p-4 border-b border-border/60 bg-muted/20">
@@ -476,15 +575,6 @@ export default function ISOManager() {
               <span className="text-sm font-bold text-primary">Isa</span>
               <span className="text-xs text-muted-foreground hidden sm:block">· ACSI Lead ISO Auditor AI</span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveSection(activeSection === 'nc' ? 'chat' : 'nc')}
-              className={`h-7 gap-1.5 text-xs ml-2 border ${activeSection === 'nc' ? 'bg-accent/10 text-accent border-accent/40 font-bold' : 'text-muted-foreground border-border/40 hover:border-accent/30 hover:text-accent'}`}
-              data-testid="button-header-nc-capa"
-            >
-              <Shield className="w-3 h-3" /> NC & CAPA
-            </Button>
             <div className="ml-auto flex items-center gap-2">
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Activity className="w-3 h-3 text-accent" /><span>Online</span>
@@ -506,6 +596,20 @@ export default function ISOManager() {
           <div className="flex-1 overflow-hidden flex flex-col relative">
             {activeSection === 'nc' ? (
               <NonconformanceManager onAskIsa={handleAskIsa} />
+            ) : activeSection === 'documentation' ? (
+              <DocumentationModule onAskIsa={handleAskIsa} />
+            ) : activeSection === 'communication' ? (
+              <ComingSoonModule moduleName="Communication" icon={Mail} />
+            ) : activeSection === 'risk' ? (
+              <ComingSoonModule moduleName="Risk Assessment" icon={AlertTriangle} />
+            ) : activeSection === 'management_review' ? (
+              <ComingSoonModule moduleName="Management Review" icon={BarChart2} />
+            ) : activeSection === 'internal_audit' ? (
+              <ComingSoonModule moduleName="Internal Audits" icon={ClipboardCheck} />
+            ) : activeSection === 'training' ? (
+              <ComingSoonModule moduleName="Training" icon={GraduationCap} />
+            ) : activeSection === 'measurement' ? (
+              <ComingSoonModule moduleName="Measurement & Monitoring" icon={Activity} />
             ) : (
               <>
             {usageData && !canAsk && !activeConversationId && (
@@ -1668,4 +1772,34 @@ function IsaMarkdown({ content }: { content: string }) {
   flushList("final");
 
   return <div className="space-y-0.5 text-sm">{nodes}</div>;
+}
+
+function ModuleNavButton({ 
+  active, 
+  onClick, 
+  icon: Icon, 
+  label, 
+  testId 
+}: { 
+  active: boolean; 
+  onClick: () => void; 
+  icon: any; 
+  label: string;
+  testId: string;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      onClick={onClick}
+      className={`w-full justify-start gap-3 h-9 px-3 transition-all ${
+        active 
+          ? "bg-accent/10 text-accent font-bold border border-accent/20" 
+          : "text-muted-foreground hover:bg-muted"
+      }`}
+      data-testid={testId}
+    >
+      <Icon className={`w-4 h-4 shrink-0 ${active ? "text-accent" : "opacity-70"}`} />
+      <span className="truncate">{label}</span>
+    </Button>
+  );
 }

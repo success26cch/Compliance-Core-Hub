@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type InsertNonconformance } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -193,6 +193,13 @@ export interface IStorage {
   createNonconformance(data: InsertNonconformance): Promise<Nonconformance>;
   updateNonconformance(id: number, userId: string, data: Partial<InsertNonconformance>): Promise<Nonconformance | undefined>;
   deleteNonconformance(id: number, userId: string): Promise<boolean>;
+
+  // ISO Documents
+  getIsoDocuments(userId: string): Promise<IsoDocument[]>;
+  getIsoDocumentsByProject(userId: string, isoProjectId: number): Promise<IsoDocument[]>;
+  createIsoDocument(data: InsertIsoDocument): Promise<IsoDocument>;
+  updateIsoDocument(id: number, userId: string, data: Partial<InsertIsoDocument>): Promise<IsoDocument | undefined>;
+  deleteIsoDocument(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1193,6 +1200,33 @@ export class DatabaseStorage implements IStorage {
   async deleteNonconformance(id: number, userId: string): Promise<boolean> {
     await db.delete(nonconformances).where(and(eq(nonconformances.id, id), eq(nonconformances.userId, userId)));
     return true;
+  }
+
+  // ISO Documents
+  async getIsoDocuments(userId: string): Promise<IsoDocument[]> {
+    return db.select().from(isoDocuments).where(eq(isoDocuments.userId, userId)).orderBy(desc(isoDocuments.updatedAt));
+  }
+
+  async getIsoDocumentsByProject(userId: string, isoProjectId: number): Promise<IsoDocument[]> {
+    return db.select().from(isoDocuments).where(and(eq(isoDocuments.userId, userId), eq(isoDocuments.isoProjectId, isoProjectId))).orderBy(desc(isoDocuments.updatedAt));
+  }
+
+  async createIsoDocument(data: InsertIsoDocument): Promise<IsoDocument> {
+    const [doc] = await db.insert(isoDocuments).values(data).returning();
+    return doc;
+  }
+
+  async updateIsoDocument(id: number, userId: string, data: Partial<InsertIsoDocument>): Promise<IsoDocument | undefined> {
+    const [updated] = await db
+      .update(isoDocuments)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteIsoDocument(id: number, userId: string): Promise<void> {
+    await db.delete(isoDocuments).where(and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId)));
   }
 }
 
