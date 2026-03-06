@@ -1942,32 +1942,36 @@ function IncidentDetailDialog({
   onSave: (id: number, data: Partial<IncidentFormData>) => void;
   isSaving: boolean;
 }) {
-  const [formData, setFormData] = useState<IncidentFormData>(defaultFormData);
+  const buildFormData = (inc: Incident): IncidentFormData => ({
+    incidentDate: new Date(inc.incidentDate).toISOString().split('T')[0],
+    description: inc.description,
+    incidentType: inc.incidentType,
+    facility: inc.facility || '',
+    employeeName: inc.employeeName || '',
+    jobTitle: inc.jobTitle || '',
+    department: inc.department || '',
+    location: inc.location || '',
+    bodyPart: inc.bodyPart || '',
+    natureOfInjury: inc.natureOfInjury || '',
+    objectOrSubstance: inc.objectOrSubstance || '',
+    isRecordable: inc.isRecordable,
+    resultedInDeath: inc.resultedInDeath,
+    daysAway: inc.daysAway ?? 0,
+    daysRestricted: inc.daysRestricted ?? 0,
+    daysJobTransfer: inc.daysJobTransfer ?? 0,
+    isOtherRecordable: inc.isOtherRecordable ?? false,
+    status: inc.status,
+  });
+
+  const [formData, setFormData] = useState<IncidentFormData>(
+    incident ? buildFormData(incident) : defaultFormData
+  );
 
   useEffect(() => {
-    if (incident) {
-      setFormData({
-        incidentDate: new Date(incident.incidentDate).toISOString().split('T')[0],
-        description: incident.description,
-        incidentType: incident.incidentType,
-        facility: incident.facility || '',
-        employeeName: incident.employeeName || '',
-        jobTitle: incident.jobTitle || '',
-        department: incident.department || '',
-        location: incident.location || '',
-        bodyPart: incident.bodyPart || '',
-        natureOfInjury: incident.natureOfInjury || '',
-        objectOrSubstance: incident.objectOrSubstance || '',
-        isRecordable: incident.isRecordable,
-        resultedInDeath: incident.resultedInDeath,
-        daysAway: incident.daysAway,
-        daysRestricted: incident.daysRestricted,
-        daysJobTransfer: incident.daysJobTransfer,
-        isOtherRecordable: incident.isOtherRecordable,
-        status: incident.status,
-      });
+    if (incident && open) {
+      setFormData(buildFormData(incident));
     }
-  }, [incident]);
+  }, [incident, open]);
 
   if (!incident) return null;
 
@@ -2558,6 +2562,7 @@ export default function Incidents() {
         />
 
         <IncidentDetailDialog
+          key={selectedIncident?.id ?? 'none'}
           incident={selectedIncident}
           open={detailOpen}
           onOpenChange={(open) => {
