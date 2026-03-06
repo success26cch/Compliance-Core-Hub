@@ -547,8 +547,19 @@ function IncidentFormDialog({
 
 function OSHA300Report({ incidents }: { incidents: Incident[] }) {
   const reportRef = useRef<HTMLDivElement>(null);
-  const recordableIncidents = incidents.filter(i => i.isRecordable);
-  
+  const [selectedFacility, setSelectedFacility] = useState<string>('all');
+
+  // Collect unique named facilities for the filter
+  const facilities = Array.from(
+    new Set(incidents.map(i => i.facility?.trim()).filter(Boolean) as string[])
+  ).sort();
+
+  const filteredIncidents = selectedFacility === 'all'
+    ? incidents
+    : incidents.filter(i => i.facility?.trim() === selectedFacility);
+
+  const recordableIncidents = filteredIncidents.filter(i => i.isRecordable);
+
   // Calculate summary stats
   const totalDeaths = recordableIncidents.filter(i => i.resultedInDeath).length;
   const totalDaysAway = recordableIncidents.reduce((sum, i) => sum + (i.daysAway || 0), 0);
@@ -603,7 +614,7 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
   return (
     <div className="space-y-6">
       {/* Report Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-lg font-bold flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
@@ -611,10 +622,28 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
           </h2>
           <p className="text-sm text-muted-foreground">Log of Work-Related Injuries and Illnesses</p>
         </div>
-        <Button onClick={handlePrint} variant="outline" className="gap-2" data-testid="button-print-osha300">
-          <Printer className="w-4 h-4" />
-          Print Report
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {facilities.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="osha-facility-filter" className="text-sm whitespace-nowrap">Facility:</Label>
+              <Select value={selectedFacility} onValueChange={setSelectedFacility}>
+                <SelectTrigger id="osha-facility-filter" className="w-52" data-testid="select-osha-facility">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Facilities</SelectItem>
+                  {facilities.map(f => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Button onClick={handlePrint} variant="outline" className="gap-2" data-testid="button-print-osha300">
+            <Printer className="w-4 h-4" />
+            Print Report
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -696,7 +725,9 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
           <h1 className="text-xl font-bold">OSHA's Form 300</h1>
           <h2 className="text-sm text-muted-foreground">Log of Work-Related Injuries and Illnesses</h2>
           <p className="text-xs text-muted-foreground mt-2">
-            Year: {new Date().getFullYear()} | Recordable Cases: {recordableIncidents.length} | 
+            Year: {new Date().getFullYear()}
+            {selectedFacility !== 'all' && ` | Facility: ${selectedFacility}`}
+            {' '}| Recordable Cases: {recordableIncidents.length} | 
             Injuries: {injuries} | Illnesses: {illnesses}
           </p>
         </div>
