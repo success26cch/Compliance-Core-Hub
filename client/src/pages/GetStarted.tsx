@@ -79,7 +79,7 @@ export default function GetStarted() {
                   <Badge className="bg-accent text-white">Most Popular</Badge>
                 </div>
                 <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-4xl font-bold text-primary">$99</span>
+                  <span className="text-4xl font-bold text-primary">$149</span>
                   <span className="text-muted-foreground">/mo per user</span>
                 </div>
               </CardHeader>
@@ -104,7 +104,7 @@ export default function GetStarted() {
                 <p className="text-sm text-muted-foreground italic mb-4">Best for Safety Managers, growing companies, and large fleets.</p>
                 <Button className="w-full" onClick={() => handleAddToCart("cch-unlimited-safety")} data-testid="button-add-cart-unlimited">
                   <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart — $99/mo
+                  Add to Cart — $149/mo
                 </Button>
               </CardContent>
             </Card>
@@ -131,10 +131,11 @@ export default function GetStarted() {
                 </div>
                 <Badge className="bg-accent text-white w-fit mx-auto">One Platform. Everything Included.</Badge>
                 <div className="flex items-baseline justify-center gap-1 mt-4">
-                  <span className="text-4xl font-bold text-primary">$299</span>
+                  <span className="text-4xl font-bold text-primary">$499</span>
                   <span className="text-muted-foreground">/mo</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">Up to 50 employees included &middot; +$2/employee beyond 50</p>
+                <p className="text-sm text-muted-foreground mt-1">Platform only &middot; Add Corey AI for $549/mo (+$99/ea additional Corey seat)</p>
+                <p className="text-sm text-muted-foreground">Up to 50 employees included &middot; +$2/employee beyond 50</p>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col pt-4">
                 <div className="grid sm:grid-cols-2 gap-x-8 gap-y-1 mb-6">
@@ -176,15 +177,19 @@ export default function GetStarted() {
                   <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                     <img src={coreyImg} alt="Corey AI Assistant" className="w-48 h-48 object-contain flex-shrink-0" data-testid="img-corey-employer-card" />
                     <div>
-                      <h4 className="text-sm font-bold text-primary">24/7 Access to Corey AI</h4>
-                      <p className="text-xs text-muted-foreground mt-1">Your AI-powered Senior Compliance Expert is always on call — get instant answers on OSHA, DOT, ISO, and more, any time of day.</p>
+                      <h4 className="text-sm font-bold text-primary">Add Corey AI for $549/mo</h4>
+                      <p className="text-xs text-muted-foreground mt-1">1 Corey seat included with Platform + Corey bundle. Additional Corey seats $99/mo each. Or subscribe to Corey standalone at $149/mo per user.</p>
                     </div>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground italic mb-4 text-center">For companies serious about compliance — from startups to mid-sized firms.</p>
-                <Button className="w-full" size="lg" onClick={() => handleAddToCart("employer-platform")} data-testid="button-add-cart-employer-platform">
+                <Button className="w-full" size="lg" onClick={() => handleAddToCart("employer-platform-with-corey")} data-testid="button-add-cart-employer-platform-corey">
                   <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart — $299/mo
+                  Platform + Corey AI — $549/mo
+                </Button>
+                <Button variant="outline" className="w-full mt-2" onClick={() => handleAddToCart("employer-platform")} data-testid="button-add-cart-employer-platform">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Platform Only — $499/mo
                 </Button>
               </CardContent>
             </Card>
@@ -358,13 +363,13 @@ export default function GetStarted() {
                     <div className="flex flex-col items-center gap-1">
                       <Badge className="bg-accent text-white">Most Popular</Badge>
                       <span>Corey AI</span>
-                      <span className="text-lg font-bold text-primary">$99<span className="text-xs font-normal text-muted-foreground">/mo per user</span></span>
+                      <span className="text-lg font-bold text-primary">$149<span className="text-xs font-normal text-muted-foreground">/mo per user</span></span>
                     </div>
                   </th>
                   <th className="text-center p-4 bg-muted/50 dark:bg-muted/20 rounded-tr-md font-semibold text-foreground" data-testid="th-employer">
                     <div className="flex flex-col items-center gap-1">
                       <span>Employer Platform</span>
-                      <span className="text-lg font-bold text-primary">$299<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                      <span className="text-lg font-bold text-primary">$499<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
                     </div>
                   </th>
                 </tr>

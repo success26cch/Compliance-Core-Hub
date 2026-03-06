@@ -319,7 +319,7 @@ function CoreyLanding() {
           </a>
           <Link href="/get-started">
             <Button size="sm" className="bg-accent hover:bg-accent/90 text-xs font-bold shadow-lg shadow-accent/25" data-testid="button-trial-subscribe">
-              Subscribe $99/mo
+              Subscribe $149/mo
             </Button>
           </Link>
         </div>
@@ -368,7 +368,7 @@ function CoreyLanding() {
             </div>
             <Link href="/get-started">
               <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-xs font-bold" data-testid="button-sidebar-subscribe">
-                Subscribe — $99/mo
+                Subscribe — $149/mo
               </Button>
             </Link>
           </div>
@@ -530,7 +530,7 @@ function CoreyLanding() {
                   <div className="flex flex-col sm:flex-row gap-2 justify-center">
                     <Link href="/get-started">
                       <Button className="bg-accent hover:bg-accent/90 font-bold gap-2" data-testid="button-limit-subscribe">
-                        Subscribe — $99/mo <ArrowRight className="w-4 h-4" />
+                        Subscribe — $149/mo <ArrowRight className="w-4 h-4" />
                       </Button>
                     </Link>
                     <a href="/api/login">
@@ -596,13 +596,13 @@ function CoreyLanding() {
             </div>
             <DialogTitle className="text-white font-black">Pro Feature</DialogTitle>
             <DialogDescription className="text-white/60 text-sm leading-relaxed text-center">
-              This feature is available with a Corey subscription. Quick Actions, Document Templates, and saved conversations are all included at $99/mo.
+              This feature is available with a Corey subscription. Quick Actions, Document Templates, and saved conversations are all included at $149/mo.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 mt-2">
             <Link href="/get-started" onClick={() => setShowProModal(false)}>
               <Button className="w-full bg-accent hover:bg-accent/90 font-bold gap-2" data-testid="button-pro-modal-subscribe">
-                Subscribe — $99/mo <ArrowRight className="w-4 h-4" />
+                Subscribe — $149/mo <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <a href="/api/login">
@@ -1073,7 +1073,7 @@ function CoreyApp() {
                 </p>
                 <Link href="/settings">
                   <Button className="w-full bg-accent hover:bg-accent/90 mt-2" data-testid="button-corey-upgrade">
-                    Unlimited Safety - $99/mo
+                    Unlimited Safety - $149/mo
                   </Button>
                 </Link>
               </Card>

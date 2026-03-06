@@ -50,7 +50,8 @@ export function PlatformGate({ children, featureName }: { children: React.ReactN
                 <h3 className="font-bold text-lg">Employer Compliance Platform</h3>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-accent">$299<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+                <div className="text-2xl font-bold text-accent">$499<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+                <div className="text-xs text-muted-foreground">+$50/mo to add Corey AI</div>
               </div>
             </div>
             
@@ -61,7 +62,7 @@ export function PlatformGate({ children, featureName }: { children: React.ReactN
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Corrective Action Plans</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Medical Passport (QR Check-in)</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>DOT Expiration Notifications</span></div>
-              <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey AI Access</span></div>
+              <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Optional: Add Corey AI (+$50/mo)</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority Action Queue</span></div>
             </div>
             

@@ -68,7 +68,7 @@ export default function BotPage() {
               <span>Free questions: {usageData.questionCount} / {usageData.freeLimit} used</span>
               {usageData.questionCount >= usageData.freeLimit && (
                 <Link href="/settings">
-                  <Button size="sm" variant="outline">Upgrade to Unlimited - $99/mo</Button>
+                  <Button size="sm" variant="outline">Upgrade to Unlimited - $149/mo</Button>
                 </Link>
               )}
             </div>
@@ -87,7 +87,7 @@ export default function BotPage() {
                 </p>
                 <div className="space-y-3 pt-2">
                   <Link href="/settings">
-                    <Button className="w-full bg-accent hover:bg-accent/90">Unlimited Safety - $99/mo</Button>
+                    <Button className="w-full bg-accent hover:bg-accent/90">Unlimited Safety - $149/mo</Button>
                   </Link>
                 </div>
               </Card>

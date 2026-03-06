@@ -48,7 +48,7 @@ const TOUR_SLIDES: TourSlide[] = [
   {
     id: "corey-ai",
     title: "Meet Corey — Your AI Compliance Expert",
-    subtitle: "$99/month per user",
+    subtitle: "$149/month per user",
     icon: Bot,
     iconColor: "text-[#FFC107]",
     iconBg: "bg-[#FFC107]/20",
@@ -102,7 +102,7 @@ const TOUR_SLIDES: TourSlide[] = [
   {
     id: "employer-platform",
     title: "Employer Compliance Platform",
-    subtitle: "$299/month — Up to 50 employees (+$2/employee beyond 50)",
+    subtitle: "$499/month (Platform only) · $549/month with Corey AI — Up to 50 employees (+$2/employee beyond 50)",
     icon: Building2,
     iconColor: "text-emerald-400",
     iconBg: "bg-emerald-500/20",
@@ -232,10 +232,11 @@ const TOUR_SLIDES: TourSlide[] = [
     icon: Sparkles,
     iconColor: "text-[#FFC107]",
     iconBg: "bg-[#FFC107]/20",
-    description: "Core Compliance Hub offers two straightforward plans. Corey AI at $99/month per user for individual compliance professionals, and the full Employer Platform at $299/month for companies that need the complete suite.",
+    description: "Core Compliance Hub offers flexible plans. Corey AI at $149/month per user for compliance professionals, and the Employer Platform at $499/month (or $549/month bundled with Corey AI) for companies that need the complete compliance suite.",
     features: [
-      { label: "Corey AI — $99/month per user", detail: "Unlimited conversations, 42 document templates, all Quick Actions, voice input/output, Team Meeting Mode, Audit Mode — per user, not per company" },
-      { label: "Employer Platform — $299/month", detail: "Everything in Corey AI plus: Dashboard, Employee Management, Incident Logging, Training LMS, CCHUB Handshake, DOT Notifications — up to 50 employees" },
+      { label: "Corey AI — $149/month per user", detail: "Unlimited conversations, 42 document templates, all Quick Actions, voice input/output, Team Meeting Mode, Audit Mode — per user, not per company" },
+      { label: "Employer Platform — $499/month", detail: "Dashboard, Employee Management, Incident Logging, OSHA 300, Training LMS, CCHUB Handshake, DOT Notifications — up to 50 employees" },
+      { label: "Platform + Corey AI — $549/month", detail: "Employer Platform with 1 Corey seat included. Additional Corey seats $99/month each" },
       { label: "Beyond 50 Employees", detail: "+$2/employee/month for companies over 50 employees — scales affordably" },
       { label: "BMA Clinic Tool", detail: "Separate subscription for occupational health clinics — includes Bilingual Medical Assistant and Digital Passport integration" },
     ],

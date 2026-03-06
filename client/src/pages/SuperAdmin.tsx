@@ -84,10 +84,13 @@ type CompanyUsage = {
 
 const planLabels: Record<string, string> = {
   'free': 'Free',
-  'cch_unlimited_safety': 'Unlimited Safety ($99)',
+  'cch_unlimited_safety': 'Unlimited Safety ($149)',
   'acsi_iso_essentials': 'ISO Essentials ($49)',
   'acsi_iso_professional': 'ISO Professional ($149)',
-  'integrated_enterprise': 'Enterprise ($299)',
+  'corey_pro': 'Corey AI ($149)',
+  'employer_platform': 'Employer Platform ($499)',
+  'employer_platform_with_corey': 'Platform + Corey AI ($549)',
+  'integrated_enterprise': 'Enterprise ($499)',
   'human_expert_retainer': 'Expert Retainer ($499)',
 };
 
@@ -405,7 +408,7 @@ export default function SuperAdmin() {
                 <AlertTriangle className="w-5 h-5 text-orange-500" />
                 Pending Retainer Requests
               </CardTitle>
-              <CardDescription>Priority tickets from $99/mo tier - requires personal response</CardDescription>
+              <CardDescription>Priority tickets from $149/mo tier - requires personal response</CardDescription>
             </CardHeader>
             <CardContent>
               {retainerLoading ? (

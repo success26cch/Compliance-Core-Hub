@@ -123,11 +123,12 @@ Target Market: Safety Directors, EHS Managers, HR Professionals, Plant Managers,
 
 2. PRICING
 ----------
-- Corey AI: $99/month PER USER (not per company)
+- Corey AI: $149/month PER USER (not per company)
   - Unlimited conversations, all Quick Actions, 42 document templates, voice input/output, Team Meeting Mode, Audit Mode
   
-- Employer Compliance Platform: $299/month
-  - Everything in Corey AI PLUS: Dashboard, Employee Management, Incident Logging, Training LMS, CCHUB Handshake, DOT Notifications
+- Employer Compliance Platform: $499/month (Platform only) · $549/month with 1 Corey AI seat
+  - Dashboard, Employee Management, Incident Logging, Training LMS, CCHUB Handshake, DOT Notifications
+  - Additional Corey seats: $99/month each
   - Up to 50 employees included; +$2/employee/month beyond 50
   
 - Bilingual Medical Assistant (BMA): Separate subscription for occupational health clinics
@@ -271,7 +272,7 @@ Company Profile:
 - Clinic partnership settings
 
 Team Seats:
-- Multi-seat billing for Corey AI ($99/user/month)
+- Multi-seat billing for Corey AI ($149/user/month standalone; $99/additional seat on Platform bundle)
 - Each user gets private conversation isolation
 - Centralized billing under the employer account
 

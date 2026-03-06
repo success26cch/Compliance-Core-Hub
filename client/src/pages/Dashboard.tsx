@@ -1060,7 +1060,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const plan = subStatus?.plan;
   const isPro = subStatus?.isPro;
-  const isUnlimited = plan === 'unlimited_monthly'; // $99 plan
+  const isUnlimited = plan === 'unlimited_monthly'; // $149/mo plan
 
   // ISO Manager-only subscribers land on /iso-manager, not the Occ Med dashboard
   const isIsoOnlyPlan = !subLoading && plan != null &&
@@ -1521,7 +1521,7 @@ export default function Dashboard() {
                   </p>
                   <Link href="/settings">
                     <Button variant="outline" className="w-full" size="sm">
-                      Upgrade to Unlimited - $99/mo
+                      Upgrade to Unlimited - $149/mo
                     </Button>
                   </Link>
                 </CardContent>

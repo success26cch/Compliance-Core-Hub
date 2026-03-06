@@ -44,7 +44,7 @@ async function requirePlatformAccess(req: any, res: any): Promise<boolean> {
   if (user?.isSuperadmin) return true;
   const sub = await storage.getSubscription(userId);
   const hasPlatform = sub?.status === 'active' && 
-    (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise');
+    (sub?.plan === 'employer_platform' || sub?.plan === 'employer_platform_with_corey' || sub?.plan === 'enterprise');
   if (!hasPlatform) {
     res.status(403).json({ message: "Employer Platform subscription required" });
     return false;
@@ -278,7 +278,7 @@ Rules:
     const user = await storage.getUserById(userId);
     const isAdmin = user?.isSuperadmin === true || isEmailAdmin(claims);
     const isPro = sub?.status === "active";
-    const hasPlatform = isAdmin || (isPro && (sub?.plan === 'employer_platform' || sub?.plan === 'enterprise'));
+    const hasPlatform = isAdmin || (isPro && (sub?.plan === 'employer_platform' || sub?.plan === 'employer_platform_with_corey' || sub?.plan === 'enterprise'));
     
     let teamMembership = null;
     if (!isPro) {
@@ -312,7 +312,7 @@ Rules:
       }
     }
 
-    const isIsaSubscriber = isAdmin || (isPro && (sub?.plan === 'isa' || sub?.plan === 'isa_pro' || sub?.plan === 'employer_platform' || sub?.plan === 'enterprise'));
+    const isIsaSubscriber = isAdmin || (isPro && (sub?.plan === 'isa' || sub?.plan === 'isa_pro' || sub?.plan === 'employer_platform' || sub?.plan === 'employer_platform_with_corey' || sub?.plan === 'enterprise'));
     const isIsaPro = isAdmin || (isPro && (sub?.plan === 'isa_pro'));
 
     res.json({
@@ -393,8 +393,9 @@ Rules:
       const stripeClient = await stripe;
 
       const planConfig: Record<string, { name: string; amount: number; interval?: string; mode: string }> = {
-        corey_pro: { name: 'CCHUB Unlimited Safety - Corey AI', amount: 9900, interval: 'month', mode: 'subscription' },
-        employer_platform: { name: 'CCHUB Employer Compliance Platform', amount: 29900, interval: 'month', mode: 'subscription' },
+        corey_pro: { name: 'CCHUB Unlimited Safety - Corey AI', amount: 14900, interval: 'month', mode: 'subscription' },
+        employer_platform: { name: 'CCHUB Employer Compliance Platform', amount: 49900, interval: 'month', mode: 'subscription' },
+        employer_platform_with_corey: { name: 'CCHUB Employer Compliance Platform + Corey AI', amount: 54900, interval: 'month', mode: 'subscription' },
         setup_fee: { name: 'CCHUB Platform Setup & Onboarding', amount: 49900, mode: 'payment' },
         isa: { name: 'ACSI Isa — ISO AI Advisor (Core)', amount: 9900, interval: 'month', mode: 'subscription' },
         isa_pro: { name: 'ACSI Isa Pro — Full ISO AI Advisor', amount: 19900, interval: 'month', mode: 'subscription' },
@@ -1854,10 +1855,13 @@ Rules:
       
       // Calculate MRR from active subscriptions
       const planPrices: Record<string, number> = {
-        'cch_unlimited_safety': 99,
+        'cch_unlimited_safety': 149,
+        'corey_pro': 149,
+        'employer_platform': 499,
+        'employer_platform_with_corey': 549,
         'acsi_iso_essentials': 49,
         'acsi_iso_professional': 149,
-        'integrated_enterprise': 299,
+        'integrated_enterprise': 499,
         'human_expert_retainer': 499,
       };
       
@@ -1888,10 +1892,13 @@ Rules:
       );
       
       const planPrices: Record<string, number> = {
-        'cch_unlimited_safety': 99,
+        'cch_unlimited_safety': 149,
+        'corey_pro': 149,
+        'employer_platform': 499,
+        'employer_platform_with_corey': 549,
         'acsi_iso_essentials': 49,
         'acsi_iso_professional': 149,
-        'integrated_enterprise': 299,
+        'integrated_enterprise': 499,
         'human_expert_retainer': 499,
       };
       

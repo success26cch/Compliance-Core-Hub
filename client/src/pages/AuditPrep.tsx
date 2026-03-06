@@ -246,7 +246,7 @@ export default function AuditPrep() {
               <div>
                 <p className="font-medium text-amber-800">Subscription Required</p>
                 <p className="text-sm text-amber-600">
-                  Upgrade to Unlimited Safety ($99/mo) to access interactive audit prep checklists.
+                  Upgrade to Unlimited Safety ($149/mo) to access interactive audit prep checklists.
                 </p>
               </div>
               <Link href="/get-started">

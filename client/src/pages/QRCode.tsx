@@ -112,7 +112,7 @@ export default function QRCodePage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-accent mt-0.5">•</span>
-              After their free questions, they're prompted to subscribe at $99/mo
+              After their free questions, they're prompted to subscribe at $149/mo
             </li>
             <li className="flex items-start gap-2">
               <span className="text-accent mt-0.5">•</span>

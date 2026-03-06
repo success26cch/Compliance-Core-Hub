@@ -516,7 +516,7 @@ export default function Settings() {
                   <CardTitle className="text-lg">Unlimited Safety</CardTitle>
                   {isCoreyPro && <Badge variant="default" className="text-xs">Current</Badge>}
                 </div>
-                <div className="text-3xl font-bold text-primary">$99<span className="text-base font-normal text-muted-foreground">/mo per user</span></div>
+                <div className="text-3xl font-bold text-primary">$149<span className="text-base font-normal text-muted-foreground">/mo per user</span></div>
                 <CardDescription>Unlimited Corey AI access</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -538,7 +538,7 @@ export default function Settings() {
                     data-testid="button-subscribe-corey"
                   >
                     {checkoutLoading === 'corey_pro' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    Subscribe - $99/mo
+                    Subscribe - $149/mo
                   </Button>
                 )}
                 {isCoreyPro && (
@@ -560,7 +560,7 @@ export default function Settings() {
                   <CardTitle className="text-lg">Employer Platform</CardTitle>
                   {hasPlatform && <Badge className="bg-accent text-white text-xs">Current</Badge>}
                 </div>
-                <div className="text-3xl font-bold text-accent">$299<span className="text-base font-normal text-muted-foreground">/mo</span></div>
+                <div className="text-3xl font-bold text-accent">$499<span className="text-base font-normal text-muted-foreground">/mo</span></div>
                 <CardDescription>Up to 50 employees included · +$2/employee beyond 50</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -584,21 +584,33 @@ export default function Settings() {
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Certification Readiness Score</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Glossary (OSHA, DOT, ISO & more)</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority expert support</span></div>
-                <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">24/7 Access to Corey AI</p>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Unlimited Corey AI queries</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>PDF document generation</span></div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">Add Corey AI (optional)</p>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>1 Corey AI seat included at $549/mo total (+$99/ea additional seat)</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Standalone Corey also available at $149/mo per user</span></div>
               </CardContent>
               <CardFooter className="flex-col gap-2">
                 {!hasPlatform && (
-                  <Button
-                    className="w-full bg-accent hover:bg-accent/90 text-white font-bold"
-                    onClick={() => handlePlatformCheckout('employer_platform')}
-                    disabled={!!checkoutLoading}
-                    data-testid="button-subscribe-platform"
-                  >
-                    {checkoutLoading === 'employer_platform' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
-                    Subscribe - $299/mo
-                  </Button>
+                  <>
+                    <Button
+                      className="w-full bg-accent hover:bg-accent/90 text-white font-bold"
+                      onClick={() => handlePlatformCheckout('employer_platform_with_corey')}
+                      disabled={!!checkoutLoading}
+                      data-testid="button-subscribe-platform-with-corey"
+                    >
+                      {checkoutLoading === 'employer_platform_with_corey' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
+                      Platform + Corey AI — $549/mo
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handlePlatformCheckout('employer_platform')}
+                      disabled={!!checkoutLoading}
+                      data-testid="button-subscribe-platform"
+                    >
+                      {checkoutLoading === 'employer_platform' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                      Platform Only — $499/mo
+                    </Button>
+                  </>
                 )}
                 {hasPlatform && (
                   <Button variant="outline" className="w-full" onClick={handleManageSubscription} data-testid="button-manage-platform">
