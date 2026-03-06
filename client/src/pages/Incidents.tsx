@@ -36,13 +36,16 @@ import {
   Eye,
   MessageSquare,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Bot,
+  RefreshCw,
+  X
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 // ── Standardized OSHA-aligned dropdown options ──────────────────────────────
 const BODY_PARTS = [
@@ -2255,7 +2258,44 @@ export default function Incidents() {
   const [activeTab, setActiveTab] = useState('incidents');
   const [capaFormOpen, setCAPAFormOpen] = useState(false);
   const [selectedCAPAForPlan, setSelectedCAPAForPlan] = useState<number | undefined>(undefined);
+  const [coreyAnalysisIncidentId, setCoreyAnalysisIncidentId] = useState<number | null>(null);
+  const [coreyAnalysis, setCoreyAnalysis] = useState("");
+  const [coreyAnalysisStreaming, setCoreyAnalysisStreaming] = useState(false);
   const { toast } = useToast();
+
+  const runCoreyAnalysis = async (incidentId: number) => {
+    setCoreyAnalysisIncidentId(incidentId);
+    setCoreyAnalysis("");
+    setCoreyAnalysisStreaming(true);
+    try {
+      const res = await fetch(`/api/incidents/${incidentId}/corey-analysis`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed");
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("No reader");
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split("\n\n")) {
+          if (line.startsWith("data: ")) {
+            try {
+              const d = JSON.parse(line.slice(6));
+              if (d.content) setCoreyAnalysis(prev => prev + d.content);
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      setCoreyAnalysis("Unable to generate analysis. Please try again.");
+    } finally {
+      setCoreyAnalysisStreaming(false);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2275,14 +2315,25 @@ export default function Incidents() {
 
   const createMutation = useMutation({
     mutationFn: async (data: IncidentFormData) => {
-      return apiRequest('POST', '/api/incidents', data);
+      const res = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to create incident');
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/incidents'] });
       queryClient.invalidateQueries({ queryKey: ['/api/incidents/chart'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
       setDialogOpen(false);
-      toast({ title: "Incident Logged", description: "Incident has been recorded successfully." });
+      toast({ title: "Incident Logged", description: "Corey is analyzing this incident now..." });
+      if (data?.id) {
+        runCoreyAnalysis(data.id);
+        setActiveTab('incidents');
+      }
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to log incident.", variant: "destructive" });
@@ -2413,6 +2464,64 @@ export default function Incidents() {
           </TabsList>
 
           <TabsContent value="incidents">
+            {/* T007: Corey Analysis Card — appears after incident submission */}
+            {coreyAnalysisIncidentId && (
+              <Card className="border-accent/40 bg-gradient-to-br from-accent/5 to-primary/5 mb-4" data-testid="card-corey-incident-analysis">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between gap-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
+                        <Bot className="w-4 h-4 text-accent" />
+                      </div>
+                      <span className="font-semibold">Corey's Incident Analysis</span>
+                      {coreyAnalysisStreaming && <span className="text-xs text-muted-foreground font-normal animate-pulse">Analyzing...</span>}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() => { setCoreyAnalysisIncidentId(null); setCoreyAnalysis(""); }}
+                      data-testid="button-close-corey-analysis"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!coreyAnalysis && coreyAnalysisStreaming ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                  ) : (
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 rounded-lg p-3 border border-border/50 max-h-64 overflow-y-auto font-mono text-xs" data-testid="corey-analysis-content">
+                      {coreyAnalysis}
+                      {coreyAnalysisStreaming && <span className="inline-block w-1.5 h-3.5 bg-accent animate-pulse ml-0.5" />}
+                    </div>
+                  )}
+                  {!coreyAnalysisStreaming && coreyAnalysis && (
+                    <div className="flex gap-2 mt-3">
+                      <Link href="/corey">
+                        <Button variant="outline" size="sm" className="gap-1 text-xs" data-testid="button-discuss-with-corey">
+                          <MessageSquare className="w-3 h-3" /> Discuss with Corey
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs"
+                        onClick={() => runCoreyAnalysis(coreyAnalysisIncidentId!)}
+                        data-testid="button-reanalyze-corey"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Re-analyze
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>Incident History</CardTitle>

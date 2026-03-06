@@ -33,6 +33,36 @@ async function isAdminOrSuperadmin(user: any): Promise<boolean> {
   return dbUser?.isSuperadmin === true;
 }
 
+// ─── TOPIC DETECTION ─────────────────────────────────────────────────────────
+function detectTopic(text: string): string | null {
+  const lower = text.toLowerCase();
+  if (/\b(osha 300|300a|300 log|recordable|recordability|recordkeeping|trir|dart|first aid|medical treatment)\b/.test(lower)) return "OSHA Recordkeeping";
+  if (/\b(dot|cdl|fmcsa|drug test|drug screen|pre.?employ|random test|post.?accident|reasonable suspicion|breathalyzer|mro|dea|physical exam|dot physical|medical examiner)\b/.test(lower)) return "DOT / Drug Testing";
+  if (/\b(iso 9001|iso 14001|iso 45001|iso 13485|iso 27001|as9100|iatf|iso audit|gap analysis|quality manual|quality management|nonconform|ncr|corrective action plan|capa|management review|internal audit)\b/.test(lower)) return "ISO / Audit";
+  if (/\b(incident|injury|near miss|investigation|root cause|5 why|corrective action|capa|accident report)\b/.test(lower)) return "Incident Investigation";
+  if (/\b(workers.? comp|work comp|claim|return to work|modified duty|light duty|temporary restriction|disability)\b/.test(lower)) return "Workers Compensation";
+  if (/\b(hazcom|ghs|sds|msds|right to know|chemical safety|chemical spill|hazardous material|haz mat)\b/.test(lower)) return "Hazard Communication";
+  if (/\b(ppe|personal protective equipment|hard hat|safety glasses|respirator|gloves|safety shoes|hearing protection)\b/.test(lower)) return "PPE / Safety Equipment";
+  if (/\b(emergency|evacuation|fire|spill response|shelter.in.place|emergency action plan|eap)\b/.test(lower)) return "Emergency Response";
+  if (/\b(training|lms|certificate|onboard|new hire|safety orientation|toolbox|tailgate)\b/.test(lower)) return "Safety Training";
+  if (/\b(lockout|tagout|loto|energized|machine guard|confined space|hot work|permit)\b/.test(lower)) return "Permit / Lockout-Tagout";
+  return null;
+}
+
+function detectComplianceDecision(text: string): boolean {
+  const lower = text.toLowerCase();
+  const decisionPhrases = [
+    "is recordable", "is not recordable", "does not meet the threshold", "meets the definition",
+    "is required by", "is not required", "must be recorded", "does not need to be recorded",
+    "qualifies as", "does not qualify", "first aid only", "medical treatment",
+    "work-related", "not work-related", "days away", "restricted duty",
+    "osha requires", "29 cfr", "49 cfr", "this is a violation", "not a violation",
+    "is compliant", "is not compliant", "based on 29 cfr", "under 29 cfr",
+    "the answer is yes", "the answer is no", "this would be recordable", "this would not be recordable",
+  ];
+  return decisionPhrases.some(phrase => lower.includes(phrase));
+}
+
 export function registerChatRoutes(app: Express): void {
   // Get all conversations (auth required - user-scoped)
   app.get("/api/conversations", async (req: Request, res: Response) => {
@@ -360,10 +390,22 @@ export function registerChatRoutes(app: Express): void {
         }
       }
 
-      // Save assistant message
-      await chatStorage.createMessage(conversationId, "assistant", fullResponse);
+      // Detect topic from first user message and tag conversation
+      const firstUserMsg = chatMessages.find(m => m.role === "user");
+      if (firstUserMsg && !conversation.topic) {
+        const detectedTopic = detectTopic(firstUserMsg.content);
+        if (detectedTopic) {
+          await chatStorage.updateConversationTopic(conversationId, detectedTopic);
+        }
+      }
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      // Detect compliance decision in assistant response
+      const isDecision = detectComplianceDecision(fullResponse);
+
+      // Save assistant message
+      await chatStorage.createMessage(conversationId, "assistant", fullResponse, isDecision);
+
+      res.write(`data: ${JSON.stringify({ done: true, isComplianceDecision: isDecision })}\n\n`);
       res.end();
     } catch (error) {
       console.error("Error sending message:", error);
@@ -373,6 +415,83 @@ export function registerChatRoutes(app: Express): void {
       } else {
         res.status(500).json({ error: "Failed to send message" });
       }
+    }
+  });
+
+  // ─── TOPIC & INSIGHTS ROUTES ─────────────────────────────────────────────
+
+  app.get("/api/conversations/topic-breakdown", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const breakdown = await chatStorage.getTopicBreakdown(userId);
+      res.json(breakdown);
+    } catch (error) {
+      console.error("Error fetching topic breakdown:", error);
+      res.status(500).json({ error: "Failed to fetch topic breakdown" });
+    }
+  });
+
+  app.get("/api/compliance-decisions", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const decisions = await chatStorage.getComplianceDecisions(userId);
+      res.json(decisions);
+    } catch (error) {
+      console.error("Error fetching compliance decisions:", error);
+      res.status(500).json({ error: "Failed to fetch compliance decisions" });
+    }
+  });
+
+  app.get("/api/pinned-guidance", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const pins = await chatStorage.getPinnedGuidance(userId);
+      res.json(pins);
+    } catch (error) {
+      console.error("Error fetching pinned guidance:", error);
+      res.status(500).json({ error: "Failed to fetch pinned guidance" });
+    }
+  });
+
+  app.post("/api/pinned-guidance", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const { conversationId, messageId, topic, summary } = req.body;
+      if (!conversationId || !messageId || !topic || !summary) {
+        return res.status(400).json({ error: "conversationId, messageId, topic, and summary are required" });
+      }
+      const pin = await chatStorage.pinGuidance({ userId, conversationId, messageId, topic, summary });
+      res.status(201).json(pin);
+    } catch (error) {
+      console.error("Error pinning guidance:", error);
+      res.status(500).json({ error: "Failed to pin guidance" });
+    }
+  });
+
+  app.delete("/api/pinned-guidance/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      await chatStorage.unpinGuidance(id, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error unpinning guidance:", error);
+      res.status(500).json({ error: "Failed to unpin guidance" });
     }
   });
 

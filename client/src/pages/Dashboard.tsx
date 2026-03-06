@@ -44,7 +44,14 @@ import {
   User,
   Mail,
   Building2,
-  Briefcase
+  Briefcase,
+  Zap,
+  Pin,
+  BarChart3,
+  Siren,
+  Printer,
+  RefreshCw,
+  ChevronDown
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
@@ -1018,12 +1025,452 @@ function DashboardCoreyChat() {
   );
 }
 
+// ─── COREY BRIEF (T006) ──────────────────────────────────────────────────────
+type CoreyBriefBullet = { icon: string; text: string; priority: "urgent" | "high" | "medium" };
+type CoreyBriefData = { bullets: CoreyBriefBullet[]; generatedAt: string };
+
+function CoreyBriefCard() {
+  const { data, isLoading, refetch } = useQuery<CoreyBriefData>({
+    queryKey: ['/api/corey-brief'],
+  });
+
+  const priorityBg = (p: string) => {
+    if (p === "urgent") return "border-destructive/40 bg-destructive/5";
+    if (p === "high") return "border-orange-400/40 bg-orange-400/5";
+    return "border-border/40 bg-muted/20";
+  };
+  const priorityDot = (p: string) => {
+    if (p === "urgent") return "bg-destructive";
+    if (p === "high") return "bg-orange-400";
+    return "bg-muted-foreground/40";
+  };
+
+  return (
+    <Card className="border-accent/30 bg-gradient-to-br from-accent/5 to-primary/5" data-testid="card-corey-brief">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-accent" />
+            </div>
+            <span className="font-semibold">Corey's Daily Brief</span>
+            {data?.generatedAt && (
+              <span className="text-xs text-muted-foreground font-normal">
+                {new Date(data.generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-accent"
+            onClick={() => refetch()}
+            data-testid="button-refresh-corey-brief"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-3/4" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {data?.bullets.map((b, i) => (
+              <div key={i} className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border ${priorityBg(b.priority)}`} data-testid={`corey-brief-bullet-${i}`}>
+                <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${priorityDot(b.priority)}`} />
+                <span className="text-sm leading-snug">{b.icon} {b.text}</span>
+              </div>
+            ))}
+            <Link href="/corey">
+              <Button variant="ghost" size="sm" className="text-xs text-accent hover:text-accent gap-1 h-7 px-2 mt-1 -ml-1" data-testid="button-brief-ask-corey">
+                <MessageSquare className="w-3 h-3" /> Ask Corey about any of these
+              </Button>
+            </Link>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── EMERGENCY RESPONSE MODAL (T008) ─────────────────────────────────────────
+const EMERGENCY_SITUATIONS = [
+  { id: "employee_injury", label: "Employee Injury", icon: "🚑", color: "text-red-600 border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800" },
+  { id: "chemical_spill", label: "Chemical Spill", icon: "⚗️", color: "text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800" },
+  { id: "osha_walkin", label: "OSHA Walk-In", icon: "🏛️", color: "text-blue-600 border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800" },
+  { id: "fire_evacuation", label: "Fire / Evacuation", icon: "🔥", color: "text-red-700 border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-900" },
+  { id: "vehicle_accident", label: "Vehicle Accident", icon: "🚗", color: "text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800" },
+];
+
+function EmergencyResponseModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [response, setResponse] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const responseRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (responseRef.current) responseRef.current.scrollTop = responseRef.current.scrollHeight;
+  }, [response]);
+
+  const handleSelect = async (situationId: string) => {
+    setSelected(situationId);
+    setResponse("");
+    setIsStreaming(true);
+    try {
+      const res = await fetch("/api/emergency-guidance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ situation: situationId }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed");
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("No reader");
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split("\n\n")) {
+          if (line.startsWith("data: ")) {
+            try {
+              const d = JSON.parse(line.slice(6));
+              if (d.content) setResponse(prev => prev + d.content);
+            } catch {}
+          }
+        }
+      }
+    } catch {
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  const handlePrint = () => {
+    const sit = EMERGENCY_SITUATIONS.find(s => s.id === selected);
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`<html><head><title>Emergency Protocol: ${sit?.label}</title><style>body{font-family:sans-serif;padding:2rem;max-width:800px;margin:0 auto}h1{color:#e55a00}pre{white-space:pre-wrap;line-height:1.6}@media print{body{padding:0}}</style></head><body><h1>${sit?.icon} Emergency Protocol: ${sit?.label}</h1><p>Generated by Corey — CCHUB AI Compliance Expert — ${new Date().toLocaleString()}</p><hr><pre>${response}</pre></body></html>`);
+    w.document.close();
+    w.print();
+  };
+
+  const handleClose = () => {
+    setSelected(null);
+    setResponse("");
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" data-testid="emergency-response-modal">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <Siren className="w-5 h-5" />
+            Emergency Response Protocol
+          </DialogTitle>
+        </DialogHeader>
+
+        {!selected ? (
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">Select the situation to get Corey's immediate action protocol with regulatory citations.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {EMERGENCY_SITUATIONS.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => handleSelect(s.id)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 font-medium text-left transition-all hover:scale-[1.02] active:scale-100 ${s.color}`}
+                  data-testid={`emergency-situation-${s.id}`}
+                >
+                  <span className="text-2xl">{s.icon}</span>
+                  <span>{s.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col flex-1 min-h-0 gap-3">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="gap-1 h-7" onClick={() => { setSelected(null); setResponse(""); }} data-testid="button-emergency-back">
+                ← Back
+              </Button>
+              <span className="font-medium text-sm">
+                {EMERGENCY_SITUATIONS.find(s => s.id === selected)?.icon}{" "}
+                {EMERGENCY_SITUATIONS.find(s => s.id === selected)?.label}
+              </span>
+              {!isStreaming && response && (
+                <Button variant="outline" size="sm" className="ml-auto gap-1 h-7" onClick={handlePrint} data-testid="button-emergency-print">
+                  <Printer className="w-3 h-3" /> Print Protocol
+                </Button>
+              )}
+            </div>
+            <div
+              ref={responseRef}
+              className="flex-1 overflow-y-auto bg-muted/30 rounded-xl border border-border/50 p-4 text-sm leading-relaxed whitespace-pre-wrap font-mono min-h-[300px] max-h-[400px]"
+              data-testid="emergency-response-content"
+            >
+              {response || (isStreaming ? <span className="text-muted-foreground animate-pulse">Corey is preparing the protocol...</span> : null)}
+              {isStreaming && <span className="inline-block w-2 h-4 bg-accent animate-pulse ml-0.5" />}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── COMPLIANCE INSIGHTS PANEL (T002) ────────────────────────────────────────
+type TopicBreakdown = { topic: string; count: number };
+type ComplianceCalendarItem = { id: string; title: string; description: string; dueDate: string; urgency: string; cfr: string };
+
+function ComplianceInsightsPanel() {
+  const { data: topicData = [], isLoading: topicsLoading } = useQuery<TopicBreakdown[]>({
+    queryKey: ['/api/conversations/topic-breakdown'],
+  });
+  const { data: calendarData, isLoading: calendarLoading } = useQuery<{ reminders: ComplianceCalendarItem[] }>({
+    queryKey: ['/api/compliance-calendar'],
+  });
+
+  const totalConvs = topicData.reduce((s, t) => s + t.count, 0);
+
+  const topicColors = [
+    "bg-accent/20 text-accent border-accent/30",
+    "bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30",
+    "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30",
+    "bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30",
+    "bg-teal-500/20 text-teal-600 dark:text-teal-400 border-teal-500/30",
+  ];
+
+  const urgencyBadge = (u: string) => {
+    if (u === "urgent") return "bg-destructive text-destructive-foreground";
+    if (u === "high") return "bg-orange-500 text-white";
+    return "bg-yellow-500 text-white";
+  };
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-6">
+      {/* Topic Breakdown */}
+      <Card data-testid="card-compliance-focus">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <BarChart3 className="w-4 h-4 text-accent" />
+            Your Compliance Focus
+          </CardTitle>
+          <CardDescription>Based on your Corey conversations</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {topicsLoading ? (
+            <div className="space-y-2"><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-3/4" /><Skeleton className="h-6 w-1/2" /></div>
+          ) : topicData.length === 0 ? (
+            <div className="text-center py-4">
+              <Bot className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
+              <p className="text-sm text-muted-foreground">Start asking Corey questions — your top topics will appear here.</p>
+              <Link href="/corey">
+                <Button variant="outline" size="sm" className="mt-3 gap-1" data-testid="button-go-ask-corey">
+                  <MessageSquare className="w-3 h-3" /> Ask Corey
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {topicData.slice(0, 5).map((t, i) => (
+                <Link key={t.topic} href={`/corey?topic=${encodeURIComponent(t.topic)}`}>
+                  <div className="flex items-center gap-2 cursor-pointer group" data-testid={`topic-bar-${i}`}>
+                    <Badge className={`text-xs px-2 py-0.5 border shrink-0 ${topicColors[i % topicColors.length]}`}>{t.topic}</Badge>
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-accent/60 rounded-full transition-all"
+                        style={{ width: `${Math.round((t.count / topicData[0].count) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">{t.count}</span>
+                  </div>
+                </Link>
+              ))}
+              <p className="text-xs text-muted-foreground pt-1">{totalConvs} conversation{totalConvs !== 1 ? 's' : ''} tracked</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Compliance Calendar */}
+      <Card data-testid="card-compliance-calendar">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Calendar className="w-4 h-4 text-primary" />
+            Compliance Calendar
+          </CardTitle>
+          <CardDescription>Regulatory deadlines & reminders</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {calendarLoading ? (
+            <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
+          ) : !calendarData?.reminders?.length ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              No upcoming compliance deadlines this period.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {calendarData.reminders.map((r) => (
+                <div key={r.id} className="p-3 rounded-lg border border-border/50 bg-muted/20 space-y-1" data-testid={`calendar-item-${r.id}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium leading-snug">{r.title}</p>
+                    <Badge className={`text-xs shrink-0 ${urgencyBadge(r.urgency)}`}>{r.urgency}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{r.description}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="font-mono">{r.cfr}</span>
+                    <span>Due: {new Date(r.dueDate).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// T005: Document Gap Check — surfaces missing but recommended documents based on industry + conversation topics
+const INDUSTRY_DOC_MAP: Record<string, Array<{ label: string; promptHint: string; topic: string }>> = {
+  manufacturing: [
+    { label: "Lockout/Tagout (LOTO) Program", promptHint: "Write a Lockout/Tagout program per 29 CFR 1910.147", topic: "Permit / Lockout-Tagout" },
+    { label: "Machine Guarding SOP", promptHint: "Create a machine guarding standard per OSHA 29 CFR 1910.212", topic: "PPE / Safety Equipment" },
+    { label: "Process Safety Management Overview", promptHint: "Draft a PSM program overview per OSHA 29 CFR 1910.119", topic: "Hazard Communication" },
+    { label: "Confined Space Entry Permit", promptHint: "Create a confined space entry permit per 29 CFR 1910.146", topic: "Permit / Lockout-Tagout" },
+    { label: "Forklift/PIT Safety Program", promptHint: "Write a forklift safety program per 29 CFR 1910.178", topic: "PPE / Safety Equipment" },
+    { label: "Electrical Safety Program", promptHint: "Create an electrical safety program per NFPA 70E and 29 CFR 1910 Subpart S", topic: "Hazard Communication" },
+  ],
+  construction: [
+    { label: "Fall Protection Plan", promptHint: "Write a fall protection plan per OSHA 29 CFR 1926.502", topic: "PPE / Safety Equipment" },
+    { label: "Excavation Safety Program", promptHint: "Create an excavation and trenching safety program per 29 CFR 1926.650", topic: "Permit / Lockout-Tagout" },
+    { label: "Scaffold Safety Program", promptHint: "Draft a scaffold safety program per 29 CFR 1926.451", topic: "PPE / Safety Equipment" },
+    { label: "Hot Work Permit", promptHint: "Create a hot work permit template per NFPA 51B and 29 CFR 1910.252", topic: "Permit / Lockout-Tagout" },
+    { label: "Confined Space Entry Permit", promptHint: "Create a confined space entry permit per 29 CFR 1910.146", topic: "Permit / Lockout-Tagout" },
+    { label: "Contractor Safety Pre-Qualification Form", promptHint: "Write a contractor pre-qualification form covering EMR, OSHA 300 log, and safety programs", topic: "Safety Training" },
+  ],
+  transportation: [
+    { label: "Drug & Alcohol Policy", promptHint: "Write a DOT drug and alcohol policy per 49 CFR Parts 40 and 382", topic: "DOT / Drug Testing" },
+    { label: "Return-to-Duty Checklist", promptHint: "Create a return-to-duty checklist for DOT-regulated employees per 49 CFR Part 40", topic: "DOT / Drug Testing" },
+    { label: "Reasonable Suspicion Documentation Form", promptHint: "Write a reasonable suspicion documentation form per DOT 49 CFR Part 382.307", topic: "DOT / Drug Testing" },
+    { label: "Fit for Duty Policy", promptHint: "Create a fit-for-duty policy covering DOT physicals and return-to-work evaluations", topic: "OSHA Recordkeeping" },
+    { label: "Vehicle Accident Investigation Form", promptHint: "Write a vehicle accident investigation report form for DOT-regulated carriers", topic: "Incident Investigation" },
+  ],
+  healthcare: [
+    { label: "Bloodborne Pathogen Exposure Control Plan", promptHint: "Write a bloodborne pathogen exposure control plan per 29 CFR 1910.1030", topic: "Hazard Communication" },
+    { label: "Respiratory Protection Program", promptHint: "Create a respiratory protection program per 29 CFR 1910.134", topic: "PPE / Safety Equipment" },
+    { label: "Fit for Duty (FFD) Form", promptHint: "Create a fit-for-duty evaluation form for healthcare workers", topic: "OSHA Recordkeeping" },
+    { label: "Needle Stick / Sharps Injury Log", promptHint: "Write a sharps injury log and exposure response SOP per 29 CFR 1910.1030", topic: "Incident Investigation" },
+  ],
+  default: [
+    { label: "OSHA Recordkeeping SOP", promptHint: "Write an OSHA recordkeeping SOP per 29 CFR 1904", topic: "OSHA Recordkeeping" },
+    { label: "Emergency Action Plan", promptHint: "Create an emergency action plan per 29 CFR 1910.38", topic: "Emergency Response" },
+    { label: "Hazard Communication Program", promptHint: "Write a hazard communication program per 29 CFR 1910.1200", topic: "Hazard Communication" },
+    { label: "Incident Investigation Form", promptHint: "Create an incident investigation form per OSHA 29 CFR 1904.7", topic: "Incident Investigation" },
+    { label: "Corrective Action Plan (CAPA) Form", promptHint: "Write a CAPA form for safety compliance and quality management", topic: "Incident Investigation" },
+    { label: "Drug & Alcohol Policy", promptHint: "Write a drug and alcohol policy per 49 CFR Parts 40 and 382", topic: "DOT / Drug Testing" },
+  ],
+};
+
+function DocumentGapCheck() {
+  const { data: profile } = useQuery<any>({ queryKey: ['/api/corey-profile'] });
+  const { data: topicData = [] } = useQuery<TopicBreakdown[]>({ queryKey: ['/api/conversations/topic-breakdown'] });
+  const [dismissed, setDismissed] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('dismissed_doc_gaps') || '[]'); } catch { return []; }
+  });
+
+  const industry = (profile?.industry || "").toLowerCase();
+  const industryKey = Object.keys(INDUSTRY_DOC_MAP).find(k => industry.includes(k)) || "default";
+  const industryDocs = INDUSTRY_DOC_MAP[industryKey] || INDUSTRY_DOC_MAP.default;
+  const topicSet = new Set(topicData.map((t: any) => t.topic));
+
+  const gaps = industryDocs
+    .filter(d => !dismissed.includes(d.label))
+    .sort((a, b) => {
+      const aRelevant = topicSet.has(a.topic) ? 0 : 1;
+      const bRelevant = topicSet.has(b.topic) ? 0 : 1;
+      return aRelevant - bRelevant;
+    })
+    .slice(0, 5);
+
+  if (!profile || gaps.length === 0) return null;
+
+  const dismiss = (label: string) => {
+    const next = [...dismissed, label];
+    setDismissed(next);
+    localStorage.setItem('dismissed_doc_gaps', JSON.stringify(next));
+  };
+
+  return (
+    <Card className="border-primary/20" data-testid="card-document-gap-check">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <FileText className="w-4 h-4 text-accent" />
+          Documents You May Be Missing
+          <Badge variant="outline" className="text-xs ml-1 capitalize">{industryKey === "default" ? "General" : industryKey}</Badge>
+        </CardTitle>
+        <CardDescription>Based on your industry and compliance activity — Corey can help you build any of these</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2.5">
+          {gaps.map((gap) => (
+            <div
+              key={gap.label}
+              className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 transition-colors group"
+              data-testid={`doc-gap-item-${gap.label.replace(/\s/g, '-').toLowerCase()}`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-md bg-accent/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{gap.label}</p>
+                  {topicSet.has(gap.topic) && (
+                    <p className="text-xs text-accent/70">Relevant to your {gap.topic} conversations</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Link href={`/corey?prompt=${encodeURIComponent(gap.promptHint)}`}>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-accent/30 text-accent hover:bg-accent/10" data-testid={`button-build-doc-${gap.label.replace(/\s/g, '-').toLowerCase()}`}>
+                    <Zap className="w-3 h-3" /> Build with Corey
+                  </Button>
+                </Link>
+                <button
+                  onClick={() => dismiss(gap.label)}
+                  className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Dismiss suggestion"
+                  data-testid={`button-dismiss-gap-${gap.label.replace(/\s/g, '-').toLowerCase()}`}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+          <Lightbulb className="w-3 h-3" />
+          Hover any item and click × to dismiss suggestions you already have covered.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const { toast } = useToast();
   const [videoEnded, setVideoEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [emergencyOpen, setEmergencyOpen] = useState(false);
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
     queryKey: ['/api/dashboard/metrics'],
@@ -1114,12 +1561,22 @@ export default function Dashboard() {
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-2xl font-bold text-primary">Compliance Dashboard</h1>
               <p className="text-muted-foreground">Welcome back, {user?.firstName || 'Manager'}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1.5 font-semibold"
+                onClick={() => setEmergencyOpen(true)}
+                data-testid="button-emergency-guidance"
+              >
+                <Siren className="w-4 h-4" />
+                Emergency Guidance
+              </Button>
               <Badge variant={isPro ? "default" : "secondary"}>
                 {isUnlimited ? 'Unlimited Safety' : 'Corey AI'}
               </Badge>
@@ -1132,6 +1589,12 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+
+          {/* Emergency Response Modal */}
+          <EmergencyResponseModal open={emergencyOpen} onClose={() => setEmergencyOpen(false)} />
+
+          {/* Corey's Daily Brief */}
+          <CoreyBriefCard />
 
           {/* Search Bar */}
           <DashboardSearch />
@@ -1307,6 +1770,12 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Compliance Insights: Topic Breakdown + Calendar */}
+          <ComplianceInsightsPanel />
+
+          {/* T005: Document Gap Check */}
+          <DocumentGapCheck />
 
           {/* Data Management Row */}
           <div className="grid md:grid-cols-2 gap-6">

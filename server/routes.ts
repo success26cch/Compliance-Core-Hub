@@ -1084,6 +1084,271 @@ Rules:
     }
   });
 
+  // ─── COREY BRIEF (T006) ─────────────────────────────────────────────────────
+  app.get("/api/corey-brief", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const [actionItems, incidents, employees] = await Promise.all([
+        storage.getPendingActionItems(userId),
+        storage.getIncidents(userId),
+        storage.getEmployees(userId),
+      ]);
+
+      const now = new Date();
+      const bullets: Array<{ icon: string; text: string; priority: "urgent" | "high" | "medium" }> = [];
+
+      // Overdue/urgent action items
+      const urgent = actionItems.filter(a => a.priority === 'urgent');
+      const overdueItems = actionItems.filter(a => a.dueDate && new Date(a.dueDate) < now);
+      if (urgent.length > 0) {
+        bullets.push({ icon: "🚨", text: `${urgent.length} urgent action${urgent.length > 1 ? 's' : ''} require${urgent.length === 1 ? 's' : ''} your attention today`, priority: "urgent" });
+      }
+      if (overdueItems.length > 0 && overdueItems.length !== urgent.length) {
+        bullets.push({ icon: "⏰", text: `${overdueItems.length} overdue item${overdueItems.length > 1 ? 's' : ''} past due date`, priority: "high" });
+      }
+
+      // Pending incidents
+      const pendingIncidents = incidents.filter(i => i.status === 'pending_review');
+      if (pendingIncidents.length > 0) {
+        bullets.push({ icon: "📋", text: `${pendingIncidents.length} incident${pendingIncidents.length > 1 ? 's' : ''} pending review`, priority: "high" });
+      }
+
+      // DOT physicals expiring
+      try {
+        const { dotNotificationService } = await import('./dotNotificationService');
+        const expiring = await dotNotificationService.checkExpiringDotPhysicals(userId);
+        const soonExpiring = expiring.filter(e => e.daysUntilExpiry <= 30);
+        if (soonExpiring.length > 0) {
+          bullets.push({ icon: "🚗", text: `${soonExpiring.length} DOT physical${soonExpiring.length > 1 ? 's' : ''} expiring within 30 days`, priority: soonExpiring.some(e => e.daysUntilExpiry <= 7) ? "urgent" : "high" });
+        }
+      } catch {}
+
+      // OSHA calendar reminders
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      if (month === 1 || (month === 12 && day >= 15)) {
+        bullets.push({ icon: "📅", text: "OSHA 300A must be posted by February 1 — run your year-end log review", priority: "high" });
+      } else if (month === 2 && day <= 7) {
+        bullets.push({ icon: "📅", text: "OSHA 300A posting required now through April 30 — confirm it's posted", priority: "high" });
+      } else if (month === 3 && day >= 1 && day <= 10) {
+        bullets.push({ icon: "📅", text: "OSHA electronic submission (ITA) due March 2 — have you submitted?", priority: "medium" });
+      }
+
+      // Drug screen pending
+      const pendingDrug = employees.filter(e => e.drugTestResult === 'pending' || e.drugTestResult === 'scheduled').length;
+      if (pendingDrug > 0) {
+        bullets.push({ icon: "🧪", text: `${pendingDrug} pending drug screen${pendingDrug > 1 ? 's' : ''} awaiting results`, priority: "medium" });
+      }
+
+      // All clear
+      if (bullets.length === 0) {
+        bullets.push({ icon: "✅", text: "No urgent items today — compliance is on track", priority: "medium" });
+        bullets.push({ icon: "📊", text: `${employees.length} employee${employees.length !== 1 ? 's' : ''} tracked · ${incidents.filter(i => i.isRecordable).length} recordable incident${incidents.filter(i => i.isRecordable).length !== 1 ? 's' : ''} YTD`, priority: "medium" });
+      }
+
+      res.json({ bullets: bullets.slice(0, 4), generatedAt: now.toISOString() });
+    } catch (error: any) {
+      console.error('Corey brief error:', error);
+      res.status(500).json({ message: "Failed to generate brief" });
+    }
+  });
+
+  // ─── INCIDENT COREY ANALYSIS (T007) ─────────────────────────────────────────
+  app.post("/api/incidents/:id/corey-analysis", async (req, res) => {
+    if (!(await requirePlatformAccess(req, res))) return;
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    try {
+      const incident = await storage.getIncident(id, userId);
+      if (!incident) return res.status(404).json({ message: "Incident not found" });
+
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const anthropic = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+
+      const prompt = `You are Corey, a Senior Occupational Health, Safety & Compliance Expert. An incident has just been logged. Analyze it and provide:
+
+1. **OSHA Recordability Determination** — Based on the details below, is this incident OSHA recordable under 29 CFR 1904? State YES or NO with the specific reason.
+2. **Immediate Actions Required** — What must the employer do right now (within 24 hours)?
+3. **CAPA Recommendations** — Suggest 2-3 specific corrective actions to prevent recurrence.
+4. **CFR Reference** — Cite the specific 29 CFR standards that apply.
+
+INCIDENT DETAILS:
+- Type: ${incident.incidentType}
+- Employee: ${incident.employeeName} (${incident.jobTitle || 'N/A'})
+- Date: ${incident.incidentDate}
+- Location: ${incident.location || 'N/A'}, Department: ${incident.department || 'N/A'}
+- Description: ${incident.description}
+- Body Part: ${incident.bodyPart || 'N/A'}
+- Nature of Injury: ${incident.natureOfInjury || 'N/A'}
+- Source: ${incident.objectOrSubstance || 'N/A'}
+- Days Away: ${incident.daysAway || 0}, Days Restricted: ${incident.daysRestricted || 0}
+- Currently marked as: ${incident.isRecordable ? 'RECORDABLE' : 'NOT RECORDABLE'}
+
+Be concise and direct. Use regulatory citations.`;
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = anthropic.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error: any) {
+      console.error('Incident analysis error:', error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed to analyze" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: "Failed to analyze incident" });
+      }
+    }
+  });
+
+  // ─── EMERGENCY RESPONSE GUIDANCE (T008) ─────────────────────────────────────
+  app.post("/api/emergency-guidance", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const { situation } = req.body;
+    if (!situation) return res.status(400).json({ message: "Situation required" });
+
+    const situationPrompts: Record<string, string> = {
+      employee_injury: `An employee has been injured at the workplace. As Corey (Senior EHS Expert), provide an IMMEDIATE response protocol:
+
+1. **First 5 Minutes** — Exact steps to take right now
+2. **Medical Response** — When to call 911 vs. send to clinic vs. first aid
+3. **Scene Management** — Preserve evidence, secure area, witness statements
+4. **Notifications Required** — OSHA reporting (is this a fatality/hospitalization requiring immediate 8-hour notification?), workers' comp, management
+5. **Documentation** — What to document and when (29 CFR 1904 forms)
+6. **OSHA Regulation** — Cite 29 CFR 1904 and any applicable standards
+
+Be urgent, practical, and cite specific regulations. This person needs to act NOW.`,
+      chemical_spill: `A chemical spill has occurred. As Corey (Senior EHS Expert), provide IMMEDIATE response:
+
+1. **First 5 Minutes** — Evacuate? Shelter-in-place? Determine based on spill size/chemical
+2. **PPE Required** — Minimum protection for responders
+3. **Containment Steps** — How to stop spread without creating more hazard
+4. **Emergency Contacts** — CHEMTREC (1-800-424-9300), local fire, EPA reporting thresholds
+5. **Regulatory Requirements** — OSHA 29 CFR 1910.120 (HAZWOPER), EPA CERCLA/EPCRA reporting thresholds, state reporting
+6. **Post-Incident** — SDS review, incident report, decontamination
+
+Cite 29 CFR 1910.120 and EPA thresholds. Be direct and actionable.`,
+      osha_walkin: `An OSHA Compliance Officer has just arrived at the facility. As Corey (Senior EHS Expert), provide IMMEDIATE guidance:
+
+1. **First 5 Minutes** — What to do before they enter (call counsel? notify management?)
+2. **Rights & Obligations** — You have the right to accompany the inspector; what you must vs. must not do
+3. **Opening Conference** — What they'll ask, what to say and NOT to say
+4. **What to Prepare** — OSHA 300 Log, written programs, training records, injury/illness data
+5. **Walk-Around Protocol** — Take notes, photograph everything they photograph, bring a witness
+6. **Closing Conference** — How to respond to preliminary findings
+
+Cite 29 CFR 1903 (Inspection procedures). This is urgent — the inspector is there NOW.`,
+      fire_evacuation: `A fire or evacuation situation. As Corey (Senior EHS Expert), immediate protocol:
+
+1. **Sound the Alarm** — Activate pull station, call 911
+2. **Evacuation Routes** — Verify clear, account for everyone (especially mobility-impaired)
+3. **Warden Duties** — Sweep rooms, check restrooms, close doors
+4. **Assembly Point** — Account for all employees — use headcount vs. roster
+5. **Re-entry Protocol** — ONLY when fire department gives all-clear
+6. **Post-Incident** — Fire investigation, OSHA reporting if injury, damage assessment
+7. **Regulatory Basis** — 29 CFR 1910.38 (Emergency Action Plan), 1910.39 (Fire Prevention Plan)
+
+Cite NFPA 101 and 29 CFR 1910.38. Lives depend on getting this right.`,
+      vehicle_accident: `A company vehicle accident has occurred. As Corey (Senior EHS Expert), immediate protocol:
+
+1. **Scene Safety** — Ensure scene is safe before approaching; call 911 if injury
+2. **Driver Steps** — What the driver must do at scene (stay, exchange info, photos)
+3. **Employer Notifications** — Management, insurance, DOT (if CDL/regulated driver)
+4. **Drug & Alcohol Testing** — Post-accident testing requirements under 49 CFR 382 — strict time limits apply
+5. **DOT Recordability** — Is this a DOT recordable accident under 49 CFR 390.5?
+6. **Documentation** — Police report, photos, witness statements, vehicle damage report
+7. **Insurance** — What to say (and not say) to insurers
+
+Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hours (drugs) under 49 CFR 382.303. Cite this regulation.`,
+    };
+
+    const systemPrompt = situationPrompts[situation];
+    if (!systemPrompt) return res.status(400).json({ message: "Unknown situation type" });
+
+    try {
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const anthropic = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = anthropic.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1200,
+        messages: [{ role: "user", content: systemPrompt }],
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error: any) {
+      console.error('Emergency guidance error:', error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: "Failed to generate guidance" });
+      }
+    }
+  });
+
+  // ─── COMPLIANCE CALENDAR TRIGGERS (T011) ────────────────────────────────────
+  app.get("/api/compliance-calendar", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const reminders: Array<{ id: string; title: string; description: string; dueDate: string; urgency: string; cfr: string }> = [];
+
+    // OSHA 300A posting (Feb 1 - Apr 30)
+    if (month === 1 && day >= 15) {
+      reminders.push({ id: "osha-300a-prep", title: "OSHA 300A — Prepare for February Posting", description: "The OSHA 300A Annual Summary must be posted by February 1. Review your 300 Log now, calculate your TRIR and DART rates, get a certifying official to sign.", dueDate: `${now.getFullYear()}-02-01`, urgency: "high", cfr: "29 CFR 1904.32" });
+    }
+    if (month === 2 && day <= 7) {
+      reminders.push({ id: "osha-300a-post", title: "OSHA 300A — Must Be Posted NOW", description: "Post the OSHA 300A Annual Summary in a visible workplace location through April 30. Ensure it is signed by a company executive.", dueDate: `${now.getFullYear()}-02-01`, urgency: "urgent", cfr: "29 CFR 1904.32" });
+    }
+    if (month >= 2 && month <= 4) {
+      reminders.push({ id: "osha-300a-active", title: "OSHA 300A Posting Period Active", description: "300A must remain posted February 1 through April 30. Do not remove it early.", dueDate: `${now.getFullYear()}-04-30`, urgency: "medium", cfr: "29 CFR 1904.32" });
+    }
+    if (month === 3 && day <= 5) {
+      reminders.push({ id: "osha-ita", title: "OSHA Electronic Submission (ITA) Due March 2", description: "Establishments with 250+ employees (or 20-249 in high-hazard industries) must submit 300A data electronically via OSHA's Injury Tracking Application.", dueDate: `${now.getFullYear()}-03-02`, urgency: month === 3 && day > 2 ? "urgent" : "high", cfr: "29 CFR 1904.41" });
+    }
+    if (month === 12 && day >= 1) {
+      reminders.push({ id: "year-end-audit", title: "Year-End OSHA 300 Log Audit", description: "Before December 31, conduct a final review of your OSHA 300 Log. Verify all recordable cases are entered, days columns are accurate, and privacy cases are handled correctly.", dueDate: `${now.getFullYear()}-12-31`, urgency: "medium", cfr: "29 CFR 1904.29" });
+    }
+
+    res.json({ reminders, generatedAt: now.toISOString() });
+  });
+
   // Get employees
   app.get("/api/employees", async (req, res) => {
     if (!(await requirePlatformAccess(req, res))) return;
