@@ -3,7 +3,7 @@ import { ProtectedLayout } from "@/components/Layout";
 import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle, ArrowRight, RotateCcw, Lock, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { AlertCircle, CheckCircle, ArrowRight, RotateCcw, Lock, ChevronDown, ChevronUp, Info, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 
@@ -441,6 +441,18 @@ export default function DecisionTree() {
     setResultCitationReason("");
   };
 
+  const goBack = () => {
+    if (history.length === 0) return;
+    const newHistory = [...history];
+    const previousNodeId = newHistory.pop()!;
+    setHistory(newHistory);
+    setCurrentNodeId(previousNodeId);
+    setResultCitation("");
+    setResultCitationReason("");
+    setSelectedCriterion(null);
+    setExpandedCriteria(null);
+  };
+
   if (isLoading) return null;
 
   if (!subStatus?.isPro) {
@@ -505,9 +517,14 @@ export default function DecisionTree() {
                   <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{resultCitationReason}</p>
                 )}
               </div>
-              <Button onClick={reset} size="lg" className="w-full sm:w-auto" data-testid="button-start-new">
-                Start New Assessment
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button variant="outline" onClick={goBack} className="gap-2" data-testid="button-back-result">
+                  <ChevronLeft className="w-4 h-4" /> Go Back
+                </Button>
+                <Button onClick={reset} size="lg" data-testid="button-start-new">
+                  Start New Assessment
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -525,6 +542,7 @@ export default function DecisionTree() {
           citation={resultCitation}
           citationReason={resultCitationReason}
           onReset={reset}
+          onBack={goBack}
         />
       </ProtectedLayout>
     );
@@ -540,6 +558,7 @@ export default function DecisionTree() {
           citation={resultCitation}
           citationReason={resultCitationReason}
           onReset={reset}
+          onBack={goBack}
         />
       </ProtectedLayout>
     );
@@ -637,9 +656,16 @@ export default function DecisionTree() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between border-t bg-muted/20 p-4">
-                  <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground" data-testid="button-restart">
-                    <RotateCcw className="w-4 h-4 mr-2" /> Restart
-                  </Button>
+                  <div className="flex gap-2">
+                    {history.length > 0 && (
+                      <Button variant="ghost" size="sm" onClick={goBack} className="text-muted-foreground" data-testid="button-back-severity">
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground" data-testid="button-restart">
+                      <RotateCcw className="w-4 h-4 mr-2" /> Restart
+                    </Button>
+                  </div>
                   <span className="text-xs text-muted-foreground">Step {history.length + 1}</span>
                 </CardFooter>
               </Card>
@@ -692,9 +718,16 @@ export default function DecisionTree() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between border-t bg-muted/20 p-4">
-                <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground" data-testid="button-restart">
-                  <RotateCcw className="w-4 h-4 mr-2" /> Restart
-                </Button>
+                <div className="flex gap-2">
+                  {history.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={goBack} className="text-muted-foreground" data-testid="button-back">
+                      <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground" data-testid="button-restart">
+                    <RotateCcw className="w-4 h-4 mr-2" /> Restart
+                  </Button>
+                </div>
                 <span className="text-xs text-muted-foreground">Step {history.length + 1}</span>
               </CardFooter>
             </Card>
@@ -731,9 +764,16 @@ function ResultCard({ title, description, type, citation, citationReason, onRese
               )}
             </div>
           )}
-          <Button onClick={onReset} size="lg" className="w-full sm:w-auto" data-testid="button-start-new">
-            Start New Assessment
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {onBack && (
+              <Button variant="outline" onClick={onBack} className="gap-2" data-testid="button-back-result">
+                <ChevronLeft className="w-4 h-4" /> Go Back
+              </Button>
+            )}
+            <Button onClick={onReset} size="lg" data-testid="button-start-new">
+              Start New Assessment
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
