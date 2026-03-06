@@ -40,7 +40,11 @@ import {
   Paperclip,
   Loader2,
   Send,
-  ExternalLink
+  ExternalLink,
+  User,
+  Mail,
+  Building2,
+  Briefcase
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
@@ -164,7 +168,121 @@ function IncidentChart({ data }: { data: IncidentChartData[] }) {
   );
 }
 
+function EmployeeActionDialog({ action, open, onClose }: { action: ActionItem | null; open: boolean; onClose: () => void }) {
+  const { data: employee, isLoading } = useQuery<any>({
+    queryKey: ['/api/employees', action?.employeeId],
+    queryFn: async () => {
+      const res = await fetch(`/api/employees/${action!.employeeId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch employee');
+      return res.json();
+    },
+    enabled: open && !!action?.employeeId,
+  });
+
+  const displayName = employee
+    ? `${employee.firstName} ${employee.lastName}`
+    : action?.employeeName ?? 'Employee';
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md" data-testid="employee-action-dialog">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+              <User className="w-4 h-4 text-accent" />
+            </div>
+            {isLoading ? 'Loading...' : displayName}
+          </DialogTitle>
+        </DialogHeader>
+
+        {action && (
+          <div className="space-y-4">
+            <div className="p-3 bg-muted/40 rounded-lg border border-border/50">
+              <p className="text-sm font-medium">{action.title}</p>
+              {action.description && (
+                <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
+              )}
+              {action.daysUntilExpiry !== undefined && (
+                <div className="flex items-center gap-1 mt-2 text-xs font-medium text-destructive">
+                  <Clock className="w-3 h-3" />
+                  <span>Expires in {action.daysUntilExpiry} day{action.daysUntilExpiry === 1 ? '' : 's'}</span>
+                </div>
+              )}
+            </div>
+
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : employee ? (
+              <div className="space-y-2 text-sm">
+                {employee.position && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Briefcase className="w-4 h-4 shrink-0" />
+                    <span>{employee.position}</span>
+                  </div>
+                )}
+                {employee.department && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building2 className="w-4 h-4 shrink-0" />
+                    <span>{employee.department}</span>
+                  </div>
+                )}
+                {employee.email && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="w-4 h-4 shrink-0" />
+                    <span>{employee.email}</span>
+                  </div>
+                )}
+                {(action.employeePhone ?? employee.phone) && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="w-4 h-4 shrink-0" />
+                    <span>{action.employeePhone ?? employee.phone}</span>
+                  </div>
+                )}
+                {employee.dotPhysicalExpiry && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Stethoscope className="w-4 h-4 shrink-0" />
+                    <span>DOT Expiry: {new Date(employee.dotPhysicalExpiry).toLocaleDateString()}</span>
+                  </div>
+                )}
+                {employee.hireDate && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="w-4 h-4 shrink-0" />
+                    <span>Hired: {new Date(employee.hireDate).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            <div className="flex gap-2 pt-1">
+              <Link href="/employees" className="flex-1">
+                <Button variant="outline" className="w-full gap-1 text-sm" data-testid="button-view-employee-record">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View Full Record
+                </Button>
+              </Link>
+              {action.type === 'dot_expiration' && action.employeeId && (
+                <Link href="/dot-notifications">
+                  <Button variant="default" className="gap-1 text-sm bg-accent hover:bg-accent/90" data-testid="button-notify-dot">
+                    <Stethoscope className="w-3.5 h-3.5" />
+                    Notify
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ActionQueue({ actions, onComplete }: { actions: ActionItem[]; onComplete: (id: number) => void }) {
+  const [selectedAction, setSelectedAction] = useState<ActionItem | null>(null);
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent': return 'bg-destructive text-destructive-foreground';
@@ -196,64 +314,80 @@ function ActionQueue({ actions, onComplete }: { actions: ActionItem[]; onComplet
   }
 
   return (
-    <div className="space-y-3 max-h-80 overflow-y-auto">
-      {actions.slice(0, 5).map((action) => (
-        <div 
-          key={action.id} 
-          className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/50"
-          data-testid={`action-item-${action.id}`}
-        >
-          <div className="mt-0.5 text-muted-foreground">
-            {getCategoryIcon(action.category, action.type)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-sm truncate">{action.title}</span>
-              <Badge className={`text-xs ${getPriorityColor(action.priority)}`}>
-                {action.priority}
-              </Badge>
+    <>
+      <div className="space-y-3 max-h-80 overflow-y-auto">
+        {actions.slice(0, 5).map((action) => (
+          <div 
+            key={action.id} 
+            className={`flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/50 transition-colors ${action.employeeId ? 'cursor-pointer hover:bg-muted/60 hover:border-accent/30' : ''}`}
+            data-testid={`action-item-${action.id}`}
+            onClick={() => action.employeeId && setSelectedAction(action)}
+          >
+            <div className="mt-0.5 text-muted-foreground">
+              {getCategoryIcon(action.category, action.type)}
             </div>
-            {action.description && (
-              <p className="text-xs text-muted-foreground line-clamp-1">{action.description}</p>
-            )}
-            {action.dueDate && (
-              <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                <Calendar className="w-3 h-3" />
-                <span>Due: {new Date(action.dueDate).toLocaleDateString()}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-medium text-sm truncate">{action.title}</span>
+                <Badge className={`text-xs ${getPriorityColor(action.priority)}`}>
+                  {action.priority}
+                </Badge>
               </div>
-            )}
+              {action.description && (
+                <p className="text-xs text-muted-foreground line-clamp-1">{action.description}</p>
+              )}
+              {action.dueDate && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                  <Calendar className="w-3 h-3" />
+                  <span>Due: {new Date(action.dueDate).toLocaleDateString()}</span>
+                </div>
+              )}
+              {action.employeeId && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-accent">
+                  <User className="w-3 h-3" />
+                  <span>{action.employeeName ?? 'View employee'}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              {action.type === 'dot_expiration' ? (
+                <Link href="/dot-notifications">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="gap-1"
+                    data-testid={`action-dot-${action.employeeId}`}
+                  >
+                    <Stethoscope className="w-3 h-3" />
+                    Notify
+                  </Button>
+                </Link>
+              ) : (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => onComplete(action.id)}
+                  data-testid={`complete-action-${action.id}`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
-          {action.type === 'dot_expiration' ? (
-            <Link href="/dot-notifications">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="shrink-0 gap-1"
-                data-testid={`action-dot-${action.employeeId}`}
-              >
-                <Stethoscope className="w-3 h-3" />
-                Notify
-              </Button>
-            </Link>
-          ) : (
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="shrink-0"
-              onClick={() => onComplete(action.id)}
-              data-testid={`complete-action-${action.id}`}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      ))}
-      {actions.length > 5 && (
-        <p className="text-xs text-center text-muted-foreground">
-          +{actions.length - 5} more actions
-        </p>
-      )}
-    </div>
+        ))}
+        {actions.length > 5 && (
+          <p className="text-xs text-center text-muted-foreground">
+            +{actions.length - 5} more actions
+          </p>
+        )}
+      </div>
+
+      <EmployeeActionDialog
+        action={selectedAction}
+        open={!!selectedAction}
+        onClose={() => setSelectedAction(null)}
+      />
+    </>
   );
 }
 

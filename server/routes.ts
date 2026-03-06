@@ -1091,6 +1091,17 @@ Rules:
     res.json(employeeList);
   });
 
+  // Get single employee
+  app.get("/api/employees/:id", async (req, res) => {
+    if (!(await requirePlatformAccess(req, res))) return;
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid employee ID" });
+    const employee = await storage.getEmployeeById(id, userId);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+    res.json(employee);
+  });
+
   // Create employee
   app.post("/api/employees", async (req, res) => {
     if (!(await requirePlatformAccess(req, res))) return;
