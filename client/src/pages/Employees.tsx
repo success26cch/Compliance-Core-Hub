@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Plus, 
@@ -18,7 +19,13 @@ import {
   TestTube,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  ShieldAlert,
+  Eye,
+  Ear,
+  Activity,
+  Syringe,
+  Search
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -185,6 +192,105 @@ function getDrugTestBadge(result: string | null) {
       return <Badge className="bg-destructive text-destructive-foreground">Failed</Badge>;
     default:
       return <Badge variant="outline">--</Badge>;
+  }
+}
+
+type SurveillanceRow = {
+  employeeId: number;
+  employeeName: string;
+  testName: string;
+  icon: React.ReactNode;
+  status: 'expired' | 'expiring' | 'pending' | 'current' | 'na' | 'positive' | 'failed' | 'cleared' | 'series_complete' | 'in_progress' | 'immune' | 'declined' | 'negative' | 'scheduled';
+  expiry: string | null;
+  result: string | null;
+  urgency: number; // 0=expired,1=expiring,2=positive/failed,3=pending/in_progress,4=current/cleared,5=na/immune/declined
+};
+
+function computeSurveillanceRows(employees: Employee[]): SurveillanceRow[] {
+  const rows: SurveillanceRow[] = [];
+
+  const urgencyFor = (status: SurveillanceRow['status']): number => {
+    switch (status) {
+      case 'expired': return 0;
+      case 'expiring': return 1;
+      case 'positive': case 'failed': return 2;
+      case 'pending': case 'in_progress': return 3;
+      case 'scheduled': return 3;
+      case 'current': case 'cleared': case 'series_complete': case 'immune': case 'negative': return 4;
+      case 'na': case 'declined': return 5;
+      default: return 3;
+    }
+  };
+
+  const push = (
+    emp: Employee,
+    testName: string,
+    icon: React.ReactNode,
+    rawStatus: string | null,
+    expiry: string | null,
+    result: string | null
+  ) => {
+    const status = (rawStatus || 'pending') as SurveillanceRow['status'];
+    rows.push({
+      employeeId: emp.id,
+      employeeName: `${emp.firstName} ${emp.lastName}`,
+      testName,
+      icon,
+      status,
+      expiry,
+      result,
+      urgency: urgencyFor(status),
+    });
+  };
+
+  for (const emp of employees) {
+    push(emp, 'DOT Physical', <Stethoscope className="w-4 h-4" />, emp.dotPhysicalStatus, emp.dotPhysicalExpiry, null);
+    push(emp, 'Respiratory Eval', <Activity className="w-4 h-4" />, emp.respiratoryStatus, emp.respiratoryExamExpiry, null);
+    push(emp, 'Fit Test', <ShieldAlert className="w-4 h-4" />, emp.fitTestStatus, emp.fitTestExpiry, null);
+    push(emp, 'Hearing / Audiometric', <Ear className="w-4 h-4" />, emp.hearingTestStatus, emp.hearingTestExpiry, null);
+    push(emp, 'Pulmonary (PFT)', <Activity className="w-4 h-4" />, emp.pftStatus, emp.pftExpiry, null);
+    push(emp, 'Vision Test', <Eye className="w-4 h-4" />, emp.visionTestStatus, emp.visionTestExpiry, null);
+    push(emp, 'Drug Test', <TestTube className="w-4 h-4" />, emp.drugTestResult, emp.lastDrugTest, emp.drugTestResult);
+    push(emp, 'TB Test', <Syringe className="w-4 h-4" />, emp.tbTestResult, emp.tbTestDate, emp.tbTestResult);
+    push(emp, 'Hepatitis B', <Syringe className="w-4 h-4" />, emp.hepBStatus, null, emp.hepBStatus);
+    push(emp, 'Hepatitis A', <Syringe className="w-4 h-4" />, emp.hepAStatus, null, emp.hepAStatus);
+    push(emp, 'Hepatitis C Screen', <Syringe className="w-4 h-4" />, emp.hepCScreenResult, emp.hepCScreenDate, emp.hepCScreenResult);
+    // Tetanus — compute status from expiry
+    if (emp.tetanusExpiry) {
+      const daysLeft = Math.floor((new Date(emp.tetanusExpiry).getTime() - Date.now()) / 86400000);
+      const tetStatus = daysLeft < 0 ? 'expired' : daysLeft <= 30 ? 'expiring' : 'current';
+      push(emp, 'Tetanus', <Syringe className="w-4 h-4" />, tetStatus, emp.tetanusExpiry, null);
+    } else {
+      push(emp, 'Tetanus', <Syringe className="w-4 h-4" />, 'pending', null, null);
+    }
+  }
+
+  return rows.sort((a, b) => {
+    if (a.urgency !== b.urgency) return a.urgency - b.urgency;
+    const aExp = a.expiry ? new Date(a.expiry).getTime() : Infinity;
+    const bExp = b.expiry ? new Date(b.expiry).getTime() : Infinity;
+    return aExp - bExp;
+  });
+}
+
+function SurveillanceBadge({ status }: { status: SurveillanceRow['status'] }) {
+  switch (status) {
+    case 'expired':
+      return <Badge className="bg-destructive text-destructive-foreground gap-1"><AlertCircle className="w-3 h-3" />Expired</Badge>;
+    case 'expiring':
+      return <Badge className="bg-yellow-500 text-white gap-1"><Clock className="w-3 h-3" />Expiring</Badge>;
+    case 'current':
+      return <Badge className="bg-green-500 text-white gap-1"><CheckCircle className="w-3 h-3" />Current</Badge>;
+    case 'positive': case 'failed':
+      return <Badge className="bg-destructive text-destructive-foreground capitalize">{status}</Badge>;
+    case 'cleared': case 'negative': case 'series_complete': case 'immune':
+      return <Badge className="bg-green-500 text-white capitalize">{status.replace('_', ' ')}</Badge>;
+    case 'in_progress': case 'scheduled':
+      return <Badge className="bg-blue-500 text-white capitalize">{status.replace('_', ' ')}</Badge>;
+    case 'na': case 'declined':
+      return <Badge variant="secondary" className="capitalize">{status}</Badge>;
+    default:
+      return <Badge variant="outline">Pending</Badge>;
   }
 }
 
@@ -703,6 +809,8 @@ function EmployeeFormDialog({
 export default function Employees() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>();
+  const [survFilter, setSurvFilter] = useState<'needs_attention' | 'all'>('needs_attention');
+  const [survSearch, setSurvSearch] = useState('');
   const { toast } = useToast();
 
   const { data: employees = [], isLoading } = useQuery<Employee[]>({
@@ -791,103 +899,241 @@ export default function Employees() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Employee Roster</CardTitle>
-            <CardDescription>
-              {employees.length} employee{employees.length !== 1 ? 's' : ''} tracked
-            </CardDescription>
+          <CardHeader className="pb-0">
+            <Tabs defaultValue="roster">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle>Employee Roster</CardTitle>
+                  <CardDescription className="mt-1">
+                    {employees.length} employee{employees.length !== 1 ? 's' : ''} tracked
+                  </CardDescription>
+                </div>
+                <TabsList data-testid="tabs-employee-view">
+                  <TabsTrigger value="roster" data-testid="tab-roster">Roster</TabsTrigger>
+                  <TabsTrigger value="surveillance" data-testid="tab-surveillance">Medical Surveillance</TabsTrigger>
+                </TabsList>
+              </div>
+
+              {/* ── ROSTER TAB ── */}
+              <TabsContent value="roster">
+                <CardContent className="px-0 pt-4">
+                  {isLoading ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                    </div>
+                  ) : employees.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="font-medium mb-2">No Employees Yet</h3>
+                      <p className="text-muted-foreground mb-4">Start by adding your first employee to track their compliance status.</p>
+                      <Button onClick={handleAdd} className="gap-2" data-testid="button-add-first-employee">
+                        <Plus className="w-4 h-4" />
+                        Add First Employee
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Department</TableHead>
+                            <TableHead>DOT Physical</TableHead>
+                            <TableHead>Respiratory</TableHead>
+                            <TableHead>Drug Test</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {employees.map((emp) => (
+                            <TableRow key={emp.id} data-testid={`employee-row-${emp.id}`}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{emp.firstName} {emp.lastName}</p>
+                                  {emp.email && <p className="text-xs text-muted-foreground">{emp.email}</p>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <p>{emp.department || '--'}</p>
+                                  {emp.position && <p className="text-xs text-muted-foreground">{emp.position}</p>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(emp.dotPhysicalStatus)}
+                                {emp.dotPhysicalExpiry && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Exp: {new Date(emp.dotPhysicalExpiry).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(emp.respiratoryStatus)}
+                              </TableCell>
+                              <TableCell>
+                                {getDrugTestBadge(emp.drugTestResult)}
+                                {emp.lastDrugTest && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {new Date(emp.lastDrugTest).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    onClick={() => handleEdit(emp)}
+                                    data-testid={`button-edit-${emp.id}`}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    onClick={() => deleteMutation.mutate(emp.id)}
+                                    data-testid={`button-delete-${emp.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </TabsContent>
+
+              {/* ── MEDICAL SURVEILLANCE TAB ── */}
+              <TabsContent value="surveillance">
+                <CardContent className="px-0 pt-4">
+                  {(() => {
+                    const allRows = computeSurveillanceRows(employees);
+                    const needsAttentionStatuses = new Set(['expired', 'expiring', 'positive', 'failed', 'in_progress', 'scheduled']);
+                    const filtered = allRows.filter(row => {
+                      const matchesFilter = survFilter === 'all' || needsAttentionStatuses.has(row.status);
+                      const matchesSearch = !survSearch || row.employeeName.toLowerCase().includes(survSearch.toLowerCase());
+                      return matchesFilter && matchesSearch;
+                    });
+
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center gap-3 pb-2">
+                          <div className="flex items-center gap-1 bg-muted rounded-md p-1">
+                            <button
+                              onClick={() => setSurvFilter('needs_attention')}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${survFilter === 'needs_attention' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                              data-testid="filter-needs-attention"
+                            >
+                              Needs Attention
+                            </button>
+                            <button
+                              onClick={() => setSurvFilter('all')}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${survFilter === 'all' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                              data-testid="filter-all-tests"
+                            >
+                              All Tests
+                            </button>
+                          </div>
+                          <div className="relative flex-1 min-w-[180px] max-w-xs">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                              className="w-full pl-8 pr-3 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-accent"
+                              placeholder="Search employee..."
+                              value={survSearch}
+                              onChange={e => setSurvSearch(e.target.value)}
+                              data-testid="input-surv-search"
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground ml-auto">{filtered.length} item{filtered.length !== 1 ? 's' : ''}</span>
+                        </div>
+
+                        {isLoading ? (
+                          <div className="space-y-2">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                          </div>
+                        ) : employees.length === 0 ? (
+                          <div className="text-center py-12">
+                            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">Add employees to track their medical surveillance.</p>
+                          </div>
+                        ) : filtered.length === 0 ? (
+                          <div className="text-center py-10">
+                            <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-3" />
+                            <p className="font-medium">All clear!</p>
+                            <p className="text-sm text-muted-foreground mt-1">No items needing attention right now.</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Employee</TableHead>
+                                  <TableHead>Test / Exam</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead>Date / Expiry</TableHead>
+                                  <TableHead className="text-right">Action</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {filtered.map((row, idx) => {
+                                  const emp = employees.find(e => e.id === row.employeeId);
+                                  return (
+                                    <TableRow key={`${row.employeeId}-${row.testName}-${idx}`} data-testid={`surv-row-${row.employeeId}-${idx}`}>
+                                      <TableCell>
+                                        <span className="font-medium">{row.employeeName}</span>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                          {row.icon}
+                                          <span className="text-sm">{row.testName}</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <SurveillanceBadge status={row.status} />
+                                      </TableCell>
+                                      <TableCell className="text-sm text-muted-foreground">
+                                        {row.expiry
+                                          ? new Date(row.expiry).toLocaleDateString()
+                                          : row.result && row.result !== row.status
+                                            ? row.result
+                                            : '--'}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {emp && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleEdit(emp)}
+                                            className="gap-1"
+                                            data-testid={`button-update-surv-${row.employeeId}-${idx}`}
+                                          >
+                                            <Pencil className="w-3 h-3" />
+                                            Update
+                                          </Button>
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </TabsContent>
+            </Tabs>
           </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ) : employees.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-medium mb-2">No Employees Yet</h3>
-                <p className="text-muted-foreground mb-4">Start by adding your first employee to track their compliance status.</p>
-                <Button onClick={handleAdd} className="gap-2" data-testid="button-add-first-employee">
-                  <Plus className="w-4 h-4" />
-                  Add First Employee
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>DOT Physical</TableHead>
-                      <TableHead>Respiratory</TableHead>
-                      <TableHead>Drug Test</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employees.map((emp) => (
-                      <TableRow key={emp.id} data-testid={`employee-row-${emp.id}`}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                            {emp.email && <p className="text-xs text-muted-foreground">{emp.email}</p>}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p>{emp.department || '--'}</p>
-                            {emp.position && <p className="text-xs text-muted-foreground">{emp.position}</p>}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(emp.dotPhysicalStatus)}
-                          {emp.dotPhysicalExpiry && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Exp: {new Date(emp.dotPhysicalExpiry).toLocaleDateString()}
-                            </p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(emp.respiratoryStatus)}
-                        </TableCell>
-                        <TableCell>
-                          {getDrugTestBadge(emp.drugTestResult)}
-                          {emp.lastDrugTest && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(emp.lastDrugTest).toLocaleDateString()}
-                            </p>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              onClick={() => handleEdit(emp)}
-                              data-testid={`button-edit-${emp.id}`}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="ghost"
-                              onClick={() => deleteMutation.mutate(emp.id)}
-                              data-testid={`button-delete-${emp.id}`}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
         </Card>
 
         <EmployeeFormDialog
