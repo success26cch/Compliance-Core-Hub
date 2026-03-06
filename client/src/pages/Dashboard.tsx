@@ -36,13 +36,18 @@ import {
   ChevronRight,
   HelpCircle,
   Lightbulb,
-  ListChecks
+  ListChecks,
+  Paperclip,
+  Loader2,
+  Send,
+  ExternalLink
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useCreateConversation } from "@/hooks/use-chat";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -705,6 +710,180 @@ function DashboardSearch() {
   );
 }
 
+function DashboardCoreyChat() {
+  const { toast } = useToast();
+  const createConversation = useCreateConversation();
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
+  const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [attachedDoc, setAttachedDoc] = useState<{ filename: string; text: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload-document", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message || "Upload failed"); }
+      const data = await res.json();
+      setAttachedDoc({ filename: data.filename, text: data.text });
+      toast({ title: `📎 ${data.filename} attached`, description: `${data.chars.toLocaleString()} characters ready for Corey.` });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const streamMessage = useCallback(async (convId: number, apiContent: string, displayContent: string) => {
+    setMessages(prev => [...prev, { role: "user", content: displayContent }]);
+    setIsStreaming(true);
+    try {
+      const response = await fetch(`/api/conversations/${convId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: apiContent }),
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to send");
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("No reader");
+      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split("\n\n")) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) {
+                setMessages(prev => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last.role === "assistant") last.content += data.content;
+                  return next;
+                });
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to reach Corey. Please try again.", variant: "destructive" });
+    } finally {
+      setIsStreaming(false);
+    }
+  }, [toast]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if ((!input.trim() && !attachedDoc) || isStreaming) return;
+    const userQuestion = input.trim() || "Please review this document.";
+    const apiContent = attachedDoc
+      ? `[UPLOADED DOCUMENT: ${attachedDoc.filename}]\n\n${attachedDoc.text}\n\n---\n\n${userQuestion}`
+      : userQuestion;
+    const displayContent = attachedDoc ? `📎 ${attachedDoc.filename}\n\n${userQuestion}` : userQuestion;
+    setInput("");
+    setAttachedDoc(null);
+    let convId = conversationId;
+    if (!convId) {
+      const conv = await createConversation.mutateAsync("Dashboard Chat");
+      convId = conv.id;
+      setConversationId(convId);
+    }
+    await streamMessage(convId, apiContent, displayContent);
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt" className="hidden" onChange={handleFileChange} data-testid="input-dashboard-corey-file" />
+      {messages.length > 0 && (
+        <div className="max-h-52 overflow-y-auto space-y-2 rounded-lg bg-muted/40 p-3 border border-border/50">
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex gap-2 text-sm ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              {msg.role === "assistant" && (
+                <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bot className="w-3 h-3 text-accent" />
+                </div>
+              )}
+              <div className={`rounded-lg px-3 py-2 max-w-[85%] whitespace-pre-wrap leading-relaxed ${
+                msg.role === "user"
+                  ? "bg-accent text-white text-right"
+                  : "bg-background border border-border/50 text-foreground"
+              }`}>
+                {msg.content || (isStreaming && i === messages.length - 1 ? <span className="inline-block w-2 h-4 bg-accent/60 animate-pulse rounded-sm" /> : "")}
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
+      {attachedDoc && (
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-medium w-fit">
+          <Paperclip className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate max-w-[200px]">{attachedDoc.filename}</span>
+          <button type="button" onClick={() => setAttachedDoc(null)} className="ml-1 text-accent/60 hover:text-accent" data-testid="button-dashboard-remove-attachment">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+        <Textarea
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
+          placeholder={attachedDoc ? "Ask Corey about this document, or just hit send..." : "Ask Corey a compliance question..."}
+          className={`resize-none text-sm min-h-[44px] max-h-[100px] ${attachedDoc ? "border-accent/40" : ""}`}
+          rows={2}
+          disabled={isStreaming}
+          data-testid="input-dashboard-corey-message"
+        />
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isStreaming || isUploading}
+          className="text-muted-foreground hover:text-accent hover:bg-accent/10 flex-shrink-0"
+          title="Attach a document (PDF, DOCX, TXT)"
+          data-testid="button-dashboard-corey-upload"
+        >
+          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+        </Button>
+        <Button
+          type="submit"
+          size="icon"
+          disabled={isStreaming || (!input.trim() && !attachedDoc)}
+          className="bg-accent hover:bg-accent/90 flex-shrink-0"
+          data-testid="button-dashboard-corey-send"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </form>
+      {conversationId && (
+        <Link href="/corey">
+          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-accent gap-1 h-7 px-2 -mt-1">
+            <ExternalLink className="w-3 h-3" /> Open full conversation in Corey
+          </Button>
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
@@ -1085,22 +1264,25 @@ export default function Dashboard() {
           {/* Quick Actions Row */}
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="hover:shadow-lg transition-shadow border-primary/10 bg-gradient-to-br from-white to-primary/5 dark:from-background dark:to-primary/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Ask Corey
-                  <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">Your AI Compliance Expert</span>
-                  <HelpTip id="askCorey" />
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    Ask Corey
+                    <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">AI Compliance Expert</span>
+                    <HelpTip id="askCorey" />
+                  </CardTitle>
+                  <Link href="/corey">
+                    <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-accent gap-1 h-7 px-2" data-testid="button-corey-fullscreen">
+                      <ExternalLink className="w-3 h-3" /> Full Chat
+                    </Button>
+                  </Link>
+                </div>
                 <CardDescription>
-                  Get instant answers for OSHA 1904 and DOT regulations. Get quick access to Corey's 42 Documents.
+                  Ask a question or upload a document (PDF, DOCX, TXT) for Corey to review.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link href="/corey">
-                  <Button className="w-full sm:w-auto gap-2" data-testid="button-chat-bot">
-                    Start Chat <ArrowUpRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+                <DashboardCoreyChat />
               </CardContent>
             </Card>
 
