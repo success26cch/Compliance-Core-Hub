@@ -187,13 +187,21 @@ function getStatusBadge(status: string) {
 function IncidentFormDialog({ 
   open, 
   onOpenChange, 
-  onSave 
+  onSave,
+  initialRecordable = false,
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void;
   onSave: (data: IncidentFormData) => void;
+  initialRecordable?: boolean;
 }) {
-  const [formData, setFormData] = useState<IncidentFormData>(defaultFormData);
+  const [formData, setFormData] = useState<IncidentFormData>({ ...defaultFormData, isRecordable: initialRecordable });
+
+  useEffect(() => {
+    if (open) {
+      setFormData({ ...defaultFormData, isRecordable: initialRecordable });
+    }
+  }, [open, initialRecordable]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -959,10 +967,16 @@ function getCAPAStatusBadge(status: string) {
   }
 }
 
-function CorrectiveActionPlans({ incidents }: { incidents: Incident[] }) {
+function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Incident[]; autoOpen?: boolean }) {
   const [capaDialogOpen, setCAPADialogOpen] = useState(false);
   const [selectedCAPA, setSelectedCAPA] = useState<CorrectiveAction | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (autoOpen) {
+      setCAPADialogOpen(true);
+    }
+  }, [autoOpen]);
 
   const { data: capaList = [], isLoading } = useQuery<CorrectiveAction[]>({
     queryKey: ['/api/corrective-actions'],
@@ -1568,7 +1582,22 @@ export default function Incidents() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [initialRecordable, setInitialRecordable] = useState(false);
+  const [autoOpenCapa, setAutoOpenCapa] = useState(false);
+  const [activeTab, setActiveTab] = useState('incidents');
   const { toast } = useToast();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('recordable') === 'true') {
+      setInitialRecordable(true);
+      setDialogOpen(true);
+    }
+    if (params.get('capa') === 'true') {
+      setAutoOpenCapa(true);
+      setActiveTab('capa');
+    }
+  }, []);
 
   const { data: incidents = [], isLoading } = useQuery<Incident[]>({
     queryKey: ['/api/incidents'],
@@ -1677,7 +1706,7 @@ export default function Incidents() {
         </div>
 
         {/* Tabs for Incident List, OSHA 300 Report, and CAPA */}
-        <Tabs defaultValue="incidents" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="incidents" className="gap-2" data-testid="tab-incidents">
               <FileWarning className="w-4 h-4" />
@@ -1798,7 +1827,7 @@ export default function Incidents() {
           </TabsContent>
 
           <TabsContent value="capa">
-            <CorrectiveActionPlans incidents={incidents} />
+            <CorrectiveActionPlans incidents={incidents} autoOpen={autoOpenCapa} />
           </TabsContent>
         </Tabs>
 
@@ -1806,6 +1835,7 @@ export default function Incidents() {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           onSave={(data) => createMutation.mutate(data)}
+          initialRecordable={initialRecordable}
         />
 
         <IncidentDetailDialog

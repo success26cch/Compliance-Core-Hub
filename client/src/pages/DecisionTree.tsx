@@ -3,7 +3,7 @@ import { ProtectedLayout } from "@/components/Layout";
 import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle, ArrowRight, RotateCcw, Lock, ChevronDown, ChevronUp, Info, ChevronLeft } from "lucide-react";
+import { AlertCircle, CheckCircle, ArrowRight, RotateCcw, Lock, ChevronDown, ChevronUp, Info, ChevronLeft, ClipboardList, FileWarning } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 
@@ -517,6 +517,30 @@ export default function DecisionTree() {
                   <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{resultCitationReason}</p>
                 )}
               </div>
+              <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-5 mb-6 text-left" data-testid="card-recordable-actions">
+                <div className="flex items-start gap-3 mb-4">
+                  <FileWarning className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-sm mb-0.5">Required Next Steps</h3>
+                    <p className="text-xs text-muted-foreground">This incident must be entered on your OSHA 300 Log within 7 calendar days of learning it is recordable. A Corrective Action Plan is also strongly recommended.</p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link href="/incidents?recordable=true" className="flex-1">
+                    <Button className="w-full gap-2 bg-accent hover:bg-accent/90 text-white" data-testid="button-log-incident-from-tree">
+                      <ClipboardList className="w-4 h-4" />
+                      Log to OSHA 300 Log
+                    </Button>
+                  </Link>
+                  <Link href="/incidents?capa=true" className="flex-1">
+                    <Button variant="outline" className="w-full gap-2 border-accent text-accent hover:bg-accent/10" data-testid="button-create-capa-from-tree">
+                      <CheckCircle className="w-4 h-4" />
+                      Create Corrective Action
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button variant="outline" onClick={goBack} className="gap-2" data-testid="button-back-result">
                   <ChevronLeft className="w-4 h-4" /> Go Back
