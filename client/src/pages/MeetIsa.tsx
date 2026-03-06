@@ -237,7 +237,7 @@ export default function MeetIsa() {
     },
     {
       q: "How does Isa integrate with the ISO Manager platform?",
-      a: "Isa is the AI brain behind the ISO Manager workspace. When you complete the setup wizard, Isa uses your organization's profile — processes, standards, industry, scope — to personalize every answer. The ISO Manager adds document storage, process maps, a document vault, and KPI tracking on top of Isa's AI guidance.",
+      a: "Isa is the AI coaching engine behind every ISO Manager module. When you complete the 3-phase setup wizard, Isa uses your organization's profile — standard, processes, scope, and quality policy — to personalize every answer. ISO Manager layers a full 8-module platform on top: Documentation Library, NC & CAPA tracking, Risk Assessment, Internal Audits, Management Review, Communication, Training, and Measurement & Monitoring.",
     },
   ];
 
@@ -579,15 +579,15 @@ export default function MeetIsa() {
                     </div>
                   </div>
                   <p className="text-sm text-white/65 leading-relaxed mb-4">
-                    ISO Manager is a <strong className="text-white/85">complete IMS management platform</strong> — it stores your documents, tracks KPIs, maps your processes, and gives you a structured workspace to build and manage your entire management system. Isa AI is included with every plan.
+                    ISO Manager is a <strong className="text-white/85">complete 8-module IMS platform</strong> — Documentation Library, NC & CAPA tracking, Risk Assessment, Internal Audits, Management Review, Communication, Training, and Measurement & Monitoring. Isa AI is the coaching engine built into every module.
                   </p>
                   <ul className="space-y-2">
                     {[
-                      "Document vault — store and manage IMS records",
-                      "Process map builder with clause tagging",
-                      "KPI tracking and audit evidence management",
-                      "Setup wizard that feeds Isa your org context",
-                      "Full document library for your chosen standards",
+                      "Documentation Library — Quality Manual, Procedures, Work Instructions",
+                      "NC & CAPA module — log, track & close nonconformances",
+                      "Risk Assessment — Clause 6.1 risk & opportunity register",
+                      "Internal Audits, Management Review & more (coming soon)",
+                      "Setup wizard that personalizes all Isa responses to your org",
                     ].map(item => (
                       <li key={item} className="flex items-start gap-2 text-xs text-white/60">
                         <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-white/40" />
@@ -750,7 +750,7 @@ export default function MeetIsa() {
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>Also available with ISO Manager</p>
                   <p className="text-sm text-white/60 leading-relaxed">
-                    Isa is included with all ISO Manager subscriptions. If you're ready to build and manage your full management system — documentation, vault, KPI tracking — explore the ISO Manager.
+                    Isa is included with all ISO Manager subscriptions. If you're ready to build and manage your full management system across all 8 modules — Documentation, NC & CAPA, Risk Assessment, Internal Audits, and more — explore the ISO Manager platform.
                   </p>
                 </div>
                 <Link href="/iso-manager" className="shrink-0">

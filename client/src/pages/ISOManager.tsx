@@ -44,53 +44,53 @@ const ISA_TIER_STANDARDS = {
 const QUICK_PROMPTS = [
   { icon: FileSearch, label: "Gap Analysis", prompt: "I need a gap analysis for ISO 9001:2015. Walk me through each clause and ask me questions to assess my current state." },
   { icon: ClipboardCheck, label: "Audit Readiness", prompt: "Help me prepare for an upcoming ISO certification audit. What should I have ready and what are the most common nonconformances?" },
-  { icon: Layers, label: "IATF 16949", prompt: "Explain the three types of internal audits required by IATF 16949 and what evidence I need for each." },
-  { icon: BookOpen, label: "Quality Manual", prompt: "Help me draft the scope section and context of the organization (Clause 4) for my ISO 9001 Quality Manual." },
-  { icon: Shield, label: "OH&S 45001", prompt: "What are the most common ISO 45001:2018 gaps for a manufacturing company that is new to the standard?" },
-  { icon: AlertTriangle, label: "NC Response", prompt: "I received a major nonconformance against Clause 6.1 (Risk Analysis) during my IATF audit. Help me write a corrective action response." },
+  { icon: BookOpen, label: "Document Library", prompt: "What documented information does ISO 9001:2015 require me to maintain and retain? Help me build a prioritized list of documents to create first." },
+  { icon: Shield, label: "NC/CAPA Guidance", prompt: "I need to respond to a nonconformance finding. Walk me through 8D or PDCA methodology for root cause analysis and corrective action." },
+  { icon: AlertTriangle, label: "Risk Assessment", prompt: "Walk me through how to identify, analyze, and treat risks and opportunities per ISO 9001:2015 Clause 6.1. What evidence do I need for an auditor?" },
+  { icon: Layers, label: "Management Review", prompt: "Help me prepare for my next management review meeting. What inputs does ISO require and what should the documented output include?" },
 ];
 
 const ISA_CAPABILITIES = [
   "Clause-by-clause gap analysis",
-  "Internal audit checklists",
-  "Corrective action guidance",
-  "Quality manual drafting",
-  "Management review prep",
-  "Audit finding responses",
+  "NC & CAPA module (log & track NCs)",
+  "Documentation library (build & manage docs)",
+  "Internal audit checklists & prep",
+  "Corrective action & root cause guidance",
+  "Management review meeting prep",
 ];
 
 const ISA_PRO_CAPABILITIES = [
-  "Everything in Isa",
+  "Everything in Isa Core",
   "IATF 16949 internal auditing",
-  "ISO 13485 medical device",
-  "ISO/IEC 27001 InfoSec",
+  "ISO 13485 medical device guidance",
+  "ISO/IEC 27001 InfoSec advisory",
   "AS9100 aerospace auditing",
-  "Second-party audit support",
+  "Second-party & supplier audit support",
 ];
 
 const ISO_CORE_CAPABILITIES = [
   "Pick 1 standard: 9001, 14001, or 45001",
-  "Isa AI guidance (clause-by-clause)",
-  "AI document generation",
-  "Secure document vault",
-  "Internal audit checklists",
+  "Isa AI coaching (clause-by-clause)",
+  "Documentation Library (Quality Manual, Procedures, WIs)",
+  "NC & CAPA Management module",
+  "Risk Assessment module (coming soon)",
   "Knowledge Architecture setup included",
 ];
 
 const ISO_INTEGRATED_CAPABILITIES = [
-  "All three core standards in one IMS",
-  "Isa AI guidance across all 3 standards",
-  "Integrated Management System design",
-  "Cross-standard process mapping",
-  "Full IMS document library",
+  "All 3 core standards: 9001 + 14001 + 45001",
+  "Isa AI across all 3 standards",
+  "Full Documentation Library + NC/CAPA",
+  "Risk Assessment + Management Review modules",
+  "Cross-standard Integrated Management System",
   "Knowledge Architecture setup included",
 ];
 
 const ISO_SPECIALIST_CAPABILITIES = [
   "Pick 1: IATF 16949, AS9100, or ISO 13485",
   "Isa Pro AI for your chosen standard",
+  "Full module suite: Docs, NC/CAPA, Audits",
   "Industry-specific process mapping",
-  "Standard-specific document generation",
   "Second-party audit support",
   "Knowledge Architecture setup included",
 ];
@@ -98,9 +98,9 @@ const ISO_SPECIALIST_CAPABILITIES = [
 const ISO_PRO_CAPABILITIES = [
   "9001 + 14001 + 45001 + 1 Specialist standard",
   "Isa Pro across all standards",
-  "Full QMS/OMS/EMS design",
-  "Cross-standard document library",
-  "KPI tracking & audit evidence",
+  "All 8 platform modules (full suite)",
+  "Communication + Training + M&M modules",
+  "KPI tracking & audit evidence management",
   "Priority ACSI consulting access",
 ];
 
@@ -663,6 +663,7 @@ export default function ISOManager() {
                 onStartWizard={handleStartWizard}
                 onResetProject={handleResetProject}
                 isResetting={deleteProjectMut.isPending}
+                onModuleSelect={(section) => setActiveSection(section)}
               />
             )}
             </>
@@ -1285,7 +1286,7 @@ function DraftEmpty() {
 
 /* ─── EMPTY STATE ─────────────────────────────────────── */
 function IsaEmptyState({
-  onQuickPrompt, onNewChat, isCreating, isPro, project, onStartWizard, onResetProject, isResetting,
+  onQuickPrompt, onNewChat, isCreating, isPro, project, onStartWizard, onResetProject, isResetting, onModuleSelect,
 }: {
   onQuickPrompt: (p: string) => void;
   onNewChat: () => void;
@@ -1295,6 +1296,7 @@ function IsaEmptyState({
   onStartWizard: () => void;
   onResetProject: () => void;
   isResetting: boolean;
+  onModuleSelect?: (section: 'chat' | 'nc' | 'documentation' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement') => void;
 }) {
   return (
     <ScrollArea className="flex-1">
@@ -1314,7 +1316,7 @@ function IsaEmptyState({
                 </span>
               </div>
               <p className="text-white/60 text-xs leading-relaxed max-w-2xl">
-                Lead ISO Auditor AI — thinks like an auditor, not a search engine. Cites clause numbers, identifies gaps with objective evidence language, and guides your team from assessment through certification.
+                A complete ISO Management System platform — Documentation Library, NC & CAPA tracking, Risk Assessment, Internal Audits, Management Review, and more. Powered by Isa, your AI Lead Auditor who cites clause numbers, identifies gaps, and guides your team from setup through certification.
               </p>
             </div>
             <Button onClick={onNewChat} disabled={isCreating}
@@ -1398,29 +1400,39 @@ function IsaEmptyState({
               <span className="text-[9px] font-black uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 rounded px-2 py-0.5">ISO Workspace</span>
               <div className="flex-1 h-px bg-border/40" />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-active-standards">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Active Standards</p>
-                <p className="text-2xl font-black text-primary leading-none">—</p>
-                <p className="text-[10px] text-muted-foreground mt-1">Set up your first project</p>
+                <p className="text-2xl font-black text-primary leading-none">{project?.standard || "—"}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{project ? "Management system active" : "Set up your first project"}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-open-cas">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Open Actions</p>
-                <p className="text-2xl font-black text-primary leading-none">0</p>
-                <p className="text-[10px] text-muted-foreground mt-1">No corrective actions open</p>
+              <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-open-ncs">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Open NCs</p>
+                <p className="text-2xl font-black text-primary leading-none">—</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Go to NC & CAPA module</p>
+              </div>
+              <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-documents">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Documents</p>
+                <p className="text-2xl font-black text-primary leading-none">—</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Go to Documentation module</p>
               </div>
               <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-next-audit">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Next Audit</p>
                 <p className="text-sm font-black text-primary leading-none mt-1">Not scheduled</p>
                 <p className="text-[10px] text-muted-foreground mt-1">Ask Isa to help plan</p>
               </div>
+              <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 shadow-sm" data-testid="card-iso-processes">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Processes Mapped</p>
+                <p className="text-2xl font-black text-primary leading-none">{(project?.processes as any[])?.length || 0}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{project ? "In your process architecture" : "Complete setup wizard"}</p>
+              </div>
             </div>
           </div>
         </motion.div>
 
         {/* ── Quick Actions ── */}
-        <div className="mb-8">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Quick Actions — click to start a consultation</p>
+        <div className="mb-6">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Ask Isa — click to start a consultation</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {QUICK_PROMPTS.map((item, i) => (
               <motion.button key={item.label}
@@ -1438,6 +1450,49 @@ function IsaEmptyState({
             ))}
           </div>
         </div>
+
+        {/* ── Platform Modules ── */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.3 }}>
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[9px] font-black uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 rounded px-2 py-0.5">Platform Modules</span>
+              <div className="flex-1 h-px bg-border/40" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { icon: MessageSquare, label: "AI Consultation", desc: "Isa coaching on any ISO clause", status: "live", section: "chat" },
+                { icon: Shield, label: "NC & CAPA", desc: "Log, track & close nonconformances", status: "live", section: "nc" },
+                { icon: FileText, label: "Documentation", desc: "Quality Manual, Procedures, WIs", status: "live", section: "documentation" },
+                { icon: AlertTriangle, label: "Risk Assessment", desc: "Clause 6.1 risk & opportunity register", status: "soon", section: "risk" },
+                { icon: BarChart2, label: "Management Review", desc: "Inputs, outputs & action tracking", status: "soon", section: "management_review" },
+                { icon: ClipboardCheck, label: "Internal Audits", desc: "Checklists, findings & close-outs", status: "soon", section: "internal_audit" },
+                { icon: Mail, label: "Communication", desc: "Internal & external communications log", status: "soon", section: "communication" },
+                { icon: GraduationCap, label: "Training", desc: "Competency tracking & training records", status: "soon", section: "training" },
+                { icon: Activity, label: "Measurement & Monitoring", desc: "KPIs, metrics & performance data", status: "soon", section: "measurement" },
+              ].map((mod) => (
+                <button
+                  key={mod.label}
+                  onClick={() => mod.status === "live" ? onModuleSelect?.(mod.section as any) : onQuickPrompt(`Can you explain what the ${mod.label} module will cover and how ISO requires it?`)}
+                  className="text-left p-3 rounded-xl bg-white dark:bg-card border border-border/60 hover:border-accent/40 hover:shadow-sm transition-all duration-150 group"
+                  data-testid={`card-module-${mod.section}`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center group-hover:bg-accent/10 transition-colors">
+                      <mod.icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-accent transition-colors" />
+                    </div>
+                    {mod.status === "live" ? (
+                      <span className="text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 rounded-full px-1.5 py-0.5">LIVE</span>
+                    ) : (
+                      <span className="text-[9px] font-bold text-muted-foreground bg-muted border border-border/60 rounded-full px-1.5 py-0.5">SOON</span>
+                    )}
+                  </div>
+                  <p className="text-xs font-bold text-primary leading-tight mb-0.5">{mod.label}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{mod.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
 
         {/* ── Plans & Pricing ── 4-tier ISO Manager ── */}
         <div className="mb-7">
