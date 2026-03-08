@@ -268,6 +268,7 @@ export const correctiveActions = pgTable("corrective_actions", {
   preventiveActions: text("preventive_actions"), // Prevent recurrence
   responsiblePerson: text("responsible_person"),
   responsiblePhone: text("responsible_phone"), // phone number of responsible person for SMS
+  responsibleEmail: text("responsible_email"), // email of responsible person for email notifications
   responsibleDepartment: text("responsible_department"),
   targetDate: timestamp("target_date"),
   completionDate: timestamp("completion_date"),
@@ -277,6 +278,7 @@ export const correctiveActions = pgTable("corrective_actions", {
   effectivenessResult: text("effectiveness_result"), // values: 'pending', 'effective', 'not_effective'
   priority: text("priority").notNull().default("medium"), // 'critical', 'high', 'medium', 'low'
   status: text("status").notNull().default("open"), // 'open', 'in_progress', 'completed', 'verified', 'closed'
+  overdueNotifiedAt: timestamp("overdue_notified_at"), // prevents repeat overdue emails (max once per 24h)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -410,6 +412,9 @@ export const companyProfiles = pgTable("company_profiles", {
   derName: text("der_name"),
   derPhone: text("der_phone"),
   derEmail: text("der_email"),
+  // Workers' Compensation contact
+  workersCompContact: text("workers_comp_contact"), // Name of WC agent/carrier contact
+  workersCompEmail: text("workers_comp_email"), // Email for incident notifications to WC carrier
   // Company logo (stored as base64 data URL or external URL)
   logoUrl: text("logo_url"),
   // Primary Occupational Health Clinic

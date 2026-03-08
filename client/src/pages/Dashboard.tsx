@@ -1521,6 +1521,12 @@ export default function Dashboard() {
     }
   }, [isIsoOnlyPlan, setLocation]);
 
+  // Silently trigger overdue CAPA email check on dashboard load (once per mount)
+  useEffect(() => {
+    fetch('/api/capa/check-overdue', { credentials: 'include' })
+      .catch(() => {});
+  }, []);
+
   if (isIsoOnlyPlan) return null;
 
   return (

@@ -126,6 +126,7 @@ type CAPAFormData = {
   preventiveActions: string;
   responsiblePerson: string;
   responsiblePhone: string;
+  responsibleEmail: string;
   responsibleDepartment: string;
   targetDate: string;
   verificationMethod: string;
@@ -143,6 +144,7 @@ const defaultCAPAFormData: CAPAFormData = {
   preventiveActions: '',
   responsiblePerson: '',
   responsiblePhone: '',
+  responsibleEmail: '',
   responsibleDepartment: '',
   targetDate: '',
   verificationMethod: '',
@@ -1045,6 +1047,17 @@ Please provide suggestions for a more thorough root cause analysis and potential
                   onChange={(e) => setFormData({...formData, responsiblePhone: e.target.value})}
                   placeholder="+15551234567"
                   data-testid="input-responsible-phone"
+                />
+              </div>
+              <div>
+                <Label htmlFor="responsibleEmail">Responsible Email</Label>
+                <Input 
+                  id="responsibleEmail"
+                  type="email"
+                  value={formData.responsibleEmail}
+                  onChange={(e) => setFormData({...formData, responsibleEmail: e.target.value})}
+                  placeholder="assignee@company.com"
+                  data-testid="input-capa-responsible-email"
                 />
               </div>
               <div>

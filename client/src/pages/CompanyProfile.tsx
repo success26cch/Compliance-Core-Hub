@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Save, User, Upload, X, Stethoscope, FileText, Trash2, Plus, Loader2, Navigation, Clock, Phone, MapPin, Badge as BadgeIcon } from "lucide-react";
+import { Building2, Save, User, Upload, X, Stethoscope, FileText, Trash2, Plus, Loader2, Navigation, Clock, Phone, MapPin, Badge as BadgeIcon, Mail } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -512,6 +512,8 @@ export default function CompanyProfile() {
   const [derName, setDerName] = useState('');
   const [derPhone, setDerPhone] = useState('');
   const [derEmail, setDerEmail] = useState('');
+  const [workersCompContact, setWorkersCompContact] = useState('');
+  const [workersCompEmail, setWorkersCompEmail] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [clinicName, setClinicName] = useState('');
   const [clinicAddress, setClinicAddress] = useState('');
@@ -537,6 +539,8 @@ export default function CompanyProfile() {
       setDerName(profile.derName || '');
       setDerPhone(profile.derPhone || '');
       setDerEmail(profile.derEmail || '');
+      setWorkersCompContact(profile.workersCompContact || '');
+      setWorkersCompEmail(profile.workersCompEmail || '');
       setLogoUrl(profile.logoUrl || '');
       setClinicName(profile.clinicName || '');
       setClinicAddress(profile.clinicAddress || '');
@@ -592,6 +596,8 @@ export default function CompanyProfile() {
         derName: derName || null,
         derPhone: derPhone || null,
         derEmail: derEmail || null,
+        workersCompContact: workersCompContact || null,
+        workersCompEmail: workersCompEmail || null,
         logoUrl: logoUrl || null,
         clinicName: clinicName || null,
         clinicAddress: clinicAddress || null,
@@ -752,6 +758,26 @@ export default function CompanyProfile() {
                     <div className="space-y-2">
                       <Label htmlFor="derEmail">DER Email</Label>
                       <Input id="derEmail" type="email" value={derEmail} onChange={(e) => setDerEmail(e.target.value)} placeholder="der@company.com" data-testid="input-der-email" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Mail className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold">Workers' Compensation Contact</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    When an incident is logged, CCHUB will automatically notify your Workers' Comp carrier contact by email.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="workersCompContact">WC Agent / Contact Name</Label>
+                      <Input id="workersCompContact" value={workersCompContact} onChange={(e) => setWorkersCompContact(e.target.value)} placeholder="Jane Doe — ABC Insurance" data-testid="input-workers-comp-contact" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="workersCompEmail">WC Agent Email</Label>
+                      <Input id="workersCompEmail" type="email" value={workersCompEmail} onChange={(e) => setWorkersCompEmail(e.target.value)} placeholder="agent@wc-carrier.com" data-testid="input-workers-comp-email" />
                     </div>
                   </div>
                 </div>

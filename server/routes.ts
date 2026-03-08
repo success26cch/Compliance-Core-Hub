@@ -13,6 +13,15 @@ import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
 import { generateSafetyManagerCheatSheet } from "./generateSafetyManagerCheatSheet";
 import { generateClinicLetterDocx, getAvailableInjuryTypes } from "./generateClinicLetter";
+import {
+  sendEmail,
+  CCHUB_ADMIN_EMAILS,
+  buildIncidentNotificationEmail,
+  buildCapaAssignmentEmail,
+  buildCapaOverdueEmail,
+  buildContactInquiryAdminEmail,
+  buildContactConfirmationEmail,
+} from "./emailService";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema, insertIsoDocumentSchema } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
@@ -977,10 +986,27 @@ Rules:
         message,
       });
       
-      // TODO: Send email notification when email service is configured
-      // This is where you'd integrate GHL, SendGrid, or similar
-      
       res.status(201).json(inquiry);
+
+      // Fire-and-forget contact inquiry emails
+      try {
+        const adminHtml = buildContactInquiryAdminEmail({
+          name,
+          email,
+          company: company || "",
+          phone: phone || "",
+          employeeCount: employeeCount || "",
+          inquiryType,
+          message,
+        });
+        const adminSubject = `[NEW INQUIRY] ${inquiryType} — ${company || "N/A"} — ${name}`;
+        await sendEmail(CCHUB_ADMIN_EMAILS, adminSubject, adminHtml);
+
+        const confirmHtml = buildContactConfirmationEmail({ name, inquiryType });
+        await sendEmail(email, "We Received Your Inquiry — Core Compliance Hub", confirmHtml);
+      } catch (emailErr) {
+        console.error("[EmailService] Contact inquiry email error:", emailErr);
+      }
     } catch (error: any) {
       console.error('Error creating contact inquiry:', error);
       res.status(500).json({ message: "Failed to submit inquiry" });
@@ -1583,6 +1609,34 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         userId,
       });
       res.status(201).json(incident);
+
+      // Fire-and-forget incident notification email
+      try {
+        const profile = await storage.getCompanyProfile(userId);
+        const recipients: string[] = [...CCHUB_ADMIN_EMAILS];
+        if (profile?.derEmail) recipients.push(profile.derEmail);
+        if (profile?.workersCompEmail) recipients.push(profile.workersCompEmail);
+
+        const html = buildIncidentNotificationEmail({
+          companyName: profile?.companyName || "Your Company",
+          employeeName: (incident as any).employeeName || "Unknown Employee",
+          incidentDate: incident.incidentDate ? new Date(incident.incidentDate).toLocaleDateString() : "N/A",
+          incidentType: incident.incidentType || "N/A",
+          location: (incident as any).facility || (incident as any).location || "N/A",
+          description: incident.description || "",
+          isRecordable: (incident as any).oshaRecordable ?? null,
+        });
+
+        const employeeName = (incident as any).employeeName || "Employee";
+        const incidentDateStr = incident.incidentDate ? new Date(incident.incidentDate).toLocaleDateString() : "N/A";
+        await sendEmail(
+          recipients,
+          `[ACTION REQUIRED] Workplace Incident Reported — ${employeeName} — ${incidentDateStr}`,
+          html
+        );
+      } catch (emailErr) {
+        console.error("[EmailService] Incident notification error:", emailErr);
+      }
     } catch (error: any) {
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: "Invalid incident data", errors: error.errors });
@@ -1629,6 +1683,52 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     res.json(actions);
   });
 
+  // CAPA Overdue Check — send overdue notifications (max once per 24h per CAPA)
+  app.get("/api/capa/check-overdue", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    try {
+      const overdueCAPAs = await storage.getOverdueCorrectiveActions(userId);
+      if (overdueCAPAs.length === 0) return res.json({ notified: 0 });
+
+      const profile = await storage.getCompanyProfile(userId);
+      let notified = 0;
+
+      for (const capa of overdueCAPAs) {
+        const targetDateStr = capa.targetDate ? new Date(capa.targetDate).toLocaleDateString() : "N/A";
+        const daysOverdue = capa.targetDate
+          ? Math.floor((Date.now() - new Date(capa.targetDate).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+
+        const html = buildCapaOverdueEmail({
+          capaTitle: capa.title,
+          targetDate: targetDateStr,
+          daysOverdue,
+          responsiblePerson: capa.responsiblePerson || "Assigned Person",
+          problemStatement: capa.problemStatement,
+          status: capa.status,
+        });
+        const subject = `[OVERDUE] CAPA Past Due — ${capa.title} — Was Due ${targetDateStr}`;
+        const recipients: string[] = [];
+        if ((capa as any).responsibleEmail) recipients.push((capa as any).responsibleEmail);
+        if (profile?.derEmail) recipients.push(profile.derEmail);
+
+        if (recipients.length > 0) {
+          await sendEmail(recipients, subject, html);
+        }
+        await storage.markCapaOverdueNotified(capa.id);
+        notified++;
+      }
+
+      res.json({ notified });
+    } catch (err) {
+      console.error("[EmailService] Overdue CAPA check error:", err);
+      res.status(500).json({ message: "Failed to check overdue CAPAs" });
+    }
+  });
+
   app.get("/api/corrective-actions/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -1660,6 +1760,31 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         userId,
       });
       res.status(201).json(action);
+
+      // Fire-and-forget CAPA assignment email
+      try {
+        const profile = await storage.getCompanyProfile(userId);
+        const targetDateStr = validated.targetDate ? new Date(validated.targetDate).toLocaleDateString() : "Not set";
+        const html = buildCapaAssignmentEmail({
+          capaTitle: validated.title,
+          problemStatement: validated.problemStatement,
+          responsiblePerson: validated.responsiblePerson || "Assigned",
+          targetDate: targetDateStr,
+          priority: validated.priority || "medium",
+          immediateActions: validated.immediateActions || "",
+          correctiveActions: validated.correctiveActions || "",
+        });
+        const subject = `[CAPA ASSIGNED] ${validated.title} — Due ${targetDateStr}`;
+        const assigneeEmail = (validated as any).responsibleEmail;
+        const emailRecipients: string[] = [];
+        if (assigneeEmail) emailRecipients.push(assigneeEmail);
+        if (profile?.derEmail && profile.derEmail !== assigneeEmail) emailRecipients.push(profile.derEmail);
+        if (emailRecipients.length > 0) {
+          await sendEmail(emailRecipients, subject, html);
+        }
+      } catch (emailErr) {
+        console.error("[EmailService] CAPA assignment email error:", emailErr);
+      }
     } catch (error: any) {
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: "Invalid corrective action data", errors: error.errors });

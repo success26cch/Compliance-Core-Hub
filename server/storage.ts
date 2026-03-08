@@ -1,6 +1,6 @@
 import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
 
 export interface IStorage {
   // Corey Profiles
@@ -58,6 +58,8 @@ export interface IStorage {
   createCorrectiveAction(action: InsertCorrectiveAction): Promise<CorrectiveAction>;
   updateCorrectiveAction(id: number, userId: string, action: Partial<InsertCorrectiveAction>): Promise<CorrectiveAction | undefined>;
   deleteCorrectiveAction(id: number, userId: string): Promise<boolean>;
+  getOverdueCorrectiveActions(userId: string): Promise<CorrectiveAction[]>;
+  markCapaOverdueNotified(id: number): Promise<void>;
 
   // Action Items
   getActionItems(userId: string): Promise<ActionItem[]>;
@@ -554,9 +556,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCorrectiveAction(id: number, userId: string): Promise<boolean> {
-    const result = await db.delete(correctiveActions)
+    await db.delete(correctiveActions)
       .where(and(eq(correctiveActions.id, id), eq(correctiveActions.userId, userId)));
     return true;
+  }
+
+  async getOverdueCorrectiveActions(userId: string): Promise<CorrectiveAction[]> {
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    return db.select().from(correctiveActions)
+      .where(and(
+        eq(correctiveActions.userId, userId),
+        lt(correctiveActions.targetDate, now),
+        or(
+          isNull(correctiveActions.overdueNotifiedAt),
+          lt(correctiveActions.overdueNotifiedAt, twentyFourHoursAgo)
+        ),
+        or(
+          eq(correctiveActions.status, "open"),
+          eq(correctiveActions.status, "in_progress")
+        )
+      ));
+  }
+
+  async markCapaOverdueNotified(id: number): Promise<void> {
+    await db.update(correctiveActions)
+      .set({ overdueNotifiedAt: new Date() } as any)
+      .where(eq(correctiveActions.id, id));
   }
 
   // Clinic Visits (Digital Medical Passport)
