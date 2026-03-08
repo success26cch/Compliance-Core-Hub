@@ -1,8 +1,52 @@
-import { Request, Response } from "express";
+import sgMail from "@sendgrid/mail";
 
 const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com"];
-const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@cchub.app";
 const FROM_NAME = "Core Compliance Hub";
+
+// Replit SendGrid connector — fetches API key + verified from_email dynamically
+async function getSendGridClient(): Promise<{ client: typeof sgMail; fromEmail: string } | null> {
+  try {
+    const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+    const xReplitToken = process.env.REPL_IDENTITY
+      ? "repl " + process.env.REPL_IDENTITY
+      : process.env.WEB_REPL_RENEWAL
+      ? "depl " + process.env.WEB_REPL_RENEWAL
+      : null;
+
+    if (!hostname || !xReplitToken) {
+      console.warn("[EmailService] Replit connector env vars missing — falling back to SENDGRID_API_KEY");
+      const apiKey = process.env.SENDGRID_API_KEY;
+      const fromEmail = process.env.SENDGRID_FROM_EMAIL || "noreply@cchub.app";
+      if (!apiKey) {
+        console.warn("[EmailService] No SendGrid API key found — emails will not be sent");
+        return null;
+      }
+      sgMail.setApiKey(apiKey);
+      return { client: sgMail, fromEmail };
+    }
+
+    const connectionSettings = await fetch(
+      "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=sendgrid",
+      {
+        headers: {
+          Accept: "application/json",
+          "X-Replit-Token": xReplitToken,
+        },
+      }
+    ).then((res) => res.json()).then((data) => data.items?.[0]);
+
+    if (!connectionSettings?.settings?.api_key || !connectionSettings?.settings?.from_email) {
+      console.warn("[EmailService] SendGrid not connected via Replit integration — emails will not be sent");
+      return null;
+    }
+
+    sgMail.setApiKey(connectionSettings.settings.api_key);
+    return { client: sgMail, fromEmail: connectionSettings.settings.from_email };
+  } catch (err) {
+    console.error("[EmailService] Failed to initialise SendGrid client:", err);
+    return null;
+  }
+}
 
 function brandedHtml(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
@@ -53,17 +97,6 @@ function brandedHtml(title: string, bodyHtml: string): string {
 </html>`;
 }
 
-async function getSendGridClient() {
-  const sgMail = await import("@sendgrid/mail");
-  const apiKey = process.env.SENDGRID_API_KEY;
-  if (!apiKey) {
-    console.warn("[EmailService] SENDGRID_API_KEY is not set — emails will not be sent");
-    return null;
-  }
-  sgMail.default.setApiKey(apiKey);
-  return sgMail.default;
-}
-
 export async function sendEmail(
   to: string | string[],
   subject: string,
@@ -71,8 +104,8 @@ export async function sendEmail(
   options?: { cc?: string[] }
 ): Promise<boolean> {
   try {
-    const client = await getSendGridClient();
-    if (!client) return false;
+    const sg = await getSendGridClient();
+    if (!sg) return false;
 
     const recipients = Array.isArray(to) ? to : [to];
     const validRecipients = recipients.filter(e => e && e.includes("@"));
@@ -81,9 +114,9 @@ export async function sendEmail(
       return false;
     }
 
-    await client.send({
+    await sg.client.send({
       to: validRecipients,
-      from: { email: FROM_EMAIL, name: FROM_NAME },
+      from: { email: sg.fromEmail, name: FROM_NAME },
       subject,
       html,
       ...(options?.cc && options.cc.length > 0 ? { cc: options.cc } : {}),
