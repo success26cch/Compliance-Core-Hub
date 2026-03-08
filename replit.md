@@ -46,5 +46,21 @@ The CCHUB platform is built with a modern web stack, utilizing React, Vite, Tail
 - **Authentication:** Replit Auth
 - **Database:** PostgreSQL with Drizzle ORM
 - **Payment Processing:** Stripe
-- **Communication:** Twilio (for SMS notifications)
+- **Communication:** Twilio (for SMS notifications); SendGrid (transactional email)
 - **Speech Services:** Web Speech API (for Spanish text-to-speech and speech-to-text)
+
+## Transactional Email System (SendGrid)
+All email logic lives in `server/emailService.ts`. Uses Replit SendGrid connector (`conn_sendgrid_01KK5D6W45GVBE1RD73YR282J6`) — credentials fetched dynamically via `getUncachableSendGridClient` pattern; never cached.
+
+**Four automatic email triggers:**
+1. **Incident logged** → `POST /api/incidents` → notifies DER email + Workers' Comp agent email + CCHUB admins
+2. **CAPA created** → `POST /api/corrective-actions` → notifies assignee (`responsibleEmail`) + DER email
+3. **CAPA overdue** → `GET /api/capa/check-overdue` (called silently on Dashboard load) → sends once per 24h per CAPA via `overdueNotifiedAt` column
+4. **Contact inquiry** → `POST /api/contact-inquiries` → admin notification + confirmation to submitter
+
+**Schema additions (all nullable):**
+- `company_profiles`: `workers_comp_contact`, `workers_comp_email`
+- `corrective_actions`: `responsible_email`, `overdue_notified_at`
+
+**Admin emails:** `raulv9471@gmail.com`, `evillarreal@acsi-quality.com`
+**All sends are fire-and-forget** — wrapped in try/catch; email failures never block the primary action.
