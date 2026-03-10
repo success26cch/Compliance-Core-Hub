@@ -789,7 +789,7 @@ function CoreyApp() {
     const seedPrompt = sessionStorage.getItem("corey-seed-prompt");
     if (seedPrompt && !activeConversationId) {
       sessionStorage.removeItem("corey-seed-prompt");
-      setPendingPrompt(seedPrompt);
+      sessionStorage.setItem("corey-auto-send", seedPrompt);
       createConversation("Document Builder", {
         onSuccess: (data) => {
           setActiveConversationId(data.id);
@@ -1690,6 +1690,14 @@ function CoreyChatInterface({
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
     setInput(transcript);
   });
+
+  useEffect(() => {
+    const autoSend = sessionStorage.getItem("corey-auto-send");
+    if (autoSend) {
+      sessionStorage.removeItem("corey-auto-send");
+      setTimeout(() => sendMessage(autoSend), 300);
+    }
+  }, []);
 
   useEffect(() => {
     if (pendingPrompt && messages.length === 0 && !isStreaming) {

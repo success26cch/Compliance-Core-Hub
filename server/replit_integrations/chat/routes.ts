@@ -79,6 +79,21 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
+  // Topic breakdown must be BEFORE /:id so it is not matched as an ID
+  app.get("/api/conversations/topic-breakdown", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const userId = (req.user as any).claims.sub;
+      const breakdown = await chatStorage.getTopicBreakdown(userId);
+      res.json(breakdown);
+    } catch (error) {
+      console.error("Error fetching topic breakdown:", error);
+      res.status(500).json({ error: "Failed to fetch topic breakdown" });
+    }
+  });
+
   // Get single conversation with messages (auth required - user-scoped)
   app.get("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
