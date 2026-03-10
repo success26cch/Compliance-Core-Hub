@@ -1300,57 +1300,44 @@ function CoreyApp() {
             ) : (
             <div className="space-y-1">
               {conversations?.filter((conv: any) => !topicFilter || conv.topic === topicFilter).map((conv: any) => (
-                <div key={conv.id} className={`flex items-center rounded-lg transition-colors ${activeConversationId === conv.id ? "bg-accent/20" : "hover:bg-white/10"}`}>
-                  {renamingId === conv.id ? (
-                    <form
-                      onSubmit={(e) => { e.preventDefault(); handleRenameConversation(conv.id); }}
-                      className="flex-1 flex gap-1 px-2 py-1"
+                <div
+                  key={conv.id}
+                  style={{ position: 'relative' }}
+                  className={`rounded-lg transition-colors ${activeConversationId === conv.id ? "bg-accent/20" : "hover:bg-white/10"}`}
+                >
+                  <button
+                    onClick={() => {
+                      setActiveConversationId(conv.id);
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                      activeConversationId === conv.id
+                        ? "text-accent font-medium"
+                        : "text-white/70 hover:text-white/90"
+                    }`}
+                    style={{ paddingRight: 68, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    data-testid={`button-conversation-${conv.id}`}
+                  >
+                    {conv.title}
+                  </button>
+                  <div style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: 3, zIndex: 2 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setRenameValue(conv.title); setRenameDialogOpen(true); setActiveConversationId(conv.id); }}
+                      style={{ width: 26, height: 26, borderRadius: 5, backgroundColor: '#334155', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                      title="Rename"
+                      data-testid={`button-rename-${conv.id}`}
                     >
-                      <Input
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        className="h-7 text-xs bg-white/10 border-white/20 text-white"
-                        autoFocus
-                        onBlur={() => setRenamingId(null)}
-                        data-testid={`input-rename-${conv.id}`}
-                      />
-                    </form>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          setActiveConversationId(conv.id);
-                          setSidebarOpen(false);
-                        }}
-                        className={`flex-1 text-left px-3 py-2 text-sm truncate transition-colors min-w-0 ${
-                          activeConversationId === conv.id
-                            ? "text-accent font-medium"
-                            : "text-white/70 hover:text-white/90"
-                        }`}
-                        data-testid={`button-conversation-${conv.id}`}
-                      >
-                        {conv.title}
-                      </button>
-                      <button
-                        onClick={() => { setRenamingId(conv.id); setRenameValue(conv.title); }}
-                        className="shrink-0 flex items-center justify-center rounded transition-colors"
-                        style={{ width: 28, height: 28, backgroundColor: '#334155', color: '#38bdf8', flexShrink: 0 }}
-                        title="Rename"
-                        data-testid={`button-rename-${conv.id}`}
-                      >
-                        <Pencil style={{ width: 14, height: 14 }} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteConversation(conv.id)}
-                        className="shrink-0 flex items-center justify-center rounded transition-colors"
-                        style={{ width: 28, height: 28, backgroundColor: '#334155', color: '#f87171', flexShrink: 0, marginRight: 4 }}
-                        title="Delete"
-                        data-testid={`button-delete-${conv.id}`}
-                      >
-                        <Trash2 style={{ width: 14, height: 14 }} />
-                      </button>
-                    </>
-                  )}
+                      <Pencil style={{ width: 13, height: 13 }} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
+                      style={{ width: 26, height: 26, borderRadius: 5, backgroundColor: '#334155', color: '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                      title="Delete"
+                      data-testid={`button-delete-${conv.id}`}
+                    >
+                      <Trash2 style={{ width: 13, height: 13 }} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
