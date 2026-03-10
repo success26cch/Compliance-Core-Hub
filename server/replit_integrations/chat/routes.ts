@@ -486,11 +486,11 @@ export function registerChatRoutes(app: Express): void {
         return res.status(401).json({ error: "Authentication required." });
       }
       const userId = (req.user as any).claims.sub;
-      const { conversationId, messageId, topic, summary } = req.body;
-      if (!conversationId || !messageId || !topic || !summary) {
+      const { conversationId, messageId, topic, summary, messageContent } = req.body;
+      if (!conversationId || messageId == null || !topic || !summary) {
         return res.status(400).json({ error: "conversationId, messageId, topic, and summary are required" });
       }
-      const pin = await chatStorage.pinGuidance({ userId, conversationId, messageId, topic, summary });
+      const pin = await chatStorage.pinGuidance({ userId, conversationId, messageId, topic, summary, messageContent });
       res.status(201).json(pin);
     } catch (error) {
       console.error("Error pinning guidance:", error);

@@ -1334,7 +1334,7 @@ function CoreyApp() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
-                          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-white/80 hover:bg-white/10 transition-opacity"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-30 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-white/80 hover:bg-white/10 transition-opacity"
                           data-testid={`button-conversation-menu-${conv.id}`}
                         >
                           <MoreVertical className="w-3.5 h-3.5" />
