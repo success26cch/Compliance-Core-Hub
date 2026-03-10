@@ -1299,11 +1299,11 @@ function CoreyApp() {
             ) : (
             <div className="space-y-1">
               {conversations?.filter((conv: any) => !topicFilter || conv.topic === topicFilter).map((conv: any) => (
-                <div key={conv.id} className="group relative">
+                <div key={conv.id} className={`flex items-center gap-1 rounded-lg transition-colors ${activeConversationId === conv.id ? "bg-accent/20" : "hover:bg-white/10"}`}>
                   {renamingId === conv.id ? (
                     <form
                       onSubmit={(e) => { e.preventDefault(); handleRenameConversation(conv.id); }}
-                      className="flex gap-1 px-1"
+                      className="flex-1 flex gap-1 px-2 py-1"
                     >
                       <Input
                         value={renameValue}
@@ -1320,10 +1320,10 @@ function CoreyApp() {
                         setActiveConversationId(conv.id);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-colors pr-8 ${
+                      className={`flex-1 text-left px-3 py-2 text-sm truncate transition-colors ${
                         activeConversationId === conv.id
-                          ? "bg-accent/20 text-accent font-medium"
-                          : "text-white/70 hover:bg-white/10 hover:text-white/90"
+                          ? "text-accent font-medium"
+                          : "text-white/70 hover:text-white/90"
                       }`}
                       data-testid={`button-conversation-${conv.id}`}
                     >
@@ -1334,10 +1334,11 @@ function CoreyApp() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
-                          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-30 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-white/80 hover:bg-white/10 transition-opacity"
+                          className="shrink-0 w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/15 transition-colors mr-1"
                           data-testid={`button-conversation-menu-${conv.id}`}
+                          title="Rename or delete"
                         >
-                          <MoreVertical className="w-3.5 h-3.5" />
+                          <MoreVertical className="w-4 h-4" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
