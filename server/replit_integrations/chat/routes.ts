@@ -87,6 +87,9 @@ export function registerChatRoutes(app: Express): void {
       }
       const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
       const conversation = await chatStorage.getConversation(id, userId);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });

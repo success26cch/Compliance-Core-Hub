@@ -789,12 +789,11 @@ function CoreyApp() {
     const seedPrompt = sessionStorage.getItem("corey-seed-prompt");
     if (seedPrompt && !activeConversationId) {
       sessionStorage.removeItem("corey-seed-prompt");
-      createConversation("New Analysis", {
+      setPendingPrompt(seedPrompt);
+      createConversation("Document Builder", {
         onSuccess: (data) => {
           setActiveConversationId(data.id);
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: seedPrompt } }));
-          }, 500);
+          setSidebarOpen(false);
         },
       });
     }
