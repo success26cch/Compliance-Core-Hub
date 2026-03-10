@@ -1658,6 +1658,8 @@ function CoreyChatInterface({
   promptInstall,
   onPinMessage,
   conversationTopic,
+  pendingPrompt,
+  onPromptConsumed,
 }: {
   conversationId: number;
   onMessageSent?: () => void;
