@@ -1332,19 +1332,19 @@ function CoreyApp() {
                       </button>
                       <button
                         onClick={() => { setRenamingId(conv.id); setRenameValue(conv.title); }}
-                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-accent hover:bg-accent/10 transition-colors"
+                        className="shrink-0 w-7 h-7 flex items-center justify-center rounded bg-slate-700 text-sky-400 hover:bg-sky-500/20 hover:text-sky-300 transition-colors"
                         title="Rename"
                         data-testid={`button-rename-${conv.id}`}
                       >
-                        <Pencil className="w-3 h-3" />
+                        <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteConversation(conv.id)}
-                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-colors mr-1"
+                        className="shrink-0 w-7 h-7 flex items-center justify-center rounded bg-slate-700 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors mr-1"
                         title="Delete"
                         data-testid={`button-delete-${conv.id}`}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </>
                   )}
