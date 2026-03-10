@@ -817,6 +817,7 @@ function CoreyApp() {
 
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [topicFilter, setTopicFilter] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("topic") || null;
@@ -1376,6 +1377,7 @@ function CoreyApp() {
           )}
 
           {activeConversationId ? (
+            <>
             <CoreyChatInterface
               conversationId={activeConversationId}
               onMessageSent={() => refetchUsage()}
@@ -1389,6 +1391,14 @@ function CoreyApp() {
               conversationTopic={conversations?.find((c: any) => c.id === activeConversationId)?.topic ?? null}
               pendingPrompt={pendingPrompt}
               onPromptConsumed={() => setPendingPrompt(null)}
+              onRename={() => {
+                const conv = conversations?.find((c: any) => c.id === activeConversationId);
+                setRenameValue(conv?.title || "");
+                setRenameDialogOpen(true);
+              }}
+              onDelete={() => {
+                if (activeConversationId) handleDeleteConversation(activeConversationId);
+              }}
               onPinMessage={async (content: string) => {
                 const activeConv = conversations?.find((c: any) => c.id === activeConversationId);
                 try {
@@ -1406,6 +1416,27 @@ function CoreyApp() {
                 }
               }}
             />
+            <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+              <DialogContent className="bg-slate-900 border-white/10 text-white max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Rename Conversation</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); if (activeConversationId) { setRenamingId(activeConversationId); handleRenameConversation(activeConversationId); setRenameDialogOpen(false); } }} className="space-y-4">
+                  <Input
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    className="bg-white/10 border-white/20 text-white"
+                    autoFocus
+                    data-testid="input-rename-dialog"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setRenameDialogOpen(false)} className="text-white/70">Cancel</Button>
+                    <Button type="submit" className="bg-accent hover:bg-accent/90" data-testid="button-rename-dialog-submit">Save</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            </>
           ) : (
             <div className="flex-1 flex flex-col items-center text-white/40 p-6 text-center overflow-y-auto pt-8">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 flex items-center justify-center mb-6">
@@ -1650,6 +1681,8 @@ function CoreyChatInterface({
   conversationTopic,
   pendingPrompt,
   onPromptConsumed,
+  onRename,
+  onDelete,
 }: {
   conversationId: number;
   onMessageSent?: () => void;
@@ -1664,6 +1697,8 @@ function CoreyChatInterface({
   conversationTopic?: string | null;
   pendingPrompt?: string | null;
   onPromptConsumed?: () => void;
+  onRename?: () => void;
+  onDelete?: () => void;
 }) {
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const { data: chatProfile } = useQuery<any>({ queryKey: ["/api/corey-profile"] });
@@ -2043,6 +2078,28 @@ function CoreyChatInterface({
       {messages.length > 0 && (
         <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {onRename && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRename}
+                className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5 text-xs"
+                data-testid="button-rename-conversation"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Rename
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                className="text-red-400 hover:text-red-300 hover:bg-red-400/10 gap-1.5 text-xs"
+                data-testid="button-delete-conversation"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
