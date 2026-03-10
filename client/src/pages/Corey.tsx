@@ -886,10 +886,6 @@ function CoreyApp() {
         onSuccess: (data) => {
           setActiveConversationId(data.id);
           setSidebarOpen(false);
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: pendingPrompt } }));
-            setPendingPrompt(null);
-          }, 500);
         },
       });
     }
@@ -1697,11 +1693,14 @@ function CoreyChatInterface({
   });
 
   useEffect(() => {
-    if (pendingPrompt && messages.length === 0) {
-      setInput(pendingPrompt);
+    if (pendingPrompt && messages.length === 0 && !isStreaming) {
+      const prompt = pendingPrompt;
       onPromptConsumed?.();
+      setTimeout(() => {
+        sendMessage(prompt);
+      }, 400);
     }
-  }, [pendingPrompt, messages.length]);
+  }, [pendingPrompt]);
 
   const handleScroll = () => {
     const el = scrollRef.current;
