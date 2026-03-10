@@ -886,6 +886,10 @@ function CoreyApp() {
         onSuccess: (data) => {
           setActiveConversationId(data.id);
           setSidebarOpen(false);
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("corey-auto-send", { detail: { prompt: pendingPrompt } }));
+            setPendingPrompt(null);
+          }, 500);
         },
       });
     }
