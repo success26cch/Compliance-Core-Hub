@@ -1299,7 +1299,7 @@ function CoreyApp() {
             ) : (
             <div className="space-y-1">
               {conversations?.filter((conv: any) => !topicFilter || conv.topic === topicFilter).map((conv: any) => (
-                <div key={conv.id} className={`flex items-center gap-1 rounded-lg transition-colors ${activeConversationId === conv.id ? "bg-accent/20" : "hover:bg-white/10"}`}>
+                <div key={conv.id} className={`flex items-center rounded-lg transition-colors ${activeConversationId === conv.id ? "bg-accent/20" : "hover:bg-white/10"}`}>
                   {renamingId === conv.id ? (
                     <form
                       onSubmit={(e) => { e.preventDefault(); handleRenameConversation(conv.id); }}
@@ -1315,49 +1315,38 @@ function CoreyApp() {
                       />
                     </form>
                   ) : (
-                    <button
-                      onClick={() => {
-                        setActiveConversationId(conv.id);
-                        setSidebarOpen(false);
-                      }}
-                      className={`flex-1 text-left px-3 py-2 text-sm truncate transition-colors ${
-                        activeConversationId === conv.id
-                          ? "text-accent font-medium"
-                          : "text-white/70 hover:text-white/90"
-                      }`}
-                      data-testid={`button-conversation-${conv.id}`}
-                    >
-                      {conv.title}
-                    </button>
-                  )}
-                  {renamingId !== conv.id && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          className="shrink-0 w-7 h-7 flex items-center justify-center rounded text-white/50 hover:text-white hover:bg-white/15 transition-colors mr-1"
-                          data-testid={`button-conversation-menu-${conv.id}`}
-                          title="Rename or delete"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem
-                          onClick={() => { setRenamingId(conv.id); setRenameValue(conv.title); }}
-                          data-testid={`menu-rename-${conv.id}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5 mr-2" /> Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteConversation(conv.id)}
-                          className="text-red-400 focus:text-red-400"
-                          data-testid={`menu-delete-${conv.id}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <>
+                      <button
+                        onClick={() => {
+                          setActiveConversationId(conv.id);
+                          setSidebarOpen(false);
+                        }}
+                        className={`flex-1 text-left px-3 py-2 text-sm truncate transition-colors min-w-0 ${
+                          activeConversationId === conv.id
+                            ? "text-accent font-medium"
+                            : "text-white/70 hover:text-white/90"
+                        }`}
+                        data-testid={`button-conversation-${conv.id}`}
+                      >
+                        {conv.title}
+                      </button>
+                      <button
+                        onClick={() => { setRenamingId(conv.id); setRenameValue(conv.title); }}
+                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-accent hover:bg-accent/10 transition-colors"
+                        title="Rename"
+                        data-testid={`button-rename-${conv.id}`}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteConversation(conv.id)}
+                        className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-colors mr-1"
+                        title="Delete"
+                        data-testid={`button-delete-${conv.id}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </>
                   )}
                 </div>
               ))}
