@@ -1380,6 +1380,7 @@ const INDUSTRY_DOC_MAP: Record<string, Array<{ label: string; promptHint: string
 };
 
 function DocumentGapCheck() {
+  const [, setLocation] = useLocation();
   const { data: profile } = useQuery<any>({ queryKey: ['/api/corey-profile'] });
   const { data: topicData = [] } = useQuery<TopicBreakdown[]>({ queryKey: ['/api/conversations/topic-breakdown'] });
   const [dismissed, setDismissed] = useState<string[]>(() => {
@@ -1438,11 +1439,18 @@ function DocumentGapCheck() {
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                <Link href={`/corey?prompt=${encodeURIComponent(gap.promptHint)}`}>
-                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-accent/30 text-accent hover:bg-accent/10" data-testid={`button-build-doc-${gap.label.replace(/\s/g, '-').toLowerCase()}`}>
-                    <Zap className="w-3 h-3" /> Build with Corey
-                  </Button>
-                </Link>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1 border-accent/30 text-accent hover:bg-accent/10"
+                  data-testid={`button-build-doc-${gap.label.replace(/\s/g, '-').toLowerCase()}`}
+                  onClick={() => {
+                    sessionStorage.setItem("corey-seed-prompt", gap.promptHint);
+                    setLocation("/corey");
+                  }}
+                >
+                  <Zap className="w-3 h-3" /> Build with Corey
+                </Button>
                 <button
                   onClick={() => dismiss(gap.label)}
                   className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
