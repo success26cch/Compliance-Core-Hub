@@ -2077,31 +2077,34 @@ function CoreyChatInterface({
 
   return (
     <>
+      {(onRename || onDelete) && (
+        <div
+          className="flex-shrink-0 flex items-center gap-2 border-b"
+          style={{ padding: '6px 12px', borderColor: 'rgba(255,255,255,0.06)' }}
+        >
+          {onRename && (
+            <button
+              onClick={onRename}
+              data-testid="button-rename-conversation"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 6, background: '#1e293b', color: '#94a3b8', fontSize: 12, cursor: 'pointer', border: 'none' }}
+            >
+              <Pencil style={{ width: 13, height: 13 }} /> Rename
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              data-testid="button-delete-conversation"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 6, background: '#1e293b', color: '#f87171', fontSize: 12, cursor: 'pointer', border: 'none' }}
+            >
+              <Trash2 style={{ width: 13, height: 13 }} /> Delete
+            </button>
+          )}
+        </div>
+      )}
       {messages.length > 0 && (
         <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {onRename && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRename}
-                className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5 text-xs"
-                data-testid="button-rename-conversation"
-              >
-                <Pencil className="w-3.5 h-3.5" /> Rename
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onDelete}
-                className="text-red-400 hover:text-red-300 hover:bg-red-400/10 gap-1.5 text-xs"
-                data-testid="button-delete-conversation"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
-              </Button>
-            )}
             <Button
               variant="ghost"
               size="sm"
