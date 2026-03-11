@@ -55,8 +55,8 @@ export default function About() {
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Core Compliance Hub exists for one reason: to educate employers on occupational health and safety — rooted in 29 CFR (Code of Federal Regulations, Title 29), where all of OSHA's safety and health standards are published. CCHUB is all about the regs. We exist so employers can understand them, apply them, protect their people, stay compliant, and grow with confidence.
           </p>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Corey is your always-on Senior Occupational Health &amp; Safety Compliance Expert — trained exclusively in OSHA standards, recordkeeping rules, and employer obligations. No generic answers, no guesswork. Just precise, regulation-backed guidance exactly when your team needs it most.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            Most employers can't afford a full-time safety director — but one missed OSHA recordable, one failed audit, or one misclassified incident can cost tens of thousands of dollars in fines, legal fees, and lost productivity. Corey changes that equation entirely. He is a Senior Occupational Health &amp; Safety Compliance Expert available 24/7, trained exclusively on federal regulations, OSHA standards, and employer obligations — and he knows your business because you told him about it. He doesn't guess. He doesn't generalize. He gives you the exact answer, backed by the exact regulation, every single time. The employers who use Corey don't just stay compliant — they stay confident.
           </p>
         </div>
       </section>
