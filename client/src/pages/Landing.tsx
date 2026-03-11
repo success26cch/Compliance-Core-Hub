@@ -37,7 +37,7 @@ import cchLogo from "@assets/1_1770683748423.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import coreyImg from "@assets/9_1771983400638.png";
 import heroVideoUrl from "@assets/CCH_BOT_VIDEO_1771359482914.mp4";
-import platformScreenshot from "@assets/image_1773263976699.png";
+import platformScreenshot from "@assets/image_1773264239505.png";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
