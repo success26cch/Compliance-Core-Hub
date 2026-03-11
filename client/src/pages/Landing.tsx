@@ -1262,6 +1262,186 @@ export default function Landing() {
         </p>
       </div>
 
+      {/* Employer Platform Preview */}
+      <section className="py-24 bg-slate-50 border-t border-border/50 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <Badge className="bg-accent/10 text-accent border border-accent/20 text-sm px-3 py-1">
+              Employer Platform
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-display font-black text-primary leading-tight">
+              One Platform. Every Compliance Need Covered.
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Your entire occupational health operation — incidents, CAPAs, employee surveillance, OSHA recordkeeping, and AI guidance — unified in a single dashboard built for employers.
+            </p>
+          </div>
+
+          {/* Dashboard Mockup */}
+          <div className="max-w-5xl mx-auto">
+            {/* Browser chrome */}
+            <div className="rounded-2xl shadow-2xl overflow-hidden border border-slate-200" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.18)" }}>
+              {/* Browser bar */}
+              <div className="bg-slate-700 px-4 py-3 flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-400" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                </div>
+                <div className="flex-1 bg-slate-600 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
+                  app.corecompliancehub.com/dashboard
+                </div>
+              </div>
+
+              {/* Dashboard body */}
+              <div className="bg-[#f8fafc] flex" style={{ minHeight: 480 }}>
+
+                {/* Sidebar */}
+                <div className="w-44 bg-[#1e293b] flex-shrink-0 py-4 px-3 flex flex-col gap-1">
+                  <div className="text-white/40 text-xs font-bold uppercase tracking-widest px-2 mb-2">CCHUB</div>
+                  {[
+                    { icon: Activity, label: "Dashboard", active: true },
+                    { icon: AlertTriangle, label: "Incidents" },
+                    { icon: ClipboardList, label: "CAPA" },
+                    { icon: Users, label: "Employees" },
+                    { icon: FileText, label: "OSHA 300 Log" },
+                    { icon: ShieldCheck, label: "Drug Screens" },
+                    { icon: Bot, label: "Ask Corey" },
+                  ].map(({ icon: Icon, label, active }) => (
+                    <div key={label} className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium ${active ? "bg-accent text-white" : "text-white/50 hover:text-white/70"}`}>
+                      <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Main content */}
+                <div className="flex-1 p-5 overflow-hidden">
+
+                  {/* Top stats row */}
+                  <div className="grid grid-cols-4 gap-3 mb-5">
+                    {[
+                      { label: "Compliance Score", value: "94%", sub: "+2% this month", color: "text-green-600", bg: "bg-green-50 border-green-100" },
+                      { label: "Open Incidents", value: "3", sub: "2 under review", color: "text-orange-600", bg: "bg-orange-50 border-orange-100" },
+                      { label: "CAPAs Due", value: "2", sub: "1 overdue", color: "text-red-600", bg: "bg-red-50 border-red-100" },
+                      { label: "Employees Tracked", value: "47", sub: "4 due for surveillance", color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
+                    ].map(({ label, value, sub, color, bg }) => (
+                      <div key={label} className={`rounded-lg border p-3 ${bg}`} data-testid={`card-platform-stat-${label.toLowerCase().replace(/ /g, '-')}`}>
+                        <p className="text-xs text-slate-500 mb-1">{label}</p>
+                        <p className={`text-2xl font-black ${color}`}>{value}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Two-column body */}
+                  <div className="grid grid-cols-5 gap-3">
+
+                    {/* Recent incidents */}
+                    <div className="col-span-3 bg-white rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-orange-500" /> Recent Incidents
+                      </p>
+                      <div className="space-y-1.5">
+                        {[
+                          { date: "Mar 10", desc: "Laceration — right hand", dept: "Warehouse", status: "Recordable", sc: "bg-red-100 text-red-700" },
+                          { date: "Mar 08", desc: "Forklift near-miss", dept: "Shipping", status: "Under Review", sc: "bg-yellow-100 text-yellow-700" },
+                          { date: "Mar 05", desc: "Chemical splash — eye", dept: "Production", status: "First Aid", sc: "bg-green-100 text-green-700" },
+                          { date: "Mar 01", desc: "Strain — lower back", dept: "Assembly", status: "Recordable", sc: "bg-red-100 text-red-700" },
+                        ].map(({ date, desc, dept, status, sc }) => (
+                          <div key={desc} className="flex items-center gap-2 text-xs py-1 border-b border-slate-50 last:border-0">
+                            <span className="text-slate-400 w-12 flex-shrink-0">{date}</span>
+                            <span className="text-slate-700 flex-1 truncate">{desc}</span>
+                            <span className="text-slate-400 text-xs w-16 text-right flex-shrink-0 hidden sm:block">{dept}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${sc}`}>{status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Right column */}
+                    <div className="col-span-2 flex flex-col gap-3">
+
+                      {/* OSHA 300 widget */}
+                      <div className="bg-white rounded-lg border border-slate-200 p-3">
+                        <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-blue-500" /> OSHA 300 Log — 2025
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "Total Cases", val: "7" },
+                            { label: "Days Away", val: "12" },
+                            { label: "Restricted", val: "3" },
+                            { label: "Fatalities", val: "0" },
+                          ].map(({ label, val }) => (
+                            <div key={label} className="bg-slate-50 rounded p-1.5 text-center">
+                              <p className="text-sm font-black text-slate-800">{val}</p>
+                              <p className="text-xs text-slate-400">{label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* CAPA tracker */}
+                      <div className="bg-white rounded-lg border border-slate-200 p-3 flex-1">
+                        <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+                          <ClipboardList className="w-3.5 h-3.5 text-purple-500" /> Active CAPAs
+                        </p>
+                        <div className="space-y-1.5">
+                          {[
+                            { title: "Forklift SOP update", due: "Mar 15", status: "bg-red-100 text-red-700", label: "Overdue" },
+                            { title: "PPE audit — Dept B", due: "Mar 22", status: "bg-yellow-100 text-yellow-700", label: "In Progress" },
+                            { title: "Spill kit restock", due: "Mar 30", status: "bg-blue-100 text-blue-700", label: "Open" },
+                          ].map(({ title, due, status, label }) => (
+                            <div key={title} className="flex items-center justify-between gap-1 text-xs">
+                              <span className="text-slate-600 truncate flex-1">{title}</span>
+                              <span className={`px-1.5 py-0.5 rounded font-semibold flex-shrink-0 ${status}`}>{label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Capability tags */}
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            {[
+              "Incident Management",
+              "OSHA 300 Reporting",
+              "CAPA Tracking + SMS Alerts",
+              "Employee Medical Surveillance",
+              "Drug Screen Tracking",
+              "Multi-Site Analytics",
+              "Digital Medical Passport",
+              "AI-Powered Guidance (Corey)",
+            ].map((cap) => (
+              <span key={cap} className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 text-sm font-medium px-4 py-2 rounded-full shadow-sm">
+                <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                {cap}
+              </span>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="mt-10 text-center">
+            <Link href="/get-started">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold px-8 gap-2" data-testid="button-platform-preview-cta">
+                Explore the Platform <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
       {/* Is This Recordable? Decision Tree */}
       <RecordabilityDecisionTree />
 
