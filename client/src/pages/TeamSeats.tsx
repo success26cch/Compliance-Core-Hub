@@ -151,7 +151,7 @@ export default function TeamSeats() {
             <Users className="w-8 h-8 text-primary" /> Corey Team Seats
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage multi-seat Corey subscriptions for your team — $99/seat/month, billed together
+            Manage multi-seat Corey subscriptions for your team — $199/seat/month, billed together
           </p>
         </div>
 
@@ -166,7 +166,7 @@ export default function TeamSeats() {
           <Card className="border-2 border-dashed border-muted">
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2"><Users className="w-5 h-5" /> Create Your Team</CardTitle>
-              <CardDescription>Purchase multiple Corey seats for your team — $99/seat/month, billed together</CardDescription>
+              <CardDescription>Purchase multiple Corey seats for your team — $199/seat/month, billed together</CardDescription>
             </CardHeader>
             <CardContent>
               {!showCreateForm ? (
@@ -206,7 +206,7 @@ export default function TeamSeats() {
                       data-testid="input-team-seats"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      ${newTeamSeats * 99}/mo for {newTeamSeats} seats
+                      ${newTeamSeats * 199}/mo for {newTeamSeats} seats
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -233,7 +233,7 @@ export default function TeamSeats() {
                     <Users className="w-5 h-5" /> {team.companyName}
                   </CardTitle>
                   <CardDescription>
-                    {seatsUsed} of {team.totalSeats} seats used — ${team.totalSeats * 99}/mo
+                    {seatsUsed} of {team.totalSeats} seats used — ${team.totalSeats * 199}/mo
                   </CardDescription>
                 </div>
                 <Badge variant={team.status === 'active' ? 'default' : 'secondary'} data-testid="badge-team-status">
@@ -320,7 +320,7 @@ export default function TeamSeats() {
               {isAdmin && !team.stripeSubscriptionId && (
                 <div className="space-y-3 pt-4 border-t">
                   <h4 className="font-semibold text-sm uppercase text-muted-foreground tracking-wide">Activate Team Subscription</h4>
-                  <p className="text-sm text-muted-foreground">Subscribe your team to Corey for ${team.totalSeats * 99}/mo ({team.totalSeats} seats x $99/seat)</p>
+                  <p className="text-sm text-muted-foreground">Subscribe your team to Corey for ${team.totalSeats * 199}/mo ({team.totalSeats} seats x $199/seat)</p>
                   <Button
                     onClick={() => {
                       fetch('/api/team/checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } })
@@ -359,7 +359,7 @@ export default function TeamSeats() {
                     >
                       +
                     </Button>
-                    <span className="text-sm text-muted-foreground">seats x $99/mo = <strong>${team.totalSeats * 99}/mo</strong></span>
+                    <span className="text-sm text-muted-foreground">seats x $199/mo = <strong>${team.totalSeats * 199}/mo</strong></span>
                   </div>
                 </div>
               )}

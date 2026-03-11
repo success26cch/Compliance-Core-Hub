@@ -247,7 +247,7 @@ function RecordabilityDecisionTree() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/get-started">
                   <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-8 py-6 text-lg" data-testid="button-recordability-upgrade">
-                    Get Unlimited Access with Corey — $149/mo
+                    Get Unlimited Access with Corey — $199/mo
                   </Button>
                 </Link>
               </div>
@@ -351,7 +351,7 @@ function RecordabilityDecisionTree() {
                 <Link href="/get-started" className="flex-1">
                   <Button className="w-full bg-accent text-white font-bold" data-testid="button-recordability-cta">
                     <Bot className="w-4 h-4 mr-2" />
-                    Get Unlimited Guidance — $149/mo
+                    Get Unlimited Guidance — $199/mo
                   </Button>
                 </Link>
                 <Button
@@ -958,7 +958,7 @@ export default function Landing() {
                             <div className="flex items-center justify-center gap-3 flex-wrap">
                               <Link href="/get-started">
                                 <Button data-testid="button-bot-signup">
-                                  Subscribe — $149/mo <ArrowRight className="w-4 h-4 ml-1" />
+                                  Subscribe — $199/mo <ArrowRight className="w-4 h-4 ml-1" />
                                 </Button>
                               </Link>
                               <a href="#pricing">
@@ -1387,8 +1387,8 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <PricingCard 
-              tier="Unlimited Safety"
-              price="$149"
+              tier="Unlimited Corey"
+              price="$199"
               period="/mo"
               features={[
                 "Unlimited Corey Interactions",
@@ -1409,7 +1409,7 @@ export default function Landing() {
             />
             <PricingCard 
               tier="Complete Compliance Platform"
-              price="$499"
+              price="$599"
               period="/mo"
               features={[
                 "Compliance Dashboard with real-time metrics",
@@ -1421,10 +1421,10 @@ export default function Landing() {
                 "Corrective Action Plans (CAPA)",
                 "ISO 9001/14001/45001 AI guidance",
                 "Up to 50 employees included (+$2/ea beyond 50)",
-                "Add Corey AI for $549/mo (+$99/ea additional seat)",
+                "Add Corey AI for $699/mo (+$129/ea additional seat)",
               ]}
               bestFor="For companies serious about compliance — from startups to mid-sized firms. One platform, one price, everything you need."
-              buttonText="Get Started — $499/mo"
+              buttonText="Get Started — $599/mo"
               buttonHref="/get-started"
               productId="employer-platform"
               onAddToCart={handleAddToCart}

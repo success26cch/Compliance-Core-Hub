@@ -110,7 +110,7 @@ export default function ComplianceChecklists() {
               <div>
                 <p className="font-medium text-amber-800">Subscription Required</p>
                 <p className="text-sm text-amber-600">
-                  Upgrade to Unlimited Safety ($149/mo) to download all compliance checklists.
+                  Upgrade to Unlimited Corey ($199/mo) to download all compliance checklists.
                 </p>
               </div>
               <Link href="/get-started">

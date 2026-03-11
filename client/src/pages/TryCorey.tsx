@@ -386,7 +386,7 @@ export default function TryCorey() {
                 </p>
                 <Link href="/get-started">
                   <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-8 py-6 text-lg w-full" data-testid="button-trial-upgrade">
-                    Get Corey AI — $149/mo
+                    Get Corey AI — $199/mo
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>

@@ -185,7 +185,7 @@ export default function MeetCorey() {
       a: "Corey is designed to be the ultimate tool FOR your Safety Director — not a replacement. Think of Corey as the compliance expert who never sleeps, never forgets a regulation, and can generate documents in seconds. Your Safety Director brings the human judgment, site-specific knowledge, and leadership that no AI can replace. Together, they are unstoppable.",
     },
     {
-      q: "How does the $149/month per user pricing work?",
+      q: "How does the $199/month per user pricing work?",
       a: "Each Corey subscription is per individual user. Every user gets their own private conversation history, unlimited questions, all 42 document templates, Quick Actions (safety meetings, audits, inspections), and the full regulatory knowledge base. Team seats are managed through the Team Seats dashboard.",
     },
     {
@@ -194,7 +194,7 @@ export default function MeetCorey() {
     },
     {
       q: "How do I get started?",
-      a: "Subscribe at $149/month per user and you'll have full access from day one — unlimited questions, all 42 document templates, every Quick Action, and the complete regulatory knowledge base. No hidden fees, no usage caps.",
+      a: "Subscribe at $199/month per user and you'll have full access from day one — unlimited questions, all 42 document templates, every Quick Action, and the complete regulatory knowledge base. No hidden fees, no usage caps.",
     },
   ];
 
@@ -248,7 +248,7 @@ export default function MeetCorey() {
               <div className="flex items-center gap-3 justify-center lg:justify-start">
                 <Badge className="bg-white/10 text-white/70 border-white/20 text-sm px-4 py-2">
                   <ShieldCheck className="w-4 h-4 mr-2 inline" />
-                  $149/mo — cancel anytime
+                  $199/mo — cancel anytime
                 </Badge>
               </div>
             </motion.div>
@@ -656,7 +656,7 @@ export default function MeetCorey() {
             <div className="relative inline-block mb-8">
               <img src={coreyImg} alt="Corey" className="w-24 h-24 rounded-full border-2 border-accent/30" data-testid="img-corey-cta" />
               <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-accent text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap" data-testid="badge-pricing">
-                $149/mo per user
+                $199/mo per user
               </div>
             </div>
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-cta-title">
@@ -669,7 +669,7 @@ export default function MeetCorey() {
               <Link href="/get-started">
                 <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-subscribe">
                   <Bot className="w-5 h-5" />
-                  Subscribe — $149/mo
+                  Subscribe — $199/mo
                 </Button>
               </Link>
               <a href="/api/login">

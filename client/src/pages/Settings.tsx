@@ -148,7 +148,7 @@ function TeamManagement() {
       <Card className="border-2 border-dashed border-muted">
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2"><Users className="w-5 h-5" /> Team Seats</CardTitle>
-          <CardDescription>Purchase multiple Corey seats for your team — $99/seat/month, billed together</CardDescription>
+          <CardDescription>Purchase multiple Corey seats for your team — $199/seat/month, billed together</CardDescription>
         </CardHeader>
         <CardContent>
           {!showCreateForm ? (
@@ -303,7 +303,7 @@ function TeamManagement() {
         {isAdmin && !team.stripeSubscriptionId && (
           <div className="space-y-3 pt-4 border-t">
             <h4 className="font-semibold text-sm uppercase text-muted-foreground tracking-wide">Activate Team Subscription</h4>
-            <p className="text-sm text-muted-foreground">Subscribe your team to Corey for ${team.totalSeats * 99}/mo ({team.totalSeats} seats × $99/seat)</p>
+            <p className="text-sm text-muted-foreground">Subscribe your team to Corey for ${team.totalSeats * 199}/mo ({team.totalSeats} seats × $199/seat)</p>
             <Button
               onClick={() => {
                 fetch('/api/team/checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } })
@@ -342,7 +342,7 @@ function TeamManagement() {
               >
                 +
               </Button>
-              <span className="text-sm text-muted-foreground">seats × $99/mo = <strong>${team.totalSeats * 99}/mo</strong></span>
+              <span className="text-sm text-muted-foreground">seats × $199/mo = <strong>${team.totalSeats * 199}/mo</strong></span>
             </div>
           </div>
         )}
@@ -437,7 +437,7 @@ export default function Settings() {
 
   const getPlanLabel = () => {
     if (hasPlatform) return 'Employer Compliance Platform';
-    if (subStatus?.isPro) return 'Unlimited Safety (Corey AI)';
+    if (subStatus?.isPro) return 'Unlimited Corey (Corey AI)';
     return 'No Active Subscription';
   };
 
@@ -513,10 +513,10 @@ export default function Settings() {
             <Card className={`border-2 relative ${isCoreyPro ? 'border-primary bg-primary/5' : 'border-border'}`} data-testid="card-plan-corey">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Unlimited Safety</CardTitle>
+                  <CardTitle className="text-lg">Unlimited Corey</CardTitle>
                   {isCoreyPro && <Badge variant="default" className="text-xs">Current</Badge>}
                 </div>
-                <div className="text-3xl font-bold text-primary">$149<span className="text-base font-normal text-muted-foreground">/mo per user</span></div>
+                <div className="text-3xl font-bold text-primary">$199<span className="text-base font-normal text-muted-foreground">/mo per user</span></div>
                 <CardDescription>Unlimited Corey AI access</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -538,7 +538,7 @@ export default function Settings() {
                     data-testid="button-subscribe-corey"
                   >
                     {checkoutLoading === 'corey_pro' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    Subscribe - $149/mo
+                    Subscribe - $199/mo
                   </Button>
                 )}
                 {isCoreyPro && (
@@ -560,7 +560,7 @@ export default function Settings() {
                   <CardTitle className="text-lg">Employer Platform</CardTitle>
                   {hasPlatform && <Badge className="bg-accent text-white text-xs">Current</Badge>}
                 </div>
-                <div className="text-3xl font-bold text-accent">$499<span className="text-base font-normal text-muted-foreground">/mo</span></div>
+                <div className="text-3xl font-bold text-accent">$599<span className="text-base font-normal text-muted-foreground">/mo</span></div>
                 <CardDescription>Up to 50 employees included · +$2/employee beyond 50</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -585,8 +585,8 @@ export default function Settings() {
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Glossary (OSHA, DOT, ISO & more)</span></div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority expert support</span></div>
                 <p className="text-xs font-semibold text-primary uppercase tracking-wider pt-2 pb-1">Add Corey AI (optional)</p>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>1 Corey AI seat included at $549/mo total (+$99/ea additional seat)</span></div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Standalone Corey also available at $149/mo per user</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>1 Corey AI seat included at $699/mo total (+$129/ea additional seat)</span></div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Standalone Corey also available at $199/mo per user</span></div>
               </CardContent>
               <CardFooter className="flex-col gap-2">
                 {!hasPlatform && (
@@ -598,7 +598,7 @@ export default function Settings() {
                       data-testid="button-subscribe-platform-with-corey"
                     >
                       {checkoutLoading === 'employer_platform_with_corey' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
-                      Platform + Corey AI — $549/mo
+                      Platform + Corey AI — $699/mo
                     </Button>
                     <Button
                       variant="outline"
@@ -608,7 +608,7 @@ export default function Settings() {
                       data-testid="button-subscribe-platform"
                     >
                       {checkoutLoading === 'employer_platform' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                      Platform Only — $499/mo
+                      Platform Only — $599/mo
                     </Button>
                   </>
                 )}

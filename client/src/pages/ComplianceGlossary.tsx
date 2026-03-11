@@ -172,7 +172,7 @@ export default function ComplianceGlossary() {
               <div>
                 <p className="font-medium text-amber-800">Employer Platform Required</p>
                 <p className="text-sm text-amber-600">
-                  The Compliance Glossary is included with the Employer Compliance Platform ($499/mo).
+                  The Compliance Glossary is included with the Employer Compliance Platform ($599/mo).
                 </p>
               </div>
               <Link href="/get-started">

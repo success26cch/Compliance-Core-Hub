@@ -272,10 +272,10 @@ const slides: DemoSlide[] = [
     color: "bg-primary",
     points: [
       "Safety Starter: FREE - 3 Corey questions/month for small teams",
-      "Unlimited Safety (Corey): $149/mo per user - Unlimited Corey + audit prep + PDF checklists",
+      "Unlimited Corey: $199/mo per user - Unlimited Corey + audit prep + PDF checklists",
       "ISO Professional: $149/mo - Unlimited ISO AI + audit checklists",
-      "Employer Platform: $499/mo - Full compliance suite, up to 50 employees",
-      "Platform + Corey AI: $549/mo - Platform with 1 Corey seat included (+$99/ea additional seat)",
+      "Employer Platform: $599/mo - Full compliance suite, up to 50 employees",
+      "Platform + Corey AI: $699/mo - Platform with 1 Corey seat included (+$129/ea additional seat)",
       "Spanish Bilingual Medical Assistant: $199/mo per location",
     ],
     visual: "pricing",

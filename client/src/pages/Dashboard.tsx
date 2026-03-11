@@ -440,7 +440,7 @@ function RetainerSupportDialog() {
         </DialogHeader>
         <div className="space-y-4 mt-4">
           <p className="text-sm text-muted-foreground">
-            As an Unlimited Safety subscriber, you have priority access to our human compliance experts. 
+            As an Unlimited Corey subscriber, you have priority access to our human compliance experts. 
             Describe your issue and we'll get back to you within 24 hours.
           </p>
           <div>
@@ -1592,7 +1592,7 @@ export default function Dashboard() {
                 Emergency Guidance
               </Button>
               <Badge variant={isPro ? "default" : "secondary"}>
-                {isUnlimited ? 'Unlimited Safety' : 'Corey AI'}
+                {isUnlimited ? 'Unlimited Corey' : 'Corey AI'}
               </Badge>
               {!isPro && (
                 <Link href="/settings">
@@ -2000,11 +2000,11 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-xs text-muted-foreground">
-                    Upgrade to Unlimited Safety for unlimited Corey interactions and full compliance tools.
+                    Upgrade to Unlimited Corey for unlimited Corey interactions and full compliance tools.
                   </p>
                   <Link href="/settings">
                     <Button variant="outline" className="w-full" size="sm">
-                      Upgrade to Unlimited - $149/mo
+                      Upgrade to Unlimited Corey - $199/mo
                     </Button>
                   </Link>
                 </CardContent>

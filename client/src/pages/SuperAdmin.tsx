@@ -84,12 +84,12 @@ type CompanyUsage = {
 
 const planLabels: Record<string, string> = {
   'free': 'Free',
-  'cch_unlimited_safety': 'Unlimited Safety ($149)',
+  'cch_unlimited_safety': 'Unlimited Corey ($199)',
   'acsi_iso_essentials': 'ISO Essentials ($49)',
   'acsi_iso_professional': 'ISO Professional ($149)',
-  'corey_pro': 'Corey AI ($149)',
-  'employer_platform': 'Employer Platform ($499)',
-  'employer_platform_with_corey': 'Platform + Corey AI ($549)',
+  'corey_pro': 'Corey AI ($199)',
+  'employer_platform': 'Employer Platform ($599)',
+  'employer_platform_with_corey': 'Platform + Corey AI ($699)',
   'integrated_enterprise': 'Enterprise ($499)',
   'human_expert_retainer': 'Expert Retainer ($499)',
 };
