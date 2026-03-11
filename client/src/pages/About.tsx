@@ -50,10 +50,13 @@ export default function About() {
             About Core Compliance Hub
           </Badge>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-foreground leading-tight" data-testid="text-about-title">
-            Education Is Our Mission.<br /><span className="text-accent">Compliance Is Our Craft.</span>
+            Education Is Our Mission.<br /><span className="text-accent">Compliance Is Our Craft.</span><br /><span style={{ color: "#38bdf8" }}>And Corey Is the Solution.</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Core Compliance Hub exists for one reason: to educate employers on occupational health and safety — rooted in 29 CFR (Code of Federal Regulations, Title 29), where all of OSHA's safety and health standards are published. CCHUB is all about the regs. We exist so employers can understand them, apply them, protect their people, stay compliant, and grow with confidence.
+          </p>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Corey is your always-on Senior Occupational Health &amp; Safety Compliance Expert — trained exclusively in OSHA standards, recordkeeping rules, and employer obligations. No generic answers, no guesswork. Just precise, regulation-backed guidance exactly when your team needs it most.
           </p>
         </div>
       </section>
