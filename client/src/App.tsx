@@ -145,7 +145,7 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="cchub-theme">
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false} storageKey="cchub-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <CartProvider>

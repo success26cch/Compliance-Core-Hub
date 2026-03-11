@@ -46,7 +46,6 @@ import BilingualAssistant from "@/components/BilingualAssistant";
 import { useCart } from "@/hooks/use-cart";
 import { PRODUCTS } from "@/lib/products";
 import { CartTrigger } from "@/components/CartDrawer";
-import { ThemeToggle } from "@/components/Layout";
 
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -661,9 +660,6 @@ export default function Landing() {
           </div>
           
           <div className="flex items-center gap-2 shrink-0">
-            <div className="text-white">
-              <ThemeToggle />
-            </div>
             <CartTrigger />
             {isAuthenticated ? (
               <Link href="/dashboard">

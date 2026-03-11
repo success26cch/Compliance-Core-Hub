@@ -15,7 +15,6 @@ import { motion } from "framer-motion";
 import coreyImg from "@assets/9_1771983400638.png";
 import logoUrl from "@assets/7_1772719327857.png";
 import { CartTrigger } from "@/components/CartDrawer";
-import { ThemeToggle } from "@/components/Layout";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -208,7 +207,6 @@ export default function MeetCorey() {
             </div>
           </Link>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <CartTrigger />
             <Link href="/get-started">
               <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-bold" data-testid="button-nav-get-started">
