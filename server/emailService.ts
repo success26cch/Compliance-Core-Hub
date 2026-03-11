@@ -1,6 +1,6 @@
 import sgMail from "@sendgrid/mail";
 
-const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com"];
+const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "team@corecompliancehub.com"];
 const FROM_NAME = "Core Compliance Hub";
 
 // Replit SendGrid connector — fetches API key + verified from_email dynamically
