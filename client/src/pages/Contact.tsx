@@ -322,7 +322,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">support@corecompliancehub.com</p>
+                    <p className="font-medium">team@corecompliancehub.com</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
