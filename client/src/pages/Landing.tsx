@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle, Check, BarChart3, Ambulance, Bell, Globe } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import jsPDF from "jspdf";
@@ -1455,13 +1455,95 @@ export default function Landing() {
 
           {/* CTA */}
           <div className="mt-10 text-center">
-            <Link href="/get-started">
+            <a href="#platform-features">
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold px-8 gap-2" data-testid="button-platform-preview-cta">
                 Explore the Platform <ArrowRight className="w-4 h-4" />
               </Button>
-            </Link>
+            </a>
           </div>
 
+        </div>
+      </section>
+
+      {/* Platform Features Detail */}
+      <section id="platform-features" className="py-24 bg-white border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <Badge className="bg-primary/10 text-primary border border-primary/20 text-sm px-3 py-1">What's Inside</Badge>
+            <h2 className="text-3xl md:text-4xl font-display font-black text-primary leading-tight">
+              Built for Every Corner of Occupational Health
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Every module talks to the others. One login, one system, zero spreadsheets.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {[
+              {
+                icon: AlertTriangle,
+                color: "bg-orange-50 text-orange-600 border-orange-100",
+                title: "Incident Management",
+                desc: "Log workplace incidents in minutes with OSHA-aligned dropdowns. Automatic recordability flags, OSHA 300 log entries, and instant notifications to your DER and workers' comp carrier."
+              },
+              {
+                icon: ClipboardList,
+                color: "bg-purple-50 text-purple-600 border-purple-100",
+                title: "CAPA Tracking",
+                desc: "Turn every incident into a corrective action. Assign owners, set due dates, and get SMS reminders via Twilio. Overdue CAPAs are flagged automatically with recurrence warnings."
+              },
+              {
+                icon: Users,
+                color: "bg-blue-50 text-blue-600 border-blue-100",
+                title: "Employee Medical Surveillance",
+                desc: "Track respirator physicals, DOT certifications, hearing tests, and drug screens by employee. Get ahead of expirations before they become violations."
+              },
+              {
+                icon: FileText,
+                color: "bg-green-50 text-green-600 border-green-100",
+                title: "OSHA 300 Log & Reporting",
+                desc: "Your 300, 300A, and 301 forms built automatically from logged incidents. Recordability guidance built in so you never second-guess a log entry."
+              },
+              {
+                icon: Ambulance,
+                color: "bg-red-50 text-red-600 border-red-100",
+                title: "Digital Medical Passport",
+                desc: "QR-based clinic authorization forms your employees carry on their phone. Clinics scan, get employer preferences instantly — first-aid limits, OTC meds, restriction wording."
+              },
+              {
+                icon: Syringe,
+                color: "bg-teal-50 text-teal-600 border-teal-100",
+                title: "Drug Screen Tracking",
+                desc: "Log pre-employment, random, post-accident, and return-to-duty screens. Track results, chain of custody status, and DOT Clearinghouse obligations by employee."
+              },
+              {
+                icon: Bot,
+                color: "bg-accent/10 text-accent border-accent/20",
+                title: "Ask Corey — AI Compliance",
+                desc: "Your AI compliance expert is woven into every module. Ask Corey directly from an incident form, a CAPA, or the dashboard — and get regulation-backed answers in seconds."
+              },
+              {
+                icon: Bell,
+                color: "bg-yellow-50 text-yellow-600 border-yellow-100",
+                title: "Email & SMS Notifications",
+                desc: "Every key event triggers the right people automatically — incident reports to DER and workers' comp, CAPA assignments to responsible parties, overdue alerts to managers."
+              },
+              {
+                icon: Globe,
+                color: "bg-sky-50 text-sky-600 border-sky-100",
+                title: "Multi-Site Analytics",
+                desc: "Run a single facility or fifty. Dashboard metrics roll up across all locations. Compare incident rates, CAPA closure times, and surveillance completion by site."
+              },
+            ].map(({ icon: Icon, color, title, desc }) => (
+              <div key={title} className={`rounded-xl border p-6 ${color.split(' ').includes('bg-accent/10') ? 'bg-accent/5 border-accent/20' : `bg-white border-slate-200`}`} data-testid={`card-platform-feature-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+                <div className={`w-10 h-10 rounded-lg border flex items-center justify-center mb-4 ${color}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-primary mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -1544,200 +1626,6 @@ export default function Landing() {
             </div>
           </div>
 
-        </div>
-      </section>
-
-      {/* Occupational Health Pricing Section */}
-      <section id="pricing" className="py-24 bg-muted/30 border-t border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <PricingCard 
-              tier="Unlimited Corey"
-              price="$199"
-              period="/mo"
-              features={[
-                "Unlimited Corey Interactions",
-                "Compliance Checklist Library (downloadable PDFs)",
-                "Interactive Audit Prep Tools with progress tracking",
-                "DOT physical & drug testing guidance",
-                "Workers' comp documentation help",
-                "Custom compliance reports",
-                "Priority response times",
-                "Dedicated support",
-              ]}
-              bestFor="Safety Managers, growing companies, and large fleets. All self-service — no consulting time required."
-              buttonText="Go Unlimited"
-              buttonHref="/get-started"
-              highlighted
-              productId="cch-unlimited-safety"
-              onAddToCart={handleAddToCart}
-            />
-            <PricingCard 
-              tier="Complete Compliance Platform"
-              price="$599"
-              period="/mo"
-              features={[
-                "Compliance Dashboard with real-time metrics",
-                "Employee tracking & medical surveillance (11 types)",
-                "OSHA 300 & 301 logging & incident management",
-                "DOT notifications at 60/30/15/7-day windows",
-                "CCHUB Handshake — QR-based Medical Passport",
-                "Training LMS with PDF certificates",
-                "Corrective Action Plans (CAPA)",
-                "ISO 9001/14001/45001 AI guidance",
-                "Up to 50 employees included (+$2/ea beyond 50)",
-                "Add Corey AI for $699/mo (+$129/ea additional seat)",
-              ]}
-              bestFor="For companies serious about compliance — from startups to mid-sized firms. One platform, one price, everything you need."
-              buttonText="Get Started — $599/mo"
-              buttonHref="/get-started"
-              productId="employer-platform"
-              onAddToCart={handleAddToCart}
-            />
-          </div>
-          <div className="text-center mt-10">
-            <p className="text-muted-foreground mb-3">Not sure which plan is right for you?</p>
-            <Link href="/contact">
-              <Button variant="outline" data-testid="button-contact-occ-pricing">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Contact Us — We'll Help You Decide
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ISO Management Pricing Section */}
-      <section className="py-24 bg-white dark:bg-background border-t border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
-            <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
-              <img src={acsiLogo} alt="ACSI" className="h-16 w-auto mx-auto mb-4 hover:opacity-80 transition-opacity" data-testid="img-acsi-logo-landing" />
-            </a>
-            <h2 className="text-3xl font-display font-bold text-primary">ISO Management Plans</h2>
-            <p className="text-lg text-muted-foreground">
-              ISO 9001, 14001, and 45001 certification support. Management as a Service.
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="bg-muted/40 border border-border rounded-2xl px-8 py-10 space-y-4">
-              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
-                <Sparkles className="w-7 h-7 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground">ACSI Training &amp; Certification Plans — Coming Soon</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                ACSI is building a dedicated suite of ISO training programs, audit packages, and certification-readiness plans. Pricing will be announced when they launch. In the meantime, contact ACSI directly for current consulting and training engagements.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-                <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer">
-                  <Button className="bg-accent text-black font-semibold" data-testid="button-visit-acsi-pricing">
-                    Visit acsi-quality.com
-                  </Button>
-                </a>
-                <Link href="/contact">
-                  <Button variant="outline" data-testid="button-contact-iso-pricing">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Contact Us — Let's Talk
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Additional Services Pricing */}
-      <section className="py-24 bg-muted/30 border-t border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-3xl font-display font-bold text-primary">Specialized Services</h2>
-            <p className="text-lg text-muted-foreground">
-              Add-on services to expand your compliance and engagement capabilities.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <Card className="p-6 flex flex-col" data-testid="card-landing-bma-pricing">
-              <Badge variant="secondary" className="self-start mb-3">Clinic Tool</Badge>
-              <h3 className="text-lg font-bold text-primary mb-1">Spanish Bilingual Medical Assistant</h3>
-              <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-3xl font-bold text-primary">$199</span>
-                <span className="text-muted-foreground text-sm">/mo per location</span>
-              </div>
-              <ul className="space-y-2 mb-6 flex-1">
-                {["Unlimited Spanish bilingual translations", "Clinical commands in Spanish", "Body map injury reporting", "Printable clinical summaries"].map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="space-y-2">
-                <Button className="w-full" onClick={() => handleAddToCart("bma-subscription")} data-testid="button-add-cart-bma">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
-                </Button>
-                <Link href="/bma">
-                  <Button variant="outline" className="w-full" data-testid="button-landing-bma">Learn More</Button>
-                </Link>
-              </div>
-            </Card>
-
-            <Card className="p-6 flex flex-col" data-testid="card-landing-mentorship-pricing">
-              <Badge className="self-start mb-3">CCHUB Exclusive</Badge>
-              <h3 className="text-lg font-bold text-primary mb-1">ACSI Mentorship</h3>
-              <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-xl font-bold text-primary">From $2,500</span>
-              </div>
-              <ul className="space-y-2 mb-6 flex-1">
-                {["12-week intensive program", "1-on-1 Lead Auditor mentoring", "Foundation ($2,500) or Executive ($5,000)", "Mock audit simulation (Executive)"].map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="space-y-2">
-                <Button className="w-full" onClick={() => handleAddToCart("mentorship-foundation")} data-testid="button-add-cart-mentorship">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart — Foundation
-                </Button>
-                <Link href="/mentorship">
-                  <Button variant="outline" className="w-full" data-testid="button-landing-mentorship">View Program</Button>
-                </Link>
-              </div>
-            </Card>
-
-            <Card className="p-6 flex flex-col" data-testid="card-landing-brandnswag-pricing">
-              <Badge variant="secondary" className="self-start mb-3">Recognition</Badge>
-              <h3 className="text-lg font-bold text-primary mb-1">BrandNSwag Platform</h3>
-              <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-3xl font-bold text-primary">$49</span>
-                <span className="text-muted-foreground text-sm">/mo</span>
-              </div>
-              <ul className="space-y-2 mb-6 flex-1">
-                {["QR code recognition system", "Points tracking & leaderboards", "Employee reward triggers", "Monthly engagement reports"].map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-accent flex-shrink-0" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="space-y-2">
-                <Button className="w-full" onClick={() => handleAddToCart("brandnswag-platform")} data-testid="button-add-cart-brandnswag">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
-                </Button>
-                <Link href="/brandnswag">
-                  <Button variant="outline" className="w-full" data-testid="button-landing-brandnswag">Learn More</Button>
-                </Link>
-              </div>
-            </Card>
-          </div>
         </div>
       </section>
 
@@ -1896,6 +1784,202 @@ export default function Landing() {
                 Contact Us
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Compare Plans */}
+      <section className="py-24 bg-slate-50 border-t border-border/50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-display font-bold text-primary" data-testid="text-landing-compare-plans">Compare Plans</h2>
+              <p className="text-sm text-muted-foreground">See all features side by side to find the right fit</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full min-w-[640px] border-collapse" data-testid="table-landing-compare-plans">
+              <thead>
+                <tr>
+                  <th className="text-left p-4 bg-muted/50 rounded-tl-md font-semibold text-foreground">Feature</th>
+                  <th className="text-center p-4 bg-accent/10 border-x-2 border-accent font-semibold text-foreground">
+                    <div className="flex flex-col items-center gap-1">
+                      <Badge className="bg-accent text-white">Most Popular</Badge>
+                      <span>Unlimited Corey</span>
+                      <span className="text-lg font-bold text-primary">$199<span className="text-xs font-normal text-muted-foreground">/mo per user</span></span>
+                    </div>
+                  </th>
+                  <th className="text-center p-4 bg-muted/50 rounded-tr-md font-semibold text-foreground">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>Employer Platform</span>
+                      <span className="text-lg font-bold text-primary">$599<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: "Corey AI Questions", corey: "Unlimited", employer: "Unlimited" },
+                  { feature: "OSHA Recordability Guidance", corey: true, employer: true },
+                  { feature: "DOT Compliance Help", corey: true, employer: true },
+                  { feature: "Compliance Checklists", corey: true, employer: true },
+                  { feature: "Audit Prep & Templates", corey: true, employer: true },
+                  { feature: "Workers' Comp Guidance", corey: true, employer: true },
+                  { feature: "Custom Reports", corey: true, employer: true },
+                  { feature: "Priority Support", corey: true, employer: true },
+                  { feature: "Employee Management", corey: false, employer: true },
+                  { feature: "Incident Logging & OSHA 300 Log", corey: false, employer: true },
+                  { feature: "CAPA Tracking + SMS Alerts", corey: false, employer: true },
+                  { feature: "Medical Passport (CCHUB Handshake)", corey: false, employer: true },
+                  { feature: "Drug Screen Tracking", corey: false, employer: true },
+                  { feature: "Employee Medical Surveillance", corey: false, employer: true },
+                  { feature: "Multi-Site Analytics", corey: false, employer: true },
+                  { feature: "DOT Random Pool Notifications", corey: false, employer: true },
+                  { feature: "Bilingual Medical Assistant", corey: false, employer: true },
+                ].map((row, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-muted/20" : ""} data-testid={`row-landing-feature-${idx}`}>
+                    <td className="p-4 text-sm font-medium text-foreground">{row.feature}</td>
+                    <td className="p-4 text-center border-x-2 border-accent/30">
+                      {typeof row.corey === "string" ? (
+                        <span className="text-sm font-medium text-accent">{row.corey}</span>
+                      ) : row.corey ? (
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-muted-foreground/40 mx-auto" />
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {typeof row.employer === "string" ? (
+                        <span className="text-sm font-medium text-accent">{row.employer}</span>
+                      ) : row.employer ? (
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-muted-foreground/40 mx-auto" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td className="p-4" />
+                  <td className="p-4 text-center border-x-2 border-accent/30">
+                    <Button className="w-full max-w-[160px]" onClick={() => handleAddToCart("cch-unlimited-safety")} data-testid="button-compare-add-corey">
+                      <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
+                    </Button>
+                  </td>
+                  <td className="p-4 text-center">
+                    <Button className="w-full max-w-[160px]" onClick={() => handleAddToCart("employer-platform")} data-testid="button-compare-add-employer">
+                      <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Choose Your Plan */}
+      <section id="pricing" className="py-24 bg-muted/30 border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl md:text-4xl font-display font-black text-primary">Choose Your Plan</h2>
+            <p className="text-lg text-muted-foreground">Start with AI guidance alone or go all-in with the full platform.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <PricingCard
+              tier="Unlimited Corey"
+              price="$199"
+              period="/mo"
+              features={[
+                "Unlimited Corey Interactions",
+                "Compliance Checklist Library (downloadable PDFs)",
+                "Interactive Audit Prep Tools with progress tracking",
+                "DOT physical & drug testing guidance",
+                "Workers' comp documentation help",
+                "Custom compliance reports",
+                "Priority response times",
+                "Dedicated support",
+              ]}
+              bestFor="Safety Managers, growing companies, and large fleets. All self-service — no consulting time required."
+              buttonText="Go Unlimited"
+              buttonHref="/get-started"
+              highlighted
+              productId="cch-unlimited-safety"
+              onAddToCart={handleAddToCart}
+            />
+            <PricingCard
+              tier="Complete Compliance Platform"
+              price="$599"
+              period="/mo"
+              features={[
+                "Compliance Dashboard with real-time metrics",
+                "Employee tracking & medical surveillance (11 types)",
+                "OSHA 300 & 301 logging & incident management",
+                "DOT notifications at 60/30/15/7-day windows",
+                "CCHUB Handshake — QR-based Medical Passport",
+                "Training LMS with PDF certificates",
+                "Corrective Action Plans (CAPA)",
+                "ISO 9001/14001/45001 AI guidance",
+                "Up to 50 employees included (+$2/ea beyond 50)",
+                "Add Corey AI for $699/mo (+$129/ea additional seat)",
+              ]}
+              bestFor="For companies serious about compliance — from startups to mid-sized firms. One platform, one price, everything you need."
+              buttonText="Get Started — $599/mo"
+              buttonHref="/get-started"
+              productId="employer-platform"
+              onAddToCart={handleAddToCart}
+            />
+          </div>
+          <div className="text-center mt-10">
+            <p className="text-muted-foreground mb-3">Not sure which plan is right for you?</p>
+            <Link href="/contact">
+              <Button variant="outline" data-testid="button-contact-occ-pricing">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Contact Us — We'll Help You Decide
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ISO Management Pricing Section */}
+      <section className="py-24 bg-white border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
+            <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
+              <img src={acsiLogo} alt="ACSI" className="h-16 w-auto mx-auto mb-4 hover:opacity-80 transition-opacity" data-testid="img-acsi-logo-landing" />
+            </a>
+            <h2 className="text-3xl font-display font-bold text-primary">ISO Management Plans</h2>
+            <p className="text-lg text-muted-foreground">
+              ISO 9001, 14001, and 45001 certification support. Management as a Service.
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <div className="bg-muted/40 border border-border rounded-2xl px-8 py-10 space-y-4">
+              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
+                <Sparkles className="w-7 h-7 text-accent" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">ACSI Training &amp; Certification Plans — Coming Soon</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                ACSI is building a dedicated suite of ISO training programs, audit packages, and certification-readiness plans. Pricing will be announced when they launch. In the meantime, contact ACSI directly for current consulting and training engagements.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer">
+                  <Button className="bg-accent text-black font-semibold" data-testid="button-visit-acsi-pricing">
+                    Visit acsi-quality.com
+                  </Button>
+                </a>
+                <Link href="/contact">
+                  <Button variant="outline" data-testid="button-contact-iso-pricing">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Contact Us — Let's Talk
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
