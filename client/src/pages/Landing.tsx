@@ -37,6 +37,7 @@ import cchLogo from "@assets/1_1770683748423.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import coreyImg from "@assets/9_1771983400638.png";
 import heroVideoUrl from "@assets/CCH_BOT_VIDEO_1771359482914.mp4";
+import platformScreenshot from "@assets/image_1773263976699.png";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1408,6 +1409,28 @@ export default function Landing() {
 
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Real platform screenshot */}
+          <div className="max-w-5xl mx-auto mt-6">
+            <div className="rounded-2xl overflow-hidden border border-slate-200" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.18)" }}>
+              <div className="bg-slate-700 px-4 py-3 flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-400" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                </div>
+                <div className="flex-1 bg-slate-600 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
+                  app.corecompliancehub.com/dashboard
+                </div>
+              </div>
+              <img
+                src={platformScreenshot}
+                alt="CCHUB Employer Platform — Training Portal, Ask Corey, OSHA Decision Tree, Clinic Communication Letter, and Digital Medical Passport"
+                className="w-full block"
+                data-testid="img-platform-screenshot"
+              />
             </div>
           </div>
 
