@@ -1224,11 +1224,6 @@ export default function Landing() {
                     See It in Action <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
-                <Link href="/bma#pricing">
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold" data-testid="button-bma-teaser-pricing">
-                    Pricing — $199/mo
-                  </Button>
-                </Link>
               </div>
             </div>
             <div className="hidden md:flex flex-col items-center justify-center">

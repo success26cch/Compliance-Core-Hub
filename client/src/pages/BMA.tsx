@@ -146,11 +146,6 @@ export default function BMA() {
                   <Play className="w-5 h-5" /> Try the Live Demo
                 </Button>
               </a>
-              <a href="#pricing">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold px-8" data-testid="button-bma-hero-pricing">
-                  See Pricing — $199/mo
-                </Button>
-              </a>
             </div>
 
             <div className="flex flex-wrap gap-6 justify-center mt-10 text-sm text-white/40">
