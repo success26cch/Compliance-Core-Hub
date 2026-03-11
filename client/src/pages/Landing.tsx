@@ -42,7 +42,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { motion } from "framer-motion";
-import BilingualAssistant from "@/components/BilingualAssistant";
 import { useCart } from "@/hooks/use-cart";
 import { PRODUCTS } from "@/lib/products";
 import { CartTrigger } from "@/components/CartDrawer";
@@ -404,8 +403,6 @@ export default function Landing() {
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
-  const bmaRef = useRef<HTMLDivElement>(null);
-  const [showBmaSticky, setShowBmaSticky] = useState(false);
 
   useEffect(() => {
     const container = videoContainerRef.current;
@@ -427,20 +424,6 @@ export default function Landing() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const section = bmaRef.current;
-    if (!section) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShowBmaSticky(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(section);
-    return () => observer.disconnect();
-  }, []);
 
   const toggleVideoSound = () => {
     if (heroVideoRef.current) {
@@ -655,7 +638,7 @@ export default function Landing() {
             <a href="#courses" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-training">Training</a>
             <Link href="/mentorship" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-mentorship">Mentorship</Link>
             <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-brandnswag">BrandNSwag</a>
-            <a href="#bilingual-assistant" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Med Assistant</a>
+            <Link href="/bma" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Med Assistant</Link>
             <a href="#faq" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
           </div>
           
@@ -1203,49 +1186,78 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Spanish Bilingual Medical Assistant — Demo Frame */}
-      <section id="bilingual-assistant" ref={bmaRef} className="relative">
+      {/* Spanish Bilingual Medical Assistant — Teaser Card */}
+      <section className="relative overflow-hidden py-16">
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,11%)] via-[hsl(222,47%,15%)] to-[hsl(222,47%,8%)]" />
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full" style={{ background: "radial-gradient(circle, hsla(24,95%,53%,0.08), transparent 70%)" }} />
 
-        {/* Always-visible pricing header bar */}
-        <div className="bg-[hsl(222,47%,11%)] border-b border-white/10 py-3 px-4">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-              <Badge className="bg-accent text-black font-bold text-xs px-3 py-1">DEMO MODE</Badge>
-              <span className="text-white font-semibold text-sm">Spanish Bilingual Medical Assistant</span>
-              <span className="text-white/40 hidden sm:inline">—</span>
-              <span className="text-accent font-bold text-sm">$199/mo per clinic location</span>
-            </div>
-            <Link href="/bma-subscription">
-              <Button size="sm" className="bg-accent text-black font-semibold whitespace-nowrap" data-testid="button-bma-demo-subscribe-top">
-                Subscribe for Unlimited Access →
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        <BilingualAssistant />
-
-        {/* Sticky subscribe bar — appears when BMA section is in view */}
-        {showBmaSticky && (
-          <div className="sticky bottom-0 z-30 bg-[hsl(222,47%,11%)] border-t border-white/10 py-3 px-4 shadow-2xl" data-testid="banner-bma-sticky">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-white text-sm font-medium text-center sm:text-left">
-                Enjoying the demo? <span className="text-accent font-bold">Unlimited clinic access — $199/mo per location</span>
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <Badge className="bg-accent/20 text-accent border border-accent/30 text-sm px-3 py-1" data-testid="badge-bma-teaser">
+                <Stethoscope className="w-4 h-4 mr-2" />
+                For Occupational Health Clinics
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-display font-black text-white leading-tight" data-testid="text-bma-teaser-title">
+                Your Patient Speaks Spanish.<br />
+                <span style={{ color: "#38bdf8" }}>Now Your Clinic Does Too.</span>
+              </h2>
+              <p className="text-white/60 text-lg leading-relaxed">
+                The CCHUB Spanish Bilingual Medical Assistant gives your MAs instant Spanish translation, one-tap clinical commands, and printable bilingual documentation — no interpreter needed.
               </p>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Link href="/bma-subscription">
-                  <Button size="sm" className="bg-accent text-black font-semibold" data-testid="button-bma-sticky-subscribe">
-                    Get Full Access
+              <ul className="space-y-3">
+                {[
+                  "Real-time bidirectional Spanish translation",
+                  "One-tap clinical commands spoken in Spanish",
+                  "Interactive body map for injury reporting",
+                  "Printable bilingual visit summaries"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-white/70 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Link href="/bma">
+                  <Button className="bg-accent hover:bg-accent/90 text-white font-bold gap-2" data-testid="button-bma-teaser-demo">
+                    See It in Action <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
-                <button onClick={() => setShowBmaSticky(false)} className="text-white/50 hover:text-white p-1" aria-label="Dismiss" data-testid="button-bma-sticky-dismiss">
-                  <X className="w-4 h-4" />
-                </button>
+                <Link href="/bma#pricing">
+                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold" data-testid="button-bma-teaser-pricing">
+                    Pricing — $199/mo
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:flex flex-col items-center justify-center">
+              <div className="w-full max-w-sm bg-white/5 rounded-2xl border border-white/10 p-8 text-center space-y-5 backdrop-blur-sm">
+                <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto">
+                  <Mic className="w-8 h-8 text-accent" />
+                </div>
+                <p className="text-white font-bold text-lg">Bidirectional Translation</p>
+                <div className="space-y-3">
+                  <div className="bg-white/5 rounded-lg p-3 text-left">
+                    <p className="text-xs text-white/40 mb-1">Provider speaks English:</p>
+                    <p className="text-white text-sm font-medium">"Take a deep breath and hold it."</p>
+                  </div>
+                  <div className="flex justify-center">
+                    <ArrowRight className="w-4 h-4 text-accent rotate-90" />
+                  </div>
+                  <div className="bg-accent/10 rounded-lg p-3 text-left border border-accent/20">
+                    <p className="text-xs text-accent/60 mb-1">Patient hears Spanish:</p>
+                    <p className="text-accent text-sm font-medium">"Respire profundo y manténgalo."</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-white/30 text-xs">
+                  <Volume2 className="w-3 h-3" />
+                  <span>Audio plays automatically</span>
+                </div>
               </div>
             </div>
           </div>
-        )}
-
+        </div>
       </section>
 
       {/* How It Works */}
@@ -1509,7 +1521,7 @@ export default function Landing() {
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Add to Cart
                 </Button>
-                <Link href="/bma-subscription">
+                <Link href="/bma">
                   <Button variant="outline" className="w-full" data-testid="button-landing-bma">Learn More</Button>
                 </Link>
               </div>

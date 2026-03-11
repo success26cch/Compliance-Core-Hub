@@ -27,6 +27,7 @@ import DOTNotifications from "@/pages/DOTNotifications";
 import EmployeePassport from "@/pages/EmployeePassport";
 import ClinicAssistant from "@/pages/ClinicAssistant";
 import BMASubscription from "@/pages/BMASubscription";
+import BMA from "@/pages/BMA";
 import ClinicAgreement from "@/pages/ClinicAgreement";
 import Demo from "@/pages/Demo";
 import SMSConsent from "@/pages/SMSConsent";
@@ -107,6 +108,7 @@ function Router() {
       <Route path="/dot-notifications" component={DOTNotifications} />
       <Route path="/employee-passport" component={EmployeePassport} />
       <Route path="/clinic-assistant" component={ClinicAssistant} />
+      <Route path="/bma" component={BMA} />
       <Route path="/bma-subscription" component={BMASubscription} />
       <Route path="/clinic-agreement" component={ClinicAgreement} />
       <Route path="/demo" component={Demo} />
