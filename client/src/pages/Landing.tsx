@@ -356,7 +356,7 @@ function RecordabilityDecisionTree() {
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  className="border-white/20 text-white/70 hover:text-white font-semibold"
+                  className="bg-transparent border-white/20 text-white/70 hover:text-white font-semibold"
                   data-testid="button-recordability-back-result"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
@@ -365,7 +365,7 @@ function RecordabilityDecisionTree() {
                 <Button
                   variant="outline"
                   onClick={handleStartOver}
-                  className="border-white/20 text-white font-bold"
+                  className="bg-transparent border-white/20 text-white font-bold"
                   data-testid="button-recordability-restart"
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
