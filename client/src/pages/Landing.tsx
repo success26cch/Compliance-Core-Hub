@@ -1199,7 +1199,7 @@ export default function Landing() {
                 For Occupational Health Clinics
               </Badge>
               <h2 className="text-3xl md:text-4xl font-display font-black text-white leading-tight" data-testid="text-bma-teaser-title">
-                Your Patient Speaks Spanish.<br />
+                Your Employees/Patients Speak Spanish.<br />
                 <span style={{ color: "#38bdf8" }}>Now Your Clinic Does Too.</span>
               </h2>
               <p className="text-white/60 text-lg leading-relaxed">
