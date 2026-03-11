@@ -178,7 +178,7 @@ export default function MeetCorey() {
   const faqs = [
     {
       q: "What makes Corey different from ChatGPT or other AI tools?",
-      a: "Corey is built from the DNA of 29 CFR. Unlike general AI tools that might cite blog posts or give vague advice, Corey only references official regulatory sources — OSHA standards, DOT regulations, ISO standards, and other authoritative codes. Corey has anti-hallucination guardrails that prevent it from guessing CFR citations or penalty amounts. It is a compliance expert, not a chatbot.",
+      a: "ChatGPT is a brilliant generalist — it knows a little about everything. Corey knows everything about YOUR world. Here's the difference that matters: when you tell Corey you're a 200-employee food manufacturer in Texas with a DART rate of 2.1 and a DOT-regulated fleet, Corey doesn't just answer your question — it connects the dots across OSHA 29 CFR 1910, DOT 49 CFR, state plan requirements, your industry's NAICS code, and your specific risk profile simultaneously. ChatGPT doesn't know what an OSHA 300 log is for. Corey built it with you. ChatGPT can't tell you whether your lockout/tagout program has a gap that would trigger a Willful citation. Corey can — and then it generates the corrected procedure on the spot.\n\nCorey learns who you are. Through your subscriber profile, Corey understands your industry, your state, your workforce size, and your compliance responsibilities before you ask your first question. It doesn't give you generic OSHA text — it gives you the answer for a company like yours, in a jurisdiction like yours, with risks like yours. That's not a chatbot. That's a Senior Occupational Health & Safety Expert who has read every regulation ever written and has been waiting for your call.\n\nEvery other AI tool makes you do the connecting. You have to know what to ask, how to frame it, and which regulation applies. Corey already knows. It cross-references OSHA, DOT, EPA, NIOSH, ACGIH, and ANSI — and it tells you what matters to you right now, before an inspector does. No hallucinated citations. No vague advice. No generic templates. Just the right answer, built for your operation, backed by real regulatory authority. That's why Corey isn't a tool. Corey is your competitive advantage.",
     },
     {
       q: "Can Corey replace my Safety Director?",
@@ -629,7 +629,11 @@ export default function MeetCorey() {
                     <ChevronDown className={`w-5 h-5 text-white/40 flex-shrink-0 transition-transform ${expandedFaq === i ? "rotate-180" : ""}`} />
                   </div>
                   {expandedFaq === i && (
-                    <p className="mt-4 text-sm text-white/50 leading-relaxed">{faq.a}</p>
+                    <div className="mt-4 space-y-3">
+                      {faq.a.split('\n\n').map((para, pi) => (
+                        <p key={pi} className="text-sm text-white/50 leading-relaxed">{para}</p>
+                      ))}
+                    </div>
                   )}
                 </button>
               </motion.div>
