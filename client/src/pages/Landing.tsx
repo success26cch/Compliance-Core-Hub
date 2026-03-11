@@ -1255,50 +1255,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-24 bg-white border-t border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-3xl font-display font-bold text-primary">How It Works</h2>
-            <p className="text-lg text-muted-foreground">
-              From question to compliant answer in seconds.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent mx-auto mb-6">
-                <MessageSquare className="w-8 h-8" />
-              </div>
-              <div className="text-sm font-bold text-accent mb-2">Step 1</div>
-              <h3 className="text-xl font-bold text-primary mb-3">Ask Your Question</h3>
-              <p className="text-muted-foreground">
-                Describe your workplace situation in plain English. No legal jargon required.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent mx-auto mb-6">
-                <Zap className="w-8 h-8" />
-              </div>
-              <div className="text-sm font-bold text-accent mb-2">Step 2</div>
-              <h3 className="text-xl font-bold text-primary mb-3">Get Expert Guidance</h3>
-              <p className="text-muted-foreground">
-                Receive instant, regulation-backed answers citing specific OSHA and DOT codes.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent mx-auto mb-6">
-                <ShieldCheck className="w-8 h-8" />
-              </div>
-              <div className="text-sm font-bold text-accent mb-2">Step 3</div>
-              <h3 className="text-xl font-bold text-primary mb-3">Stay Compliant</h3>
-              <p className="text-muted-foreground">
-                Document your decisions and keep your workplace audit-ready at all times.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Tagline bridge */}
+      <div className="py-10 bg-white border-t border-border/50 text-center">
+        <p className="text-2xl font-display font-bold text-primary" data-testid="text-tagline-bridge">
+          From question to compliant answer in seconds.
+        </p>
+      </div>
 
       {/* Is This Recordable? Decision Tree */}
       <RecordabilityDecisionTree />
