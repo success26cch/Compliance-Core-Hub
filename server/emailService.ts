@@ -5,6 +5,18 @@ const FROM_NAME = "Core Compliance Hub";
 
 // Replit SendGrid connector — fetches API key + verified from_email dynamically
 async function getSendGridClient(): Promise<{ client: typeof sgMail; fromEmail: string } | null> {
+  // Helper: try env var fallback
+  function tryEnvFallback(): { client: typeof sgMail; fromEmail: string } | null {
+    const apiKey = process.env.SENDGRID_API_KEY;
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || "noreply@corecompliancehub.com";
+    if (!apiKey || !apiKey.startsWith("SG.")) {
+      console.warn("[EmailService] SENDGRID_API_KEY missing or invalid — emails will not be sent");
+      return null;
+    }
+    sgMail.setApiKey(apiKey);
+    return { client: sgMail, fromEmail };
+  }
+
   try {
     const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
     const xReplitToken = process.env.REPL_IDENTITY
@@ -15,14 +27,7 @@ async function getSendGridClient(): Promise<{ client: typeof sgMail; fromEmail: 
 
     if (!hostname || !xReplitToken) {
       console.warn("[EmailService] Replit connector env vars missing — falling back to SENDGRID_API_KEY");
-      const apiKey = process.env.SENDGRID_API_KEY;
-      const fromEmail = process.env.SENDGRID_FROM_EMAIL || "noreply@cchub.app";
-      if (!apiKey) {
-        console.warn("[EmailService] No SendGrid API key found — emails will not be sent");
-        return null;
-      }
-      sgMail.setApiKey(apiKey);
-      return { client: sgMail, fromEmail };
+      return tryEnvFallback();
     }
 
     const connectionSettings = await fetch(
@@ -35,16 +40,19 @@ async function getSendGridClient(): Promise<{ client: typeof sgMail; fromEmail: 
       }
     ).then((res) => res.json()).then((data) => data.items?.[0]);
 
-    if (!connectionSettings?.settings?.api_key || !connectionSettings?.settings?.from_email) {
-      console.warn("[EmailService] SendGrid not connected via Replit integration — emails will not be sent");
-      return null;
+    const connKey: string = connectionSettings?.settings?.api_key ?? "";
+    const connFrom: string = connectionSettings?.settings?.from_email ?? "";
+
+    if (!connKey.startsWith("SG.") || !connFrom) {
+      console.warn("[EmailService] Connector returned invalid key — falling back to SENDGRID_API_KEY env var");
+      return tryEnvFallback();
     }
 
-    sgMail.setApiKey(connectionSettings.settings.api_key);
-    return { client: sgMail, fromEmail: connectionSettings.settings.from_email };
+    sgMail.setApiKey(connKey);
+    return { client: sgMail, fromEmail: connFrom };
   } catch (err) {
     console.error("[EmailService] Failed to initialise SendGrid client:", err);
-    return null;
+    return tryEnvFallback();
   }
 }
 
