@@ -50,6 +50,7 @@ import ComplianceGlossary from "@/pages/ComplianceGlossary";
 import MeetCorey from "@/pages/MeetCorey";
 import MeetIsa from "@/pages/MeetIsa";
 import DemoTour from "@/pages/DemoTour";
+import WatchDemo from "@/pages/WatchDemo";
 import PlatformBrief from "@/pages/PlatformBrief";
 import Cesar from "@/pages/Cesar";
 import ISOManagerMarketing from "@/pages/ISOManagerMarketing";
@@ -112,6 +113,7 @@ function Router() {
       <Route path="/bma-subscription" component={BMASubscription} />
       <Route path="/clinic-agreement" component={ClinicAgreement} />
       <Route path="/demo" component={Demo} />
+      <Route path="/watch-demo" component={WatchDemo} />
       <Route path="/sms-consent" component={SMSConsent} />
       <Route path="/training" component={Training} />
       <Route path="/training/:id" component={CourseViewer} />

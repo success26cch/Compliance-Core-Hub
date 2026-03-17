@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle, Check, BarChart3, Ambulance, Bell, Globe } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle, Check, BarChart3, Ambulance, Bell, Globe, Play } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import jsPDF from "jspdf";
@@ -1110,11 +1110,12 @@ export default function Landing() {
                   Get Started
                 </Button>
               </Link>
-              <a href="#features">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto" data-testid="button-hero-see-features">
-                  See Features
+              <Link href="/watch-demo">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2" data-testid="button-hero-watch-demo">
+                  <Play className="w-4 h-4" />
+                  Watch Demo
                 </Button>
-              </a>
+              </Link>
             </div>
           </motion.div>
         </div>
