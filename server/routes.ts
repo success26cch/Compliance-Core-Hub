@@ -1,5 +1,7 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import fs from "fs";
+import path from "path";
 import { setupAuth } from "./replit_integrations/auth";
 import { registerAuthRoutes } from "./replit_integrations/auth";
 import { registerChatRoutes } from "./replit_integrations/chat";
@@ -90,7 +92,39 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Auth Setup
   await setupAuth(app);
   registerAuthRoutes(app);
-  
+
+  // Demo video — served via API route to bypass CDN/static layer size limits
+  app.get("/api/demo-video", (req: Request, res: Response) => {
+    const videoPath = path.resolve(
+      process.env.NODE_ENV === "production"
+        ? path.join(__dirname, "public/demo.mp4")
+        : path.join(process.cwd(), "client/public/demo.mp4"),
+    );
+    if (!fs.existsSync(videoPath)) {
+      res.status(404).send("Video not found");
+      return;
+    }
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    if (range) {
+      const [startStr, endStr] = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(startStr, 10);
+      const end = endStr ? parseInt(endStr, 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+      res.writeHead(206, {
+        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+        "Content-Length": chunkSize,
+      });
+      fs.createReadStream(videoPath, { start, end }).pipe(res);
+    } else {
+      res.writeHead(200, { "Content-Length": fileSize });
+      fs.createReadStream(videoPath).pipe(res);
+    }
+  });
+
   // Chat Integration
   registerChatRoutes(app);
 

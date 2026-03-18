@@ -111,7 +111,7 @@ export default function WatchDemo() {
         <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 bg-black group" data-testid="section-video-player">
           <video
             ref={videoRef}
-            src="/demo.mp4"
+            src="/api/demo-video"
             className="w-full aspect-video object-contain bg-black"
             preload="auto"
             muted
