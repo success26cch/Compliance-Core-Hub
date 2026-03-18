@@ -1,7 +1,8 @@
+import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react";
+import { Play, Pause, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react";
 import logoUrl from "@assets/1_1770683748423.png";
 
 const HIGHLIGHTS = [
@@ -16,6 +17,31 @@ const HIGHLIGHTS = [
 ];
 
 export default function WatchDemo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+  }, []);
+
+  const toggle = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      v.play().then(() => setPlaying(true)).catch(() => {});
+    } else {
+      v.pause();
+      setPlaying(false);
+    }
+  };
+
+  const goFullscreen = () => {
+    videoRef.current?.requestFullscreen?.();
+  };
+
   return (
     <div className="min-h-screen bg-[hsl(222,47%,6%)] text-white">
       {/* Header */}
@@ -58,21 +84,53 @@ export default function WatchDemo() {
 
       {/* Video Player */}
       <section className="max-w-5xl mx-auto px-4 pb-16">
-        <div
-          className="rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 bg-black"
-          data-testid="section-video-player"
-        >
+        <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 bg-black" data-testid="section-video-player">
           <video
+            ref={videoRef}
             src="/api/demo-video"
-            autoPlay
-            muted
             playsInline
-            controls
-            className="w-full aspect-video block"
+            preload="auto"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onEnded={() => setPlaying(false)}
+            onClick={toggle}
+            className="w-full block cursor-pointer"
+            style={{ display: "block", aspectRatio: "16/9", backgroundColor: "#000" }}
             data-testid="video-demo"
-            style={{ display: "block", backgroundColor: "#000" }}
           />
+
+          {/* Play/Pause overlay — shows briefly on toggle */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {!playing && (
+              <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
+                <Play className="w-7 h-7 text-white ml-1" fill="white" />
+              </div>
+            )}
+          </div>
+
+          {/* Bottom controls */}
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-t from-black/70 to-transparent">
+            <button
+              onClick={toggle}
+              className="text-white hover:text-accent transition-colors"
+              data-testid="button-video-toggle"
+              aria-label={playing ? "Pause" : "Play"}
+            >
+              {playing
+                ? <Pause className="w-5 h-5" fill="currentColor" />
+                : <Play className="w-5 h-5" fill="currentColor" />}
+            </button>
+            <button
+              onClick={goFullscreen}
+              className="text-white hover:text-accent transition-colors"
+              data-testid="button-video-fullscreen"
+              aria-label="Fullscreen"
+            >
+              <Maximize className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
         <p className="text-center text-white/40 text-sm mt-4">
           Full platform walkthrough · Core Compliance Hub
         </p>

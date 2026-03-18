@@ -95,12 +95,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // Demo video — served via API route to bypass CDN/static layer size limits
   app.get("/api/demo-video", (req: Request, res: Response) => {
-    const videoPath = path.resolve(
-      process.env.NODE_ENV === "production"
-        ? path.join(__dirname, "public/demo.mp4")
-        : path.join(process.cwd(), "client/public/demo.mp4"),
-    );
-    if (!fs.existsSync(videoPath)) {
+    const isProd = process.env.NODE_ENV === "production";
+    const videoPath = isProd
+      ? path.join(__dirname, "public", "demo.mp4")
+      : path.join(process.cwd(), "client", "public", "demo.mp4");
+    const exists = fs.existsSync(videoPath);
+    console.log(`[demo-video] env=${isProd ? "prod" : "dev"} path=${videoPath} exists=${exists}`);
+    if (!exists) {
       res.status(404).send("Video not found");
       return;
     }
@@ -109,6 +110,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const range = req.headers.range;
     res.setHeader("Content-Type", "video/mp4");
     res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "public, max-age=86400");
     if (range) {
       const [startStr, endStr] = range.replace(/bytes=/, "").split("-");
       const start = parseInt(startStr, 10);
