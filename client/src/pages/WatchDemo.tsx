@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +19,26 @@ const HIGHLIGHTS = [
 export default function WatchDemo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [started, setStarted] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [showUnmuteHint, setShowUnmuteHint] = useState(false);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    const playPromise = v.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setPlaying(true);
+          setShowUnmuteHint(true);
+          setTimeout(() => setShowUnmuteHint(false), 4000);
+        })
+        .catch(() => {
+          setPlaying(false);
+        });
+    }
+  }, []);
 
   const togglePlay = () => {
     const v = videoRef.current;
@@ -28,7 +46,6 @@ export default function WatchDemo() {
     if (v.paused) {
       v.play();
       setPlaying(true);
-      setStarted(true);
     } else {
       v.pause();
       setPlaying(false);
@@ -40,6 +57,7 @@ export default function WatchDemo() {
     if (!v) return;
     v.muted = !v.muted;
     setMuted(v.muted);
+    setShowUnmuteHint(false);
   };
 
   const openFullscreen = () => {
@@ -95,31 +113,27 @@ export default function WatchDemo() {
             ref={videoRef}
             src="/demo.mp4"
             className="w-full aspect-video object-contain bg-black"
-            preload="metadata"
-            onPlay={() => { setPlaying(true); setStarted(true); }}
+            preload="auto"
+            muted
+            playsInline
+            onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onEnded={() => { setPlaying(false); setStarted(false); }}
+            onEnded={() => setPlaying(false)}
             data-testid="video-demo"
           />
 
-          {/* Big play overlay — only before first play */}
-          {!started && (
-            <button
-              onClick={togglePlay}
-              className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/50 transition-colors"
-              data-testid="button-video-play-overlay"
-              aria-label="Play demo video"
-            >
-              <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center shadow-xl shadow-accent/30 hover:scale-105 transition-transform">
-                <Play className="w-8 h-8 text-white ml-1" fill="white" />
-              </div>
-            </button>
+          {/* Unmute hint toast */}
+          {showUnmuteHint && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 text-white text-sm px-4 py-2 rounded-full border border-white/20 flex items-center gap-2 pointer-events-none">
+              <VolumeX className="w-4 h-4 text-accent" />
+              Video is muted — click the speaker icon to unmute
+            </div>
           )}
 
-          {/* Controls bar */}
-          <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Controls bar — always visible, stronger on hover */}
+          <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent opacity-60 group-hover:opacity-100 transition-opacity">
             <button onClick={togglePlay} className="text-white hover:text-accent transition-colors" data-testid="button-video-toggle-play" aria-label={playing ? "Pause" : "Play"}>
-              {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+              {playing ? <Pause className="w-5 h-5" fill="currentColor" /> : <Play className="w-5 h-5" fill="currentColor" />}
             </button>
             <button onClick={toggleMute} className="text-white hover:text-accent transition-colors" data-testid="button-video-toggle-mute" aria-label={muted ? "Unmute" : "Mute"}>
               {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
