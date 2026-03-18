@@ -2580,18 +2580,17 @@ export default function Incidents() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="w-full">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Employee</TableHead>
-                          <TableHead>Type</TableHead>
+                          <TableHead className="w-[100px]">Date</TableHead>
+                          <TableHead className="w-[130px]">Employee</TableHead>
+                          <TableHead className="w-[110px]">Type</TableHead>
                           <TableHead>Description</TableHead>
-                          <TableHead>Recordable</TableHead>
-                          <TableHead>Days Away/Restricted</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead></TableHead>
+                          <TableHead className="w-[100px]">OSHA</TableHead>
+                          <TableHead className="w-[90px]">Status</TableHead>
+                          <TableHead className="w-[90px]"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -2602,42 +2601,36 @@ export default function Incidents() {
                             className="cursor-pointer hover:bg-muted/50 transition-colors"
                             onClick={() => handleOpenIncident(incident)}
                           >
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-muted-foreground" />
-                                {new Date(incident.incidentDate).toLocaleDateString()}
-                              </div>
+                            <TableCell className="text-sm whitespace-nowrap">
+                              {new Date(incident.incidentDate).toLocaleDateString()}
                             </TableCell>
-                            <TableCell>
-                              {incident.employeeName || <span className="text-muted-foreground">—</span>}
+                            <TableCell className="max-w-[130px]">
+                              <span className="truncate block">{incident.employeeName || <span className="text-muted-foreground">—</span>}</span>
                             </TableCell>
                             <TableCell>{getTypeBadge(incident.incidentType)}</TableCell>
-                            <TableCell className="max-w-xs">
-                              <span className="truncate block max-w-[200px]">{incident.description}</span>
+                            <TableCell>
+                              <span className="truncate block max-w-[180px] text-sm">{incident.description}</span>
                             </TableCell>
                             <TableCell>
                               {incident.isRecordable ? (
-                                <Badge className="bg-destructive text-destructive-foreground">Yes</Badge>
+                                <div className="flex flex-col gap-0.5">
+                                  <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 w-fit">Recordable</Badge>
+                                  {(incident.daysAway || incident.daysRestricted) ? (
+                                    <span className="text-[10px] text-muted-foreground">{incident.daysAway ?? 0}d away / {incident.daysRestricted ?? 0}d restr.</span>
+                                  ) : null}
+                                </div>
                               ) : (
-                                <Badge variant="secondary">No</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {incident.isRecordable ? (
-                                <span className="text-sm">
-                                  {incident.daysAway} / {incident.daysRestricted}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground">--</span>
+                                <Badge variant="secondary" className="text-[10px] px-1.5">Not Rec.</Badge>
                               )}
                             </TableCell>
                             <TableCell>{getStatusBadge(incident.status)}</TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
                                 <Button
-                                  size="sm"
+                                  size="icon"
                                   variant="outline"
-                                  className="h-8 gap-2 border-accent text-accent hover:bg-accent/10"
+                                  className="h-7 w-7 border-accent text-accent hover:bg-accent/10"
+                                  title="Create CAPA"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedCAPAForPlan(incident.id);
@@ -2646,13 +2639,12 @@ export default function Incidents() {
                                   data-testid={`button-incident-capa-${incident.id}`}
                                 >
                                   <ShieldCheck className="w-3.5 h-3.5" />
-                                  CAPA
                                 </Button>
                                 <Button
-                                  size="sm"
+                                  size="icon"
                                   variant="ghost"
-                                  className="gap-1 text-xs text-sky-600 hover:text-sky-700 hover:bg-sky-50"
-                                  title="Send incident notification to your workers' comp adjuster"
+                                  className="h-7 w-7 text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                                  title="Notify workers' comp adjuster"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     notifyAdjusterMutation.mutate(incident.id);
@@ -2660,18 +2652,17 @@ export default function Incidents() {
                                   disabled={notifyAdjusterMutation.isPending}
                                   data-testid={`button-notify-adjuster-${incident.id}`}
                                 >
-                                  <Mail className="w-3 h-3" />
-                                  Notify WC
+                                  <Mail className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
-                                  size="sm"
+                                  size="icon"
                                   variant="ghost"
-                                  className="gap-1 text-xs"
+                                  className="h-7 w-7"
+                                  title="Open incident detail"
                                   onClick={(e) => { e.stopPropagation(); handleOpenIncident(incident); }}
                                   data-testid={`button-open-incident-${incident.id}`}
                                 >
-                                  <Eye className="w-3 h-3" />
-                                  Open
+                                  <Eye className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
                             </TableCell>
