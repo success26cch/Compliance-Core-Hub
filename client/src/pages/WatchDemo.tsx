@@ -1,8 +1,7 @@
-import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Volume2, VolumeX, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react";
 import logoUrl from "@assets/1_1770683748423.png";
 
 const HIGHLIGHTS = [
@@ -17,55 +16,6 @@ const HIGHLIGHTS = [
 ];
 
 export default function WatchDemo() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
-  const [showUnmuteHint, setShowUnmuteHint] = useState(false);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = true;
-    const playPromise = v.play();
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          setPlaying(true);
-          setShowUnmuteHint(true);
-          setTimeout(() => setShowUnmuteHint(false), 4000);
-        })
-        .catch(() => {
-          setPlaying(false);
-        });
-    }
-  }, []);
-
-  const togglePlay = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (v.paused) {
-      v.play();
-      setPlaying(true);
-    } else {
-      v.pause();
-      setPlaying(false);
-    }
-  };
-
-  const toggleMute = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = !v.muted;
-    setMuted(v.muted);
-    setShowUnmuteHint(false);
-  };
-
-  const openFullscreen = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (v.requestFullscreen) v.requestFullscreen();
-  };
-
   return (
     <div className="min-h-screen bg-[hsl(222,47%,6%)] text-white">
       {/* Header */}
@@ -108,49 +58,27 @@ export default function WatchDemo() {
 
       {/* Video Player */}
       <section className="max-w-5xl mx-auto px-4 pb-16">
-        <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 bg-black group" data-testid="section-video-player">
+        <div
+          className="rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 bg-black"
+          data-testid="section-video-player"
+        >
           <video
-            ref={videoRef}
             src="/api/demo-video"
-            className="w-full aspect-video object-contain bg-black"
-            preload="auto"
+            autoPlay
             muted
             playsInline
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
+            controls
+            className="w-full aspect-video block"
             data-testid="video-demo"
+            style={{ display: "block", backgroundColor: "#000" }}
           />
-
-          {/* Unmute hint toast */}
-          {showUnmuteHint && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 text-white text-sm px-4 py-2 rounded-full border border-white/20 flex items-center gap-2 pointer-events-none">
-              <VolumeX className="w-4 h-4 text-accent" />
-              Video is muted — click the speaker icon to unmute
-            </div>
-          )}
-
-          {/* Controls bar — always visible, stronger on hover */}
-          <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent opacity-60 group-hover:opacity-100 transition-opacity">
-            <button onClick={togglePlay} className="text-white hover:text-accent transition-colors" data-testid="button-video-toggle-play" aria-label={playing ? "Pause" : "Play"}>
-              {playing ? <Pause className="w-5 h-5" fill="currentColor" /> : <Play className="w-5 h-5" fill="currentColor" />}
-            </button>
-            <button onClick={toggleMute} className="text-white hover:text-accent transition-colors" data-testid="button-video-toggle-mute" aria-label={muted ? "Unmute" : "Mute"}>
-              {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-            </button>
-            <div className="flex-1" />
-            <button onClick={openFullscreen} className="text-white hover:text-accent transition-colors" data-testid="button-video-fullscreen" aria-label="Fullscreen">
-              <Maximize className="w-5 h-5" />
-            </button>
-          </div>
         </div>
-
         <p className="text-center text-white/40 text-sm mt-4">
           Full platform walkthrough · Core Compliance Hub
         </p>
       </section>
 
-      {/* What You Just Saw */}
+      {/* Highlights */}
       <section className="max-w-4xl mx-auto px-4 pb-20">
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-display font-black text-white mb-3" data-testid="text-highlights-title">
@@ -160,7 +88,11 @@ export default function WatchDemo() {
         </div>
         <div className="grid sm:grid-cols-2 gap-3 max-w-3xl mx-auto">
           {HIGHLIGHTS.map((item) => (
-            <div key={item} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3" data-testid={`item-highlight-${item.slice(0, 20).toLowerCase().replace(/\s+/g, '-')}`}>
+            <div
+              key={item}
+              className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+              data-testid={`item-highlight-${item.slice(0, 20).toLowerCase().replace(/\s+/g, "-")}`}
+            >
               <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
               <span className="text-sm text-white/80 leading-relaxed">{item}</span>
             </div>
