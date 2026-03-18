@@ -40,7 +40,16 @@ import {
   Bot,
   RefreshCw,
   X,
-  Mail
+  Mail,
+  Building2,
+  Phone,
+  DollarSign,
+  MapPin,
+  Briefcase,
+  UserCheck,
+  ChevronRight,
+  ChevronLeft,
+  Hospital
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -178,6 +187,7 @@ type Incident = {
 };
 
 type IncidentFormData = {
+  // Basic / OSHA 300
   incidentDate: string;
   description: string;
   incidentType: string;
@@ -196,6 +206,50 @@ type IncidentFormData = {
   daysJobTransfer: number;
   isOtherRecordable: boolean;
   status: string;
+  // FROI — Employee Personal
+  employeeSsnLast4: string;
+  employeeDob: string;
+  employeeSex: string;
+  employeePhone: string;
+  employeeAddress: string;
+  employeeHireDate: string;
+  employeeDependents: string;
+  employeeTaxStatus: string;
+  // FROI — Wage & Employment
+  grossWeeklyWage: string;
+  weeksWorked: string;
+  fringeBenefitsValue: string;
+  isVolunteer: boolean;
+  isVocationallyHandicapped: boolean;
+  // FROI — Employer / Insurance
+  fein: string;
+  uiNumber: string;
+  sicNaicsCode: string;
+  insuranceCompany: string;
+  insurancePhone: string;
+  policyNumber: string;
+  tpaName: string;
+  // FROI — Timing & Location
+  timeWorkBegan: string;
+  timeOfEvent: string;
+  injuryCity: string;
+  injuryState: string;
+  injuryCounty: string;
+  onEmployerPremises: boolean;
+  whatEmployeeWasDoing: string;
+  howInjuryOccurred: string;
+  // FROI — Medical
+  physicianName: string;
+  treatmentFacility: string;
+  treatedInEr: boolean;
+  hospitalizedOvernight: boolean;
+  treatmentAddress: string;
+  // FROI — Key Dates
+  lastDayWorked: string;
+  firstDayMissed: string;
+  returnToWorkDate: string;
+  deathDate: string;
+  dateEmployerNotified: string;
 };
 
 const defaultFormData: IncidentFormData = {
@@ -217,6 +271,44 @@ const defaultFormData: IncidentFormData = {
   daysJobTransfer: 0,
   isOtherRecordable: false,
   status: 'pending_review',
+  employeeSsnLast4: '',
+  employeeDob: '',
+  employeeSex: '',
+  employeePhone: '',
+  employeeAddress: '',
+  employeeHireDate: '',
+  employeeDependents: '',
+  employeeTaxStatus: '',
+  grossWeeklyWage: '',
+  weeksWorked: '',
+  fringeBenefitsValue: '',
+  isVolunteer: false,
+  isVocationallyHandicapped: false,
+  fein: '',
+  uiNumber: '',
+  sicNaicsCode: '',
+  insuranceCompany: '',
+  insurancePhone: '',
+  policyNumber: '',
+  tpaName: '',
+  timeWorkBegan: '',
+  timeOfEvent: '',
+  injuryCity: '',
+  injuryState: '',
+  injuryCounty: '',
+  onEmployerPremises: true,
+  whatEmployeeWasDoing: '',
+  howInjuryOccurred: '',
+  physicianName: '',
+  treatmentFacility: '',
+  treatedInEr: false,
+  hospitalizedOvernight: false,
+  treatmentAddress: '',
+  lastDayWorked: '',
+  firstDayMissed: '',
+  returnToWorkDate: '',
+  deathDate: '',
+  dateEmployerNotified: '',
 };
 
 function getTypeBadge(type: string) {
@@ -247,6 +339,22 @@ function getStatusBadge(status: string) {
   }
 }
 
+const FROI_TABS = [
+  { id: "incident",  label: "Incident",        icon: AlertTriangle },
+  { id: "employee",  label: "Employee",         icon: UserCheck },
+  { id: "details",   label: "Incident Details", icon: ClipboardList },
+  { id: "medical",   label: "Medical & Dates",  icon: Hospital },
+  { id: "osha",      label: "OSHA / WC",        icon: ShieldCheck },
+];
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b pb-1.5">
+      {children}
+    </h3>
+  );
+}
+
 function IncidentFormDialog({ 
   open, 
   onOpenChange, 
@@ -259,300 +367,490 @@ function IncidentFormDialog({
   initialRecordable?: boolean;
 }) {
   const [formData, setFormData] = useState<IncidentFormData>({ ...defaultFormData, isRecordable: initialRecordable });
+  const [activeTab, setActiveTab] = useState("incident");
 
   useEffect(() => {
     if (open) {
       setFormData({ ...defaultFormData, isRecordable: initialRecordable });
+      setActiveTab("incident");
     }
   }, [open, initialRecordable]);
+
+  const set = (fields: Partial<IncidentFormData>) => setFormData(prev => ({ ...prev, ...fields }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
-    setFormData(defaultFormData);
   };
+
+  const tabIdx = FROI_TABS.findIndex(t => t.id === activeTab);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            OSHA 300 Incident Report
+      <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0">
+        {/* Header */}
+        <div className="px-6 pt-5 pb-3 border-b">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+            <FileText className="w-5 h-5 text-accent" />
+            First Report of Injury / OSHA 300 Incident Report
           </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="incidentDate">Date of Injury/Illness *</Label>
-                <Input 
-                  id="incidentDate"
-                  type="date"
-                  value={formData.incidentDate}
-                  onChange={(e) => setFormData({...formData, incidentDate: e.target.value})}
-                  required
-                  data-testid="input-incident-date"
-                />
-              </div>
-              <div>
-                <Label htmlFor="incidentType">Incident Type *</Label>
-                <Select 
-                  value={formData.incidentType} 
-                  onValueChange={(v) => setFormData({...formData, incidentType: v})}
+          <p className="text-xs text-muted-foreground mt-0.5">Complete all sections for a full Workers' Comp FROI submission</p>
+        </div>
+
+        {/* Tab navigation */}
+        <div className="border-b bg-muted/30">
+          <div className="flex overflow-x-auto">
+            {FROI_TABS.map((tab, i) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    isActive
+                      ? "border-accent text-accent bg-white"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-white/60"
+                  }`}
                 >
-                  <SelectTrigger data-testid="select-incident-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="injury">Injury</SelectItem>
-                    <SelectItem value="illness">Illness</SelectItem>
-                    <SelectItem value="near_miss">Near Miss</SelectItem>
-                    <SelectItem value="property_damage">Property Damage</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  <span className={`w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0 ${
+                    isActive ? "bg-accent text-white" : "bg-muted text-muted-foreground"
+                  }`}>{i + 1}</span>
+                  <Icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Employee Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Employee Information</h3>
-            <div>
-              <Label htmlFor="facility">Facility / Site Name</Label>
-              <Input
-                id="facility"
-                value={formData.facility}
-                onChange={(e) => setFormData({...formData, facility: e.target.value})}
-                placeholder="e.g., Plant 1 – Detroit, Warehouse North, Corporate Office"
-                data-testid="input-facility"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="employeeName">Employee Name</Label>
-                <Input 
-                  id="employeeName"
-                  value={formData.employeeName}
-                  onChange={(e) => setFormData({...formData, employeeName: e.target.value})}
-                  placeholder="Full name of injured/ill employee"
-                  data-testid="input-employee-name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="jobTitle">Job Title</Label>
-                <Input 
-                  id="jobTitle"
-                  value={formData.jobTitle}
-                  onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
-                  placeholder="e.g., Forklift Operator"
-                  data-testid="input-job-title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="department">Department</Label>
-                <Input 
-                  id="department"
-                  value={formData.department}
-                  onChange={(e) => setFormData({...formData, department: e.target.value})}
-                  placeholder="e.g., Warehouse"
-                  data-testid="input-department"
-                />
-              </div>
-              <div>
-                <Label htmlFor="location">Work Area / Location</Label>
-                <Select value={formData.location} onValueChange={(v) => setFormData({...formData, location: v})}>
-                  <SelectTrigger id="location" data-testid="select-location">
-                    <SelectValue placeholder="Select work area..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORK_AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* Injury/Illness Details */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Injury/Illness Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="bodyPart">Body Part Affected</Label>
-                <Select value={formData.bodyPart} onValueChange={(v) => setFormData({...formData, bodyPart: v})}>
-                  <SelectTrigger id="bodyPart" data-testid="select-body-part">
-                    <SelectValue placeholder="Select body part..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BODY_PARTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="natureOfInjury">Nature of Injury/Illness</Label>
-                <Select value={formData.natureOfInjury} onValueChange={(v) => setFormData({...formData, natureOfInjury: v})}>
-                  <SelectTrigger id="natureOfInjury" data-testid="select-nature-injury">
-                    <SelectValue placeholder="Select injury type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INJURY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="objectOrSubstance">Source / Object That Caused Harm</Label>
-              <Select value={formData.objectOrSubstance} onValueChange={(v) => setFormData({...formData, objectOrSubstance: v})}>
-                <SelectTrigger id="objectOrSubstance" data-testid="select-object-substance">
-                  <SelectValue placeholder="Select source of harm..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {OBJECTS_SOURCES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="description">Description of Event *</Label>
-              <Textarea 
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Describe what happened, how, and any contributing factors..."
-                rows={3}
-                required
-                data-testid="input-description"
-              />
-            </div>
-          </div>
-
-          {/* OSHA Classification */}
-          <div className="border rounded-lg p-4 bg-muted/30">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-destructive" />
-              OSHA 300 Classification
-            </h4>
-            <div className="space-y-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox"
-                  checked={formData.isRecordable}
-                  onChange={(e) => setFormData({...formData, isRecordable: e.target.checked})}
-                  className="w-4 h-4"
-                  data-testid="checkbox-recordable"
-                />
-                <span className="text-sm font-medium">This is an OSHA recordable incident</span>
-              </label>
-
-              {formData.isRecordable && (
-                <div className="space-y-4 pl-6 border-l-2 border-destructive/30">
-                  {/* Classification checkboxes */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="checkbox"
-                        checked={formData.resultedInDeath}
-                        onChange={(e) => setFormData({...formData, resultedInDeath: e.target.checked})}
-                        className="w-4 h-4"
-                        data-testid="checkbox-death"
-                      />
-                      <span className="text-sm flex items-center gap-1">
-                        <Skull className="w-4 h-4 text-destructive" />
-                        Resulted in Death
-                      </span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="checkbox"
-                        checked={formData.isOtherRecordable}
-                        onChange={(e) => setFormData({...formData, isOtherRecordable: e.target.checked})}
-                        className="w-4 h-4"
-                        data-testid="checkbox-other-recordable"
-                      />
-                      <span className="text-sm flex items-center gap-1">
-                        <Stethoscope className="w-4 h-4 text-orange-500" />
-                        Other Recordable Case
-                      </span>
-                    </label>
+            {/* ── TAB 1: Incident ─────────────────────────────────────────── */}
+            {activeTab === "incident" && (
+              <div className="space-y-5">
+                <SectionLabel><AlertTriangle className="w-3.5 h-3.5" /> Basic Incident Information</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="incidentDate">Date of Injury / Illness *</Label>
+                    <Input id="incidentDate" type="date" value={formData.incidentDate}
+                      onChange={e => set({ incidentDate: e.target.value })} required data-testid="input-incident-date" />
                   </div>
-
-                  {/* Days fields */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="daysAway" className="flex items-center gap-1 text-xs">
-                        <BedDouble className="w-3 h-3" />
-                        Days Away From Work
-                      </Label>
-                      <Input 
-                        id="daysAway"
-                        type="number"
-                        min="0"
-                        value={formData.daysAway}
-                        onChange={(e) => setFormData({...formData, daysAway: parseInt(e.target.value) || 0})}
-                        data-testid="input-days-away"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="daysRestricted" className="flex items-center gap-1 text-xs">
-                        <Construction className="w-3 h-3" />
-                        Days Restricted Duty
-                      </Label>
-                      <Input 
-                        id="daysRestricted"
-                        type="number"
-                        min="0"
-                        value={formData.daysRestricted}
-                        onChange={(e) => setFormData({...formData, daysRestricted: parseInt(e.target.value) || 0})}
-                        data-testid="input-days-restricted"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="daysJobTransfer" className="flex items-center gap-1 text-xs">
-                        <ClipboardList className="w-3 h-3" />
-                        Days Job Transfer
-                      </Label>
-                      <Input 
-                        id="daysJobTransfer"
-                        type="number"
-                        min="0"
-                        value={formData.daysJobTransfer}
-                        onChange={(e) => setFormData({...formData, daysJobTransfer: parseInt(e.target.value) || 0})}
-                        data-testid="input-days-transfer"
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="incidentType">Incident Type *</Label>
+                    <Select value={formData.incidentType} onValueChange={v => set({ incidentType: v })}>
+                      <SelectTrigger data-testid="select-incident-type"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="injury">Injury</SelectItem>
+                        <SelectItem value="illness">Illness</SelectItem>
+                        <SelectItem value="near_miss">Near Miss</SelectItem>
+                        <SelectItem value="property_damage">Property Damage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="timeWorkBegan">Time Employee Began Work</Label>
+                    <Input id="timeWorkBegan" type="time" value={formData.timeWorkBegan}
+                      onChange={e => set({ timeWorkBegan: e.target.value })} data-testid="input-time-work-began" />
+                  </div>
+                  <div>
+                    <Label htmlFor="timeOfEvent">Time of Incident / Event</Label>
+                    <Input id="timeOfEvent" type="time" value={formData.timeOfEvent}
+                      onChange={e => set({ timeOfEvent: e.target.value })} data-testid="input-time-of-event" />
                   </div>
                 </div>
-              )}
-            </div>
+                <div>
+                  <Label htmlFor="facility">Facility / Site Name</Label>
+                  <Input id="facility" value={formData.facility}
+                    onChange={e => set({ facility: e.target.value })}
+                    placeholder="e.g., Plant 1 – Detroit, Warehouse North, Corporate Office"
+                    data-testid="input-facility" />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="injuryCity">City of Incident</Label>
+                    <Input id="injuryCity" value={formData.injuryCity}
+                      onChange={e => set({ injuryCity: e.target.value })} placeholder="City" data-testid="input-injury-city" />
+                  </div>
+                  <div>
+                    <Label htmlFor="injuryState">State</Label>
+                    <Input id="injuryState" value={formData.injuryState}
+                      onChange={e => set({ injuryState: e.target.value })} placeholder="e.g., MI" maxLength={2} data-testid="input-injury-state" />
+                  </div>
+                  <div>
+                    <Label htmlFor="injuryCounty">County</Label>
+                    <Input id="injuryCounty" value={formData.injuryCounty}
+                      onChange={e => set({ injuryCounty: e.target.value })} placeholder="County" data-testid="input-injury-county" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="location">Work Area / Location</Label>
+                  <Select value={formData.location} onValueChange={v => set({ location: v })}>
+                    <SelectTrigger data-testid="select-location"><SelectValue placeholder="Select work area..." /></SelectTrigger>
+                    <SelectContent>{WORK_AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="onEmployerPremises" checked={formData.onEmployerPremises}
+                    onChange={e => set({ onEmployerPremises: e.target.checked })}
+                    className="w-4 h-4" data-testid="checkbox-on-premises" />
+                  <Label htmlFor="onEmployerPremises" className="cursor-pointer">Incident occurred on employer premises</Label>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB 2: Employee ─────────────────────────────────────────── */}
+            {activeTab === "employee" && (
+              <div className="space-y-5">
+                <SectionLabel><UserCheck className="w-3.5 h-3.5" /> Employee Personal Data</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="empName">Employee Full Name</Label>
+                    <Input id="empName" value={formData.employeeName}
+                      onChange={e => set({ employeeName: e.target.value })}
+                      placeholder="Last, First MI" data-testid="input-employee-name" />
+                  </div>
+                  <div>
+                    <Label htmlFor="empSsn">SSN — Last 4 Digits</Label>
+                    <Input id="empSsn" value={formData.employeeSsnLast4}
+                      onChange={e => set({ employeeSsnLast4: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                      placeholder="XXXX" maxLength={4} data-testid="input-ssn-last4" />
+                  </div>
+                  <div>
+                    <Label htmlFor="empDob">Date of Birth</Label>
+                    <Input id="empDob" type="date" value={formData.employeeDob}
+                      onChange={e => set({ employeeDob: e.target.value })} data-testid="input-employee-dob" />
+                  </div>
+                  <div>
+                    <Label htmlFor="empSex">Sex</Label>
+                    <Select value={formData.employeeSex} onValueChange={v => set({ employeeSex: v })}>
+                      <SelectTrigger data-testid="select-employee-sex"><SelectValue placeholder="Select..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="empPhone">Phone Number</Label>
+                    <Input id="empPhone" value={formData.employeePhone}
+                      onChange={e => set({ employeePhone: e.target.value })} placeholder="(555) 000-0000" data-testid="input-employee-phone" />
+                  </div>
+                  <div>
+                    <Label htmlFor="empDependents">Number of Dependents</Label>
+                    <Input id="empDependents" type="number" min="0" value={formData.employeeDependents}
+                      onChange={e => set({ employeeDependents: e.target.value })} data-testid="input-employee-dependents" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="empAddress">Home Address</Label>
+                  <Input id="empAddress" value={formData.employeeAddress}
+                    onChange={e => set({ employeeAddress: e.target.value })}
+                    placeholder="Street, City, State, ZIP" data-testid="input-employee-address" />
+                </div>
+                <div>
+                  <Label htmlFor="empTaxStatus">Tax Filing Status</Label>
+                  <Select value={formData.employeeTaxStatus} onValueChange={v => set({ employeeTaxStatus: v })}>
+                    <SelectTrigger data-testid="select-tax-status"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Single</SelectItem>
+                      <SelectItem value="head_of_household">Head of Household</SelectItem>
+                      <SelectItem value="married_joint">Married Filing Joint</SelectItem>
+                      <SelectItem value="married_separate">Married Filing Separate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <SectionLabel><Briefcase className="w-3.5 h-3.5" /> Employment Details</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="empHireDate">Date of Hire</Label>
+                    <Input id="empHireDate" type="date" value={formData.employeeHireDate}
+                      onChange={e => set({ employeeHireDate: e.target.value })} data-testid="input-hire-date" />
+                  </div>
+                  <div>
+                    <Label htmlFor="jobTitle">Job Title / Occupation</Label>
+                    <Input id="jobTitle" value={formData.jobTitle}
+                      onChange={e => set({ jobTitle: e.target.value })} placeholder="e.g., Forklift Operator" data-testid="input-job-title" />
+                  </div>
+                  <div>
+                    <Label htmlFor="department">Department</Label>
+                    <Input id="department" value={formData.department}
+                      onChange={e => set({ department: e.target.value })} placeholder="e.g., Warehouse" data-testid="input-department" />
+                  </div>
+                  <div>
+                    <Label htmlFor="dateEmployerNotified">Date Employer Was Notified</Label>
+                    <Input id="dateEmployerNotified" type="date" value={formData.dateEmployerNotified}
+                      onChange={e => set({ dateEmployerNotified: e.target.value })} data-testid="input-employer-notified-date" />
+                  </div>
+                </div>
+                <SectionLabel><DollarSign className="w-3.5 h-3.5" /> Wage Information</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="grossWeeklyWage">Total Gross Weekly Wage (highest 39 of last 52 wks)</Label>
+                    <Input id="grossWeeklyWage" value={formData.grossWeeklyWage}
+                      onChange={e => set({ grossWeeklyWage: e.target.value })} placeholder="$0.00" data-testid="input-gross-weekly-wage" />
+                  </div>
+                  <div>
+                    <Label htmlFor="weeksWorked">Number of Weeks Used</Label>
+                    <Input id="weeksWorked" type="number" min="0" max="52" value={formData.weeksWorked}
+                      onChange={e => set({ weeksWorked: e.target.value })} data-testid="input-weeks-worked" />
+                  </div>
+                  <div>
+                    <Label htmlFor="fringeBenefitsValue">Value of Discontinued Fringe Benefits</Label>
+                    <Input id="fringeBenefitsValue" value={formData.fringeBenefitsValue}
+                      onChange={e => set({ fringeBenefitsValue: e.target.value })} placeholder="$0.00" data-testid="input-fringe-benefits" />
+                  </div>
+                </div>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.isVolunteer}
+                      onChange={e => set({ isVolunteer: e.target.checked })} className="w-4 h-4" data-testid="checkbox-volunteer" />
+                    <span className="text-sm">Employee is a volunteer</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.isVocationallyHandicapped}
+                      onChange={e => set({ isVocationallyHandicapped: e.target.checked })} className="w-4 h-4" data-testid="checkbox-voc-handicapped" />
+                    <span className="text-sm">Certified as vocationally handicapped</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB 3: Incident Details ──────────────────────────────────── */}
+            {activeTab === "details" && (
+              <div className="space-y-5">
+                <SectionLabel><ClipboardList className="w-3.5 h-3.5" /> Injury / Illness Details</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="bodyPart">Body Part Affected</Label>
+                    <Select value={formData.bodyPart} onValueChange={v => set({ bodyPart: v })}>
+                      <SelectTrigger data-testid="select-body-part"><SelectValue placeholder="Select body part..." /></SelectTrigger>
+                      <SelectContent>{BODY_PARTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="natureOfInjury">Nature of Injury / Illness</Label>
+                    <Select value={formData.natureOfInjury} onValueChange={v => set({ natureOfInjury: v })}>
+                      <SelectTrigger data-testid="select-nature-injury"><SelectValue placeholder="Select injury type..." /></SelectTrigger>
+                      <SelectContent>{INJURY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="objectOrSubstance">Object / Substance That Directly Harmed the Employee</Label>
+                  <Select value={formData.objectOrSubstance} onValueChange={v => set({ objectOrSubstance: v })}>
+                    <SelectTrigger data-testid="select-object-substance"><SelectValue placeholder="Select source of harm..." /></SelectTrigger>
+                    <SelectContent>{OBJECTS_SOURCES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="whatEmployeeWasDoing">What was the employee doing just before the incident?</Label>
+                  <p className="text-xs text-muted-foreground mb-1">Describe the activity, tools, and materials in use</p>
+                  <Textarea id="whatEmployeeWasDoing" value={formData.whatEmployeeWasDoing}
+                    onChange={e => set({ whatEmployeeWasDoing: e.target.value })}
+                    placeholder="e.g., Operating a stand-up reach forklift to place pallets on racking in Aisle 7..."
+                    rows={3} data-testid="input-what-doing" />
+                </div>
+                <div>
+                  <Label htmlFor="howInjuryOccurred">How did the injury occur? *</Label>
+                  <p className="text-xs text-muted-foreground mb-1">Step-by-step account of the event sequence</p>
+                  <Textarea id="howInjuryOccurred" value={formData.howInjuryOccurred}
+                    onChange={e => set({ howInjuryOccurred: e.target.value })}
+                    placeholder="e.g., While lowering the forks, the employee's left hand contacted the racking beam..."
+                    rows={3} required data-testid="input-how-occurred" />
+                </div>
+                <div>
+                  <Label htmlFor="description">Additional Notes / Description</Label>
+                  <Textarea id="description" value={formData.description}
+                    onChange={e => set({ description: e.target.value })}
+                    placeholder="Any additional details, contributing factors, or supervisor observations..."
+                    rows={2} data-testid="input-description" />
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB 4: Medical & Dates ──────────────────────────────────── */}
+            {activeTab === "medical" && (
+              <div className="space-y-5">
+                <SectionLabel><Hospital className="w-3.5 h-3.5" /> Medical Treatment</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="physicianName">Treating Physician / Healthcare Professional</Label>
+                    <Input id="physicianName" value={formData.physicianName}
+                      onChange={e => set({ physicianName: e.target.value })} placeholder="Dr. Jane Smith" data-testid="input-physician-name" />
+                  </div>
+                  <div>
+                    <Label htmlFor="treatmentFacility">Clinic / Hospital / Treatment Facility</Label>
+                    <Input id="treatmentFacility" value={formData.treatmentFacility}
+                      onChange={e => set({ treatmentFacility: e.target.value })} placeholder="e.g., OccuHealth Clinic" data-testid="input-treatment-facility" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="treatmentAddress">Treatment Location Address (if away from worksite)</Label>
+                  <Input id="treatmentAddress" value={formData.treatmentAddress}
+                    onChange={e => set({ treatmentAddress: e.target.value })}
+                    placeholder="Street, City, State, ZIP" data-testid="input-treatment-address" />
+                </div>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.treatedInEr}
+                      onChange={e => set({ treatedInEr: e.target.checked })} className="w-4 h-4" data-testid="checkbox-treated-er" />
+                    <span className="text-sm">Treated in Emergency Room</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.hospitalizedOvernight}
+                      onChange={e => set({ hospitalizedOvernight: e.target.checked })} className="w-4 h-4" data-testid="checkbox-hospitalized" />
+                    <span className="text-sm">Hospitalized overnight (inpatient)</span>
+                  </label>
+                </div>
+                <SectionLabel><Calendar className="w-3.5 h-3.5" /> Key Dates</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="lastDayWorked">Last Day Worked</Label>
+                    <Input id="lastDayWorked" type="date" value={formData.lastDayWorked}
+                      onChange={e => set({ lastDayWorked: e.target.value })} data-testid="input-last-day-worked" />
+                  </div>
+                  <div>
+                    <Label htmlFor="firstDayMissed">First Day Missed / Away from Work</Label>
+                    <Input id="firstDayMissed" type="date" value={formData.firstDayMissed}
+                      onChange={e => set({ firstDayMissed: e.target.value })} data-testid="input-first-day-missed" />
+                  </div>
+                  <div>
+                    <Label htmlFor="returnToWorkDate">Return-to-Work Date (if known)</Label>
+                    <Input id="returnToWorkDate" type="date" value={formData.returnToWorkDate}
+                      onChange={e => set({ returnToWorkDate: e.target.value })} data-testid="input-rtw-date" />
+                  </div>
+                  <div>
+                    <Label htmlFor="deathDate">Date of Death (if applicable)</Label>
+                    <Input id="deathDate" type="date" value={formData.deathDate}
+                      onChange={e => set({ deathDate: e.target.value })} data-testid="input-death-date" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB 5: OSHA & Workers' Comp ─────────────────────────────── */}
+            {activeTab === "osha" && (
+              <div className="space-y-5">
+                <SectionLabel><ShieldCheck className="w-3.5 h-3.5" /> OSHA 300 Classification</SectionLabel>
+                <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={formData.isRecordable}
+                      onChange={e => set({ isRecordable: e.target.checked })} className="w-4 h-4" data-testid="checkbox-recordable" />
+                    <span className="font-medium text-sm">This is an OSHA recordable incident</span>
+                  </label>
+                  {formData.isRecordable && (
+                    <div className="space-y-4 pl-4 border-l-2 border-destructive/30">
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={formData.resultedInDeath}
+                            onChange={e => set({ resultedInDeath: e.target.checked })} className="w-4 h-4" data-testid="checkbox-death" />
+                          <span className="text-sm flex items-center gap-1"><Skull className="w-4 h-4 text-destructive" />Resulted in Death</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={formData.isOtherRecordable}
+                            onChange={e => set({ isOtherRecordable: e.target.checked })} className="w-4 h-4" data-testid="checkbox-other-recordable" />
+                          <span className="text-sm flex items-center gap-1"><Stethoscope className="w-4 h-4 text-orange-500" />Other Recordable Case</span>
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label className="flex items-center gap-1 text-xs"><BedDouble className="w-3 h-3" />Days Away From Work</Label>
+                          <Input type="number" min="0" value={formData.daysAway}
+                            onChange={e => set({ daysAway: parseInt(e.target.value) || 0 })} data-testid="input-days-away" />
+                        </div>
+                        <div>
+                          <Label className="flex items-center gap-1 text-xs"><Construction className="w-3 h-3" />Days Restricted Duty</Label>
+                          <Input type="number" min="0" value={formData.daysRestricted}
+                            onChange={e => set({ daysRestricted: parseInt(e.target.value) || 0 })} data-testid="input-days-restricted" />
+                        </div>
+                        <div>
+                          <Label className="flex items-center gap-1 text-xs"><ClipboardList className="w-3 h-3" />Days Job Transfer</Label>
+                          <Input type="number" min="0" value={formData.daysJobTransfer}
+                            onChange={e => set({ daysJobTransfer: parseInt(e.target.value) || 0 })} data-testid="input-days-transfer" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <SectionLabel><Building2 className="w-3.5 h-3.5" /> Employer / Carrier / TPA Information</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="fein">Federal Employer ID (FEIN)</Label>
+                    <Input id="fein" value={formData.fein}
+                      onChange={e => set({ fein: e.target.value })} placeholder="XX-XXXXXXX" data-testid="input-fein" />
+                  </div>
+                  <div>
+                    <Label htmlFor="uiNumber">UI (Unemployment Insurance) Number</Label>
+                    <Input id="uiNumber" value={formData.uiNumber}
+                      onChange={e => set({ uiNumber: e.target.value })} data-testid="input-ui-number" />
+                  </div>
+                  <div>
+                    <Label htmlFor="sicNaicsCode">SIC / NAICS Code</Label>
+                    <Input id="sicNaicsCode" value={formData.sicNaicsCode}
+                      onChange={e => set({ sicNaicsCode: e.target.value })} placeholder="e.g., 3599 or 336390" data-testid="input-sic-naics" />
+                  </div>
+                  <div>
+                    <Label htmlFor="insuranceCompany">Insurance Company Name</Label>
+                    <Input id="insuranceCompany" value={formData.insuranceCompany}
+                      onChange={e => set({ insuranceCompany: e.target.value })} data-testid="input-insurance-company" />
+                  </div>
+                  <div>
+                    <Label htmlFor="insurancePhone">Insurance Company Phone</Label>
+                    <Input id="insurancePhone" value={formData.insurancePhone}
+                      onChange={e => set({ insurancePhone: e.target.value })} placeholder="(555) 000-0000" data-testid="input-insurance-phone" />
+                  </div>
+                  <div>
+                    <Label htmlFor="policyNumber">Policy Number</Label>
+                    <Input id="policyNumber" value={formData.policyNumber}
+                      onChange={e => set({ policyNumber: e.target.value })} data-testid="input-policy-number" />
+                  </div>
+                  <div>
+                    <Label htmlFor="tpaName">Third-Party Administrator (TPA) Name</Label>
+                    <Input id="tpaName" value={formData.tpaName}
+                      onChange={e => set({ tpaName: e.target.value })} data-testid="input-tpa-name" />
+                  </div>
+                </div>
+
+                <SectionLabel><ClipboardList className="w-3.5 h-3.5" /> Review Status</SectionLabel>
+                <Select value={formData.status} onValueChange={v => set({ status: v })}>
+                  <SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending_review">Pending Review</SelectItem>
+                    <SelectItem value="reviewed">Reviewed</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
-          {/* Status */}
-          <div>
-            <Label htmlFor="status">Review Status</Label>
-            <Select 
-              value={formData.status} 
-              onValueChange={(v) => setFormData({...formData, status: v})}
-            >
-              <SelectTrigger data-testid="select-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending_review">Pending Review</SelectItem>
-                <SelectItem value="reviewed">Reviewed</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Footer with prev/next + save */}
+          <div className="border-t px-6 py-3 flex items-center justify-between bg-white">
+            <Button type="button" variant="outline" size="sm"
+              onClick={() => tabIdx > 0 && setActiveTab(FROI_TABS[tabIdx - 1].id)}
+              disabled={tabIdx === 0} className="gap-1">
+              <ChevronLeft className="w-4 h-4" /> Back
+            </Button>
+            <span className="text-xs text-muted-foreground">Section {tabIdx + 1} of {FROI_TABS.length}</span>
+            {tabIdx < FROI_TABS.length - 1 ? (
+              <Button type="button" size="sm"
+                onClick={() => setActiveTab(FROI_TABS[tabIdx + 1].id)}
+                className="gap-1 bg-accent hover:bg-accent/90 text-white">
+                Next <ChevronRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit" size="sm" data-testid="button-save-incident" className="bg-accent hover:bg-accent/90 text-white">
+                  Log Incident
+                </Button>
+              </div>
+            )}
           </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" data-testid="button-save-incident">
-              Log Incident
-            </Button>
-          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -2042,6 +2340,45 @@ function IncidentDetailDialog({
     daysJobTransfer: inc.daysJobTransfer ?? 0,
     isOtherRecordable: inc.isOtherRecordable ?? false,
     status: inc.status,
+    // FROI fields
+    employeeSsnLast4: inc.employeeSsnLast4 || '',
+    employeeDob: inc.employeeDob || '',
+    employeeSex: inc.employeeSex || '',
+    employeePhone: inc.employeePhone || '',
+    employeeAddress: inc.employeeAddress || '',
+    employeeHireDate: inc.employeeHireDate || '',
+    employeeDependents: inc.employeeDependents?.toString() || '',
+    employeeTaxStatus: inc.employeeTaxStatus || '',
+    grossWeeklyWage: inc.grossWeeklyWage || '',
+    weeksWorked: inc.weeksWorked?.toString() || '',
+    fringeBenefitsValue: inc.fringeBenefitsValue || '',
+    isVolunteer: inc.isVolunteer ?? false,
+    isVocationallyHandicapped: inc.isVocationallyHandicapped ?? false,
+    fein: inc.fein || '',
+    uiNumber: inc.uiNumber || '',
+    sicNaicsCode: inc.sicNaicsCode || '',
+    insuranceCompany: inc.insuranceCompany || '',
+    insurancePhone: inc.insurancePhone || '',
+    policyNumber: inc.policyNumber || '',
+    tpaName: inc.tpaName || '',
+    timeWorkBegan: inc.timeWorkBegan || '',
+    timeOfEvent: inc.timeOfEvent || '',
+    injuryCity: inc.injuryCity || '',
+    injuryState: inc.injuryState || '',
+    injuryCounty: inc.injuryCounty || '',
+    onEmployerPremises: inc.onEmployerPremises ?? true,
+    whatEmployeeWasDoing: inc.whatEmployeeWasDoing || '',
+    howInjuryOccurred: inc.howInjuryOccurred || '',
+    physicianName: inc.physicianName || '',
+    treatmentFacility: inc.treatmentFacility || '',
+    treatedInEr: inc.treatedInEr ?? false,
+    hospitalizedOvernight: inc.hospitalizedOvernight ?? false,
+    treatmentAddress: inc.treatmentAddress || '',
+    lastDayWorked: inc.lastDayWorked || '',
+    firstDayMissed: inc.firstDayMissed || '',
+    returnToWorkDate: inc.returnToWorkDate || '',
+    deathDate: inc.deathDate || '',
+    dateEmployerNotified: inc.dateEmployerNotified || '',
   });
 
   const [formData, setFormData] = useState<IncidentFormData>(

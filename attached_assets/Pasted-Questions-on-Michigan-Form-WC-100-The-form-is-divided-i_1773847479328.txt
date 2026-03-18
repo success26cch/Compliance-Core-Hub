@@ -1,0 +1,52 @@
+Questions on Michigan Form WC-100
+The form is divided into sections covering the employee, employer, and the incident itself. 
+I. Employee Data
+Personal Identification: Social Security Number, Name (Last, First, MI), and Home Address.
+Demographics: Date of Birth, Sex, and Telephone Number.
+Dependents & Tax Info: Number of Dependents and Tax Filing Status (Single, Head of Household, Married Filing Joint, or Married Filing Separate). 
+State of Michigan (.gov)
+State of Michigan (.gov)
+ +3
+II. Employer/Carrier Data
+Business Details: Employer Name, Street Address, Federal ID Number (FEIN), and UI (Unemployment Insurance) number.
+Categorization: Type of Business (SIC/NAICS code) and Injury Location Code.
+Insurance Info: Insurance Company Name and Telephone Number. 
+State of Michigan (.gov)
+State of Michigan (.gov)
+ +2
+III. Injury/Medical Data
+Timing: Date of injury, last day worked, date of return to work (if applicable), and date of death (if applicable).
+Incident Details:
+Time employee began work and time of the event.
+Specific location (City, State, County) and whether it occurred on employer premises.
+"What was the employee doing just before the incident occurred?" (Describe activity, tools, and materials).
+"How did the injury occur?" (Detailed step-by-step account).
+"What object or substance directly harmed the employee?" (e.g., concrete floor, chlorine).
+The Injury: Description of the nature of the injury and the specific part of the body affected.
+Medical Treatment:
+Name of physician or healthcare professional.
+Whether the employee was treated in an ER or hospitalized overnight.
+Location of treatment if given away from the worksite. 
+State of Michigan (.gov)
+State of Michigan (.gov)
+ +4
+IV. Occupation and Wage Data
+Employment History: Date of hire and specific occupation.
+Wages: Total gross weekly wage (highest 39 of the last 52 weeks) and number of weeks used.
+Other Benefits: Value of discontinued fringe benefits.
+Worker Status: Was the employee a volunteer or certified as vocationally handicapped?.
+Reporting: Date the employer was notified by the employee. 
+Midwestern Insurance Alliance
+Midwestern Insurance Alliance
+ +1
+What Workers' Comp Adjusters Need to Know 
+Adjusters use this information to determine compensability (whether the claim is covered) and calculate benefits. Specifically, they look for: 
+Employers
+Employers
+Causation: Clear evidence that the injury "arose out of and in the course of employment".
+Notification Timelines: Proof the employee reported the injury promptly to the employer.
+Medical Substantiation: Details of the first treatment to match the injury description with medical findings.
+Average Weekly Wage: Critical for calculating the correct disability payment amount. 
+LII | Legal Information Institute
+LII | Legal Information Institute
+ +6

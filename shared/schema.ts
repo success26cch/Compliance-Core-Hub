@@ -210,34 +210,80 @@ export const insertEmployeeSchema = createInsertSchema(employees, {
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
-// Recordable Incidents - OSHA 300 Log
+// Recordable Incidents - OSHA 300 Log + FROI / Workers' Comp
 export const incidents = pgTable("incidents", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull(), // Company/manager who owns this record
-  employeeId: integer("employee_id"), // Optional link to employee
-  caseNumber: text("case_number"), // OSHA case number (auto-generated or manual)
+  userId: text("user_id").notNull(),
+  employeeId: integer("employee_id"),
+  caseNumber: text("case_number"),
   incidentDate: timestamp("incident_date").notNull(),
   description: text("description").notNull(),
-  incidentType: text("incident_type").notNull(), // 'injury', 'illness', 'near_miss', 'property_damage'
+  incidentType: text("incident_type").notNull(),
   // OSHA 300 Required Fields
-  employeeName: text("employee_name"), // Name of injured/ill employee
-  jobTitle: text("job_title"), // Job title at time of incident
-  facility: text("facility"), // Site / Facility name (e.g., "Plant 1 – Detroit")
-  department: text("department"), // Department/location where incident occurred
-  location: text("location"), // Specific location of event
-  bodyPart: text("body_part"), // Part of body affected
-  natureOfInjury: text("nature_of_injury"), // Nature of injury/illness
-  objectOrSubstance: text("object_or_substance"), // Object/substance that harmed employee
+  employeeName: text("employee_name"),
+  jobTitle: text("job_title"),
+  facility: text("facility"),
+  department: text("department"),
+  location: text("location"),
+  bodyPart: text("body_part"),
+  natureOfInjury: text("nature_of_injury"),
+  objectOrSubstance: text("object_or_substance"),
   // Classification
   isRecordable: boolean("is_recordable").default(false),
   resultedInDeath: boolean("resulted_in_death").default(false),
   daysAway: integer("days_away").default(0),
   daysRestricted: integer("days_restricted").default(0),
   daysJobTransfer: integer("days_job_transfer").default(0),
-  isOtherRecordable: boolean("is_other_recordable").default(false), // Other recordable case
+  isOtherRecordable: boolean("is_other_recordable").default(false),
   // Tracking
-  status: text("status").notNull().default("pending_review"), // 'pending_review', 'reviewed', 'closed'
+  status: text("status").notNull().default("pending_review"),
   createdAt: timestamp("created_at").defaultNow(),
+
+  // ── FROI / Workers' Comp Additional Fields ─────────────────────────────────
+  // Employee Personal Data
+  employeeSsnLast4: text("employee_ssn_last4"),
+  employeeDob: text("employee_dob"),
+  employeeSex: text("employee_sex"),
+  employeePhone: text("employee_phone"),
+  employeeAddress: text("employee_address"),
+  employeeHireDate: text("employee_hire_date"),
+  employeeDependents: integer("employee_dependents"),
+  employeeTaxStatus: text("employee_tax_status"),
+  // Wage & Employment
+  grossWeeklyWage: text("gross_weekly_wage"),
+  weeksWorked: integer("weeks_worked"),
+  fringeBenefitsValue: text("fringe_benefits_value"),
+  isVolunteer: boolean("is_volunteer").default(false),
+  isVocationallyHandicapped: boolean("is_vocationally_handicapped").default(false),
+  // Employer / Insurance / Carrier
+  fein: text("fein"),
+  uiNumber: text("ui_number"),
+  sicNaicsCode: text("sic_naics_code"),
+  insuranceCompany: text("insurance_company"),
+  insurancePhone: text("insurance_phone"),
+  policyNumber: text("policy_number"),
+  tpaName: text("tpa_name"),
+  // Incident Timing & Location
+  timeWorkBegan: text("time_work_began"),
+  timeOfEvent: text("time_of_event"),
+  injuryCity: text("injury_city"),
+  injuryState: text("injury_state"),
+  injuryCounty: text("injury_county"),
+  onEmployerPremises: boolean("on_employer_premises").default(true),
+  whatEmployeeWasDoing: text("what_employee_was_doing"),
+  howInjuryOccurred: text("how_injury_occurred"),
+  // Medical Treatment
+  physicianName: text("physician_name"),
+  treatmentFacility: text("treatment_facility"),
+  treatedInEr: boolean("treated_in_er").default(false),
+  hospitalizedOvernight: boolean("hospitalized_overnight").default(false),
+  treatmentAddress: text("treatment_address"),
+  // WC Key Dates
+  lastDayWorked: text("last_day_worked"),
+  firstDayMissed: text("first_day_missed"),
+  returnToWorkDate: text("return_to_work_date"),
+  deathDate: text("death_date"),
+  dateEmployerNotified: text("date_employer_notified"),
 });
 
 // Incident date as string or Date

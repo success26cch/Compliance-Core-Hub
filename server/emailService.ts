@@ -208,6 +208,125 @@ export function buildIncidentNotificationEmail(data: {
   return brandedHtml("Workplace Incident Reported", body);
 }
 
+function row(label: string, value: string | null | undefined, highlight = false): string {
+  if (!value) return '';
+  return `<tr>
+    <td style="padding:5px 0;color:#475569;font-size:12px;width:200px;vertical-align:top;"><strong>${label}</strong></td>
+    <td style="padding:5px 0;color:${highlight ? '#dc2626' : '#0f172a'};font-size:12px;">${value}</td>
+  </tr>`;
+}
+
+function section(title: string, rows: string): string {
+  const content = rows.trim();
+  if (!content) return '';
+  return `
+  <p style="margin:18px 0 6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">${title}</p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;">
+    <tr><td style="padding:12px 16px;">
+      <table width="100%" cellpadding="0" cellspacing="0">${content}</table>
+    </td></tr>
+  </table>`;
+}
+
+export function buildFROIAdjusterEmail(data: {
+  companyName: string;
+  inc: Record<string, any>;
+  incidentDate: string;
+}): string {
+  const inc = data.inc;
+  const recordableBadge = inc.isRecordable
+    ? `<span style="background:#dc2626;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;">OSHA RECORDABLE</span>`
+    : `<span style="background:#64748b;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;">NON-RECORDABLE / PENDING</span>`;
+
+  const body = `
+    <h2 style="margin:0 0 4px;color:#0f172a;font-size:20px;">Workers' Compensation — First Report of Injury</h2>
+    <p style="margin:0 0 4px;color:#64748b;font-size:13px;">Submitted by <strong>${data.companyName}</strong> via Core Compliance Hub</p>
+    <p style="margin:0 0 16px;">${recordableBadge}</p>
+
+    ${section("I. Employee Data", [
+      row("Employee Name", inc.employeeName),
+      row("SSN (Last 4)", inc.employeeSsnLast4 ? `XXX-XX-${inc.employeeSsnLast4}` : null),
+      row("Date of Birth", inc.employeeDob),
+      row("Sex", inc.employeeSex ? inc.employeeSex.charAt(0).toUpperCase() + inc.employeeSex.slice(1) : null),
+      row("Phone", inc.employeePhone),
+      row("Home Address", inc.employeeAddress),
+      row("Number of Dependents", inc.employeeDependents?.toString()),
+      row("Tax Filing Status", inc.employeeTaxStatus?.replace(/_/g, ' ')),
+    ].join(''))}
+
+    ${section("II. Employment & Wage Data", [
+      row("Job Title", inc.jobTitle),
+      row("Department", inc.department),
+      row("Date of Hire", inc.employeeHireDate),
+      row("Total Gross Weekly Wage", inc.grossWeeklyWage),
+      row("Number of Weeks Used", inc.weeksWorked?.toString()),
+      row("Fringe Benefits Value", inc.fringeBenefitsValue),
+      row("Volunteer", inc.isVolunteer ? "Yes" : null),
+      row("Vocationally Handicapped", inc.isVocationallyHandicapped ? "Yes" : null),
+      row("Date Employer Notified", inc.dateEmployerNotified),
+    ].join(''))}
+
+    ${section("III. Employer / Carrier / TPA Data", [
+      row("Employer (Legal Name)", data.companyName),
+      row("Federal Employer ID (FEIN)", inc.fein),
+      row("UI Number", inc.uiNumber),
+      row("SIC / NAICS Code", inc.sicNaicsCode),
+      row("Facility / Site", inc.facility),
+      row("Insurance Company", inc.insuranceCompany),
+      row("Insurance Phone", inc.insurancePhone),
+      row("Policy Number", inc.policyNumber),
+      row("TPA Name", inc.tpaName),
+    ].join(''))}
+
+    ${section("IV. Injury / Incident Data", [
+      row("Date of Injury / Illness", data.incidentDate),
+      row("Time Employee Began Work", inc.timeWorkBegan),
+      row("Time of Event", inc.timeOfEvent),
+      row("Incident Location", [inc.injuryCity, inc.injuryState, inc.injuryCounty].filter(Boolean).join(', ')),
+      row("Work Area", inc.location),
+      row("On Employer Premises", inc.onEmployerPremises === true ? "Yes" : inc.onEmployerPremises === false ? "No" : null),
+      row("Incident Type", inc.incidentType),
+      row("Nature of Injury", inc.natureOfInjury),
+      row("Body Part Affected", inc.bodyPart),
+      row("Object / Substance", inc.objectOrSubstance),
+    ].join(''))}
+
+    ${inc.whatEmployeeWasDoing ? `
+    <p style="margin:14px 0 4px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">What Employee Was Doing</p>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;font-size:12px;color:#0f172a;">${inc.whatEmployeeWasDoing}</div>
+    ` : ''}
+
+    ${inc.howInjuryOccurred ? `
+    <p style="margin:14px 0 4px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">How the Injury Occurred</p>
+    <div style="background:#fffbeb;border-left:4px solid #d97706;border-radius:4px;padding:12px 16px;font-size:12px;color:#78350f;">${inc.howInjuryOccurred}</div>
+    ` : ''}
+
+    ${section("V. Medical Treatment", [
+      row("Treating Physician", inc.physicianName),
+      row("Treatment Facility", inc.treatmentFacility),
+      row("Treatment Address", inc.treatmentAddress),
+      row("Treated in ER", inc.treatedInEr ? "Yes" : null),
+      row("Hospitalized Overnight", inc.hospitalizedOvernight ? "Yes" : null, inc.hospitalizedOvernight),
+    ].join(''))}
+
+    ${section("VI. OSHA 300 Classification & Key Dates", [
+      row("OSHA Recordable", inc.isRecordable ? "YES" : "No", inc.isRecordable),
+      row("Resulted in Death", inc.resultedInDeath ? "YES" : null, inc.resultedInDeath),
+      row("Days Away from Work", inc.daysAway > 0 ? inc.daysAway.toString() : null),
+      row("Days Restricted Duty", inc.daysRestricted > 0 ? inc.daysRestricted.toString() : null),
+      row("Days Job Transfer", inc.daysJobTransfer > 0 ? inc.daysJobTransfer.toString() : null),
+      row("Last Day Worked", inc.lastDayWorked),
+      row("First Day Missed", inc.firstDayMissed),
+      row("Return-to-Work Date", inc.returnToWorkDate),
+      row("Date of Death", inc.deathDate, true),
+    ].join(''))}
+
+    <p style="margin:20px 0 0;font-size:12px;color:#64748b;">This First Report of Injury was generated by <strong>Core Compliance Hub</strong>. For questions contact the employer directly or log in to CCHUB to view the full incident record.</p>
+  `;
+
+  return brandedHtml("FROI — Workers' Compensation First Report of Injury", body);
+}
+
 export function buildCapaAssignmentEmail(data: {
   assigneeName: string;
   capaTitle: string;

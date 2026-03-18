@@ -19,6 +19,7 @@ import {
   sendEmail,
   CCHUB_ADMIN_EMAILS,
   buildIncidentNotificationEmail,
+  buildFROIAdjusterEmail,
   buildCapaAssignmentEmail,
   buildCapaOverdueEmail,
   buildContactInquiryAdminEmail,
@@ -1691,10 +1692,28 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       const updates: Record<string, any> = {};
       const allowed = [
+        // OSHA 300 core
         'description', 'incidentType', 'employeeName', 'jobTitle', 'department',
-        'location', 'bodyPart', 'natureOfInjury', 'objectOrSubstance',
+        'location', 'facility', 'bodyPart', 'natureOfInjury', 'objectOrSubstance',
         'isRecordable', 'resultedInDeath', 'daysAway', 'daysRestricted',
         'daysJobTransfer', 'isOtherRecordable', 'status', 'incidentDate',
+        // FROI — Employee
+        'employeeSsnLast4', 'employeeDob', 'employeeSex', 'employeePhone',
+        'employeeAddress', 'employeeHireDate', 'employeeDependents', 'employeeTaxStatus',
+        // FROI — Wage
+        'grossWeeklyWage', 'weeksWorked', 'fringeBenefitsValue',
+        'isVolunteer', 'isVocationallyHandicapped',
+        // FROI — Employer / Insurance
+        'fein', 'uiNumber', 'sicNaicsCode', 'insuranceCompany',
+        'insurancePhone', 'policyNumber', 'tpaName',
+        // FROI — Timing & Location
+        'timeWorkBegan', 'timeOfEvent', 'injuryCity', 'injuryState', 'injuryCounty',
+        'onEmployerPremises', 'whatEmployeeWasDoing', 'howInjuryOccurred',
+        // FROI — Medical
+        'physicianName', 'treatmentFacility', 'treatedInEr',
+        'hospitalizedOvernight', 'treatmentAddress',
+        // FROI — Dates
+        'lastDayWorked', 'firstDayMissed', 'returnToWorkDate', 'deathDate', 'dateEmployerNotified',
       ];
       for (const key of allowed) {
         if (req.body[key] !== undefined) updates[key] = req.body[key];
@@ -1722,20 +1741,16 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (!profile?.workersCompEmail) {
         return res.status(422).json({ message: "No workers' comp adjuster email configured. Please add it in Company Profile → Insurance & Workers' Comp." });
       }
-      const html = buildIncidentNotificationEmail({
-        companyName: profile.companyName || "Your Company",
-        employeeName: (incident as any).employeeName || "Unknown Employee",
-        incidentDate: incident.incidentDate ? new Date(incident.incidentDate).toLocaleDateString() : "N/A",
-        incidentType: incident.incidentType || "N/A",
-        location: (incident as any).facility || (incident as any).location || "N/A",
-        description: incident.description || "",
-        isRecordable: (incident as any).oshaRecordable ?? null,
-      });
-      const employeeName = (incident as any).employeeName || "Employee";
       const incidentDateStr = incident.incidentDate ? new Date(incident.incidentDate).toLocaleDateString() : "N/A";
+      const employeeName = (incident as any).employeeName || "Employee";
+      const html = buildFROIAdjusterEmail({
+        companyName: profile.companyName || "Your Company",
+        inc: incident as Record<string, any>,
+        incidentDate: incidentDateStr,
+      });
       await sendEmail(
         [profile.workersCompEmail],
-        `[Incident Notification] Workplace Incident — ${employeeName} — ${incidentDateStr}`,
+        `[FROI] Workers' Comp First Report of Injury — ${employeeName} — ${incidentDateStr}`,
         html
       );
       res.json({ message: `Notification sent to ${profile.workersCompEmail}` });
