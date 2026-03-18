@@ -39,7 +39,8 @@ import {
   AlertCircle,
   Bot,
   RefreshCw,
-  X
+  X,
+  Mail
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -2276,6 +2277,25 @@ export default function Incidents() {
   const [coreyAnalysisStreaming, setCoreyAnalysisStreaming] = useState(false);
   const { toast } = useToast();
 
+  const notifyAdjusterMutation = useMutation({
+    mutationFn: async (incidentId: number) => {
+      const res = await apiRequest('POST', `/api/incidents/${incidentId}/notify-adjuster`);
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({ title: "Adjuster Notified", description: data?.message || "Email sent to your workers' comp adjuster." });
+    },
+    onError: (err: any) => {
+      let msg = "Failed to send email.";
+      try {
+        const jsonStr = String(err?.message || "").replace(/^\d+:\s*/, "");
+        const parsed = JSON.parse(jsonStr);
+        if (parsed.message) msg = parsed.message;
+      } catch {}
+      toast({ title: "Could Not Send Email", description: msg, variant: "destructive" });
+    },
+  });
+
   const runCoreyAnalysis = async (incidentId: number) => {
     setCoreyAnalysisIncidentId(incidentId);
     setCoreyAnalysis("");
@@ -2627,6 +2647,21 @@ export default function Incidents() {
                                 >
                                   <ShieldCheck className="w-3.5 h-3.5" />
                                   CAPA
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="gap-1 text-xs text-sky-600 hover:text-sky-700 hover:bg-sky-50"
+                                  title="Send incident notification to your workers' comp adjuster"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    notifyAdjusterMutation.mutate(incident.id);
+                                  }}
+                                  disabled={notifyAdjusterMutation.isPending}
+                                  data-testid={`button-notify-adjuster-${incident.id}`}
+                                >
+                                  <Mail className="w-3 h-3" />
+                                  Notify WC
                                 </Button>
                                 <Button
                                   size="sm"

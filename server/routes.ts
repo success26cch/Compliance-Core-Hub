@@ -1709,6 +1709,42 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     }
   });
 
+  // Notify work comp adjuster for a specific incident (on-demand)
+  app.post("/api/incidents/:id/notify-adjuster", async (req, res) => {
+    if (!(await requirePlatformAccess(req, res))) return;
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid incident ID" });
+    try {
+      const incident = await storage.getIncident(id, userId);
+      if (!incident) return res.status(404).json({ message: "Incident not found" });
+      const profile = await storage.getCompanyProfile(userId);
+      if (!profile?.workersCompEmail) {
+        return res.status(422).json({ message: "No workers' comp adjuster email configured. Please add it in Company Profile → Insurance & Workers' Comp." });
+      }
+      const html = buildIncidentNotificationEmail({
+        companyName: profile.companyName || "Your Company",
+        employeeName: (incident as any).employeeName || "Unknown Employee",
+        incidentDate: incident.incidentDate ? new Date(incident.incidentDate).toLocaleDateString() : "N/A",
+        incidentType: incident.incidentType || "N/A",
+        location: (incident as any).facility || (incident as any).location || "N/A",
+        description: incident.description || "",
+        isRecordable: (incident as any).oshaRecordable ?? null,
+      });
+      const employeeName = (incident as any).employeeName || "Employee";
+      const incidentDateStr = incident.incidentDate ? new Date(incident.incidentDate).toLocaleDateString() : "N/A";
+      await sendEmail(
+        [profile.workersCompEmail],
+        `[Incident Notification] Workplace Incident — ${employeeName} — ${incidentDateStr}`,
+        html
+      );
+      res.json({ message: `Notification sent to ${profile.workersCompEmail}` });
+    } catch (error) {
+      console.error("[notify-adjuster] Error:", error);
+      res.status(500).json({ message: "Failed to send notification email" });
+    }
+  });
+
   // Corrective Action Plans (CAPA)
   app.get("/api/corrective-actions", async (req, res) => {
     if (!req.isAuthenticated()) {
