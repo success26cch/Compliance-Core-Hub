@@ -447,6 +447,7 @@ export default function Landing() {
   const { isListening: botListening, speechSupported: botSpeechSupported, toggleListening: botToggleListening, stopListening: botStopListening } = useSpeechRecognition((text) => setBotInput(text));
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const cachedVoicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   const handleBotScroll = () => {
     const el = botScrollRef.current;
@@ -462,7 +463,14 @@ export default function Landing() {
   }, [botMessages]);
 
   useEffect(() => {
-    if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
+    if (!('speechSynthesis' in window)) return;
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length > 0) cachedVoicesRef.current = v;
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
   }, []);
 
   const handleBotSpeak = useCallback((text: string, idx: number) => {
@@ -477,7 +485,9 @@ export default function Landing() {
     const cleanText = stripMarkdown(text);
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.rate = 0.95;
-    const voices = window.speechSynthesis.getVoices();
+    const voices = cachedVoicesRef.current.length > 0
+      ? cachedVoicesRef.current
+      : window.speechSynthesis.getVoices();
     const naturalNames = ['Samantha','Karen','Daniel','Google UK English Female','Google US English','Microsoft Aria','Microsoft Jenny'];
     const enVoices = voices.filter(v => v.lang.startsWith('en'));
     const preferred = enVoices.find(v => naturalNames.some(n => v.name.includes(n)))

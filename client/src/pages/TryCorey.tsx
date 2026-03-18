@@ -37,9 +37,22 @@ export default function TryCorey() {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
 
+  const cachedVoicesRef = useRef<SpeechSynthesisVoice[]>([]);
+
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
     setMessage(transcript);
   });
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length > 0) cachedVoicesRef.current = v;
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  }, []);
 
   const handleScroll = () => {
     const el = chatScrollRef.current;
@@ -156,7 +169,9 @@ export default function TryCorey() {
     utterance.pitch = 1;
     utterance.volume = 1;
 
-    const voices = window.speechSynthesis.getVoices();
+    const voices = cachedVoicesRef.current.length > 0
+      ? cachedVoicesRef.current
+      : window.speechSynthesis.getVoices();
     const naturalVoiceNames = [
       'Samantha', 'Karen', 'Daniel', 'Moira', 'Tessa', 'Rishi',
       'Google UK English Female', 'Google UK English Male',

@@ -243,12 +243,6 @@ export default function MeetCorey() {
               <p className="text-base text-white/50 mb-8 max-w-xl">
                 Not a chatbot. Not a search engine. Corey is the person in the office that everyone goes to — from the plant floor to the corner office.
               </p>
-              <div className="flex items-center gap-3 justify-center lg:justify-start">
-                <Badge className="bg-white/10 text-white/70 border-white/20 text-sm px-4 py-2">
-                  <ShieldCheck className="w-4 h-4 mr-2 inline" />
-                  $199/mo — cancel anytime
-                </Badge>
-              </div>
             </motion.div>
 
             <motion.div variants={fadeUp} className="flex-shrink-0">
