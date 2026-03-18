@@ -562,6 +562,7 @@ function IncidentFormDialog({
 function OSHA300Report({ incidents }: { incidents: Incident[] }) {
   const reportRef = useRef<HTMLDivElement>(null);
   const [selectedFacility, setSelectedFacility] = useState<string>('all');
+  const [drillDown, setDrillDown] = useState<string | null>(null);
 
   // Collect unique named facilities for the filter
   const facilities = Array.from(
@@ -660,78 +661,141 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-destructive/30">
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-destructive">{totalDeaths}</p>
-              <p className="text-xs text-muted-foreground mt-1">Deaths</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-orange-600">{casesWithDaysAway}</p>
-              <p className="text-xs text-muted-foreground mt-1">Cases w/ Days Away</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-yellow-600">{casesWithRestrictions}</p>
-              <p className="text-xs text-muted-foreground mt-1">Cases w/ Restrictions</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">{otherRecordable}</p>
-              <p className="text-xs text-muted-foreground mt-1">Other Recordable</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Summary Cards — clickable drill-down */}
+      {(() => {
+        const toggle = (key: string) => setDrillDown(prev => prev === key ? null : key);
+        const cardBase = "cursor-pointer transition-all hover:shadow-md hover:ring-2";
 
-      {/* Days Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="bg-orange-50 dark:bg-orange-950/20">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Days Away</p>
-                <p className="text-2xl font-bold">{totalDaysAway}</p>
+        const drillDownMap: Record<string, { label: string; list: Incident[]; detail?: (i: Incident) => string }> = {
+          deaths:        { label: "Deaths",                        list: recordableIncidents.filter(i => i.resultedInDeath),                                                   detail: () => "Fatal injury" },
+          days_away:     { label: "Cases with Days Away",          list: recordableIncidents.filter(i => (i.daysAway || 0) > 0),                                              detail: i => `${i.daysAway} day(s) away from work` },
+          restrictions:  { label: "Cases with Restrictions/Transfer", list: recordableIncidents.filter(i => (i.daysRestricted || 0) > 0 || (i.daysJobTransfer || 0) > 0),   detail: i => `${i.daysRestricted || 0}d restricted · ${i.daysJobTransfer || 0}d transfer` },
+          other:         { label: "Other Recordable Cases",        list: recordableIncidents.filter(i => i.isOtherRecordable),                                               detail: () => "Other recordable" },
+          total_away:    { label: "Total Days Away from Work",     list: recordableIncidents.filter(i => (i.daysAway || 0) > 0),                                              detail: i => `${i.daysAway} day(s) away` },
+          total_restr:   { label: "Total Restricted Workdays",     list: recordableIncidents.filter(i => (i.daysRestricted || 0) > 0),                                       detail: i => `${i.daysRestricted} restricted day(s)` },
+          total_xfer:    { label: "Total Transfer Days",           list: recordableIncidents.filter(i => (i.daysJobTransfer || 0) > 0),                                      detail: i => `${i.daysJobTransfer} transfer day(s)` },
+        };
+
+        const DrillPanel = ({ ddKey }: { ddKey: string }) => {
+          if (drillDown !== ddKey) return null;
+          const { label, list, detail } = drillDownMap[ddKey];
+          return (
+            <div className="col-span-full mt-1 rounded-xl border border-primary/20 bg-primary/5 p-4 animate-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-sm text-primary">{label}</h4>
+                <button onClick={() => setDrillDown(null)} className="text-muted-foreground hover:text-foreground text-xs flex items-center gap-1">
+                  <X className="w-3.5 h-3.5" /> Close
+                </button>
               </div>
-              <BedDouble className="w-8 h-8 text-orange-500" />
+              {list.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">No incidents in this category.</p>
+              ) : (
+                <div className="space-y-2">
+                  {list.map(i => (
+                    <div key={i.id} className="flex items-center justify-between bg-background rounded-lg px-3 py-2 border text-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{i.employeeName || "Unknown Employee"}</span>
+                        <span className="text-muted-foreground">{new Date(i.incidentDate).toLocaleDateString()}</span>
+                        {getTypeBadge(i.incidentType)}
+                      </div>
+                      {detail && <span className="text-xs text-muted-foreground font-mono">{detail(i)}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-yellow-50 dark:bg-yellow-950/20">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Restricted Days</p>
-                <p className="text-2xl font-bold">{totalDaysRestricted}</p>
-              </div>
-              <Construction className="w-8 h-8 text-yellow-600" />
+          );
+        };
+
+        return (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className={`${cardBase} border-destructive/30 ${drillDown === 'deaths' ? 'ring-2 ring-destructive' : 'hover:ring-destructive/40'}`} onClick={() => toggle('deaths')}>
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-destructive">{totalDeaths}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Deaths</p>
+                    <p className="text-[10px] text-primary/50 mt-1">click to view</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className={`${cardBase} ${drillDown === 'days_away' ? 'ring-2 ring-orange-400' : 'hover:ring-orange-300'}`} onClick={() => toggle('days_away')}>
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-orange-600">{casesWithDaysAway}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Cases w/ Days Away</p>
+                    <p className="text-[10px] text-primary/50 mt-1">click to view</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className={`${cardBase} ${drillDown === 'restrictions' ? 'ring-2 ring-yellow-400' : 'hover:ring-yellow-300'}`} onClick={() => toggle('restrictions')}>
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-yellow-600">{casesWithRestrictions}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Cases w/ Restrictions</p>
+                    <p className="text-[10px] text-primary/50 mt-1">click to view</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className={`${cardBase} ${drillDown === 'other' ? 'ring-2 ring-blue-400' : 'hover:ring-blue-300'}`} onClick={() => toggle('other')}>
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-blue-600">{otherRecordable}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Other Recordable</p>
+                    <p className="text-[10px] text-primary/50 mt-1">click to view</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <DrillPanel ddKey="deaths" />
+              <DrillPanel ddKey="days_away" />
+              <DrillPanel ddKey="restrictions" />
+              <DrillPanel ddKey="other" />
             </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-blue-50 dark:bg-blue-950/20">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Transfer Days</p>
-                <p className="text-2xl font-bold">{totalDaysTransfer}</p>
-              </div>
-              <ClipboardList className="w-8 h-8 text-blue-600" />
+
+            <div className="grid grid-cols-3 gap-4">
+              <Card className={`bg-orange-50 ${cardBase} ${drillDown === 'total_away' ? 'ring-2 ring-orange-400' : 'hover:ring-orange-300'}`} onClick={() => toggle('total_away')}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Days Away</p>
+                      <p className="text-2xl font-bold">{totalDaysAway}</p>
+                      <p className="text-[10px] text-primary/50 mt-1">click to view</p>
+                    </div>
+                    <BedDouble className="w-8 h-8 text-orange-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className={`bg-yellow-50 ${cardBase} ${drillDown === 'total_restr' ? 'ring-2 ring-yellow-400' : 'hover:ring-yellow-300'}`} onClick={() => toggle('total_restr')}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Restricted Days</p>
+                      <p className="text-2xl font-bold">{totalDaysRestricted}</p>
+                      <p className="text-[10px] text-primary/50 mt-1">click to view</p>
+                    </div>
+                    <Construction className="w-8 h-8 text-yellow-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className={`bg-blue-50 ${cardBase} ${drillDown === 'total_xfer' ? 'ring-2 ring-blue-400' : 'hover:ring-blue-300'}`} onClick={() => toggle('total_xfer')}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Transfer Days</p>
+                      <p className="text-2xl font-bold">{totalDaysTransfer}</p>
+                      <p className="text-[10px] text-primary/50 mt-1">click to view</p>
+                    </div>
+                    <ClipboardList className="w-8 h-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              <DrillPanel ddKey="total_away" />
+              <DrillPanel ddKey="total_restr" />
+              <DrillPanel ddKey="total_xfer" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </>
+        );
+      })()}
 
       {/* Printable Report Content */}
       <div ref={reportRef} className="bg-white p-6 rounded-lg border">
@@ -2413,6 +2477,7 @@ export default function Incidents() {
 
   const recordableCount = incidents.filter(i => i.isRecordable).length;
   const pendingReviewCount = incidents.filter(i => i.status === 'pending_review').length;
+  const [statFilter, setStatFilter] = useState<'all' | 'recordable' | 'pending_review' | null>(null);
 
   return (
     <PlatformGate featureName="Incident Log & OSHA 300">
@@ -2432,47 +2497,114 @@ export default function Incidents() {
           </Button>
         </div>
 
-        {/* Summary Stats */}
-        <div className="grid sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted">
-                  <FileWarning className="w-5 h-5 text-primary" />
+        {/* Summary Stats — clickable drill-down */}
+        <div className="space-y-3">
+          <div className="grid sm:grid-cols-3 gap-4">
+            {/* Total Incidents */}
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-md hover:ring-2 hover:ring-primary/40 ${statFilter === 'all' ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => setStatFilter(prev => prev === 'all' ? null : 'all')}
+              data-testid="card-stat-total"
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <FileWarning className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{incidents.length}</p>
+                    <p className="text-sm text-muted-foreground">Total Incidents</p>
+                    <p className="text-[10px] text-primary/50">click to view</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{incidents.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Incidents</p>
+              </CardContent>
+            </Card>
+
+            {/* OSHA Recordable */}
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-md hover:ring-2 hover:ring-destructive/40 ${statFilter === 'recordable' ? 'ring-2 ring-destructive' : ''}`}
+              onClick={() => setStatFilter(prev => prev === 'recordable' ? null : 'recordable')}
+              data-testid="card-stat-recordable"
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/10">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-destructive">{recordableCount}</p>
+                    <p className="text-sm text-muted-foreground">OSHA Recordable</p>
+                    <p className="text-[10px] text-primary/50">click to view</p>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Pending Review */}
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-md hover:ring-2 hover:ring-yellow-400/50 ${statFilter === 'pending_review' ? 'ring-2 ring-yellow-400' : ''}`}
+              onClick={() => setStatFilter(prev => prev === 'pending_review' ? null : 'pending_review')}
+              data-testid="card-stat-pending"
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-yellow-500/10">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-yellow-600">{pendingReviewCount}</p>
+                    <p className="text-sm text-muted-foreground">Pending Review</p>
+                    <p className="text-[10px] text-primary/50">click to view</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Drill-down panel */}
+          {statFilter !== null && (() => {
+            const filtered = statFilter === 'all'
+              ? incidents
+              : statFilter === 'recordable'
+              ? incidents.filter(i => i.isRecordable)
+              : incidents.filter(i => i.status === 'pending_review');
+            const title = statFilter === 'all' ? 'All Incidents' : statFilter === 'recordable' ? 'OSHA Recordable Incidents' : 'Incidents Pending Review';
+            return (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-sm text-primary">{title} ({filtered.length})</h4>
+                  <button onClick={() => setStatFilter(null)} className="text-muted-foreground hover:text-foreground text-xs flex items-center gap-1">
+                    <X className="w-3.5 h-3.5" /> Close
+                  </button>
+                </div>
+                {filtered.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No incidents in this category.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {filtered.map(i => (
+                      <div
+                        key={i.id}
+                        className="flex items-center justify-between bg-background rounded-lg px-3 py-2 border text-sm cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleOpenIncident(i)}
+                        data-testid={`stat-drill-incident-${i.id}`}
+                      >
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="font-medium">{i.employeeName || "Unknown Employee"}</span>
+                          <span className="text-muted-foreground text-xs">{new Date(i.incidentDate).toLocaleDateString()}</span>
+                          {getTypeBadge(i.incidentType)}
+                          {getStatusBadge(i.status)}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {i.isRecordable && <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5">Recordable</Badge>}
+                          <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-destructive/10">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-destructive">{recordableCount}</p>
-                  <p className="text-sm text-muted-foreground">OSHA Recordable</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-yellow-500/10">
-                  <Clock className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-yellow-600">{pendingReviewCount}</p>
-                  <p className="text-sm text-muted-foreground">Pending Review</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            );
+          })()}
         </div>
 
         {/* Tabs for Incident List, OSHA 300 Report, and CAPA */}
