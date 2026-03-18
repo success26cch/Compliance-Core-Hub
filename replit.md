@@ -28,6 +28,7 @@ The CCHUB platform is built with a modern web stack, utilizing React, Vite, Tail
     - **BrandNSwag:** An employee recognition platform using QR-code recognition for points-based rewards.
     - **Spanish Bilingual Medical Assistant (BMA):** A standalone tool featuring bidirectional speech-to-text translation, interactive body maps, and multi-step bilingual forms. Has a dedicated showcase page at `/bma` with hero, live demo, ROI calculator, comparison table, and pricing. The landing page links to `/bma` with a teaser card instead of embedding the full demo inline.
     - **Digital Medical Passport (CCHUB Handshake):** A QR-based clinic check-in system with digital authorization forms, employer notifications, and time-away tracking.
+- **Demo Video Page (`/watch-demo`):** A platform walkthrough video page. Video is served via the Express route `GET /api/demo-video` (bypasses the Replit CDN static layer). File is `client/public/demo.mp4` — kept at ~9MB (re-encoded to 720p, H.264, no audio, faststart). Player has click-to-toggle play/pause and a fullscreen button; no mute button.
 - **Dark Mode:** Disabled; app is locked to light mode via `forcedTheme="light"` in `App.tsx`. Theme toggle removed from all pages.
 - **"Is This Recordable?" Decision Tree:** An interactive 5-question OSHA recordability tool on the landing page.
 - **Compare Plans Table:** A feature comparison table on the Get Started page for different subscription tiers.
