@@ -50,8 +50,8 @@ The CCHUB platform is built with a modern web stack, utilizing React, Vite, Tail
 - **Communication:** Twilio (for SMS notifications); SendGrid (transactional email)
 - **Speech Services:** Web Speech API (for Spanish text-to-speech and speech-to-text)
 
-## Transactional Email System (SendGrid)
-All email logic lives in `server/emailService.ts`. Uses Replit SendGrid connector (`conn_sendgrid_01KK5D6W45GVBE1RD73YR282J6`) — credentials fetched dynamically via `getUncachableSendGridClient` pattern; never cached.
+## Transactional Email System (MailerSend)
+All email logic lives in `server/emailService.ts`. Uses MailerSend REST API (`https://api.mailersend.com/v1/email`) with `MAILERSEND_API_KEY` environment secret. No SDK — pure fetch() call. From address: `noreply@corecompliancehub.com`.
 
 **Four automatic email triggers:**
 1. **Incident logged** → `POST /api/incidents` → notifies DER email + Workers' Comp agent email + CCHUB admins

@@ -1,60 +1,7 @@
-import sgMail from "@sendgrid/mail";
-
 const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "team@corecompliancehub.com"];
+const FROM_EMAIL = "noreply@corecompliancehub.com";
 const FROM_NAME = "Core Compliance Hub";
-
-// Replit SendGrid connector — fetches API key + verified from_email dynamically
-async function getSendGridClient(): Promise<{ client: typeof sgMail; fromEmail: string } | null> {
-  // Helper: try env var fallback
-  function tryEnvFallback(): { client: typeof sgMail; fromEmail: string } | null {
-    const apiKey = process.env.SENDGRID_API_KEY;
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || "noreply@corecompliancehub.com";
-    if (!apiKey || !apiKey.startsWith("SG.")) {
-      console.warn("[EmailService] SENDGRID_API_KEY missing or invalid — emails will not be sent");
-      return null;
-    }
-    sgMail.setApiKey(apiKey);
-    return { client: sgMail, fromEmail };
-  }
-
-  try {
-    const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-    const xReplitToken = process.env.REPL_IDENTITY
-      ? "repl " + process.env.REPL_IDENTITY
-      : process.env.WEB_REPL_RENEWAL
-      ? "depl " + process.env.WEB_REPL_RENEWAL
-      : null;
-
-    if (!hostname || !xReplitToken) {
-      console.warn("[EmailService] Replit connector env vars missing — falling back to SENDGRID_API_KEY");
-      return tryEnvFallback();
-    }
-
-    const connectionSettings = await fetch(
-      "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=sendgrid",
-      {
-        headers: {
-          Accept: "application/json",
-          "X-Replit-Token": xReplitToken,
-        },
-      }
-    ).then((res) => res.json()).then((data) => data.items?.[0]);
-
-    const connKey: string = connectionSettings?.settings?.api_key ?? "";
-    const connFrom: string = connectionSettings?.settings?.from_email ?? "";
-
-    if (!connKey.startsWith("SG.") || !connFrom) {
-      console.warn("[EmailService] Connector returned invalid key — falling back to SENDGRID_API_KEY env var");
-      return tryEnvFallback();
-    }
-
-    sgMail.setApiKey(connKey);
-    return { client: sgMail, fromEmail: connFrom };
-  } catch (err) {
-    console.error("[EmailService] Failed to initialise SendGrid client:", err);
-    return tryEnvFallback();
-  }
-}
+const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 
 function brandedHtml(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
@@ -111,24 +58,45 @@ export async function sendEmail(
   html: string,
   options?: { cc?: string[] }
 ): Promise<boolean> {
-  try {
-    const sg = await getSendGridClient();
-    if (!sg) return false;
+  const apiKey = process.env.MAILERSEND_API_KEY;
+  if (!apiKey) {
+    console.warn("[EmailService] MAILERSEND_API_KEY not set — emails will not be sent");
+    return false;
+  }
 
-    const recipients = Array.isArray(to) ? to : [to];
-    const validRecipients = recipients.filter(e => e && e.includes("@"));
-    if (validRecipients.length === 0) {
-      console.warn("[EmailService] No valid recipients for email:", subject);
+  const recipients = Array.isArray(to) ? to : [to];
+  const validRecipients = recipients.filter(e => e && e.includes("@"));
+  if (validRecipients.length === 0) {
+    console.warn("[EmailService] No valid recipients for email:", subject);
+    return false;
+  }
+
+  const body: Record<string, any> = {
+    from: { email: FROM_EMAIL, name: FROM_NAME },
+    to: validRecipients.map(email => ({ email })),
+    subject,
+    html,
+  };
+
+  if (options?.cc && options.cc.length > 0) {
+    body.cc = options.cc.map(email => ({ email }));
+  }
+
+  try {
+    const res = await fetch(MAILERSEND_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "(no body)");
+      console.error(`[EmailService] MailerSend error ${res.status}:`, detail);
       return false;
     }
-
-    await sg.client.send({
-      to: validRecipients,
-      from: { email: sg.fromEmail, name: FROM_NAME },
-      subject,
-      html,
-      ...(options?.cc && options.cc.length > 0 ? { cc: options.cc } : {}),
-    });
 
     console.log(`[EmailService] Sent "${subject}" to ${validRecipients.join(", ")}`);
     return true;
