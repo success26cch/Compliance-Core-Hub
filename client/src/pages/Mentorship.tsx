@@ -6,31 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, ArrowRight, Users, Target, Shield, 
   TrendingUp, Award, BookOpen, MessageSquare, Calendar,
-  Briefcase, GraduationCap, ClipboardCheck, ShoppingCart
+  Briefcase, GraduationCap, ClipboardCheck
 } from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
-import { PRODUCTS } from "@/lib/products";
-import { CartTrigger } from "@/components/CartDrawer";
 import logoUrl from "@assets/1_1767636977932.png";
 import mentorshipLogo from "@assets/tree.transp_1768928785893.png";
 
 export default function Mentorship() {
   const { isAuthenticated } = useAuth();
-  const { addItem } = useCart();
-
-  const handleAddToCart = (productId: string) => {
-    const product = PRODUCTS[productId];
-    if (product) {
-      addItem({
-        id: product.id,
-        name: product.name,
-        unitAmount: product.unitAmount,
-        currency: product.currency,
-        interval: product.interval,
-        category: product.category,
-      });
-    }
-  };
 
   const benefits = [
     {
@@ -137,12 +119,11 @@ export default function Mentorship() {
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Ongoing guidance and competency development for internal system owners.
-                <span className="block mt-2 font-semibold text-accent">Only available through CCHUB.</span>
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <a href="https://calendly.com/isomentorship-discovery-call/15min?month=2026-03" target="_blank" rel="noopener noreferrer">
                   <Button size="lg" data-testid="button-mentorship-enroll">
-                    Enroll in Mentorship Program
+                    Book a Call to Learn More
                     <GraduationCap className="w-5 h-5 ml-2" />
                   </Button>
                 </a>
@@ -325,9 +306,6 @@ export default function Mentorship() {
               <Card className="p-8 flex flex-col" data-testid="card-mentorship-foundation">
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-primary mb-2">Foundation Tier</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-primary">$2,500</span>
-                  </div>
                   <p className="text-sm text-muted-foreground mt-1">12-week intensive program</p>
                 </div>
                 <ul className="space-y-3 mb-6 flex-1">
@@ -347,15 +325,11 @@ export default function Mentorship() {
                 </ul>
                 <p className="text-sm text-muted-foreground mb-6 italic">For individual system owners or internal auditors preparing for their first ISO audit.</p>
                 <div className="space-y-2">
-                  <Button className="w-full" onClick={() => handleAddToCart("mentorship-foundation")} data-testid="button-add-cart-mentorship-foundation">
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart — $2,500
-                  </Button>
-                  <Link href="/contact">
-                    <Button className="w-full" variant="outline" data-testid="button-mentorship-foundation">
-                      Apply for Foundation Tier
+                  <a href="https://calendly.com/isomentorship-discovery-call/15min?month=2026-03" target="_blank" rel="noopener noreferrer">
+                    <Button className="w-full" data-testid="button-mentorship-foundation">
+                      Book a Call to Learn More
                     </Button>
-                  </Link>
+                  </a>
                 </div>
               </Card>
 
@@ -363,9 +337,6 @@ export default function Mentorship() {
                 <Badge className="mb-4 self-start">Recommended</Badge>
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-primary mb-2">Executive Tier</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-primary">$5,000</span>
-                  </div>
                   <p className="text-sm text-muted-foreground mt-1">12-week intensive + ongoing support</p>
                 </div>
                 <ul className="space-y-3 mb-6 flex-1">
@@ -387,15 +358,11 @@ export default function Mentorship() {
                 </ul>
                 <p className="text-sm text-muted-foreground mb-6 italic">For organizations serious about audit readiness and long-term compliance sustainability.</p>
                 <div className="space-y-2">
-                  <Button className="w-full" onClick={() => handleAddToCart("mentorship-executive")} data-testid="button-add-cart-mentorship-executive">
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart — $5,000
-                  </Button>
-                  <Link href="/contact">
-                    <Button className="w-full" variant="outline" data-testid="button-mentorship-executive">
-                      Apply for Executive Tier
+                  <a href="https://calendly.com/isomentorship-discovery-call/15min?month=2026-03" target="_blank" rel="noopener noreferrer">
+                    <Button className="w-full" data-testid="button-mentorship-executive">
+                      Book a Call to Learn More
                     </Button>
-                  </Link>
+                  </a>
                 </div>
               </Card>
             </div>
@@ -416,7 +383,7 @@ export default function Mentorship() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="https://calendly.com/isomentorship-discovery-call/15min?month=2026-03" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="secondary" data-testid="button-mentorship-cta-enroll">
-                  Start Your Mentorship Journey
+                  Book a Call to Learn More
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </a>
