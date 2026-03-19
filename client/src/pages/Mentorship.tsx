@@ -127,11 +127,6 @@ export default function Mentorship() {
                     <GraduationCap className="w-5 h-5 ml-2" />
                   </Button>
                 </a>
-                <Link href="/#pricing">
-                  <Button size="lg" variant="outline" data-testid="button-mentorship-pricing">
-                    View Pricing Options
-                  </Button>
-                </Link>
               </div>
             </div>
           </div>
