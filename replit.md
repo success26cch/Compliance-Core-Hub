@@ -65,3 +65,8 @@ All email logic lives in `server/emailService.ts`. Uses Replit SendGrid connecto
 
 **Admin emails:** `raulv9471@gmail.com`, `evillarreal@acsi-quality.com`
 **All sends are fire-and-forget** — wrapped in try/catch; email failures never block the primary action.
+
+## Pending Payment Infrastructure (On Hold — Awaiting Decision)
+- **Payment processor decision pending:** Owner is evaluating **Paddle** as the payment/invoicing platform instead of Stripe. Paddle acts as Merchant of Record (handles sales tax, VAT automatically) and supports native invoicing with Net payment terms. Once confirmed, replace Stripe integration with Paddle API keys (no Replit connector exists for Paddle — use API keys directly).
+- **Invoice billing (Net 30):** Plan is to add a "Request Invoice Billing" form on the Get Started/pricing page. Captures company name, billing contact, email, PO number, and desired plan. Sends admin notification; admin creates invoice in Paddle with Net 30 terms. Customer pays via Paddle-generated payment link.
+- **Account suspension for non-payment:** Architecture is ready — `PlatformGate` (frontend) and `requirePlatformAccess` (backend) already gate all protected features. Add a `suspended` boolean to `company_profiles`, check it in both gate points. Flip to suspend on non-payment, flip back to reinstate. Automatable via scheduled overdue check. Grace period configurable.
