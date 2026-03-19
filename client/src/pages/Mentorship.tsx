@@ -140,7 +140,7 @@ export default function Mentorship() {
                 <span className="block mt-2 font-semibold text-accent">Only available through CCHUB.</span>
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                <a href="https://calendly.com/isomentorship-discovery-call/15min?month=2026-03" target="_blank" rel="noopener noreferrer">
                   <Button size="lg" data-testid="button-mentorship-enroll">
                     Enroll in Mentorship Program
                     <GraduationCap className="w-5 h-5 ml-2" />
@@ -414,7 +414,7 @@ export default function Mentorship() {
               The only ISO mentorship program of its kind. Act now before compliance issues cost you thousands.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+              <a href="https://calendly.com/isomentorship-discovery-call/15min?month=2026-03" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="secondary" data-testid="button-mentorship-cta-enroll">
                   Start Your Mentorship Journey
                   <ArrowRight className="w-5 h-5 ml-2" />
