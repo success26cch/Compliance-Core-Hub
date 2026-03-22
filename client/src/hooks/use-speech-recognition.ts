@@ -23,6 +23,9 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     setTimeout(() => {
       restartingRef.current = false;
       if (!shouldBeListeningRef.current) return;
+      // Reset accumulated finals on every restart — without this, text from the
+      // previous mini-session gets prepended to the next one, causing repetition.
+      finalTranscriptRef.current = "";
       try {
         recognition.start();
       } catch (_) {}
