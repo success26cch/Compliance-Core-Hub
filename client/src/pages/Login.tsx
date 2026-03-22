@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
-import hubLogo from "@assets/6_1770259909295.png";
+import hubLogo from "@assets/8_1774207860083.png";
 
 async function apiPost(path: string, body: object) {
   const res = await fetch(path, {
