@@ -138,6 +138,7 @@ export default function Login() {
                         {...field}
                         type="email"
                         placeholder="you@company.com"
+                        autoComplete="email"
                         className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500"
                         data-testid="input-email"
                       />
@@ -158,6 +159,7 @@ export default function Login() {
                           {...field}
                           type={showPassword ? "text" : "password"}
                           placeholder="••••••••"
+                          autoComplete="current-password"
                           className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10"
                           data-testid="input-password"
                         />
@@ -196,7 +198,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel className="text-slate-300">First Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Jane" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-first-name" />
+                        <Input {...field} placeholder="Jane" autoComplete="given-name" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-first-name" />
                       </FormControl>
                       <FormMessage className="text-red-400" />
                     </FormItem>
@@ -209,7 +211,7 @@ export default function Login() {
                     <FormItem>
                       <FormLabel className="text-slate-300">Last Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Smith" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-last-name" />
+                        <Input {...field} placeholder="Smith" autoComplete="family-name" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-last-name" />
                       </FormControl>
                       <FormMessage className="text-red-400" />
                     </FormItem>
@@ -223,7 +225,7 @@ export default function Login() {
                   <FormItem>
                     <FormLabel className="text-slate-300">Work Email</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" placeholder="you@company.com" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-register-email" />
+                      <Input {...field} type="email" placeholder="you@company.com" autoComplete="off" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-register-email" />
                     </FormControl>
                     <FormMessage className="text-red-400" />
                   </FormItem>
@@ -237,7 +239,7 @@ export default function Login() {
                     <FormLabel className="text-slate-300">Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input {...field} type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10" data-testid="input-register-password" />
+                        <Input {...field} type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" autoComplete="new-password" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10" data-testid="input-register-password" />
                         <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white" onClick={() => setShowPassword(!showPassword)}>
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -255,7 +257,7 @@ export default function Login() {
                     <FormLabel className="text-slate-300">Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input {...field} type={showConfirm ? "text" : "password"} placeholder="Re-enter password" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10" data-testid="input-confirm-password" />
+                        <Input {...field} type={showConfirm ? "text" : "password"} placeholder="Re-enter password" autoComplete="new-password" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10" data-testid="input-confirm-password" />
                         <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white" onClick={() => setShowConfirm(!showConfirm)}>
                           {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
