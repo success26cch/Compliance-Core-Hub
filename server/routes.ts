@@ -34,6 +34,7 @@ import { textToSpeech, openai } from "./replit_integrations/audio/client";
 
 const HARDCODED_ADMIN_EMAILS = [
   "raulv9471@gmail.com",
+  "raul@corecompliancehub.com",
   "evillarreal@acsi-quality.com",
   "team@corecompliancehub.com",
 ];
