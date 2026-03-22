@@ -51,7 +51,8 @@ import {
   Siren,
   Printer,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  LogOut
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
@@ -1473,7 +1474,7 @@ function DocumentGapCheck() {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const { toast } = useToast();
   const [videoEnded, setVideoEnded] = useState(false);
@@ -1601,6 +1602,16 @@ export default function Dashboard() {
                   </Button>
                 </Link>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive"
+                onClick={() => logout()}
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4" />
+                Log Out
+              </Button>
             </div>
           </div>
 
