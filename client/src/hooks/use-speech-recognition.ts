@@ -9,9 +9,9 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const onTranscriptRef = useRef(onTranscript);
   const shouldBeListeningRef = useRef(false);
   const restartingRef = useRef(false);
-  // Text finalized in previous sessions (carried over when session auto-restarts)
+  // Accumulated finals from all completed sessions
   const crossSessionFinalsRef = useRef("");
-  // Finals seen in the current session (rebuilt fresh from event.results each event)
+  // Finals seen in the current session
   const lastSessionFinalsRef = useRef("");
 
   onTranscriptRef.current = onTranscript;
@@ -26,7 +26,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       restartingRef.current = false;
       if (!shouldBeListeningRef.current) return;
       try { recognition.start(); } catch (_) {}
-    }, 300);
+    }, 250);
   }, []);
 
   useEffect(() => {
@@ -35,15 +35,18 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;      // Don't cut off on pauses
-    recognition.interimResults = true;  // Show text while speaking
+
+    // continuous: false — each session ends cleanly after a pause, with NO
+    // audio buffer re-processing on the next start. This prevents duplication.
+    // We auto-restart in onend so the user never experiences a cutoff.
+    recognition.continuous = false;
+    recognition.interimResults = true;
     recognition.lang = "en-US";
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
-      // Rebuild current session's transcript from scratch on every event.
-      // This avoids duplication — event.results already contains the full
-      // state for this session, so we never need to += across events.
+      // Rebuild this session's transcript from scratch every event.
+      // event.results holds the full state for this session — no need to +=.
       let sessionFinals = "";
       let interim = "";
       for (let i = 0; i < event.results.length; i++) {
@@ -51,11 +54,9 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
         if (r.isFinal) sessionFinals += r[0].transcript;
         else interim += r[0].transcript;
       }
-      // Track what's been finalized this session so we can carry it over
-      // if the session auto-restarts (common on Android PWA)
       lastSessionFinalsRef.current = sessionFinals;
 
-      // Full transcript = everything from previous sessions + this session
+      // Full transcript = everything finalized in past sessions + this session
       const combined = (crossSessionFinalsRef.current + sessionFinals + interim).trim();
       if (combined) onTranscriptRef.current(combined);
     };
@@ -68,18 +69,22 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
         setIsListening(false);
         return;
       }
-      if (event.error === "aborted" || event.error === "no-speech") return;
-      console.warn("[SpeechRecognition] error:", event.error);
+      // no-speech and aborted are non-fatal — onend will fire and restart
+      if (event.error !== "aborted" && event.error !== "no-speech") {
+        console.warn("[SpeechRecognition] error:", event.error);
+      }
     };
 
     recognition.onend = () => {
       if (shouldBeListeningRef.current) {
-        // Session ended but user is still listening — carry over finals and restart
+        // Session ended naturally (pause detected). Save what was finalized
+        // and immediately restart — continuous: false gives us a clean buffer
+        // so the new session won't re-process old audio (no duplication).
         crossSessionFinalsRef.current += lastSessionFinalsRef.current;
         lastSessionFinalsRef.current = "";
         scheduleRestart(recognition);
       } else {
-        // User intentionally stopped
+        // User tapped mic to stop
         crossSessionFinalsRef.current = "";
         lastSessionFinalsRef.current = "";
         restartingRef.current = false;
@@ -137,7 +142,6 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       }
     }
 
-    // Fresh start — clear any previous session state
     crossSessionFinalsRef.current = "";
     lastSessionFinalsRef.current = "";
     shouldBeListeningRef.current = true;
