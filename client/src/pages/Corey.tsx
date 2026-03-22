@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import {
   Send, Bot, User, Plus, Lock, Mic, MicOff, MessageSquare, Shield,
-  CheckCircle2, Sparkles, ArrowRight, Download, Smartphone, MoreVertical,
+  CheckCircle2, Sparkles, ArrowRight, ArrowLeft, Download, Smartphone, MoreVertical,
   Copy, Mail, FileText, Trash2, Pencil, Share2, FileDown, ClipboardCopy,
   Printer, Volume2, VolumeX, Square, ClipboardList, Search, Calendar, BookOpen, AlertTriangle, Target, Scale,
   X, ExternalLink, UserCircle, Paperclip, Loader2, Siren, RefreshCw, Pin
@@ -1099,6 +1099,13 @@ function CoreyApp() {
             >
               <MessageSquare className="w-4 h-4" />
             </button>
+            <Link href="/dashboard">
+              <button className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="button-back-to-dashboard" title="Back to Dashboard">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <ArrowLeft className="w-4 h-4 text-white/70" />
+                </div>
+              </button>
+            </Link>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-accent/25">
                 <Bot className="w-5 h-5 text-white" />
@@ -1711,6 +1718,7 @@ function CoreyChatInterface({
 }) {
   const { messages, sendMessage, isStreaming, limitReached } = useChatStream(conversationId, onMessageSent);
   const { data: chatProfile } = useQuery<any>({ queryKey: ["/api/corey-profile"] });
+  const { data: companyProfile } = useQuery<any>({ queryKey: ["/api/company-profile"] });
   const [input, setInput] = useState("");
   const [attachedDoc, setAttachedDoc] = useState<{ filename: string; text: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -1884,7 +1892,7 @@ function CoreyChatInterface({
 
       doc.setFontSize(9);
       doc.setTextColor(120, 120, 120);
-      doc.text('Core Compliance Hub', pageWidth / 2, 32, { align: 'center' });
+      doc.text(companyProfile?.companyName || 'Core Compliance Hub', pageWidth / 2, 32, { align: 'center' });
       doc.text(`Document Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 37, { align: 'center' });
 
       doc.setDrawColor(200, 160, 50);
@@ -1961,8 +1969,8 @@ function CoreyChatInterface({
       doc.save(`corey-document-${new Date().toISOString().slice(0, 10)}.pdf`);
       toast({ title: "PDF document downloaded" });
     };
-    img.src = logoUrl;
-  }, [messages, toast]);
+    img.src = companyProfile?.logoUrl || logoUrl;
+  }, [messages, toast, companyProfile]);
 
   const handleEmailConversation = useCallback(async () => {
     if (!emailTo.trim()) return;
