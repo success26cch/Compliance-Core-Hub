@@ -1648,9 +1648,21 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     const userId = (req.user as any).claims.sub;
     
     try {
+      // Sanitize integer fields — form sends empty strings; Zod expects number | null
+      const toIntOrNull = (val: any) => {
+        if (val === '' || val === null || val === undefined) return null;
+        const n = Number(val);
+        return isNaN(n) ? null : n;
+      };
+
       const validated = insertIncidentSchema.omit({ userId: true }).parse({
         ...req.body,
         incidentDate: new Date(req.body.incidentDate),
+        employeeDependents: toIntOrNull(req.body.employeeDependents),
+        weeksWorked: toIntOrNull(req.body.weeksWorked),
+        daysAway: toIntOrNull(req.body.daysAway) ?? 0,
+        daysRestricted: toIntOrNull(req.body.daysRestricted) ?? 0,
+        daysJobTransfer: toIntOrNull(req.body.daysJobTransfer) ?? 0,
       });
       const incident = await storage.createIncident({
         ...validated,
