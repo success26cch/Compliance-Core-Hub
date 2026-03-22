@@ -1,34 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
 import hubLogo from "@assets/6_1770259909295.png";
-
-const loginSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-const registerSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
-type RegisterForm = z.infer<typeof registerSchema>;
 
 async function apiPost(path: string, body: object) {
   const res = await fetch(path, {
@@ -42,6 +18,9 @@ async function apiPost(path: string, body: object) {
   return data;
 }
 
+const inputClass =
+  "w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent";
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -50,18 +29,22 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const queryClient = useQueryClient();
 
-  const loginForm = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
-  });
+  // Login state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginErrors, setLoginErrors] = useState<Record<string, string>>({});
 
-  const registerForm = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "", confirmPassword: "" },
-  });
+  // Register state
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regConfirm, setRegConfirm] = useState("");
+  const [regErrors, setRegErrors] = useState<Record<string, string>>({});
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginForm) => apiPost("/api/auth/login", data),
+    mutationFn: (data: { email: string; password: string }) =>
+      apiPost("/api/auth/login", data),
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
       setLocation("/dashboard");
@@ -70,13 +53,7 @@ export default function Login() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: (data: RegisterForm) =>
-      apiPost("/api/auth/register", {
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
-      }),
+    mutationFn: (data: object) => apiPost("/api/auth/register", data),
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
       setLocation("/dashboard");
@@ -85,6 +62,45 @@ export default function Login() {
   });
 
   const isPending = loginMutation.isPending || registerMutation.isPending;
+
+  function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg("");
+    const errs: Record<string, string> = {};
+    if (!loginEmail.trim()) errs.email = "Email is required";
+    if (!loginPassword) errs.password = "Password is required";
+    setLoginErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    loginMutation.mutate({ email: loginEmail.trim(), password: loginPassword });
+  }
+
+  function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg("");
+    const errs: Record<string, string> = {};
+    if (!firstName.trim()) errs.firstName = "First name is required";
+    if (!lastName.trim()) errs.lastName = "Last name is required";
+    if (!regEmail.trim()) errs.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim()))
+      errs.email = "Enter a valid email address";
+    if (regPassword.length < 8) errs.password = "Password must be at least 8 characters";
+    if (regPassword !== regConfirm) errs.confirm = "Passwords do not match";
+    setRegErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    registerMutation.mutate({
+      email: regEmail.trim(),
+      password: regPassword,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+    });
+  }
+
+  function switchMode(m: "login" | "register") {
+    setMode(m);
+    setErrorMsg("");
+    setLoginErrors({});
+    setRegErrors({});
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4">
@@ -99,18 +115,20 @@ export default function Login() {
 
       {/* Card */}
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
-        {/* Mode tabs */}
+        {/* Tabs */}
         <div className="flex bg-slate-800 rounded-lg p-1 mb-6">
           <button
+            type="button"
             className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === "login" ? "bg-orange-500 text-white" : "text-slate-400 hover:text-white"}`}
-            onClick={() => { setMode("login"); setErrorMsg(""); }}
+            onClick={() => switchMode("login")}
             data-testid="tab-login"
           >
             Sign In
           </button>
           <button
+            type="button"
             className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === "register" ? "bg-orange-500 text-white" : "text-slate-400 hover:text-white"}`}
-            onClick={() => { setMode("register"); setErrorMsg(""); }}
+            onClick={() => switchMode("register")}
             data-testid="tab-register"
           >
             Create Account
@@ -124,159 +142,159 @@ export default function Login() {
           </Alert>
         )}
 
-        {mode === "login" ? (
-          <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit((d) => { setErrorMsg(""); loginMutation.mutate(d); })} className="space-y-4">
-              <FormField
-                control={loginForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate-300">Work Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="you@company.com"
-                        autoComplete="email"
-                        className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500"
-                        data-testid="input-email"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
+        {/* ── Sign In form ── */}
+        {mode === "login" && (
+          <form onSubmit={handleLogin} className="space-y-4" autoComplete="on">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Work Email</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="you@company.com"
+                autoComplete="email"
+                className={inputClass}
+                data-testid="input-email"
               />
-              <FormField
-                control={loginForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate-300">Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          autoComplete="current-password"
-                          className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10"
-                          data-testid="input-password"
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                          onClick={() => setShowPassword(!showPassword)}
-                          data-testid="button-toggle-password"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-                data-testid="button-sign-in"
-              >
-                {isPending ? "Signing in…" : "Sign In"}
-              </Button>
-            </form>
-          </Form>
-        ) : (
-          <Form {...registerForm}>
-            <form onSubmit={registerForm.handleSubmit((d) => { setErrorMsg(""); registerMutation.mutate(d); })} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={registerForm.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-300">First Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Jane" autoComplete="given-name" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-first-name" />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
+              {loginErrors.email && <p className="text-red-400 text-xs mt-1">{loginErrors.email}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className={inputClass + " pr-10"}
+                  data-testid="input-password"
                 />
-                <FormField
-                  control={registerForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-300">Last Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Smith" autoComplete="family-name" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-last-name" />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  onClick={() => setShowPassword(!showPassword)}
+                  data-testid="button-toggle-password"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-              <FormField
-                control={registerForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate-300">Work Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="text" placeholder="you@company.com" autoComplete="off" inputMode="email" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-register-email" />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
+              {loginErrors.password && <p className="text-red-400 text-xs mt-1">{loginErrors.password}</p>}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+              data-testid="button-sign-in"
+            >
+              {isPending ? "Signing in…" : "Sign In"}
+            </Button>
+          </form>
+        )}
+
+        {/* ── Create Account form ── */}
+        {mode === "register" && (
+          <form onSubmit={handleRegister} className="space-y-4" autoComplete="on">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">First Name</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Jane"
+                  autoComplete="given-name"
+                  className={inputClass}
+                  data-testid="input-first-name"
+                />
+                {regErrors.firstName && <p className="text-red-400 text-xs mt-1">{regErrors.firstName}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Last Name</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Smith"
+                  autoComplete="family-name"
+                  className={inputClass}
+                  data-testid="input-last-name"
+                />
+                {regErrors.lastName && <p className="text-red-400 text-xs mt-1">{regErrors.lastName}</p>}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Work Email</label>
+              <input
+                type="text"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                placeholder="you@company.com"
+                autoComplete="username"
+                className={inputClass}
+                data-testid="input-register-email"
               />
-              <FormField
-                control={registerForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate-300">Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input {...field} type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" autoComplete="new-password" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10" data-testid="input-register-password" />
-                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white" onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={registerForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate-300">Confirm Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input {...field} type={showConfirm ? "text" : "password"} placeholder="Re-enter password" autoComplete="new-password" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 pr-10" data-testid="input-confirm-password" />
-                        <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white" onClick={() => setShowConfirm(!showConfirm)}>
-                          {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-                data-testid="button-create-account"
-              >
-                {isPending ? "Creating account…" : "Create Account"}
-              </Button>
-            </form>
-          </Form>
+              {regErrors.email && <p className="text-red-400 text-xs mt-1">{regErrors.email}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  placeholder="Min. 8 characters"
+                  autoComplete="new-password"
+                  className={inputClass + " pr-10"}
+                  data-testid="input-register-password"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {regErrors.password && <p className="text-red-400 text-xs mt-1">{regErrors.password}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Confirm Password</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={regConfirm}
+                  onChange={(e) => setRegConfirm(e.target.value)}
+                  placeholder="Re-enter password"
+                  autoComplete="new-password"
+                  className={inputClass + " pr-10"}
+                  data-testid="input-confirm-password"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {regErrors.confirm && <p className="text-red-400 text-xs mt-1">{regErrors.confirm}</p>}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+              data-testid="button-create-account"
+            >
+              {isPending ? "Creating account…" : "Create Account"}
+            </Button>
+          </form>
         )}
 
         <p className="mt-6 text-center text-xs text-slate-500">
