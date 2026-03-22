@@ -10,7 +10,6 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const shouldBeListeningRef = useRef(false);
   const restartingRef = useRef(false);
   const failCountRef = useRef(0);
-  const finalTranscriptRef = useRef("");
 
   onTranscriptRef.current = onTranscript;
 
@@ -23,9 +22,6 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     setTimeout(() => {
       restartingRef.current = false;
       if (!shouldBeListeningRef.current) return;
-      // Reset accumulated finals on every restart — without this, text from the
-      // previous mini-session gets prepended to the next one, causing repetition.
-      finalTranscriptRef.current = "";
       try {
         recognition.start();
       } catch (_) {}
@@ -45,21 +41,19 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
 
     recognition.onresult = (event: any) => {
       failCountRef.current = 0;
-      // Only process NEW results starting from event.resultIndex.
-      // Starting from 0 every time causes the duplication seen in the UI —
-      // previously finalized words get re-appended on every interim update.
-      let newFinal = "";
+      // Rebuild the full transcript from ALL results every time.
+      // event.results already holds the complete state for this session —
+      // accumulating separately causes finals to be counted multiple times,
+      // which is what produces the "can youcan youcan you create..." repetition
+      // on Android PWA where resultIndex stays 0.
+      let finals = "";
       let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          newFinal += result[0].transcript;
-        } else {
-          interim += result[0].transcript;
-        }
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) finals += r[0].transcript;
+        else interim += r[0].transcript;
       }
-      if (newFinal) finalTranscriptRef.current += newFinal;
-      const combined = (finalTranscriptRef.current + " " + interim).trim();
+      const combined = (finals + interim).trim();
       if (combined) onTranscriptRef.current(combined);
     };
 
@@ -143,7 +137,6 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     }
 
     failCountRef.current = 0;
-    finalTranscriptRef.current = "";
     shouldBeListeningRef.current = true;
     restartingRef.current = false;
     try {
@@ -159,7 +152,6 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     if (!recognitionRef.current || !isListening) return;
     shouldBeListeningRef.current = false;
     restartingRef.current = false;
-    finalTranscriptRef.current = "";
     try { recognitionRef.current.stop(); } catch (_) {}
     setIsListening(false);
   }, [isListening]);
