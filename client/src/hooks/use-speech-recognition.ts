@@ -7,26 +7,12 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const [permissionStatus, setPermissionStatus] = useState<MicPermission>("unknown");
   const recognitionRef = useRef<any>(null);
   const onTranscriptRef = useRef(onTranscript);
-  const shouldBeListeningRef = useRef(false);
-  const restartingRef = useRef(false);
-  const failCountRef = useRef(0);
+  const activeRef = useRef(false);
 
   onTranscriptRef.current = onTranscript;
 
   const speechSupported = typeof window !== "undefined" &&
     ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
-
-  const scheduleRestart = useCallback((recognition: any) => {
-    if (restartingRef.current) return;
-    restartingRef.current = true;
-    setTimeout(() => {
-      restartingRef.current = false;
-      if (!shouldBeListeningRef.current) return;
-      try {
-        recognition.start();
-      } catch (_) {}
-    }, 350);
-  }, []);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -34,18 +20,17 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+
+    // Single-utterance mode: no restarts, no accumulation, no race conditions.
+    // continuous:true causes Android PWA to restart sessions constantly,
+    // which produces duplicated/combined words. One clear utterance per tap
+    // is correct for a chat input.
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = "en-US";
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
-      failCountRef.current = 0;
-      // Rebuild the full transcript from ALL results every time.
-      // event.results already holds the complete state for this session —
-      // accumulating separately causes finals to be counted multiple times,
-      // which is what produces the "can youcan youcan you create..." repetition
-      // on Android PWA where resultIndex stays 0.
       let finals = "";
       let interim = "";
       for (let i = 0; i < event.results.length; i++) {
@@ -60,33 +45,18 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     recognition.onerror = (event: any) => {
       if (event.error === "not-allowed" || event.error === "permission-denied") {
         setPermissionStatus("denied");
-        shouldBeListeningRef.current = false;
-        restartingRef.current = false;
-        setIsListening(false);
-        return;
       }
-      if (event.error === "aborted") return;
-      if (event.error === "no-speech") return;
-
-      failCountRef.current += 1;
-      console.warn("[SpeechRecognition] error:", event.error, "— fail count:", failCountRef.current);
-
-      if (failCountRef.current >= 5) {
-        console.error("[SpeechRecognition] Too many consecutive errors — stopping");
-        shouldBeListeningRef.current = false;
-        restartingRef.current = false;
-        setIsListening(false);
-        failCountRef.current = 0;
+      // Ignore no-speech and aborted — onend will fire and clean up
+      if (event.error !== "aborted" && event.error !== "no-speech") {
+        console.warn("[SpeechRecognition] error:", event.error);
       }
+      activeRef.current = false;
+      setIsListening(false);
     };
 
     recognition.onend = () => {
-      if (shouldBeListeningRef.current) {
-        scheduleRestart(recognition);
-      } else {
-        restartingRef.current = false;
-        setIsListening(false);
-      }
+      activeRef.current = false;
+      setIsListening(false);
     };
 
     recognitionRef.current = recognition;
@@ -104,23 +74,22 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     }
 
     return () => {
-      shouldBeListeningRef.current = false;
-      restartingRef.current = false;
+      activeRef.current = false;
       try { recognition.abort(); } catch (_) {}
     };
-  }, [scheduleRestart]);
+  }, []);
 
   const toggleListening = useCallback(async () => {
     if (!recognitionRef.current) return;
 
     if (isListening) {
-      shouldBeListeningRef.current = false;
-      restartingRef.current = false;
+      activeRef.current = false;
       try { recognitionRef.current.stop(); } catch (_) {}
       setIsListening(false);
       return;
     }
 
+    // Request mic permission explicitly on first tap — required for PWA installs
     if (permissionStatus !== "granted") {
       if (!navigator.mediaDevices?.getUserMedia) {
         setPermissionStatus("denied");
@@ -136,22 +105,19 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       }
     }
 
-    failCountRef.current = 0;
-    shouldBeListeningRef.current = true;
-    restartingRef.current = false;
     try {
+      activeRef.current = true;
       recognitionRef.current.start();
       setIsListening(true);
     } catch (_) {
-      shouldBeListeningRef.current = false;
+      activeRef.current = false;
       setIsListening(false);
     }
   }, [isListening, permissionStatus]);
 
   const stopListening = useCallback(() => {
     if (!recognitionRef.current || !isListening) return;
-    shouldBeListeningRef.current = false;
-    restartingRef.current = false;
+    activeRef.current = false;
     try { recognitionRef.current.stop(); } catch (_) {}
     setIsListening(false);
   }, [isListening]);
