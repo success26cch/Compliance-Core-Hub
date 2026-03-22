@@ -231,6 +231,9 @@ export default function Contact() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="general">General Question</SelectItem>
+                                <SelectItem value="corey-ai">Corey AI</SelectItem>
+                                <SelectItem value="employer-dashboard">Employer Dashboard</SelectItem>
+                                <SelectItem value="bma">Bi-Lingual Medical Assistant</SelectItem>
                                 <SelectItem value="compliance">OSHA / DOT Compliance Help</SelectItem>
                                 <SelectItem value="iso">ISO Certification &amp; Audits</SelectItem>
                                 <SelectItem value="training">Training Courses</SelectItem>
