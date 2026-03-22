@@ -457,11 +457,44 @@ export function buildContactInquiryAdminEmail(data: {
 
 export function buildContactConfirmationEmail(data: {
   name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  employeeCount?: string;
   inquiryType: string;
+  message: string;
 }): string {
   const body = `
     <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px;">We Received Your Inquiry</h2>
-    <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Thank you for reaching out, ${data.name}. Our team has received your ${data.inquiryType} inquiry and will follow up within <strong>1 business day</strong>.</p>
+    <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Thank you for reaching out, ${data.name}. Our team has received your inquiry and will follow up within <strong>1 business day</strong>.</p>
+
+    <p style="margin:0 0 12px;color:#0f172a;font-size:14px;font-weight:600;">Here's a summary of what you submitted:</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:20px;">
+      <tr><td style="padding:16px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:6px 0;color:#475569;font-size:13px;width:160px;"><strong>Name:</strong></td>
+            <td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.name}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Email:</strong></td>
+            <td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.email}</td>
+          </tr>
+          ${data.company ? `<tr><td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Company:</strong></td><td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.company}</td></tr>` : ""}
+          ${data.phone ? `<tr><td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Phone:</strong></td><td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.phone}</td></tr>` : ""}
+          ${data.employeeCount ? `<tr><td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Employee Count:</strong></td><td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.employeeCount}</td></tr>` : ""}
+          <tr>
+            <td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Area of Interest:</strong></td>
+            <td style="padding:6px 0;"><span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700;">${data.inquiryType}</span></td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+
+    <div style="background:#f8fafc;border-left:4px solid #ea6c19;padding:12px 16px;border-radius:4px;margin-bottom:20px;">
+      <p style="margin:0;font-size:13px;color:#475569;"><strong>Your Message:</strong></p>
+      <p style="margin:6px 0 0;font-size:13px;color:#374151;white-space:pre-wrap;">${data.message}</p>
+    </div>
 
     <div style="background:#f0fdf4;border:1px solid #d1fae5;border-radius:8px;padding:20px;margin-bottom:20px;">
       <p style="margin:0 0 12px;color:#166534;font-size:14px;font-weight:600;">What happens next:</p>
@@ -472,14 +505,10 @@ export function buildContactConfirmationEmail(data: {
       </ul>
     </div>
 
-    <p style="margin:0 0 20px;font-size:13px;color:#475569;">
-      In the meantime, you can explore our compliance platform and AI-powered tools at <a href="https://cchub.app" style="color:#ea6c19;">cchub.app</a>.
-    </p>
-
     <p style="margin:0;font-size:13px;color:#475569;">
       Best regards,<br />
       <strong>The Core Compliance Hub Team</strong><br />
-      <a href="mailto:evillarreal@acsi-quality.com" style="color:#ea6c19;">evillarreal@acsi-quality.com</a>
+      <a href="mailto:team@corecompliancehub.com" style="color:#ea6c19;">team@corecompliancehub.com</a>
     </p>
   `;
 

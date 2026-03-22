@@ -1040,9 +1040,17 @@ Rules:
           message,
         });
         const adminSubject = `[NEW INQUIRY] ${inquiryType} — ${company || "N/A"} — ${name}`;
-        await sendEmail(CCHUB_ADMIN_EMAILS, adminSubject, adminHtml);
+        await sendEmail("team@corecompliancehub.com", adminSubject, adminHtml);
 
-        const confirmHtml = buildContactConfirmationEmail({ name, inquiryType });
+        const confirmHtml = buildContactConfirmationEmail({
+          name,
+          email,
+          company: company || "",
+          phone: phone || "",
+          employeeCount: employeeCount || "",
+          inquiryType,
+          message,
+        });
         await sendEmail(email, "We Received Your Inquiry — Core Compliance Hub", confirmHtml);
       } catch (emailErr) {
         console.error("[EmailService] Contact inquiry email error:", emailErr);
