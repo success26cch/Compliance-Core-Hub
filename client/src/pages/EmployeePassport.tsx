@@ -141,6 +141,10 @@ function EmployeePassportContent() {
     employee: { firstName: string; lastName: string };
   } | null>(null);
 
+  const { data: companyProfile } = useQuery<any>({
+    queryKey: ["/api/company-profile"],
+  });
+
   const { data: employees = [], isLoading: loadingEmployees } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
   });
@@ -371,8 +375,14 @@ function EmployeePassportContent() {
       <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black p-4 flex flex-col items-center justify-center">
         <Card className="w-full max-w-sm bg-gray-800/80 border-gray-700 p-6 text-center space-y-4">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src={cchLogo} alt="CCHUB" className="w-6 h-6 object-contain" />
-            <h2 className="text-xl font-bold text-white">CCHUB Medical Passport</h2>
+            <img
+              src={companyProfile?.logoUrl || cchLogo}
+              alt={companyProfile?.companyName || "CCHUB"}
+              className="w-6 h-6 object-contain"
+            />
+            <h2 className="text-xl font-bold text-white">
+              {companyProfile?.companyName || "CCHUB"} Medical Passport
+            </h2>
           </div>
 
           <div className="text-sm text-gray-400">

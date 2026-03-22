@@ -862,6 +862,8 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
   const [selectedFacility, setSelectedFacility] = useState<string>('all');
   const [drillDown, setDrillDown] = useState<string | null>(null);
 
+  const { data: companyProfile } = useQuery<any>({ queryKey: ['/api/company-profile'] });
+
   // Collect unique named facilities for the filter
   const facilities = Array.from(
     new Set(incidents.map(i => i.facility?.trim()).filter(Boolean) as string[])
@@ -1097,15 +1099,27 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
 
       {/* Printable Report Content */}
       <div ref={reportRef} className="bg-white p-6 rounded-lg border">
-        <div className="header-info mb-6">
-          <h1 className="text-xl font-bold">OSHA's Form 300</h1>
-          <h2 className="text-sm text-muted-foreground">Log of Work-Related Injuries and Illnesses</h2>
-          <p className="text-xs text-muted-foreground mt-2">
-            Year: {new Date().getFullYear()}
-            {selectedFacility !== 'all' && ` | Facility: ${selectedFacility}`}
-            {' '}| Recordable Cases: {recordableIncidents.length} | 
-            Injuries: {injuries} | Illnesses: {illnesses}
-          </p>
+        <div className="header-info mb-6 flex items-start gap-4">
+          {companyProfile?.logoUrl && (
+            <img
+              src={companyProfile.logoUrl}
+              alt={companyProfile.companyName || "Company Logo"}
+              className="w-14 h-14 object-contain rounded flex-shrink-0"
+            />
+          )}
+          <div>
+            {companyProfile?.companyName && (
+              <p className="text-sm font-semibold text-gray-700 mb-1">{companyProfile.companyName}</p>
+            )}
+            <h1 className="text-xl font-bold">OSHA's Form 300</h1>
+            <h2 className="text-sm text-muted-foreground">Log of Work-Related Injuries and Illnesses</h2>
+            <p className="text-xs text-muted-foreground mt-2">
+              Year: {new Date().getFullYear()}
+              {selectedFacility !== 'all' && ` | Facility: ${selectedFacility}`}
+              {' '}| Recordable Cases: {recordableIncidents.length} | 
+              Injuries: {injuries} | Illnesses: {illnesses}
+            </p>
+          </div>
         </div>
 
         {recordableIncidents.length === 0 ? (
