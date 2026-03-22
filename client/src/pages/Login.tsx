@@ -225,7 +225,7 @@ export default function Login() {
                   <FormItem>
                     <FormLabel className="text-slate-300">Work Email</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" placeholder="you@company.com" autoComplete="off" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-register-email" />
+                      <Input {...field} type="text" placeholder="you@company.com" autoComplete="off" inputMode="email" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-orange-500" data-testid="input-register-email" />
                     </FormControl>
                     <FormMessage className="text-red-400" />
                   </FormItem>
