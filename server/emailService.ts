@@ -422,31 +422,18 @@ export function buildContactInquiryAdminEmail(data: {
     <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px;">New Contact Inquiry</h2>
     <p style="margin:0 0 20px;color:#64748b;font-size:14px;">A new inquiry has been submitted through the Core Compliance Hub website.</p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:20px;">
-      <tr><td style="padding:16px 20px;">
-        <table width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="padding:6px 0;color:#475569;font-size:13px;width:160px;"><strong>Name:</strong></td>
-            <td style="padding:6px 0;color:#0f172a;font-size:13px;font-weight:600;">${data.name}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Email:</strong></td>
-            <td style="padding:6px 0;"><a href="mailto:${data.email}" style="color:#ea6c19;font-size:13px;">${data.email}</a></td>
-          </tr>
-          ${data.company ? `<tr><td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Company:</strong></td><td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.company}</td></tr>` : ""}
-          ${data.phone ? `<tr><td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Phone:</strong></td><td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.phone}</td></tr>` : ""}
-          ${data.employeeCount ? `<tr><td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Employee Count:</strong></td><td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.employeeCount}</td></tr>` : ""}
-          <tr>
-            <td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Inquiry Type:</strong></td>
-            <td style="padding:6px 0;"><span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700;">${data.inquiryType}</span></td>
-          </tr>
-        </table>
-      </td></tr>
-    </table>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:20px;">
+      <p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Name:</strong>&nbsp; ${data.name}</p>
+      <p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Email:</strong>&nbsp; <a href="mailto:${data.email}" style="color:#ea6c19;">${data.email}</a></p>
+      ${data.company ? `<p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Company:</strong>&nbsp; ${data.company}</p>` : ""}
+      ${data.phone ? `<p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Phone:</strong>&nbsp; ${data.phone}</p>` : ""}
+      ${data.employeeCount ? `<p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Employee Count:</strong>&nbsp; ${data.employeeCount}</p>` : ""}
+      <p style="margin:0;font-size:14px;color:#0f172a;"><strong>Area of Interest:</strong>&nbsp; <span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:13px;font-weight:700;">${data.inquiryType}</span></p>
+    </div>
 
-    <div style="background:#f0fdf4;border-left:4px solid #16a34a;padding:12px 16px;border-radius:4px;margin-bottom:20px;">
-      <p style="margin:0;font-size:13px;color:#14532d;"><strong>Message:</strong></p>
-      <p style="margin:6px 0 0;font-size:14px;color:#166534;white-space:pre-wrap;">${data.message}</p>
+    <div style="background:#f0fdf4;border-left:4px solid #16a34a;padding:16px;border-radius:4px;margin-bottom:20px;">
+      <p style="margin:0 0 8px;font-size:13px;color:#14532d;"><strong>Message:</strong></p>
+      <p style="margin:0;font-size:14px;color:#166534;white-space:pre-wrap;">${data.message}</p>
     </div>
 
     <a href="mailto:${data.email}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px;">Reply to ${data.name} →</a>
