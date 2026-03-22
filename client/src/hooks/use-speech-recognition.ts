@@ -7,12 +7,27 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const [permissionStatus, setPermissionStatus] = useState<MicPermission>("unknown");
   const recognitionRef = useRef<any>(null);
   const onTranscriptRef = useRef(onTranscript);
-  const activeRef = useRef(false);
+  const shouldBeListeningRef = useRef(false);
+  const restartingRef = useRef(false);
+  // Text finalized in previous sessions (carried over when session auto-restarts)
+  const crossSessionFinalsRef = useRef("");
+  // Finals seen in the current session (rebuilt fresh from event.results each event)
+  const lastSessionFinalsRef = useRef("");
 
   onTranscriptRef.current = onTranscript;
 
   const speechSupported = typeof window !== "undefined" &&
     ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  const scheduleRestart = useCallback((recognition: any) => {
+    if (restartingRef.current) return;
+    restartingRef.current = true;
+    setTimeout(() => {
+      restartingRef.current = false;
+      if (!shouldBeListeningRef.current) return;
+      try { recognition.start(); } catch (_) {}
+    }, 300);
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -20,43 +35,56 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-
-    // Single-utterance mode: no restarts, no accumulation, no race conditions.
-    // continuous:true causes Android PWA to restart sessions constantly,
-    // which produces duplicated/combined words. One clear utterance per tap
-    // is correct for a chat input.
-    recognition.continuous = false;
-    recognition.interimResults = true;
+    recognition.continuous = true;      // Don't cut off on pauses
+    recognition.interimResults = true;  // Show text while speaking
     recognition.lang = "en-US";
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
-      let finals = "";
+      // Rebuild current session's transcript from scratch on every event.
+      // This avoids duplication — event.results already contains the full
+      // state for this session, so we never need to += across events.
+      let sessionFinals = "";
       let interim = "";
       for (let i = 0; i < event.results.length; i++) {
         const r = event.results[i];
-        if (r.isFinal) finals += r[0].transcript;
+        if (r.isFinal) sessionFinals += r[0].transcript;
         else interim += r[0].transcript;
       }
-      const combined = (finals + interim).trim();
+      // Track what's been finalized this session so we can carry it over
+      // if the session auto-restarts (common on Android PWA)
+      lastSessionFinalsRef.current = sessionFinals;
+
+      // Full transcript = everything from previous sessions + this session
+      const combined = (crossSessionFinalsRef.current + sessionFinals + interim).trim();
       if (combined) onTranscriptRef.current(combined);
     };
 
     recognition.onerror = (event: any) => {
       if (event.error === "not-allowed" || event.error === "permission-denied") {
         setPermissionStatus("denied");
+        shouldBeListeningRef.current = false;
+        restartingRef.current = false;
+        setIsListening(false);
+        return;
       }
-      // Ignore no-speech and aborted — onend will fire and clean up
-      if (event.error !== "aborted" && event.error !== "no-speech") {
-        console.warn("[SpeechRecognition] error:", event.error);
-      }
-      activeRef.current = false;
-      setIsListening(false);
+      if (event.error === "aborted" || event.error === "no-speech") return;
+      console.warn("[SpeechRecognition] error:", event.error);
     };
 
     recognition.onend = () => {
-      activeRef.current = false;
-      setIsListening(false);
+      if (shouldBeListeningRef.current) {
+        // Session ended but user is still listening — carry over finals and restart
+        crossSessionFinalsRef.current += lastSessionFinalsRef.current;
+        lastSessionFinalsRef.current = "";
+        scheduleRestart(recognition);
+      } else {
+        // User intentionally stopped
+        crossSessionFinalsRef.current = "";
+        lastSessionFinalsRef.current = "";
+        restartingRef.current = false;
+        setIsListening(false);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -74,16 +102,20 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     }
 
     return () => {
-      activeRef.current = false;
+      shouldBeListeningRef.current = false;
+      restartingRef.current = false;
       try { recognition.abort(); } catch (_) {}
     };
-  }, []);
+  }, [scheduleRestart]);
 
   const toggleListening = useCallback(async () => {
     if (!recognitionRef.current) return;
 
     if (isListening) {
-      activeRef.current = false;
+      shouldBeListeningRef.current = false;
+      restartingRef.current = false;
+      crossSessionFinalsRef.current = "";
+      lastSessionFinalsRef.current = "";
       try { recognitionRef.current.stop(); } catch (_) {}
       setIsListening(false);
       return;
@@ -105,19 +137,27 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       }
     }
 
+    // Fresh start — clear any previous session state
+    crossSessionFinalsRef.current = "";
+    lastSessionFinalsRef.current = "";
+    shouldBeListeningRef.current = true;
+    restartingRef.current = false;
+
     try {
-      activeRef.current = true;
       recognitionRef.current.start();
       setIsListening(true);
     } catch (_) {
-      activeRef.current = false;
+      shouldBeListeningRef.current = false;
       setIsListening(false);
     }
   }, [isListening, permissionStatus]);
 
   const stopListening = useCallback(() => {
     if (!recognitionRef.current || !isListening) return;
-    activeRef.current = false;
+    shouldBeListeningRef.current = false;
+    restartingRef.current = false;
+    crossSessionFinalsRef.current = "";
+    lastSessionFinalsRef.current = "";
     try { recognitionRef.current.stop(); } catch (_) {}
     setIsListening(false);
   }, [isListening]);
