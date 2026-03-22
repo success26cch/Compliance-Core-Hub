@@ -100,8 +100,26 @@ export function registerAuthRoutes(app: Express): void {
 
       const normalizedEmail = email.trim().toLowerCase();
       const [existing] = await db.select().from(users).where(eq(users.email, normalizedEmail));
+
       if (existing) {
-        return res.status(409).json({ message: "An account with this email already exists" });
+        if (!existing.passwordHash) {
+          // Pre-existing account from Replit Auth — allow setting a password for the first time
+          const passwordHash = await hashPassword(password);
+          const [updated] = await db
+            .update(users)
+            .set({
+              passwordHash,
+              firstName: firstName?.trim() || existing.firstName,
+              lastName: lastName?.trim() || existing.lastName,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, existing.id))
+            .returning();
+          req.session.userId = updated.id;
+          req.session.userEmail = updated.email ?? "";
+          return res.json({ id: updated.id, email: updated.email, firstName: updated.firstName, lastName: updated.lastName });
+        }
+        return res.status(409).json({ message: "An account with this email already exists. Please sign in instead." });
       }
 
       const passwordHash = await hashPassword(password);
@@ -135,8 +153,11 @@ export function registerAuthRoutes(app: Express): void {
       const normalizedEmail = email.trim().toLowerCase();
       const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail));
 
-      if (!user || !user.passwordHash) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid email or password" });
+      }
+      if (!user.passwordHash) {
+        return res.status(401).json({ message: "No password set for this account. Use 'Create Account' with your email to set one." });
       }
 
       const valid = await verifyPassword(password, user.passwordHash);
