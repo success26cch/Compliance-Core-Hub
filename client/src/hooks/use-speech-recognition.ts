@@ -10,6 +10,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const shouldBeListeningRef = useRef(false);
   const restartingRef = useRef(false);
   const failCountRef = useRef(0);
+  const finalTranscriptRef = useRef("");
 
   onTranscriptRef.current = onTranscript;
 
@@ -41,17 +42,21 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
 
     recognition.onresult = (event: any) => {
       failCountRef.current = 0;
-      let finalText = "";
-      let interimText = "";
-      for (let i = 0; i < event.results.length; i++) {
+      // Only process NEW results starting from event.resultIndex.
+      // Starting from 0 every time causes the duplication seen in the UI —
+      // previously finalized words get re-appended on every interim update.
+      let newFinal = "";
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          finalText += result[0].transcript;
+          newFinal += result[0].transcript;
         } else {
-          interimText += result[0].transcript;
+          interim += result[0].transcript;
         }
       }
-      const combined = (finalText + " " + interimText).trim();
+      if (newFinal) finalTranscriptRef.current += newFinal;
+      const combined = (finalTranscriptRef.current + " " + interim).trim();
       if (combined) onTranscriptRef.current(combined);
     };
 
@@ -135,6 +140,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     }
 
     failCountRef.current = 0;
+    finalTranscriptRef.current = "";
     shouldBeListeningRef.current = true;
     restartingRef.current = false;
     try {
@@ -150,6 +156,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     if (!recognitionRef.current || !isListening) return;
     shouldBeListeningRef.current = false;
     restartingRef.current = false;
+    finalTranscriptRef.current = "";
     try { recognitionRef.current.stop(); } catch (_) {}
     setIsListening(false);
   }, [isListening]);
