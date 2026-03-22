@@ -661,7 +661,7 @@ export default function Landing() {
                 <Button size="sm" className="bg-white text-[hsl(222,47%,11%)] hover:bg-gray-100 font-semibold" data-testid="button-nav-dashboard">Dashboard</Button>
               </Link>
             ) : (
-              <a href="/api/login">
+              <a href="/login">
                 <Button size="sm" className="bg-white text-[hsl(222,47%,11%)] hover:bg-gray-100 font-semibold" data-testid="button-nav-signin">Sign In</Button>
               </a>
             )}
@@ -1697,7 +1697,7 @@ export default function Landing() {
                   Need to train your team? Assign courses to employees, send them a simple access link, and track their progress and certificates — all from one dashboard. No employee accounts required.
                 </p>
               </div>
-              <Link href={isAuthenticated ? "/employer-training" : "/api/login"}>
+              <Link href={isAuthenticated ? "/employer-training" : "/login"}>
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0" data-testid="button-employer-portal-cta">
                   <GraduationCap className="w-4 h-4" />
                   Open Employer Portal

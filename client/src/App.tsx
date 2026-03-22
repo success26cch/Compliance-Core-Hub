@@ -59,6 +59,7 @@ import CoreyProfile from "@/pages/CoreyProfile";
 import IsaStandalone from "@/pages/Isa";
 import IsaProfile from "@/pages/IsaProfile";
 import WelcomeIsa from "@/pages/WelcomeIsa";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -91,6 +92,7 @@ function PageTracker() {
 function Router() {
   return (
     <Switch>
+      <Route path="/login" component={Login} />
       <Route path="/" component={Landing} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/bot" component={BotPage} />

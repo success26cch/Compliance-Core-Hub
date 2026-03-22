@@ -664,7 +664,7 @@ export default function MeetCorey() {
                   Subscribe — $199/mo
                 </Button>
               </Link>
-              <a href="/api/login">
+              <a href="/login">
                 <Button size="lg" className="bg-white/10 border-2 border-white/30 text-white font-bold px-10 py-6 text-lg gap-2" data-testid="button-cta-signin">
                   Sign In
                   <ArrowRight className="w-5 h-5" />

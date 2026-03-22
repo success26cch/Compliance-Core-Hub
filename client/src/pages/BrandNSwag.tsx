@@ -100,7 +100,7 @@ export default function BrandNSwag() {
                 <Button data-testid="button-nav-dashboard">Go to Dashboard</Button>
               </Link>
             ) : (
-              <a href="/api/login">
+              <a href="/login">
                 <Button variant="outline" data-testid="button-nav-signin">Sign In</Button>
               </a>
             )}

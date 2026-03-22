@@ -108,7 +108,7 @@ export default function BMA() {
                 <Button data-testid="button-bma-dashboard">Go to Dashboard</Button>
               </Link>
             ) : (
-              <a href="/api/login">
+              <a href="/login">
                 <Button variant="outline" data-testid="button-bma-signin">Sign In</Button>
               </a>
             )}
@@ -421,7 +421,7 @@ export default function BMA() {
                   <ShoppingCart className="w-5 h-5 mr-2" />
                   Add to Cart — $199/mo
                 </Button>
-                <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                <a href={isAuthenticated ? "/dashboard" : "/login"}>
                   <Button size="lg" variant="outline" className="w-full" data-testid="button-bma-subscribe-main">
                     Start Your BMA Subscription Today
                   </Button>

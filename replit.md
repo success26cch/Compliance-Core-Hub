@@ -9,7 +9,15 @@ Core Compliance Hub (CCHUB) is a comprehensive occupational health and complianc
 - AI personas: Senior Occupational Health & Safety Compliance Expert (CCHUB), Lead ISO Auditor (ACSI)
 
 ## System Architecture
-The CCHUB platform is built with a modern web stack, utilizing React, Vite, TailwindCSS, and shadcn/ui for the frontend, and Express with Node.js for the backend. PostgreSQL with Drizzle ORM handles data persistence. AI functionalities are powered by Anthropic Claude, integrated via Replit AI. User authentication is managed through Replit Auth.
+The CCHUB platform is built with a modern web stack, utilizing React, Vite, TailwindCSS, and shadcn/ui for the frontend, and Express with Node.js for the backend. PostgreSQL with Drizzle ORM handles data persistence. AI functionalities are powered by Anthropic Claude, integrated via Replit AI. User authentication uses a custom email/password system (Node.js `crypto` scrypt, session-based with PostgreSQL session store via `connect-pg-simple`).
+
+**Authentication Architecture (custom — no Replit OIDC):**
+- `server/auth/index.ts` — auth module: `setupAuth()` (session middleware), `registerAuthRoutes()` (register/login/logout routes), `authMiddleware()` (patches `req.isAuthenticated()` + `req.user.claims` from session)
+- Routes: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/user`, `GET /api/logout`
+- Password hashing: `crypto.scrypt` with random salt — no external packages
+- Session: stored in PostgreSQL `sessions` table via `connect-pg-simple`; `req.session.userId` + `req.session.userEmail`
+- All existing route guards (`req.isAuthenticated()`, `req.user.claims.sub`) work unchanged
+- Frontend: `/login` page with Sign In / Create Account tabs; `use-auth.ts` queries `/api/auth/user`
 
 **Key Architectural Decisions & Features:**
 - **AI-Powered Assistance:**

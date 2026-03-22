@@ -22,7 +22,7 @@ export function CartDrawer() {
     if (items.length === 0) return;
 
     if (!isAuthenticated) {
-      window.location.href = "/api/login";
+      window.location.href = "/login";
       return;
     }
 

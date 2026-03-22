@@ -169,7 +169,7 @@ export default function CoreyStandalone() {
   }
 
   if (!isAuthenticated) {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
@@ -312,7 +312,7 @@ function CoreyLanding() {
               Learn More
             </Button>
           </Link>
-          <a href="/api/login">
+          <a href="/login">
             <Button variant="ghost" size="sm" className="text-white/60 hover:text-white text-xs" data-testid="button-trial-signin">
               Sign In
             </Button>
@@ -533,7 +533,7 @@ function CoreyLanding() {
                         Subscribe — $199/mo <ArrowRight className="w-4 h-4" />
                       </Button>
                     </Link>
-                    <a href="/api/login">
+                    <a href="/login">
                       <Button variant="ghost" className="text-white/60 hover:text-white border border-white/10" data-testid="button-limit-signin">
                         Sign In
                       </Button>
@@ -605,7 +605,7 @@ function CoreyLanding() {
                 Subscribe — $199/mo <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <a href="/api/login">
+            <a href="/login">
               <Button variant="ghost" className="w-full text-white/60 hover:text-white border border-white/10">
                 Already subscribed? Sign In
               </Button>

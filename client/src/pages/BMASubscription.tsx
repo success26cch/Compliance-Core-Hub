@@ -105,7 +105,7 @@ export default function BMASubscription() {
                 <Button data-testid="button-bma-dashboard">Go to Dashboard</Button>
               </Link>
             ) : (
-              <a href="/api/login">
+              <a href="/login">
                 <Button variant="outline" data-testid="button-bma-signin">Sign In</Button>
               </a>
             )}
@@ -130,7 +130,7 @@ export default function BMASubscription() {
                 Spanish bilingual documentation — all for one flat monthly fee.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                <a href={isAuthenticated ? "/dashboard" : "/login"}>
                   <Button size="lg" data-testid="button-bma-subscribe">
                     Start Your BMA Subscription
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -338,7 +338,7 @@ export default function BMASubscription() {
                     <Printer className="w-4 h-4 mr-2" />
                     Print ROI Report
                   </Button>
-                  <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                  <a href={isAuthenticated ? "/dashboard" : "/login"}>
                     <Button data-testid="button-subscribe-calculator">
                       Start Your BMA Subscription
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -389,7 +389,7 @@ export default function BMASubscription() {
                   <ShoppingCart className="w-5 h-5 mr-2" />
                   Add to Cart — $199/mo
                 </Button>
-                <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+                <a href={isAuthenticated ? "/dashboard" : "/login"}>
                   <Button size="lg" variant="outline" className="w-full" data-testid="button-bma-subscribe-main">
                     Start Your BMA Subscription Today
                   </Button>
@@ -423,7 +423,7 @@ export default function BMASubscription() {
               and watch your clinic's efficiency transform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href={isAuthenticated ? "/dashboard" : "/api/login"}>
+              <a href={isAuthenticated ? "/dashboard" : "/login"}>
                 <Button size="lg" variant="secondary" data-testid="button-bma-cta-subscribe">
                   Get Started Now
                   <ArrowRight className="w-5 h-5 ml-2" />

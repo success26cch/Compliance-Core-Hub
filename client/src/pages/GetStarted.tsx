@@ -481,7 +481,7 @@ export default function GetStarted() {
                 Contact Us
               </Button>
             </Link>
-            <a href="/api/login">
+            <a href="/login">
               <Button size="lg" data-testid="button-try-corey">
                 Sign In to Get Started
                 <ArrowRight className="w-4 h-4 ml-2" />
