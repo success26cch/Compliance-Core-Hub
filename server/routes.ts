@@ -32,10 +32,15 @@ import path from "path";
 import fs from "fs";
 import { textToSpeech, openai } from "./replit_integrations/audio/client";
 
-const PLATFORM_ADMIN_EMAILS = (process.env.ADMIN_USERS || "")
-  .split(",")
-  .map((s) => s.trim().toLowerCase())
-  .filter(Boolean);
+const HARDCODED_ADMIN_EMAILS = [
+  "raulv9471@gmail.com",
+  "evillarreal@acsi-quality.com",
+  "team@corecompliancehub.com",
+];
+const PLATFORM_ADMIN_EMAILS = [
+  ...HARDCODED_ADMIN_EMAILS,
+  ...(process.env.ADMIN_USERS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
+];
 
 function isEmailAdmin(claims: any): boolean {
   const email = (claims?.email || "").toLowerCase();
@@ -972,13 +977,11 @@ Rules:
   });
 
   // Admin users get unlimited access
-  const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
   function isAdmin(user: any): boolean {
     if (!user?.claims) return false;
-    const userId = user.claims.sub;
     const email = (user.claims.email || "").toLowerCase();
     const username = (user.claims.name || user.claims.preferred_username || "").toLowerCase();
-    return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(email) || ADMIN_USERS.includes(username);
+    return PLATFORM_ADMIN_EMAILS.includes(email) || PLATFORM_ADMIN_EMAILS.includes(username);
   }
 
   // Question usage
