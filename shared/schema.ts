@@ -226,6 +226,7 @@ export const incidents = pgTable("incidents", {
   department: text("department"),
   location: text("location"),
   bodyPart: text("body_part"),
+  bodySide: text("body_side"),
   natureOfInjury: text("nature_of_injury"),
   objectOrSubstance: text("object_or_substance"),
   // Classification

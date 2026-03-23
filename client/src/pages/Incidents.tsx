@@ -68,6 +68,8 @@ const BODY_PARTS = [
   "Multiple Body Parts", "Body System (Respiratory/Circulatory)", "Other",
 ];
 
+const BODY_SIDES = ["Left", "Right", "Bilateral", "Center / Midline", "N/A"];
+
 const INJURY_TYPES = [
   "Strain / Sprain", "Laceration / Cut", "Puncture / Bite",
   "Contusion / Bruise", "Fracture / Break", "Abrasion / Scrape",
@@ -174,6 +176,7 @@ type Incident = {
   department: string | null;
   location: string | null;
   bodyPart: string | null;
+  bodySide: string | null;
   natureOfInjury: string | null;
   objectOrSubstance: string | null;
   isRecordable: boolean;
@@ -197,6 +200,7 @@ type IncidentFormData = {
   department: string;
   location: string;
   bodyPart: string;
+  bodySide: string;
   natureOfInjury: string;
   objectOrSubstance: string;
   isRecordable: boolean;
@@ -262,6 +266,7 @@ const defaultFormData: IncidentFormData = {
   department: '',
   location: '',
   bodyPart: '',
+  bodySide: '',
   natureOfInjury: '',
   objectOrSubstance: '',
   isRecordable: false,
@@ -630,6 +635,15 @@ function IncidentFormDialog({
                       <SelectContent>{BODY_PARTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="bodySide">Side of Body</Label>
+                    <Select value={formData.bodySide} onValueChange={v => set({ bodySide: v })}>
+                      <SelectTrigger data-testid="select-body-side"><SelectValue placeholder="Left / Right / N/A..." /></SelectTrigger>
+                      <SelectContent>{BODY_SIDES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="natureOfInjury">Nature of Injury / Illness</Label>
                     <Select value={formData.natureOfInjury} onValueChange={v => set({ natureOfInjury: v })}>
@@ -1584,6 +1598,7 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
   };
 
   const bodyParts = tally('bodyPart');
+  const bodySides = tally('bodySide');
   const injuryTypes = tally('natureOfInjury');
   const workAreas = tally('location');
   const objects = tally('objectOrSubstance');
@@ -1849,6 +1864,17 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
                   <FreqBar key={label} label={label} count={count} max={maxOf(bodyParts)} color="bg-accent" />
                 ))
               : <p className="text-xs text-muted-foreground">No data for this selection.</p>}
+            {bodySides.filter(([s]) => s !== '(Not Specified)').length > 0 && (
+              <>
+                <div className="pt-3 pb-1 border-t border-border mt-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Side of Body</p>
+                </div>
+                {bodySides.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => {
+                  const color = label === 'Left' ? 'bg-blue-500' : label === 'Right' ? 'bg-orange-500' : label === 'Bilateral' ? 'bg-emerald-500' : 'bg-slate-400';
+                  return <FreqBar key={label} label={label} count={count} max={maxOf(bodySides)} color={color} />;
+                })}
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -2345,6 +2371,7 @@ function IncidentDetailDialog({
     department: inc.department || '',
     location: inc.location || '',
     bodyPart: inc.bodyPart || '',
+    bodySide: inc.bodySide || '',
     natureOfInjury: inc.natureOfInjury || '',
     objectOrSubstance: inc.objectOrSubstance || '',
     isRecordable: inc.isRecordable,
@@ -2550,6 +2577,19 @@ function IncidentDetailDialog({
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="detail-body-side">Side of Body</Label>
+                <Select value={formData.bodySide} onValueChange={(v) => setFormData({ ...formData, bodySide: v })}>
+                  <SelectTrigger id="detail-body-side" data-testid="select-detail-body-side">
+                    <SelectValue placeholder="Left / Right / N/A..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BODY_SIDES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="detail-nature">Nature of Injury / Illness</Label>
                 <Select value={formData.natureOfInjury} onValueChange={(v) => setFormData({ ...formData, natureOfInjury: v })}>
