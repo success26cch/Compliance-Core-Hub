@@ -285,6 +285,16 @@ export const incidents = pgTable("incidents", {
   returnToWorkDate: text("return_to_work_date"),
   deathDate: text("death_date"),
   dateEmployerNotified: text("date_employer_notified"),
+  // ── Enhanced Analytics Fields ──────────────────────────────────────────────
+  shiftTime: text("shift_time"),                 // 'Day Shift' | 'Swing Shift' | 'Night Shift' | 'Overtime'
+  taskBeingPerformed: text("task_being_performed"), // 'Regular Duties' | 'New Task' | etc.
+  rootCauseCategory: text("root_cause_category"), // 'Human Error' | 'Equipment Failure' | etc.
+  ppeStatus: text("ppe_status"),                 // 'Worn Correctly' | 'Not Worn' | etc.
+  contributingFactor: text("contributing_factor"), // 'Fatigue' | 'Rushing' | etc.
+  employeeTenure: text("employee_tenure"),        // '< 30 days' | '30–90 days' | etc.
+  employmentType: text("employment_type"),        // 'Full-time' | 'Part-time' | 'Contractor' | etc.
+  medicalTreatmentType: text("medical_treatment_type"), // 'First Aid Only' | 'Emergency Room' | etc.
+  drugTestAdministered: text("drug_test_administered"), // 'Yes' | 'No' | 'Refused' | 'Not Required'
 });
 
 // Incident date as string or Date

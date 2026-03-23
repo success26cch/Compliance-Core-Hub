@@ -70,6 +70,46 @@ const BODY_PARTS = [
 
 const BODY_SIDES = ["Left", "Right", "Bilateral", "Center / Midline", "N/A"];
 
+const SHIFT_TIMES = ["Day Shift", "Swing Shift", "Night Shift", "Overtime / Extended Shift"];
+
+const TASKS_BEING_PERFORMED = [
+  "Regular / Routine Duties", "New Task / First Time", "Maintenance / Repair",
+  "Overtime Coverage", "Training / Orientation", "Non-routine Assignment", "Other",
+];
+
+const ROOT_CAUSE_CATEGORIES = [
+  "Human Error", "Equipment Failure / Malfunction", "Procedure Not Followed",
+  "Inadequate Training", "Environmental / Conditions", "Ergonomic / Repetitive Motion",
+  "Struck By / Caught In", "Fall / Slip / Trip Hazard", "Chemical / Substance Exposure", "Other",
+];
+
+const PPE_STATUSES = [
+  "Worn Correctly", "Worn Incorrectly / Improperly", "Not Worn — Employee Choice",
+  "Not Worn — Not Available", "Not Required for Task", "PPE Failed",
+];
+
+const CONTRIBUTING_FACTORS = [
+  "Rushing / Time Pressure", "Fatigue / End of Shift", "Distraction / Inattention",
+  "First Time Performing Task", "Poor Lighting / Visibility", "Wet / Slippery Surface",
+  "Congested Work Area", "Inadequate Training", "Equipment Not Maintained",
+  "Missing / Inadequate Guarding", "Improper Lifting Technique", "Other",
+];
+
+const EMPLOYEE_TENURES = [
+  "< 30 Days", "30–90 Days", "3–12 Months", "1–3 Years", "3+ Years",
+];
+
+const EMPLOYMENT_TYPES = [
+  "Full-time", "Part-time", "Temporary / Seasonal", "Contractor / Vendor", "Leased Employee", "Volunteer",
+];
+
+const MEDICAL_TREATMENT_TYPES = [
+  "First Aid Only (No Medical Treatment)", "Occupational Medicine / Clinic",
+  "Urgent Care", "Emergency Room", "Hospital Admission (Inpatient)", "Telemedicine",
+];
+
+const DRUG_TEST_OPTIONS = ["Yes — Administered", "No — Not Administered", "Refused", "Not Required"];
+
 const INJURY_TYPES = [
   "Strain / Sprain", "Laceration / Cut", "Puncture / Bite",
   "Contusion / Bruise", "Fracture / Break", "Abrasion / Scrape",
@@ -187,6 +227,16 @@ type Incident = {
   isOtherRecordable: boolean;
   status: string;
   createdAt: string;
+  // Analytics fields
+  shiftTime: string | null;
+  taskBeingPerformed: string | null;
+  rootCauseCategory: string | null;
+  ppeStatus: string | null;
+  contributingFactor: string | null;
+  employeeTenure: string | null;
+  employmentType: string | null;
+  medicalTreatmentType: string | null;
+  drugTestAdministered: string | null;
 };
 
 type IncidentFormData = {
@@ -204,6 +254,16 @@ type IncidentFormData = {
   natureOfInjury: string;
   objectOrSubstance: string;
   isRecordable: boolean;
+  // Analytics fields
+  shiftTime: string;
+  taskBeingPerformed: string;
+  rootCauseCategory: string;
+  ppeStatus: string;
+  contributingFactor: string;
+  employeeTenure: string;
+  employmentType: string;
+  medicalTreatmentType: string;
+  drugTestAdministered: string;
   resultedInDeath: boolean;
   daysAway: number;
   daysRestricted: number;
@@ -270,6 +330,15 @@ const defaultFormData: IncidentFormData = {
   natureOfInjury: '',
   objectOrSubstance: '',
   isRecordable: false,
+  shiftTime: '',
+  taskBeingPerformed: '',
+  rootCauseCategory: '',
+  ppeStatus: '',
+  contributingFactor: '',
+  employeeTenure: '',
+  employmentType: '',
+  medicalTreatmentType: '',
+  drugTestAdministered: '',
   resultedInDeath: false,
   daysAway: 0,
   daysRestricted: 0,
@@ -620,6 +689,22 @@ function IncidentFormDialog({
                     <span className="text-sm">Certified as vocationally handicapped</span>
                   </label>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="employmentType">Employment Type</Label>
+                    <Select value={formData.employmentType} onValueChange={v => set({ employmentType: v })}>
+                      <SelectTrigger data-testid="select-employment-type"><SelectValue placeholder="Full-time / Contractor..." /></SelectTrigger>
+                      <SelectContent>{EMPLOYMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="employeeTenure">Employee Tenure at Time of Injury</Label>
+                    <Select value={formData.employeeTenure} onValueChange={v => set({ employeeTenure: v })}>
+                      <SelectTrigger data-testid="select-employee-tenure"><SelectValue placeholder="How long employed..." /></SelectTrigger>
+                      <SelectContent>{EMPLOYEE_TENURES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -651,6 +736,44 @@ function IncidentFormDialog({
                       <SelectContent>{INJURY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                </div>
+                <SectionLabel><Clock className="w-3.5 h-3.5" /> Circumstances &amp; Root Cause</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Shift at Time of Incident</Label>
+                    <Select value={formData.shiftTime} onValueChange={v => set({ shiftTime: v })}>
+                      <SelectTrigger data-testid="select-shift-time"><SelectValue placeholder="Day / Swing / Night..." /></SelectTrigger>
+                      <SelectContent>{SHIFT_TIMES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Task Being Performed</Label>
+                    <Select value={formData.taskBeingPerformed} onValueChange={v => set({ taskBeingPerformed: v })}>
+                      <SelectTrigger data-testid="select-task-performed"><SelectValue placeholder="Regular duties / New task..." /></SelectTrigger>
+                      <SelectContent>{TASKS_BEING_PERFORMED.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>PPE Status</Label>
+                    <Select value={formData.ppeStatus} onValueChange={v => set({ ppeStatus: v })}>
+                      <SelectTrigger data-testid="select-ppe-status"><SelectValue placeholder="Was PPE worn?" /></SelectTrigger>
+                      <SelectContent>{PPE_STATUSES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Contributing Factor</Label>
+                    <Select value={formData.contributingFactor} onValueChange={v => set({ contributingFactor: v })}>
+                      <SelectTrigger data-testid="select-contributing-factor"><SelectValue placeholder="Select contributing factor..." /></SelectTrigger>
+                      <SelectContent>{CONTRIBUTING_FACTORS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Root Cause Category</Label>
+                  <Select value={formData.rootCauseCategory} onValueChange={v => set({ rootCauseCategory: v })}>
+                    <SelectTrigger data-testid="select-root-cause"><SelectValue placeholder="Select root cause category..." /></SelectTrigger>
+                    <SelectContent>{ROOT_CAUSE_CATEGORIES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="objectOrSubstance">Object / Substance That Directly Harmed the Employee</Label>
@@ -689,6 +812,22 @@ function IncidentFormDialog({
             {activeTab === "medical" && (
               <div className="space-y-5">
                 <SectionLabel><Hospital className="w-3.5 h-3.5" /> Medical Treatment</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Medical Treatment Type</Label>
+                    <Select value={formData.medicalTreatmentType} onValueChange={v => set({ medicalTreatmentType: v })}>
+                      <SelectTrigger data-testid="select-medical-treatment-type"><SelectValue placeholder="First Aid / ER / Clinic..." /></SelectTrigger>
+                      <SelectContent>{MEDICAL_TREATMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Post-Incident Drug Test</Label>
+                    <Select value={formData.drugTestAdministered} onValueChange={v => set({ drugTestAdministered: v })}>
+                      <SelectTrigger data-testid="select-drug-test"><SelectValue placeholder="Was a drug test given?" /></SelectTrigger>
+                      <SelectContent>{DRUG_TEST_OPTIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="physicianName">Treating Physician / Healthcare Professional</Label>
@@ -1602,6 +1741,15 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
   const injuryTypes = tally('natureOfInjury');
   const workAreas = tally('location');
   const objects = tally('objectOrSubstance');
+  const shiftTimes = tally('shiftTime');
+  const taskTypes = tally('taskBeingPerformed');
+  const rootCauses = tally('rootCauseCategory');
+  const ppeStatuses = tally('ppeStatus');
+  const contributingFactors = tally('contributingFactor');
+  const tenures = tally('employeeTenure');
+  const empTypes = tally('employmentType');
+  const medTreatments = tally('medicalTreatmentType');
+  const drugTests = tally('drugTestAdministered');
   const maxOf = (rows: [string, number][]) => rows.reduce((m, r) => Math.max(m, r[1]), 0);
 
   // Cross-site data (only used when "All Sites" is active and multiple sites exist)
@@ -1923,6 +2071,156 @@ function IncidentAnalytics({ incidents }: { incidents: Incident[] }) {
                   <FreqBar key={label} label={label} count={count} max={maxOf(objects)} color="bg-yellow-500" />
                 ))
               : <p className="text-xs text-muted-foreground">No data for this selection.</p>}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Circumstances & Root Cause charts */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4 text-slate-500" />
+              Shift Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {shiftTimes.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? shiftTimes.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(shiftTimes)} color="bg-slate-500" />
+                ))
+              : <p className="text-xs text-muted-foreground">No shift data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-blue-500" />
+              Task Being Performed
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {taskTypes.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? taskTypes.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(taskTypes)} color="bg-blue-500" />
+                ))
+              : <p className="text-xs text-muted-foreground">No task data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Search className="w-4 h-4 text-destructive" />
+              Root Cause Category
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {rootCauses.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? rootCauses.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(rootCauses)} color="bg-destructive" />
+                ))
+              : <p className="text-xs text-muted-foreground">No root cause data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              PPE Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {ppeStatuses.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? ppeStatuses.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => {
+                  const color = label.startsWith('Worn Correctly') ? 'bg-emerald-500' : label.startsWith('Not Required') ? 'bg-slate-400' : 'bg-destructive';
+                  return <FreqBar key={label} label={label} count={count} max={maxOf(ppeStatuses)} color={color} />;
+                })
+              : <p className="text-xs text-muted-foreground">No PPE status data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-500" />
+              Contributing Factor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {contributingFactors.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? contributingFactors.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(contributingFactors)} color="bg-yellow-500" />
+                ))
+              : <p className="text-xs text-muted-foreground">No contributing factor data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              Employee Tenure at Injury
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {tenures.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? tenures.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(tenures)} color="bg-blue-600" />
+                ))
+              : <p className="text-xs text-muted-foreground">No tenure data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-slate-600" />
+              Employment Type
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {empTypes.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? empTypes.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => (
+                  <FreqBar key={label} label={label} count={count} max={maxOf(empTypes)} color="bg-slate-600" />
+                ))
+              : <p className="text-xs text-muted-foreground">No employment type data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Hospital className="w-4 h-4 text-cyan-600" />
+              Medical Treatment Type
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {medTreatments.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? medTreatments.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => {
+                  const color = label.startsWith('First Aid') ? 'bg-emerald-500' : label.startsWith('Emergency') ? 'bg-destructive' : label.startsWith('Hospital') ? 'bg-red-700' : 'bg-cyan-600';
+                  return <FreqBar key={label} label={label} count={count} max={maxOf(medTreatments)} color={color} />;
+                })
+              : <p className="text-xs text-muted-foreground">No medical treatment data logged yet.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              Post-Incident Drug Test
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {drugTests.filter(([s]) => s !== '(Not Specified)').length > 0
+              ? drugTests.filter(([s]) => s !== '(Not Specified)').map(([label, count]) => {
+                  const color = label.startsWith('Yes') ? 'bg-emerald-500' : label === 'Refused' ? 'bg-destructive' : 'bg-slate-400';
+                  return <FreqBar key={label} label={label} count={count} max={maxOf(drugTests)} color={color} />;
+                })
+              : <p className="text-xs text-muted-foreground">No drug test data logged yet.</p>}
           </CardContent>
         </Card>
       </div>
@@ -2374,6 +2672,15 @@ function IncidentDetailDialog({
     bodySide: inc.bodySide || '',
     natureOfInjury: inc.natureOfInjury || '',
     objectOrSubstance: inc.objectOrSubstance || '',
+    shiftTime: inc.shiftTime || '',
+    taskBeingPerformed: inc.taskBeingPerformed || '',
+    rootCauseCategory: inc.rootCauseCategory || '',
+    ppeStatus: inc.ppeStatus || '',
+    contributingFactor: inc.contributingFactor || '',
+    employeeTenure: inc.employeeTenure || '',
+    employmentType: inc.employmentType || '',
+    medicalTreatmentType: inc.medicalTreatmentType || '',
+    drugTestAdministered: inc.drugTestAdministered || '',
     isRecordable: inc.isRecordable,
     resultedInDeath: inc.resultedInDeath,
     daysAway: inc.daysAway ?? 0,
@@ -2612,6 +2919,83 @@ function IncidentDetailDialog({
                   {OBJECTS_SOURCES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Circumstances & Root Cause */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Circumstances &amp; Root Cause</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Shift at Time of Incident</Label>
+                <Select value={formData.shiftTime} onValueChange={(v) => setFormData({ ...formData, shiftTime: v })}>
+                  <SelectTrigger data-testid="select-detail-shift"><SelectValue placeholder="Day / Swing / Night..." /></SelectTrigger>
+                  <SelectContent>{SHIFT_TIMES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Task Being Performed</Label>
+                <Select value={formData.taskBeingPerformed} onValueChange={(v) => setFormData({ ...formData, taskBeingPerformed: v })}>
+                  <SelectTrigger data-testid="select-detail-task"><SelectValue placeholder="Regular duties / New task..." /></SelectTrigger>
+                  <SelectContent>{TASKS_BEING_PERFORMED.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>PPE Status</Label>
+                <Select value={formData.ppeStatus} onValueChange={(v) => setFormData({ ...formData, ppeStatus: v })}>
+                  <SelectTrigger data-testid="select-detail-ppe"><SelectValue placeholder="Was PPE worn?" /></SelectTrigger>
+                  <SelectContent>{PPE_STATUSES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Contributing Factor</Label>
+                <Select value={formData.contributingFactor} onValueChange={(v) => setFormData({ ...formData, contributingFactor: v })}>
+                  <SelectTrigger data-testid="select-detail-factor"><SelectValue placeholder="Select contributing factor..." /></SelectTrigger>
+                  <SelectContent>{CONTRIBUTING_FACTORS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>Root Cause Category</Label>
+              <Select value={formData.rootCauseCategory} onValueChange={(v) => setFormData({ ...formData, rootCauseCategory: v })}>
+                <SelectTrigger data-testid="select-detail-root-cause"><SelectValue placeholder="Select root cause category..." /></SelectTrigger>
+                <SelectContent>{ROOT_CAUSE_CATEGORIES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Employment & Medical */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Employment &amp; Medical</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Employment Type</Label>
+                <Select value={formData.employmentType} onValueChange={(v) => setFormData({ ...formData, employmentType: v })}>
+                  <SelectTrigger data-testid="select-detail-employment-type"><SelectValue placeholder="Full-time / Contractor..." /></SelectTrigger>
+                  <SelectContent>{EMPLOYMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Employee Tenure at Injury</Label>
+                <Select value={formData.employeeTenure} onValueChange={(v) => setFormData({ ...formData, employeeTenure: v })}>
+                  <SelectTrigger data-testid="select-detail-tenure"><SelectValue placeholder="How long employed..." /></SelectTrigger>
+                  <SelectContent>{EMPLOYEE_TENURES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Medical Treatment Type</Label>
+                <Select value={formData.medicalTreatmentType} onValueChange={(v) => setFormData({ ...formData, medicalTreatmentType: v })}>
+                  <SelectTrigger data-testid="select-detail-medical-type"><SelectValue placeholder="First Aid / ER / Clinic..." /></SelectTrigger>
+                  <SelectContent>{MEDICAL_TREATMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Post-Incident Drug Test</Label>
+                <Select value={formData.drugTestAdministered} onValueChange={(v) => setFormData({ ...formData, drugTestAdministered: v })}>
+                  <SelectTrigger data-testid="select-detail-drug-test"><SelectValue placeholder="Was a drug test given?" /></SelectTrigger>
+                  <SelectContent>{DRUG_TEST_OPTIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
