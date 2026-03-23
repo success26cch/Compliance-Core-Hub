@@ -14,16 +14,26 @@ const FREE_QUESTION_LIMIT = 3;
 const LANDING_BOT_LIMIT = 3;
 const TRIAL_QUESTION_LIMIT = 1;
 
-// Admin users get unlimited access (set via environment variable)
-// Format: comma-separated user IDs, emails, or usernames
-const ADMIN_USERS = (process.env.ADMIN_USERS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+// Hardcoded platform admins — always get unlimited access regardless of env vars or DB flags
+const HARDCODED_ADMIN_EMAILS = [
+  "raulv9471@gmail.com",
+  "raul@corecompliancehub.com",
+  "evillarreal@acsi-quality.com",
+  "team@corecompliancehub.com",
+];
+
+// Admin users get unlimited access — checked against hardcoded list + optional env var
+const ALL_ADMIN_EMAILS = [
+  ...HARDCODED_ADMIN_EMAILS,
+  ...(process.env.ADMIN_USERS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean),
+];
 
 function isAdmin(user: any): boolean {
   if (!user?.claims) return false;
-  const userId = user.claims.sub;
+  const userId = (user.claims.sub || "").toLowerCase();
   const email = (user.claims.email || "").toLowerCase();
   const username = (user.claims.name || user.claims.preferred_username || "").toLowerCase();
-  return ADMIN_USERS.includes(userId) || ADMIN_USERS.includes(email) || ADMIN_USERS.includes(username);
+  return ALL_ADMIN_EMAILS.includes(userId) || ALL_ADMIN_EMAILS.includes(email) || ALL_ADMIN_EMAILS.includes(username);
 }
 
 async function isAdminOrSuperadmin(user: any): Promise<boolean> {
