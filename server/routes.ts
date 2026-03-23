@@ -1717,7 +1717,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const allowed = [
         // OSHA 300 core
         'description', 'incidentType', 'employeeName', 'jobTitle', 'department',
-        'location', 'facility', 'bodyPart', 'natureOfInjury', 'objectOrSubstance',
+        'location', 'facility', 'bodyPart', 'bodySide', 'natureOfInjury', 'objectOrSubstance',
         'isRecordable', 'resultedInDeath', 'daysAway', 'daysRestricted',
         'daysJobTransfer', 'isOtherRecordable', 'status', 'incidentDate',
         // FROI — Employee
@@ -1737,6 +1737,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         'hospitalizedOvernight', 'treatmentAddress',
         // FROI — Dates
         'lastDayWorked', 'firstDayMissed', 'returnToWorkDate', 'deathDate', 'dateEmployerNotified',
+        // Enhanced Analytics Fields
+        'shiftTime', 'taskBeingPerformed', 'rootCauseCategory', 'ppeStatus',
+        'contributingFactor', 'employeeTenure', 'employmentType',
+        'medicalTreatmentType', 'drugTestAdministered',
       ];
       for (const key of allowed) {
         if (req.body[key] !== undefined) updates[key] = req.body[key];
