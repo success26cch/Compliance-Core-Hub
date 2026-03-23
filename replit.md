@@ -8,6 +8,20 @@ Core Compliance Hub (CCHUB) is a comprehensive occupational health and complianc
 - Focus on Occupational Medicine terminology
 - AI personas: Senior Occupational Health & Safety Compliance Expert (CCHUB), Lead ISO Auditor (ACSI)
 
+## Future Product: Corey MD (On Deck — Post-CCHUB Launch)
+**Concept:** A clinical decision-support AI for occupational health providers — not a diagnostic tool, a reasoning tool. Helps providers treat without bias while protecting both patient and employer interests.
+**Core capabilities planned:**
+- OSHA 29 CFR 1904 recordability reasoning with full clinical documentation rationale
+- Work restriction recommendations with defensible medical reasoning (lifting, RTW timelines, modified duty)
+- Case note language the provider can use to support non-recordability determinations
+- Dual-loyalty framework: patient welfare + employer interests balanced without compromising either
+- Workers' comp documentation support — reduces claim disputes and denial risk
+- Strict recommendation-only mode (no diagnosis, no prescriptions) — licensed provider makes every decision
+**Build plan:** Start narrow — OSHA recordability reasoning + restriction documentation only (v1), then expand to RTW timelines, DOT physicals, and case note generation (v2).
+**Prompt development:** Requires 20–30 real occupational medicine case scenarios (messy ones) reviewed by the owner as subject matter expert. Engineering: ~3–4 days. Prompt iteration: 3–5 weeks.
+**Market:** Occupational health clinics, urgent care with occ med programs, employer-embedded health clinics.
+**Name confirmed:** Corey MD
+
 ## System Architecture
 The CCHUB platform is built with a modern web stack, utilizing React, Vite, TailwindCSS, and shadcn/ui for the frontend, and Express with Node.js for the backend. PostgreSQL with Drizzle ORM handles data persistence. AI functionalities are powered by Anthropic Claude, integrated via Replit AI. User authentication uses a custom email/password system (Node.js `crypto` scrypt, session-based with PostgreSQL session store via `connect-pg-simple`).
 
