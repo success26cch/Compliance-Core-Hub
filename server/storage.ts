@@ -630,8 +630,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async isSuperadmin(userId: string): Promise<boolean> {
+    const SUPERADMIN_EMAILS = [
+      "raul@corecompliancehub.com",
+      "raulv9471@gmail.com",
+      "evillarreal@acsi-quality.com",
+    ];
     const user = await this.getUserById(userId);
-    return user?.isSuperadmin === true;
+    if (!user) return false;
+    if (user.isSuperadmin === true) return true;
+    return SUPERADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "");
   }
 
   async getAllUsers(): Promise<User[]> {
