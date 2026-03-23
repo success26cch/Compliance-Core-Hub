@@ -141,4 +141,24 @@
   .sticky {
     display: none !important;
   }
+
+  /* Targeted section printing */
+  body.printing-section * {
+    visibility: hidden;
+  }
+  body.printing-section .print-section,
+  body.printing-section .print-section * {
+    visibility: visible;
+  }
+  body.printing-section .print-section {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px;
+    background: white;
+  }
+  body.printing-section .no-print {
+    display: none !important;
+  }
 }

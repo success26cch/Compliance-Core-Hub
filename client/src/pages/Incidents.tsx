@@ -3114,7 +3114,20 @@ export default function Incidents() {
   const [coreyAnalysisIncidentId, setCoreyAnalysisIncidentId] = useState<number | null>(null);
   const [coreyAnalysis, setCoreyAnalysis] = useState("");
   const [coreyAnalysisStreaming, setCoreyAnalysisStreaming] = useState(false);
+  const [printTarget, setPrintTarget] = useState<'incidents' | 'capa' | 'analytics' | null>(null);
   const { toast } = useToast();
+
+  const handlePrint = (target: 'incidents' | 'capa' | 'analytics') => {
+    setPrintTarget(target);
+    document.body.classList.add('printing-section');
+    const afterPrint = () => {
+      document.body.classList.remove('printing-section');
+      setPrintTarget(null);
+      window.removeEventListener('afterprint', afterPrint);
+    };
+    window.addEventListener('afterprint', afterPrint);
+    setTimeout(() => window.print(), 150);
+  };
 
   const notifyAdjusterMutation = useMutation({
     mutationFn: async (incidentId: number) => {
@@ -3404,6 +3417,7 @@ export default function Incidents() {
           </TabsList>
 
           <TabsContent value="incidents">
+            <div className={printTarget === 'incidents' ? 'print-section' : ''}>
             {/* T007: Corey Analysis Card — appears after incident submission */}
             {coreyAnalysisIncidentId && (
               <Card className="border-accent/40 bg-gradient-to-br from-accent/5 to-primary/5 mb-4" data-testid="card-corey-incident-analysis">
@@ -3464,10 +3478,24 @@ export default function Incidents() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Incident History</CardTitle>
-                <CardDescription>
-                  All recorded workplace incidents
-                </CardDescription>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <CardTitle>Incident History</CardTitle>
+                    <CardDescription>
+                      All recorded workplace incidents
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 no-print shrink-0"
+                    onClick={() => handlePrint('incidents')}
+                    data-testid="button-print-incidents"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print PDF
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -3581,6 +3609,7 @@ export default function Incidents() {
                 )}
               </CardContent>
             </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="osha300">
@@ -3588,24 +3617,54 @@ export default function Incidents() {
           </TabsContent>
 
           <TabsContent value="capa">
-            <CorrectiveActionPlans incidents={incidents} autoOpen={autoOpenCapa} />
+            <div className={printTarget === 'capa' ? 'print-section' : ''}>
+              <div className="flex justify-end mb-3 no-print">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => handlePrint('capa')}
+                  data-testid="button-print-capa"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print PDF
+                </Button>
+              </div>
+              <CorrectiveActionPlans incidents={incidents} autoOpen={autoOpenCapa} />
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics">
+            <div className={printTarget === 'analytics' ? 'print-section' : ''}>
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-accent" />
-                  Incident Analytics
-                </CardTitle>
-                <CardDescription>
-                  Frequency distribution by body part, injury type, work area, and source of harm. Use standardized dropdown values when logging incidents for meaningful analysis.
-                </CardDescription>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-accent" />
+                      Incident Analytics
+                    </CardTitle>
+                    <CardDescription>
+                      Frequency distribution by body part, injury type, work area, and source of harm. Use standardized dropdown values when logging incidents for meaningful analysis.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 no-print shrink-0"
+                    onClick={() => handlePrint('analytics')}
+                    data-testid="button-print-analytics"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print PDF
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <IncidentAnalytics incidents={incidents} />
               </CardContent>
             </Card>
+            </div>
           </TabsContent>
         </Tabs>
 
