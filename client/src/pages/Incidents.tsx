@@ -3115,6 +3115,9 @@ export default function Incidents() {
   const [coreyAnalysis, setCoreyAnalysis] = useState("");
   const [coreyAnalysisStreaming, setCoreyAnalysisStreaming] = useState(false);
   const [printTarget, setPrintTarget] = useState<'incidents' | 'capa' | 'analytics' | null>(null);
+  const [analyticsDateRange, setAnalyticsDateRange] = useState<'all' | '30d' | '90d' | '6m' | '1y'>('all');
+  const [analyticsFilterField, setAnalyticsFilterField] = useState<string>('none');
+  const [analyticsFilterValue, setAnalyticsFilterValue] = useState<string>('none');
   const { toast } = useToast();
 
   const handlePrint = (target: 'incidents' | 'capa' | 'analytics') => {
@@ -3197,6 +3200,49 @@ export default function Incidents() {
   const { data: incidents = [], isLoading } = useQuery<Incident[]>({
     queryKey: ['/api/incidents'],
   });
+
+  // Analytics filter fields definition
+  const ANALYTICS_FILTER_FIELDS: { key: string; label: string }[] = [
+    { key: 'bodyPart',           label: 'Body Part' },
+    { key: 'bodySide',           label: 'Body Side' },
+    { key: 'natureOfInjury',     label: 'Injury Type' },
+    { key: 'incidentType',       label: 'Incident Type' },
+    { key: 'location',           label: 'Work Area' },
+    { key: 'facility',           label: 'Facility / Site' },
+    { key: 'shiftTime',          label: 'Shift' },
+    { key: 'taskBeingPerformed', label: 'Task Being Performed' },
+    { key: 'rootCauseCategory',  label: 'Root Cause Category' },
+    { key: 'ppeStatus',          label: 'PPE Status' },
+    { key: 'contributingFactor', label: 'Contributing Factor' },
+    { key: 'employeeTenure',     label: 'Employee Tenure' },
+    { key: 'employmentType',     label: 'Employment Type' },
+    { key: 'medicalTreatmentType', label: 'Medical Treatment Type' },
+    { key: 'drugTestAdministered', label: 'Drug Test Administered' },
+  ];
+
+  // Compute filtered incidents for analytics
+  const filteredIncidentsForAnalytics = (() => {
+    let result = [...incidents];
+    // Date range
+    if (analyticsDateRange !== 'all') {
+      const days = analyticsDateRange === '30d' ? 30 : analyticsDateRange === '90d' ? 90 : analyticsDateRange === '6m' ? 180 : 365;
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      result = result.filter(i => i.incidentDate && new Date(i.incidentDate) >= cutoff);
+    }
+    // Field + value filter
+    if (analyticsFilterField !== 'none' && analyticsFilterValue !== 'none') {
+      result = result.filter(i => {
+        const val = (i as any)[analyticsFilterField];
+        return analyticsFilterValue === '(Not Specified)' ? !val : val === analyticsFilterValue;
+      });
+    }
+    return result;
+  })();
+
+  // Distinct values for the selected filter field
+  const analyticsFilterValues = analyticsFilterField === 'none' ? [] :
+    Array.from(new Set(incidents.map(i => (i as any)[analyticsFilterField] || '(Not Specified)'))).sort();
 
   const createMutation = useMutation({
     mutationFn: async (data: IncidentFormData) => {
@@ -3645,7 +3691,7 @@ export default function Incidents() {
                       Incident Analytics
                     </CardTitle>
                     <CardDescription>
-                      Frequency distribution by body part, injury type, work area, and source of harm. Use standardized dropdown values when logging incidents for meaningful analysis.
+                      Filter by date range, injury type, body part, or any field — then print the filtered report.
                     </CardDescription>
                   </div>
                   <Button
@@ -3659,9 +3705,96 @@ export default function Incidents() {
                     Print PDF
                   </Button>
                 </div>
+
+                {/* Filter bar */}
+                <div className="no-print mt-4 flex flex-wrap gap-3 items-end p-3 bg-muted/40 rounded-lg border border-border/50">
+                  {/* Date range */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-muted-foreground">Date Range</label>
+                    <Select value={analyticsDateRange} onValueChange={(v) => setAnalyticsDateRange(v as any)}>
+                      <SelectTrigger className="h-8 w-36 text-xs" data-testid="select-analytics-date-range">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="30d">Last 30 Days</SelectItem>
+                        <SelectItem value="90d">Last 90 Days</SelectItem>
+                        <SelectItem value="6m">Last 6 Months</SelectItem>
+                        <SelectItem value="1y">Last Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Field selector */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-muted-foreground">Narrow By Field</label>
+                    <Select value={analyticsFilterField} onValueChange={(v) => { setAnalyticsFilterField(v); setAnalyticsFilterValue('none'); }}>
+                      <SelectTrigger className="h-8 w-48 text-xs" data-testid="select-analytics-filter-field">
+                        <SelectValue placeholder="All Fields" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">All Fields (no filter)</SelectItem>
+                        {ANALYTICS_FILTER_FIELDS.map(f => (
+                          <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Value selector — only shown once a field is chosen */}
+                  {analyticsFilterField !== 'none' && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-muted-foreground">Value</label>
+                      <Select value={analyticsFilterValue} onValueChange={setAnalyticsFilterValue}>
+                        <SelectTrigger className="h-8 w-52 text-xs" data-testid="select-analytics-filter-value">
+                          <SelectValue placeholder="All Values" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">All Values</SelectItem>
+                          {analyticsFilterValues.map(v => (
+                            <SelectItem key={v} value={v}>{v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Clear + active filter count */}
+                  {(analyticsDateRange !== 'all' || analyticsFilterField !== 'none') && (
+                    <div className="flex items-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs gap-1 text-muted-foreground"
+                        onClick={() => { setAnalyticsDateRange('all'); setAnalyticsFilterField('none'); setAnalyticsFilterValue('none'); }}
+                        data-testid="button-clear-analytics-filters"
+                      >
+                        <X className="w-3 h-3" /> Clear Filters
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Active filter summary */}
+                  <div className="ml-auto text-xs text-muted-foreground self-end pb-1">
+                    <span className="font-semibold text-foreground">{filteredIncidentsForAnalytics.length}</span>
+                    {' '}of {incidents.length} incidents
+                    {(analyticsDateRange !== 'all' || (analyticsFilterField !== 'none' && analyticsFilterValue !== 'none')) && (
+                      <span className="ml-1 text-accent font-medium">· filtered</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Print header — only visible when printing */}
+                <div className="hidden print:block mt-2 text-xs text-muted-foreground">
+                  {analyticsDateRange !== 'all' && <span>Period: {analyticsDateRange === '30d' ? 'Last 30 Days' : analyticsDateRange === '90d' ? 'Last 90 Days' : analyticsDateRange === '6m' ? 'Last 6 Months' : 'Last Year'} · </span>}
+                  {analyticsFilterField !== 'none' && analyticsFilterValue !== 'none' && (
+                    <span>{ANALYTICS_FILTER_FIELDS.find(f => f.key === analyticsFilterField)?.label}: {analyticsFilterValue} · </span>
+                  )}
+                  <span>{filteredIncidentsForAnalytics.length} incidents analyzed</span>
+                </div>
               </CardHeader>
               <CardContent>
-                <IncidentAnalytics incidents={incidents} />
+                <IncidentAnalytics incidents={filteredIncidentsForAnalytics} />
               </CardContent>
             </Card>
             </div>
