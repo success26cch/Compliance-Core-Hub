@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart, RefreshCw } from "lucide-react";
+import { Play, Pause, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react";
 import logoUrl from "@assets/1_1770683748423.png";
 
 const HIGHLIGHTS = [
@@ -133,20 +133,17 @@ export default function WatchDemo() {
             </div>
           )}
 
-          {/* Error / retry state */}
+          {/* Error state — tap anywhere on the player to retry */}
           {error && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 gap-4">
-              <p className="text-white/70 text-sm text-center px-6">
-                Tap to retry loading the video.
-              </p>
-              <button
-                onClick={retry}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent text-white text-sm font-semibold"
-                data-testid="button-video-retry"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Retry
-              </button>
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 gap-3 cursor-pointer"
+              onClick={retry}
+              data-testid="overlay-video-error"
+            >
+              <div className="w-20 h-20 rounded-full bg-black/70 flex items-center justify-center border-2 border-white/30 shadow-xl">
+                <Play className="w-9 h-9 text-white ml-1" fill="white" />
+              </div>
+              <p className="text-white/60 text-xs text-center px-8">Tap to play</p>
             </div>
           )}
 
