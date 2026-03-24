@@ -158,6 +158,7 @@ import {
   Printer,
   Languages,
   Stethoscope,
+  X,
   Eye,
   Wind,
   Droplets,
@@ -749,6 +750,13 @@ function BmaInteractiveChatMode() {
   const providerRecognitionRef = useRef<any>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Refs that hold accumulated transcripts — avoids stale closure duplication on mobile
+  const patientTranscriptRef = useRef("");
+  const providerTranscriptRef = useRef("");
+  // Refs to track desired listening state so mobile auto-restart works correctly
+  const patientShouldListenRef = useRef(false);
+  const providerShouldListenRef = useRef(false);
+
   useEffect(() => {
     const el = chatContainerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -766,6 +774,8 @@ function BmaInteractiveChatMode() {
     setMessages(newMessages);
     setProviderInput("");
     setPatientSpoken("");
+    patientTranscriptRef.current = "";
+    providerTranscriptRef.current = "";
     setIsLoading(true);
 
     try {
@@ -798,90 +808,109 @@ function BmaInteractiveChatMode() {
     }
   }, [messages, isLoading, context]);
 
-  const togglePatientListening = useCallback(() => {
-    if (isListening) {
-      safeStopRecognition(recognitionRef);
-      setIsListening(false);
-      return;
-    }
-
-    const recognition = createRecognition("es-MX", true);
+  // ── Patient (Spanish) mic ──────────────────────────────────────────────────
+  const startPatientRecognition = useCallback(() => {
+    const recognition = createRecognition("es-MX", false);
     if (!recognition) return;
     recognitionRef.current = recognition;
-
-    let finalTranscript = patientSpoken;
 
     recognition.onresult = (event: any) => {
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
+        const t = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += (finalTranscript ? " " : "") + transcript;
-          setPatientSpoken(finalTranscript);
+          patientTranscriptRef.current += (patientTranscriptRef.current ? " " : "") + t.trim();
+          setPatientSpoken(patientTranscriptRef.current);
         } else {
-          interim = transcript;
+          interim = t;
         }
       }
       if (interim) {
-        setPatientSpoken(finalTranscript + (finalTranscript ? " " : "") + interim);
+        setPatientSpoken(patientTranscriptRef.current + (patientTranscriptRef.current ? " " : "") + interim);
       }
     };
 
     recognition.onend = () => {
-      setIsListening(false);
       recognitionRef.current = null;
+      // Auto-restart on mobile if user hasn't explicitly stopped
+      if (patientShouldListenRef.current) {
+        setTimeout(() => {
+          if (patientShouldListenRef.current) startPatientRecognition();
+        }, 200);
+      } else {
+        setIsListening(false);
+      }
     };
 
     recognition.onerror = (event: any) => {
       const ignorable = ["no-speech", "aborted"];
       if (!ignorable.includes(event.error)) {
-        console.warn("Speech recognition error:", event.error);
+        console.warn("Patient speech recognition error:", event.error);
       }
-      setIsListening(false);
       recognitionRef.current = null;
+      if (patientShouldListenRef.current && event.error !== "not-allowed") {
+        setTimeout(() => {
+          if (patientShouldListenRef.current) startPatientRecognition();
+        }, 300);
+      } else {
+        patientShouldListenRef.current = false;
+        setIsListening(false);
+      }
     };
 
     try {
       recognition.start();
-      setIsListening(true);
     } catch (err) {
-      console.warn("Could not start speech recognition:", err);
+      console.warn("Could not start patient speech recognition:", err);
       recognitionRef.current = null;
+      patientShouldListenRef.current = false;
+      setIsListening(false);
     }
-  }, [isListening, patientSpoken]);
+  }, []);
 
-  const toggleProviderListening = useCallback(() => {
-    if (isProviderListening) {
-      safeStopRecognition(providerRecognitionRef);
-      setIsProviderListening(false);
-      return;
+  const togglePatientListening = useCallback(() => {
+    if (isListening) {
+      patientShouldListenRef.current = false;
+      safeStopRecognition(recognitionRef);
+      setIsListening(false);
+    } else {
+      patientShouldListenRef.current = true;
+      setIsListening(true);
+      startPatientRecognition();
     }
+  }, [isListening, startPatientRecognition]);
 
-    const recognition = createRecognition("en-US", true);
+  // ── Provider (English) mic ─────────────────────────────────────────────────
+  const startProviderRecognition = useCallback(() => {
+    const recognition = createRecognition("en-US", false);
     if (!recognition) return;
     providerRecognitionRef.current = recognition;
-
-    let finalTranscript = providerInput;
 
     recognition.onresult = (event: any) => {
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
+        const t = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += (finalTranscript ? " " : "") + transcript;
-          setProviderInput(finalTranscript);
+          providerTranscriptRef.current += (providerTranscriptRef.current ? " " : "") + t.trim();
+          setProviderInput(providerTranscriptRef.current);
         } else {
-          interim = transcript;
+          interim = t;
         }
       }
       if (interim) {
-        setProviderInput(finalTranscript + (finalTranscript ? " " : "") + interim);
+        setProviderInput(providerTranscriptRef.current + (providerTranscriptRef.current ? " " : "") + interim);
       }
     };
 
     recognition.onend = () => {
-      setIsProviderListening(false);
       providerRecognitionRef.current = null;
+      if (providerShouldListenRef.current) {
+        setTimeout(() => {
+          if (providerShouldListenRef.current) startProviderRecognition();
+        }, 200);
+      } else {
+        setIsProviderListening(false);
+      }
     };
 
     recognition.onerror = (event: any) => {
@@ -889,21 +918,44 @@ function BmaInteractiveChatMode() {
       if (!ignorable.includes(event.error)) {
         console.warn("Provider speech recognition error:", event.error);
       }
-      setIsProviderListening(false);
       providerRecognitionRef.current = null;
+      if (providerShouldListenRef.current && event.error !== "not-allowed") {
+        setTimeout(() => {
+          if (providerShouldListenRef.current) startProviderRecognition();
+        }, 300);
+      } else {
+        providerShouldListenRef.current = false;
+        setIsProviderListening(false);
+      }
     };
 
     try {
       recognition.start();
-      setIsProviderListening(true);
     } catch (err) {
       console.warn("Could not start provider speech recognition:", err);
       providerRecognitionRef.current = null;
+      providerShouldListenRef.current = false;
+      setIsProviderListening(false);
     }
-  }, [isProviderListening, providerInput]);
+  }, []);
+
+  const toggleProviderListening = useCallback(() => {
+    if (isProviderListening) {
+      providerShouldListenRef.current = false;
+      safeStopRecognition(providerRecognitionRef);
+      setIsProviderListening(false);
+    } else {
+      providerTranscriptRef.current = providerInput;
+      providerShouldListenRef.current = true;
+      setIsProviderListening(true);
+      startProviderRecognition();
+    }
+  }, [isProviderListening, providerInput, startProviderRecognition]);
 
   useEffect(() => {
     return () => {
+      patientShouldListenRef.current = false;
+      providerShouldListenRef.current = false;
       safeStopRecognition(recognitionRef);
       safeStopRecognition(providerRecognitionRef);
     };
@@ -913,6 +965,8 @@ function BmaInteractiveChatMode() {
     setMessages([]);
     setProviderInput("");
     setPatientSpoken("");
+    patientTranscriptRef.current = "";
+    providerTranscriptRef.current = "";
   };
 
   return (
@@ -925,17 +979,15 @@ function BmaInteractiveChatMode() {
             <Bot className="w-3 h-3 mr-1" /> AI-Powered
           </Badge>
         </div>
-        {messages.length > 0 && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
-            onClick={clearChat}
-            data-testid="btn-bma-clear-chat"
-          >
-            <Trash2 className="w-3 h-3 mr-1" /> Clear
-          </Button>
-        )}
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
+          onClick={clearChat}
+          data-testid="btn-bma-clear-chat"
+        >
+          <Trash2 className="w-3 h-3 mr-1" /> Clear Chat
+        </Button>
       </div>
       <p className="text-sm text-gray-100">
         Real-time bidirectional interpretation between provider and patient. The AI translates with clinical precision, confirms understanding, and generates summaries for the medical record.
@@ -1113,19 +1165,31 @@ function BmaInteractiveChatMode() {
               <Mic className="w-4 h-4 text-blue-400" />
             )}
           </button>
-          <Input
-            value={providerInput}
-            onChange={(e) => setProviderInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(providerInput, "provider"); } }}
-            placeholder={isProviderListening ? "Listening..." : "Type or speak what the provider says in English..."}
-            className={`flex-1 bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 ${isProviderListening ? "ring-2 ring-blue-500/50" : ""}`}
-            disabled={isLoading}
-            data-testid="input-bma-provider"
-          />
+          <div className="relative flex-1">
+            <Input
+              value={providerInput}
+              onChange={(e) => { setProviderInput(e.target.value); providerTranscriptRef.current = e.target.value; }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(providerInput, "provider"); } }}
+              placeholder={isProviderListening ? "Listening..." : "Type or speak in English..."}
+              className={`w-full bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 pr-8 ${isProviderListening ? "ring-2 ring-blue-500/50" : ""}`}
+              disabled={isLoading}
+              data-testid="input-bma-provider"
+            />
+            {providerInput && (
+              <button
+                type="button"
+                onClick={() => { setProviderInput(""); providerTranscriptRef.current = ""; }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                data-testid="btn-bma-clear-provider-input"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           <Button
             size="icon"
             variant="default"
-            className="bg-blue-600"
+            className="bg-blue-600 shrink-0"
             onClick={() => sendMessage(providerInput, "provider")}
             disabled={!providerInput.trim() || isLoading}
             data-testid="btn-bma-send-provider"
@@ -1163,20 +1227,36 @@ function BmaInteractiveChatMode() {
             </span>
           </div>
           {patientSpoken && (
-            <div className="flex gap-2">
-              <div className="flex-1 rounded-md bg-gray-800/60 border border-green-500/30 p-2">
-                <span className="text-[10px] uppercase tracking-wider text-green-400 font-semibold block mb-1">Patient said (Spanish)</span>
-                <p className="text-sm text-white" data-testid="bma-patient-spoken">{patientSpoken}</p>
+            <div className="space-y-2">
+              <div className="rounded-md bg-gray-800/60 border border-green-500/30 p-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] uppercase tracking-wider text-green-400 font-semibold">Patient said (Spanish)</span>
+                  <button
+                    type="button"
+                    onClick={() => { setPatientSpoken(""); patientTranscriptRef.current = ""; }}
+                    className="text-[10px] text-red-400 hover:text-red-300 underline"
+                    data-testid="btn-bma-clear-patient"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <textarea
+                  value={patientSpoken}
+                  onChange={(e) => { setPatientSpoken(e.target.value); patientTranscriptRef.current = e.target.value; }}
+                  rows={2}
+                  className="w-full text-sm text-white bg-transparent resize-none outline-none"
+                  data-testid="bma-patient-spoken"
+                />
               </div>
               <Button
-                size="icon"
+                size="sm"
                 variant="default"
-                className="bg-green-600 self-end"
+                className="w-full bg-green-600 hover:bg-green-700"
                 onClick={() => sendMessage(patientSpoken, "patient")}
                 disabled={isLoading}
                 data-testid="btn-bma-send-patient"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4 mr-2" /> Send to Interpreter
               </Button>
             </div>
           )}
