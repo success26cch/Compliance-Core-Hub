@@ -284,13 +284,22 @@ const CLINIC_INSTRUCTIONS = [
     ],
   },
   {
-    category: "Blood Draw",
+    category: "Blood Draw / TB Test",
     icon: Droplets,
     commands: [
       { en: "Make a fist.", es: "Cierre el puño." },
       { en: "Are you allergic to latex?", es: "¿Es alérgico(a) al látex?" },
       { en: "Have you eaten today?", es: "¿Ha comido hoy?" },
       { en: "You may feel a small pinch.", es: "Puede sentir un pequeño pinchazo." },
+      { en: "— TB Test —", es: "— Prueba de TB —" },
+      { en: "Have you ever had a TB test before?", es: "¿Alguna vez le han hecho una prueba de tuberculosis?" },
+      { en: "Have you ever tested positive for tuberculosis?", es: "¿Alguna vez ha salido positivo en una prueba de tuberculosis?" },
+      { en: "Have you ever had an allergic reaction to the TB test?", es: "¿Ha tenido alguna vez una reacción alérgica a la prueba de tuberculosis?" },
+      { en: "Which arm would you like the test in?", es: "¿En cuál brazo quiere la prueba?" },
+      { en: "Ok, small poke.", es: "Listo, pequeño piquete." },
+      { en: "Do not wrap it or put a bandage on it.", es: "No lo envuelva ni le ponga vendaje." },
+      { en: "You must come back in 48 to 72 hours so we can read your arm.", es: "Debe regresar en 48 a 72 horas para que podamos leer su brazo." },
+      { en: "You are all set — we will see you back in 48 to 72 hours. Don't forget!", es: "¡Listo! Lo esperamos de regreso en 48 a 72 horas. ¡No lo olvide!" },
     ],
   },
   {
