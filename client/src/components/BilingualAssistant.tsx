@@ -723,11 +723,16 @@ const CONTEXT_STARTERS: Record<string, { label: string; prompt: string }[]> = {
     { label: "After draw", prompt: "Apply pressure to this area for a few minutes. Do not do any heavy lifting with this arm for the rest of the day." },
   ],
   "general": [
-    { label: "Open exam", prompt: "Good morning. My name is the medical assistant. I am here to help with your visit today. What brings you in?" },
-    { label: "Medical history", prompt: "I need to ask you a few questions about your health history before the provider sees you." },
-    { label: "Symptoms", prompt: "When did you start feeling this way? Do you have any fever, chills, nausea, or shortness of breath?" },
+    { label: "Welcome", prompt: "Good morning. My name is the medical assistant. I am here to help with your visit today. What brings you in?" },
+    { label: "Been here before?", prompt: "Have you been to this clinic before? Are you an existing patient with us?" },
+    { label: "Insurance", prompt: "Do you have health insurance? Can I see your insurance card?" },
+    { label: "Co-pay", prompt: "You have a co-pay that I need to collect today before you see the doctor. How would you like to pay — cash, card, or check?" },
+    { label: "Pharmacy", prompt: "Do you have a preferred pharmacy? If the doctor prescribes medication, where would you like us to send it?" },
+    { label: "When did it start?", prompt: "When did this problem start? Has it been getting better, worse, or staying the same?" },
+    { label: "Allergies", prompt: "Do you have any allergies to medications, foods, or anything else we should know about?" },
+    { label: "Consent for injection", prompt: "The doctor would like to give you a shot with medication today. Is that okay with you? Have you ever had a reaction to an injection before?" },
     { label: "Medications", prompt: "Are you currently taking any prescription medications, vitamins, or supplements?" },
-    { label: "Follow-up care", prompt: "The provider wants to see you again in one week. Please call us if your symptoms get worse before then." },
+    { label: "Follow-up", prompt: "The provider wants to see you again. We will schedule your follow-up before you leave today. Please call us if anything gets worse." },
   ],
 };
 
