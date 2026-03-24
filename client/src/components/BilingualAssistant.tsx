@@ -810,7 +810,9 @@ function BmaInteractiveChatMode() {
 
   // ── Patient (Spanish) mic ──────────────────────────────────────────────────
   const startPatientRecognition = useCallback(() => {
-    const recognition = createRecognition("es-MX", false);
+    // continuous:true keeps the session alive on desktop; on mobile it still
+    // fires onend after silence — we auto-restart from onend when needed.
+    const recognition = createRecognition("es-MX", true);
     if (!recognition) return;
     recognitionRef.current = recognition;
 
@@ -819,6 +821,7 @@ function BmaInteractiveChatMode() {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
+          // Append only — ref accumulates across restarts, no stale closure duplication
           patientTranscriptRef.current += (patientTranscriptRef.current ? " " : "") + t.trim();
           setPatientSpoken(patientTranscriptRef.current);
         } else {
@@ -832,36 +835,32 @@ function BmaInteractiveChatMode() {
 
     recognition.onend = () => {
       recognitionRef.current = null;
-      // Auto-restart on mobile if user hasn't explicitly stopped
       if (patientShouldListenRef.current) {
+        // Mobile: browser killed the session — restart after brief pause
         setTimeout(() => {
           if (patientShouldListenRef.current) startPatientRecognition();
-        }, 200);
+        }, 250);
       } else {
         setIsListening(false);
       }
     };
 
     recognition.onerror = (event: any) => {
-      const ignorable = ["no-speech", "aborted"];
-      if (!ignorable.includes(event.error)) {
-        console.warn("Patient speech recognition error:", event.error);
+      if (!["no-speech", "aborted"].includes(event.error)) {
+        console.warn("Patient mic error:", event.error);
       }
       recognitionRef.current = null;
       if (patientShouldListenRef.current && event.error !== "not-allowed") {
         setTimeout(() => {
           if (patientShouldListenRef.current) startPatientRecognition();
-        }, 300);
+        }, 350);
       } else {
         patientShouldListenRef.current = false;
         setIsListening(false);
       }
     };
 
-    try {
-      recognition.start();
-    } catch (err) {
-      console.warn("Could not start patient speech recognition:", err);
+    try { recognition.start(); } catch {
       recognitionRef.current = null;
       patientShouldListenRef.current = false;
       setIsListening(false);
@@ -874,15 +873,17 @@ function BmaInteractiveChatMode() {
       safeStopRecognition(recognitionRef);
       setIsListening(false);
     } else {
+      // Reset accumulated transcript for a fresh recording session
+      patientTranscriptRef.current = patientSpoken;
       patientShouldListenRef.current = true;
       setIsListening(true);
       startPatientRecognition();
     }
-  }, [isListening, startPatientRecognition]);
+  }, [isListening, patientSpoken, startPatientRecognition]);
 
   // ── Provider (English) mic ─────────────────────────────────────────────────
   const startProviderRecognition = useCallback(() => {
-    const recognition = createRecognition("en-US", false);
+    const recognition = createRecognition("en-US", true);
     if (!recognition) return;
     providerRecognitionRef.current = recognition;
 
@@ -907,32 +908,28 @@ function BmaInteractiveChatMode() {
       if (providerShouldListenRef.current) {
         setTimeout(() => {
           if (providerShouldListenRef.current) startProviderRecognition();
-        }, 200);
+        }, 250);
       } else {
         setIsProviderListening(false);
       }
     };
 
     recognition.onerror = (event: any) => {
-      const ignorable = ["no-speech", "aborted"];
-      if (!ignorable.includes(event.error)) {
-        console.warn("Provider speech recognition error:", event.error);
+      if (!["no-speech", "aborted"].includes(event.error)) {
+        console.warn("Provider mic error:", event.error);
       }
       providerRecognitionRef.current = null;
       if (providerShouldListenRef.current && event.error !== "not-allowed") {
         setTimeout(() => {
           if (providerShouldListenRef.current) startProviderRecognition();
-        }, 300);
+        }, 350);
       } else {
         providerShouldListenRef.current = false;
         setIsProviderListening(false);
       }
     };
 
-    try {
-      recognition.start();
-    } catch (err) {
-      console.warn("Could not start provider speech recognition:", err);
+    try { recognition.start(); } catch {
       providerRecognitionRef.current = null;
       providerShouldListenRef.current = false;
       setIsProviderListening(false);
@@ -1046,12 +1043,12 @@ function BmaInteractiveChatMode() {
             <button
               type="button"
               onClick={() => setMessages(prev => prev.filter((_, idx) => idx !== i))}
-              className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-gray-500 hover:text-red-400 transition-opacity touch-manipulation"
+              className="absolute top-1 right-1 p-1 rounded text-gray-600 hover:text-red-400 active:text-red-400 touch-manipulation"
               style={{ WebkitTapHighlightColor: "transparent" }}
               aria-label="Delete message"
               data-testid={`btn-delete-msg-${i}`}
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
             <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
               msg.role === "assistant"
