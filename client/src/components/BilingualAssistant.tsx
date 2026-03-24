@@ -4,7 +4,146 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock, Unlock, CheckCircle2, ArrowRight, Star } from "lucide-react";
+
+const BMA_GATE_KEY = "bma_gate_v1";
+
+function getBmaGateState(): { triedModes: string[]; unlocked: boolean } {
+  try {
+    const s = localStorage.getItem(BMA_GATE_KEY);
+    return s ? JSON.parse(s) : { triedModes: [], unlocked: false };
+  } catch {
+    return { triedModes: [], unlocked: false };
+  }
+}
+
+function saveBmaGateState(state: { triedModes: string[]; unlocked: boolean }) {
+  try { localStorage.setItem(BMA_GATE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
+}
+
+function BmaLeadGate({ onUnlock }: { onUnlock: () => void }) {
+  const [form, setForm] = useState({ firstName: "", lastName: "", company: "", email: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.firstName.trim() || !form.email.trim()) {
+      setError("First name and email are required.");
+      return;
+    }
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await fetch("/api/bma-leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+    } catch { /* fire-and-forget */ }
+    setIsSubmitting(false);
+    setSubmitted(true);
+    setTimeout(() => onUnlock(), 1800);
+  };
+
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg" style={{ backdropFilter: "blur(8px)", background: "rgba(15,22,40,0.88)" }}>
+      <div className="w-full max-w-md mx-4">
+        {submitted ? (
+          <div className="text-center space-y-3 py-8">
+            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-green-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white">You're in!</h3>
+            <p className="text-gray-300 text-sm">Unlocking your full access now…</p>
+          </div>
+        ) : (
+          <div className="bg-[hsl(222,47%,16%)] border border-[#FFC107]/40 rounded-xl p-6 shadow-2xl space-y-5">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-[#FFC107]/20 flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-6 h-6 text-[#FFC107]" />
+              </div>
+              <h3 className="text-xl font-bold text-white">You've tried all 3 visit types!</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Enter your info to unlock continued access. We'll also send you a quick product overview — no spam, ever.
+              </p>
+              <div className="flex justify-center gap-4 pt-1">
+                <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Injury Reporting</span>
+                <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> New Hire Intake</span>
+                <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Drug Screen</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">First Name *</label>
+                  <Input
+                    className="bg-gray-900/60 border-gray-600 text-white placeholder:text-gray-500 text-sm"
+                    placeholder="Jane"
+                    value={form.firstName}
+                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                    data-testid="input-gate-firstname"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Last Name</label>
+                  <Input
+                    className="bg-gray-900/60 border-gray-600 text-white placeholder:text-gray-500 text-sm"
+                    placeholder="Smith"
+                    value={form.lastName}
+                    onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                    data-testid="input-gate-lastname"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Company / Clinic</label>
+                <Input
+                  className="bg-gray-900/60 border-gray-600 text-white placeholder:text-gray-500 text-sm"
+                  placeholder="Acme Occupational Health"
+                  value={form.company}
+                  onChange={(e) => setForm({ ...form, company: e.target.value })}
+                  data-testid="input-gate-company"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Work Email *</label>
+                <Input
+                  type="email"
+                  className="bg-gray-900/60 border-gray-600 text-white placeholder:text-gray-500 text-sm"
+                  placeholder="jane@yourcompany.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  data-testid="input-gate-email"
+                />
+              </div>
+              {error && <p className="text-red-400 text-xs">{error}</p>}
+              <Button
+                type="submit"
+                className="w-full bg-[#FFC107] text-black font-bold hover:bg-[#FFD54F]"
+                disabled={isSubmitting}
+                data-testid="btn-gate-submit"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Unlock className="w-4 h-4 mr-2" />
+                )}
+                {isSubmitting ? "Unlocking…" : "Unlock Full Access"}
+                {!isSubmitting && <ArrowRight className="w-4 h-4 ml-2" />}
+              </Button>
+              <p className="text-center text-xs text-gray-500">
+                No credit card required. We'll reach out about pricing when you're ready.
+              </p>
+            </form>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 import {
   Volume2,
   VolumeX,
@@ -2402,12 +2541,46 @@ interface BilingualAssistantProps {
 
 export default function BilingualAssistant({ prefilledName, prefilledCompany }: BilingualAssistantProps = {}) {
   const [mode, setMode] = useState<Mode>("intake");
+  const [gateState, setGateState] = useState<{ triedModes: string[]; unlocked: boolean }>(getBmaGateState);
+  const [showGate, setShowGate] = useState(false);
+  const gateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const modes = [
     { key: "injury" as Mode, label: "Injury Reporting", labelEs: "Reporte de Lesiones", icon: AlertTriangle },
     { key: "intake" as Mode, label: "New Hire Intake", labelEs: "Admisión", icon: UserPlus },
     { key: "drugscreen" as Mode, label: "Drug Screen", labelEs: "Prueba de Drogas", icon: FlaskConical },
   ];
+
+  const ALL_MODES = ["injury", "intake", "drugscreen"];
+
+  const handleModeChange = (newMode: Mode) => {
+    setMode(newMode);
+    if (gateState.unlocked) return;
+
+    const newTriedModes = [...new Set([...gateState.triedModes, newMode])];
+    const updated = { ...gateState, triedModes: newTriedModes };
+    setGateState(updated);
+    saveBmaGateState(updated);
+
+    if (newTriedModes.length >= ALL_MODES.length) {
+      if (gateTimerRef.current) clearTimeout(gateTimerRef.current);
+      gateTimerRef.current = setTimeout(() => setShowGate(true), 2200);
+    }
+  };
+
+  useEffect(() => {
+    return () => { if (gateTimerRef.current) clearTimeout(gateTimerRef.current); };
+  }, []);
+
+  const handleUnlock = () => {
+    const updated = { ...gateState, unlocked: true };
+    setGateState(updated);
+    saveBmaGateState(updated);
+    setShowGate(false);
+  };
+
+  const triedCount = gateState.triedModes.length;
+  const isUnlocked = gateState.unlocked;
 
   return (
     <section className="py-20 bg-[hsl(222,47%,11%)]" id="bilingual-assistant" data-testid="section-bilingual-assistant">
@@ -2432,6 +2605,34 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
           </p>
         </div>
 
+        {!isUnlocked && (
+          <div className="flex justify-center mb-4">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800/60 border border-gray-700 text-sm">
+              {triedCount < ALL_MODES.length ? (
+                <>
+                  <Star className="w-3.5 h-3.5 text-[#FFC107]" />
+                  <span className="text-gray-300">
+                    Free trial: <span className="text-[#FFC107] font-semibold">{triedCount} of {ALL_MODES.length}</span> visit types explored
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-[#FFC107]" />
+                  <span className="text-gray-300">Trial complete — <span className="text-[#FFC107] font-semibold">unlock required</span></span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+        {isUnlocked && (
+          <div className="flex justify-center mb-4">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/30 text-sm">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+              <span className="text-green-300 text-sm">Full access unlocked</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {modes.map((m) => (
             <Button
@@ -2441,28 +2642,34 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
                 ? "bg-[#FFC107] text-black font-bold"
                 : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black font-semibold"
               }
-              onClick={() => setMode(m.key)}
+              onClick={() => handleModeChange(m.key)}
               data-testid={`btn-mode-${m.key}`}
             >
               <m.icon className="w-4 h-4 mr-1.5" />
               {m.label}
+              {!isUnlocked && gateState.triedModes.includes(m.key) && (
+                <CheckCircle2 className="w-3 h-3 ml-1 text-green-400 opacity-80" />
+              )}
             </Button>
           ))}
         </div>
 
-        <Card className="bg-[hsl(222,47%,14%)] border-gray-700 p-3 sm:p-6">
-          {mode === "injury" && <InjuryReportingMode />}
-          {mode === "intake" && <NewHireIntakeMode />}
-          {mode === "drugscreen" && <DrugScreenMode />}
+        <div className="relative">
+          <Card className="bg-[hsl(222,47%,14%)] border-gray-700 p-3 sm:p-6">
+            {mode === "injury" && <InjuryReportingMode />}
+            {mode === "intake" && <NewHireIntakeMode />}
+            {mode === "drugscreen" && <DrugScreenMode />}
 
-          <div className="mt-6 pt-4 border-t border-gray-700">
-            <BmaInteractiveChatMode />
-          </div>
+            <div className="mt-6 pt-4 border-t border-gray-700">
+              <BmaInteractiveChatMode />
+            </div>
 
-          <div className="mt-6 pt-4 border-t border-gray-700">
-            <CommandCenterMode />
-          </div>
-        </Card>
+            <div className="mt-6 pt-4 border-t border-gray-700">
+              <CommandCenterMode />
+            </div>
+          </Card>
+          {showGate && !isUnlocked && <BmaLeadGate onUnlock={handleUnlock} />}
+        </div>
 
         <p className="text-center text-xs text-gray-500 mt-4">
           Text-to-Speech powered by browser Web Speech API. Clinical summaries are for review purposes only.

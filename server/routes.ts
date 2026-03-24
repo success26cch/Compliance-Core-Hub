@@ -1007,6 +1007,43 @@ Rules:
     });
   });
 
+  // BMA Lead Capture (from demo gate)
+  app.post("/api/bma-leads", async (req, res) => {
+    try {
+      const { firstName, lastName, company, email } = req.body;
+      if (!firstName || !email) {
+        return res.status(400).json({ message: "First name and email are required" });
+      }
+      const fullName = [firstName, lastName].filter(Boolean).join(" ");
+      const adminHtml = `
+        <h2>New BMA Demo Lead</h2>
+        <p>A visitor completed the BMA free trial and unlocked their access.</p>
+        <table cellpadding="6" style="border-collapse:collapse;">
+          <tr><td><strong>Name</strong></td><td>${fullName}</td></tr>
+          <tr><td><strong>Email</strong></td><td>${email}</td></tr>
+          <tr><td><strong>Company/Clinic</strong></td><td>${company || "—"}</td></tr>
+          <tr><td><strong>Source</strong></td><td>BMA Demo Gate (/bma)</td></tr>
+          <tr><td><strong>Date</strong></td><td>${new Date().toLocaleString()}</td></tr>
+        </table>
+        <p style="margin-top:16px">Follow up with a BMA pricing overview or schedule a demo call.</p>
+      `;
+      const confirmHtml = `
+        <h2>You're unlocked — welcome to the BMA!</h2>
+        <p>Hi ${firstName},</p>
+        <p>Thanks for trying the Core Compliance Hub Spanish Bilingual Medical Assistant. Your full demo access is now active.</p>
+        <p>If you'd like to learn more about bringing BMA to your clinic, reply to this email or <a href="https://corecompliancehub.com/bma">visit our BMA page</a>.</p>
+        <p>— The CCHUB Team</p>
+      `;
+      const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "team@corecompliancehub.com"];
+      await sendEmail(ADMIN_EMAILS, `New BMA Lead: ${fullName}`, adminHtml);
+      await sendEmail(email, "Your BMA demo access is unlocked — Core Compliance Hub", confirmHtml);
+      res.status(201).json({ success: true });
+    } catch (err) {
+      console.error("[BMA Leads]", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // Contact Inquiries (retainer, consultation requests)
   app.post("/api/contact-inquiries", async (req, res) => {
     try {
