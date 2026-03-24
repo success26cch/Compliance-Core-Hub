@@ -276,9 +276,11 @@ const CLINIC_INSTRUCTIONS = [
     category: "Breathing / PFT",
     icon: Wind,
     commands: [
-      { en: "Blow as hard and as long as you can.", es: "Sople tan fuerte y por tanto tiempo como pueda." },
-      { en: "Seal your lips tightly around the mouthpiece.", es: "Selle los labios firmemente alrededor de la boquilla." },
-      { en: "Breathe in deeply, then blow out fast.", es: "Inhale profundamente, luego exhale rápidamente." },
+      { en: "Blow as hard and as long as you can — do not stop blowing until I tell you to.", es: "Sople tan fuerte y por tanto tiempo como pueda — no deje de soplar hasta que yo le diga." },
+      { en: "Seal your lips tightly around the mouthpiece — no air should escape.", es: "Selle los labios firmemente alrededor de la boquilla — no debe escaparse el aire." },
+      { en: "Breathe in as deeply as possible, then blow out fast and hard.", es: "Inhale lo más profundo que pueda, luego exhale rápido y fuerte." },
+      { en: "I need 3 good tests, so we have to do another one.", es: "Necesito 3 pruebas buenas, así que tenemos que hacer otra." },
+      { en: "Ok, you are all set. We will send the results to your employer.", es: "Listo, ya terminamos. Le enviaremos los resultados a su empleador." },
     ],
   },
   {
