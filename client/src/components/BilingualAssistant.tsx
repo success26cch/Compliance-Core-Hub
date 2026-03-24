@@ -776,6 +776,18 @@ function BmaInteractiveChatMode() {
     setPatientSpoken("");
     patientTranscriptRef.current = "";
     providerTranscriptRef.current = "";
+
+    // Auto-stop whichever mic is active when a message is sent
+    if (speaker === "patient") {
+      patientShouldListenRef.current = false;
+      safeStopRecognition(recognitionRef);
+      setIsListening(false);
+    } else {
+      providerShouldListenRef.current = false;
+      safeStopRecognition(providerRecognitionRef);
+      setIsProviderListening(false);
+    }
+
     setIsLoading(true);
 
     try {
