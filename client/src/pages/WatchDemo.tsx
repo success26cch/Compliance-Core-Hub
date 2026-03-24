@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,19 +19,14 @@ const HIGHLIGHTS = [
 export default function WatchDemo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = true;
-    v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
-  }, []);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [error, setError] = useState(false);
 
   const toggle = () => {
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().then(() => setPlaying(true)).catch(() => {});
+      v.play().then(() => { setPlaying(true); setHasStarted(true); }).catch(() => {});
     } else {
       v.pause();
       setPlaying(false);
@@ -39,7 +34,13 @@ export default function WatchDemo() {
   };
 
   const goFullscreen = () => {
-    videoRef.current?.requestFullscreen?.();
+    const v = videoRef.current;
+    if (!v) return;
+    if ((v as any).webkitEnterFullscreen) {
+      (v as any).webkitEnterFullscreen();
+    } else {
+      v.requestFullscreen?.();
+    }
   };
 
   return (
@@ -89,24 +90,38 @@ export default function WatchDemo() {
             ref={videoRef}
             src="/api/demo-video"
             playsInline
-            preload="auto"
-            onPlay={() => setPlaying(true)}
+            muted
+            preload="metadata"
+            onPlay={() => { setPlaying(true); setHasStarted(true); }}
             onPause={() => setPlaying(false)}
             onEnded={() => setPlaying(false)}
-            onClick={toggle}
-            className="w-full block cursor-pointer"
+            onError={() => setError(true)}
+            className="w-full block"
             style={{ display: "block", aspectRatio: "16/9", backgroundColor: "#000" }}
             data-testid="video-demo"
           />
 
-          {/* Play/Pause overlay — shows briefly on toggle */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            {!playing && (
-              <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
-                <Play className="w-7 h-7 text-white ml-1" fill="white" />
+          {/* Tap-to-play overlay — covers the whole player until started */}
+          {!hasStarted && !error && (
+            <div
+              className="absolute inset-0 flex items-center justify-center cursor-pointer"
+              onClick={toggle}
+              data-testid="overlay-video-play"
+            >
+              <div className="w-20 h-20 rounded-full bg-black/70 flex items-center justify-center border-2 border-white/30 shadow-xl">
+                <Play className="w-9 h-9 text-white ml-1" fill="white" />
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+              <p className="text-white/60 text-sm text-center px-6">
+                Unable to load video. Please try on a faster connection or desktop browser.
+              </p>
+            </div>
+          )}
 
           {/* Bottom controls */}
           <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-t from-black/70 to-transparent">
