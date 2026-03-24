@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -2540,6 +2541,7 @@ interface BilingualAssistantProps {
 }
 
 export default function BilingualAssistant({ prefilledName, prefilledCompany }: BilingualAssistantProps = {}) {
+  const { isAuthenticated } = useAuth();
   const [mode, setMode] = useState<Mode>("intake");
   const [gateState, setGateState] = useState<{ triedModes: string[]; unlocked: boolean }>(getBmaGateState);
   const [showGate, setShowGate] = useState(false);
@@ -2555,7 +2557,7 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
 
   const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
-    if (gateState.unlocked) return;
+    if (gateState.unlocked || isAuthenticated) return;
 
     const newTriedModes = [...new Set([...gateState.triedModes, newMode])];
     const updated = { ...gateState, triedModes: newTriedModes };
@@ -2580,7 +2582,7 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
   };
 
   const triedCount = gateState.triedModes.length;
-  const isUnlocked = gateState.unlocked;
+  const isUnlocked = gateState.unlocked || isAuthenticated;
 
   return (
     <section className="py-20 bg-[hsl(222,47%,11%)]" id="bilingual-assistant" data-testid="section-bilingual-assistant">
