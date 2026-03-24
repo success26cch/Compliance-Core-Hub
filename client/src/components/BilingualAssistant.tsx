@@ -1042,7 +1042,17 @@ function BmaInteractiveChatMode() {
           </div>
         )}
         {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-3 ${msg.role === "assistant" ? "" : ""}`}>
+          <div key={i} className="flex gap-3 relative group">
+            <button
+              type="button"
+              onClick={() => setMessages(prev => prev.filter((_, idx) => idx !== i))}
+              className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-gray-500 hover:text-red-400 transition-opacity touch-manipulation"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+              aria-label="Delete message"
+              data-testid={`btn-delete-msg-${i}`}
+            >
+              <X className="w-3 h-3" />
+            </button>
             <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
               msg.role === "assistant"
                 ? "bg-[#FFC107]/20"
@@ -1118,6 +1128,17 @@ function BmaInteractiveChatMode() {
           </div>
         )}
       </div>
+
+      {messages.length > 0 && (
+        <button
+          type="button"
+          onClick={clearChat}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-md border border-red-500/40 bg-red-500/10 text-red-400 text-sm font-semibold hover:bg-red-500/20 active:bg-red-500/30 transition-colors touch-manipulation"
+          data-testid="btn-new-conversation"
+        >
+          <Trash2 className="w-4 h-4" /> New Conversation (Clear All)
+        </button>
+      )}
 
       <div className="flex gap-2 mb-2">
         <Button
