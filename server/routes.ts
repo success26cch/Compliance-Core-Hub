@@ -3969,18 +3969,49 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
 
   app.post("/api/tts", async (req, res) => {
     try {
-      const { text, voice = "onyx" } = req.body;
+      const { text } = req.body;
       if (!text || typeof text !== "string") {
         return res.status(400).json({ message: "Text is required" });
       }
-      const sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+/);
-      let excerpt = "";
-      for (const s of sentences) {
-        if ((excerpt + " " + s).length > 500) break;
-        excerpt += (excerpt ? " " : "") + s;
+      const trimmed = text.slice(0, 1500).trim();
+
+      // Split text into chunks ≤ 200 chars at sentence boundaries for Google TTS
+      function splitIntoChunks(str: string, maxLen = 200): string[] {
+        const chunks: string[] = [];
+        let remaining = str;
+        while (remaining.length > 0) {
+          if (remaining.length <= maxLen) {
+            chunks.push(remaining);
+            break;
+          }
+          let cut = remaining.lastIndexOf('. ', maxLen);
+          if (cut <= 0) cut = remaining.lastIndexOf(' ', maxLen);
+          if (cut <= 0) cut = maxLen;
+          else cut = cut + 1;
+          chunks.push(remaining.slice(0, cut).trim());
+          remaining = remaining.slice(cut).trim();
+        }
+        return chunks.filter(c => c.length > 0);
       }
-      const trimmed = (excerpt || text.slice(0, 500)).trim();
-      const audioBuffer = await textToSpeech(trimmed, voice as any, "mp3");
+
+      const chunks = splitIntoChunks(trimmed);
+      const buffers: Buffer[] = [];
+
+      for (const chunk of chunks) {
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=en-US&client=tw-ob&ttsspeed=0.9`;
+        const gResp = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://translate.google.com/",
+            "Accept": "*/*",
+          },
+        });
+        if (!gResp.ok) throw new Error(`Google TTS ${gResp.status}`);
+        const buf = Buffer.from(await gResp.arrayBuffer());
+        buffers.push(buf);
+      }
+
+      const audioBuffer = buffers.length === 1 ? buffers[0] : Buffer.concat(buffers);
       res.set({
         "Content-Type": "audio/mpeg",
         "Content-Length": audioBuffer.length.toString(),
@@ -3988,8 +4019,23 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       });
       res.send(audioBuffer);
     } catch (error: any) {
-      console.error("TTS error:", error);
-      res.status(500).json({ message: "Failed to generate speech" });
+      console.error("TTS primary error, falling back to gpt-audio:", error.message || error);
+      // Fallback: gpt-audio via Replit proxy
+      try {
+        const { text } = req.body;
+        const trimmed = (text || "").slice(0, 1500).trim();
+        const audioB64 = await textToSpeech(trimmed, "onyx");
+        const audioBuffer = Buffer.from(audioB64, "base64");
+        res.set({
+          "Content-Type": "audio/mpeg",
+          "Content-Length": audioBuffer.length.toString(),
+          "Cache-Control": "public, max-age=3600",
+        });
+        res.send(audioBuffer);
+      } catch (fallbackError: any) {
+        console.error("TTS fallback error:", fallbackError);
+        res.status(500).json({ message: "Failed to generate speech" });
+      }
     }
   });
 

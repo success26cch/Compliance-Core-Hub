@@ -2042,64 +2042,59 @@ function CoreyChatInterface({
     printWindow.print();
   }, [messages, toast]);
 
-  const handleSpeak = useCallback((text: string, msgIdx: number) => {
-    if (!('speechSynthesis' in window)) return;
-
+  const handleSpeak = useCallback(async (text: string, msgIdx: number) => {
     if (speakingMsgIdx === msgIdx) {
-      window.speechSynthesis.cancel();
+      if (speechSynthRef.current) {
+        (speechSynthRef.current as any).pause?.();
+        speechSynthRef.current = null;
+      }
       setSpeakingMsgIdx(null);
-      speechSynthRef.current = null;
       return;
     }
 
-    window.speechSynthesis.cancel();
-
-    const cleanText = stripMarkdown(text);
-    const sentences = cleanText.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+/);
-    let excerpt = "";
-    for (const s of sentences) {
-      if ((excerpt + " " + s).length > 800) break;
-      excerpt += (excerpt ? " " : "") + s;
+    if (speechSynthRef.current) {
+      (speechSynthRef.current as any).pause?.();
+      speechSynthRef.current = null;
     }
-    const trimmed = (excerpt || cleanText.slice(0, 800)).trim();
 
-    const utterance = new SpeechSynthesisUtterance(trimmed);
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    const voices = cachedVoicesRef.current.length > 0
-      ? cachedVoicesRef.current
-      : window.speechSynthesis.getVoices();
-    const maleVoiceNames = [
-      'Daniel', 'Alex', 'Fred', 'Tom', 'Lee', 'Rishi',
-      'Google UK English Male',
-      'Microsoft Guy', 'Microsoft Davis', 'Microsoft Christopher', 'Microsoft Mark', 'Microsoft Ryan',
-      'en-US-GuyNeural', 'en-US-DavisNeural', 'en-US-ChristopherNeural', 'en-GB-RyanNeural',
-    ];
-    const femaleVoiceNames = ['Samantha', 'Karen', 'Moira', 'Tessa', 'Victoria', 'Aria', 'Jenny',
-      'Google UK English Female', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Sara'];
-    const enVoices = voices.filter(v => v.lang.startsWith('en'));
-    const maleByKeyword = enVoices.find(v => v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female'));
-    const maleByName = enVoices.find(v => maleVoiceNames.some(n => v.name.includes(n)));
-    const notFemale = enVoices.find(v => !femaleVoiceNames.some(n => v.name.includes(n)));
-    const preferred = maleByKeyword || maleByName || notFemale || enVoices[0];
-    if (preferred) utterance.voice = preferred;
-
-    utterance.onend = () => { setSpeakingMsgIdx(null); speechSynthRef.current = null; };
-    utterance.onerror = () => { setSpeakingMsgIdx(null); speechSynthRef.current = null; };
-
-    speechSynthRef.current = utterance;
     setSpeakingMsgIdx(msgIdx);
 
-    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-    setTimeout(() => window.speechSynthesis.speak(utterance), 50);
-  }, [speakingMsgIdx]);
+    try {
+      const cleanText = stripMarkdown(text).slice(0, 2000);
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ text: cleanText, voice: "onyx" }),
+      });
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      (speechSynthRef.current as any) = audio;
+      audio.onended = () => {
+        setSpeakingMsgIdx(null);
+        speechSynthRef.current = null;
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setSpeakingMsgIdx(null);
+        speechSynthRef.current = null;
+        URL.revokeObjectURL(url);
+      };
+      audio.play();
+    } catch {
+      setSpeakingMsgIdx(null);
+      toast({ title: "Voice playback unavailable", description: "Could not generate audio. Please try again.", variant: "destructive" });
+    }
+  }, [speakingMsgIdx, toast]);
 
   const handleStopSpeaking = useCallback(() => {
-    window.speechSynthesis?.cancel();
+    if (speechSynthRef.current) {
+      (speechSynthRef.current as any).pause?.();
+      speechSynthRef.current = null;
+    }
     setSpeakingMsgIdx(null);
-    speechSynthRef.current = null;
   }, []);
 
   return (
