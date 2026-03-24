@@ -285,6 +285,7 @@ Rules:
       if (!text || typeof text !== "string") {
         return res.status(400).json({ error: "Text required" });
       }
+
       const clean = text
         .replace(/[→←↑↓►◄▶◀"""\\]/g, "")
         .replace(/\*\*([^*]+)\*\*/g, "$1")
@@ -292,17 +293,40 @@ Rules:
         .replace(/\n+/g, " ")
         .replace(/\s{2,}/g, " ")
         .trim()
-        .slice(0, 4096);
-      const mp3Response = await openai.audio.speech.create({
-        model: "tts-1",
-        voice: "nova",
-        input: clean,
-        response_format: "mp3",
-      } as any);
-      const buffer = Buffer.from(await mp3Response.arrayBuffer());
+        .slice(0, 1000);
+
+      // Split into chunks ≤ 190 chars at word boundaries for Google TTS limit
+      const chunks: string[] = [];
+      const words = clean.split(" ");
+      let current = "";
+      for (const word of words) {
+        if ((current + " " + word).trim().length > 190) {
+          if (current) chunks.push(current.trim());
+          current = word;
+        } else {
+          current = current ? current + " " + word : word;
+        }
+      }
+      if (current.trim()) chunks.push(current.trim());
+
+      // Fetch each chunk from Google Translate TTS
+      const buffers: Buffer[] = [];
+      for (const chunk of chunks) {
+        const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=es&q=${encodeURIComponent(chunk)}`;
+        const gttsRes = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://translate.google.com/",
+          },
+        });
+        if (!gttsRes.ok) throw new Error(`Google TTS chunk failed: ${gttsRes.status}`);
+        buffers.push(Buffer.from(await gttsRes.arrayBuffer()));
+      }
+
+      const combined = Buffer.concat(buffers);
       res.setHeader("Content-Type", "audio/mpeg");
       res.setHeader("Cache-Control", "no-cache");
-      res.send(buffer);
+      res.send(combined);
     } catch (error) {
       console.error("BMA TTS error:", error);
       res.status(500).json({ error: "TTS failed" });
