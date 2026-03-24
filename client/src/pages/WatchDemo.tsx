@@ -132,7 +132,7 @@ export default function WatchDemo() {
         </div>
 
         <p className="text-center text-white/40 text-sm mt-4">
-          Full platform walkthrough · Core Compliance Hub
+          Core Compliance Hub
         </p>
       </section>
 
@@ -140,7 +140,7 @@ export default function WatchDemo() {
       <section className="max-w-4xl mx-auto px-4 pb-20">
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-display font-black text-white mb-3" data-testid="text-highlights-title">
-            Everything in the Demo
+            Just a Peek at the Power of Corey
           </h2>
           <p className="text-white/50">One platform. Every tool your compliance team needs.</p>
         </div>
