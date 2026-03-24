@@ -711,10 +711,11 @@ function BmaInteractiveChatMode() {
   const [patientSpoken, setPatientSpoken] = useState("");
   const recognitionRef = useRef<any>(null);
   const providerRecognitionRef = useRef<any>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   const sendMessage = useCallback(async (text: string, speaker: "provider" | "patient") => {
@@ -945,7 +946,7 @@ function BmaInteractiveChatMode() {
         </div>
       )}
 
-      <div className="rounded-md bg-gray-900/60 border border-gray-700/50 p-4 min-h-[200px] max-h-[400px] overflow-y-auto space-y-3" data-testid="bma-chat-messages">
+      <div ref={chatContainerRef} className="rounded-md bg-gray-900/60 border border-gray-700/50 p-4 min-h-[200px] max-h-[400px] overflow-y-auto space-y-3" data-testid="bma-chat-messages">
         {messages.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -1028,7 +1029,6 @@ function BmaInteractiveChatMode() {
             <p className="text-sm text-gray-100">Translating and analyzing...</p>
           </div>
         )}
-        <div ref={chatEndRef} />
       </div>
 
       <div className="flex gap-2 mb-2">
