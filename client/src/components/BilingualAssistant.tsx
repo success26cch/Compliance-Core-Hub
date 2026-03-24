@@ -1292,9 +1292,6 @@ function CommandCenterMode() {
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <Languages className="w-5 h-5 text-[#FFC107]" />
         <h3 className="text-lg font-bold text-white">Staff Command Center</h3>
-        <Badge className="bg-[#FFC107]/20 text-[#FFC107] no-default-hover-elevate no-default-active-elevate">
-          <Volume2 className="w-3 h-3 mr-1" /> Text-to-Speech
-        </Badge>
         <StopReadingButton />
       </div>
       <p className="text-sm text-gray-100">Tap any button to speak the instruction aloud in Spanish to the patient.</p>
