@@ -647,6 +647,59 @@ const BMA_CONTEXT_OPTIONS = [
   { value: "general", label: "General Medical Visit" },
 ];
 
+const CONTEXT_STARTERS: Record<string, { label: string; prompt: string }[]> = {
+  "dot-physical": [
+    { label: "Introduce exam", prompt: "I am going to perform your DOT physical examination today. I need to check your vision, hearing, blood pressure, and overall health." },
+    { label: "Medical history", prompt: "I need to review your medical history. Have you ever been diagnosed with diabetes, high blood pressure, heart disease, or seizures?" },
+    { label: "Medications", prompt: "Please list all medications you are currently taking, including over-the-counter medications and supplements." },
+    { label: "Vision test", prompt: "I need to test your vision. Please read the smallest line you can see on the chart." },
+    { label: "Blood pressure", prompt: "I am going to take your blood pressure. Please relax your arm and stay still." },
+    { label: "Exam result", prompt: "Based on today's examination, you meet the medical standards required for commercial motor vehicle driving." },
+  ],
+  "drug-screen": [
+    { label: "Explain procedure", prompt: "We are going to collect a urine sample today for a drug and alcohol screen. This is required by your employer." },
+    { label: "Pre-collection", prompt: "Please empty your pockets and leave all personal belongings here. Do not flush or run water until I say it is okay." },
+    { label: "Collection instructions", prompt: "Fill the cup to at least the line marked on the side. Bring it back to me without putting a lid on it." },
+    { label: "Post-result", prompt: "Your drug screen results will be sent to a certified laboratory. Results are typically available within 24 to 72 hours." },
+    { label: "Refusal warning", prompt: "Refusing to provide a specimen is treated the same as a positive test result under federal regulations." },
+  ],
+  "injury-report": [
+    { label: "Open visit", prompt: "Tell me what happened. Can you describe where you were and what you were doing when you got hurt?" },
+    { label: "Pain location", prompt: "Point to where you feel pain. On a scale of 1 to 10, how would you rate your pain right now?" },
+    { label: "PPE question", prompt: "Were you wearing any personal protective equipment at the time of the injury, such as gloves, a hard hat, or safety shoes?" },
+    { label: "Treatment plan", prompt: "We are going to clean and bandage the wound. I want you to come back in two days so we can check how it is healing." },
+    { label: "Work restrictions", prompt: "Based on your injury, I am recommending that you avoid lifting more than 10 pounds for the next three days." },
+  ],
+  "work-restrictions": [
+    { label: "Explain restrictions", prompt: "Based on your evaluation, I am placing you on light duty. This means you cannot lift more than 15 pounds or stand for more than 2 hours at a time." },
+    { label: "Duration", prompt: "These restrictions will be in place for the next two weeks. We will reassess at your follow-up appointment." },
+    { label: "RTW instructions", prompt: "You are cleared to return to work with restrictions. Please give this form to your supervisor before starting your shift." },
+    { label: "Full release", prompt: "I am clearing you to return to full duty with no restrictions as of today." },
+    { label: "Employer communication", prompt: "A copy of your work restrictions will be sent to your employer's HR department and to the occupational health coordinator." },
+  ],
+  "respiratory-exam": [
+    { label: "Introduce spirometry", prompt: "We are going to perform a breathing test today called a spirometry. I need you to breathe in as deeply as possible and then blow out as hard and fast as you can." },
+    { label: "Effort instruction", prompt: "I need your best effort on this test. Breathe in all the way, then blast the air out completely and keep blowing until I say stop." },
+    { label: "Respirator question", prompt: "Do you have any difficulty breathing when you use a respirator or tight-fitting face piece at work?" },
+    { label: "Results explanation", prompt: "Your breathing test results are within the normal range. You are medically cleared to wear a respirator for your job duties." },
+    { label: "Follow-up", prompt: "Your results show reduced lung function. We need to repeat this test and you may need to see a specialist before I can clear you for respirator use." },
+  ],
+  "blood-draw": [
+    { label: "Explain procedure", prompt: "I am going to draw a small amount of blood from your arm for lab testing. You may feel a small pinch when I insert the needle." },
+    { label: "Consent", prompt: "This blood draw is required for your occupational health evaluation. Do you have any questions before we begin?" },
+    { label: "Allergy check", prompt: "Are you allergic to latex or adhesives? Have you ever fainted or felt dizzy during a blood draw?" },
+    { label: "During draw", prompt: "Please keep your arm still and look away if you need to. It will only take about 30 seconds." },
+    { label: "After draw", prompt: "Apply pressure to this area for a few minutes. Do not do any heavy lifting with this arm for the rest of the day." },
+  ],
+  "general": [
+    { label: "Open exam", prompt: "Good morning. My name is the medical assistant. I am here to help with your visit today. What brings you in?" },
+    { label: "Medical history", prompt: "I need to ask you a few questions about your health history before the provider sees you." },
+    { label: "Symptoms", prompt: "When did you start feeling this way? Do you have any fever, chills, nausea, or shortness of breath?" },
+    { label: "Medications", prompt: "Are you currently taking any prescription medications, vitamins, or supplements?" },
+    { label: "Follow-up care", prompt: "The provider wants to see you again in one week. Please call us if your symptoms get worse before then." },
+  ],
+};
+
 function BmaInteractiveChatMode() {
   const [messages, setMessages] = useState<BmaChatMessage[]>([]);
   const [providerInput, setProviderInput] = useState("");
@@ -870,11 +923,33 @@ function BmaInteractiveChatMode() {
         ))}
       </div>
 
+      {messages.length === 0 && CONTEXT_STARTERS[context] && (
+        <div className="rounded-md bg-gray-900/40 border border-gray-700/40 p-3 space-y-2">
+          <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+            Quick starters — {BMA_CONTEXT_OPTIONS.find(o => o.value === context)?.label}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {CONTEXT_STARTERS[context].map((s, i) => (
+              <button
+                key={i}
+                onClick={() => sendMessage(s.prompt, "provider")}
+                disabled={isLoading}
+                className="text-xs px-3 py-1.5 rounded-full bg-[#F57C00]/20 border border-[#F57C00]/40 text-[#FFC107] hover:bg-[#F57C00]/40 transition-colors disabled:opacity-40"
+                data-testid={`btn-starter-${context}-${i}`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500">Click any starter to send a pre-written English phrase — the AI translates it to Spanish and reads it aloud.</p>
+        </div>
+      )}
+
       <div className="rounded-md bg-gray-900/60 border border-gray-700/50 p-4 min-h-[200px] max-h-[400px] overflow-y-auto space-y-3" data-testid="bma-chat-messages">
         {messages.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Start a conversation. Type what the provider says in English, or record the patient speaking Spanish.</p>
+            <p className="text-sm">Start a conversation. Type what the provider says in English, or use a quick starter above.</p>
           </div>
         )}
         {messages.map((msg, i) => (
