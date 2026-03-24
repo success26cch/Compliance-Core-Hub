@@ -708,11 +708,12 @@ const CONTEXT_STARTERS: Record<string, { label: string; prompt: string }[]> = {
     { label: "Work restrictions", prompt: "Based on your injury, I am recommending that you avoid lifting more than 10 pounds for the next three days." },
   ],
   "work-restrictions": [
-    { label: "Explain restrictions", prompt: "Based on your evaluation, I am placing you on light duty. This means you cannot lift more than 15 pounds or stand for more than 2 hours at a time." },
-    { label: "Duration", prompt: "These restrictions will be in place for the next two weeks. We will reassess at your follow-up appointment." },
-    { label: "RTW instructions", prompt: "You are cleared to return to work with restrictions. Please give this form to your supervisor before starting your shift." },
-    { label: "Full release", prompt: "I am clearing you to return to full duty with no restrictions as of today." },
-    { label: "Employer communication", prompt: "A copy of your work restrictions will be sent to your employer's HR department and to the occupational health coordinator." },
+    { label: "Explain purpose", prompt: "The doctor is going to review the results of your evaluation and explain what activities you can and cannot do at work right now." },
+    { label: "Describe activities", prompt: "Can you describe what your normal job duties look like? What does a typical day at work involve for you?" },
+    { label: "Understanding check", prompt: "Do you understand the instructions the doctor gave you about your work restrictions? Do you have any questions?" },
+    { label: "Form explanation", prompt: "The doctor has filled out a form with your work restrictions. You need to give this form to your supervisor or human resources before you return to work." },
+    { label: "Follow-up reminder", prompt: "The doctor wants to see you again for a follow-up visit. We will schedule that before you leave today." },
+    { label: "Employer copy", prompt: "A copy of the doctor's recommendations will be sent to your employer. You will also receive a copy for your records." },
   ],
   "blood-draw": [
     { label: "Explain procedure", prompt: "I am going to draw a small amount of blood from your arm for lab testing. You may feel a small pinch when I insert the needle." },
