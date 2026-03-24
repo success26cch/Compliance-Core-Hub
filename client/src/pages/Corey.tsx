@@ -1729,11 +1729,27 @@ function CoreyChatInterface({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [speakingMsgIdx, setSpeakingMsgIdx] = useState<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const cachedVoicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   const { isListening, speechSupported, toggleListening, stopListening } = useSpeechRecognition((transcript: string) => {
     setInput(transcript);
   });
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length > 0) cachedVoicesRef.current = v;
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  }, []);
+
+  useEffect(() => {
+    return () => { window.speechSynthesis?.cancel(); };
+  }, []);
 
   useEffect(() => {
     const autoSend = sessionStorage.getItem("corey-auto-send");
@@ -2026,68 +2042,61 @@ function CoreyChatInterface({
     printWindow.print();
   }, [messages, toast]);
 
-  const handleSpeak = useCallback(async (text: string, msgIdx: number) => {
+  const handleSpeak = useCallback((text: string, msgIdx: number) => {
+    if (!('speechSynthesis' in window)) return;
+
     if (speakingMsgIdx === msgIdx) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      window.speechSynthesis.cancel();
       setSpeakingMsgIdx(null);
+      speechSynthRef.current = null;
       return;
     }
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
+    window.speechSynthesis.cancel();
 
+    const cleanText = stripMarkdown(text);
+    const sentences = cleanText.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+/);
+    let excerpt = "";
+    for (const s of sentences) {
+      if ((excerpt + " " + s).length > 800) break;
+      excerpt += (excerpt ? " " : "") + s;
+    }
+    const trimmed = (excerpt || cleanText.slice(0, 800)).trim();
+
+    const utterance = new SpeechSynthesisUtterance(trimmed);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    const voices = cachedVoicesRef.current.length > 0
+      ? cachedVoicesRef.current
+      : window.speechSynthesis.getVoices();
+    const naturalVoiceNames = [
+      'Samantha', 'Karen', 'Daniel', 'Moira', 'Tessa',
+      'Google US English', 'Google UK English Male', 'Google UK English Female',
+      'Microsoft Guy', 'Microsoft Davis', 'Microsoft Aria',
+    ];
+    const enVoices = voices.filter(v => v.lang.startsWith('en'));
+    const preferred = enVoices.find(v => naturalVoiceNames.some(n => v.name.includes(n)))
+      || enVoices.find(v => v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Premium'))
+      || enVoices.find(v => v.name.includes('Google'))
+      || enVoices[0];
+    if (preferred) utterance.voice = preferred;
+
+    utterance.onend = () => { setSpeakingMsgIdx(null); speechSynthRef.current = null; };
+    utterance.onerror = () => { setSpeakingMsgIdx(null); speechSynthRef.current = null; };
+
+    speechSynthRef.current = utterance;
     setSpeakingMsgIdx(msgIdx);
 
-    try {
-      const cleanText = stripMarkdown(text).slice(0, 4000);
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ text: cleanText, voice: "onyx" }),
-      });
-      if (!res.ok) throw new Error("TTS failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => {
-        setSpeakingMsgIdx(null);
-        audioRef.current = null;
-        URL.revokeObjectURL(url);
-      };
-      audio.onerror = () => {
-        setSpeakingMsgIdx(null);
-        audioRef.current = null;
-        URL.revokeObjectURL(url);
-      };
-      audio.play();
-    } catch {
-      setSpeakingMsgIdx(null);
-      toast({ title: "Voice playback unavailable", description: "Could not generate audio. Please try again.", variant: "destructive" });
-    }
-  }, [speakingMsgIdx, toast]);
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+    setTimeout(() => window.speechSynthesis.speak(utterance), 50);
+  }, [speakingMsgIdx]);
 
   const handleStopSpeaking = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
+    window.speechSynthesis?.cancel();
     setSpeakingMsgIdx(null);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+    speechSynthRef.current = null;
   }, []);
 
   return (
