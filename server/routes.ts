@@ -242,19 +242,36 @@ Rules:
 
       const rawReply = response.content[0].type === "text" ? response.content[0].text : "";
 
+      // Strip markdown code fences that sometimes wrap the JSON
+      let cleanRaw = rawReply.trim();
+      if (cleanRaw.startsWith("```")) {
+        cleanRaw = cleanRaw.replace(/^```[a-z]*\n?/i, "").replace(/\n?```\s*$/, "").trim();
+      }
+
+      const cleanField = (s: string) =>
+        (s || "").replace(/[→←↑↓►◄▶◀"""\\]/g, "").replace(/\n+/g, " ").trim();
+
       try {
-        const parsed = JSON.parse(rawReply);
-        const spanish = (parsed.spanish || "").replace(/[→←↑↓►◄▶◀"""\\]/g, "").replace(/\n+/g, " ").trim();
-        const english = (parsed.english || "").replace(/[→←↑↓►◄▶◀"""\\]/g, "").replace(/\n+/g, " ").trim();
-        const followUp = (parsed.followUp || "").replace(/\n+/g, " ").trim();
-        res.json({
-          reply: spanish || english || rawReply,
-          spanish,
-          english,
-          followUp,
-        });
+        const parsed = JSON.parse(cleanRaw);
+        const spanish = cleanField(parsed.spanish);
+        const english = cleanField(parsed.english);
+        const followUp = cleanField(parsed.followUp);
+        res.json({ reply: spanish || english || cleanRaw, spanish, english, followUp });
       } catch {
-        res.json({ reply: rawReply, spanish: "", english: "", followUp: "" });
+        // Regex fallback — extract fields even if JSON is malformed
+        const spanishMatch = cleanRaw.match(/"spanish"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const englishMatch = cleanRaw.match(/"english"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const followUpMatch = cleanRaw.match(/"followUp"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const spanish = cleanField(spanishMatch?.[1] ?? "");
+        const english = cleanField(englishMatch?.[1] ?? "");
+        const followUp = cleanField(followUpMatch?.[1] ?? "");
+        if (spanish || english) {
+          res.json({ reply: spanish || english, spanish, english, followUp });
+        } else {
+          // Last resort — return the raw text, stripped of JSON artifacts
+          const stripped = cleanRaw.replace(/^\{[\s\S]*\}$/, "").trim() || cleanRaw;
+          res.json({ reply: stripped, spanish: "", english: "", followUp: "" });
+        }
       }
     } catch (error) {
       console.error("BMA chat error:", error);
