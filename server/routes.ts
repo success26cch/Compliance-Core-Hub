@@ -3973,8 +3973,14 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (!text || typeof text !== "string") {
         return res.status(400).json({ message: "Text is required" });
       }
-      const trimmed = text.slice(0, 4000);
-      const audioBuffer = await textToSpeech(trimmed, voice as any, "mp3");
+      const trimmed = text.slice(0, 2000);
+      const mp3Response = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: voice as any,
+        input: trimmed,
+        response_format: "mp3",
+      });
+      const audioBuffer = Buffer.from(await mp3Response.arrayBuffer());
       res.set({
         "Content-Type": "audio/mpeg",
         "Content-Length": audioBuffer.length.toString(),
