@@ -172,19 +172,19 @@ export default function TryCorey() {
     const voices = cachedVoicesRef.current.length > 0
       ? cachedVoicesRef.current
       : window.speechSynthesis.getVoices();
-    const naturalVoiceNames = [
-      'Samantha', 'Karen', 'Daniel', 'Moira', 'Tessa', 'Rishi',
-      'Google UK English Female', 'Google UK English Male',
-      'Google US English', 'Microsoft Aria', 'Microsoft Guy',
-      'Microsoft Jenny', 'Microsoft Davis', 'Microsoft Sara',
-      'English (America)+Aria', 'en-US-AriaNeural', 'en-US-JennyNeural',
+    const maleVoiceNames = [
+      'Daniel', 'Alex', 'Fred', 'Tom', 'Lee', 'Rishi',
+      'Google UK English Male',
+      'Microsoft Guy', 'Microsoft Davis', 'Microsoft Christopher', 'Microsoft Mark', 'Microsoft Ryan',
+      'en-US-GuyNeural', 'en-US-DavisNeural', 'en-US-ChristopherNeural', 'en-GB-RyanNeural',
     ];
+    const femaleVoiceNames = ['Samantha', 'Karen', 'Moira', 'Tessa', 'Victoria', 'Aria', 'Jenny',
+      'Google UK English Female', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Sara'];
     const enVoices = voices.filter(v => v.lang.startsWith('en'));
-    const preferred = enVoices.find(v => naturalVoiceNames.some(n => v.name.includes(n)))
-      || enVoices.find(v => v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Premium'))
-      || enVoices.find(v => v.name.includes('Google'))
-      || enVoices.find(v => v.name.includes('Microsoft'))
-      || enVoices[0];
+    const maleByKeyword = enVoices.find(v => v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female'));
+    const maleByName = enVoices.find(v => maleVoiceNames.some(n => v.name.includes(n)));
+    const notFemale = enVoices.find(v => !femaleVoiceNames.some(n => v.name.includes(n)));
+    const preferred = maleByKeyword || maleByName || notFemale || enVoices[0];
     if (preferred) utterance.voice = preferred;
 
     utterance.onend = () => {
