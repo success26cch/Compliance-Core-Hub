@@ -682,6 +682,7 @@ interface BmaChatMessage {
   content: string;
   speaker?: "provider" | "patient";
   spanish?: string;
+  followUp?: string;
 }
 
 const BMA_CONTEXT_OPTIONS = [
@@ -806,6 +807,7 @@ function BmaInteractiveChatMode() {
           role: "assistant",
           content: data.reply || data.spanish || data.english || "",
           spanish: data.spanish || "",
+          followUp: data.followUp || "",
         };
         setMessages(prev => [...prev, assistantMsg]);
 
@@ -1086,13 +1088,21 @@ function BmaInteractiveChatMode() {
                 </span>
               )}
               {msg.role === "assistant" ? (
-                <div className="text-sm text-white whitespace-pre-wrap leading-relaxed" data-testid={`bma-chat-response-${i}`}>
-                  {msg.content.split(/(\*\*[^*]+\*\*)/).map((part, pi) => {
-                    if (part.startsWith("**") && part.endsWith("**")) {
-                      return <span key={pi} className="font-bold text-[#FFC107]">{part.slice(2, -2)}</span>;
-                    }
-                    return <span key={pi}>{part}</span>;
-                  })}
+                <div className="space-y-2">
+                  <div className="text-sm text-white whitespace-pre-wrap leading-relaxed" data-testid={`bma-chat-response-${i}`}>
+                    {msg.content.split(/(\*\*[^*]+\*\*)/).map((part, pi) => {
+                      if (part.startsWith("**") && part.endsWith("**")) {
+                        return <span key={pi} className="font-bold text-[#FFC107]">{part.slice(2, -2)}</span>;
+                      }
+                      return <span key={pi}>{part}</span>;
+                    })}
+                  </div>
+                  {msg.followUp && (
+                    <div className="rounded-md bg-blue-900/30 border border-blue-500/30 px-3 py-2">
+                      <span className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold block mb-0.5">Provider Insight</span>
+                      <p className="text-xs text-blue-200 leading-relaxed">{msg.followUp}</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-white" data-testid={`bma-chat-input-${i}`}>

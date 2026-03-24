@@ -209,13 +209,14 @@ CRITICAL RESPONSE FORMAT: You MUST respond in valid JSON with ONLY these fields:
 {
   "spanish": "The Spanish translation to speak to the patient. Plain Spanish text only — no quotes, no labels, no markdown, no symbols. Empty string if patient is speaking.",
   "english": "The English translation for the provider to read. Plain English text only — no quotes, no labels, no markdown, no symbols. Empty string if provider is speaking.",
-  "followUp": "One brief suggested follow-up question in English, or empty string if none needed."
+  "followUp": "Provider Insight (English only): When the patient has spoken, briefly summarize what they appear to be communicating clinically, then suggest one specific question or next step the provider should take. Example: 'Patient describes sharp left-side lower back pain starting after a lift. Consider asking: Does the pain radiate down the leg?' — When the provider has spoken, suggest a relevant follow-up or flag anything clinically important. Keep it to 1-2 sentences. Empty string only if there is truly nothing useful to add."
 }
 
 Rules:
 - No display field. No verbose headers. No 'Provider asked:' or 'Translation to Patient:' labels.
 - No arrow symbols (→), no escaped quotes, no markdown formatting.
 - spanish and english fields must contain ONLY the clean translated text, nothing else.
+- followUp must always be plain English text, never empty unless there is truly nothing useful.
 - Always return valid JSON. No markdown code blocks. Just the raw JSON object.`;
 
   app.post("/api/bma-chat", async (req, res) => {
