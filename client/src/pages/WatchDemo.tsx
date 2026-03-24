@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react";
+import { Play, Pause, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart, RefreshCw } from "lucide-react";
 import logoUrl from "@assets/1_1770683748423.png";
 
 const HIGHLIGHTS = [
@@ -22,11 +22,30 @@ export default function WatchDemo() {
   const [hasStarted, setHasStarted] = useState(false);
   const [error, setError] = useState(false);
 
+  // Set muted via ref — React's `muted` JSX prop doesn't render as an HTML
+  // attribute due to a long-standing React bug, which causes iOS Safari to
+  // immediately fire onError on unmuted video before any user gesture.
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+    }
+  }, []);
+
+  const retry = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    setError(false);
+    v.load();
+  };
+
   const toggle = () => {
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().then(() => { setPlaying(true); setHasStarted(true); }).catch(() => {});
+      v.muted = true; // ensure muted before play attempt (iOS requirement)
+      v.play()
+        .then(() => { setPlaying(true); setHasStarted(true); setError(false); })
+        .catch(() => {});
     } else {
       v.pause();
       setPlaying(false);
@@ -36,6 +55,7 @@ export default function WatchDemo() {
   const goFullscreen = () => {
     const v = videoRef.current;
     if (!v) return;
+    // iOS Safari uses webkitEnterFullscreen; all others use requestFullscreen
     if ((v as any).webkitEnterFullscreen) {
       (v as any).webkitEnterFullscreen();
     } else {
@@ -90,9 +110,8 @@ export default function WatchDemo() {
             ref={videoRef}
             src="/api/demo-video"
             playsInline
-            muted
             preload="metadata"
-            onPlay={() => { setPlaying(true); setHasStarted(true); }}
+            onPlay={() => { setPlaying(true); setHasStarted(true); setError(false); }}
             onPause={() => setPlaying(false)}
             onEnded={() => setPlaying(false)}
             onError={() => setError(true)}
@@ -101,7 +120,7 @@ export default function WatchDemo() {
             data-testid="video-demo"
           />
 
-          {/* Tap-to-play overlay — covers the whole player until started */}
+          {/* Tap-to-play overlay — visible until video starts */}
           {!hasStarted && !error && (
             <div
               className="absolute inset-0 flex items-center justify-center cursor-pointer"
@@ -114,12 +133,20 @@ export default function WatchDemo() {
             </div>
           )}
 
-          {/* Error state */}
+          {/* Error / retry state */}
           {error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-              <p className="text-white/60 text-sm text-center px-6">
-                Unable to load video. Please try on a faster connection or desktop browser.
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 gap-4">
+              <p className="text-white/70 text-sm text-center px-6">
+                Tap to retry loading the video.
               </p>
+              <button
+                onClick={retry}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent text-white text-sm font-semibold"
+                data-testid="button-video-retry"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Retry
+              </button>
             </div>
           )}
 
