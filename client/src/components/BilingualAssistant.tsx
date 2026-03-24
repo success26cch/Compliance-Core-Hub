@@ -1360,7 +1360,7 @@ function InjuryReportingMode() {
 
       <div>
         <label className="text-xs text-gray-100 mb-2 block">Body Part Affected / Parte del cuerpo afectada</label>
-        <div className="flex gap-2 mb-2">
+        <div className="flex flex-wrap gap-2 mb-2">
           {["upper", "torso", "lower"].map((r) => (
             <Button
               key={r}
@@ -1432,7 +1432,7 @@ function InjuryReportingMode() {
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
           <label className="text-xs text-gray-100 block">
             Description / Descripción
             <span className="ml-2 text-[#FFC107]/70 text-[10px] font-normal">
@@ -1503,7 +1503,7 @@ function InjuryReportingMode() {
 
       <div>
         <label className="text-xs text-gray-100 mb-1 block">Witnessed? / ¿Hubo testigos?</label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {["Yes / Sí", "No", "Unknown / Desconocido"].map((opt) => (
             <Button
               key={opt}
@@ -1706,7 +1706,7 @@ function NewHireIntakeMode() {
 
       {step === 0 && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-100 mb-1 block">First Name / Nombre</label>
               <Input className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500" placeholder="Nombre" value={data.firstName} onChange={(e) => setData({ ...data, firstName: e.target.value })} data-testid="input-intake-firstname" />
@@ -1774,7 +1774,7 @@ function NewHireIntakeMode() {
             <br />
             <span className="text-gray-100 text-xs">Do you have any of the following conditions?</span>
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {conditionsList.map((c) => (
               <button
                 key={c.en}
@@ -2039,7 +2039,7 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
           </p>
         </div>
 
-        <div className="flex justify-center gap-2 mb-6">
+        <div className="flex flex-wrap justify-center gap-2 mb-6">
           {modes.map((m) => (
             <Button
               key={m.key}
@@ -2052,13 +2052,12 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
               data-testid={`btn-mode-${m.key}`}
             >
               <m.icon className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">{m.label}</span>
-              <span className="sm:hidden">{m.labelEs}</span>
+              {m.label}
             </Button>
           ))}
         </div>
 
-        <Card className="bg-[hsl(222,47%,14%)] border-gray-700 p-6">
+        <Card className="bg-[hsl(222,47%,14%)] border-gray-700 p-3 sm:p-6">
           {mode === "injury" && <InjuryReportingMode />}
           {mode === "intake" && <NewHireIntakeMode />}
           {mode === "drugscreen" && <DrugScreenMode />}
