@@ -685,10 +685,8 @@ interface BmaChatMessage {
 
 const BMA_CONTEXT_OPTIONS = [
   { value: "dot-physical", label: "DOT Physical" },
-  { value: "drug-screen", label: "Drug & Alcohol Testing" },
   { value: "injury-report", label: "Injury Reporting" },
   { value: "work-restrictions", label: "Work Restrictions" },
-  { value: "respiratory-exam", label: "Respiratory / PFT" },
   { value: "blood-draw", label: "Blood Draw / Lab Work" },
   { value: "general", label: "General Medical Visit" },
 ];
@@ -701,13 +699,6 @@ const CONTEXT_STARTERS: Record<string, { label: string; prompt: string }[]> = {
     { label: "Vision test", prompt: "I need to test your vision. Please read the smallest line you can see on the chart." },
     { label: "Blood pressure", prompt: "I am going to take your blood pressure. Please relax your arm and stay still." },
     { label: "Exam result", prompt: "Based on today's examination, you meet the medical standards required for commercial motor vehicle driving." },
-  ],
-  "drug-screen": [
-    { label: "Explain procedure", prompt: "We are going to collect a urine sample today for a drug and alcohol screen. This is required by your employer." },
-    { label: "Pre-collection", prompt: "Please empty your pockets and leave all personal belongings here. Do not flush or run water until I say it is okay." },
-    { label: "Collection instructions", prompt: "Fill the cup to at least the line marked on the side. Bring it back to me without putting a lid on it." },
-    { label: "Post-result", prompt: "Your drug screen results will be sent to a certified laboratory. Results are typically available within 24 to 72 hours." },
-    { label: "Refusal warning", prompt: "Refusing to provide a specimen is treated the same as a positive test result under federal regulations." },
   ],
   "injury-report": [
     { label: "Open visit", prompt: "Tell me what happened. Can you describe where you were and what you were doing when you got hurt?" },
@@ -722,13 +713,6 @@ const CONTEXT_STARTERS: Record<string, { label: string; prompt: string }[]> = {
     { label: "RTW instructions", prompt: "You are cleared to return to work with restrictions. Please give this form to your supervisor before starting your shift." },
     { label: "Full release", prompt: "I am clearing you to return to full duty with no restrictions as of today." },
     { label: "Employer communication", prompt: "A copy of your work restrictions will be sent to your employer's HR department and to the occupational health coordinator." },
-  ],
-  "respiratory-exam": [
-    { label: "Introduce spirometry", prompt: "We are going to perform a breathing test today called a spirometry. I need you to breathe in as deeply as possible and then blow out as hard and fast as you can." },
-    { label: "Effort instruction", prompt: "I need your best effort on this test. Breathe in all the way, then blast the air out completely and keep blowing until I say stop." },
-    { label: "Respirator question", prompt: "Do you have any difficulty breathing when you use a respirator or tight-fitting face piece at work?" },
-    { label: "Results explanation", prompt: "Your breathing test results are within the normal range. You are medically cleared to wear a respirator for your job duties." },
-    { label: "Follow-up", prompt: "Your results show reduced lung function. We need to repeat this test and you may need to see a specialist before I can clear you for respirator use." },
   ],
   "blood-draw": [
     { label: "Explain procedure", prompt: "I am going to draw a small amount of blood from your arm for lab testing. You may feel a small pinch when I insert the needle." },
@@ -970,7 +954,7 @@ function BmaInteractiveChatMode() {
         ))}
       </div>
 
-      {messages.length === 0 && CONTEXT_STARTERS[context] && (
+      {CONTEXT_STARTERS[context] && (
         <div className="rounded-md bg-gray-900/40 border border-gray-700/40 p-3 space-y-2">
           <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">
             Quick starters — {BMA_CONTEXT_OPTIONS.find(o => o.value === context)?.label}
