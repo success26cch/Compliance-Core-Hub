@@ -584,8 +584,14 @@ function cleanTextForTTS(text: string): string {
 
 function safeStopRecognition(ref: React.MutableRefObject<any>) {
   if (ref.current) {
-    try { ref.current.stop(); } catch { /* already stopped */ }
-    ref.current = null;
+    try {
+      const r = ref.current;
+      ref.current = null;   // clear the ref first
+      r.onresult = null;    // null ALL handlers BEFORE abort so onend
+      r.onend    = null;    // cannot fire and trigger an unwanted restart
+      r.onerror  = null;
+      r.abort();
+    } catch { /* already stopped */ }
   }
 }
 
@@ -828,26 +834,24 @@ function BmaInteractiveChatMode() {
   }, [messages, isLoading, context]);
 
   // ── Patient (Spanish) mic ──────────────────────────────────────────────────
-  // Chrome Android replays ALL results from index 0 on every onresult event.
-  // patientLastFinalRef tracks how many final results we've already consumed
-  // in the current session so we never append the same word twice.
+  // continuous:false = one utterance per session → Chrome Android cannot
+  // accumulate/replay a growing result list.
+  // safeStopRecognition nulls all handlers before abort → onend can never
+  // fire an unwanted restart after the user taps Stop.
   const startPatientRecognition = useCallback(() => {
-    const recognition = createRecognition("es-MX", true);
+    if (recognitionRef.current) return; // already running — do not double-start
+    const recognition = createRecognition("es-MX", false);
     if (!recognition) return;
     recognitionRef.current = recognition;
-    patientLastFinalRef.current = 0; // reset per-session counter
 
     recognition.onresult = (event: any) => {
+      // With continuous:false each session has exactly one utterance.
+      // We only append on isFinal so interim previews never duplicate.
       let interim = "";
-      const results = event.results;
-      // Only process results we haven't seen yet in this session
-      for (let i = patientLastFinalRef.current; i < results.length; i++) {
-        const t = results[i][0].transcript.trim();
-        if (results[i].isFinal) {
-          if (t) {
-            patientTranscriptRef.current += (patientTranscriptRef.current ? " " : "") + t;
-          }
-          patientLastFinalRef.current = i + 1; // mark as consumed
+      for (let i = 0; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript.trim();
+        if (event.results[i].isFinal) {
+          if (t) patientTranscriptRef.current += (patientTranscriptRef.current ? " " : "") + t;
           setPatientSpoken(patientTranscriptRef.current);
         } else {
           interim = t;
@@ -861,7 +865,8 @@ function BmaInteractiveChatMode() {
     };
 
     recognition.onend = () => {
-      recognitionRef.current = null;
+      // Only restart if this is still the active session (not replaced by safeStop)
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
       if (patientShouldListenRef.current) {
         setTimeout(() => {
           if (patientShouldListenRef.current) startPatientRecognition();
@@ -875,7 +880,7 @@ function BmaInteractiveChatMode() {
       if (!["no-speech", "aborted"].includes(event.error)) {
         console.warn("Patient mic error:", event.error);
       }
-      recognitionRef.current = null;
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
       if (patientShouldListenRef.current && event.error !== "not-allowed") {
         setTimeout(() => {
           if (patientShouldListenRef.current) startPatientRecognition();
@@ -896,10 +901,10 @@ function BmaInteractiveChatMode() {
   const togglePatientListening = useCallback(() => {
     if (isListening) {
       patientShouldListenRef.current = false;
-      safeStopRecognition(recognitionRef);
+      safeStopRecognition(recognitionRef); // nulls handlers first → onend won't restart
       setIsListening(false);
     } else {
-      patientTranscriptRef.current = patientSpoken; // seed with any existing text
+      patientTranscriptRef.current = patientSpoken;
       patientShouldListenRef.current = true;
       setIsListening(true);
       startPatientRecognition();
@@ -908,21 +913,17 @@ function BmaInteractiveChatMode() {
 
   // ── Provider (English) mic ─────────────────────────────────────────────────
   const startProviderRecognition = useCallback(() => {
-    const recognition = createRecognition("en-US", true);
+    if (providerRecognitionRef.current) return; // guard against double-start
+    const recognition = createRecognition("en-US", false);
     if (!recognition) return;
     providerRecognitionRef.current = recognition;
-    providerLastFinalRef.current = 0; // reset per-session counter
 
     recognition.onresult = (event: any) => {
       let interim = "";
-      const results = event.results;
-      for (let i = providerLastFinalRef.current; i < results.length; i++) {
-        const t = results[i][0].transcript.trim();
-        if (results[i].isFinal) {
-          if (t) {
-            providerTranscriptRef.current += (providerTranscriptRef.current ? " " : "") + t;
-          }
-          providerLastFinalRef.current = i + 1;
+      for (let i = 0; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript.trim();
+        if (event.results[i].isFinal) {
+          if (t) providerTranscriptRef.current += (providerTranscriptRef.current ? " " : "") + t;
           setProviderInput(providerTranscriptRef.current);
         } else {
           interim = t;
@@ -936,7 +937,7 @@ function BmaInteractiveChatMode() {
     };
 
     recognition.onend = () => {
-      providerRecognitionRef.current = null;
+      if (providerRecognitionRef.current === recognition) providerRecognitionRef.current = null;
       if (providerShouldListenRef.current) {
         setTimeout(() => {
           if (providerShouldListenRef.current) startProviderRecognition();
@@ -950,7 +951,7 @@ function BmaInteractiveChatMode() {
       if (!["no-speech", "aborted"].includes(event.error)) {
         console.warn("Provider mic error:", event.error);
       }
-      providerRecognitionRef.current = null;
+      if (providerRecognitionRef.current === recognition) providerRecognitionRef.current = null;
       if (providerShouldListenRef.current && event.error !== "not-allowed") {
         setTimeout(() => {
           if (providerShouldListenRef.current) startProviderRecognition();
