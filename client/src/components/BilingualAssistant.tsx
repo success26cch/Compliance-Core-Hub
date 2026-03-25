@@ -179,6 +179,7 @@ import {
   Briefcase,
   Activity,
   UserCheck,
+  MapPin,
 } from "lucide-react";
 
 type Mode = "injury" | "intake" | "drugscreen";
@@ -1708,17 +1709,25 @@ function InjuryReportingMode() {
         </div>
       </div>
 
-      <div>
-        <label className="text-xs text-gray-100 mb-2 block">Body Part Affected / Parte del cuerpo afectada</label>
-        <div className="flex flex-wrap gap-2 mb-2">
+      <div className="rounded-xl border-2 border-[#FFC107]/40 bg-[#FFC107]/5 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 rounded-full bg-[#FFC107] flex items-center justify-center flex-shrink-0">
+            <MapPin className="w-4 h-4 text-black" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-[#FFC107] uppercase tracking-wide">Interactive Body Map</p>
+            <p className="text-xs text-gray-400">Tap a region, then tap the injured body part(s)</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-3">
           {["upper", "torso", "lower"].map((r) => (
             <Button
               key={r}
               size="sm"
               variant={bodyRegion === r ? "default" : "outline"}
               className={bodyRegion === r
-                ? "bg-[#FFC107] text-black"
-                : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black"
+                ? "bg-[#FFC107] text-black font-bold"
+                : "bg-gray-700 text-white border-gray-600 hover:bg-[#FFC107] hover:text-black"
               }
               onClick={() => setBodyRegion(r)}
               data-testid={`btn-region-${r}`}
@@ -1952,14 +1961,29 @@ function InjuryReportingMode() {
         </div>
       </div>
 
-      <Button
-        className="w-full bg-[#FFC107] text-black font-semibold"
-        onClick={() => setShowSummary(true)}
-        disabled={!data.employeeName || data.bodyParts.length === 0}
-        data-testid="btn-generate-injury-report"
-      >
-        Generate Report <ChevronRight className="w-4 h-4 ml-1" />
-      </Button>
+      <div className="rounded-xl border-2 border-[#FFC107] bg-[#FFC107]/10 p-4 text-center">
+        <Printer className="w-6 h-6 text-[#FFC107] mx-auto mb-2" />
+        <p className="text-sm font-bold text-white mb-1">Generate Printable Clinical Summary</p>
+        <p className="text-xs text-gray-400 mb-3">
+          {!data.employeeName && !data.bodyParts.length
+            ? "Enter employee name and select at least one body part to continue"
+            : !data.employeeName
+            ? "Enter employee name above to continue"
+            : data.bodyParts.length === 0
+            ? "Select at least one body part in the map above"
+            : "Ready — tap to view the bilingual summary and print"}
+        </p>
+        <Button
+          size="lg"
+          className="w-full bg-[#FFC107] text-black font-bold text-base"
+          onClick={() => setShowSummary(true)}
+          disabled={!data.employeeName || data.bodyParts.length === 0}
+          data-testid="btn-generate-injury-report"
+        >
+          <FileText className="w-5 h-5 mr-2" />
+          View Summary &amp; Print Report
+        </Button>
+      </div>
     </div>
   );
 }
@@ -2637,7 +2661,7 @@ interface BilingualAssistantProps {
 
 export default function BilingualAssistant({ prefilledName, prefilledCompany }: BilingualAssistantProps = {}) {
   const { isAuthenticated } = useAuth();
-  const [mode, setMode] = useState<Mode>("intake");
+  const [mode, setMode] = useState<Mode>("injury");
   const [gateState, setGateState] = useState<{ triedModes: string[]; unlocked: boolean }>(getBmaGateState);
   const [showGate, setShowGate] = useState(false);
   const gateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2730,25 +2754,36 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
           </div>
         )}
 
-        <div className="flex flex-wrap justify-center gap-2 mb-6">
-          {modes.map((m) => (
-            <Button
-              key={m.key}
-              variant={mode === m.key ? "default" : "outline"}
-              className={mode === m.key
-                ? "bg-[#FFC107] text-black font-bold"
-                : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black font-semibold"
-              }
-              onClick={() => handleModeChange(m.key)}
-              data-testid={`btn-mode-${m.key}`}
-            >
-              <m.icon className="w-4 h-4 mr-1.5" />
-              {m.label}
-              {!isUnlocked && gateState.triedModes.includes(m.key) && (
-                <CheckCircle2 className="w-3 h-3 ml-1 text-green-400 opacity-80" />
-              )}
-            </Button>
-          ))}
+        <div className="mb-6">
+          <p className="text-center text-xs font-bold uppercase tracking-widest text-[#FFC107] mb-3 flex items-center justify-center gap-2">
+            <span>— SELECT VISIT TYPE —</span>
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {modes.map((m) => (
+              <Button
+                key={m.key}
+                size="lg"
+                variant={mode === m.key ? "default" : "outline"}
+                className={mode === m.key
+                  ? "bg-[#FFC107] text-black font-bold text-sm px-5"
+                  : "bg-[#F57C00] text-white border-[#F57C00] hover:bg-[#FFC107] hover:text-black font-semibold text-sm px-5"
+                }
+                onClick={() => handleModeChange(m.key)}
+                data-testid={`btn-mode-${m.key}`}
+              >
+                <m.icon className="w-4 h-4 mr-1.5" />
+                {m.label}
+                {!isUnlocked && gateState.triedModes.includes(m.key) && (
+                  <CheckCircle2 className="w-3 h-3 ml-1 text-green-400 opacity-80" />
+                )}
+              </Button>
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-2">
+            {mode === "injury" && "Fill out the injury form → select body parts → generate a printable report"}
+            {mode === "intake" && "Step-by-step new hire bilingual intake form"}
+            {mode === "drugscreen" && "DOT-compliant drug screen instructions in Spanish"}
+          </p>
         </div>
 
         <div className="relative">

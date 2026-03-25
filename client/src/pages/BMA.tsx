@@ -8,7 +8,8 @@ import { useState } from "react";
 import {
   CheckCircle2, ArrowRight, Languages, Stethoscope, Calculator,
   DollarSign, Mic, Volume2, Printer, FileText,
-  MessageSquare, TrendingUp, ShoppingCart, Play
+  MessageSquare, TrendingUp, ShoppingCart, Play,
+  AlertTriangle, UserPlus, FlaskConical
 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { PRODUCTS } from "@/lib/products";
@@ -182,19 +183,42 @@ export default function BMA() {
         </section>
 
         <section id="demo" className="relative">
-          <div className="bg-[hsl(222,47%,11%)] border-b border-white/10 py-3 px-4">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-                <Badge className="bg-accent text-black font-bold text-xs px-3 py-1">LIVE DEMO</Badge>
-                <span className="text-white font-semibold text-sm">Spanish Bilingual Medical Assistant</span>
-                <span className="text-white/40 hidden sm:inline">—</span>
-                <span className="text-accent font-bold text-sm">Try it free, right now</span>
+          <div className="bg-[hsl(222,47%,8%)] border-y border-white/10 py-5 px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <Badge className="bg-accent text-black font-bold text-xs px-3 py-1">LIVE DEMO</Badge>
+                  <span className="text-white font-bold text-base">Spanish Bilingual Medical Assistant</span>
+                </div>
+                <a href="#pricing">
+                  <Button size="sm" className="bg-accent text-black font-semibold whitespace-nowrap" data-testid="button-bma-demo-subscribe">
+                    Subscribe — $199/mo
+                  </Button>
+                </a>
               </div>
-              <a href="#pricing">
-                <Button size="sm" className="bg-accent text-black font-semibold whitespace-nowrap" data-testid="button-bma-demo-subscribe">
-                  Subscribe — $199/mo
-                </Button>
-              </a>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex items-start gap-3 bg-white/5 rounded-lg px-4 py-3 border border-white/10">
+                  <AlertTriangle className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-semibold text-sm">Injury Reporting</p>
+                    <p className="text-white/50 text-xs">Interactive body map + printable bilingual report</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-white/5 rounded-lg px-4 py-3 border border-white/10">
+                  <UserPlus className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-semibold text-sm">New Hire Intake</p>
+                    <p className="text-white/50 text-xs">Step-by-step bilingual onboarding form</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-white/5 rounded-lg px-4 py-3 border border-white/10">
+                  <FlaskConical className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-semibold text-sm">Drug Screen</p>
+                    <p className="text-white/50 text-xs">DOT-compliant step-by-step instructions</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
