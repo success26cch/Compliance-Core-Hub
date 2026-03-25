@@ -133,8 +133,8 @@ export default function BMA() {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white leading-tight mb-6" data-testid="text-bma-hero-title">
-              Your Employees/Patients Speak Spanish.<br />
-              <span style={{ color: "#38bdf8" }}>Now Your Clinic Does Too.</span>
+              Because Your Occupational Health Employees Speak Spanish.<br />
+              <span style={{ color: "#38bdf8" }}>And So Do Your Patients.</span>
             </h1>
 
             <p className="text-lg md:text-xl text-white/60 max-w-3xl mx-auto leading-relaxed mb-8">
