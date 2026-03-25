@@ -751,10 +751,15 @@ function BmaInteractiveChatMode() {
   const providerRecognitionRef = useRef<any>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Refs that hold accumulated transcripts — avoids stale closure duplication on mobile
+  // Accumulated transcript refs — written directly, not via state, to avoid stale closures
   const patientTranscriptRef = useRef("");
   const providerTranscriptRef = useRef("");
-  // Refs to track desired listening state so mobile auto-restart works correctly
+  // Track how many final results have been consumed in the CURRENT session.
+  // Chrome Android replays ALL results from index 0 on every onresult event —
+  // this ref prevents already-processed results from being appended again.
+  const patientLastFinalRef = useRef(0);
+  const providerLastFinalRef = useRef(0);
+  // Whether the user wants the mic to stay on (drives auto-restart on mobile)
   const patientShouldListenRef = useRef(false);
   const providerShouldListenRef = useRef(false);
 
@@ -823,37 +828,44 @@ function BmaInteractiveChatMode() {
   }, [messages, isLoading, context]);
 
   // ── Patient (Spanish) mic ──────────────────────────────────────────────────
+  // Chrome Android replays ALL results from index 0 on every onresult event.
+  // patientLastFinalRef tracks how many final results we've already consumed
+  // in the current session so we never append the same word twice.
   const startPatientRecognition = useCallback(() => {
-    // continuous:true keeps the session alive on desktop; on mobile it still
-    // fires onend after silence — we auto-restart from onend when needed.
     const recognition = createRecognition("es-MX", true);
     if (!recognition) return;
     recognitionRef.current = recognition;
+    patientLastFinalRef.current = 0; // reset per-session counter
 
     recognition.onresult = (event: any) => {
       let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          // Append only — ref accumulates across restarts, no stale closure duplication
-          patientTranscriptRef.current += (patientTranscriptRef.current ? " " : "") + t.trim();
+      const results = event.results;
+      // Only process results we haven't seen yet in this session
+      for (let i = patientLastFinalRef.current; i < results.length; i++) {
+        const t = results[i][0].transcript.trim();
+        if (results[i].isFinal) {
+          if (t) {
+            patientTranscriptRef.current += (patientTranscriptRef.current ? " " : "") + t;
+          }
+          patientLastFinalRef.current = i + 1; // mark as consumed
           setPatientSpoken(patientTranscriptRef.current);
         } else {
           interim = t;
         }
       }
       if (interim) {
-        setPatientSpoken(patientTranscriptRef.current + (patientTranscriptRef.current ? " " : "") + interim);
+        setPatientSpoken(
+          patientTranscriptRef.current + (patientTranscriptRef.current ? " " : "") + interim
+        );
       }
     };
 
     recognition.onend = () => {
       recognitionRef.current = null;
       if (patientShouldListenRef.current) {
-        // Mobile: browser killed the session — restart after brief pause
         setTimeout(() => {
           if (patientShouldListenRef.current) startPatientRecognition();
-        }, 250);
+        }, 200);
       } else {
         setIsListening(false);
       }
@@ -867,7 +879,7 @@ function BmaInteractiveChatMode() {
       if (patientShouldListenRef.current && event.error !== "not-allowed") {
         setTimeout(() => {
           if (patientShouldListenRef.current) startPatientRecognition();
-        }, 350);
+        }, 300);
       } else {
         patientShouldListenRef.current = false;
         setIsListening(false);
@@ -887,8 +899,7 @@ function BmaInteractiveChatMode() {
       safeStopRecognition(recognitionRef);
       setIsListening(false);
     } else {
-      // Reset accumulated transcript for a fresh recording session
-      patientTranscriptRef.current = patientSpoken;
+      patientTranscriptRef.current = patientSpoken; // seed with any existing text
       patientShouldListenRef.current = true;
       setIsListening(true);
       startPatientRecognition();
@@ -900,20 +911,27 @@ function BmaInteractiveChatMode() {
     const recognition = createRecognition("en-US", true);
     if (!recognition) return;
     providerRecognitionRef.current = recognition;
+    providerLastFinalRef.current = 0; // reset per-session counter
 
     recognition.onresult = (event: any) => {
       let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          providerTranscriptRef.current += (providerTranscriptRef.current ? " " : "") + t.trim();
+      const results = event.results;
+      for (let i = providerLastFinalRef.current; i < results.length; i++) {
+        const t = results[i][0].transcript.trim();
+        if (results[i].isFinal) {
+          if (t) {
+            providerTranscriptRef.current += (providerTranscriptRef.current ? " " : "") + t;
+          }
+          providerLastFinalRef.current = i + 1;
           setProviderInput(providerTranscriptRef.current);
         } else {
           interim = t;
         }
       }
       if (interim) {
-        setProviderInput(providerTranscriptRef.current + (providerTranscriptRef.current ? " " : "") + interim);
+        setProviderInput(
+          providerTranscriptRef.current + (providerTranscriptRef.current ? " " : "") + interim
+        );
       }
     };
 
@@ -922,7 +940,7 @@ function BmaInteractiveChatMode() {
       if (providerShouldListenRef.current) {
         setTimeout(() => {
           if (providerShouldListenRef.current) startProviderRecognition();
-        }, 250);
+        }, 200);
       } else {
         setIsProviderListening(false);
       }
@@ -936,7 +954,7 @@ function BmaInteractiveChatMode() {
       if (providerShouldListenRef.current && event.error !== "not-allowed") {
         setTimeout(() => {
           if (providerShouldListenRef.current) startProviderRecognition();
-        }, 350);
+        }, 300);
       } else {
         providerShouldListenRef.current = false;
         setIsProviderListening(false);
