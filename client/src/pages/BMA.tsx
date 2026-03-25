@@ -16,7 +16,7 @@ import { PRODUCTS } from "@/lib/products";
 import { CartTrigger } from "@/components/CartDrawer";
 import BilingualAssistant from "@/components/BilingualAssistant";
 import logoUrl from "@assets/1_1767636977932.png";
-import cchLogo from "@assets/1_1770683748423.png";
+import cchLogo from "@assets/8_1774401539830.png";
 
 export default function BMA() {
   const { isAuthenticated } = useAuth();
@@ -129,7 +129,7 @@ export default function BMA() {
             </Badge>
 
             <div className="flex justify-center mb-6">
-              <img src={cchLogo} alt="CCHUB" className="h-20 md:h-24 w-auto" data-testid="img-bma-hero-logo" />
+              <img src={cchLogo} alt="CCHUB" className="h-40 md:h-48 w-auto" data-testid="img-bma-hero-logo" />
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white leading-tight mb-6" data-testid="text-bma-hero-title">
