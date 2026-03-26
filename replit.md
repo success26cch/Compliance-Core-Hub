@@ -88,7 +88,9 @@ All email logic lives in `server/emailService.ts`. Uses MailerSend REST API (`ht
 **Admin emails:** `raulv9471@gmail.com`, `evillarreal@acsi-quality.com`
 **All sends are fire-and-forget** — wrapped in try/catch; email failures never block the primary action.
 
-## Pending Payment Infrastructure (On Hold — Awaiting Decision)
-- **Payment processor decision pending:** Owner is evaluating **Paddle** as the payment/invoicing platform instead of Stripe. Paddle acts as Merchant of Record (handles sales tax, VAT automatically) and supports native invoicing with Net payment terms. Once confirmed, replace Stripe integration with Paddle API keys (no Replit connector exists for Paddle — use API keys directly).
-- **Invoice billing (Net 30):** Plan is to add a "Request Invoice Billing" form on the Get Started/pricing page. Captures company name, billing contact, email, PO number, and desired plan. Sends admin notification; admin creates invoice in Paddle with Net 30 terms. Customer pays via Paddle-generated payment link.
-- **Account suspension for non-payment:** Architecture is ready — `PlatformGate` (frontend) and `requirePlatformAccess` (backend) already gate all protected features. Add a `suspended` boolean to `company_profiles`, check it in both gate points. Flip to suspend on non-payment, flip back to reinstate. Automatable via scheduled overdue check. Grace period configurable.
+## Payment Infrastructure — Paddle Migration (IN PROGRESS — coming within days)
+- **Decision confirmed:** Replacing Stripe with **Paddle** as Merchant of Record. Paddle handles sales tax, VAT, and invoicing automatically. No Replit connector — use Paddle API keys directly.
+- **Migration plan:** Remove all Stripe code and replace with Paddle Billing API. Owner has Paddle integration code ready (from Gemini). When ready: add `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` environment secrets, install Paddle SDK, replace checkout flows.
+- **Invoice billing (Net 30):** Add a "Request Invoice Billing" form on Get Started/pricing page. Captures company name, billing contact, email, PO number, desired plan. Admin notification sent; admin creates invoice in Paddle with Net 30 terms. Customer pays via Paddle-generated payment link.
+- **Account suspension for non-payment:** Architecture already ready — `PlatformGate` (frontend) and `requirePlatformAccess` (backend) gate all protected features. Add `suspended` boolean to `company_profiles`, check in both gate points. Flip to suspend on non-payment, reinstate on payment. Grace period configurable.
+- **Do not touch Stripe code until owner provides the Paddle integration code to implement.**
