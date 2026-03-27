@@ -1481,6 +1481,189 @@ function DocumentGapCheck() {
   );
 }
 
+// ─── INCIDENT PIPELINE SHOWCASE ──────────────────────────────────────────────
+function IncidentPipelineShowcase() {
+  const [, setLocation] = useLocation();
+
+  const steps = [
+    {
+      num: "01",
+      icon: <ClipboardList className="w-6 h-6" />,
+      color: "text-primary",
+      bg: "bg-primary/10",
+      border: "border-primary/20",
+      title: "Log It or Not?",
+      subtitle: "OSHA Recordability Decision Tree",
+      desc: "5-question instant assessment — Corey tells you in seconds if the injury is OSHA recordable under 29 CFR 1904.",
+      tag: "< 2 min",
+      tagColor: "bg-primary/10 text-primary",
+      href: "/decision-tree",
+    },
+    {
+      num: "02",
+      icon: <FileWarning className="w-6 h-6" />,
+      color: "text-accent",
+      bg: "bg-accent/10",
+      border: "border-accent/20",
+      title: "Incident Report Filed",
+      subtitle: "OSHA 300 Log Entry Created",
+      desc: "Full case documentation — body diagram, root cause, injury type, lost days, and case outcome. Fed directly into your OSHA 300 report.",
+      tag: "Auto-documented",
+      tagColor: "bg-accent/10 text-accent",
+      href: "/incidents",
+    },
+    {
+      num: "03",
+      icon: <Target className="w-6 h-6" />,
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/20",
+      title: "CAPA Auto-Created",
+      subtitle: "Corrective Action Assigned",
+      desc: "A corrective action plan fires automatically. Responsible party is assigned, due date is set, and an SMS notification is sent — no manual steps.",
+      tag: "SMS fired",
+      tagColor: "bg-orange-500/10 text-orange-600",
+      href: "/incidents",
+    },
+    {
+      num: "04",
+      icon: <Mail className="w-6 h-6" />,
+      color: "text-emerald-600",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+      title: "Workers' Comp Notified",
+      subtitle: "Email Sent Automatically",
+      desc: "Your Workers' Comp carrier, DER, and company admin are notified by email the moment the incident is logged — before a claim even starts.",
+      tag: "Zero manual emails",
+      tagColor: "bg-emerald-500/10 text-emerald-700",
+      href: "/incidents",
+    },
+  ];
+
+  return (
+    <div
+      className="rounded-2xl border border-border/60 overflow-hidden bg-white shadow-sm"
+      data-testid="incident-pipeline-showcase"
+    >
+      {/* Header band */}
+      <div className="bg-gradient-to-r from-primary to-primary/80 px-5 py-4 md:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className="w-4 h-4 text-accent" />
+              <span className="text-xs font-bold uppercase tracking-widest text-accent">Powered by CCHUB</span>
+            </div>
+            <h2 className="text-lg md:text-xl font-bold text-white leading-tight">
+              The Incident Pipeline
+            </h2>
+            <p className="text-sm text-white/70 mt-0.5">
+              Decision → Documentation → Action → Notification — fully automated
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-xs font-semibold text-white">0 manual steps</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
+              <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+              <span className="text-xs font-semibold text-white">100% documented</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pipeline steps */}
+      <div className="p-5 md:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-0">
+          {steps.map((step, idx) => (
+            <div key={step.num} className="flex lg:flex-col items-start gap-3 lg:items-stretch">
+              {/* Step card */}
+              <div
+                className={`flex-1 lg:flex-none relative p-4 rounded-xl border ${step.border} bg-white hover:shadow-md transition-all duration-200 cursor-pointer group`}
+                onClick={() => setLocation(step.href)}
+                data-testid={`pipeline-step-${idx + 1}`}
+              >
+                {/* Number + icon row */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-10 h-10 rounded-xl ${step.bg} flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                    <span className={step.color}>{step.icon}</span>
+                  </div>
+                  <span className={`text-2xl font-black ${step.color} opacity-20 leading-none`}>{step.num}</span>
+                </div>
+
+                {/* Content */}
+                <p className="text-sm font-bold text-primary leading-tight">{step.title}</p>
+                <p className={`text-xs font-semibold mt-0.5 ${step.color}`}>{step.subtitle}</p>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{step.desc}</p>
+
+                {/* Tag */}
+                <div className={`inline-flex items-center gap-1 mt-3 px-2 py-0.5 rounded-full text-xs font-semibold ${step.tagColor}`}>
+                  <CheckCircle2 className="w-3 h-3" />
+                  {step.tag}
+                </div>
+              </div>
+
+              {/* Connector arrow (between steps, not after last) */}
+              {idx < steps.length - 1 && (
+                <div className="hidden lg:flex items-center justify-center w-6 shrink-0 self-center mt-[-12px]">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="w-px h-3 bg-border" />
+                    <ChevronRight className="w-4 h-4 text-accent" />
+                    <div className="w-px h-3 bg-border" />
+                  </div>
+                </div>
+              )}
+              {/* Mobile connector */}
+              {idx < steps.length - 1 && (
+                <div className="lg:hidden flex items-center justify-center h-6 w-full -my-1">
+                  <div className="flex items-center gap-1">
+                    <div className="h-px w-8 bg-border" />
+                    <ChevronRight className="w-3.5 h-3.5 text-accent rotate-90 sm:rotate-0" />
+                    <div className="h-px w-8 bg-border" />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom CTA row */}
+        <div className="mt-5 pt-4 border-t border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-primary">Your company can't afford to skip this.</p>
+            <p className="text-xs text-muted-foreground">
+              Every unlogged incident is OSHA exposure. Every missing CAPA is a repeat injury waiting to happen.
+              Every late workers' comp notification costs you money. CCHUB handles all of it — automatically.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+              onClick={() => setLocation('/decision-tree')}
+              data-testid="button-pipeline-start-assessment"
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              Start the Pipeline
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5 bg-accent hover:bg-accent/90 text-white"
+              onClick={() => setLocation('/incidents')}
+              data-testid="button-pipeline-log-incident"
+            >
+              <FileWarning className="w-3.5 h-3.5" />
+              Log an Incident
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── COMPLIANCE HEALTH BANNER ────────────────────────────────────────────────
 function ComplianceHealthBanner({
   metrics,
@@ -2092,6 +2275,9 @@ export default function Dashboard() {
 
           {/* Emergency Response Modal */}
           <EmergencyResponseModal open={emergencyOpen} onClose={() => setEmergencyOpen(false)} />
+
+          {/* ★ Incident Pipeline Showcase — the flagship workflow */}
+          <IncidentPipelineShowcase />
 
           {/* Corey's Daily Brief */}
           <CoreyBriefCard />
