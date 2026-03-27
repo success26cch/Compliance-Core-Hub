@@ -157,7 +157,7 @@ export default function TeamSeats() {
   const createDept = useMutation({
     mutationFn: () => {
       const sup = deptForm.supervisorMemberId ? teamData?.members.find(m => m.id === parseInt(deptForm.supervisorMemberId)) : null;
-      return apiRequest("POST", "/api/team/departments", { ...deptForm, supervisorMemberId: sup?.id ?? null, supervisorName: sup?.name ?? deptForm.supervisorName || null }).then(r => r.json());
+      return apiRequest("POST", "/api/team/departments", { ...deptForm, supervisorMemberId: sup?.id ?? null, supervisorName: (sup?.name ?? deptForm.supervisorName) || null }).then(r => r.json());
     },
     onSuccess: () => { toast({ title: "Department created!" }); setDeptForm({ name: "", description: "", color: "blue", supervisorMemberId: "", supervisorName: "" }); setShowDeptForm(false); queryClient.invalidateQueries({ queryKey: ["/api/team/departments"] }); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
