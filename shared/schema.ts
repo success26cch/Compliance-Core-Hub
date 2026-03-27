@@ -40,6 +40,25 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 
+// Paddle event audit log — every webhook event is recorded here for compliance
+export const paddleEvents = pgTable("paddle_events", {
+  id: serial("id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  paddleEventId: text("paddle_event_id"),
+  transactionId: text("transaction_id"),
+  subscriptionId: text("subscription_id"),
+  customerId: text("customer_id"),
+  customerEmail: text("customer_email"),
+  amountCents: integer("amount_cents"),
+  currency: text("currency"),
+  status: text("status"),
+  payload: jsonb("payload"),
+  processedAt: timestamp("processed_at").defaultNow(),
+});
+
+export type PaddleEvent = typeof paddleEvents.$inferSelect;
+export type InsertPaddleEvent = typeof paddleEvents.$inferInsert;
+
 // Question usage tracking for freemium model
 export const questionUsage = pgTable("question_usage", {
   id: serial("id").primaryKey(),

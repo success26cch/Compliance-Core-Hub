@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
 
@@ -97,6 +97,10 @@ export interface IStorage {
   getAuthorizationFormByVisitType(userId: string, visitType: string): Promise<AuthorizationForm | undefined>;
   upsertAuthorizationForm(form: InsertAuthorizationForm): Promise<AuthorizationForm>;
   deleteAuthorizationForm(id: number, userId: string): Promise<boolean>;
+
+  // Paddle audit log
+  logPaddleEvent(event: InsertPaddleEvent): Promise<PaddleEvent>;
+  getPaddleEvents(limit?: number): Promise<PaddleEvent[]>;
 
   // Superadmin functions
   getUserById(userId: string): Promise<User | undefined>;
@@ -622,6 +626,16 @@ export class DatabaseStorage implements IStorage {
   async getEmployeeByIdPublic(id: number): Promise<Employee | undefined> {
     const [employee] = await db.select().from(employees).where(eq(employees.id, id));
     return employee;
+  }
+
+  // Paddle audit log
+  async logPaddleEvent(event: InsertPaddleEvent): Promise<PaddleEvent> {
+    const [created] = await db.insert(paddleEvents).values(event).returning();
+    return created;
+  }
+
+  async getPaddleEvents(limit = 100): Promise<PaddleEvent[]> {
+    return db.select().from(paddleEvents).orderBy(desc(paddleEvents.processedAt)).limit(limit);
   }
 
   // Superadmin functions

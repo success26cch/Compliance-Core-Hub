@@ -175,10 +175,62 @@ async function handleSubscriptionCancelled(data: any) {
 }
 
 // ---------------------------------------------------------------------------
+// Audit log helper — writes every event to paddle_events before processing
+// ---------------------------------------------------------------------------
+
+async function auditLogEvent(eventType: string, data: any, fullPayload: any): Promise<void> {
+  try {
+    // Extract common fields across event types
+    const transactionId: string | undefined =
+      data?.id && eventType.startsWith("transaction.") ? data.id : data?.transaction_id;
+    const subscriptionId: string | undefined =
+      data?.id && eventType.startsWith("subscription.") ? data.id : data?.subscription_id;
+    const customerId: string | undefined = data?.customer_id ?? data?.customer?.id;
+    const customerEmail: string | undefined = data?.customer?.email ?? data?.billing_details?.email;
+
+    // Amount — Paddle uses unit amounts in smallest currency unit
+    const amountCents: number | undefined =
+      data?.details?.totals?.total != null
+        ? parseInt(data.details.totals.total, 10)
+        : data?.items?.[0]?.price?.unit_price?.amount != null
+        ? parseInt(data.items[0].price.unit_price.amount, 10)
+        : undefined;
+
+    const currency: string | undefined =
+      data?.details?.totals?.currency_code ??
+      data?.currency_code ??
+      data?.items?.[0]?.price?.unit_price?.currency_code;
+
+    await storage.logPaddleEvent({
+      eventType,
+      paddleEventId: fullPayload?.event_id ?? fullPayload?.notification_id ?? null,
+      transactionId: transactionId ?? null,
+      subscriptionId: subscriptionId ?? null,
+      customerId: customerId ?? null,
+      customerEmail: customerEmail ?? null,
+      amountCents: amountCents ?? null,
+      currency: currency ?? null,
+      status: data?.status ?? null,
+      payload: fullPayload,
+    });
+  } catch (err: any) {
+    // Audit log failures must never block payment processing
+    console.error("[Paddle] Failed to write audit log:", err.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main dispatcher — called by the webhook route
 // ---------------------------------------------------------------------------
 
-export async function processPaddleEvent(eventType: string, data: any): Promise<void> {
+export async function processPaddleEvent(
+  eventType: string,
+  data: any,
+  fullPayload?: any
+): Promise<void> {
+  // Always write audit log first — even for unhandled event types
+  await auditLogEvent(eventType, data, fullPayload ?? { event_type: eventType, data });
+
   switch (eventType) {
     case "transaction.completed":
       await handleTransactionCompleted(data);
@@ -194,6 +246,6 @@ export async function processPaddleEvent(eventType: string, data: any): Promise<
       await handleSubscriptionCancelled(data);
       break;
     default:
-      console.log(`[Paddle] Unhandled event type: ${eventType}`);
+      console.log(`[Paddle] Unhandled event type: ${eventType} — logged to audit trail`);
   }
 }

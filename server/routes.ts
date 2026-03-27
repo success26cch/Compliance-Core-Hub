@@ -131,7 +131,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const eventType: string = event?.event_type ?? event?.notification_type ?? "";
       const data = event?.data ?? event;
       console.log(`[Paddle] Received event: ${eventType}`);
-      await processPaddleEvent(eventType, data);
+      await processPaddleEvent(eventType, data, event);
       return res.json({ received: true });
     } catch (err: any) {
       console.error("[Paddle] Error processing webhook event:", err.message);
@@ -2587,6 +2587,18 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     } catch (error: any) {
       console.error('Error fetching retainer requests:', error);
       res.status(500).json({ message: "Failed to fetch retainer requests" });
+    }
+  });
+
+  // Paddle payment audit log
+  app.get("/api/superadmin/paddle-events", requireSuperadmin, async (req, res) => {
+    try {
+      const limit = Math.min(parseInt((req.query.limit as string) ?? "200", 10), 500);
+      const events = await storage.getPaddleEvents(limit);
+      res.json(events);
+    } catch (error: any) {
+      console.error("Error fetching Paddle events:", error);
+      res.status(500).json({ message: "Failed to fetch Paddle audit log" });
     }
   });
 
