@@ -52,10 +52,18 @@ import {
   Printer,
   RefreshCw,
   ChevronDown,
-  LogOut
+  LogOut,
+  ShieldCheck,
+  ShieldAlert,
+  Target,
+  Award,
+  HeartPulse,
+  Sparkles,
+  Layers,
+  Megaphone,
+  Cpu
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import coreyVideo from "@assets/Dashboard_corey_1771768410962.mp4";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -1473,12 +1481,537 @@ function DocumentGapCheck() {
   );
 }
 
+// ─── COMPLIANCE HEALTH BANNER ────────────────────────────────────────────────
+function ComplianceHealthBanner({
+  metrics,
+  chartData,
+  metricsLoading,
+  onEmergency,
+  user,
+  logout,
+  isPro,
+  isUnlimited,
+  plan,
+}: {
+  metrics?: DashboardMetrics;
+  chartData: IncidentChartData[];
+  metricsLoading: boolean;
+  onEmergency: () => void;
+  user: any;
+  logout: () => void;
+  isPro?: boolean;
+  isUnlimited?: boolean;
+  plan?: string;
+}) {
+  // Calculate overall compliance health score
+  const score = (() => {
+    if (!metrics) return 0;
+    const isoW = metrics.isoAuditReadiness * 0.20;
+    const medW = metrics.medicalSurveillance * 0.30;
+    const totalDS = (metrics.drugScreenCleared + metrics.drugScreenPending) || 1;
+    const drugW = (metrics.drugScreenCleared / totalDS) * 100 * 0.20;
+    const recordablePenalty = Math.min(metrics.recordableIncidents6Mo * 8, 30);
+    const actionPenalty = Math.min(metrics.pendingActions * 1.5, 20);
+    const base = isoW + medW + drugW;
+    return Math.max(0, Math.min(100, base - recordablePenalty - actionPenalty));
+  })();
+
+  const grade = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
+  const gradeColor = grade === "A" ? "text-emerald-500" : grade === "B" ? "text-accent" : grade === "C" ? "text-yellow-500" : grade === "D" ? "text-orange-500" : "text-destructive";
+  const gradeBg = grade === "A" ? "bg-emerald-500/10 border-emerald-500/20" : grade === "B" ? "bg-accent/10 border-accent/20" : grade === "C" ? "bg-yellow-500/10 border-yellow-500/20" : "bg-destructive/10 border-destructive/20";
+
+  // Days since last recordable incident
+  const daysSafeCalc = (() => {
+    const withRecordable = [...chartData].reverse().find(d => d.recordable > 0);
+    if (!withRecordable) return null;
+    const lastMonth = new Date(withRecordable.month + '-01');
+    const now = new Date();
+    return Math.floor((now.getTime() - lastMonth.getTime()) / (1000 * 60 * 60 * 24));
+  })();
+
+  const statusItems = [
+    {
+      label: "OSHA 300",
+      ok: (metrics?.recordableIncidents6Mo ?? 0) === 0,
+      icon: <ClipboardList className="w-3 h-3" />,
+    },
+    {
+      label: "Medical",
+      ok: (metrics?.medicalSurveillance ?? 0) >= 80,
+      icon: <HeartPulse className="w-3 h-3" />,
+    },
+    {
+      label: "Drug Screen",
+      ok: (metrics?.drugScreenPending ?? 0) === 0,
+      icon: <TestTube className="w-3 h-3" />,
+    },
+    {
+      label: "ISO Ready",
+      ok: (metrics?.isoAuditReadiness ?? 0) >= 70,
+      icon: <Shield className="w-3 h-3" />,
+    },
+  ];
+
+  return (
+    <div className="rounded-2xl overflow-hidden border border-border/60 shadow-sm bg-white" data-testid="compliance-health-banner">
+      {/* Top gradient bar */}
+      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-emerald-500" />
+      
+      <div className="p-5 md:p-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-5">
+          {/* Left: Grade + Score */}
+          <div className="flex items-center gap-5">
+            {/* Corey avatar + greeting */}
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-border/50 flex items-center justify-center shadow-sm">
+                <Bot className="w-8 h-8 text-accent" />
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">COREY AI</span>
+            </div>
+            {/* Grade display */}
+            <div className={`flex flex-col items-center justify-center w-20 h-20 rounded-2xl border-2 shadow-sm ${gradeBg}`}>
+              {metricsLoading ? (
+                <Skeleton className="w-10 h-10 rounded" />
+              ) : (
+                <>
+                  <span className={`text-4xl font-black leading-none ${gradeColor}`}>{grade}</span>
+                  <span className="text-xs text-muted-foreground mt-0.5 font-medium">{Math.round(score)}%</span>
+                </>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Compliance Health</p>
+              <h2 className="text-xl font-bold text-primary leading-tight">
+                {metricsLoading ? <Skeleton className="w-32 h-6" /> : (
+                  grade === "A" ? "Excellent Standing" :
+                  grade === "B" ? "Good Standing" :
+                  grade === "C" ? "Needs Attention" :
+                  grade === "D" ? "At Risk" : "Critical Status"
+                )}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Welcome back, <span className="font-semibold text-primary">{user?.firstName || user?.email?.split('@')[0] || 'Manager'}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Center: Key numbers */}
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/40" data-testid="stat-employees">
+              <div className="text-2xl font-bold text-primary">{metricsLoading ? '—' : (metrics?.employeeCount ?? 0)}</div>
+              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
+                <Users className="w-3 h-3" /> Employees
+              </div>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/40" data-testid="stat-days-safe">
+              <div className={`text-2xl font-bold ${daysSafeCalc === null ? 'text-emerald-500' : daysSafeCalc > 30 ? 'text-accent' : 'text-destructive'}`}>
+                {metricsLoading ? '—' : daysSafeCalc === null ? '180+' : daysSafeCalc}
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
+                <ShieldCheck className="w-3 h-3" /> Days Safe
+              </div>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/40" data-testid="stat-pending-actions">
+              <div className={`text-2xl font-bold ${(metrics?.pendingActions ?? 0) > 5 ? 'text-destructive' : (metrics?.pendingActions ?? 0) > 0 ? 'text-yellow-500' : 'text-emerald-500'}`}>
+                {metricsLoading ? '—' : (metrics?.pendingActions ?? 0)}
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
+                <ClipboardList className="w-3 h-3" /> Open Actions
+              </div>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-muted/30 border border-border/40" data-testid="stat-recordables">
+              <div className={`text-2xl font-bold ${(metrics?.recordableIncidents6Mo ?? 0) > 0 ? 'text-destructive' : 'text-emerald-500'}`}>
+                {metricsLoading ? '—' : (metrics?.recordableIncidents6Mo ?? 0)}
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
+                <AlertTriangle className="w-3 h-3" /> Recordables (6mo)
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Status chips + buttons */}
+          <div className="flex flex-col gap-3">
+            {/* Status strip */}
+            <div className="grid grid-cols-2 gap-1.5">
+              {statusItems.map((s) => (
+                <div
+                  key={s.label}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border ${s.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-destructive/5 border-destructive/20 text-destructive'}`}
+                  data-testid={`status-chip-${s.label.toLowerCase().replace(' ', '-')}`}
+                >
+                  {s.ok ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+                  {s.icon}
+                  {s.label}
+                </div>
+              ))}
+            </div>
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1.5 font-semibold flex-1"
+                onClick={onEmergency}
+                data-testid="button-emergency-guidance"
+              >
+                <Siren className="w-4 h-4" />
+                Emergency
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive"
+                onClick={() => logout()}
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={isPro ? "default" : "secondary"} className="text-xs">
+                {isUnlimited ? 'Unlimited Corey' : plan ? plan.replace(/_/g, ' ') : 'Corey AI'}
+              </Badge>
+              {!isPro && (
+                <Link href="/settings">
+                  <Button size="sm" variant="ghost" className="h-6 text-xs text-accent hover:text-accent" data-testid="button-upgrade">
+                    Upgrade ↑
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TEAM HUB SNAPSHOT ───────────────────────────────────────────────────────
+type TeamMember = { id: number; userId: string; name?: string; email?: string; role: string; departmentId?: number; jobTitle?: string };
+type TeamDepartment = { id: number; name: string; memberCount?: number };
+type TeamAnnouncement = { id: number; title: string; body: string; createdAt: string; authorName?: string };
+
+function TeamHubSnapshot() {
+  const { data: members = [] } = useQuery<TeamMember[]>({ queryKey: ['/api/team/members'] });
+  const { data: departments = [] } = useQuery<TeamDepartment[]>({ queryKey: ['/api/team/departments'] });
+  const { data: announcements = [] } = useQuery<TeamAnnouncement[]>({ queryKey: ['/api/team/announcements'] });
+
+  const admins = members.filter(m => m.role === 'admin');
+  const supervisors = members.filter(m => m.role === 'supervisor');
+  const memberCount = members.filter(m => m.role === 'member');
+  const latestAnnouncement = announcements[0];
+
+  const roleColor = (role: string) => {
+    if (role === 'admin') return 'bg-accent/10 text-accent border-accent/20';
+    if (role === 'supervisor') return 'bg-primary/10 text-primary border-primary/20';
+    return 'bg-muted text-muted-foreground border-border/40';
+  };
+
+  return (
+    <Card className="border-primary/20 overflow-hidden" data-testid="card-team-hub-snapshot">
+      {/* Header band */}
+      <div className="bg-gradient-to-r from-primary/5 to-accent/5 px-5 pt-4 pb-3 border-b border-border/40">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-primary">Team Hub</h3>
+              <p className="text-xs text-muted-foreground">Your compliance workforce at a glance</p>
+            </div>
+          </div>
+          <Link href="/team">
+            <Button variant="outline" size="sm" className="gap-1 text-xs h-7 border-primary/30 text-primary hover:bg-primary/5" data-testid="button-open-team-hub">
+              Open Team Hub <ChevronRight className="w-3 h-3" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      <CardContent className="p-5">
+        <div className="grid md:grid-cols-3 gap-5">
+          {/* Column 1: Org stats */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Organization</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="text-center p-2.5 rounded-xl bg-muted/40 border border-border/40">
+                <div className="text-xl font-bold text-primary">{members.length}</div>
+                <div className="text-xs text-muted-foreground">Members</div>
+              </div>
+              <div className="text-center p-2.5 rounded-xl bg-muted/40 border border-border/40">
+                <div className="text-xl font-bold text-primary">{departments.length}</div>
+                <div className="text-xs text-muted-foreground">Depts</div>
+              </div>
+              <div className="text-center p-2.5 rounded-xl bg-muted/40 border border-border/40">
+                <div className="text-xl font-bold text-accent">{supervisors.length}</div>
+                <div className="text-xs text-muted-foreground">Supvr</div>
+              </div>
+            </div>
+
+            {/* Role breakdown */}
+            <div className="space-y-1.5">
+              {admins.length > 0 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Badge className={`text-xs px-2 py-0 h-5 border ${roleColor('admin')}`}>Admin</Badge>
+                  <span className="text-muted-foreground">{admins.length} user{admins.length !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+              {supervisors.length > 0 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Badge className={`text-xs px-2 py-0 h-5 border ${roleColor('supervisor')}`}>Supervisor</Badge>
+                  <span className="text-muted-foreground">{supervisors.length} user{supervisors.length !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+              {memberCount.length > 0 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Badge className={`text-xs px-2 py-0 h-5 border ${roleColor('member')}`}>Member</Badge>
+                  <span className="text-muted-foreground">{memberCount.length} user{memberCount.length !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+              {members.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">No team members yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Departments */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Departments</p>
+            {departments.length === 0 ? (
+              <div className="text-center py-4">
+                <Building2 className="w-6 h-6 text-muted-foreground/40 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">No departments set up yet</p>
+                <Link href="/team">
+                  <Button variant="ghost" size="sm" className="text-xs text-accent gap-1 h-6 mt-1 px-2" data-testid="button-add-dept">
+                    <Zap className="w-3 h-3" /> Set up departments
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-28 overflow-y-auto">
+                {departments.map((dept) => {
+                  const deptMembers = members.filter(m => m.departmentId === dept.id);
+                  return (
+                    <div key={dept.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-muted/30 border border-border/30 text-xs" data-testid={`dept-row-${dept.id}`}>
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="w-3 h-3 text-muted-foreground" />
+                        <span className="font-medium truncate max-w-[100px]">{dept.name}</span>
+                      </div>
+                      <span className="text-muted-foreground">{deptMembers.length} member{deptMembers.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Column 3: Latest announcement + how teams work */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Latest Announcement</p>
+            {latestAnnouncement ? (
+              <div className="p-3 rounded-xl bg-accent/5 border border-accent/20 space-y-1" data-testid="latest-announcement">
+                <div className="flex items-start gap-2">
+                  <Megaphone className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-primary leading-tight">{latestAnnouncement.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{latestAnnouncement.body}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">
+                      {new Date(latestAnnouncement.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-muted/30 border border-border/40">
+                <p className="text-xs text-muted-foreground italic">No announcements yet</p>
+              </div>
+            )}
+
+            {/* How teams work */}
+            <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 space-y-1.5">
+              <p className="text-xs font-semibold text-primary flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> How Teams Work
+              </p>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex items-start gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>Invite admins, supervisors, and members — each sees only what they need</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>Supervisors see compliance data for their department only (HIPAA-aware)</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>Medical & restriction details are hidden by default — toggle per department</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── PLATFORM MODULE GRID ─────────────────────────────────────────────────────
+function PlatformModuleGrid({ metrics, actions }: { metrics?: DashboardMetrics; actions: ActionItem[] }) {
+  const urgentCount = actions.filter(a => a.priority === 'urgent').length;
+
+  const modules = [
+    {
+      id: "corey",
+      title: "Corey AI",
+      subtitle: "Compliance Expert",
+      icon: <Bot className="w-5 h-5" />,
+      href: "/corey",
+      color: "text-accent",
+      bg: "bg-accent/10",
+      border: "border-accent/20",
+      badge: null,
+      description: "24/7 OSHA, DOT & ISO AI — ask anything",
+    },
+    {
+      id: "employees",
+      title: "Employee Management",
+      subtitle: "Medical Surveillance",
+      icon: <Users className="w-5 h-5" />,
+      href: "/employees",
+      color: "text-primary",
+      bg: "bg-primary/10",
+      border: "border-primary/20",
+      badge: (metrics?.employeeCount ?? 0) > 0 ? `${metrics?.employeeCount} employees` : null,
+      description: "DOT physicals, drug screens, medical records",
+    },
+    {
+      id: "incidents",
+      title: "Incident Log",
+      subtitle: "OSHA 300",
+      icon: <FileWarning className="w-5 h-5" />,
+      href: "/incidents",
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      border: "border-destructive/20",
+      badge: (metrics?.totalIncidents6Mo ?? 0) > 0 ? `${metrics?.totalIncidents6Mo} this period` : null,
+      description: "Record, review & manage workplace incidents",
+    },
+    {
+      id: "capa",
+      title: "Corrective Actions",
+      subtitle: "CAPA Tracker",
+      icon: <Target className="w-5 h-5" />,
+      href: "/incidents",
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/20",
+      badge: urgentCount > 0 ? `${urgentCount} urgent` : null,
+      description: "Track CAPAs with SMS notifications & deadlines",
+    },
+    {
+      id: "team",
+      title: "Team Hub",
+      subtitle: "Multi-Seat Access",
+      icon: <Layers className="w-5 h-5" />,
+      href: "/team",
+      color: "text-blue-600",
+      bg: "bg-blue-600/10",
+      border: "border-blue-600/20",
+      badge: null,
+      description: "3-tier HIPAA-aware role system for your team",
+    },
+    {
+      id: "training",
+      title: "Training Portal",
+      subtitle: "LMS + Certificates",
+      icon: <GraduationCap className="w-5 h-5" />,
+      href: "/employer-training",
+      color: "text-emerald-600",
+      bg: "bg-emerald-600/10",
+      border: "border-emerald-600/20",
+      badge: null,
+      description: "Assign courses, auto-text employees, track completions",
+    },
+    {
+      id: "iso",
+      title: "ISO Manager",
+      subtitle: "9001 · 14001 · 45001+",
+      icon: <Award className="w-5 h-5" />,
+      href: "/iso-manager",
+      color: "text-purple-600",
+      bg: "bg-purple-600/10",
+      border: "border-purple-600/20",
+      badge: (metrics?.isoAuditReadiness ?? 0) > 0 ? `${metrics?.isoAuditReadiness}% ready` : null,
+      description: "NC tracking, documentation, audit prep with Isa AI",
+    },
+    {
+      id: "passport",
+      title: "Digital Passport",
+      subtitle: "QR Clinic Check-In",
+      icon: <QrCode className="w-5 h-5" />,
+      href: "/employee-passport",
+      color: "text-amber-600",
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20",
+      badge: null,
+      description: "QR-based clinic auth forms + employer notifications",
+    },
+    {
+      id: "decision-tree",
+      title: "OSHA Decision Tree",
+      subtitle: "Recordability Tool",
+      icon: <ClipboardList className="w-5 h-5" />,
+      href: "/decision-tree",
+      color: "text-teal-600",
+      bg: "bg-teal-600/10",
+      border: "border-teal-600/20",
+      badge: null,
+      description: "Is this recordable? 5-question instant assessment",
+    },
+  ];
+
+  return (
+    <div data-testid="platform-module-grid">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Cpu className="w-4 h-4 text-accent" />
+          <h3 className="font-semibold text-sm text-primary">Platform Modules</h3>
+          <Badge variant="outline" className="text-xs text-accent border-accent/30">9 Active</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">Your full compliance command center</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {modules.map((mod) => (
+          <Link key={mod.id} href={mod.href} data-testid={`module-tile-${mod.id}`}>
+            <div className={`group relative p-4 rounded-xl border bg-white hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${mod.border}`}>
+              <div className="flex items-start gap-3">
+                <div className={`w-10 h-10 rounded-xl ${mod.bg} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
+                  <span className={mod.color}>{mod.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-primary leading-tight">{mod.title}</p>
+                    {mod.badge && (
+                      <Badge className={`text-xs px-1.5 py-0 h-4 ${mod.bg} ${mod.color} border-0`}>{mod.badge}</Badge>
+                    )}
+                  </div>
+                  <p className={`text-xs font-medium ${mod.color} mt-0.5`}>{mod.subtitle}</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-snug">{mod.description}</p>
+                </div>
+                <ArrowUpRight className={`w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${mod.color}`} />
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const { toast } = useToast();
-  const [videoEnded, setVideoEnded] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [emergencyOpen, setEmergencyOpen] = useState(false);
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
@@ -1544,76 +2077,18 @@ export default function Dashboard() {
       <div className="flex gap-6">
         {/* Main Dashboard Content */}
         <div className="flex-1 space-y-6">
-          <div className="flex flex-col items-center gap-1">
-            <video
-              ref={videoRef}
-              src={coreyVideo}
-              autoPlay
-              playsInline
-              muted
-              onEnded={() => setVideoEnded(true)}
-              className="w-40 h-auto mix-blend-multiply"
-              data-testid="video-corey-intro"
-            />
-            {videoEnded && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs gap-1 text-muted-foreground hover:text-primary h-7 px-2"
-                onClick={() => {
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = 0;
-                    videoRef.current.play();
-                    setVideoEnded(false);
-                  }
-                }}
-                data-testid="button-replay-corey"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Replay
-              </Button>
-            )}
-          </div>
-
-          {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-primary">Compliance Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back, {user?.firstName || 'Manager'}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                size="sm"
-                variant="destructive"
-                className="gap-1.5 font-semibold"
-                onClick={() => setEmergencyOpen(true)}
-                data-testid="button-emergency-guidance"
-              >
-                <Siren className="w-4 h-4" />
-                Emergency Guidance
-              </Button>
-              <Badge variant={isPro ? "default" : "secondary"}>
-                {isUnlimited ? 'Unlimited Corey' : 'Corey AI'}
-              </Badge>
-              {!isPro && (
-                <Link href="/settings">
-                  <Button size="sm" variant="outline" data-testid="button-upgrade">
-                    Upgrade
-                  </Button>
-                </Link>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive"
-                onClick={() => logout()}
-                data-testid="button-logout"
-              >
-                <LogOut className="w-4 h-4" />
-                Log Out
-              </Button>
-            </div>
-          </div>
+          {/* Compliance Command Center Hero */}
+          <ComplianceHealthBanner
+            metrics={metrics}
+            chartData={chartData}
+            metricsLoading={metricsLoading}
+            onEmergency={() => setEmergencyOpen(true)}
+            user={user}
+            logout={logout}
+            isPro={isPro}
+            isUnlimited={isUnlimited}
+            plan={plan ?? undefined}
+          />
 
           {/* Emergency Response Modal */}
           <EmergencyResponseModal open={emergencyOpen} onClose={() => setEmergencyOpen(false)} />
@@ -1744,6 +2219,9 @@ export default function Dashboard() {
             </Card>
           </div>
 
+          {/* Team Hub Snapshot */}
+          <TeamHubSnapshot />
+
           {/* Middle Row: Chart and Actions */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Incident Chart */}
@@ -1802,180 +2280,35 @@ export default function Dashboard() {
           {/* T005: Document Gap Check */}
           <DocumentGapCheck />
 
-          {/* Data Management Row */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="hover:shadow-lg transition-shadow border-primary/20" data-testid="card-manage-employees">
-              <CardHeader>
+          {/* Platform Module Grid */}
+          <PlatformModuleGrid metrics={metrics} actions={actions} />
+
+          {/* Ask Corey — Quick Access Chat */}
+          <Card className="border-accent/20 bg-gradient-to-br from-white to-accent/5" data-testid="card-ask-corey-dashboard">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  Employee Management
-                  <HelpTip id="employeeManagement" />
+                  <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-accent" />
+                  </div>
+                  Ask Corey
+                  <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">AI Compliance Expert</span>
+                  <HelpTip id="askCorey" />
                 </CardTitle>
-                <CardDescription>
-                  Add employees, track DOT physicals, drug tests, and medical surveillance.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/employees">
-                  <Button className="w-full sm:w-auto gap-2" data-testid="button-manage-employees">
-                    Manage Employees <ArrowUpRight className="w-4 h-4" />
+                <Link href="/corey">
+                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-accent gap-1 h-7 px-2" data-testid="button-corey-fullscreen">
+                    <ExternalLink className="w-3 h-3" /> Full Chat
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow border-primary/20" data-testid="card-manage-incidents">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileWarning className="w-5 h-5 text-destructive" />
-                  Incident Log
-                  <HelpTip id="incidentLog" />
-                </CardTitle>
-                <CardDescription>
-                  Record workplace incidents for OSHA 300 compliance tracking.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/incidents">
-                  <Button variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-manage-incidents">
-                    Log Incidents <ArrowUpRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Employer Training Portal */}
-            <Card className="hover:shadow-lg transition-shadow border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-indigo-500/5" data-testid="card-employer-training">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-blue-500" />
-                  Employer Training Portal
-                  <HelpTip id="employerTraining" />
-                </CardTitle>
-                <CardDescription>
-                  Assign compliance courses to your employees — they're automatically texted their link. DER is notified on completion.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/employer-training">
-                  <Button className="w-full sm:w-auto gap-2 bg-blue-600 hover:bg-blue-700 text-white" data-testid="button-employer-training">
-                    Open Training Portal <ArrowUpRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* My Courses */}
-            <Card className="hover:shadow-lg transition-shadow border-green-500/30 bg-gradient-to-r from-green-500/5 to-emerald-500/5" data-testid="card-my-courses">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-green-500" />
-                  My Courses
-                  <HelpTip id="myCourses" />
-                </CardTitle>
-                <CardDescription>
-                  Access your purchased courses, continue where you left off, and view your certificates of completion.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/training?tab=my-courses">
-                  <Button className="w-full sm:w-auto gap-2 bg-green-600 hover:bg-green-700 text-white" data-testid="button-my-courses">
-                    View My Courses <ArrowUpRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions Row */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="hover:shadow-lg transition-shadow border-primary/10 bg-gradient-to-br from-white to-primary/5 dark:from-background dark:to-primary/5">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    Ask Corey
-                    <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">AI Compliance Expert</span>
-                    <HelpTip id="askCorey" />
-                  </CardTitle>
-                  <Link href="/corey">
-                    <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-accent gap-1 h-7 px-2" data-testid="button-corey-fullscreen">
-                      <ExternalLink className="w-3 h-3" /> Full Chat
-                    </Button>
-                  </Link>
-                </div>
-                <CardDescription>
-                  Ask a question or upload a document (PDF, DOCX, TXT) for Corey to review.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DashboardCoreyChat />
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow border-primary/10">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  OSHA 300, Log it or Not, Decision Tree
-                  <HelpTip id="decisionTree" />
-                </CardTitle>
-                <CardDescription>
-                  Determine if an injury is OSHA recordable in minutes.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/decision-tree">
-                  <Button variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-decision-tree">
-                    Start Assessment <ArrowUpRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Clinic Authorization Forms */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="hover:shadow-lg transition-shadow border-blue-500/20 bg-gradient-to-br from-white to-blue-50/50 dark:from-background dark:to-blue-500/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  Clinic Communication Letter
-                  <HelpTip id="clinicLetter" />
-                </CardTitle>
-                <CardDescription>
-                  Set expectations with your occupational health clinic — first-aid treatment preferences, OTC medication requests, and restriction wording guidance per 29 CFR 1904.7(a).
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/clinic-letter">
-                  <Button className="w-full sm:w-auto gap-2 bg-blue-600 hover:bg-blue-500 text-white" data-testid="button-clinic-letter-dashboard">
-                    <FileText className="w-4 h-4" /> Generate Letter
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow border-[#FFC107]/20 bg-gradient-to-br from-white to-amber-50/50 dark:from-background dark:to-[#FFC107]/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <QrCode className="w-5 h-5 text-[#FFC107]" />
-                  Digital Medical Passport
-                  <HelpTip id="digitalPassport" />
-                </CardTitle>
-                <CardDescription>
-                  Generate QR-based clinic authorization forms for your employees. Clinics scan the code, you get notified instantly.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/employee-passport">
-                  <Button variant="outline" className="w-full sm:w-auto gap-2" data-testid="button-passport-dashboard">
-                    <QrCode className="w-4 h-4" /> Generate Passport
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <CardDescription>
+                Ask anything about OSHA, DOT, ISO, or upload a document (PDF, DOCX, TXT) for Corey to review.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DashboardCoreyChat />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar for Pro Users */}
