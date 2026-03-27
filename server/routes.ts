@@ -9,6 +9,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey } from "./stripeClient";
+import { verifyPaddleSignature, processPaddleEvent } from "./paddleService";
 import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
@@ -98,6 +99,45 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Auth Setup
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // ── Paddle Webhook ─────────────────────────────────────────────────────────
+  // Must be registered before any body-parsing middleware consumes the raw body.
+  // We use req.rawBody (captured by express.json's verify callback in index.ts).
+  app.post("/webhooks/paddle", async (req: Request, res: Response) => {
+    const secret = process.env.PADDLE_WEBHOOK_SECRET;
+    if (!secret) {
+      console.error("[Paddle] PADDLE_WEBHOOK_SECRET is not set");
+      return res.status(500).json({ error: "Webhook secret not configured" });
+    }
+
+    const signatureHeader = req.headers["paddle-signature"] as string | undefined;
+    if (!signatureHeader) {
+      return res.status(400).json({ error: "Missing Paddle-Signature header" });
+    }
+
+    const rawBody = (req as any).rawBody as Buffer | undefined;
+    if (!rawBody) {
+      console.error("[Paddle] rawBody not available — ensure express.json verify callback is active");
+      return res.status(400).json({ error: "Raw body unavailable" });
+    }
+
+    if (!verifyPaddleSignature(rawBody, signatureHeader, secret)) {
+      console.warn("[Paddle] Webhook signature verification failed");
+      return res.status(401).json({ error: "Invalid signature" });
+    }
+
+    try {
+      const event = req.body;
+      const eventType: string = event?.event_type ?? event?.notification_type ?? "";
+      const data = event?.data ?? event;
+      console.log(`[Paddle] Received event: ${eventType}`);
+      await processPaddleEvent(eventType, data);
+      return res.json({ received: true });
+    } catch (err: any) {
+      console.error("[Paddle] Error processing webhook event:", err.message);
+      return res.status(500).json({ error: "Event processing failed" });
+    }
+  });
 
   // Demo video — served via API route to bypass CDN/static layer size limits
   app.get("/api/demo-video", (req: Request, res: Response) => {

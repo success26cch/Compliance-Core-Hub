@@ -22,10 +22,12 @@ export type InsertLead = z.infer<typeof insertLeadSchema>;
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(), // Matches auth user id (string from Replit Auth)
-  status: text("status").notNull().default("inactive"), // 'active', 'inactive'
+  status: text("status").notNull().default("inactive"), // 'active', 'inactive', 'cancelled', 'past_due'
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
-  plan: text("plan"), // 'pro_monthly'
+  paddleCustomerId: text("paddle_customer_id"),
+  paddleSubscriptionId: text("paddle_subscription_id"),
+  plan: text("plan"), // 'pro_monthly', 'employer_monthly', 'iso_manager', etc.
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

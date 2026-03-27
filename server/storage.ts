@@ -100,6 +100,7 @@ export interface IStorage {
 
   // Superadmin functions
   getUserById(userId: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   isSuperadmin(userId: string): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
   getAllSubscriptions(): Promise<Subscription[]>;
@@ -626,6 +627,11 @@ export class DatabaseStorage implements IStorage {
   // Superadmin functions
   async getUserById(userId: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
 
