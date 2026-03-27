@@ -60,6 +60,8 @@ import IsaStandalone from "@/pages/Isa";
 import IsaProfile from "@/pages/IsaProfile";
 import WelcomeIsa from "@/pages/WelcomeIsa";
 import Login from "@/pages/Login";
+import RefundPolicy from "@/pages/RefundPolicy";
+import TermsOfService from "@/pages/TermsOfService";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -144,6 +146,8 @@ function Router() {
       <Route path="/demo-tour" component={DemoTour} />
       <Route path="/platform-brief" component={PlatformBrief} />
       <Route path="/cesar" component={Cesar} />
+      <Route path="/refund-policy" component={RefundPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
       <Route component={NotFound} />
     </Switch>
   );

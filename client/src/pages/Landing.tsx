@@ -2194,14 +2194,25 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground py-12 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Core Compliance Hub" className="h-20 w-auto brightness-0 invert" />
+      <footer className="bg-primary text-primary-foreground py-10 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-6">
+          <div className="flex flex-col md:flex-row w-full justify-between items-center gap-6">
+            <div className="flex items-center gap-3">
+              <img src={logoUrl} alt="Core Compliance Hub" className="h-16 w-auto brightness-0 invert" />
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-primary-foreground/50 justify-center">
+              <Link href="/terms-of-service" className="hover:text-primary-foreground transition-colors">Terms of Service</Link>
+              <Link href="/refund-policy" className="hover:text-primary-foreground transition-colors">Refund &amp; Cancellation Policy</Link>
+              <Link href="/privacy-policy" className="hover:text-primary-foreground transition-colors">Privacy Policy</Link>
+              <Link href="/contact" className="hover:text-primary-foreground transition-colors">Contact</Link>
+              <Link href="/about" className="hover:text-primary-foreground transition-colors">About</Link>
+            </div>
           </div>
-          <p className="text-primary-foreground/60 text-sm">
-            © 2024 Core Compliance Hub. All rights reserved.
-          </p>
+          <div className="w-full border-t border-primary-foreground/10 pt-4 text-center">
+            <p className="text-primary-foreground/40 text-xs">
+              © 2026 Core Compliance Hub. All rights reserved. Payments processed by Paddle — Merchant of Record.
+            </p>
+          </div>
         </div>
       </footer>
     </div>

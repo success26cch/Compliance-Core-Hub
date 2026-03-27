@@ -1,0 +1,29 @@
+Refund & Cancellation Policy
+Paddle specifically looks for a clear "No Surprises" policy to prevent chargebacks.
+
+Refunds & Subscription Cancellations
+
+Cancellation: You may cancel your Core Compliance Hub (CCH) subscription at any time directly through your account dashboard or by contacting support. Your access will remain active until the end of your current billing period.
+
+Refunds: Since CCH provides immediate access to digital training curriculum and compliance tools, we generally do not offer refunds once a billing cycle has processed. However, if you experience technical issues that prevent you from using the service, please contact us within 14 days of the charge for a full review.
+
+Invoiced Payments: For companies paying via monthly invoice, payments are due within 30 days. Late payments may result in a temporary suspension of platform access until the balance is cleared.
+
+2. Terms of Service (The "B2B" Essentials)
+This protects your Intellectual Property (the curriculum) and defines the relationship.
+
+Terms of Service Highlights
+
+License: Upon payment, CCH grants your company a non-exclusive, non-transferable license to use our compliance modules for internal training purposes only.
+
+Restrictions: You may not record, resell, or redistribute the training materials or the "Corey" AI agent logic to third parties.
+
+Merchant of Record: Payments are processed via Paddle, our Merchant of Record. Your financial agreement for the transaction is with Paddle.net, while your service agreement for the compliance platform is with Core Compliance Hub.
+
+Compliance Disclaimer: While CCH provides tools to assist with OSHA and DOT standards, the employer remains legally responsible for ensuring total workplace safety and final regulatory compliance.
+
+Pro-Tip for the Replit Agent
+When you ask the Agent to build these pages, tell it:
+"Make these pages look professional with clear headings and place a link to them in the site footer. This is required for our payment provider audit."
+
+Would you like me to help you draft the "Privacy Policy" as well? (Paddle requires this to show how you handle the email addresses and data of the employees using the app).
