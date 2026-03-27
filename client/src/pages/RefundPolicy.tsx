@@ -104,7 +104,7 @@ export default function RefundPolicy() {
               </div>
             </div>
             <p className="text-sm">
-              To request a refund review, email <a href="mailto:support@corecompliancehub.com" className="text-accent underline font-medium">support@corecompliancehub.com</a> with your account email, the charge date, and a description of the issue.
+              To request a refund review, email <a href="mailto:team@corecompliancehub.com" className="text-accent underline font-medium">team@corecompliancehub.com</a> with your account email, the charge date, and a description of the issue.
             </p>
           </div>
         </section>
@@ -159,7 +159,7 @@ export default function RefundPolicy() {
               <p className="text-white/60 text-sm">Our team typically responds within one business day.</p>
             </div>
           </div>
-          <a href="mailto:support@corecompliancehub.com">
+          <a href="mailto:team@corecompliancehub.com">
             <Button className="bg-accent hover:bg-accent/90 text-white font-semibold" data-testid="button-contact-billing">
               Email Support
             </Button>

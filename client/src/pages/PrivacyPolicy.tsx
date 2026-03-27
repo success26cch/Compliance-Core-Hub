@@ -130,7 +130,7 @@ export default function PrivacyPolicy() {
               This Privacy Policy explains how we handle personal information collected through our website at <strong className="text-foreground">corecompliancehub.com</strong> and any related services.
             </p>
             <p className="text-sm">
-              Questions? Email us at <a href="mailto:privacy@corecompliancehub.com" className="text-accent underline font-medium">privacy@corecompliancehub.com</a>.
+              Questions? Email us at <a href="mailto:team@corecompliancehub.com" className="text-accent underline font-medium">team@corecompliancehub.com</a>.
             </p>
           </Section>
 
@@ -232,7 +232,7 @@ export default function PrivacyPolicy() {
               <li><strong className="text-foreground">AI conversations</strong> are not permanently stored — they exist only for your active session</li>
             </ul>
             <Highlight icon={Lock} color="blue">
-              No system is 100% secure. If you believe your account has been compromised, contact us immediately at <strong>security@corecompliancehub.com</strong>.
+              No system is 100% secure. If you believe your account has been compromised, contact us immediately at <strong>team@corecompliancehub.com</strong>.
             </Highlight>
           </Section>
 
@@ -268,7 +268,7 @@ export default function PrivacyPolicy() {
             </div>
 
             <p className="text-sm">
-              To exercise any of these rights, email <a href="mailto:privacy@corecompliancehub.com" className="text-accent underline font-medium">privacy@corecompliancehub.com</a>. We'll respond within <strong className="text-foreground">30 days</strong>. No fees, no runaround.
+              To exercise any of these rights, email <a href="mailto:team@corecompliancehub.com" className="text-accent underline font-medium">team@corecompliancehub.com</a>. We'll respond within <strong className="text-foreground">30 days</strong>. No fees, no runaround.
             </p>
           </Section>
 
@@ -307,7 +307,7 @@ export default function PrivacyPolicy() {
                 <p className="text-white/60 text-sm">We're real people. Reach us anytime — we'll get back to you within one business day.</p>
               </div>
             </div>
-            <a href="mailto:privacy@corecompliancehub.com">
+            <a href="mailto:team@corecompliancehub.com">
               <Button className="bg-accent hover:bg-accent/90 text-white font-semibold whitespace-nowrap" data-testid="button-contact-privacy">
                 Email Privacy Team
               </Button>
@@ -325,7 +325,7 @@ export default function PrivacyPolicy() {
                 <p className="text-muted-foreground text-sm">We'll permanently delete your account and all associated data within 10 business days.</p>
               </div>
             </div>
-            <a href="mailto:privacy@corecompliancehub.com?subject=Account%20Deletion%20Request">
+            <a href="mailto:team@corecompliancehub.com?subject=Account%20Deletion%20Request">
               <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 whitespace-nowrap" data-testid="button-delete-account">
                 Request Deletion
               </Button>

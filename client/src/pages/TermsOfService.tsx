@@ -244,7 +244,7 @@ export default function TermsOfService() {
               <p className="text-white/60 text-sm">We're happy to explain anything in plain language.</p>
             </div>
           </div>
-          <a href="mailto:support@corecompliancehub.com">
+          <a href="mailto:team@corecompliancehub.com">
             <Button className="bg-accent hover:bg-accent/90 text-white font-semibold" data-testid="button-contact-legal">
               Email Support
             </Button>
