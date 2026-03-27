@@ -62,6 +62,7 @@ import WelcomeIsa from "@/pages/WelcomeIsa";
 import Login from "@/pages/Login";
 import RefundPolicy from "@/pages/RefundPolicy";
 import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -148,6 +149,7 @@ function Router() {
       <Route path="/cesar" component={Cesar} />
       <Route path="/refund-policy" component={RefundPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route component={NotFound} />
     </Switch>
   );
