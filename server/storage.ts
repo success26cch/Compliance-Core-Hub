@@ -103,7 +103,7 @@ export interface IStorage {
   createTeamDepartment(dept: InsertTeamDepartment): Promise<TeamDepartment>;
   updateTeamDepartment(id: number, teamId: number, updates: Partial<InsertTeamDepartment>): Promise<TeamDepartment | undefined>;
   deleteTeamDepartment(id: number, teamId: number): Promise<boolean>;
-  updateTeamMemberDept(memberId: number, teamId: number, departmentId: number | null, jobTitle?: string): Promise<CoreyTeamMember | undefined>;
+  updateTeamMemberDept(memberId: number, teamId: number, departmentId: number | null, jobTitle?: string, role?: string): Promise<CoreyTeamMember | undefined>;
 
   // Team announcements
   getTeamAnnouncements(teamId: number): Promise<TeamAnnouncement[]>;
@@ -1192,9 +1192,10 @@ export class DatabaseStorage implements IStorage {
     return (result as any).count > 0;
   }
 
-  async updateTeamMemberDept(memberId: number, teamId: number, departmentId: number | null, jobTitle?: string): Promise<CoreyTeamMember | undefined> {
+  async updateTeamMemberDept(memberId: number, teamId: number, departmentId: number | null, jobTitle?: string, role?: string): Promise<CoreyTeamMember | undefined> {
     const updates: any = { departmentId };
     if (jobTitle !== undefined) updates.jobTitle = jobTitle;
+    if (role !== undefined && ["member", "supervisor", "admin"].includes(role)) updates.role = role;
     const [updated] = await db.update(coreyTeamMembers).set(updates)
       .where(and(eq(coreyTeamMembers.id, memberId), eq(coreyTeamMembers.teamId, teamId))).returning();
     return updated;

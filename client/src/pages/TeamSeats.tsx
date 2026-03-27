@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Crown, UserPlus, UserMinus, Shield, Loader2, Video,
-  Building2, ChevronRight, Pin, PinOff, Megaphone, AlertTriangle,
+  Building2, Pin, PinOff, Megaphone, AlertTriangle,
   CheckCircle2, Clock, TrendingUp, Flame, BookOpen, Plus, Trash2,
-  UserCog, Briefcase, Activity, BarChart3, X, Edit2, Save,
+  UserCog, Activity, BarChart3, Save, Lock, Eye, EyeOff, Info,
+  ChevronDown, ChevronUp,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -31,11 +33,14 @@ interface TeamData {
   team: { id: number; adminUserId: string; companyName: string; totalSeats: number; status: string; } | null;
   members: TeamMember[]; isAdmin: boolean; role: string | null;
 }
-interface Department { id: number; teamId: number; name: string; description?: string | null; color: string; supervisorMemberId?: number | null; supervisorName?: string | null; createdAt: string; }
+interface VisibilitySettings { incidentSummary: boolean; medicalDetails: boolean; restrictionDetails: boolean; capaDetails: boolean; trainingStatus: boolean; }
+interface Department { id: number; teamId: number; name: string; description?: string | null; color: string; supervisorMemberId?: number | null; supervisorName?: string | null; visibilitySettings?: VisibilitySettings | null; createdAt: string; }
 interface Announcement { id: number; teamId: number; authorName: string; authorEmail?: string | null; title: string; body: string; category: string; isPinned: boolean; createdAt: string; }
 interface ComplianceData {
-  summary: { incidentsLast30Days: number; totalOpenCAPAs: number; overdueCAPAs: number; totalRecordables: number; totalIncidents: number; };
-  byDepartment: { incidents: Record<string, number>; capas: Record<string, number>; };
+  viewerRole: string; restricted: boolean; message?: string;
+  supervisedDeptNames?: string[]; visibilitySettings?: VisibilitySettings | null;
+  summary: { incidentsLast30Days: number; totalOpenCAPAs: number; overdueCAPAs: number; totalRecordables: number; totalIncidents: number; } | null;
+  byDepartment: { incidents: Record<string, number>; capas: Record<string, number>; } | null;
   recentIncidents: any[]; overdueCAPAList: any[];
 }
 
@@ -95,6 +100,11 @@ export default function TeamSeats() {
   const [assigningMember, setAssigningMember] = useState<number | null>(null);
   const [assignDept, setAssignDept] = useState("");
   const [assignTitle, setAssignTitle] = useState("");
+  const [assignRole, setAssignRole] = useState("member");
+
+  // per-department visibility editor
+  const [editingVisibility, setEditingVisibility] = useState<number | null>(null);
+  const [visibilityDraft, setVisibilityDraft] = useState<VisibilitySettings>({ incidentSummary: true, medicalDetails: false, restrictionDetails: false, capaDetails: true, trainingStatus: true });
 
   // On successful checkout
   useEffect(() => {
@@ -159,9 +169,16 @@ export default function TeamSeats() {
   });
 
   const assignMemberDept = useMutation({
-    mutationFn: ({ memberId, departmentId, jobTitle }: { memberId: number; departmentId: number | null; jobTitle: string }) =>
-      apiRequest("PATCH", `/api/team/members/${memberId}/department`, { departmentId, jobTitle }).then(r => r.json()),
+    mutationFn: ({ memberId, departmentId, jobTitle, role }: { memberId: number; departmentId: number | null; jobTitle: string; role: string }) =>
+      apiRequest("PATCH", `/api/team/members/${memberId}/department`, { departmentId, jobTitle, role }).then(r => r.json()),
     onSuccess: () => { toast({ title: "Member updated" }); setAssigningMember(null); queryClient.invalidateQueries({ queryKey: ["/api/team"] }); },
+  });
+
+  const updateVisibility = useMutation({
+    mutationFn: ({ deptId, settings }: { deptId: number; settings: VisibilitySettings }) =>
+      apiRequest("PATCH", `/api/team/departments/${deptId}`, { visibilitySettings: settings }).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Visibility settings saved" }); setEditingVisibility(null); queryClient.invalidateQueries({ queryKey: ["/api/team/departments"] }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const createAnn = useMutation({
@@ -320,7 +337,8 @@ export default function TeamSeats() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          {member.role === "admin" && <Crown className="w-3.5 h-3.5 text-amber-500" />}
+                          {member.role === "admin" && <Crown className="w-3.5 h-3.5 text-amber-500" title="Admin" />}
+                          {member.role === "supervisor" && <Shield className="w-3.5 h-3.5 text-blue-500" title="Supervisor" />}
                           <Badge variant="outline" className={`text-xs ${member.status === "active" ? "border-green-200 text-green-700" : "border-amber-200 text-amber-700"}`}>
                             {member.status}
                           </Badge>
@@ -344,8 +362,21 @@ export default function TeamSeats() {
                             </SelectContent>
                           </Select>
                           <Input className="h-8 text-xs" placeholder="Job title (optional)" value={assignTitle} onChange={e => setAssignTitle(e.target.value)} data-testid={`input-title-${member.id}`} />
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Role</Label>
+                            <Select value={assignRole} onValueChange={setAssignRole}>
+                              <SelectTrigger className="h-8 text-xs mt-1" data-testid={`select-role-${member.id}`}><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="member"><span className="flex items-center gap-2"><Users className="w-3 h-3" />Member</span></SelectItem>
+                                <SelectItem value="supervisor"><span className="flex items-center gap-2"><Shield className="w-3 h-3 text-blue-500" />Supervisor</span></SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {assignRole === "supervisor" && (
+                              <p className="text-xs text-muted-foreground mt-1">Supervisors see compliance data for their department within the visibility settings you configure.</p>
+                            )}
+                          </div>
                           <div className="flex gap-2">
-                            <Button size="sm" className="h-7 text-xs flex-1 bg-accent hover:bg-accent/90 text-white" onClick={() => assignMemberDept.mutate({ memberId: member.id, departmentId: assignDept && assignDept !== "none" ? parseInt(assignDept) : null, jobTitle: assignTitle })} data-testid={`button-save-dept-${member.id}`}>
+                            <Button size="sm" className="h-7 text-xs flex-1 bg-accent hover:bg-accent/90 text-white" onClick={() => assignMemberDept.mutate({ memberId: member.id, departmentId: assignDept && assignDept !== "none" ? parseInt(assignDept) : null, jobTitle: assignTitle, role: assignRole })} data-testid={`button-save-dept-${member.id}`}>
                               <Save className="w-3 h-3 mr-1" />Save
                             </Button>
                             <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAssigningMember(null)}>Cancel</Button>
@@ -355,7 +386,7 @@ export default function TeamSeats() {
 
                       {isAdmin && !isAssigning && (
                         <div className="flex gap-1.5 border-t pt-2">
-                          <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-muted-foreground" onClick={() => { setAssigningMember(member.id); setAssignDept(member.departmentId ? String(member.departmentId) : "none"); setAssignTitle(member.jobTitle || ""); }} data-testid={`button-assign-${member.id}`}>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-muted-foreground" onClick={() => { setAssigningMember(member.id); setAssignDept(member.departmentId ? String(member.departmentId) : "none"); setAssignTitle(member.jobTitle || ""); setAssignRole(member.role === "admin" ? "member" : member.role); }} data-testid={`button-assign-${member.id}`}>
                             <UserCog className="w-3 h-3 mr-1" />Assign
                           </Button>
                           {member.role !== "admin" && (
@@ -481,6 +512,73 @@ export default function TeamSeats() {
                             <p className={`text-xs ${deptCAPAs > 0 ? "text-red-500" : "text-green-500"}`}>Open CAPAs</p>
                           </div>
                         </div>
+
+                        {/* Supervisor visibility settings */}
+                        {isAdmin && (
+                          <div className="border-t pt-3 mt-1">
+                            <button
+                              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground w-full"
+                              onClick={() => {
+                                if (editingVisibility === dept.id) { setEditingVisibility(null); return; }
+                                setEditingVisibility(dept.id);
+                                setVisibilityDraft(dept.visibilitySettings ?? { incidentSummary: true, medicalDetails: false, restrictionDetails: false, capaDetails: true, trainingStatus: true });
+                              }}
+                              data-testid={`button-visibility-${dept.id}`}
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span className="flex-1 text-left font-medium">Supervisor Visibility</span>
+                              {editingVisibility === dept.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+
+                            {editingVisibility === dept.id && (
+                              <div className="mt-3 space-y-3">
+                                {[
+                                  { key: "incidentSummary", label: "Incident Summary", desc: "Date, type, OSHA recordable Y/N, days away", icon: Activity },
+                                  { key: "capaDetails", label: "CAPA Details", desc: "Corrective action plans and status", icon: CheckCircle2 },
+                                  { key: "trainingStatus", label: "Training Status", desc: "Completion rates for dept members", icon: BookOpen },
+                                  { key: "medicalDetails", label: "Medical Details", desc: "Injury description, body part, treatment type", icon: Eye },
+                                  { key: "restrictionDetails", label: "Work Restrictions", desc: "RTW status and work limitations", icon: Info },
+                                ].map(({ key, label, desc, icon: Icon }) => (
+                                  <div key={key} className="flex items-center justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5">
+                                        <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                        <span className="text-xs font-medium">{label}</span>
+                                        {(key === "medicalDetails" || key === "restrictionDetails") && (
+                                          <Badge className="text-xs px-1 py-0 bg-amber-100 text-amber-700 border-amber-200">HIPAA sensitive</Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-muted-foreground ml-5">{desc}</p>
+                                    </div>
+                                    <Switch
+                                      checked={visibilityDraft[key as keyof VisibilitySettings]}
+                                      onCheckedChange={v => setVisibilityDraft(d => ({ ...d, [key]: v }))}
+                                      data-testid={`switch-${key}-${dept.id}`}
+                                    />
+                                  </div>
+                                ))}
+
+                                {/* Drug test — always locked */}
+                                <div className="flex items-center justify-between gap-3 opacity-60">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <Lock className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                                      <span className="text-xs font-medium">Drug Test Results</span>
+                                      <Badge className="text-xs px-1 py-0 bg-red-100 text-red-700 border-red-200">Always restricted</Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground ml-5">Visible to DER / admin only — cannot be unlocked</p>
+                                  </div>
+                                  <Switch checked={false} disabled />
+                                </div>
+
+                                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white h-8 text-xs" onClick={() => updateVisibility.mutate({ deptId: dept.id, settings: visibilityDraft })} disabled={updateVisibility.isPending} data-testid={`button-save-visibility-${dept.id}`}>
+                                  {updateVisibility.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />}
+                                  Save Visibility Settings
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
@@ -493,15 +591,36 @@ export default function TeamSeats() {
           <TabsContent value="compliance" className="space-y-4 mt-4">
             {compLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
+            ) : compliance?.restricted ? (
+              <div className="text-center py-16">
+                <Lock className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-40" />
+                <p className="font-semibold text-foreground">Access Restricted</p>
+                <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">{compliance.message || "Compliance data is available to supervisors and administrators only."}</p>
+              </div>
             ) : compliance ? (
               <>
+                {/* Supervisor scope banner */}
+                {compliance.viewerRole === "supervisor" && compliance.supervisedDeptNames && compliance.supervisedDeptNames.length > 0 && (
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl text-sm">
+                    <Shield className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium text-blue-800">Supervisor View — {compliance.supervisedDeptNames.join(", ")}</p>
+                      <p className="text-blue-600 text-xs mt-0.5">
+                        Showing data for your department(s) only.
+                        {compliance.visibilitySettings && !compliance.visibilitySettings.medicalDetails && " Medical details are restricted per your admin's settings."}
+                        {" "}Drug test results are always restricted to protect employee privacy.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              
                 {/* Summary metrics */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {compliance.summary && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: "Incidents (30d)", value: compliance.summary.incidentsLast30Days, icon: AlertTriangle, color: "orange" },
-                    { label: "Open CAPAs", value: compliance.summary.totalOpenCAPAs, icon: Clock, color: "blue" },
-                    { label: "Overdue CAPAs", value: compliance.summary.overdueCAPAs, icon: Flame, color: "red" },
-                    { label: "Total Recordables", value: compliance.summary.totalRecordables, icon: TrendingUp, color: "purple" },
+                    { label: "Incidents (30d)", value: compliance.summary!.incidentsLast30Days, icon: AlertTriangle, color: "orange" },
+                    { label: "Open CAPAs", value: compliance.summary!.totalOpenCAPAs, icon: Clock, color: "blue" },
+                    { label: "Overdue CAPAs", value: compliance.summary!.overdueCAPAs, icon: Flame, color: "red" },
+                    { label: "Total Recordables", value: compliance.summary!.totalRecordables, icon: TrendingUp, color: "purple" },
                   ].map(({ label, value, icon: Icon, color }) => (
                     <Card key={label} data-testid={`metric-${label.toLowerCase().replace(/\s/g, "-")}`}>
                       <CardContent className="pt-4 pb-4">
@@ -513,22 +632,22 @@ export default function TeamSeats() {
                       </CardContent>
                     </Card>
                   ))}
-                </div>
+                </div>}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {compliance.byDepartment && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Incidents by dept */}
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="w-4 h-4 text-accent" />Incidents by Department (30 days)</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {Object.entries(compliance.byDepartment.incidents).length === 0 ? (
+                      {Object.entries(compliance.byDepartment!.incidents).length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">No incidents logged in the last 30 days.</p>
-                      ) : Object.entries(compliance.byDepartment.incidents).sort((a, b) => b[1] - a[1]).map(([dept, cnt]) => (
+                      ) : Object.entries(compliance.byDepartment!.incidents).sort((a, b) => b[1] - a[1]).map(([dept, cnt]) => (
                         <div key={dept} className="flex items-center gap-3">
                           <span className="text-sm flex-1 truncate">{dept}</span>
                           <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-orange-400 rounded-full" style={{ width: `${(cnt / Math.max(...Object.values(compliance.byDepartment.incidents))) * 100}%` }} />
+                            <div className="h-full bg-orange-400 rounded-full" style={{ width: `${(cnt / Math.max(...Object.values(compliance.byDepartment!.incidents))) * 100}%` }} />
                           </div>
                           <span className="text-sm font-semibold w-6 text-right">{cnt}</span>
                         </div>
@@ -542,23 +661,23 @@ export default function TeamSeats() {
                       <CardTitle className="text-sm flex items-center gap-2"><Activity className="w-4 h-4 text-accent" />Open CAPAs by Department</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {Object.entries(compliance.byDepartment.capas).length === 0 ? (
+                      {Object.entries(compliance.byDepartment!.capas).length === 0 ? (
                         <div className="text-center py-4">
                           <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-1" />
                           <p className="text-sm text-muted-foreground">No open CAPAs — great work!</p>
                         </div>
-                      ) : Object.entries(compliance.byDepartment.capas).sort((a, b) => b[1] - a[1]).map(([dept, cnt]) => (
+                      ) : Object.entries(compliance.byDepartment!.capas).sort((a, b) => b[1] - a[1]).map(([dept, cnt]) => (
                         <div key={dept} className="flex items-center gap-3">
                           <span className="text-sm flex-1 truncate">{dept}</span>
                           <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-red-400 rounded-full" style={{ width: `${(cnt / Math.max(...Object.values(compliance.byDepartment.capas))) * 100}%` }} />
+                            <div className="h-full bg-red-400 rounded-full" style={{ width: `${(cnt / Math.max(...Object.values(compliance.byDepartment!.capas))) * 100}%` }} />
                           </div>
                           <span className="text-sm font-semibold w-6 text-right">{cnt}</span>
                         </div>
                       ))}
                     </CardContent>
                   </Card>
-                </div>
+                </div>}
 
                 {/* Overdue CAPAs */}
                 {compliance.overdueCAPAList.length > 0 && (

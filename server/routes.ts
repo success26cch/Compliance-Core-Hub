@@ -4786,8 +4786,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const team = await storage.getTeamByAdmin(userId);
       if (!team) return res.status(403).json({ message: "Only admins can assign departments" });
-      const { departmentId, jobTitle } = req.body;
-      const updated = await storage.updateTeamMemberDept(parseInt(req.params.id), team.id, departmentId ?? null, jobTitle);
+      const { departmentId, jobTitle, role } = req.body;
+      const updated = await storage.updateTeamMemberDept(parseInt(req.params.id), team.id, departmentId ?? null, jobTitle, role);
       if (!updated) return res.status(404).json({ message: "Member not found" });
       res.json(updated);
     } catch (err: any) { res.status(500).json({ message: err.message }); }
@@ -4857,9 +4857,36 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const adminTeam = await storage.getTeamByAdmin(userId);
       const team = adminTeam || membership?.team;
       if (!team) return res.status(404).json({ message: "No team found" });
-      const teamAdminId = team.adminUserId;
 
-      // Pull incidents + CAPAs for the team admin's account
+      const isAdmin = !!adminTeam;
+      const viewerRole = isAdmin ? "admin" : (membership?.member.role ?? "member");
+
+      // Members (non-supervisor, non-admin) don't get compliance data
+      if (viewerRole === "member") {
+        return res.json({ viewerRole, restricted: true, summary: null, byDepartment: null, recentIncidents: [], overdueCAPAList: [] });
+      }
+
+      // Determine which departments the supervisor oversees (by supervisorMemberId)
+      const allDepts = await storage.getTeamDepartments(team.id);
+      let supervisedDepts: typeof allDepts = [];
+      let mergedVisibility = { incidentSummary: true, medicalDetails: false, restrictionDetails: false, capaDetails: true, trainingStatus: true };
+
+      if (!isAdmin) {
+        supervisedDepts = allDepts.filter(d => d.supervisorMemberId === membership!.member.id);
+        if (supervisedDepts.length === 0) {
+          return res.json({ viewerRole, restricted: true, message: "You are not assigned as supervisor of any department.", summary: null, byDepartment: null, recentIncidents: [], overdueCAPAList: [] });
+        }
+        // Merge visibility: most permissive across all supervised depts
+        mergedVisibility = {
+          incidentSummary: supervisedDepts.some(d => (d.visibilitySettings as any)?.incidentSummary !== false),
+          medicalDetails: supervisedDepts.some(d => (d.visibilitySettings as any)?.medicalDetails === true),
+          restrictionDetails: supervisedDepts.some(d => (d.visibilitySettings as any)?.restrictionDetails === true),
+          capaDetails: supervisedDepts.some(d => (d.visibilitySettings as any)?.capaDetails !== false),
+          trainingStatus: supervisedDepts.some(d => (d.visibilitySettings as any)?.trainingStatus !== false),
+        };
+      }
+
+      const teamAdminId = team.adminUserId;
       const [allIncidents, allCAPAs] = await Promise.all([
         storage.getIncidents(teamAdminId),
         storage.getCorrectiveActions(teamAdminId),
@@ -4868,28 +4895,72 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      const recentIncidents = allIncidents.filter(i => i.incidentDate && new Date(i.incidentDate) >= thirtyDaysAgo);
-      const openCAPAs = allCAPAs.filter(c => c.status !== "Completed" && c.status !== "Closed");
-      const overdueCAPAs = openCAPAs.filter(c => c.dueDate && new Date(c.dueDate) < now);
-      const recordables = allIncidents.filter(i => i.isOshaRecordable);
+      // Filter by department for supervisors
+      const supervisedDeptNames = supervisedDepts.map(d => d.name);
+      const incidentsInScope = isAdmin
+        ? allIncidents
+        : allIncidents.filter(i => supervisedDeptNames.includes(i.department ?? ""));
+      const capasInScope = isAdmin
+        ? allCAPAs
+        : allCAPAs.filter(c => supervisedDeptNames.includes(c.responsibleDepartment ?? ""));
 
-      // Group by department
+      const recentIncidents = incidentsInScope.filter(i => i.incidentDate && new Date(i.incidentDate) >= thirtyDaysAgo);
+      const openCAPAs = capasInScope.filter(c => c.status !== "Completed" && c.status !== "Closed");
+      const overdueCAPAs = openCAPAs.filter(c => c.dueDate && new Date(c.dueDate) < now);
+      const recordables = incidentsInScope.filter(i => i.isOshaRecordable);
+
+      // Strip HIPAA-protected fields from incident objects for supervisors
+      function sanitizeIncident(inc: any) {
+        if (isAdmin) return inc;
+        const safe: any = {
+          id: inc.id,
+          incidentDate: inc.incidentDate,
+          department: inc.department,
+          incidentType: inc.incidentType,
+          isOshaRecordable: inc.isOshaRecordable,
+          daysAway: inc.daysAway,
+          daysRestricted: inc.daysRestricted,
+          status: inc.status,
+        };
+        if (mergedVisibility.medicalDetails) {
+          safe.description = inc.description;
+          safe.injuryType = inc.injuryType;
+          safe.bodyPart = inc.bodyPart;
+          safe.treatmentType = inc.treatmentType;
+        }
+        if (mergedVisibility.restrictionDetails) {
+          safe.workRestrictions = inc.workRestrictions;
+          safe.returnToWorkDate = inc.returnToWorkDate;
+        }
+        // Drug test results are ALWAYS stripped for supervisors regardless of settings
+        return safe;
+      }
+
       const deptIncidentMap: Record<string, number> = {};
       const deptCAPAMap: Record<string, number> = {};
       recentIncidents.forEach(i => { const d = i.department || "Unassigned"; deptIncidentMap[d] = (deptIncidentMap[d] || 0) + 1; });
-      openCAPAs.forEach(c => { const d = c.responsibleDepartment || "Unassigned"; deptCAPAMap[d] = (deptCAPAMap[d] || 0) + 1; });
+      if (mergedVisibility.capaDetails || isAdmin) {
+        openCAPAs.forEach(c => { const d = c.responsibleDepartment || "Unassigned"; deptCAPAMap[d] = (deptCAPAMap[d] || 0) + 1; });
+      }
 
       res.json({
-        summary: {
+        viewerRole,
+        restricted: false,
+        supervisedDeptNames: isAdmin ? [] : supervisedDeptNames,
+        visibilitySettings: isAdmin ? null : mergedVisibility,
+        summary: mergedVisibility.incidentSummary || isAdmin ? {
           incidentsLast30Days: recentIncidents.length,
           totalOpenCAPAs: openCAPAs.length,
           overdueCAPAs: overdueCAPAs.length,
           totalRecordables: recordables.length,
-          totalIncidents: allIncidents.length,
+          totalIncidents: incidentsInScope.length,
+        } : null,
+        byDepartment: {
+          incidents: (mergedVisibility.incidentSummary || isAdmin) ? deptIncidentMap : {},
+          capas: (mergedVisibility.capaDetails || isAdmin) ? deptCAPAMap : {},
         },
-        byDepartment: { incidents: deptIncidentMap, capas: deptCAPAMap },
-        recentIncidents: recentIncidents.slice(0, 5),
-        overdueCAPAList: overdueCAPAs.slice(0, 5),
+        recentIncidents: (mergedVisibility.incidentSummary || isAdmin) ? recentIncidents.slice(0, 5).map(sanitizeIncident) : [],
+        overdueCAPAList: (mergedVisibility.capaDetails || isAdmin) ? overdueCAPAs.slice(0, 5) : [],
       });
     } catch (err: any) { res.status(500).json({ message: err.message }); }
   });

@@ -920,7 +920,7 @@ export const coreyTeamMembers = pgTable("corey_team_members", {
   userId: text("user_id"), // null until invite is accepted and user signs in
   email: text("email").notNull(),
   name: text("name"),
-  role: text("role").notNull().default("member"), // 'admin', 'member'
+  role: text("role").notNull().default("member"), // 'admin', 'supervisor', 'member'
   status: text("status").notNull().default("invited"), // 'invited', 'active', 'removed'
   inviteToken: text("invite_token"),
   departmentId: integer("department_id"), // nullable, assigned to a dept
@@ -938,6 +938,14 @@ export const teamDepartments = pgTable("team_departments", {
   color: text("color").notNull().default("blue"), // blue, green, orange, red, purple, yellow
   supervisorMemberId: integer("supervisor_member_id"), // ref to corey_team_members.id
   supervisorName: text("supervisor_name"),
+  // Per-dept supervisor visibility toggles (drug test results are always hard-locked off)
+  visibilitySettings: jsonb("visibility_settings").$type<{
+    incidentSummary: boolean;   // see incidents occurred, date, type, OSHA recordable Y/N
+    medicalDetails: boolean;    // see injury description, body part, treatment type
+    restrictionDetails: boolean; // see work restrictions / RTW status
+    capaDetails: boolean;       // see CAPA details for their dept
+    trainingStatus: boolean;    // see training completion for their dept
+  }>().default({ incidentSummary: true, medicalDetails: false, restrictionDetails: false, capaDetails: true, trainingStatus: true }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
