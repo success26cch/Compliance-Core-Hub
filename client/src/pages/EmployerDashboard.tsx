@@ -601,6 +601,246 @@ export default function EmployerDashboard() {
         </div>
       </section>
 
+      {/* ── HOW THE TIERS WORK ───────────────────────────────────────────── */}
+      <section className="bg-[#faf9f7] py-16 px-4 md:px-6 border-y border-stone-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-10 space-y-2">
+            <Badge variant="outline" className="text-accent border-accent/30">Pricing Tiers</Badge>
+            <h2 className="text-3xl md:text-4xl font-black text-primary">How Every Tier Works</h2>
+            <p className="text-muted-foreground text-base max-w-2xl mx-auto">
+              Pick the level your program needs today. Every tier is designed to work standalone
+              or stack — you grow into what you need.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+
+            {/* ── TIER 1: Corey AI Only ── */}
+            <div className="flex flex-col rounded-2xl border border-border/60 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="h-1.5 w-full bg-gradient-to-r from-accent to-orange-400" />
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                    <Bot className="w-5 h-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tier 1</p>
+                    <h3 className="text-base font-black text-primary leading-tight">Corey AI Only</h3>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <span className="text-3xl font-black text-primary">$199</span>
+                  <span className="text-sm text-muted-foreground">/mo</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  Pure AI power. No dashboard. Ideal for small employers or solo safety managers who need a compliance expert on call 24/7 without the full platform overhead.
+                </p>
+                <div className="space-y-2 flex-1">
+                  {[
+                    { text: "Corey AI — unlimited questions", ok: true },
+                    { text: "23+ document templates", ok: true },
+                    { text: "OSHA decision tree (unlimited)", ok: true },
+                    { text: "Emergency response guidance", ok: true },
+                    { text: "Audit Mode & Team Meeting Mode", ok: true },
+                    { text: "Employee & incident management", ok: false },
+                    { text: "CAPA tracker + SMS notifications", ok: false },
+                    { text: "Team Hub & multi-seat access", ok: false },
+                  ].map((item, i) => (
+                    <div key={i} className={`flex items-start gap-2 text-sm ${item.ok ? 'text-primary' : 'text-muted-foreground/40 line-through'}`}>
+                      {item.ok
+                        ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/20 shrink-0 mt-0.5" />
+                      }
+                      {item.text}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5">
+                  <Link href="/meet-corey">
+                    <Button variant="outline" className="w-full border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold">
+                      Meet Corey
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* ── TIER 2: Employer Platform ── */}
+            <div className="flex flex-col rounded-2xl border border-border/60 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="h-1.5 w-full bg-gradient-to-r from-primary to-blue-600" />
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tier 2</p>
+                    <h3 className="text-base font-black text-primary leading-tight">Employer Platform</h3>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <span className="text-3xl font-black text-primary">$599</span>
+                  <span className="text-sm text-muted-foreground">/mo</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  The full compliance command center. All 9 modules, your whole team, and every workflow automated — without Corey AI. Great if your team already has expertise on staff.
+                </p>
+                <div className="space-y-2 flex-1">
+                  {[
+                    { text: "Full dashboard — all 9 modules", ok: true },
+                    { text: "Employee & medical surveillance", ok: true },
+                    { text: "Incident log + OSHA 300 auto-build", ok: true },
+                    { text: "CAPA tracker with SMS notifications", ok: true },
+                    { text: "Team Hub (5 seats included)", ok: true },
+                    { text: "Training portal + certificates", ok: true },
+                    { text: "Digital Passport (QR clinic check-in)", ok: true },
+                    { text: "Corey AI add-on available (+$100)", ok: false },
+                  ].map((item, i) => (
+                    <div key={i} className={`flex items-start gap-2 text-sm ${item.ok ? 'text-primary' : 'text-muted-foreground/60'}`}>
+                      {item.ok
+                        ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        : <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />
+                      }
+                      {item.text}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5">
+                  <Link href="/get-started">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
+                      Get the Platform
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* ── TIER 3: Employer Platform + Corey ── (BEST VALUE) */}
+            <div className="flex flex-col rounded-2xl border-2 border-accent bg-white overflow-hidden shadow-lg relative">
+              <div className="absolute top-3 right-3 z-10">
+                <Badge className="bg-accent text-white font-bold text-xs px-2 py-0.5">Best Value</Badge>
+              </div>
+              <div className="h-1.5 w-full bg-gradient-to-r from-accent via-orange-400 to-yellow-400" />
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-5 h-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-accent uppercase tracking-wider">Tier 3 — Recommended</p>
+                    <h3 className="text-base font-black text-primary leading-tight">Platform + Corey AI</h3>
+                  </div>
+                </div>
+                <div className="mb-1">
+                  <span className="text-3xl font-black text-primary">$699</span>
+                  <span className="text-sm text-muted-foreground">/mo</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">+$129/mo per additional seat</p>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  The complete package. Everything in the Employer Platform plus Corey AI answering every compliance question, drafting every document, and briefing you every morning.
+                </p>
+                <div className="space-y-2 flex-1">
+                  {[
+                    { text: "Everything in Employer Platform", ok: true },
+                    { text: "Corey AI — unlimited questions", ok: true },
+                    { text: "23+ document templates", ok: true },
+                    { text: "Emergency response guidance", ok: true },
+                    { text: "Corey's Daily Brief (morning AI rundown)", ok: true },
+                    { text: "Audit Mode + Team Meeting Mode", ok: true },
+                    { text: "Private conversations per seat", ok: true },
+                    { text: "ISO Manager (available as add-on)", ok: false },
+                  ].map((item, i) => (
+                    <div key={i} className={`flex items-start gap-2 text-sm ${item.ok ? 'text-primary' : 'text-muted-foreground/60'}`}>
+                      {item.ok
+                        ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        : <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />
+                      }
+                      {item.text}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5">
+                  <Link href="/get-started">
+                    <Button className="w-full bg-accent hover:bg-accent/90 text-white font-bold shadow-md shadow-accent/20">
+                      Get Started — $699/mo
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* ── TIER 4: ISO Manager ── */}
+            <div className="flex flex-col rounded-2xl border border-border/60 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="h-1.5 w-full bg-gradient-to-r from-purple-600 to-purple-400" />
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600/10 flex items-center justify-center shrink-0">
+                    <Award className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tier 4</p>
+                    <h3 className="text-base font-black text-primary leading-tight">ISO Manager</h3>
+                  </div>
+                </div>
+                <div className="mb-1">
+                  <span className="text-3xl font-black text-primary">$299</span>
+                  <span className="text-sm text-muted-foreground">/mo Core</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Scales to $899/mo for ISO Manager PRO</p>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  Purpose-built for ISO-certified or pursuing organizations. Standalone or stacked on top of your Employer Platform — Isa AI handles 7 major standards with full audit logic.
+                </p>
+                <div className="space-y-2 flex-1">
+                  {[
+                    { text: "Isa AI — Lead ISO Auditor on demand", ok: true },
+                    { text: "ISO 9001, 14001, 45001, 13485, 27001", ok: true },
+                    { text: "AS9100 & IATF 16949 (PRO)", ok: true },
+                    { text: "NC & CAPA tracking (ISO-aligned)", ok: true },
+                    { text: "Documentation library + clause mapping", ok: true },
+                    { text: "Guided setup wizard (3-phase onboarding)", ok: true },
+                    { text: "CESAR — Customer Specific Requirements", ok: true },
+                    { text: "Stacks with any Employer tier above", ok: true },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-primary">
+                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                      {item.text}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5">
+                  <Link href="/meet-iso-manager">
+                    <Button variant="outline" className="w-full border-purple-400/40 text-purple-700 hover:bg-purple-600 hover:text-white font-semibold">
+                      Explore ISO Manager
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom note */}
+          <div className="mt-8 p-5 rounded-2xl bg-white border border-border/50 text-center space-y-1">
+            <p className="text-sm font-semibold text-primary">Not sure which tier fits?</p>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+              Most employers with 25–500 employees find that <strong>Tier 3 (Platform + Corey)</strong> covers everything
+              they need from day one. Corey pays for itself the first time it keeps an injury off the OSHA 300 log.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Link href="/contact">
+                <Button variant="outline" size="sm" className="gap-1.5 border-border/60 text-muted-foreground hover:text-primary">
+                  <MessageSquare className="w-3.5 h-3.5" /> Talk to Us
+                </Button>
+              </Link>
+              <Link href="/get-started">
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-bold gap-1.5">
+                  Compare All Plans <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── COREY AI HIGHLIGHT ───────────────────────────────────────────── */}
       <section className="bg-gradient-to-br from-primary/5 via-background to-accent/5 py-16 px-4 md:px-6 border-y border-border/40">
         <div className="max-w-7xl mx-auto">
