@@ -60,6 +60,7 @@ import IsaStandalone from "@/pages/Isa";
 import IsaProfile from "@/pages/IsaProfile";
 import WelcomeIsa from "@/pages/WelcomeIsa";
 import Login from "@/pages/Login";
+import EmployerDashboard from "@/pages/EmployerDashboard";
 import RefundPolicy from "@/pages/RefundPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/" component={Landing} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/employer-dashboard" component={EmployerDashboard} />
       <Route path="/bot" component={BotPage} />
       <Route path="/iso-manager" component={ISOManager} />
       <Route path="/decision-tree" component={DecisionTree} />
