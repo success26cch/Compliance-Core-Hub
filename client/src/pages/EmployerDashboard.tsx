@@ -140,15 +140,15 @@ export default function EmployerDashboard() {
   ];
 
   const modules = [
-    { title: "Corey AI", sub: "OSHA · DOT · ISO Expert", icon: <Bot className="w-5 h-5" />, color: "text-accent", bg: "bg-accent/10", border: "border-accent/20", badge: "24/7 AI" },
-    { title: "Employee Management", sub: "Medical Surveillance", icon: <Users className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20", badge: `${DEMO.employees} employees` },
-    { title: "Incident Log", sub: "OSHA 300 Compliant", icon: <FileWarning className="w-5 h-5" />, color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/20", badge: null },
-    { title: "CAPA Tracker", sub: "SMS Notifications", icon: <Target className="w-5 h-5" />, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20", badge: `${DEMO.openActions} open` },
-    { title: "Team Hub", sub: "3-Tier Role System", icon: <Layers className="w-5 h-5" />, color: "text-blue-600", bg: "bg-blue-600/10", border: "border-blue-600/20", badge: `${DEMO.teamMembers} members` },
-    { title: "Training Portal", sub: "LMS + Certificates", icon: <GraduationCap className="w-5 h-5" />, color: "text-emerald-600", bg: "bg-emerald-600/10", border: "border-emerald-600/20", badge: null },
-    { title: "ISO Manager", sub: "9001 · 14001 · 45001+", icon: <Award className="w-5 h-5" />, color: "text-purple-600", bg: "bg-purple-600/10", border: "border-purple-600/20", badge: `${DEMO.isoReadiness}% ready` },
-    { title: "Digital Passport", sub: "QR Clinic Check-In", icon: <QrCode className="w-5 h-5" />, color: "text-amber-600", bg: "bg-amber-500/10", border: "border-amber-500/20", badge: null },
-    { title: "OSHA Decision Tree", sub: "Recordability Tool", icon: <ClipboardList className="w-5 h-5" />, color: "text-teal-600", bg: "bg-teal-600/10", border: "border-teal-600/20", badge: null },
+    { title: "Corey AI", sub: "OSHA · DOT Compliance Expert", icon: <Bot className="w-5 h-5" />, color: "text-accent", bg: "bg-accent/10", border: "border-accent/20", badge: "24/7 AI", desc: "Your senior occupational health and safety expert, available around the clock. Ask Corey any OSHA or DOT compliance question, draft policy documents on demand, run an audit prep session, or start your morning with a prioritized brief of everything that needs your attention." },
+    { title: "Employee Management", sub: "Medical Surveillance", icon: <Users className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20", badge: `${DEMO.employees} employees`, desc: "Keep every employee's compliance record current — DOT physicals, respirator clearances, drug screen results, and work restrictions all tracked in one place. Get ahead of expiring exams before they create regulatory exposure or put an employee behind the wheel out of compliance." },
+    { title: "Incident Log", sub: "OSHA 300 Compliant", icon: <FileWarning className="w-5 h-5" />, color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/20", badge: null, desc: "Document every workplace injury and illness with a complete OSHA-aligned case record — body diagram, injury classification, root cause, restricted days, and case outcome. Your OSHA 300 log builds itself as incidents are entered, and your workers' comp carrier is notified the same moment you hit submit." },
+    { title: "CAPA Tracker", sub: "SMS Notifications", icon: <Target className="w-5 h-5" />, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20", badge: `${DEMO.openActions} open`, desc: "Every incident or near-miss automatically generates a corrective action. Assign it, set a due date, and the system texts the responsible party. Overdue CAPAs surface in the Action Queue before they become repeat injuries — and effectiveness verification keeps the loop closed." },
+    { title: "Team Hub", sub: "3-Tier Role System", icon: <Layers className="w-5 h-5" />, color: "text-blue-600", bg: "bg-blue-600/10", border: "border-blue-600/20", badge: `${DEMO.teamMembers} members`, desc: "Invite your whole safety and operations team with role-based access built in. Admins see everything. Supervisors see their department. Members see only their own records. Medical details and restriction information are hidden by default — HIPAA-aware from the ground up." },
+    { title: "Training Portal", sub: "LMS + Certificates", icon: <GraduationCap className="w-5 h-5" />, color: "text-emerald-600", bg: "bg-emerald-600/10", border: "border-emerald-600/20", badge: null, desc: "Assign and track mandatory safety training across your workforce without spreadsheets. Video modules, knowledge quizzes, completion records, and printable certificates are all managed from a single admin dashboard — with employee-facing progress tracking built in." },
+    { title: "ISO Manager", sub: "9001 · 14001 · 45001+", icon: <Award className="w-5 h-5" />, color: "text-purple-600", bg: "bg-purple-600/10", border: "border-purple-600/20", badge: `${DEMO.isoReadiness}% ready`, desc: "A full ISO quality and safety management system powered by Isa AI — your on-demand Lead Auditor. Covers seven major standards with nonconformance tracking, CAPA workflows, a documentation library with clause mapping, and a 3-phase guided setup wizard to get your system audit-ready." },
+    { title: "Digital Passport", sub: "QR Clinic Check-In", icon: <QrCode className="w-5 h-5" />, color: "text-amber-600", bg: "bg-amber-500/10", border: "border-amber-500/20", badge: null, desc: "Issue every employee a QR-code medical passport they present at any occupational health clinic visit. Authorization forms are signed digitally on arrival, the employer is notified automatically, and time-away tracking begins the moment they check in — no fax, no paperwork, no phone tag." },
+    { title: "OSHA Decision Tree", sub: "Recordability Tool", icon: <ClipboardList className="w-5 h-5" />, color: "text-teal-600", bg: "bg-teal-600/10", border: "border-teal-600/20", badge: null, desc: "Five targeted questions walk you through 29 CFR 1904 step by step and return a clear, defensible recordability determination in under two minutes. Every answer shows the regulatory logic behind it — so you can explain your decision to an OSHA inspector with confidence." },
   ];
 
   const powerStats = [
@@ -577,14 +577,14 @@ export default function EmployerDashboard() {
               Every module is included in your $599/mo Employer Platform subscription — nothing locked behind extra fees.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {modules.map((mod, i) => (
-              <div key={i} className={`group p-4 rounded-xl border bg-white hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 ${mod.border}`}>
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-xl ${mod.bg} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
+              <div key={i} className={`group flex flex-col p-5 rounded-2xl border bg-white hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 ${mod.border}`}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className={`w-11 h-11 rounded-xl ${mod.bg} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
                     <span className={mod.color}>{mod.icon}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pt-0.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-bold text-primary">{mod.title}</p>
                       {mod.badge && (
@@ -593,8 +593,9 @@ export default function EmployerDashboard() {
                     </div>
                     <p className={`text-xs font-semibold mt-0.5 ${mod.color}`}>{mod.sub}</p>
                   </div>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-1" />
                 </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{mod.desc}</p>
               </div>
             ))}
           </div>
