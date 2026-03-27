@@ -208,7 +208,7 @@ export default function EmployerDashboard() {
                 </Button>
               </Link>
               <Link href="/watch-demo">
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 font-semibold gap-2 text-base">
+                <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold gap-2 text-base">
                   <Play className="w-4 h-4" /> Watch Demo
                 </Button>
               </Link>
@@ -448,7 +448,7 @@ export default function EmployerDashboard() {
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <Link href="/decision-tree">
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 gap-1.5">
+                <Button className="bg-white text-primary hover:bg-white/90 font-semibold gap-1.5">
                   <ClipboardList className="w-4 h-4" /> Try Decision Tree
                 </Button>
               </Link>
@@ -929,7 +929,7 @@ export default function EmployerDashboard() {
               </Button>
             </Link>
             <Link href="/corey">
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 font-semibold gap-2 text-base">
+              <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold gap-2 text-base">
                 <Bot className="w-4 h-4" /> Ask Corey First
               </Button>
             </Link>

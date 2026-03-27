@@ -2192,7 +2192,15 @@ function PlatformModuleGrid({ metrics, actions }: { metrics?: DashboardMetrics; 
 }
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading: authLoading, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/employer-dashboard");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const { toast } = useToast();
   const [emergencyOpen, setEmergencyOpen] = useState(false);
