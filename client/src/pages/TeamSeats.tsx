@@ -3,369 +3,702 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, Mail, Crown, UserPlus, UserMinus, Shield, Loader2, User } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Users, Crown, UserPlus, UserMinus, Shield, Loader2, Video,
+  Building2, ChevronRight, Pin, PinOff, Megaphone, AlertTriangle,
+  CheckCircle2, Clock, TrendingUp, Flame, BookOpen, Plus, Trash2,
+  UserCog, Briefcase, Activity, BarChart3, X, Edit2, Save,
+} from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 
-interface TeamData {
-  team: {
-    id: number;
-    adminUserId: string;
-    companyName: string;
-    totalSeats: number;
-    status: string;
-    stripeSubscriptionId?: string;
-  } | null;
-  members: Array<{
-    id: number;
-    teamId: number;
-    userId: string | null;
-    email: string;
-    name: string | null;
-    role: string;
-    status: string;
-    invitedAt: string;
-    joinedAt: string | null;
-  }>;
-  isAdmin: boolean;
-  role: string | null;
+// ── Types ────────────────────────────────────────────────────────────────────
+
+interface TeamMember {
+  id: number; teamId: number; userId: string | null;
+  email: string; name: string | null; role: string; status: string;
+  inviteToken?: string; departmentId?: number | null; jobTitle?: string | null;
+  invitedAt: string; joinedAt: string | null;
 }
+interface TeamData {
+  team: { id: number; adminUserId: string; companyName: string; totalSeats: number; status: string; } | null;
+  members: TeamMember[]; isAdmin: boolean; role: string | null;
+}
+interface Department { id: number; teamId: number; name: string; description?: string | null; color: string; supervisorMemberId?: number | null; supervisorName?: string | null; createdAt: string; }
+interface Announcement { id: number; teamId: number; authorName: string; authorEmail?: string | null; title: string; body: string; category: string; isPinned: boolean; createdAt: string; }
+interface ComplianceData {
+  summary: { incidentsLast30Days: number; totalOpenCAPAs: number; overdueCAPAs: number; totalRecordables: number; totalIncidents: number; };
+  byDepartment: { incidents: Record<string, number>; capas: Record<string, number>; };
+  recentIncidents: any[]; overdueCAPAList: any[];
+}
+
+// ── Colour helpers ───────────────────────────────────────────────────────────
+
+const DEPT_COLORS: { value: string; label: string; cls: string; bg: string }[] = [
+  { value: "blue",   label: "Blue",   cls: "bg-blue-100 text-blue-800 border-blue-200",   bg: "bg-blue-500" },
+  { value: "green",  label: "Green",  cls: "bg-green-100 text-green-800 border-green-200", bg: "bg-green-500" },
+  { value: "orange", label: "Orange", cls: "bg-orange-100 text-orange-800 border-orange-200", bg: "bg-orange-500" },
+  { value: "red",    label: "Red",    cls: "bg-red-100 text-red-800 border-red-200",       bg: "bg-red-500" },
+  { value: "purple", label: "Purple", cls: "bg-purple-100 text-purple-800 border-purple-200", bg: "bg-purple-500" },
+  { value: "yellow", label: "Yellow", cls: "bg-yellow-100 text-yellow-800 border-yellow-200", bg: "bg-yellow-500" },
+];
+const deptColorCls = (c: string) => DEPT_COLORS.find(d => d.value === c)?.cls ?? DEPT_COLORS[0].cls;
+const deptBg = (c: string) => DEPT_COLORS.find(d => d.value === c)?.bg ?? "bg-blue-500";
+
+const ANN_CATEGORIES: { value: string; label: string; icon: any; cls: string }[] = [
+  { value: "general",  label: "General",  icon: Megaphone,    cls: "bg-slate-100 text-slate-700" },
+  { value: "safety",   label: "Safety",   icon: AlertTriangle, cls: "bg-orange-100 text-orange-700" },
+  { value: "policy",   label: "Policy",   icon: Shield,        cls: "bg-blue-100 text-blue-700" },
+  { value: "training", label: "Training", icon: BookOpen,      cls: "bg-green-100 text-green-700" },
+  { value: "urgent",   label: "Urgent",   icon: Flame,         cls: "bg-red-100 text-red-700" },
+];
+const annCat = (v: string) => ANN_CATEGORIES.find(a => a.value === v) ?? ANN_CATEGORIES[0];
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 
 export default function TeamSeats() {
   const { toast } = useToast();
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteName, setInviteName] = useState('');
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newTeamName, setNewTeamName] = useState('');
-  const [newTeamSeats, setNewTeamSeats] = useState(2);
+  const [tab, setTab] = useState("people");
 
+  // form states
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamSeats, setNewTeamSeats] = useState(2);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  // dept form
+  const [deptForm, setDeptForm] = useState({ name: "", description: "", color: "blue", supervisorMemberId: "", supervisorName: "" });
+  const [showDeptForm, setShowDeptForm] = useState(false);
+
+  // announcement form
+  const [annForm, setAnnForm] = useState({ title: "", body: "", category: "general" });
+  const [showAnnForm, setShowAnnForm] = useState(false);
+
+  // member dept assignment
+  const [assigningMember, setAssigningMember] = useState<number | null>(null);
+  const [assignDept, setAssignDept] = useState("");
+  const [assignTitle, setAssignTitle] = useState("");
+
+  // On successful checkout
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('team_checkout') === 'success') {
-      fetch('/api/team/activate', { method: 'POST', credentials: 'include' })
-        .then(r => r.json())
-        .then(data => {
+    if (params.get("team_checkout") === "success") {
+      fetch("/api/team/activate", { method: "POST", credentials: "include" })
+        .then(r => r.json()).then(data => {
           if (data.success) {
             toast({ title: "Team Activated!", description: "Your team subscription is now active." });
-            queryClient.invalidateQueries({ queryKey: ['/api/team'] });
-            queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/status'] });
+            queryClient.invalidateQueries({ queryKey: ["/api/team"] });
           }
-        })
-        .catch(() => {});
-      window.history.replaceState({}, '', '/team-seats');
+        }).catch(() => {});
+      window.history.replaceState({}, "", "/team-seats");
     }
   }, []);
 
-  const { data: teamData, isLoading } = useQuery<TeamData>({
-    queryKey: ['/api/team'],
-    queryFn: async () => {
-      const res = await fetch('/api/team', { credentials: 'include' });
-      if (res.status === 401) return { team: null, members: [], isAdmin: false, role: null };
-      if (res.status === 404) return { team: null, members: [], isAdmin: false, role: null };
-      if (!res.ok) throw new Error('Failed to fetch team');
-      const data = await res.json();
-      return {
-        team: data.team,
-        members: data.members || [],
-        isAdmin: data.role === 'admin',
-        role: data.role,
-      };
-    },
+  // ── Queries ──────────────────────────────────────────────────────────────
+  const { data: teamData, isLoading: teamLoading } = useQuery<TeamData>({ queryKey: ["/api/team"] });
+  const { data: departments = [], isLoading: deptsLoading } = useQuery<Department[]>({
+    queryKey: ["/api/team/departments"],
+    enabled: !!teamData?.team,
+  });
+  const { data: announcements = [], isLoading: annsLoading } = useQuery<Announcement[]>({
+    queryKey: ["/api/team/announcements"],
+    enabled: !!teamData?.team,
+  });
+  const { data: compliance, isLoading: compLoading } = useQuery<ComplianceData>({
+    queryKey: ["/api/team/compliance"],
+    enabled: !!teamData?.team,
   });
 
+  // ── Mutations ────────────────────────────────────────────────────────────
   const createTeam = useMutation({
-    mutationFn: async (data: { companyName: string; totalSeats: number }) => {
-      const res = await apiRequest('POST', '/api/team', data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/team'] });
-      setShowCreateForm(false);
-      setNewTeamName('');
-      setNewTeamSeats(2);
-      toast({ title: "Team Created", description: "Your team has been set up. You can now invite members." });
-    },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message || "Failed to create team.", variant: "destructive" });
-    },
+    mutationFn: () => apiRequest("POST", "/api/team", { companyName: newTeamName, totalSeats: newTeamSeats }).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Team created!" }); queryClient.invalidateQueries({ queryKey: ["/api/team"] }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const inviteMember = useMutation({
-    mutationFn: async (data: { email: string; name: string }) => {
-      const res = await apiRequest('POST', '/api/team/members', data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/team'] });
-      setInviteEmail('');
-      setInviteName('');
-      toast({ title: "Invite Sent", description: "Team member has been invited. Share the join link with them." });
-    },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message || "Failed to invite member.", variant: "destructive" });
-    },
+    mutationFn: () => apiRequest("POST", "/api/team/members", { email: inviteEmail, name: inviteName }).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Invite sent!", description: `${inviteEmail} was invited.` }); setInviteEmail(""); setInviteName(""); queryClient.invalidateQueries({ queryKey: ["/api/team"] }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const removeMember = useMutation({
-    mutationFn: async (memberId: number) => {
-      await apiRequest('DELETE', `/api/team/members/${memberId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/team'] });
-      toast({ title: "Member Removed", description: "Team member has been removed." });
-    },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message || "Failed to remove member.", variant: "destructive" });
-    },
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/team/members/${id}`).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Member removed" }); queryClient.invalidateQueries({ queryKey: ["/api/team"] }); },
   });
 
-  const updateSeats = useMutation({
-    mutationFn: async (totalSeats: number) => {
-      const res = await apiRequest('PATCH', '/api/team/seats', { totalSeats });
-      return res.json();
+  const createDept = useMutation({
+    mutationFn: () => {
+      const sup = deptForm.supervisorMemberId ? teamData?.members.find(m => m.id === parseInt(deptForm.supervisorMemberId)) : null;
+      return apiRequest("POST", "/api/team/departments", { ...deptForm, supervisorMemberId: sup?.id ?? null, supervisorName: sup?.name ?? deptForm.supervisorName || null }).then(r => r.json());
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/team'] });
-      toast({ title: "Seats Updated", description: "Team seat count has been updated." });
-    },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message || "Failed to update seats.", variant: "destructive" });
-    },
+    onSuccess: () => { toast({ title: "Department created!" }); setDeptForm({ name: "", description: "", color: "blue", supervisorMemberId: "", supervisorName: "" }); setShowDeptForm(false); queryClient.invalidateQueries({ queryKey: ["/api/team/departments"] }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const team = teamData?.team;
-  const members = teamData?.members || [];
-  const isAdmin = teamData?.isAdmin || false;
-  const activeMembers = members.filter(m => m.status === 'active' || m.status === 'invited');
-  const seatsUsed = activeMembers.length;
+  const deleteDept = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/team/departments/${id}`).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Department removed" }); queryClient.invalidateQueries({ queryKey: ["/api/team/departments"] }); queryClient.invalidateQueries({ queryKey: ["/api/team"] }); },
+  });
 
-  return (
+  const assignMemberDept = useMutation({
+    mutationFn: ({ memberId, departmentId, jobTitle }: { memberId: number; departmentId: number | null; jobTitle: string }) =>
+      apiRequest("PATCH", `/api/team/members/${memberId}/department`, { departmentId, jobTitle }).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Member updated" }); setAssigningMember(null); queryClient.invalidateQueries({ queryKey: ["/api/team"] }); },
+  });
+
+  const createAnn = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/team/announcements", annForm).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Announcement posted!" }); setAnnForm({ title: "", body: "", category: "general" }); setShowAnnForm(false); queryClient.invalidateQueries({ queryKey: ["/api/team/announcements"] }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const pinAnn = useMutation({
+    mutationFn: (id: number) => apiRequest("PATCH", `/api/team/announcements/${id}/pin`).then(r => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/team/announcements"] }),
+  });
+
+  const deleteAnn = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/team/announcements/${id}`).then(r => r.json()),
+    onSuccess: () => { toast({ title: "Announcement deleted" }); queryClient.invalidateQueries({ queryKey: ["/api/team/announcements"] }); },
+  });
+
+  // ── Start video meeting ──────────────────────────────────────────────────
+  function startMeeting() {
+    const teamName = (teamData?.team?.companyName ?? "cchub-team").replace(/\s+/g, "-").toLowerCase();
+    const room = `${teamName}-${Math.random().toString(36).slice(2, 7)}`;
+    window.open(`https://meet.jit.si/${room}`, "_blank", "noopener,noreferrer");
+  }
+
+  // ── Loading / no-team states ─────────────────────────────────────────────
+  if (teamLoading) return (
     <ProtectedLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Users className="w-8 h-8 text-primary" /> Corey Team Seats
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage multi-seat Corey subscriptions for your team — $199/seat/month, billed together
-          </p>
+      <div className="max-w-5xl mx-auto px-4 py-10 space-y-4">
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+      </div>
+    </ProtectedLayout>
+  );
+
+  if (!teamData?.team) return (
+    <ProtectedLayout>
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-5">
+          <Users className="w-8 h-8 text-accent" />
         </div>
-
-        {isLoading ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2"><Users className="w-5 h-5" /> Team Seats</CardTitle>
-            </CardHeader>
-            <CardContent><Skeleton className="h-32 w-full" /></CardContent>
-          </Card>
-        ) : !team ? (
-          <Card className="border-2 border-dashed border-muted">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2"><Users className="w-5 h-5" /> Create Your Team</CardTitle>
-              <CardDescription>Purchase multiple Corey seats for your team — $199/seat/month, billed together</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!showCreateForm ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">Team Access for Corey</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    Create a team to manage multiple Corey subscriptions under one bill. Each team member gets their own private Corey access with isolated conversations.
-                  </p>
-                  <Button onClick={() => setShowCreateForm(true)} className="gap-2" size="lg" data-testid="button-create-team">
-                    <Users className="w-4 h-4" /> Create a Team
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4 max-w-md mx-auto">
-                  <div>
-                    <Label htmlFor="team-name">Company / Team Name</Label>
-                    <Input
-                      id="team-name"
-                      value={newTeamName}
-                      onChange={(e) => setNewTeamName(e.target.value)}
-                      placeholder="Acme Safety Corp"
-                      data-testid="input-team-name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="team-seats">Number of Seats</Label>
-                    <Input
-                      id="team-seats"
-                      type="number"
-                      min={2}
-                      max={100}
-                      value={newTeamSeats}
-                      onChange={(e) => setNewTeamSeats(parseInt(e.target.value) || 2)}
-                      data-testid="input-team-seats"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      ${newTeamSeats * 199}/mo for {newTeamSeats} seats
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => createTeam.mutate({ companyName: newTeamName, totalSeats: newTeamSeats })}
-                      disabled={!newTeamName || newTeamSeats < 2 || createTeam.isPending}
-                      data-testid="button-confirm-create-team"
-                    >
-                      {createTeam.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Create Team
-                    </Button>
-                    <Button variant="ghost" onClick={() => setShowCreateForm(false)}>Cancel</Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <h1 className="text-2xl font-bold mb-2">Create Your Team</h1>
+        <p className="text-muted-foreground mb-8">Set up your workspace to invite colleagues, manage departments, and track compliance across your organization.</p>
+        {!showCreateForm ? (
+          <Button onClick={() => setShowCreateForm(true)} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-create-team">
+            <Plus className="w-4 h-4 mr-2" /> Create Team
+          </Button>
         ) : (
-          <Card className="border-2 border-primary/30">
-            <CardHeader>
-              <div className="flex flex-wrap justify-between items-start gap-2">
-                <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Users className="w-5 h-5" /> {team.companyName}
-                  </CardTitle>
-                  <CardDescription>
-                    {seatsUsed} of {team.totalSeats} seats used — ${team.totalSeats * 199}/mo
-                  </CardDescription>
-                </div>
-                <Badge variant={team.status === 'active' ? 'default' : 'secondary'} data-testid="badge-team-status">
-                  {team.status === 'active' ? 'Active' : team.status}
-                </Badge>
+          <Card className="text-left">
+            <CardContent className="pt-6 space-y-4">
+              <div><Label>Company / Team Name</Label><Input value={newTeamName} onChange={e => setNewTeamName(e.target.value)} placeholder="Acme Safety Team" data-testid="input-team-name" /></div>
+              <div><Label>Number of Seats (Corey AI users) — $199/seat/mo</Label><Input type="number" min={1} value={newTeamSeats} onChange={e => setNewTeamSeats(parseInt(e.target.value))} data-testid="input-team-seats" /></div>
+              <div className="flex gap-2">
+                <Button onClick={() => createTeam.mutate()} disabled={!newTeamName || createTeam.isPending} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-confirm-create-team">
+                  {createTeam.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Team"}
+                </Button>
+                <Button variant="outline" onClick={() => setShowCreateForm(false)}>Cancel</Button>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm uppercase text-muted-foreground tracking-wide">Team Members</h4>
-                <div className="space-y-2">
-                  {members.filter(m => m.status !== 'removed').map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30" data-testid={`team-member-${member.id}`}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          {member.role === 'admin' ? <Crown className="w-4 h-4 text-primary" /> : <User className="w-4 h-4 text-muted-foreground" />}
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">{member.name || member.email}</div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Mail className="w-3 h-3" /> {member.email}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={member.status === 'active' ? 'default' : 'outline'} className="text-xs">
-                          {member.status === 'active' ? 'Active' : member.status === 'invited' ? 'Pending' : member.status}
-                        </Badge>
-                        {isAdmin && member.role !== 'admin' && member.status !== 'removed' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeMember.mutate(member.id)}
-                            disabled={removeMember.isPending}
-                            className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                            data-testid={`button-remove-member-${member.id}`}
-                          >
-                            <UserMinus className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {isAdmin && seatsUsed < team.totalSeats && (
-                <div className="space-y-3 pt-4 border-t">
-                  <h4 className="font-semibold text-sm uppercase text-muted-foreground tracking-wide flex items-center gap-2">
-                    <UserPlus className="w-4 h-4" /> Invite Team Member
-                  </h4>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      placeholder="Name"
-                      value={inviteName}
-                      onChange={(e) => setInviteName(e.target.value)}
-                      className="sm:w-40"
-                      data-testid="input-invite-name"
-                    />
-                    <Input
-                      placeholder="Email address"
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="flex-1"
-                      data-testid="input-invite-email"
-                    />
-                    <Button
-                      onClick={() => inviteMember.mutate({ email: inviteEmail, name: inviteName })}
-                      disabled={!inviteEmail || inviteMember.isPending}
-                      className="gap-2"
-                      data-testid="button-invite-member"
-                    >
-                      {inviteMember.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                      Invite
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {team.totalSeats - seatsUsed} seat(s) available. Each member gets their own private Corey access.
-                  </p>
-                </div>
-              )}
-
-              {isAdmin && !team.stripeSubscriptionId && (
-                <div className="space-y-3 pt-4 border-t">
-                  <h4 className="font-semibold text-sm uppercase text-muted-foreground tracking-wide">Activate Team Subscription</h4>
-                  <p className="text-sm text-muted-foreground">Subscribe your team to Corey for ${team.totalSeats * 199}/mo ({team.totalSeats} seats x $199/seat)</p>
-                  <Button
-                    onClick={() => {
-                      fetch('/api/team/checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } })
-                        .then(r => r.json())
-                        .then(data => { if (data.url) window.location.href = data.url; else toast({ title: "Error", description: data.message, variant: "destructive" }); })
-                        .catch(() => toast({ title: "Error", description: "Failed to start checkout.", variant: "destructive" }));
-                    }}
-                    className="gap-2 bg-accent hover:bg-accent/90 text-white font-bold"
-                    data-testid="button-team-checkout"
-                  >
-                    <Shield className="w-4 h-4" /> Subscribe Team — ${team.totalSeats * 99}/mo
-                  </Button>
-                </div>
-              )}
-
-              {isAdmin && (
-                <div className="space-y-3 pt-4 border-t">
-                  <h4 className="font-semibold text-sm uppercase text-muted-foreground tracking-wide">Manage Seats</h4>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => updateSeats.mutate(team.totalSeats - 1)}
-                      disabled={team.totalSeats <= seatsUsed || updateSeats.isPending}
-                      data-testid="button-decrease-seats"
-                    >
-                      -
-                    </Button>
-                    <span className="font-semibold text-lg min-w-[3ch] text-center" data-testid="text-total-seats">{team.totalSeats}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => updateSeats.mutate(team.totalSeats + 1)}
-                      disabled={updateSeats.isPending}
-                      data-testid="button-increase-seats"
-                    >
-                      +
-                    </Button>
-                    <span className="text-sm text-muted-foreground">seats x $199/mo = <strong>${team.totalSeats * 199}/mo</strong></span>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
+      </div>
+    </ProtectedLayout>
+  );
+
+  const team = teamData.team;
+  const members = teamData.members.filter(m => m.status !== "removed");
+  const activeCount = members.filter(m => m.status === "active").length;
+  const isAdmin = teamData.isAdmin;
+
+  // ── Full team hub ────────────────────────────────────────────────────────
+  return (
+    <ProtectedLayout>
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+
+        {/* Header */}
+        <div className="bg-[hsl(222,47%,11%)] rounded-2xl p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center shrink-0">
+              <Building2 className="w-6 h-6 text-accent" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">{team.companyName}</h1>
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                <Badge className={team.status === "active" ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"}>
+                  {team.status === "active" ? <CheckCircle2 className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
+                  {team.status}
+                </Badge>
+                <span className="text-white/50 text-sm">{activeCount} of {team.totalSeats} seats used</span>
+                <span className="text-white/50 text-sm">·</span>
+                <span className="text-white/50 text-sm">{departments.length} department{departments.length !== 1 ? "s" : ""}</span>
+              </div>
+            </div>
+          </div>
+          <Button onClick={startMeeting} className="bg-accent hover:bg-accent/90 text-white shrink-0" data-testid="button-start-meeting">
+            <Video className="w-4 h-4 mr-2" /> Start Video Meeting
+          </Button>
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="grid grid-cols-4 w-full">
+            <TabsTrigger value="people" data-testid="tab-people"><Users className="w-4 h-4 mr-1.5 hidden sm:inline" />People</TabsTrigger>
+            <TabsTrigger value="departments" data-testid="tab-departments"><Building2 className="w-4 h-4 mr-1.5 hidden sm:inline" />Departments</TabsTrigger>
+            <TabsTrigger value="compliance" data-testid="tab-compliance"><Activity className="w-4 h-4 mr-1.5 hidden sm:inline" />Compliance</TabsTrigger>
+            <TabsTrigger value="announcements" data-testid="tab-announcements"><Megaphone className="w-4 h-4 mr-1.5 hidden sm:inline" />Feed</TabsTrigger>
+          </TabsList>
+
+          {/* ── PEOPLE TAB ──────────────────────────────────────────────── */}
+          <TabsContent value="people" className="space-y-4 mt-4">
+            {/* Invite form */}
+            {isAdmin && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2"><UserPlus className="w-4 h-4 text-accent" />Invite Team Member</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Input placeholder="Full name" value={inviteName} onChange={e => setInviteName(e.target.value)} className="flex-1" data-testid="input-invite-name" />
+                    <Input type="email" placeholder="Work email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} className="flex-1" data-testid="input-invite-email" />
+                    <Button onClick={() => inviteMember.mutate()} disabled={!inviteEmail || inviteMember.isPending || members.length >= team.totalSeats} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-send-invite">
+                      {inviteMember.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UserPlus className="w-4 h-4 mr-1" />Invite</>}
+                    </Button>
+                  </div>
+                  {members.length >= team.totalSeats && (
+                    <p className="text-xs text-muted-foreground mt-2">All seats are filled. <button className="text-accent underline" onClick={() => {}}>Add more seats</button> to invite additional members.</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Seat bar */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${Math.min((activeCount / team.totalSeats) * 100, 100)}%` }} />
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">{activeCount}/{team.totalSeats} seats</span>
+            </div>
+
+            {/* Member cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {members.map(member => {
+                const dept = departments.find(d => d.id === member.departmentId);
+                const isAssigning = assigningMember === member.id;
+                return (
+                  <Card key={member.id} className="relative" data-testid={`card-member-${member.id}`}>
+                    <CardContent className="pt-5 pb-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                            {(member.name || member.email).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate">{member.name || "—"}</p>
+                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                            {member.jobTitle && <p className="text-xs text-accent">{member.jobTitle}</p>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {member.role === "admin" && <Crown className="w-3.5 h-3.5 text-amber-500" />}
+                          <Badge variant="outline" className={`text-xs ${member.status === "active" ? "border-green-200 text-green-700" : "border-amber-200 text-amber-700"}`}>
+                            {member.status}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {dept && (
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${deptColorCls(dept.color)}`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${deptBg(dept.color)}`} />
+                          {dept.name}
+                        </div>
+                      )}
+
+                      {isAdmin && isAssigning && (
+                        <div className="space-y-2 border-t pt-3 mt-2">
+                          <Select value={assignDept} onValueChange={setAssignDept}>
+                            <SelectTrigger className="h-8 text-xs" data-testid={`select-dept-${member.id}`}><SelectValue placeholder="Assign department…" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No department</SelectItem>
+                              {departments.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Input className="h-8 text-xs" placeholder="Job title (optional)" value={assignTitle} onChange={e => setAssignTitle(e.target.value)} data-testid={`input-title-${member.id}`} />
+                          <div className="flex gap-2">
+                            <Button size="sm" className="h-7 text-xs flex-1 bg-accent hover:bg-accent/90 text-white" onClick={() => assignMemberDept.mutate({ memberId: member.id, departmentId: assignDept && assignDept !== "none" ? parseInt(assignDept) : null, jobTitle: assignTitle })} data-testid={`button-save-dept-${member.id}`}>
+                              <Save className="w-3 h-3 mr-1" />Save
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAssigningMember(null)}>Cancel</Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {isAdmin && !isAssigning && (
+                        <div className="flex gap-1.5 border-t pt-2">
+                          <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-muted-foreground" onClick={() => { setAssigningMember(member.id); setAssignDept(member.departmentId ? String(member.departmentId) : "none"); setAssignTitle(member.jobTitle || ""); }} data-testid={`button-assign-${member.id}`}>
+                            <UserCog className="w-3 h-3 mr-1" />Assign
+                          </Button>
+                          {member.role !== "admin" && (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => removeMember.mutate(member.id)} data-testid={`button-remove-${member.id}`}>
+                              <UserMinus className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* ── DEPARTMENTS TAB ─────────────────────────────────────────── */}
+          <TabsContent value="departments" className="space-y-4 mt-4">
+            {isAdmin && (
+              <div className="flex justify-end">
+                <Button onClick={() => setShowDeptForm(!showDeptForm)} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-dept">
+                  <Plus className="w-4 h-4 mr-2" />{showDeptForm ? "Cancel" : "New Department"}
+                </Button>
+              </div>
+            )}
+
+            {showDeptForm && isAdmin && (
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Create Department</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Department Name *</Label>
+                      <Input value={deptForm.name} onChange={e => setDeptForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Safety & Compliance" data-testid="input-dept-name" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Color</Label>
+                      <Select value={deptForm.color} onValueChange={v => setDeptForm(f => ({ ...f, color: v }))}>
+                        <SelectTrigger data-testid="select-dept-color"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {DEPT_COLORS.map(c => <SelectItem key={c.value} value={c.value}><span className="flex items-center gap-2"><span className={`w-3 h-3 rounded-full ${c.bg}`} />{c.label}</span></SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Description (optional)</Label>
+                    <Input value={deptForm.description} onChange={e => setDeptForm(f => ({ ...f, description: e.target.value }))} placeholder="What does this department handle?" data-testid="input-dept-desc" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Supervisor</Label>
+                    <Select value={deptForm.supervisorMemberId} onValueChange={v => setDeptForm(f => ({ ...f, supervisorMemberId: v }))}>
+                      <SelectTrigger data-testid="select-dept-supervisor"><SelectValue placeholder="Select supervisor…" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No supervisor assigned</SelectItem>
+                        {members.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.name || m.email}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={() => createDept.mutate()} disabled={!deptForm.name || createDept.isPending} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-create-dept">
+                    {createDept.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Department"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {deptsLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{[1, 2].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}</div>
+            ) : departments.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No departments yet</p>
+                <p className="text-sm">Create departments to organize your team by function, location, or shift.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {departments.map(dept => {
+                  const deptMembers = members.filter(m => m.departmentId === dept.id);
+                  const supervisor = members.find(m => m.id === dept.supervisorMemberId);
+                  const deptIncidents = compliance?.byDepartment.incidents[dept.name] ?? 0;
+                  const deptCAPAs = compliance?.byDepartment.capas[dept.name] ?? 0;
+                  return (
+                    <Card key={dept.id} className="overflow-hidden" data-testid={`card-dept-${dept.id}`}>
+                      <div className={`h-1.5 ${deptBg(dept.color)}`} />
+                      <CardContent className="pt-4 pb-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border mb-2 ${deptColorCls(dept.color)}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${deptBg(dept.color)}`} />
+                              {dept.name}
+                            </div>
+                            {dept.description && <p className="text-xs text-muted-foreground">{dept.description}</p>}
+                          </div>
+                          {isAdmin && (
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50" onClick={() => deleteDept.mutate(dept.id)} data-testid={`button-delete-dept-${dept.id}`}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+
+                        {supervisor && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Crown className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Supervisor: <strong className="text-foreground">{supervisor.name || supervisor.email}</strong></span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Users className="w-3.5 h-3.5" />
+                          <span>{deptMembers.length} member{deptMembers.length !== 1 ? "s" : ""}</span>
+                          {deptMembers.length > 0 && (
+                            <span className="text-muted-foreground/60">— {deptMembers.map(m => m.name || m.email.split("@")[0]).join(", ")}</span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <div className="bg-orange-50 border border-orange-100 rounded-lg p-2 text-center">
+                            <p className="text-lg font-bold text-orange-600">{deptIncidents}</p>
+                            <p className="text-xs text-orange-500">Incidents (30d)</p>
+                          </div>
+                          <div className={`${deptCAPAs > 0 ? "bg-red-50 border-red-100" : "bg-green-50 border-green-100"} border rounded-lg p-2 text-center`}>
+                            <p className={`text-lg font-bold ${deptCAPAs > 0 ? "text-red-600" : "text-green-600"}`}>{deptCAPAs}</p>
+                            <p className={`text-xs ${deptCAPAs > 0 ? "text-red-500" : "text-green-500"}`}>Open CAPAs</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── COMPLIANCE TAB ──────────────────────────────────────────── */}
+          <TabsContent value="compliance" className="space-y-4 mt-4">
+            {compLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
+            ) : compliance ? (
+              <>
+                {/* Summary metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: "Incidents (30d)", value: compliance.summary.incidentsLast30Days, icon: AlertTriangle, color: "orange" },
+                    { label: "Open CAPAs", value: compliance.summary.totalOpenCAPAs, icon: Clock, color: "blue" },
+                    { label: "Overdue CAPAs", value: compliance.summary.overdueCAPAs, icon: Flame, color: "red" },
+                    { label: "Total Recordables", value: compliance.summary.totalRecordables, icon: TrendingUp, color: "purple" },
+                  ].map(({ label, value, icon: Icon, color }) => (
+                    <Card key={label} data-testid={`metric-${label.toLowerCase().replace(/\s/g, "-")}`}>
+                      <CardContent className="pt-4 pb-4">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 bg-${color}-100`}>
+                          <Icon className={`w-4 h-4 text-${color}-600`} />
+                        </div>
+                        <p className="text-2xl font-bold">{value}</p>
+                        <p className="text-xs text-muted-foreground">{label}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Incidents by dept */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="w-4 h-4 text-accent" />Incidents by Department (30 days)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {Object.entries(compliance.byDepartment.incidents).length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">No incidents logged in the last 30 days.</p>
+                      ) : Object.entries(compliance.byDepartment.incidents).sort((a, b) => b[1] - a[1]).map(([dept, cnt]) => (
+                        <div key={dept} className="flex items-center gap-3">
+                          <span className="text-sm flex-1 truncate">{dept}</span>
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-orange-400 rounded-full" style={{ width: `${(cnt / Math.max(...Object.values(compliance.byDepartment.incidents))) * 100}%` }} />
+                          </div>
+                          <span className="text-sm font-semibold w-6 text-right">{cnt}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Open CAPAs by dept */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2"><Activity className="w-4 h-4 text-accent" />Open CAPAs by Department</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {Object.entries(compliance.byDepartment.capas).length === 0 ? (
+                        <div className="text-center py-4">
+                          <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-1" />
+                          <p className="text-sm text-muted-foreground">No open CAPAs — great work!</p>
+                        </div>
+                      ) : Object.entries(compliance.byDepartment.capas).sort((a, b) => b[1] - a[1]).map(([dept, cnt]) => (
+                        <div key={dept} className="flex items-center gap-3">
+                          <span className="text-sm flex-1 truncate">{dept}</span>
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-red-400 rounded-full" style={{ width: `${(cnt / Math.max(...Object.values(compliance.byDepartment.capas))) * 100}%` }} />
+                          </div>
+                          <span className="text-sm font-semibold w-6 text-right">{cnt}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Overdue CAPAs */}
+                {compliance.overdueCAPAList.length > 0 && (
+                  <Card className="border-red-200">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2 text-red-600"><Flame className="w-4 h-4" />Overdue CAPAs — Action Required</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {compliance.overdueCAPAList.map((capa: any) => (
+                        <div key={capa.id} className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{capa.description || capa.actionTitle || "CAPA"}</p>
+                            <p className="text-xs text-muted-foreground">Due: {capa.dueDate ? new Date(capa.dueDate).toLocaleDateString() : "—"} · {capa.responsibleDepartment || "Unassigned"}</p>
+                          </div>
+                          <Badge variant="destructive" className="text-xs shrink-0">Overdue</Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Recent incidents */}
+                {compliance.recentIncidents.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2"><Clock className="w-4 h-4 text-accent" />Recent Incidents</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {compliance.recentIncidents.map((inc: any) => (
+                        <div key={inc.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${inc.isOshaRecordable ? "bg-red-500" : "bg-amber-400"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{inc.description || inc.injuryType || "Incident"}</p>
+                            <p className="text-xs text-muted-foreground">{inc.department || "—"} · {inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString() : "—"}</p>
+                          </div>
+                          {inc.isOshaRecordable && <Badge variant="destructive" className="text-xs shrink-0">Recordable</Badge>}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-16 text-muted-foreground">
+                <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No compliance data yet</p>
+                <p className="text-sm">Log incidents and create CAPAs to see department scorecards here.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── ANNOUNCEMENTS TAB ───────────────────────────────────────── */}
+          <TabsContent value="announcements" className="space-y-4 mt-4">
+            {isAdmin && (
+              <div className="flex justify-end">
+                <Button onClick={() => setShowAnnForm(!showAnnForm)} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-new-announcement">
+                  <Plus className="w-4 h-4 mr-2" />{showAnnForm ? "Cancel" : "New Announcement"}
+                </Button>
+              </div>
+            )}
+
+            {showAnnForm && isAdmin && (
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Post Announcement</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs">Title *</Label>
+                      <Input value={annForm.title} onChange={e => setAnnForm(f => ({ ...f, title: e.target.value }))} placeholder="Announcement title…" data-testid="input-ann-title" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Category</Label>
+                      <Select value={annForm.category} onValueChange={v => setAnnForm(f => ({ ...f, category: v }))}>
+                        <SelectTrigger data-testid="select-ann-category"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ANN_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Message *</Label>
+                    <Textarea value={annForm.body} onChange={e => setAnnForm(f => ({ ...f, body: e.target.value }))} placeholder="Share a safety update, policy change, training reminder…" rows={4} data-testid="input-ann-body" />
+                  </div>
+                  <Button onClick={() => createAnn.mutate()} disabled={!annForm.title || !annForm.body || createAnn.isPending} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-post-announcement">
+                    {createAnn.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Megaphone className="w-4 h-4 mr-2" />Post</>}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {annsLoading ? (
+              <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
+            ) : announcements.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <Megaphone className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No announcements yet</p>
+                <p className="text-sm">Post safety alerts, policy updates, and training reminders for your whole team.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {announcements.map(ann => {
+                  const cat = annCat(ann.category);
+                  const CatIcon = cat.icon;
+                  return (
+                    <Card key={ann.id} className={`${ann.isPinned ? "border-accent/40 bg-accent/5" : ""}`} data-testid={`card-ann-${ann.id}`}>
+                      <CardContent className="pt-4 pb-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${cat.cls}`}>
+                            <CatIcon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              {ann.isPinned && <Pin className="w-3.5 h-3.5 text-accent" />}
+                              <p className="font-semibold text-sm">{ann.title}</p>
+                              <Badge className={`text-xs ${cat.cls}`}>{cat.label}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{ann.body}</p>
+                            <p className="text-xs text-muted-foreground/60 mt-2">Posted by {ann.authorName} · {timeAgo(ann.createdAt)}</p>
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => pinAnn.mutate(ann.id)} title={ann.isPinned ? "Unpin" : "Pin"} data-testid={`button-pin-${ann.id}`}>
+                                {ann.isPinned ? <PinOff className="w-3.5 h-3.5 text-accent" /> : <Pin className="w-3.5 h-3.5 text-muted-foreground" />}
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600" onClick={() => deleteAnn.mutate(ann.id)} data-testid={`button-delete-ann-${ann.id}`}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </ProtectedLayout>
   );

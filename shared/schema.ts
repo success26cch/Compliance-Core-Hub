@@ -923,9 +923,42 @@ export const coreyTeamMembers = pgTable("corey_team_members", {
   role: text("role").notNull().default("member"), // 'admin', 'member'
   status: text("status").notNull().default("invited"), // 'invited', 'active', 'removed'
   inviteToken: text("invite_token"),
+  departmentId: integer("department_id"), // nullable, assigned to a dept
+  jobTitle: text("job_title"),
   invitedAt: timestamp("invited_at").defaultNow(),
   joinedAt: timestamp("joined_at"),
 });
+
+// Team Departments
+export const teamDepartments = pgTable("team_departments", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").notNull().default("blue"), // blue, green, orange, red, purple, yellow
+  supervisorMemberId: integer("supervisor_member_id"), // ref to corey_team_members.id
+  supervisorName: text("supervisor_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type TeamDepartment = typeof teamDepartments.$inferSelect;
+export type InsertTeamDepartment = typeof teamDepartments.$inferInsert;
+
+// Team Announcements
+export const teamAnnouncements = pgTable("team_announcements", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull(),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email"),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  category: text("category").notNull().default("general"), // 'general', 'safety', 'policy', 'training', 'urgent'
+  isPinned: boolean("is_pinned").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type TeamAnnouncement = typeof teamAnnouncements.$inferSelect;
+export type InsertTeamAnnouncement = typeof teamAnnouncements.$inferInsert;
 
 export const insertCoreyTeamMemberSchema = createInsertSchema(coreyTeamMembers).omit({
   id: true,

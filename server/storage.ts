@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, teamDepartments, teamAnnouncements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent, type TeamDepartment, type InsertTeamDepartment, type TeamAnnouncement, type InsertTeamAnnouncement } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
 
@@ -97,6 +97,19 @@ export interface IStorage {
   getAuthorizationFormByVisitType(userId: string, visitType: string): Promise<AuthorizationForm | undefined>;
   upsertAuthorizationForm(form: InsertAuthorizationForm): Promise<AuthorizationForm>;
   deleteAuthorizationForm(id: number, userId: string): Promise<boolean>;
+
+  // Team departments
+  getTeamDepartments(teamId: number): Promise<TeamDepartment[]>;
+  createTeamDepartment(dept: InsertTeamDepartment): Promise<TeamDepartment>;
+  updateTeamDepartment(id: number, teamId: number, updates: Partial<InsertTeamDepartment>): Promise<TeamDepartment | undefined>;
+  deleteTeamDepartment(id: number, teamId: number): Promise<boolean>;
+  updateTeamMemberDept(memberId: number, teamId: number, departmentId: number | null, jobTitle?: string): Promise<CoreyTeamMember | undefined>;
+
+  // Team announcements
+  getTeamAnnouncements(teamId: number): Promise<TeamAnnouncement[]>;
+  createTeamAnnouncement(ann: InsertTeamAnnouncement): Promise<TeamAnnouncement>;
+  toggleAnnouncementPin(id: number, teamId: number): Promise<TeamAnnouncement | undefined>;
+  deleteTeamAnnouncement(id: number, teamId: number): Promise<boolean>;
 
   // Paddle audit log
   logPaddleEvent(event: InsertPaddleEvent): Promise<PaddleEvent>;
@@ -1152,6 +1165,65 @@ export class DatabaseStorage implements IStorage {
         sql`${coreyTeamMembers.status} IN ('active', 'invited')`
       ));
     return result[0]?.count || 0;
+  }
+
+  // ── Team Departments ─────────────────────────────────────────────────────
+  async getTeamDepartments(teamId: number): Promise<TeamDepartment[]> {
+    return db.select().from(teamDepartments).where(eq(teamDepartments.teamId, teamId)).orderBy(teamDepartments.name);
+  }
+
+  async createTeamDepartment(dept: InsertTeamDepartment): Promise<TeamDepartment> {
+    const [created] = await db.insert(teamDepartments).values(dept).returning();
+    return created;
+  }
+
+  async updateTeamDepartment(id: number, teamId: number, updates: Partial<InsertTeamDepartment>): Promise<TeamDepartment | undefined> {
+    const [updated] = await db.update(teamDepartments).set(updates)
+      .where(and(eq(teamDepartments.id, id), eq(teamDepartments.teamId, teamId))).returning();
+    return updated;
+  }
+
+  async deleteTeamDepartment(id: number, teamId: number): Promise<boolean> {
+    // Unassign members from this dept first
+    await db.update(coreyTeamMembers).set({ departmentId: null })
+      .where(and(eq(coreyTeamMembers.teamId, teamId), eq(coreyTeamMembers.departmentId, id)));
+    const result = await db.delete(teamDepartments)
+      .where(and(eq(teamDepartments.id, id), eq(teamDepartments.teamId, teamId)));
+    return (result as any).count > 0;
+  }
+
+  async updateTeamMemberDept(memberId: number, teamId: number, departmentId: number | null, jobTitle?: string): Promise<CoreyTeamMember | undefined> {
+    const updates: any = { departmentId };
+    if (jobTitle !== undefined) updates.jobTitle = jobTitle;
+    const [updated] = await db.update(coreyTeamMembers).set(updates)
+      .where(and(eq(coreyTeamMembers.id, memberId), eq(coreyTeamMembers.teamId, teamId))).returning();
+    return updated;
+  }
+
+  // ── Team Announcements ───────────────────────────────────────────────────
+  async getTeamAnnouncements(teamId: number): Promise<TeamAnnouncement[]> {
+    return db.select().from(teamAnnouncements).where(eq(teamAnnouncements.teamId, teamId))
+      .orderBy(desc(teamAnnouncements.isPinned), desc(teamAnnouncements.createdAt));
+  }
+
+  async createTeamAnnouncement(ann: InsertTeamAnnouncement): Promise<TeamAnnouncement> {
+    const [created] = await db.insert(teamAnnouncements).values(ann).returning();
+    return created;
+  }
+
+  async toggleAnnouncementPin(id: number, teamId: number): Promise<TeamAnnouncement | undefined> {
+    const [existing] = await db.select().from(teamAnnouncements)
+      .where(and(eq(teamAnnouncements.id, id), eq(teamAnnouncements.teamId, teamId)));
+    if (!existing) return undefined;
+    const [updated] = await db.update(teamAnnouncements).set({ isPinned: !existing.isPinned })
+      .where(eq(teamAnnouncements.id, id)).returning();
+    return updated;
+  }
+
+  async deleteTeamAnnouncement(id: number, teamId: number): Promise<boolean> {
+    await db.delete(teamAnnouncements)
+      .where(and(eq(teamAnnouncements.id, id), eq(teamAnnouncements.teamId, teamId)));
+    return true;
   }
 
   async getRecordabilityUsageCount(ipAddress: string): Promise<number> {

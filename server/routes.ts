@@ -4729,6 +4729,171 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     }
   });
 
+  // ── Team Departments ────────────────────────────────────────────────────
+  app.get("/api/team/departments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const membership = await storage.getTeamMembership(userId);
+      const adminTeam = await storage.getTeamByAdmin(userId);
+      const team = adminTeam || membership?.team;
+      if (!team) return res.status(404).json({ message: "No team found" });
+      const depts = await storage.getTeamDepartments(team.id);
+      res.json(depts);
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  app.post("/api/team/departments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) return res.status(403).json({ message: "Only team admins can create departments" });
+      const { name, description, color, supervisorMemberId, supervisorName } = req.body;
+      if (!name?.trim()) return res.status(400).json({ message: "Department name is required" });
+      const dept = await storage.createTeamDepartment({ teamId: team.id, name: name.trim(), description, color: color || "blue", supervisorMemberId, supervisorName });
+      res.json(dept);
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  app.patch("/api/team/departments/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) return res.status(403).json({ message: "Only admins can update departments" });
+      const updated = await storage.updateTeamDepartment(parseInt(req.params.id), team.id, req.body);
+      if (!updated) return res.status(404).json({ message: "Department not found" });
+      res.json(updated);
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  app.delete("/api/team/departments/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) return res.status(403).json({ message: "Only admins can delete departments" });
+      await storage.deleteTeamDepartment(parseInt(req.params.id), team.id);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  // Assign member to department / update job title
+  app.patch("/api/team/members/:id/department", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) return res.status(403).json({ message: "Only admins can assign departments" });
+      const { departmentId, jobTitle } = req.body;
+      const updated = await storage.updateTeamMemberDept(parseInt(req.params.id), team.id, departmentId ?? null, jobTitle);
+      if (!updated) return res.status(404).json({ message: "Member not found" });
+      res.json(updated);
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  // ── Team Announcements ───────────────────────────────────────────────────
+  app.get("/api/team/announcements", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const membership = await storage.getTeamMembership(userId);
+      const adminTeam = await storage.getTeamByAdmin(userId);
+      const team = adminTeam || membership?.team;
+      if (!team) return res.status(404).json({ message: "No team found" });
+      const anns = await storage.getTeamAnnouncements(team.id);
+      res.json(anns);
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  app.post("/api/team/announcements", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const membership = await storage.getTeamMembership(userId);
+      const adminTeam = await storage.getTeamByAdmin(userId);
+      const team = adminTeam || membership?.team;
+      if (!team) return res.status(404).json({ message: "No team found" });
+      const isAdmin = !!adminTeam || membership?.member.role === "admin";
+      if (!isAdmin) return res.status(403).json({ message: "Only admins can post announcements" });
+      const { title, body, category } = req.body;
+      if (!title?.trim() || !body?.trim()) return res.status(400).json({ message: "Title and body are required" });
+      const user = await storage.getUserById(userId);
+      const ann = await storage.createTeamAnnouncement({ teamId: team.id, authorName: user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : (user?.email || "Admin"), authorEmail: user?.email || null, title: title.trim(), body: body.trim(), category: category || "general", isPinned: false });
+      res.json(ann);
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  app.patch("/api/team/announcements/:id/pin", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) return res.status(403).json({ message: "Only admins can pin announcements" });
+      const updated = await storage.toggleAnnouncementPin(parseInt(req.params.id), team.id);
+      if (!updated) return res.status(404).json({ message: "Announcement not found" });
+      res.json(updated);
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  app.delete("/api/team/announcements/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const team = await storage.getTeamByAdmin(userId);
+      if (!team) return res.status(403).json({ message: "Only admins can delete announcements" });
+      await storage.deleteTeamAnnouncement(parseInt(req.params.id), team.id);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
+  // ── Team Compliance Snapshot ─────────────────────────────────────────────
+  app.get("/api/team/compliance", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const membership = await storage.getTeamMembership(userId);
+      const adminTeam = await storage.getTeamByAdmin(userId);
+      const team = adminTeam || membership?.team;
+      if (!team) return res.status(404).json({ message: "No team found" });
+      const teamAdminId = team.adminUserId;
+
+      // Pull incidents + CAPAs for the team admin's account
+      const [allIncidents, allCAPAs] = await Promise.all([
+        storage.getIncidents(teamAdminId),
+        storage.getCorrectiveActions(teamAdminId),
+      ]);
+
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const recentIncidents = allIncidents.filter(i => i.incidentDate && new Date(i.incidentDate) >= thirtyDaysAgo);
+      const openCAPAs = allCAPAs.filter(c => c.status !== "Completed" && c.status !== "Closed");
+      const overdueCAPAs = openCAPAs.filter(c => c.dueDate && new Date(c.dueDate) < now);
+      const recordables = allIncidents.filter(i => i.isOshaRecordable);
+
+      // Group by department
+      const deptIncidentMap: Record<string, number> = {};
+      const deptCAPAMap: Record<string, number> = {};
+      recentIncidents.forEach(i => { const d = i.department || "Unassigned"; deptIncidentMap[d] = (deptIncidentMap[d] || 0) + 1; });
+      openCAPAs.forEach(c => { const d = c.responsibleDepartment || "Unassigned"; deptCAPAMap[d] = (deptCAPAMap[d] || 0) + 1; });
+
+      res.json({
+        summary: {
+          incidentsLast30Days: recentIncidents.length,
+          totalOpenCAPAs: openCAPAs.length,
+          overdueCAPAs: overdueCAPAs.length,
+          totalRecordables: recordables.length,
+          totalIncidents: allIncidents.length,
+        },
+        byDepartment: { incidents: deptIncidentMap, capas: deptCAPAMap },
+        recentIncidents: recentIncidents.slice(0, 5),
+        overdueCAPAList: overdueCAPAs.slice(0, 5),
+      });
+    } catch (err: any) { res.status(500).json({ message: err.message }); }
+  });
+
   app.get("/api/qr/try-corey", async (req: Request, res: Response) => {
     try {
       const QRCode = await import("qrcode");
