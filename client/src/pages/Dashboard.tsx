@@ -2262,6 +2262,10 @@ export default function Dashboard() {
 
   if (isIsoOnlyPlan) return null;
 
+  // Unauthenticated visitors — the useEffect above will navigate to /employer-dashboard;
+  // return null here so the PlatformGate gated message never flashes on screen.
+  if (!authLoading && !isAuthenticated) return null;
+
   return (
     <PlatformGate featureName="Compliance Dashboard">
     <ProtectedLayout>
