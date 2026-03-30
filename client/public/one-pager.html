@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core Compliance Hub — Corey & Employer Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #fff;
+      color: #1a1a2e;
+      font-size: 9.5pt;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.45in 0.5in 0.4in;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #e7520a;
+    }
+    .header-left h1 {
+      font-size: 17pt;
+      font-weight: 800;
+      color: #0f1c2e;
+      letter-spacing: -0.5px;
+    }
+    .header-left h1 span { color: #e7520a; }
+    .header-left p {
+      font-size: 8.5pt;
+      color: #64748b;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .header-right {
+      text-align: right;
+    }
+    .header-right .tagline {
+      font-size: 8pt;
+      color: #64748b;
+      max-width: 220px;
+    }
+    .header-right .website {
+      font-size: 8pt;
+      font-weight: 700;
+      color: #e7520a;
+      margin-top: 4px;
+    }
+
+    /* ── Two-column layout ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* ── Section blocks ── */
+    .section {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-header.navy { background: #0f1c2e; }
+    .section-header.orange { background: #e7520a; }
+    .section-header.slate { background: #1e293b; }
+    .section-header h2 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+    .section-header .badge {
+      margin-left: auto;
+      font-size: 7pt;
+      font-weight: 700;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    .section-body {
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    /* ── Intro blurb ── */
+    .intro {
+      font-size: 9pt;
+      color: #334155;
+      line-height: 1.5;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    /* ── Feature list ── */
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+    .feature-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 8.5pt;
+      color: #1e293b;
+      line-height: 1.4;
+    }
+    .feature-list li .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0px;
+      font-size: 9pt;
+      font-weight: 700;
+      color: #fff;
+    }
+    .dot.orange { background: #e7520a; }
+    .dot.navy { background: #0f1c2e; }
+    .feature-list li strong { font-weight: 600; color: #0f1c2e; }
+
+    /* ── Callout box ── */
+    .callout {
+      background: #fff7f0;
+      border: 1.5px solid #fcd9bc;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-top: 8px;
+    }
+    .callout p { font-size: 8pt; color: #7c3b0e; line-height: 1.45; }
+    .callout strong { font-weight: 700; color: #c2440a; }
+
+    .callout.navy-callout {
+      background: #f0f4ff;
+      border-color: #c7d5f8;
+    }
+    .callout.navy-callout p { color: #1e3a8a; }
+    .callout.navy-callout strong { color: #1e3a8a; }
+
+    /* ── Metrics row ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .metric-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 7px 8px;
+      text-align: center;
+      background: #f8fafc;
+    }
+    .metric-card .num {
+      font-size: 14pt;
+      font-weight: 800;
+      color: #e7520a;
+      display: block;
+    }
+    .metric-card .lbl {
+      font-size: 7pt;
+      color: #64748b;
+      font-weight: 500;
+      display: block;
+      margin-top: 1px;
+      line-height: 1.3;
+    }
+
+    /* ── Pricing strip ── */
+    .pricing {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .price-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 8px;
+      text-align: center;
+    }
+    .price-card.highlight {
+      border-color: #e7520a;
+      background: #fff7f0;
+    }
+    .price-card .plan { font-size: 7.5pt; font-weight: 700; color: #0f1c2e; line-height: 1.3; }
+    .price-card .price { font-size: 12pt; font-weight: 800; color: #e7520a; display: block; margin: 3px 0 1px; }
+    .price-card .sub { font-size: 6.5pt; color: #94a3b8; font-weight: 500; }
+    .price-card .best { font-size: 6pt; font-weight: 700; background: #e7520a; color: #fff; padding: 1px 6px; border-radius: 10px; display: inline-block; margin-top: 3px; }
+
+    /* ── Module grid ── */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .module-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 5px;
+      padding: 6px 8px;
+    }
+    .module-item .m-title { font-size: 8pt; font-weight: 700; color: #0f1c2e; }
+    .module-item .m-desc { font-size: 7pt; color: #64748b; margin-top: 1px; line-height: 1.35; }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1.5px solid #e2e8f0;
+      padding-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer p { font-size: 7.5pt; color: #94a3b8; }
+    .footer .contact { font-size: 8pt; font-weight: 600; color: #0f1c2e; text-align: right; }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; padding: 0.4in 0.45in; }
+      @page { size: letter portrait; margin: 0; }
+    }
+
+    /* ── Print button (screen only) ── */
+    .print-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: #e7520a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 2px 8px rgba(231,82,10,0.3);
+      z-index: 100;
+    }
+    .print-btn:hover { background: #c2440a; }
+    @media print { .print-btn { display: none; } }
+  </style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">⬇ Save as PDF</button>
+
+<div class="page">
+
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Core Compliance <span>Hub</span></h1>
+      <p>AI-Powered Occupational Health &amp; Safety Compliance Platform</p>
+    </div>
+    <div class="header-right">
+      <p class="tagline">One platform. Every compliance obligation. Zero missed deadlines.</p>
+      <p class="website">corecompliancehub.com</p>
+    </div>
+  </div>
+
+  <!-- ── TWO-COLUMN MAIN ── -->
+  <div class="two-col">
+
+    <!-- LEFT: Corey -->
+    <div class="section">
+      <div class="section-header orange">
+        <h2>Corey — AI Compliance Expert</h2>
+        <span class="badge">$199 / mo standalone</span>
+      </div>
+      <div class="section-body">
+        <p class="intro">A Senior Occupational Health, Safety &amp; Compliance Expert available 24/7 — not a chatbot, a disciplined compliance authority with an anti-hallucination protocol and deep OSHA/DOT expertise.</p>
+
+        <ul class="feature-list">
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>OSHA Regulation Q&amp;A</strong> — Answers any compliance question with the exact CFR citation (29 CFR 1904, 1910, 1926, DOT). Never guesses.</span>
+          </li>
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>OSHA Recordability Decisions</strong> — Walks through 29 CFR 1904 criteria step by step. Tells you exactly what to record, what not to, and why.</span>
+          </li>
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>23 Document Templates</strong> — Written programs, safety policies, OSHA 300 guidance, return-to-work letters, CAPA documentation — generated in seconds.</span>
+          </li>
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>Team Meeting Mode</strong> — Corey leads a structured safety meeting: agenda, talking points, real-world scenarios, discussion questions, then generates distributable meeting minutes.</span>
+          </li>
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>Audit Mode</strong> — Acts as your internal auditor. Asks questions, identifies program gaps, and recommends corrective actions before a real inspector shows up.</span>
+          </li>
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>Incident Analysis</strong> — After logging an incident, Corey reviews the details and gives you a recordability determination, investigation framework, and corrective action recommendations.</span>
+          </li>
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>Company-Personalized</strong> — A 5-step onboarding profile tells Corey your industry, employee count, NAICS code, drug testing program, and high-risk activities. Every answer is tailored to your company — not generic advice.</span>
+          </li>
+          <li>
+            <div class="dot orange">✓</div>
+            <span><strong>Mobile PWA</strong> — Installs like a native app on any phone or tablet. Works from the shop floor. No app store required.</span>
+          </li>
+        </ul>
+
+        <div class="callout">
+          <p><strong>The ROI is immediate:</strong> One missed OSHA recordability determination — recording something you shouldn't, or skipping something you must — can trigger OSHA inspections, inflate your TRIR/DART rates, and cost more in consultant fees than 12 months of Corey. At <strong>$199/mo</strong>, that's under $7/day for expert guidance that was previously only available by the hour.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Dashboard -->
+    <div class="section">
+      <div class="section-header navy">
+        <h2>Employer Dashboard</h2>
+        <span class="badge">Platform from $599 / mo</span>
+      </div>
+      <div class="section-body">
+        <p class="intro">A unified command center for your entire occupational health operation — incidents, CAPAs, employee surveillance, OSHA recordkeeping, team management, and training, all in one place.</p>
+
+        <div class="metrics">
+          <div class="metric-card"><span class="num">1</span><span class="lbl">Live compliance score at a glance</span></div>
+          <div class="metric-card"><span class="num">6mo</span><span class="lbl">Incident trend chart by month</span></div>
+          <div class="metric-card"><span class="num">Auto</span><span class="lbl">OSHA 300 Log populated in real time</span></div>
+          <div class="metric-card"><span class="num">24/7</span><span class="lbl">Email + SMS alerts on every incident</span></div>
+        </div>
+
+        <ul class="feature-list">
+          <li>
+            <div class="dot navy">✓</div>
+            <span><strong>Incident Logging (FROI + OSHA 300)</strong> — Full First Report of Injury form with 7 sections. Select injured employee from your team roster, department auto-fills, supervisor auto-notified by email the moment the report is saved.</span>
+          </li>
+          <li>
+            <div class="dot navy">✓</div>
+            <span><strong>CAPA Management</strong> — Every incident triggers a Corrective Action Plan. Assigns responsibility, sends SMS to the responsible party, tracks due dates, flags overdue actions in red, verifies effectiveness.</span>
+          </li>
+          <li>
+            <div class="dot navy">✓</div>
+            <span><strong>Team &amp; Department Management</strong> — Multi-user with role-based access (Admin / Supervisor / Member). Supervisors see only their department's data. Admin controls exactly what each supervisor can view — incident summaries, CAPAs, training — while medical details and drug tests stay locked.</span>
+          </li>
+          <li>
+            <div class="dot navy">✓</div>
+            <span><strong>Employee Medical Surveillance</strong> — DOT physical expiration tracking with automatic alerts at 60, 30, 15, and 7 days. Drug screen logs. Never miss a required exam again.</span>
+          </li>
+          <li>
+            <div class="dot navy">✓</div>
+            <span><strong>Safety Training LMS</strong> — Built-in video courses with quizzes, progress tracking, and certificate generation. Pre-built courses include Hazard Communication, PPE, Drug &amp; Alcohol, Slips/Trips/Falls, and more.</span>
+          </li>
+          <li>
+            <div class="dot navy">✓</div>
+            <span><strong>Team Feed &amp; Video Meetings</strong> — Post safety alerts, policy updates, and training reminders. Pin urgent announcements. One-click video meetings — no Zoom license needed.</span>
+          </li>
+        </ul>
+
+        <div class="callout navy-callout">
+          <p><strong>Add Corey to the Platform for $100 more/mo</strong> ($699 total). Every incident gets an AI analysis. Every CAPA gets AI-suggested corrective actions. Every compliance question gets an immediate, regulation-backed answer — without leaving the platform.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── MODULE OVERVIEW ── -->
+  <div class="section">
+    <div class="section-header slate">
+      <h2>Also Included in the Platform</h2>
+    </div>
+    <div class="section-body" style="padding-bottom: 8px;">
+      <div class="module-grid">
+        <div class="module-item">
+          <div class="m-title">ISO Manager + Isa AI</div>
+          <div class="m-desc">Lead ISO Auditor AI covering 9001, 14001, 45001, 13485, 27001, AS9100, IATF 16949. NC &amp; CAPA tracking, document library, audit prep. Add-on from $299/mo.</div>
+        </div>
+        <div class="module-item">
+          <div class="m-title">Spanish Bilingual Assistant (BMA)</div>
+          <div class="m-desc">Bidirectional speech translation, interactive body maps, bilingual injury intake forms. Eliminates language-barrier documentation risk. $199/mo per location.</div>
+        </div>
+        <div class="module-item">
+          <div class="m-title">Digital Medical Passport</div>
+          <div class="m-desc">QR-code clinic check-in. Digital authorization forms. Employer notification on arrival and return. Automatic time-away tracking for workers' comp.</div>
+        </div>
+        <div class="module-item">
+          <div class="m-title">Recordability Decision Tree</div>
+          <div class="m-desc">Interactive 5-question tool based on 29 CFR 1904. Gives any supervisor a clear recordable/non-recordable determination in under 2 minutes.</div>
+        </div>
+        <div class="module-item">
+          <div class="m-title">BrandNSwag Recognition</div>
+          <div class="m-desc">QR-code employee recognition platform. Supervisors award points for safe behavior on the spot. Points redeemable for branded rewards. Builds safety culture.</div>
+        </div>
+        <div class="module-item">
+          <div class="m-title">OSHA 300 &amp; Compliance Reports</div>
+          <div class="m-desc">Print-ready OSHA 300 Log, TRIR/DART rate tracking, 6-month incident analytics by department, recordable trend charts, and audit-ready documentation.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRICING ── -->
+  <div class="pricing">
+    <div class="price-card">
+      <div class="plan">Corey AI Only</div>
+      <span class="price">$199</span>
+      <div class="sub">per month</div>
+      <div style="font-size:7pt; color:#64748b; margin-top:4px; line-height:1.4;">AI compliance expert. OSHA Q&amp;A, document templates, recordability guidance.</div>
+    </div>
+    <div class="price-card">
+      <div class="plan">Employer Platform</div>
+      <span class="price">$599</span>
+      <div class="sub">per month</div>
+      <div style="font-size:7pt; color:#64748b; margin-top:4px; line-height:1.4;">Full dashboard. Incidents, CAPAs, team mgmt, training, surveillance.</div>
+    </div>
+    <div class="price-card highlight">
+      <div class="plan">Platform + Corey</div>
+      <span class="price">$699</span>
+      <div class="sub">per month</div>
+      <div class="best">Best Value</div>
+      <div style="font-size:7pt; color:#7c3b0e; margin-top:4px; line-height:1.4;">Everything above. AI-powered compliance at every step.</div>
+    </div>
+    <div class="price-card">
+      <div class="plan">ISO Manager Add-On</div>
+      <span class="price">$299–$899</span>
+      <div class="sub">per month</div>
+      <div style="font-size:7pt; color:#64748b; margin-top:4px; line-height:1.4;">ISO AI, NC &amp; CAPA, document library. Core to Pro tiers.</div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <div class="footer">
+    <p>Additional team seats: $129/seat/mo &nbsp;·&nbsp; Bilingual Assistant: $199/mo per location &nbsp;·&nbsp; All plans include onboarding support</p>
+    <div class="contact">
+      corecompliancehub.com<br>
+      <span style="color:#e7520a;">Schedule a demo today</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
