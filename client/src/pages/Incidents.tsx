@@ -442,11 +442,26 @@ function IncidentFormDialog({
 }) {
   const [formData, setFormData] = useState<IncidentFormData>({ ...defaultFormData, isRecordable: initialRecordable });
   const [activeTab, setActiveTab] = useState("incident");
+  const [empNameMode, setEmpNameMode] = useState<"select" | "other">("select");
+  const [deptMode, setDeptMode] = useState<"select" | "other">("select");
+
+  // Fetch team members and departments to power the smart dropdowns
+  const { data: teamData } = useQuery<{ team: any; members: any[]; isAdmin: boolean; role: string | null }>({
+    queryKey: ["/api/team"],
+    enabled: open,
+  });
+  const teamMembers = (teamData?.members || []).filter((m: any) => m.status === "active" || m.status === "invited");
+  const { data: teamDepts = [] } = useQuery<{ id: number; name: string; supervisorMemberId: number | null; supervisorName: string | null }[]>({
+    queryKey: ["/api/team/departments"],
+    enabled: open && !!teamData?.team,
+  });
 
   useEffect(() => {
     if (open) {
       setFormData({ ...defaultFormData, isRecordable: initialRecordable });
       setActiveTab("incident");
+      setEmpNameMode("select");
+      setDeptMode("select");
     }
   }, [open, initialRecordable]);
 
@@ -579,12 +594,64 @@ function IncidentFormDialog({
             {activeTab === "employee" && (
               <div className="space-y-5">
                 <SectionLabel><UserCheck className="w-3.5 h-3.5" /> Employee Personal Data</SectionLabel>
+                {teamMembers.length > 0 && (
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm">
+                    <Users className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                    <p className="text-blue-700">Your team members are loaded — select one below to auto-fill their details, or choose "Other" to enter manually.</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="empName">Employee Full Name</Label>
-                    <Input id="empName" value={formData.employeeName}
-                      onChange={e => set({ employeeName: e.target.value })}
-                      placeholder="Last, First MI" data-testid="input-employee-name" />
+                    {teamMembers.length > 0 ? (
+                      <div className="space-y-2">
+                        <Select
+                          value={empNameMode === "other" ? "__other__" : (formData.employeeName || "")}
+                          onValueChange={v => {
+                            if (v === "__other__") {
+                              setEmpNameMode("other");
+                              set({ employeeName: "" });
+                            } else {
+                              const member = teamMembers.find((m: any) => (m.name || m.email) === v);
+                              setEmpNameMode("select");
+                              const deptName = member?.departmentId
+                                ? (teamDepts.find(d => d.id === member.departmentId)?.name || "")
+                                : "";
+                              set({
+                                employeeName: v,
+                                jobTitle: member?.jobTitle || formData.jobTitle,
+                                ...(deptName ? { department: deptName } : {}),
+                              });
+                              if (deptName) setDeptMode("select");
+                            }
+                          }}
+                          data-testid="select-employee-name"
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select team member…" /></SelectTrigger>
+                          <SelectContent>
+                            {teamMembers.map((m: any) => (
+                              <SelectItem key={m.id} value={m.name || m.email}>
+                                <span className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                                    {(m.name || m.email).charAt(0).toUpperCase()}
+                                  </span>
+                                  <span>{m.name || m.email}{m.jobTitle ? ` — ${m.jobTitle}` : ""}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="__other__">Other / Not listed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {empNameMode === "other" && (
+                          <Input value={formData.employeeName} onChange={e => set({ employeeName: e.target.value })}
+                            placeholder="Last, First MI" data-testid="input-employee-name" />
+                        )}
+                      </div>
+                    ) : (
+                      <Input id="empName" value={formData.employeeName}
+                        onChange={e => set({ employeeName: e.target.value })}
+                        placeholder="Last, First MI" data-testid="input-employee-name" />
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="empSsn">SSN — Last 4 Digits</Label>
@@ -650,8 +717,43 @@ function IncidentFormDialog({
                   </div>
                   <div>
                     <Label htmlFor="department">Department</Label>
-                    <Input id="department" value={formData.department}
-                      onChange={e => set({ department: e.target.value })} placeholder="e.g., Warehouse" data-testid="input-department" />
+                    {teamDepts.length > 0 ? (
+                      <div className="space-y-2">
+                        <Select
+                          value={deptMode === "other" ? "__other__" : (formData.department || "")}
+                          onValueChange={v => {
+                            if (v === "__other__") {
+                              setDeptMode("other");
+                              set({ department: "" });
+                            } else {
+                              setDeptMode("select");
+                              set({ department: v });
+                            }
+                          }}
+                          data-testid="select-department"
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select department…" /></SelectTrigger>
+                          <SelectContent>
+                            {teamDepts.map(d => (
+                              <SelectItem key={d.id} value={d.name}>
+                                <span className="flex items-center gap-2">
+                                  {d.name}
+                                  {d.supervisorName && <span className="text-xs text-muted-foreground">— Supervisor: {d.supervisorName}</span>}
+                                </span>
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="__other__">Other / Not listed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {deptMode === "other" && (
+                          <Input value={formData.department} onChange={e => set({ department: e.target.value })}
+                            placeholder="e.g., Warehouse" data-testid="input-department" />
+                        )}
+                      </div>
+                    ) : (
+                      <Input id="department" value={formData.department}
+                        onChange={e => set({ department: e.target.value })} placeholder="e.g., Warehouse" data-testid="input-department" />
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="dateEmployerNotified">Date Employer Was Notified</Label>

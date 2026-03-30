@@ -1796,6 +1796,29 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         if (profile?.derEmail) recipients.push(profile.derEmail);
         if (profile?.workersCompEmail) recipients.push(profile.workersCompEmail);
 
+        // Auto-notify the department supervisor if one exists
+        try {
+          const adminTeam = await storage.getTeamByAdmin(userId);
+          let teamForUser = adminTeam;
+          if (!teamForUser) {
+            const membership = await storage.getTeamMembership(userId);
+            teamForUser = (membership as any)?.team ?? null;
+          }
+          if (teamForUser && incident.department) {
+            const depts = await storage.getTeamDepartments(teamForUser.id);
+            const dept = depts.find((d: any) => d.name.toLowerCase() === (incident.department || "").toLowerCase());
+            if (dept?.supervisorMemberId) {
+              const members = await storage.getTeamMembers(teamForUser.id);
+              const supervisor = members.find((m: any) => m.id === dept.supervisorMemberId);
+              if (supervisor?.email && !recipients.includes(supervisor.email)) {
+                recipients.push(supervisor.email);
+              }
+            }
+          }
+        } catch (_supErr) {
+          // supervisor lookup is best-effort, don't block the notification
+        }
+
         const html = buildIncidentNotificationEmail({
           companyName: profile?.companyName || "Your Company",
           employeeName: (incident as any).employeeName || "Unknown Employee",
