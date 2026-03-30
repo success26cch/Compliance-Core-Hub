@@ -246,7 +246,7 @@ export default function TeamSeats() {
   const team = teamData.team;
   const members = teamData.members.filter(m => m.status !== "removed");
   const activeCount = members.filter(m => m.status === "active").length;
-  const isAdmin = teamData.isAdmin;
+  const isAdmin = teamData.role === "admin" || (teamData as any).isAdmin === true;
 
   // ── Full team hub ────────────────────────────────────────────────────────
   return (
@@ -406,9 +406,10 @@ export default function TeamSeats() {
           {/* ── DEPARTMENTS TAB ─────────────────────────────────────────── */}
           <TabsContent value="departments" className="space-y-4 mt-4">
             {isAdmin && (
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{departments.length} department{departments.length !== 1 ? "s" : ""} configured</p>
                 <Button onClick={() => setShowDeptForm(!showDeptForm)} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-dept">
-                  <Plus className="w-4 h-4 mr-2" />{showDeptForm ? "Cancel" : "New Department"}
+                  <Plus className="w-4 h-4 mr-2" />{showDeptForm ? "Cancel" : "Add Department"}
                 </Button>
               </div>
             )}
@@ -459,7 +460,12 @@ export default function TeamSeats() {
               <div className="text-center py-16 text-muted-foreground">
                 <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
                 <p className="font-medium">No departments yet</p>
-                <p className="text-sm">Create departments to organize your team by function, location, or shift.</p>
+                <p className="text-sm mb-4">Create departments to organize your team by function, location, or shift.</p>
+                {isAdmin && !showDeptForm && (
+                  <Button onClick={() => setShowDeptForm(true)} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-create-first-dept">
+                    <Plus className="w-4 h-4 mr-2" />Create First Department
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -733,9 +739,10 @@ export default function TeamSeats() {
           {/* ── ANNOUNCEMENTS TAB ───────────────────────────────────────── */}
           <TabsContent value="announcements" className="space-y-4 mt-4">
             {isAdmin && (
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{announcements.length} announcement{announcements.length !== 1 ? "s" : ""} posted</p>
                 <Button onClick={() => setShowAnnForm(!showAnnForm)} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-new-announcement">
-                  <Plus className="w-4 h-4 mr-2" />{showAnnForm ? "Cancel" : "New Announcement"}
+                  <Megaphone className="w-4 h-4 mr-2" />{showAnnForm ? "Cancel" : "Post Announcement"}
                 </Button>
               </div>
             )}
@@ -776,7 +783,12 @@ export default function TeamSeats() {
               <div className="text-center py-16 text-muted-foreground">
                 <Megaphone className="w-10 h-10 mx-auto mb-3 opacity-30" />
                 <p className="font-medium">No announcements yet</p>
-                <p className="text-sm">Post safety alerts, policy updates, and training reminders for your whole team.</p>
+                <p className="text-sm mb-4">Post safety alerts, policy updates, and training reminders for your whole team.</p>
+                {isAdmin && !showAnnForm && (
+                  <Button onClick={() => setShowAnnForm(true)} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-post-first-announcement">
+                    <Megaphone className="w-4 h-4 mr-2" />Post First Announcement
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

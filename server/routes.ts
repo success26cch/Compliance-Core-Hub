@@ -4439,16 +4439,16 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     const adminTeam = await storage.getTeamByAdmin(userId);
     if (adminTeam) {
       const members = await storage.getTeamMembers(adminTeam.id);
-      return res.json({ team: adminTeam, members, role: "admin" });
+      return res.json({ team: adminTeam, members, role: "admin", isAdmin: true });
     }
 
     const membership = await storage.getTeamMembership(userId);
     if (membership) {
       const members = await storage.getTeamMembers(membership.team.id);
-      return res.json({ team: membership.team, members, role: membership.member.role });
+      return res.json({ team: membership.team, members, role: membership.member.role, isAdmin: false });
     }
 
-    return res.json({ team: null, members: [], role: null });
+    return res.json({ team: null, members: [], role: null, isAdmin: false });
   });
 
   app.post("/api/team", async (req, res) => {
