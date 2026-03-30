@@ -706,6 +706,26 @@ export default function Landing() {
               </div>
             </div>
             
+            {/* ── SaaS / Digital Product Identifier ── */}
+            <div className="text-center py-3 px-4">
+              <div className="inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground font-medium">
+                <span className="flex items-center gap-1.5 text-accent font-bold uppercase tracking-widest">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                  Cloud-Based SaaS Software
+                </span>
+                <span className="hidden sm:inline text-border">·</span>
+                <span>Monthly Digital Subscription</span>
+                <span className="hidden sm:inline text-border">·</span>
+                <span>Browser + Mobile App</span>
+                <span className="hidden sm:inline text-border">·</span>
+                <span>No Hardware · No Installation</span>
+                <span className="hidden sm:inline text-border">·</span>
+                <a href="#pricing" className="text-primary font-semibold underline underline-offset-2 hover:text-accent transition-colors">
+                  Plans from $199/mo ↓
+                </a>
+              </div>
+            </div>
+
             <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
               <div className="flex flex-col items-center gap-2 group" data-testid="logo-cch">
                 <img src={cchLogo} alt="CCHUB" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
@@ -1816,8 +1836,12 @@ export default function Landing() {
       <section id="pricing" className="py-24 bg-muted/30 border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-bold uppercase tracking-widest mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+              Cloud SaaS · Digital Software Subscription · Cancel Anytime
+            </div>
             <h2 className="text-3xl md:text-4xl font-display font-black text-primary">Choose Your Plan</h2>
-            <p className="text-lg text-muted-foreground">Start with AI guidance alone or go all-in with the full platform.</p>
+            <p className="text-lg text-muted-foreground">Start with AI guidance alone or go all-in with the full platform. All plans are monthly digital subscriptions — access via browser and mobile app, no hardware or installation required.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <PricingCard
