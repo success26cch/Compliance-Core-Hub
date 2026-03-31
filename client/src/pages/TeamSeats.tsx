@@ -13,7 +13,7 @@ import {
   Building2, Pin, PinOff, Megaphone, AlertTriangle,
   CheckCircle2, Clock, TrendingUp, Flame, BookOpen, Plus, Trash2,
   UserCog, Activity, BarChart3, Save, Lock, Eye, EyeOff, Info,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, X, ArrowRight, Check,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -91,6 +91,7 @@ export default function TeamSeats() {
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamSeats, setNewTeamSeats] = useState(2);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [setupDismissed, setSetupDismissed] = useState(() => localStorage.getItem("cchub-team-setup-dismissed") === "1");
 
   // dept form
   const [deptForm, setDeptForm] = useState({ name: "", description: "", color: "blue", supervisorMemberId: "", supervisorName: "" });
@@ -413,6 +414,105 @@ export default function TeamSeats() {
             </CardContent>
           </Card>
         )}
+
+        {/* ── Getting Started banner (admin only, dismissible) ── */}
+        {isAdmin && !setupDismissed && (() => {
+          const departments = teamData.departments ?? [];
+          const nonAdminActive = members.filter(m => m.role !== "admin" && m.status === "active");
+          const step1Done = nonAdminActive.length > 0;
+          const step2Done = departments.length > 0;
+          const step3Done = !!(team.derName || team.derEmail);
+          const allDone = step1Done && step2Done && step3Done;
+
+          const steps = [
+            {
+              num: 1,
+              tab: "people",
+              label: "Invite Your Team",
+              desc: "Go to the People tab and invite each team member by name and email.",
+              done: step1Done,
+              doneText: `${nonAdminActive.length} member${nonAdminActive.length !== 1 ? "s" : ""} active`,
+            },
+            {
+              num: 2,
+              tab: "departments",
+              label: "Set Up Departments",
+              desc: "Create departments, assign members, and choose what supervisors can see.",
+              done: step2Done,
+              doneText: `${departments.length} department${departments.length !== 1 ? "s" : ""} created`,
+            },
+            {
+              num: 3,
+              tab: "admin",
+              label: "Configure Access & DER",
+              desc: "Designate your DER and set each person's data access level.",
+              done: step3Done,
+              doneText: "DER assigned",
+            },
+          ];
+
+          return (
+            <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-50/60 p-5" data-testid="banner-getting-started">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="font-bold text-sm text-blue-900">Getting Started — Set up your team in 3 steps</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Follow these steps in order for the best experience. Click any step to jump to that tab.</p>
+                </div>
+                <button
+                  onClick={() => { setSetupDismissed(true); localStorage.setItem("cchub-team-setup-dismissed", "1"); }}
+                  className="text-blue-400 hover:text-blue-600 shrink-0 mt-0.5"
+                  data-testid="button-dismiss-setup"
+                  aria-label="Dismiss setup guide"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {steps.map((step, i) => (
+                  <div key={step.num} className="flex sm:flex-col gap-3 sm:gap-0">
+                    <button
+                      className={`flex-1 text-left rounded-xl border px-4 py-3 transition-all ${step.done ? "bg-white border-green-200" : "bg-white border-blue-200 hover:border-blue-400 hover:shadow-sm"}`}
+                      onClick={() => setTab(step.tab)}
+                      data-testid={`button-setup-step-${step.num}`}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${step.done ? "bg-green-500 text-white" : "bg-blue-600 text-white"}`}>
+                          {step.done ? <Check className="w-3.5 h-3.5" /> : step.num}
+                        </div>
+                        <span className={`text-sm font-semibold ${step.done ? "text-green-800" : "text-blue-900"}`}>{step.label}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {step.done ? <span className="text-green-700 font-medium">{step.doneText}</span> : step.desc}
+                      </p>
+                    </button>
+                    {i < steps.length - 1 && (
+                      <div className="hidden sm:flex items-center justify-center absolute" style={{ display: "none" }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {allDone && (
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-green-50 border border-green-200 px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                    <p className="text-sm font-medium text-green-800">All set! Your team is fully configured.</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-green-700 hover:text-green-900 hover:bg-green-100 text-xs h-7"
+                    onClick={() => { setSetupDismissed(true); localStorage.setItem("cchub-team-setup-dismissed", "1"); }}
+                    data-testid="button-dismiss-setup-complete"
+                  >
+                    Hide this guide
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Tabs */}
         <Tabs value={tab} onValueChange={setTab}>
