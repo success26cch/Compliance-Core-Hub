@@ -2,7 +2,9 @@ import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Play, Pause, Maximize, ArrowRight, ArrowLeft, CheckCircle2, ShoppingCart, Loader2, Mail, User, Calendar } from "lucide-react";
 import logoUrl from "@assets/1_1770683748423.png";
 
 const HIGHLIGHTS = [
@@ -21,6 +23,13 @@ export default function WatchDemo() {
   const [playing, setPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [error, setError] = useState(false);
+
+  // Gate state
+  const [unlocked, setUnlocked] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [gateError, setGateError] = useState("");
 
   // Set muted via ref — React's `muted` JSX prop doesn't render as an HTML
   // attribute due to a long-standing React bug, which causes iOS Safari to
@@ -42,7 +51,7 @@ export default function WatchDemo() {
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.muted = true; // ensure muted before play attempt (iOS requirement)
+      v.muted = true;
       v.play()
         .then(() => { setPlaying(true); setHasStarted(true); setError(false); })
         .catch(() => {});
@@ -55,12 +64,37 @@ export default function WatchDemo() {
   const goFullscreen = () => {
     const v = videoRef.current;
     if (!v) return;
-    // iOS Safari uses webkitEnterFullscreen; all others use requestFullscreen
     if ((v as any).webkitEnterFullscreen) {
       (v as any).webkitEnterFullscreen();
     } else {
       v.requestFullscreen?.();
     }
+  };
+
+  const handleGateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) {
+      setGateError("Please enter your name and email to continue.");
+      return;
+    }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    if (!emailOk) {
+      setGateError("Please enter a valid email address.");
+      return;
+    }
+    setGateError("");
+    setSubmitting(true);
+    try {
+      await fetch("/api/demo-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+      });
+    } catch {
+      // fire-and-forget — unlock the video even if the lead capture fails
+    }
+    setSubmitting(false);
+    setUnlocked(true);
   };
 
   return (
@@ -103,76 +137,173 @@ export default function WatchDemo() {
         </p>
       </section>
 
-      {/* Video Player */}
+      {/* Video / Gate */}
       <section className="max-w-5xl mx-auto px-4 pb-16">
-        <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 bg-black" data-testid="section-video-player">
-          <video
-            ref={videoRef}
-            src="/api/demo-video"
-            playsInline
-            preload="metadata"
-            onPlay={() => { setPlaying(true); setHasStarted(true); setError(false); }}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
-            onError={() => setError(true)}
-            className="w-full block"
-            style={{ display: "block", aspectRatio: "16/9", backgroundColor: "#000" }}
-            data-testid="video-demo"
-          />
-
-          {/* Tap-to-play overlay — visible until video starts */}
-          {!hasStarted && !error && (
-            <div
-              className="absolute inset-0 flex items-center justify-center cursor-pointer"
-              onClick={toggle}
-              data-testid="overlay-video-play"
-            >
-              <div className="w-20 h-20 rounded-full bg-black/70 flex items-center justify-center border-2 border-white/30 shadow-xl">
-                <Play className="w-9 h-9 text-white ml-1" fill="white" />
+        {!unlocked ? (
+          /* ── Lead-capture gate ── */
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden shadow-2xl shadow-black/60">
+            {/* Blurred preview hint */}
+            <div className="relative h-48 md:h-64 bg-gradient-to-br from-[hsl(222,47%,10%)] to-[hsl(222,47%,6%)] flex items-center justify-center overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center opacity-20 select-none pointer-events-none">
+                <Play className="w-24 h-24 text-white" fill="white" />
+              </div>
+              <div className="relative z-10 text-center px-4">
+                <div className="w-16 h-16 mx-auto rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center mb-4">
+                  <Play className="w-7 h-7 text-accent ml-1" fill="currentColor" />
+                </div>
+                <p className="text-white/80 font-semibold text-lg">Platform Demo Video</p>
+                <p className="text-white/40 text-sm mt-1">~9 min full platform walkthrough</p>
               </div>
             </div>
-          )}
 
-          {/* Error state — tap anywhere on the player to retry */}
-          {error && (
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 gap-3 cursor-pointer"
-              onClick={retry}
-              data-testid="overlay-video-error"
-            >
-              <div className="w-20 h-20 rounded-full bg-black/70 flex items-center justify-center border-2 border-white/30 shadow-xl">
-                <Play className="w-9 h-9 text-white ml-1" fill="white" />
+            {/* Form */}
+            <div className="px-6 py-8 md:px-10">
+              <h2 className="text-xl md:text-2xl font-display font-black text-white mb-1 text-center">
+                Watch the Full Demo
+              </h2>
+              <p className="text-white/50 text-sm text-center mb-6">
+                Enter your name and email to unlock instant access — no password needed.
+              </p>
+
+              <form onSubmit={handleGateSubmit} className="max-w-md mx-auto space-y-4" data-testid="form-demo-gate">
+                <div className="space-y-1.5">
+                  <Label htmlFor="gate-name" className="text-white/70 text-sm font-medium flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5" /> Full Name
+                  </Label>
+                  <Input
+                    id="gate-name"
+                    data-testid="input-demo-name"
+                    type="text"
+                    placeholder="Jane Smith"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-accent focus:ring-accent"
+                    disabled={submitting}
+                    autoComplete="name"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="gate-email" className="text-white/70 text-sm font-medium flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5" /> Work Email
+                  </Label>
+                  <Input
+                    id="gate-email"
+                    data-testid="input-demo-email"
+                    type="email"
+                    placeholder="jane@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-accent focus:ring-accent"
+                    disabled={submitting}
+                    autoComplete="email"
+                  />
+                </div>
+
+                {gateError && (
+                  <p className="text-red-400 text-sm" data-testid="text-gate-error">{gateError}</p>
+                )}
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full bg-accent hover:bg-accent/90 text-white font-bold gap-2"
+                  disabled={submitting}
+                  data-testid="button-demo-unlock"
+                >
+                  {submitting ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Unlocking…</>
+                  ) : (
+                    <><Play className="w-4 h-4" fill="currentColor" /> Watch the Demo</>
+                  )}
+                </Button>
+
+                <p className="text-center text-white/30 text-xs pt-1">
+                  No spam. We'll only reach out if you want us to.
+                </p>
+              </form>
+
+              {/* Bonus CTA */}
+              <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                <p className="text-white/40 text-sm mb-3">Prefer a live walkthrough?</p>
+                <Link href="/contact">
+                  <Button variant="outline" size="sm" className="border-white/20 text-white/70 hover:text-white hover:bg-white/10 gap-2" data-testid="button-schedule-demo-gate">
+                    <Calendar className="w-3.5 h-3.5" /> Schedule a Personalized Demo
+                  </Button>
+                </Link>
               </div>
-              <p className="text-white/60 text-xs text-center px-8">Tap to play</p>
             </div>
-          )}
-
-          {/* Bottom controls */}
-          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-t from-black/70 to-transparent">
-            <button
-              onClick={toggle}
-              className="text-white hover:text-accent transition-colors"
-              data-testid="button-video-toggle"
-              aria-label={playing ? "Pause" : "Play"}
-            >
-              {playing
-                ? <Pause className="w-5 h-5" fill="currentColor" />
-                : <Play className="w-5 h-5" fill="currentColor" />}
-            </button>
-            <button
-              onClick={goFullscreen}
-              className="text-white hover:text-accent transition-colors"
-              data-testid="button-video-fullscreen"
-              aria-label="Fullscreen"
-            >
-              <Maximize className="w-5 h-5" />
-            </button>
           </div>
-        </div>
+        ) : (
+          /* ── Video player (unlocked) ── */
+          <>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 bg-black" data-testid="section-video-player">
+              <video
+                ref={videoRef}
+                src="/api/demo-video"
+                playsInline
+                preload="metadata"
+                onPlay={() => { setPlaying(true); setHasStarted(true); setError(false); }}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+                onError={() => setError(true)}
+                className="w-full block"
+                style={{ display: "block", aspectRatio: "16/9", backgroundColor: "#000" }}
+                data-testid="video-demo"
+              />
 
-        <p className="text-center text-white/40 text-sm mt-4">
-          Core Compliance Hub
-        </p>
+              {!hasStarted && !error && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                  onClick={toggle}
+                  data-testid="overlay-video-play"
+                >
+                  <div className="w-20 h-20 rounded-full bg-black/70 flex items-center justify-center border-2 border-white/30 shadow-xl">
+                    <Play className="w-9 h-9 text-white ml-1" fill="white" />
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 gap-3 cursor-pointer"
+                  onClick={retry}
+                  data-testid="overlay-video-error"
+                >
+                  <div className="w-20 h-20 rounded-full bg-black/70 flex items-center justify-center border-2 border-white/30 shadow-xl">
+                    <Play className="w-9 h-9 text-white ml-1" fill="white" />
+                  </div>
+                  <p className="text-white/60 text-xs text-center px-8">Tap to play</p>
+                </div>
+              )}
+
+              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3 bg-gradient-to-t from-black/70 to-transparent">
+                <button
+                  onClick={toggle}
+                  className="text-white hover:text-accent transition-colors"
+                  data-testid="button-video-toggle"
+                  aria-label={playing ? "Pause" : "Play"}
+                >
+                  {playing
+                    ? <Pause className="w-5 h-5" fill="currentColor" />
+                    : <Play className="w-5 h-5" fill="currentColor" />}
+                </button>
+                <button
+                  onClick={goFullscreen}
+                  className="text-white hover:text-accent transition-colors"
+                  data-testid="button-video-fullscreen"
+                  aria-label="Fullscreen"
+                >
+                  <Maximize className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <p className="text-center text-white/40 text-sm mt-4">
+              Core Compliance Hub
+            </p>
+          </>
+        )}
       </section>
 
       {/* Highlights */}

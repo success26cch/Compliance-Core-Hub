@@ -207,9 +207,9 @@ export default function EmployerDashboard() {
                   Get Your Dashboard <ChevronRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="/watch-demo">
+              <Link href="/contact">
                 <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold gap-2 text-base">
-                  <Play className="w-4 h-4" /> Watch Demo
+                  <Calendar className="w-4 h-4" /> Schedule a Demo
                 </Button>
               </Link>
             </div>

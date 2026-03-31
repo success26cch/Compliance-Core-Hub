@@ -1126,6 +1126,43 @@ Rules:
     }
   });
 
+  // Watch Demo Lead Capture
+  app.post("/api/demo-lead", async (req, res) => {
+    try {
+      const { name, email } = req.body;
+      if (!name || !email) {
+        return res.status(400).json({ message: "Name and email are required" });
+      }
+      const adminHtml = `
+        <h2>New Watch-Demo Lead</h2>
+        <p>A visitor entered their info to unlock the platform demo video.</p>
+        <table cellpadding="6" style="border-collapse:collapse;">
+          <tr><td><strong>Name</strong></td><td>${name}</td></tr>
+          <tr><td><strong>Email</strong></td><td>${email}</td></tr>
+          <tr><td><strong>Source</strong></td><td>Watch Demo Gate (/watch-demo)</td></tr>
+          <tr><td><strong>Date</strong></td><td>${new Date().toLocaleString()}</td></tr>
+        </table>
+        <p style="margin-top:16px">Follow up with a demo call or pricing overview.</p>
+      `;
+      const confirmHtml = `
+        <h2>Your CCHUB demo is ready to watch!</h2>
+        <p>Hi ${name},</p>
+        <p>Thanks for checking out Core Compliance Hub. Your platform demo is now playing.</p>
+        <p>Questions or want a live walkthrough? <a href="https://corecompliancehub.com/contact">Schedule a personalized demo</a> with our team.</p>
+        <p>— The CCHUB Team</p>
+      `;
+      const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "team@corecompliancehub.com"];
+      await Promise.all([
+        sendEmail(ADMIN_EMAILS, `New Demo Lead: ${name}`, adminHtml),
+        sendEmail(email, "Your CCHUB demo is unlocked — Core Compliance Hub", confirmHtml),
+      ]);
+      res.status(201).json({ success: true });
+    } catch (err) {
+      console.error("[Demo Lead]", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // Contact Inquiries (retainer, consultation requests)
   app.post("/api/contact-inquiries", async (req, res) => {
     try {
