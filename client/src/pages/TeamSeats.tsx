@@ -119,24 +119,6 @@ export default function TeamSeats() {
   const [editingVisibility, setEditingVisibility] = useState<number | null>(null);
   const [visibilityDraft, setVisibilityDraft] = useState<VisibilitySettings>({ incidentSummary: true, medicalDetails: false, restrictionDetails: false, capaDetails: true, trainingStatus: true });
 
-  // Sync seat draft and team name draft when team data loads
-  useEffect(() => {
-    if (teamData?.team) {
-      setSeatDraft(teamData.team.totalSeats);
-      setTeamNameDraft(teamData.team.companyName);
-      if (teamData.team.derName || teamData.team.derEmail) {
-        setDerDraft({
-          derMemberId: teamData.team.derMemberId ? String(teamData.team.derMemberId) : "",
-          derName: teamData.team.derName ?? "",
-          derEmail: teamData.team.derEmail ?? "",
-          derPhone: teamData.team.derPhone ?? "",
-          derTitle: teamData.team.derTitle ?? "",
-        });
-        setDerMode(teamData.team.derMemberId ? "member" : "custom");
-      }
-    }
-  }, [teamData?.team?.id]);
-
   // On successful checkout
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -166,6 +148,24 @@ export default function TeamSeats() {
     queryKey: ["/api/team/compliance"],
     enabled: !!teamData?.team,
   });
+
+  // Sync seat draft, team name draft, and DER draft when team data loads
+  useEffect(() => {
+    if (teamData?.team) {
+      setSeatDraft(teamData.team.totalSeats);
+      setTeamNameDraft(teamData.team.companyName);
+      if (teamData.team.derName || teamData.team.derEmail) {
+        setDerDraft({
+          derMemberId: teamData.team.derMemberId ? String(teamData.team.derMemberId) : "",
+          derName: teamData.team.derName ?? "",
+          derEmail: teamData.team.derEmail ?? "",
+          derPhone: teamData.team.derPhone ?? "",
+          derTitle: teamData.team.derTitle ?? "",
+        });
+        setDerMode(teamData.team.derMemberId ? "member" : "custom");
+      }
+    }
+  }, [teamData?.team?.id]);
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const createTeam = useMutation({
