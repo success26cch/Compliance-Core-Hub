@@ -102,6 +102,10 @@ export default function TeamSeats() {
   const [assignTitle, setAssignTitle] = useState("");
   const [assignRole, setAssignRole] = useState("member");
 
+  // seat editor
+  const [showSeatEditor, setShowSeatEditor] = useState(false);
+  const [seatDraft, setSeatDraft] = useState(1);
+
   // per-department visibility editor
   const [editingVisibility, setEditingVisibility] = useState<number | null>(null);
   const [visibilityDraft, setVisibilityDraft] = useState<VisibilitySettings>({ incidentSummary: true, medicalDetails: false, restrictionDetails: false, capaDetails: true, trainingStatus: true });
@@ -197,6 +201,16 @@ export default function TeamSeats() {
     onSuccess: () => { toast({ title: "Announcement deleted" }); queryClient.invalidateQueries({ queryKey: ["/api/team/announcements"] }); },
   });
 
+  const updateSeats = useMutation({
+    mutationFn: (seats: number) => apiRequest("PATCH", "/api/team/seats", { totalSeats: seats }).then(r => r.json()),
+    onSuccess: () => {
+      toast({ title: "Seats updated!", description: "Your team seat count has been updated." });
+      setShowSeatEditor(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/team"] });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   // ── Start video meeting ──────────────────────────────────────────────────
   function startMeeting() {
     const teamName = (teamData?.team?.companyName ?? "cchub-team").replace(/\s+/g, "-").toLowerCase();
@@ -272,10 +286,87 @@ export default function TeamSeats() {
               </div>
             </div>
           </div>
-          <Button onClick={startMeeting} className="bg-accent hover:bg-accent/90 text-white shrink-0" data-testid="button-start-meeting">
-            <Video className="w-4 h-4 mr-2" /> Start Video Meeting
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-white/20 text-white/70 hover:text-white hover:bg-white/10 shrink-0"
+                onClick={() => { setSeatDraft(team.totalSeats); setShowSeatEditor(true); }}
+                data-testid="button-manage-seats"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Seats
+              </Button>
+            )}
+            <Button onClick={startMeeting} className="bg-accent hover:bg-accent/90 text-white shrink-0" data-testid="button-start-meeting">
+              <Video className="w-4 h-4 mr-2" /> Start Video Meeting
+            </Button>
+          </div>
         </div>
+
+        {/* Seat Editor (inline) */}
+        {isAdmin && showSeatEditor && (
+          <Card className="border-accent/30 bg-accent/5" data-testid="card-seat-editor">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="w-4 h-4 text-accent" /> Manage Seat Count
+              </CardTitle>
+              <CardDescription>
+                You currently have {team.totalSeats} seat{team.totalSeats !== 1 ? "s" : ""} and {activeCount} active member{activeCount !== 1 ? "s" : ""}. Increase seats to invite more people.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSeatDraft(d => Math.max(activeCount, d - 1))}
+                    disabled={seatDraft <= activeCount}
+                    data-testid="button-seat-minus"
+                    className="w-8 h-8 p-0"
+                  >
+                    −
+                  </Button>
+                  <Input
+                    type="number"
+                    min={activeCount}
+                    value={seatDraft}
+                    onChange={e => setSeatDraft(Math.max(activeCount, parseInt(e.target.value) || activeCount))}
+                    className="w-20 text-center"
+                    data-testid="input-seat-count"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSeatDraft(d => d + 1)}
+                    data-testid="button-seat-plus"
+                    className="w-8 h-8 p-0"
+                  >
+                    +
+                  </Button>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {seatDraft > team.totalSeats ? `Adding ${seatDraft - team.totalSeats} seat${seatDraft - team.totalSeats !== 1 ? "s" : ""}` : seatDraft < team.totalSeats ? `Reducing to ${seatDraft} seat${seatDraft !== 1 ? "s" : ""}` : "No change"}
+                </span>
+                <div className="flex gap-2 sm:ml-auto">
+                  <Button
+                    size="sm"
+                    className="bg-accent hover:bg-accent/90 text-white"
+                    onClick={() => updateSeats.mutate(seatDraft)}
+                    disabled={updateSeats.isPending || seatDraft === team.totalSeats}
+                    data-testid="button-save-seats"
+                  >
+                    {updateSeats.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-3.5 h-3.5 mr-1.5" />Save</>}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setShowSeatEditor(false)} data-testid="button-cancel-seats">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs */}
         <Tabs value={tab} onValueChange={setTab}>
@@ -303,7 +394,7 @@ export default function TeamSeats() {
                     </Button>
                   </div>
                   {members.length >= team.totalSeats && (
-                    <p className="text-xs text-muted-foreground mt-2">All seats are filled. <button className="text-accent underline" onClick={() => {}}>Add more seats</button> to invite additional members.</p>
+                    <p className="text-xs text-muted-foreground mt-2">All seats are filled. <button className="text-accent underline font-medium" data-testid="button-add-seats-inline" onClick={() => { setSeatDraft(team.totalSeats + 1); setShowSeatEditor(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Add more seats</button> to invite additional members.</p>
                   )}
                 </CardContent>
               </Card>
