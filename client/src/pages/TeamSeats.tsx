@@ -247,6 +247,16 @@ export default function TeamSeats() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const updateMemberAccess = useMutation({
+    mutationFn: ({ memberId, role, departmentId, jobTitle }: { memberId: number; role: string; departmentId: number | null; jobTitle: string }) =>
+      apiRequest("PATCH", `/api/team/members/${memberId}/department`, { departmentId, jobTitle, role }).then(r => r.json()),
+    onSuccess: () => {
+      toast({ title: "Access level updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/team"] });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   // ── Start video meeting ──────────────────────────────────────────────────
   function startMeeting() {
     const teamName = (teamData?.team?.companyName ?? "cchub-team").replace(/\s+/g, "-").toLowerCase();
@@ -969,7 +979,7 @@ export default function TeamSeats() {
                     <Shield className="w-4 h-4 text-accent" /> Designated Employer Representative (DER)
                   </CardTitle>
                   <CardDescription>
-                    The DER is the authorized employer contact responsible for DOT drug &amp; alcohol testing decisions, receiving MRO results, and directing employee follow-up. Only the DER may remove an employee from safety-sensitive duties based on a positive result.
+                    The DER is the authorized employer contact for DOT drug &amp; alcohol testing — receives MRO results, directs employee follow-up, and is the only person who may remove an employee from safety-sensitive duties based on a positive result. Designate which of your existing team members serves this role, or enter someone outside your team.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
@@ -994,32 +1004,31 @@ export default function TeamSeats() {
                     <div className="rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-4 text-center">
                       <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
                       <p className="text-sm font-medium text-muted-foreground">No DER assigned yet</p>
-                      <p className="text-xs text-muted-foreground/70 mt-1">Assign a DER below to designate the person responsible for drug &amp; alcohol program decisions.</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Use the form below to designate your DER.</p>
                     </div>
                   )}
 
                   {/* Mode toggle */}
                   <div className="flex gap-2">
                     <Button size="sm" variant={derMode === "member" ? "default" : "outline"} className={derMode === "member" ? "bg-accent hover:bg-accent/90 text-white" : ""} onClick={() => setDerMode("member")} data-testid="button-der-mode-member">
-                      Select Team Member
+                      From Your Team
                     </Button>
                     <Button size="sm" variant={derMode === "custom" ? "default" : "outline"} className={derMode === "custom" ? "bg-accent hover:bg-accent/90 text-white" : ""} onClick={() => setDerMode("custom")} data-testid="button-der-mode-custom">
-                      Enter Manually
+                      Outside Your Team
                     </Button>
                   </div>
 
                   {derMode === "member" ? (
                     <div className="space-y-3">
-                      <Label className="text-sm font-medium">Select DER from your team</Label>
+                      <Label className="text-sm font-medium">Select from your existing team members</Label>
                       <Select
                         value={derDraft.derMemberId}
                         onValueChange={val => {
                           const m = members.find(x => String(x.id) === val);
                           setDerDraft(d => ({ ...d, derMemberId: val, derName: m?.name ?? "", derEmail: m?.email ?? "", derTitle: m?.jobTitle ?? "" }));
                         }}
-                        data-testid="select-der-member"
                       >
-                        <SelectTrigger><SelectValue placeholder="Choose a team member…" /></SelectTrigger>
+                        <SelectTrigger data-testid="select-der-member"><SelectValue placeholder="Choose a team member…" /></SelectTrigger>
                         <SelectContent>
                           {members.filter(m => m.status === "active").map(m => (
                             <SelectItem key={m.id} value={String(m.id)} data-testid={`option-der-member-${m.id}`}>
@@ -1030,9 +1039,9 @@ export default function TeamSeats() {
                       </Select>
                       {derDraft.derMemberId && (
                         <div className="grid sm:grid-cols-2 gap-3">
-                          <div><Label className="text-xs text-muted-foreground">Title / Role</Label>
+                          <div><Label className="text-xs text-muted-foreground">DER Title / Role</Label>
                             <Input value={derDraft.derTitle} onChange={e => setDerDraft(d => ({ ...d, derTitle: e.target.value }))} placeholder="e.g. Safety Manager, HR Director" data-testid="input-der-title" /></div>
-                          <div><Label className="text-xs text-muted-foreground">Phone</Label>
+                          <div><Label className="text-xs text-muted-foreground">DER Direct Phone</Label>
                             <Input value={derDraft.derPhone} onChange={e => setDerDraft(d => ({ ...d, derPhone: e.target.value }))} placeholder="(555) 000-0000" data-testid="input-der-phone" /></div>
                         </div>
                       )}
@@ -1071,41 +1080,103 @@ export default function TeamSeats() {
                 </CardContent>
               </Card>
 
-              {/* ── Seat Management ── */}
-              <Card data-testid="card-admin-seats">
+              {/* ── Data Access Controls ── */}
+              <Card data-testid="card-data-access">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="w-4 h-4 text-accent" /> Seat Management
+                    <Eye className="w-4 h-4 text-accent" /> Member Data Access
                   </CardTitle>
                   <CardDescription>
-                    {activeCount} of {team.totalSeats} seat{team.totalSeats !== 1 ? "s" : ""} in use. Increase or decrease your seat count as your team grows or changes.
+                    Control what each team member can see. Use the dropdown next to each person to choose their access level. Drug test results are always restricted to the DER and admins — this cannot be changed. For fine-grained visibility settings (what a supervisor can see per department), use the Departments tab.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="w-8 h-8 p-0"
-                        onClick={() => setSeatDraft(d => Math.max(activeCount, d - 1))}
-                        disabled={seatDraft <= activeCount} data-testid="button-admin-seat-minus">−
-                      </Button>
-                      <Input type="number" min={activeCount} value={seatDraft}
-                        onChange={e => setSeatDraft(Math.max(activeCount, parseInt(e.target.value) || activeCount))}
-                        className="w-20 text-center" data-testid="input-admin-seat-count"
-                        onFocus={() => { if (seatDraft === 1 && team.totalSeats > 1) setSeatDraft(team.totalSeats); }}
-                      />
-                      <Button variant="outline" size="sm" className="w-8 h-8 p-0"
-                        onClick={() => setSeatDraft(d => d + 1)} data-testid="button-admin-seat-plus">+
-                      </Button>
+                  {members.filter(m => m.role !== "admin").length === 0 ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No team members yet. Invite people in the People tab first.</p>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {seatDraft > team.totalSeats ? `Adding ${seatDraft - team.totalSeats} seat${seatDraft - team.totalSeats !== 1 ? "s" : ""}` : seatDraft < team.totalSeats ? `Reducing to ${seatDraft}` : `Current: ${team.totalSeats} seat${team.totalSeats !== 1 ? "s" : ""}`}
-                    </span>
-                    <Button size="sm" className="bg-accent hover:bg-accent/90 text-white sm:ml-auto"
-                      onClick={() => updateSeats.mutate(seatDraft)}
-                      disabled={updateSeats.isPending || seatDraft === team.totalSeats} data-testid="button-admin-save-seats">
-                      {updateSeats.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-3.5 h-3.5 mr-1.5" />Save</>}
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="divide-y">
+                      {members.filter(m => m.role !== "admin").map(m => (
+                        <div key={m.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0" data-testid={`row-access-${m.id}`}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                              {(m.name || m.email).charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{m.name || "—"}</p>
+                              <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {m.status === "pending" && (
+                              <Badge variant="outline" className="text-xs border-amber-200 text-amber-600">Invite pending</Badge>
+                            )}
+                            <Select
+                              value={m.role}
+                              onValueChange={newRole => updateMemberAccess.mutate({
+                                memberId: m.id,
+                                role: newRole,
+                                departmentId: m.departmentId ?? null,
+                                jobTitle: m.jobTitle || "",
+                              })}
+                            >
+                              <SelectTrigger className="w-52 h-8 text-xs" data-testid={`select-access-${m.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="supervisor">
+                                  <span className="flex items-center gap-2">
+                                    <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
+                                    Can View Compliance Data
+                                  </span>
+                                </SelectItem>
+                                <SelectItem value="member">
+                                  <span className="flex items-center gap-2">
+                                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                                    Own Records Only
+                                  </span>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Admins — locked row */}
+                      {members.filter(m => m.role === "admin").length > 1 && (
+                        <>
+                          <div className="pt-3">
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">Full Access (Admin)</p>
+                          </div>
+                          {members.filter(m => m.role === "admin").map(m => (
+                            <div key={m.id} className="flex items-center justify-between gap-3 py-2 opacity-60">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-xs shrink-0">
+                                  {(m.name || m.email).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{m.name || "—"}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Crown className="w-3.5 h-3.5 text-amber-500" />
+                                Full Access — cannot be changed
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {/* Drug test — always locked note */}
+                      <div className="pt-3">
+                        <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-100 px-3 py-2.5">
+                          <Lock className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+                          <p className="text-xs text-red-700"><strong>Drug test results</strong> are always restricted to the DER and admins — this cannot be changed regardless of access level.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
