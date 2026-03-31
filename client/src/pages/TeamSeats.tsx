@@ -30,7 +30,11 @@ interface TeamMember {
   invitedAt: string; joinedAt: string | null;
 }
 interface TeamData {
-  team: { id: number; adminUserId: string; companyName: string; totalSeats: number; status: string; } | null;
+  team: {
+    id: number; adminUserId: string; companyName: string; totalSeats: number; status: string;
+    derMemberId?: number | null; derName?: string | null; derEmail?: string | null;
+    derPhone?: string | null; derTitle?: string | null;
+  } | null;
   members: TeamMember[]; isAdmin: boolean; role: string | null;
 }
 interface VisibilitySettings { incidentSummary: boolean; medicalDetails: boolean; restrictionDetails: boolean; capaDetails: boolean; trainingStatus: boolean; }
@@ -106,9 +110,32 @@ export default function TeamSeats() {
   const [showSeatEditor, setShowSeatEditor] = useState(false);
   const [seatDraft, setSeatDraft] = useState(1);
 
+  // admin settings / DER
+  const [teamNameDraft, setTeamNameDraft] = useState("");
+  const [derMode, setDerMode] = useState<"member" | "custom">("member");
+  const [derDraft, setDerDraft] = useState({ derMemberId: "", derName: "", derEmail: "", derPhone: "", derTitle: "" });
+
   // per-department visibility editor
   const [editingVisibility, setEditingVisibility] = useState<number | null>(null);
   const [visibilityDraft, setVisibilityDraft] = useState<VisibilitySettings>({ incidentSummary: true, medicalDetails: false, restrictionDetails: false, capaDetails: true, trainingStatus: true });
+
+  // Sync seat draft and team name draft when team data loads
+  useEffect(() => {
+    if (teamData?.team) {
+      setSeatDraft(teamData.team.totalSeats);
+      setTeamNameDraft(teamData.team.companyName);
+      if (teamData.team.derName || teamData.team.derEmail) {
+        setDerDraft({
+          derMemberId: teamData.team.derMemberId ? String(teamData.team.derMemberId) : "",
+          derName: teamData.team.derName ?? "",
+          derEmail: teamData.team.derEmail ?? "",
+          derPhone: teamData.team.derPhone ?? "",
+          derTitle: teamData.team.derTitle ?? "",
+        });
+        setDerMode(teamData.team.derMemberId ? "member" : "custom");
+      }
+    }
+  }, [teamData?.team?.id]);
 
   // On successful checkout
   useEffect(() => {
@@ -206,6 +233,15 @@ export default function TeamSeats() {
     onSuccess: () => {
       toast({ title: "Seats updated!", description: "Your team seat count has been updated." });
       setShowSeatEditor(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/team"] });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const updateSettings = useMutation({
+    mutationFn: (payload: object) => apiRequest("PATCH", "/api/team/settings", payload).then(r => r.json()),
+    onSuccess: () => {
+      toast({ title: "Settings saved!" });
       queryClient.invalidateQueries({ queryKey: ["/api/team"] });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -370,11 +406,12 @@ export default function TeamSeats() {
 
         {/* Tabs */}
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className={`grid w-full ${isAdmin ? "grid-cols-5" : "grid-cols-4"}`}>
             <TabsTrigger value="people" data-testid="tab-people"><Users className="w-4 h-4 mr-1.5 hidden sm:inline" />People</TabsTrigger>
             <TabsTrigger value="departments" data-testid="tab-departments"><Building2 className="w-4 h-4 mr-1.5 hidden sm:inline" />Departments</TabsTrigger>
             <TabsTrigger value="compliance" data-testid="tab-compliance"><Activity className="w-4 h-4 mr-1.5 hidden sm:inline" />Compliance</TabsTrigger>
             <TabsTrigger value="announcements" data-testid="tab-announcements"><Megaphone className="w-4 h-4 mr-1.5 hidden sm:inline" />Feed</TabsTrigger>
+            {isAdmin && <TabsTrigger value="admin" data-testid="tab-admin"><Shield className="w-4 h-4 mr-1.5 hidden sm:inline" />Admin</TabsTrigger>}
           </TabsList>
 
           {/* ── PEOPLE TAB ──────────────────────────────────────────────── */}
@@ -920,6 +957,192 @@ export default function TeamSeats() {
               </div>
             )}
           </TabsContent>
+
+          {/* ── ADMIN TAB ──────────────────────────────────────────────── */}
+          {isAdmin && (
+            <TabsContent value="admin" className="space-y-5 mt-4">
+
+              {/* ── DER Designation ── */}
+              <Card data-testid="card-der">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-accent" /> Designated Employer Representative (DER)
+                  </CardTitle>
+                  <CardDescription>
+                    The DER is the authorized employer contact responsible for DOT drug &amp; alcohol testing decisions, receiving MRO results, and directing employee follow-up. Only the DER may remove an employee from safety-sensitive duties based on a positive result.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+
+                  {/* Current DER display */}
+                  {(team.derName || team.derEmail) ? (
+                    <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center shrink-0">
+                        <Shield className="w-5 h-5 text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{team.derName ?? "—"}</p>
+                        {team.derTitle && <p className="text-xs text-muted-foreground">{team.derTitle}</p>}
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
+                          {team.derEmail && <p className="text-xs text-muted-foreground">{team.derEmail}</p>}
+                          {team.derPhone && <p className="text-xs text-muted-foreground">{team.derPhone}</p>}
+                        </div>
+                      </div>
+                      <Badge className="bg-accent/20 text-accent border-accent/30 text-xs self-start sm:self-auto">Active DER</Badge>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-4 text-center">
+                      <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
+                      <p className="text-sm font-medium text-muted-foreground">No DER assigned yet</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Assign a DER below to designate the person responsible for drug &amp; alcohol program decisions.</p>
+                    </div>
+                  )}
+
+                  {/* Mode toggle */}
+                  <div className="flex gap-2">
+                    <Button size="sm" variant={derMode === "member" ? "default" : "outline"} className={derMode === "member" ? "bg-accent hover:bg-accent/90 text-white" : ""} onClick={() => setDerMode("member")} data-testid="button-der-mode-member">
+                      Select Team Member
+                    </Button>
+                    <Button size="sm" variant={derMode === "custom" ? "default" : "outline"} className={derMode === "custom" ? "bg-accent hover:bg-accent/90 text-white" : ""} onClick={() => setDerMode("custom")} data-testid="button-der-mode-custom">
+                      Enter Manually
+                    </Button>
+                  </div>
+
+                  {derMode === "member" ? (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Select DER from your team</Label>
+                      <Select
+                        value={derDraft.derMemberId}
+                        onValueChange={val => {
+                          const m = members.find(x => String(x.id) === val);
+                          setDerDraft(d => ({ ...d, derMemberId: val, derName: m?.name ?? "", derEmail: m?.email ?? "", derTitle: m?.jobTitle ?? "" }));
+                        }}
+                        data-testid="select-der-member"
+                      >
+                        <SelectTrigger><SelectValue placeholder="Choose a team member…" /></SelectTrigger>
+                        <SelectContent>
+                          {members.filter(m => m.status === "active").map(m => (
+                            <SelectItem key={m.id} value={String(m.id)} data-testid={`option-der-member-${m.id}`}>
+                              {m.name ?? m.email}{m.jobTitle ? ` — ${m.jobTitle}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {derDraft.derMemberId && (
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <div><Label className="text-xs text-muted-foreground">Title / Role</Label>
+                            <Input value={derDraft.derTitle} onChange={e => setDerDraft(d => ({ ...d, derTitle: e.target.value }))} placeholder="e.g. Safety Manager, HR Director" data-testid="input-der-title" /></div>
+                          <div><Label className="text-xs text-muted-foreground">Phone</Label>
+                            <Input value={derDraft.derPhone} onChange={e => setDerDraft(d => ({ ...d, derPhone: e.target.value }))} placeholder="(555) 000-0000" data-testid="input-der-phone" /></div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div><Label className="text-xs text-muted-foreground">Full Name</Label>
+                        <Input value={derDraft.derName} onChange={e => setDerDraft(d => ({ ...d, derName: e.target.value }))} placeholder="Jane Smith" data-testid="input-der-name" /></div>
+                      <div><Label className="text-xs text-muted-foreground">Title / Role</Label>
+                        <Input value={derDraft.derTitle} onChange={e => setDerDraft(d => ({ ...d, derTitle: e.target.value }))} placeholder="Safety Manager" data-testid="input-der-title-custom" /></div>
+                      <div><Label className="text-xs text-muted-foreground">Work Email</Label>
+                        <Input type="email" value={derDraft.derEmail} onChange={e => setDerDraft(d => ({ ...d, derEmail: e.target.value }))} placeholder="jane@company.com" data-testid="input-der-email" /></div>
+                      <div><Label className="text-xs text-muted-foreground">Phone</Label>
+                        <Input value={derDraft.derPhone} onChange={e => setDerDraft(d => ({ ...d, derPhone: e.target.value }))} placeholder="(555) 000-0000" data-testid="input-der-phone-custom" /></div>
+                    </div>
+                  )}
+
+                  <Button
+                    className="bg-accent hover:bg-accent/90 text-white"
+                    disabled={updateSettings.isPending || (!derDraft.derName && !derDraft.derMemberId)}
+                    onClick={() => {
+                      const payload: any = {
+                        derName: derDraft.derName || null,
+                        derEmail: derDraft.derEmail || null,
+                        derPhone: derDraft.derPhone || null,
+                        derTitle: derDraft.derTitle || null,
+                        derMemberId: derDraft.derMemberId ? parseInt(derDraft.derMemberId) : null,
+                      };
+                      updateSettings.mutate(payload);
+                    }}
+                    data-testid="button-save-der"
+                  >
+                    {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    Save DER
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* ── Seat Management ── */}
+              <Card data-testid="card-admin-seats">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="w-4 h-4 text-accent" /> Seat Management
+                  </CardTitle>
+                  <CardDescription>
+                    {activeCount} of {team.totalSeats} seat{team.totalSeats !== 1 ? "s" : ""} in use. Increase or decrease your seat count as your team grows or changes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="w-8 h-8 p-0"
+                        onClick={() => setSeatDraft(d => Math.max(activeCount, d - 1))}
+                        disabled={seatDraft <= activeCount} data-testid="button-admin-seat-minus">−
+                      </Button>
+                      <Input type="number" min={activeCount} value={seatDraft}
+                        onChange={e => setSeatDraft(Math.max(activeCount, parseInt(e.target.value) || activeCount))}
+                        className="w-20 text-center" data-testid="input-admin-seat-count"
+                        onFocus={() => { if (seatDraft === 1 && team.totalSeats > 1) setSeatDraft(team.totalSeats); }}
+                      />
+                      <Button variant="outline" size="sm" className="w-8 h-8 p-0"
+                        onClick={() => setSeatDraft(d => d + 1)} data-testid="button-admin-seat-plus">+
+                      </Button>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {seatDraft > team.totalSeats ? `Adding ${seatDraft - team.totalSeats} seat${seatDraft - team.totalSeats !== 1 ? "s" : ""}` : seatDraft < team.totalSeats ? `Reducing to ${seatDraft}` : `Current: ${team.totalSeats} seat${team.totalSeats !== 1 ? "s" : ""}`}
+                    </span>
+                    <Button size="sm" className="bg-accent hover:bg-accent/90 text-white sm:ml-auto"
+                      onClick={() => updateSeats.mutate(seatDraft)}
+                      disabled={updateSeats.isPending || seatDraft === team.totalSeats} data-testid="button-admin-save-seats">
+                      {updateSeats.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-3.5 h-3.5 mr-1.5" />Save</>}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ── Team Settings ── */}
+              <Card data-testid="card-admin-team-settings">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-accent" /> Team Settings
+                  </CardTitle>
+                  <CardDescription>Update your team or company name.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium">Team / Company Name</Label>
+                    <Input
+                      value={teamNameDraft || team.companyName}
+                      onChange={e => setTeamNameDraft(e.target.value)}
+                      placeholder={team.companyName}
+                      className="mt-1.5"
+                      data-testid="input-admin-team-name"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-accent hover:bg-accent/90 text-white"
+                    onClick={() => updateSettings.mutate({ companyName: teamNameDraft || team.companyName })}
+                    disabled={updateSettings.isPending || !teamNameDraft || teamNameDraft === team.companyName}
+                    data-testid="button-admin-save-team-name"
+                  >
+                    {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-3.5 h-3.5 mr-1.5" />Save Name</>}
+                  </Button>
+                </CardContent>
+              </Card>
+
+            </TabsContent>
+          )}
+
         </Tabs>
       </div>
     </ProtectedLayout>

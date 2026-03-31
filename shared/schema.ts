@@ -901,6 +901,12 @@ export const coreyTeams = pgTable("corey_teams", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripeCustomerId: text("stripe_customer_id"),
   status: text("status").notNull().default("active"), // 'active', 'inactive', 'cancelled'
+  // DER (Designated Employer Representative)
+  derMemberId: integer("der_member_id"), // ref to corey_team_members.id, nullable
+  derName: text("der_name"),
+  derEmail: text("der_email"),
+  derPhone: text("der_phone"),
+  derTitle: text("der_title"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

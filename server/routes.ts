@@ -4646,6 +4646,26 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     res.json(updated);
   });
 
+  // Team Settings (company name, DER designation)
+  app.patch("/api/team/settings", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const team = await storage.getTeamByAdmin(userId);
+    if (!team) return res.status(403).json({ message: "Only team admins can update settings" });
+
+    const { companyName, derMemberId, derName, derEmail, derPhone, derTitle } = req.body;
+    const updates: any = {};
+    if (companyName && typeof companyName === "string") updates.companyName = companyName.trim();
+    if ("derMemberId" in req.body) updates.derMemberId = derMemberId ?? null;
+    if ("derName" in req.body) updates.derName = derName ?? null;
+    if ("derEmail" in req.body) updates.derEmail = derEmail ?? null;
+    if ("derPhone" in req.body) updates.derPhone = derPhone ?? null;
+    if ("derTitle" in req.body) updates.derTitle = derTitle ?? null;
+
+    const updated = await storage.updateTeamSettings(team.id, updates);
+    res.json(updated);
+  });
+
   app.get("/api/team/join/:token", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

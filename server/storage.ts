@@ -191,6 +191,7 @@ export interface IStorage {
   getTeamMembership(userId: string): Promise<{ team: CoreyTeam; member: CoreyTeamMember } | undefined>;
   createTeam(team: InsertCoreyTeam): Promise<CoreyTeam>;
   updateTeamSeats(teamId: number, totalSeats: number): Promise<CoreyTeam | undefined>;
+  updateTeamSettings(teamId: number, settings: { companyName?: string; derMemberId?: number | null; derName?: string | null; derEmail?: string | null; derPhone?: string | null; derTitle?: string | null; }): Promise<CoreyTeam | undefined>;
   updateTeamSubscription(teamId: number, stripeSubscriptionId: string, stripeCustomerId: string, status: string): Promise<CoreyTeam | undefined>;
   getTeamById(teamId: number): Promise<CoreyTeam | undefined>;
   getTeamMembers(teamId: number): Promise<CoreyTeamMember[]>;
@@ -1101,6 +1102,14 @@ export class DatabaseStorage implements IStorage {
   async updateTeamSeats(teamId: number, totalSeats: number): Promise<CoreyTeam | undefined> {
     const [updated] = await db.update(coreyTeams)
       .set({ totalSeats, updatedAt: new Date() })
+      .where(eq(coreyTeams.id, teamId))
+      .returning();
+    return updated;
+  }
+
+  async updateTeamSettings(teamId: number, settings: { companyName?: string; derMemberId?: number | null; derName?: string | null; derEmail?: string | null; derPhone?: string | null; derTitle?: string | null; }): Promise<CoreyTeam | undefined> {
+    const [updated] = await db.update(coreyTeams)
+      .set({ ...settings, updatedAt: new Date() })
       .where(eq(coreyTeams.id, teamId))
       .returning();
     return updated;
