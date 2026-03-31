@@ -291,7 +291,7 @@ export default function TeamSeats() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-white/20 text-white/70 hover:text-white hover:bg-white/10 shrink-0"
+                className="border-white/20 bg-black text-white hover:bg-black/80 shrink-0"
                 onClick={() => { setSeatDraft(team.totalSeats); setShowSeatEditor(true); }}
                 data-testid="button-manage-seats"
               >
