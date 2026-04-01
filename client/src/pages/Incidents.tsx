@@ -49,7 +49,8 @@ import {
   UserCheck,
   ChevronRight,
   ChevronLeft,
-  Hospital
+  Hospital,
+  Loader2
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -1463,13 +1464,15 @@ function CAPAFormDialog({
   onOpenChange, 
   onSave,
   incidents,
-  incidentId
+  incidentId,
+  isPending = false,
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void;
   onSave: (data: CAPAFormData) => void;
   incidents: Incident[];
   incidentId?: number;
+  isPending?: boolean;
 }) {
   const [formData, setFormData] = useState<CAPAFormData>(defaultCAPAFormData);
   const [, setLocation] = useLocation();
@@ -1522,16 +1525,19 @@ Please provide suggestions for a more thorough root cause analysis and potential
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl flex flex-col p-0 gap-0 max-h-[90vh]">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-accent">
             <ShieldCheck className="w-5 h-5" />
             {formData.incidentId ? 'Create Incident CAPA' : 'New Corrective Action Plan'}
           </DialogTitle>
         </DialogHeader>
 
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+
         {formData.incidentId && similarIncidentsCount >= 2 && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg flex items-start gap-3 mb-4">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-bold text-yellow-800 dark:text-yellow-400">⚠️ Recurrence Alert</p>
@@ -1541,8 +1547,6 @@ Please provide suggestions for a more thorough root cause analysis and potential
             </div>
           </div>
         )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Link to Incident (Optional) */}
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Related Incident</h3>
@@ -1750,12 +1754,23 @@ Please provide suggestions for a more thorough root cause analysis and potential
             </div>
           </div>
 
-          <DialogFooter>
+          </div>
+
+          <DialogFooter className="shrink-0 px-6 py-4 border-t bg-background">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" data-testid="button-save-capa">
-              Create Action Plan
+            <Button
+              type="submit"
+              className="bg-accent hover:bg-accent/90 text-white"
+              disabled={isPending}
+              data-testid="button-save-capa"
+            >
+              {isPending ? (
+                <><Loader2 className="w-4 h-4 animate-spin mr-2" />Saving...</>
+              ) : (
+                'Save Action Plan'
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -2743,6 +2758,7 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
         onOpenChange={setCAPADialogOpen}
         onSave={(data) => createMutation.mutate(data)}
         incidents={incidents}
+        isPending={createMutation.isPending}
       />
     </div>
   );
@@ -3930,6 +3946,7 @@ export default function Incidents() {
           }}
           incidents={incidents}
           incidentId={selectedCAPAForPlan}
+          isPending={createCAPAMutation.isPending}
         />
       </div>
     </ProtectedLayout>
