@@ -2885,12 +2885,27 @@ function IncidentDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileWarning className="w-5 h-5" />
-            Review Incident — {incident.caseNumber || `#${incident.id}`}
+            {incident.caseNumber || `Incident #${incident.id}`}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-          {/* Review Status — most prominent, at top */}
+          {/* Incident Title — top, inline-edit style so users can rename immediately */}
+          <div className="space-y-1">
+            <Label htmlFor="detail-title" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <Edit className="w-3 h-3" /> Case Name — click to rename
+            </Label>
+            <Input
+              id="detail-title"
+              className="text-base font-semibold border-dashed focus:border-solid focus:border-primary"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder={`e.g., Forklift Struck Employee – Warehouse B`}
+              data-testid="input-detail-title"
+            />
+          </div>
+
+          {/* Review Status */}
           <div className="border rounded-lg p-4 bg-muted/30">
             <Label htmlFor="detail-status" className="text-base font-semibold mb-2 block">Review Status</Label>
             <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
@@ -2903,21 +2918,6 @@ function IncidentDetailDialog({
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Incident Title */}
-          <div>
-            <Label htmlFor="detail-title" className="flex items-center gap-1 font-semibold">
-              Incident Name / Case Title
-            </Label>
-            <Input
-              id="detail-title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Forklift Struck Employee – Warehouse B"
-              data-testid="input-detail-title"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Rename this incident for easier identification in reports and lists.</p>
           </div>
 
           {/* Basic Info */}
@@ -3253,6 +3253,8 @@ function IncidentDetailDialog({
 }
 
 function IncidentCAPASection({ incidentId }: { incidentId: number }) {
+  const [selectedCapa, setSelectedCapa] = useState<CorrectiveAction | null>(null);
+  const { toast } = useToast();
   const { data: allCapas = [] } = useQuery<CorrectiveAction[]>({
     queryKey: ['/api/corrective-actions'],
   });
@@ -3271,38 +3273,177 @@ function IncidentCAPASection({ incidentId }: { incidentId: number }) {
         <ShieldCheck className="w-4 h-4 text-accent" /> Corrective Action Plans ({linked.length})
       </h3>
       {linked.map(capa => (
-        <div key={capa.id} className="bg-background border rounded-lg p-3 space-y-1">
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-sm text-primary">{capa.title}</p>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              capa.status === 'verified' ? 'bg-green-100 text-green-700' :
-              capa.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-              capa.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-              'bg-gray-100 text-gray-600'
-            }`}>{capa.status?.replace('_', ' ')}</span>
+        <div key={capa.id} className="bg-background border rounded-lg p-3 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-primary truncate">{capa.title}</p>
+              {capa.problemStatement && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{capa.problemStatement}</p>}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {getCAPAStatusBadge(capa.status)}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                onClick={() => setSelectedCapa(capa)}
+                data-testid={`button-open-capa-${capa.id}`}
+              >
+                <Eye className="w-3 h-3" /> Open
+              </Button>
+            </div>
           </div>
-          {capa.problemStatement && <p className="text-xs text-muted-foreground line-clamp-2">{capa.problemStatement}</p>}
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1">
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
             {capa.responsiblePerson && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{capa.responsiblePerson}</span>}
             {capa.targetDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Due: {new Date(capa.targetDate).toLocaleDateString()}</span>}
-            <span className={`font-medium ${capa.priority === 'critical' ? 'text-destructive' : capa.priority === 'high' ? 'text-orange-600' : 'text-muted-foreground'}`}>
-              {capa.priority} priority
-            </span>
+            {getPriorityBadge(capa.priority)}
           </div>
-          {capa.correctiveActions && (
-            <div className="mt-2 pt-2 border-t">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Corrective Actions:</p>
-              <p className="text-xs text-foreground">{capa.correctiveActions}</p>
-            </div>
-          )}
-          {capa.verificationMethod && (
-            <div className="mt-1">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Verification:</p>
-              <p className="text-xs text-foreground">{capa.verificationMethod}</p>
-            </div>
-          )}
         </div>
       ))}
+
+      {/* CAPA Detail Dialog — opens when user clicks "Open" on a CAPA card */}
+      {selectedCapa && (
+        <Dialog open={!!selectedCapa} onOpenChange={() => setSelectedCapa(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" />
+                {selectedCapa.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                {getPriorityBadge(selectedCapa.priority)}
+                {getCAPAStatusBadge(selectedCapa.status)}
+                {selectedCapa.responsiblePhone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs ml-auto"
+                    onClick={async () => {
+                      try {
+                        await apiRequest('POST', `/api/corrective-actions/${selectedCapa.id}/notify-sms`);
+                        toast({ title: "Notification Sent", description: `SMS sent to ${selectedCapa.responsiblePerson}` });
+                      } catch {
+                        toast({ title: "SMS Failed", description: "Could not send notification.", variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" /> Send SMS Notification
+                  </Button>
+                )}
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-sm mb-1">Problem Statement</h4>
+                <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">{selectedCapa.problemStatement}</p>
+              </div>
+
+              {selectedCapa.rootCause && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Root Cause</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">{selectedCapa.rootCause}</p>
+                </div>
+              )}
+              {selectedCapa.immediateActions && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Immediate Actions</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">{selectedCapa.immediateActions}</p>
+                </div>
+              )}
+              {selectedCapa.correctiveActions && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Corrective Actions</h4>
+                  <p className="text-sm text-muted-foreground bg-blue-50 p-3 rounded border-l-4 border-blue-500">{selectedCapa.correctiveActions}</p>
+                </div>
+              )}
+              {selectedCapa.preventiveActions && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Preventive Actions</h4>
+                  <p className="text-sm text-muted-foreground bg-green-50 p-3 rounded border-l-4 border-green-500">{selectedCapa.preventiveActions}</p>
+                </div>
+              )}
+              {selectedCapa.verificationMethod && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Verification Method</h4>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">{selectedCapa.verificationMethod}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <p className="text-xs text-muted-foreground">Responsible</p>
+                  <p className="font-medium">{selectedCapa.responsiblePerson || '—'}</p>
+                  <p className="text-sm text-muted-foreground">{selectedCapa.responsibleDepartment || ''}</p>
+                  {selectedCapa.responsiblePhone && <p className="text-xs text-muted-foreground">{selectedCapa.responsiblePhone}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Target Date</p>
+                  <p className="font-medium">
+                    {selectedCapa.targetDate ? new Date(selectedCapa.targetDate).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+              </div>
+
+              {(selectedCapa.status === 'completed' || selectedCapa.status === 'verified') && (
+                <div className="mt-4 border-t pt-4 space-y-4">
+                  <h4 className="font-bold flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-accent" /> Effectiveness Verification
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Effectiveness Result</Label>
+                      <Select
+                        defaultValue={selectedCapa.effectivenessResult || 'pending'}
+                        onValueChange={async (val) => {
+                          await apiRequest('PATCH', `/api/corrective-actions/${selectedCapa.id}`, { effectivenessResult: val });
+                          queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="effective">Effective</SelectItem>
+                          <SelectItem value="not_effective">Not Effective</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Verification Notes</Label>
+                      <Textarea
+                        placeholder="Enter verification details..."
+                        defaultValue={selectedCapa.verificationNotes || ''}
+                        onBlur={async (e) => {
+                          await apiRequest('PATCH', `/api/corrective-actions/${selectedCapa.id}`, { verificationNotes: e.target.value });
+                          queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {selectedCapa.status !== 'verified' && (
+                    <Button
+                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={async () => {
+                        await apiRequest('PATCH', `/api/corrective-actions/${selectedCapa.id}`, {
+                          status: 'verified',
+                          completionDate: new Date().toISOString()
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                        setSelectedCapa(null);
+                        toast({ title: "CAPA Verified", description: "The action plan has been marked as verified and completed." });
+                      }}
+                    >
+                      Mark Verified & Close
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedCapa(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
