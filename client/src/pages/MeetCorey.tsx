@@ -234,7 +234,7 @@ export default function MeetCorey() {
               <Badge className="bg-accent/20 text-accent border-accent/30 mb-6 text-sm px-4 py-1.5" data-testid="badge-hero">
                 The World's First AI Built From the DNA of 29 CFR
               </Badge>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-extrabold leading-tight mb-6" data-testid="text-hero-title">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-extrabold leading-tight mb-6 text-white" data-testid="text-hero-title">
                 Meet <span className="text-accent">Corey</span>
               </h1>
               <p className="text-xl md:text-2xl text-white/70 leading-relaxed mb-4 max-w-2xl" data-testid="text-hero-subtitle">
@@ -289,7 +289,7 @@ export default function MeetCorey() {
             className="text-center mb-16"
           >
             <Badge className="bg-white/10 text-white/80 border-white/10 mb-4">What Corey Can Do</Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-capabilities-title">
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4 text-white" data-testid="text-capabilities-title">
               More Than Answers. <span className="text-accent">Actions.</span>
             </h2>
             <p className="text-lg text-white/50 max-w-2xl mx-auto">
@@ -383,7 +383,7 @@ export default function MeetCorey() {
             className="text-center mb-16"
           >
             <Badge className="bg-white/10 text-white/80 border-white/10 mb-4">Proactive Compliance</Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-proactive-title">
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4 text-white" data-testid="text-proactive-title">
               Corey Doesn't Wait. <span className="text-accent">Corey Leads.</span>
             </h2>
             <p className="text-lg text-white/50 max-w-2xl mx-auto">
@@ -522,7 +522,7 @@ export default function MeetCorey() {
             className="text-center mb-16"
           >
             <Badge className="bg-white/10 text-white/80 border-white/10 mb-4">Regulatory Coverage</Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4" data-testid="text-regulations-title">
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4 text-white" data-testid="text-regulations-title">
               Built From <span className="text-accent">Regulations.</span> Not Opinions.
             </h2>
             <p className="text-lg text-white/50 max-w-2xl mx-auto">
