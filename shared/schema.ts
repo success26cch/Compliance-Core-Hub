@@ -237,6 +237,7 @@ export const incidents = pgTable("incidents", {
   userId: text("user_id").notNull(),
   employeeId: integer("employee_id"),
   caseNumber: text("case_number"),
+  title: text("title"),
   incidentDate: timestamp("incident_date").notNull(),
   description: text("description").notNull(),
   incidentType: text("incident_type").notNull(),

@@ -1298,6 +1298,7 @@ Rules:
       const recentIncidents = incidentList.filter(i => new Date(i.incidentDate) >= sixMonthsAgo);
       const recordableIncidents = recentIncidents.filter(i => i.isRecordable).length;
 
+      const openIncidents = incidentList.filter(i => i.status === 'pending_review' || i.status === 'reviewed');
       res.json({
         employeeCount: employeeList.length,
         isoAuditReadiness: isoReadiness,
@@ -1307,6 +1308,7 @@ Rules:
         pendingActions: actionList.length,
         recordableIncidents6Mo: recordableIncidents,
         totalIncidents6Mo: recentIncidents.length,
+        openIncidentsCount: openIncidents.length,
       });
     } catch (error: any) {
       console.error('Error fetching dashboard metrics:', error);

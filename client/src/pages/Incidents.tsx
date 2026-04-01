@@ -208,6 +208,7 @@ const defaultCAPAFormData: CAPAFormData = {
 type Incident = {
   id: number;
   caseNumber: string | null;
+  title: string | null;
   incidentDate: string;
   description: string;
   incidentType: string;
@@ -242,6 +243,7 @@ type Incident = {
 
 type IncidentFormData = {
   // Basic / OSHA 300
+  title: string;
   incidentDate: string;
   description: string;
   incidentType: string;
@@ -318,6 +320,7 @@ type IncidentFormData = {
 };
 
 const defaultFormData: IncidentFormData = {
+  title: '',
   incidentDate: new Date().toISOString().split('T')[0],
   description: '',
   incidentType: 'injury',
@@ -521,6 +524,17 @@ function IncidentFormDialog({
             {/* ── TAB 1: Incident ─────────────────────────────────────────── */}
             {activeTab === "incident" && (
               <div className="space-y-5">
+                <div>
+                  <Label htmlFor="incidentTitle">Incident Name / Case Title</Label>
+                  <Input
+                    id="incidentTitle"
+                    value={formData.title}
+                    onChange={e => set({ title: e.target.value })}
+                    placeholder="e.g., Forklift Struck Employee – Warehouse B"
+                    data-testid="input-incident-title"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Optional — give this incident a short, recognizable name for easy identification in reports.</p>
+                </div>
                 <SectionLabel><AlertTriangle className="w-3.5 h-3.5" /> Basic Incident Information</SectionLabel>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -2778,6 +2792,7 @@ function IncidentDetailDialog({
   isSaving: boolean;
 }) {
   const buildFormData = (inc: Incident): IncidentFormData => ({
+    title: inc.title || '',
     incidentDate: new Date(inc.incidentDate).toISOString().split('T')[0],
     description: inc.description,
     incidentType: inc.incidentType,
@@ -2888,6 +2903,21 @@ function IncidentDetailDialog({
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Incident Title */}
+          <div>
+            <Label htmlFor="detail-title" className="flex items-center gap-1 font-semibold">
+              Incident Name / Case Title
+            </Label>
+            <Input
+              id="detail-title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="e.g., Forklift Struck Employee – Warehouse B"
+              data-testid="input-detail-title"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Rename this incident for easier identification in reports and lists.</p>
           </div>
 
           {/* Basic Info */}
@@ -3206,6 +3236,8 @@ function IncidentDetailDialog({
             )}
           </div>
 
+          <IncidentCAPASection incidentId={incident.id} />
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -3217,6 +3249,61 @@ function IncidentDetailDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function IncidentCAPASection({ incidentId }: { incidentId: number }) {
+  const { data: allCapas = [] } = useQuery<CorrectiveAction[]>({
+    queryKey: ['/api/corrective-actions'],
+  });
+  const linked = allCapas.filter(c => c.incidentId === incidentId);
+  if (linked.length === 0) return (
+    <div className="border rounded-lg p-4 bg-muted/20 space-y-2">
+      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+        <ShieldCheck className="w-4 h-4 text-accent" /> Corrective Action Plans (CAPA)
+      </h3>
+      <p className="text-sm text-muted-foreground">No corrective action plans linked to this incident yet.</p>
+    </div>
+  );
+  return (
+    <div className="border rounded-lg p-4 bg-muted/20 space-y-3">
+      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+        <ShieldCheck className="w-4 h-4 text-accent" /> Corrective Action Plans ({linked.length})
+      </h3>
+      {linked.map(capa => (
+        <div key={capa.id} className="bg-background border rounded-lg p-3 space-y-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-sm text-primary">{capa.title}</p>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              capa.status === 'verified' ? 'bg-green-100 text-green-700' :
+              capa.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+              capa.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
+              'bg-gray-100 text-gray-600'
+            }`}>{capa.status?.replace('_', ' ')}</span>
+          </div>
+          {capa.problemStatement && <p className="text-xs text-muted-foreground line-clamp-2">{capa.problemStatement}</p>}
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1">
+            {capa.responsiblePerson && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{capa.responsiblePerson}</span>}
+            {capa.targetDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Due: {new Date(capa.targetDate).toLocaleDateString()}</span>}
+            <span className={`font-medium ${capa.priority === 'critical' ? 'text-destructive' : capa.priority === 'high' ? 'text-orange-600' : 'text-muted-foreground'}`}>
+              {capa.priority} priority
+            </span>
+          </div>
+          {capa.correctiveActions && (
+            <div className="mt-2 pt-2 border-t">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Corrective Actions:</p>
+              <p className="text-xs text-foreground">{capa.correctiveActions}</p>
+            </div>
+          )}
+          {capa.verificationMethod && (
+            <div className="mt-1">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Verification:</p>
+              <p className="text-xs text-foreground">{capa.verificationMethod}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -3708,7 +3795,8 @@ export default function Incidents() {
                             </TableCell>
                             <TableCell>{getTypeBadge(incident.incidentType)}</TableCell>
                             <TableCell>
-                              <span className="truncate block max-w-[180px] text-sm">{incident.description}</span>
+                              <span className="truncate block max-w-[180px] text-sm font-medium">{incident.title || incident.description}</span>
+                              {incident.title && <span className="truncate block max-w-[180px] text-xs text-muted-foreground">{incident.description}</span>}
                             </TableCell>
                             <TableCell>
                               {incident.isRecordable ? (

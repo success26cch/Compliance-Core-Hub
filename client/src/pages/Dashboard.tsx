@@ -82,6 +82,7 @@ type DashboardMetrics = {
   pendingActions: number;
   recordableIncidents6Mo: number;
   totalIncidents6Mo: number;
+  openIncidentsCount: number;
 };
 
 type ActionItem = {
@@ -2298,7 +2299,7 @@ export default function Dashboard() {
           <DashboardSearch />
 
           {/* Metric Cards Row */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {/* ISO Audit Readiness */}
             <Card data-testid="card-iso-readiness">
               <CardHeader className="pb-2">
@@ -2415,6 +2416,36 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Open Incidents */}
+            <Link href="/incidents" data-testid="card-open-incidents-link">
+              <Card className="cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all border-orange-200 bg-gradient-to-br from-white to-orange-50 h-full" data-testid="card-open-incidents">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <FileWarning className="w-4 h-4 text-accent" />
+                    Open Incidents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {metricsLoading ? (
+                    <Skeleton className="h-16" />
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="text-4xl font-bold text-accent">
+                        {metrics?.openIncidentsCount ?? 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-snug">
+                        Incidents pending review or under active review
+                      </p>
+                      <div className="flex items-center gap-1 text-xs font-medium text-accent">
+                        View Incident Log & OSHA 300
+                        <ArrowUpRight className="w-3 h-3" />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
           {/* Team Hub Snapshot */}
