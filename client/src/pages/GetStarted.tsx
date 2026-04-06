@@ -184,22 +184,11 @@ export default function GetStarted() {
                       ))}
                     </ul>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">ISO & Audit Readiness</h4>
-                    <ul className="space-y-2 mb-5">
-                      {["ISO 9001/14001/45001 AI guidance", "AI Gap Analysis & audit checklists", "Quality Manual & procedure drafting", "'Write-Up Free' Guarantee tools", "Management Review templates", "Audit Readiness Dashboard"].map((f, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 </div>
                 <div className="border-t border-border/50 pt-4 mb-4">
                   <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Also Included</h4>
                   <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
-                    {["Supplier audit checklists", "Document control & tracking", "Certification Readiness Score", "Compliance Glossary (OSHA, DOT, ISO & more)", "Priority expert support"].map((f, i) => (
+                    {["Compliance Glossary (OSHA & DOT)", "Audit Prep Checklists", "Priority expert support"].map((f, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
                         <span>{f}</span>
@@ -340,7 +329,6 @@ export default function GetStarted() {
               { id: "course-dot-medical", name: "DOT Medical Certification", price: "$199", desc: "Become certified in DOT physical exam requirements and protocols" },
               { id: "course-osha-surveillance", name: "OSHA Medical Surveillance", price: "$249", desc: "Comprehensive training on medical surveillance programs and compliance" },
               { id: "course-drug-alcohol", name: "Drug & Alcohol Testing", price: "$199", desc: "Master DOT-compliant drug and alcohol testing procedures" },
-              { id: "course-iso-management", name: "ISO Management Systems", price: "$349", desc: "Full training on ISO 9001, 14001, and 45001 management systems" },
               { id: "course-osha-recordkeeping", name: "OSHA Recordkeeping Master", price: "$299", desc: "Deep dive into OSHA 300 logs, recordability rules, and compliance" },
               { id: "course-complete-bundle", name: "Complete Training Bundle", desc: "Custom-built bundle pricing tailored to your team's size and training needs. Contact us for a consultation.", highlighted: true, isBundle: true },
             ].map((course: any) => (
@@ -423,7 +411,6 @@ export default function GetStarted() {
                   { feature: "OSHA 300 Log & Reporting", corey: false, employer: true },
                   { feature: "Medical Passport (CCHUB Handshake)", corey: false, employer: true },
                   { feature: "Incident Management & CAPA", corey: false, employer: true },
-                  { feature: "ISO Audit Readiness (ACSI)", corey: false, employer: true },
                   { feature: "Compliance Glossary", corey: false, employer: true },
                   { feature: "DOT Random Pool Notifications", corey: false, employer: true },
                   { feature: "Bilingual Medical Assistant", corey: false, employer: true },

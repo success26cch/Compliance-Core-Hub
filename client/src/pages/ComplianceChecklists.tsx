@@ -37,15 +37,6 @@ const checklists: ChecklistItem[] = [
     pages: "3 pages",
   },
   {
-    id: "iso-audit",
-    title: "ISO Audit Prep Checklist",
-    description: "Be audit-ready for ISO 9001, 14001, and 45001. 30-day countdown checklist, common findings to avoid, and questions auditors typically ask.",
-    icon: Award,
-    downloadUrl: "/api/cheat-sheet/iso-audit",
-    category: "iso",
-    pages: "4 pages",
-  },
-  {
     id: "safety-manager",
     title: "New Safety Manager's First 30 Days",
     description: "Your survival guide for the first month on the job. Week-by-week action items, compliance quick checks, and key metrics to start tracking.",

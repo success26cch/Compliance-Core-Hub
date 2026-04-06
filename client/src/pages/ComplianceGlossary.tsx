@@ -73,28 +73,6 @@ const DRUG_ALCOHOL_TERMS: Term[] = [
   { term: "Refusal to Test", definition: "Behaviors that constitute a refusal include: failure to appear for a test, leaving the collection site before the process is complete, failing to provide a sufficient specimen without a valid medical explanation, tampering with or substituting a specimen, or refusing to submit to a direct observation collection when required." },
 ];
 
-const ISO_TERMS: Term[] = [
-  { term: "International Organization for Standardization", acronym: "ISO", definition: "An independent, non-governmental international organization that develops voluntary international standards to ensure the quality, safety, and efficiency of products, services, and systems." },
-  { term: "ISO 9001", definition: "The international standard for Quality Management Systems (QMS). It specifies requirements for a QMS where an organization needs to demonstrate its ability to consistently provide products and services that meet customer and regulatory requirements." },
-  { term: "ISO 14001", definition: "The international standard for Environmental Management Systems (EMS). It provides a framework for organizations to protect the environment, respond to changing environmental conditions, and integrate environmental management into business processes." },
-  { term: "ISO 45001", definition: "The international standard for Occupational Health and Safety Management Systems (OH&S MS). It provides a framework for managing OH&S risks and opportunities, preventing work-related injury and ill health, and providing safe and healthy workplaces." },
-  { term: "Quality Management System", acronym: "QMS", definition: "A formalized system that documents processes, procedures, and responsibilities for achieving quality policies and objectives. It coordinates and directs an organization's activities to meet customer and regulatory requirements." },
-  { term: "Environmental Management System", acronym: "EMS", definition: "A structured approach to managing an organization's environmental impact. It provides a framework for setting environmental objectives, implementing controls, and continually improving environmental performance." },
-  { term: "Nonconformity", acronym: "NC", definition: "A failure to fulfill a specified requirement. In ISO audits, nonconformities are classified as Major (systematic failure or complete absence of a required element) or Minor (isolated lapse that does not indicate a systemic problem)." },
-  { term: "Corrective Action Plan", acronym: "CAP / CAPA", definition: "A structured plan to address a nonconformity by identifying its root cause and implementing actions to prevent recurrence. CAPA stands for Corrective Action / Preventive Action." },
-  { term: "Internal Audit", definition: "A systematic, independent, and documented process for obtaining audit evidence and evaluating it objectively. Organizations conduct internal audits to verify their management system conforms to planned arrangements and ISO requirements." },
-  { term: "Management Review", definition: "A periodic, structured review by top management to ensure the continuing suitability, adequacy, effectiveness, and alignment of the management system with the strategic direction of the organization." },
-  { term: "Continual Improvement", definition: "An ongoing effort to improve products, services, or processes. In ISO standards, continual improvement is a core principle requiring organizations to enhance their management system performance over time." },
-  { term: "Risk-Based Thinking", definition: "An approach embedded in ISO standards (especially the 2015 revisions) that requires organizations to identify risks and opportunities that could affect the intended outcomes of their management systems and plan actions to address them." },
-  { term: "Document Control", definition: "The process of managing documents to ensure they are properly approved, distributed, reviewed, updated, and made available at the point of use. A critical requirement in all ISO management system standards." },
-  { term: "Certification Body", acronym: "CB", definition: "An independent, accredited third-party organization that conducts audits and issues ISO certificates to organizations whose management systems meet the requirements of the relevant standard." },
-  { term: "Surveillance Audit", definition: "A periodic audit conducted by the certification body between certification and recertification audits (typically annually) to verify that the organization continues to comply with the standard's requirements." },
-  { term: "Gap Analysis", definition: "An assessment comparing an organization's current management system against the requirements of an ISO standard to identify areas (gaps) that need to be addressed before certification can be achieved." },
-  { term: "Scope of Certification", definition: "A statement that defines the boundaries and applicability of the management system, including the products, services, processes, locations, and functions covered by the ISO certification." },
-  { term: "Context of the Organization", definition: "Clause 4 of ISO standards requiring organizations to understand internal and external issues, interested parties and their needs, and the scope of the management system. Forms the foundation for planning." },
-  { term: "Plan-Do-Check-Act", acronym: "PDCA", definition: "A four-step management cycle used for the continual improvement of processes and products. Plan (establish objectives), Do (implement), Check (monitor and measure), Act (take actions to improve)." },
-];
-
 const COMPLIANCE_TERMS: Term[] = [
   { term: "Code of Federal Regulations", acronym: "CFR", definition: "The codification of the general and permanent rules and regulations published in the Federal Register by executive departments and agencies of the federal government. Compliance requirements are found throughout various CFR titles." },
   { term: "Compliance Program", definition: "A set of internal policies, procedures, and practices designed to ensure that an organization adheres to applicable laws, regulations, and ethical standards." },
@@ -119,7 +97,6 @@ const ALL_CATEGORIES = [
   { id: "osha", label: "OSHA", icon: ShieldCheck, terms: OSHA_TERMS, color: "bg-blue-100 text-blue-700" },
   { id: "dot", label: "DOT", icon: Truck, terms: DOT_TERMS, color: "bg-green-100 text-green-700" },
   { id: "drug-alcohol", label: "Drug & Alcohol", icon: FlaskConical, terms: DRUG_ALCOHOL_TERMS, color: "bg-red-100 text-red-700" },
-  { id: "iso", label: "ISO", icon: Award, terms: ISO_TERMS, color: "bg-purple-100 text-purple-700" },
   { id: "compliance", label: "Compliance", icon: Scale, terms: COMPLIANCE_TERMS, color: "bg-orange-100 text-orange-700" },
 ];
 
@@ -160,7 +137,7 @@ export default function ComplianceGlossary() {
             Compliance Glossary
           </h2>
           <p className="text-sm text-muted-foreground">
-            {totalTerms} essential definitions across OSHA, DOT, Drug & Alcohol Testing, ISO, and General Compliance.
+            {totalTerms} essential definitions across OSHA, DOT, Drug & Alcohol Testing, and General Compliance.
           </p>
         </div>
       </div>

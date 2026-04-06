@@ -75,7 +75,6 @@ import { useToast } from "@/hooks/use-toast";
 
 type DashboardMetrics = {
   employeeCount: number;
-  isoAuditReadiness: number;
   medicalSurveillance: number;
   drugScreenCleared: number;
   drugScreenPending: number;
@@ -495,18 +494,6 @@ type HelpContent = {
 };
 
 const HELP_CONTENT: Record<string, HelpContent> = {
-  isoAuditReadiness: {
-    title: "ISO Audit Readiness",
-    what: "This gauge shows what percentage of your ISO compliance checklist items are marked complete. It covers ISO 9001 (Quality), ISO 14001 (Environmental), and ISO 45001 (Safety) standards.",
-    how: [
-      "Navigate to the ISO section via ACSI Mentorship to complete checklist items.",
-      "Ask Corey to run a 'Gap Analysis' for any ISO standard — it will tell you exactly what's missing.",
-      "Use the ACSI ISO Manager for guided audit prep and mock audits.",
-      "Each completed item raises your readiness percentage in real time.",
-    ],
-    nextStep: "Ask Corey to run an ISO gap analysis now",
-    nextHref: "/corey",
-  },
   medicalSurveillance: {
     title: "Medical Surveillance",
     what: "Tracks the percentage of your employees with current DOT physicals and respiratory medical evaluations on file. OSHA and DOT require these to stay current for safety-sensitive roles.",
@@ -617,11 +604,10 @@ const HELP_CONTENT: Record<string, HelpContent> = {
   },
   askCorey: {
     title: "Ask Corey — AI Compliance Expert",
-    what: "Corey is the World's First AI built from the DNA of 29 CFR — a Senior Occupational Health, Safety & Compliance Expert. Ask any OSHA, DOT, or ISO question and get a precise, regulation-cited answer in seconds.",
+    what: "Corey is the World's First AI built from the DNA of 29 CFR — a Senior Occupational Health, Safety & Compliance Expert. Ask any OSHA or DOT question and get a precise, regulation-cited answer in seconds.",
     how: [
       "Use Quick Action cards: Lead a Safety Meeting, Audit My OSHA 300, Mock OSHA Inspection, Weekly Safety Topic.",
       "Open the Documents Panel to generate any of 42 compliance documents instantly.",
-      "For ISO work, ask Corey to connect you with the ACSI ISO Manager for a gap analysis.",
       "Corey never hallucinates — it cites only official regulatory sources (OSHA, DOT, CFR).",
     ],
     nextStep: "Open Corey AI now",
@@ -758,7 +744,6 @@ const SEARCH_INDEX = [
   { label: "Mock OSHA Inspection", description: "Corey walks through a mock inspection with you", href: "/corey", icon: Bot, category: "Corey AI Actions" },
   { label: "Weekly Safety Topic", description: "Corey generates a ready-to-use 5-minute safety talk", href: "/corey", icon: Bot, category: "Corey AI Actions" },
   { label: "Compliance Calendar Check", description: "Corey identifies upcoming deadlines for your company", href: "/corey", icon: Bot, category: "Corey AI Actions" },
-  { label: "How does ISO Audit Readiness work?", description: "Your ISO readiness gauge shows % of checklist items complete. Ask Corey for a gap analysis to raise your score. Covers ISO 9001, 14001, and 45001.", href: "/corey", icon: HelpCircle, category: "How it Works" },
   { label: "How does Medical Surveillance tracking work?", description: "Track DOT physicals, hearing tests, fit tests, vaccines, and more per employee. Expiring exams trigger automatic Action Queue alerts.", href: "/employees", icon: HelpCircle, category: "How it Works" },
   { label: "How does Drug Screen Status work?", description: "Log test results in Employee Management. Cleared = negative result on file. Pending = test ordered but result not yet entered.", href: "/employees", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Action Queue work?", description: "Auto-generated compliance to-do list. DOT expirations, pending drug tests, and incident reviews appear here automatically by priority.", href: "/dashboard", icon: HelpCircle, category: "How it Works" },
@@ -766,7 +751,7 @@ const SEARCH_INDEX = [
   { label: "How does Employee Management work?", description: "Central database for all employees. Store contact info, DOT physical dates, drug screen results, vaccine records, and medical surveillance data.", href: "/employees", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Incident Log work?", description: "Record every workplace injury or illness. System applies 29 CFR 1904 recordability criteria and generates OSHA 300 entries and CAPA forms.", href: "/incidents", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Employer Training Portal work?", description: "Assign OSHA courses to employees. They get an auto-text with their unique training link. You and DER are notified upon completion.", href: "/employer-training", icon: HelpCircle, category: "How it Works" },
-  { label: "How does Corey AI work?", description: "Ask OSHA, DOT, or ISO questions. Use Quick Actions, generate 42 compliance documents, run mock inspections, lead safety meetings, and audit your OSHA 300.", href: "/corey", icon: HelpCircle, category: "How it Works" },
+  { label: "How does Corey AI work?", description: "Ask OSHA and DOT questions. Use Quick Actions, generate 42 compliance documents, run mock inspections, lead safety meetings, and audit your OSHA 300.", href: "/corey", icon: HelpCircle, category: "How it Works" },
   { label: "How does the OSHA Decision Tree work?", description: "Answer 5 questions about any injury to get an immediate recordability determination under 29 CFR 1904 with the exact regulation cited.", href: "/decision-tree", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Clinic Communication Letter work?", description: "Generate a letter instructing your clinic on treatment preferences, first-aid-only policies, and restriction wording to avoid unnecessary recordables.", href: "/clinic-letter", icon: HelpCircle, category: "How it Works" },
   { label: "How does the Digital Medical Passport work?", description: "Generate a QR code for each employee. Clinic scans it at check-in to pull up their authorization form. You get an immediate text notification.", href: "/employee-passport", icon: HelpCircle, category: "How it Works" },
@@ -1690,13 +1675,12 @@ function ComplianceHealthBanner({
   // Calculate overall compliance health score
   const score = (() => {
     if (!metrics) return 0;
-    const isoW = metrics.isoAuditReadiness * 0.20;
-    const medW = metrics.medicalSurveillance * 0.30;
+    const medW = metrics.medicalSurveillance * 0.40;
     const totalDS = (metrics.drugScreenCleared + metrics.drugScreenPending) || 1;
-    const drugW = (metrics.drugScreenCleared / totalDS) * 100 * 0.20;
+    const drugW = (metrics.drugScreenCleared / totalDS) * 100 * 0.30;
     const recordablePenalty = Math.min(metrics.recordableIncidents6Mo * 8, 30);
     const actionPenalty = Math.min(metrics.pendingActions * 1.5, 20);
-    const base = isoW + medW + drugW;
+    const base = medW + drugW;
     return Math.max(0, Math.min(100, base - recordablePenalty - actionPenalty));
   })();
 
@@ -1728,11 +1712,6 @@ function ComplianceHealthBanner({
       label: "Drug Screen",
       ok: (metrics?.drugScreenPending ?? 0) === 0,
       icon: <TestTube className="w-3 h-3" />,
-    },
-    {
-      label: "ISO Ready",
-      ok: (metrics?.isoAuditReadiness ?? 0) >= 70,
-      icon: <Shield className="w-3 h-3" />,
     },
   ];
 
@@ -2054,7 +2033,7 @@ function PlatformModuleGrid({ metrics, actions }: { metrics?: DashboardMetrics; 
       bg: "bg-accent/10",
       border: "border-accent/20",
       badge: null,
-      description: "24/7 OSHA, DOT & ISO AI — ask anything",
+      description: "24/7 OSHA & DOT AI — ask anything",
     },
     {
       id: "employees",
@@ -2125,7 +2104,7 @@ function PlatformModuleGrid({ metrics, actions }: { metrics?: DashboardMetrics; 
       color: "text-purple-600",
       bg: "bg-purple-600/10",
       border: "border-purple-600/20",
-      badge: (metrics?.isoAuditReadiness ?? 0) > 0 ? `${metrics?.isoAuditReadiness}% ready` : null,
+      badge: null,
       description: "NC tracking, documentation, audit prep with Isa AI",
     },
     {
@@ -2299,29 +2278,7 @@ export default function Dashboard() {
           <DashboardSearch />
 
           {/* Metric Cards Row */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {/* ISO Audit Readiness */}
-            <Card data-testid="card-iso-readiness">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-accent" />
-                  ISO Audit Readiness
-                  <HelpTip id="isoAuditReadiness" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex justify-center pt-2">
-                {metricsLoading ? (
-                  <Skeleton className="w-24 h-24 rounded-full" />
-                ) : (
-                  <CircularProgress 
-                    value={metrics?.isoAuditReadiness || 0} 
-                    size={100}
-                    label="Ready"
-                  />
-                )}
-              </CardContent>
-            </Card>
-
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Medical Surveillance */}
             <Card data-testid="card-medical-surveillance">
               <CardHeader className="pb-2">
@@ -2531,7 +2488,7 @@ export default function Dashboard() {
                 </Link>
               </div>
               <CardDescription>
-                Ask anything about OSHA, DOT, ISO, or upload a document (PDF, DOCX, TXT) for Corey to review.
+                Ask anything about OSHA or DOT regulations, or upload a document (PDF, DOCX, TXT) for Corey to review.
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -891,10 +891,10 @@ export default function Landing() {
                             </div>
                             <div>
                               <p className="font-semibold text-foreground">Ask Corey a Compliance Question</p>
-                              <p className="text-sm mt-1">OSHA recordability, DOT physicals, drug testing, ISO audits — Corey knows it all.</p>
+                              <p className="text-sm mt-1">OSHA recordability, DOT physicals, drug testing — Corey knows it all.</p>
                             </div>
                             <div className="flex flex-wrap items-center justify-center gap-2">
-                              {["Is a laceration needing stitches OSHA recordable?", "What's required for a DOT physical?", "Explain ISO 45001 basics"].map((q) => (
+                              {["Is a laceration needing stitches OSHA recordable?", "What's required for a DOT physical?", "When is a drug test required post-accident?"].map((q) => (
                                 <button
                                   key={q}
                                   onClick={() => { setBotInput(q); }}
@@ -1050,12 +1050,6 @@ export default function Landing() {
                   <CheckCircle2 className="w-4 h-4 text-accent" />
                 </div>
                 <span><strong className="text-primary">AI-Powered Compliance:</strong> Get instant, expert answers on OSHA 300 recordability, DOT physicals, and drug testing—24/7.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent" />
-                </div>
-                <span><strong className="text-primary">ISO Certification Ready:</strong> 9001, 14001, 45001—our Lead Auditor AI guides you from gap analysis to audit day.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1877,7 +1871,6 @@ export default function Landing() {
                 "CCHUB Handshake — QR-based Medical Passport",
                 "Training LMS with PDF certificates",
                 "Corrective Action Plans (CAPA)",
-                "ISO 9001/14001/45001 AI guidance",
                 "Up to 50 employees included (+$2/ea beyond 50)",
                 "Add Corey AI for $699/mo (+$129/ea additional seat)",
               ]}
@@ -2152,7 +2145,7 @@ export default function Landing() {
                 Is the AI guidance legally binding?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                CCHUB provides educational guidance based on OSHA 29 CFR 1904, DOT 49 CFR Part 40, and ISO standards. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, please consult with a qualified employment attorney.
+                CCHUB provides educational guidance based on OSHA 29 CFR 1904 and DOT 49 CFR Part 40. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, please consult with a qualified employment attorney. ISO management system guidance is provided separately through the ACSI ISO Manager.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2" className="bg-muted/30 rounded-lg border border-border/50 px-6">

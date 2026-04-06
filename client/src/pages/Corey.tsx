@@ -275,7 +275,6 @@ function CoreyLanding() {
     { title: "Mock OSHA Inspection", description: "Simulate what an OSHA compliance officer would ask during an inspection.", icon: AlertTriangle, iconBg: "bg-yellow-500/20", iconColor: "text-yellow-400" },
     { title: "Weekly Safety Topic", description: "Pick a topic and get a ready-to-present 5-minute safety talk.", icon: BookOpen, iconBg: "bg-green-500/20", iconColor: "text-green-400" },
     { title: "Compliance Calendar Check", description: "Review upcoming regulatory deadlines and required submissions.", icon: Calendar, iconBg: "bg-blue-500/20", iconColor: "text-blue-400" },
-    { title: "Gap Analysis — ACSI", description: "Full gap analysis is an ACSI service. Let Corey connect you.", icon: Target, iconBg: "bg-accent/20", iconColor: "text-accent" },
   ];
 
   const TRIAL_DOCS = [
@@ -975,15 +974,6 @@ function CoreyApp() {
       iconBg: "bg-blue-500/20",
       iconColor: "text-blue-400",
       prompt: "Help me check my compliance calendar. Based on today's date, walk me through all upcoming OSHA, DOT, and EPA regulatory deadlines I should be aware of for the next 90 days. Include: OSHA 300A posting/removal dates, OSHA electronic submission deadlines (ITA), DOT random drug testing rate requirements, respirator fit test annual requirements, hearing conservation audiogram schedules, fire extinguisher inspections, and any other time-sensitive compliance obligations. Ask me about my industry and company size so you can tailor the deadlines to my situation.",
-    },
-    {
-      id: "gap-analysis",
-      title: "Gap Analysis — ACSI",
-      description: "Full gap analysis is an ACSI service. Let Corey connect you.",
-      icon: Target,
-      iconBg: "bg-orange-500/20",
-      iconColor: "text-orange-400",
-      prompt: "A user is interested in a Gap Analysis for their compliance programs or ISO management system. Gap Analysis is a core service provided by ACSI (Assessment & Consulting Services Inc.), our dedicated ISO and compliance consulting division. Please explain what a Gap Analysis involves — covering ISO 9001, 14001, 45001, and OSHA compliance program reviews — and let them know that ACSI's Lead ISO Auditors specialize in conducting thorough gap analyses, audit preparation, and implementation support. You can answer general questions about what gap analysis covers, but for the actual structured assessment, direct them to ACSI. At the end of your response, always include a clear call-to-action: Visit ACSI online at [www.acsi-quality.com](https://www.acsi-quality.com/) to learn more, or head to their [Contact page](https://www.acsi-quality.com/contact) to reach out directly and schedule your gap analysis.",
     },
     {
       id: "osha-recordability",

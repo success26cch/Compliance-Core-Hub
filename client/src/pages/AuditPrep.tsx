@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardCheck, Download, ShieldCheck, Truck, Award, FileText, Lock, CheckSquare, Square } from "lucide-react";
+import { ClipboardCheck, Download, ShieldCheck, Truck, FileText, Lock, CheckSquare, Square } from "lucide-react";
 import { ProtectedLayout } from "@/components/Layout";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,84 +71,6 @@ const CHECKLIST_CATEGORIES: ChecklistCategory[] = [
       { key: "hos-compliance", label: "Hours of Service tracking/ELD compliance", regulation: "49 CFR Part 395" },
       { key: "employee-education", label: "Employee drug/alcohol education materials distributed", regulation: "49 CFR 382.601" },
       { key: "record-retention", label: "Drug/alcohol testing records retained per requirements", regulation: "49 CFR 382.401" },
-    ],
-  },
-  {
-    id: "iso_9001",
-    label: "ISO 9001",
-    description: "Quality Management System",
-    icon: Award,
-    items: [
-      { key: "quality-policy", label: "Quality Policy documented and communicated" },
-      { key: "quality-objectives", label: "Quality objectives established and measurable" },
-      { key: "context-org", label: "Context of the organization determined (4.1)" },
-      { key: "interested-parties", label: "Interested parties and their requirements identified (4.2)" },
-      { key: "scope-defined", label: "QMS scope defined and documented (4.3)" },
-      { key: "process-approach", label: "Process approach implemented with inputs/outputs defined (4.4)" },
-      { key: "management-commitment", label: "Top management commitment demonstrated (5.1)" },
-      { key: "roles-responsibilities", label: "Roles, responsibilities, and authorities assigned (5.3)" },
-      { key: "risk-assessment", label: "Risk and opportunity assessment completed (6.1)" },
-      { key: "resources-determined", label: "Resources determined and provided (7.1)" },
-      { key: "competence-records", label: "Competence determined and training records maintained (7.2)" },
-      { key: "documented-info", label: "Documented information controlled and maintained (7.5)" },
-      { key: "operational-planning", label: "Operational planning and control in place (8.1)" },
-      { key: "customer-communication", label: "Customer communication processes established (8.2)" },
-      { key: "design-control", label: "Design and development controls if applicable (8.3)" },
-      { key: "supplier-evaluation", label: "Supplier evaluation and monitoring process (8.4)" },
-      { key: "monitoring-measurement", label: "Monitoring, measurement, analysis, and evaluation (9.1)" },
-      { key: "internal-audit", label: "Internal audit program planned and conducted (9.2)" },
-      { key: "management-review", label: "Management review conducted with required inputs (9.3)" },
-      { key: "corrective-actions", label: "Nonconformity and corrective action process (10.2)" },
-      { key: "continual-improvement", label: "Continual improvement process demonstrated (10.3)" },
-    ],
-  },
-  {
-    id: "iso_14001",
-    label: "ISO 14001",
-    description: "Environmental Management System",
-    icon: Award,
-    items: [
-      { key: "env-policy", label: "Environmental Policy established and communicated" },
-      { key: "env-aspects", label: "Environmental aspects and impacts identified" },
-      { key: "legal-requirements", label: "Legal and regulatory requirements identified and tracked" },
-      { key: "env-objectives", label: "Environmental objectives and targets established" },
-      { key: "env-programs", label: "Programs to achieve objectives defined" },
-      { key: "env-roles", label: "Roles and responsibilities assigned for EMS" },
-      { key: "env-training", label: "Environmental awareness training completed" },
-      { key: "emergency-prep", label: "Emergency preparedness and response procedures" },
-      { key: "env-monitoring", label: "Environmental monitoring and measurement program" },
-      { key: "legal-compliance", label: "Compliance evaluation with legal requirements" },
-      { key: "env-internal-audit", label: "Internal audit program for EMS" },
-      { key: "env-management-review", label: "Management review of EMS performance" },
-      { key: "env-nonconformity", label: "Nonconformity and corrective action process for EMS" },
-      { key: "waste-management", label: "Waste management procedures documented" },
-      { key: "pollution-prevention", label: "Pollution prevention measures implemented" },
-    ],
-  },
-  {
-    id: "iso_45001",
-    label: "ISO 45001",
-    description: "Occupational Health & Safety Management",
-    icon: ShieldCheck,
-    items: [
-      { key: "ohs-policy", label: "OH&S Policy established and communicated" },
-      { key: "worker-consultation", label: "Worker consultation and participation processes (5.4)" },
-      { key: "hazard-identification", label: "Hazard identification process implemented (6.1.2)" },
-      { key: "ohs-risks", label: "OH&S risks and opportunities assessed (6.1.2)" },
-      { key: "legal-ohs-requirements", label: "Legal and other OH&S requirements determined (6.1.3)" },
-      { key: "ohs-objectives", label: "OH&S objectives and plans established (6.2)" },
-      { key: "ohs-competence", label: "OH&S competence determined and training provided (7.2)" },
-      { key: "ohs-awareness", label: "Workers aware of OH&S policy and their contribution (7.3)" },
-      { key: "ohs-communication", label: "Internal/external communication processes for OH&S (7.4)" },
-      { key: "hierarchy-controls", label: "Hierarchy of controls applied to hazards (8.1.2)" },
-      { key: "change-management", label: "Management of change process for OH&S impacts (8.1.3)" },
-      { key: "contractor-control", label: "Procurement and contractor OH&S controls (8.1.4)" },
-      { key: "emergency-ohs", label: "Emergency preparedness and response for OH&S (8.2)" },
-      { key: "performance-monitoring", label: "OH&S performance monitoring and evaluation (9.1)" },
-      { key: "incident-investigation", label: "Incident investigation process implemented (10.2)" },
-      { key: "ohs-internal-audit", label: "Internal audit program for OH&S (9.2)" },
-      { key: "ohs-management-review", label: "Management review of OH&S system (9.3)" },
-      { key: "ohs-continual-improvement", label: "Continual improvement of OH&S performance (10.3)" },
     ],
   },
 ];
@@ -224,7 +146,7 @@ export default function AuditPrep() {
               Audit Prep Tools
             </h1>
             <p className="text-muted-foreground mt-2">
-              Interactive compliance checklists to prepare for OSHA, DOT, and ISO audits. Track your progress and generate readiness reports.
+              Interactive compliance checklists to prepare for OSHA and DOT audits. Track your progress and generate readiness reports.
             </p>
           </div>
           {hasAccess && (
