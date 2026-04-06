@@ -5401,7 +5401,21 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   // ─── DOT COMPLIANCE HUB ROUTES ────────────────────────────────────────────
 
   // Normalizers: convert date strings → Date objects + map frontend field names to schema names
-  const toDateOrNull = (v: any) => (v && v !== "") ? new Date(v) : null;
+  // Strict parser: only accepts YYYY-MM-DD or full ISO timestamps; rejects anything else to prevent
+  // pg from receiving an out-of-range year (e.g. "+020225-01-01") that causes a 500.
+  const toDateOrNull = (v: any): Date | null => {
+    if (v === null || v === undefined || v === "" || v === false) return null;
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+    if (typeof v !== "string") return null;
+    // Must start with a 4-digit year segment to be a valid date string
+    if (!/^\d{4}-\d{2}-\d{2}/.test(v)) return null;
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return null;
+    // Sanity gate: reject dates outside the range humans actually enter
+    const yr = d.getUTCFullYear();
+    if (yr < 1900 || yr > 2100) return null;
+    return d;
+  };
 
   const normalizeDotDriver = (body: any) => ({
     userId: body.userId,
