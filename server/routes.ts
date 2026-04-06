@@ -5500,6 +5500,66 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // Clearinghouse delta status (counts for UI — does NOT modify data)
+  app.get("/api/dot/clearinghouse-delta-status", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const drivers = await storage.getDotDrivers(userId);
+      const pendingAdd = drivers.filter(d => d.status === "active" && !d.clearinghouseExportedAt);
+      const synced    = drivers.filter(d => d.status === "active" && !!d.clearinghouseExportedAt);
+      const pendingRemove = drivers.filter(d =>
+        d.status !== "active" && !!d.clearinghouseExportedAt && !d.clearinghouseRemovalExported
+      );
+      res.json({
+        pendingAdd: pendingAdd.length,
+        synced: synced.length,
+        pendingRemove: pendingRemove.length,
+        total: drivers.length,
+      });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Delta CSV export — generates file AND marks drivers as exported/removed
+  app.get("/api/dot/drivers-delta-csv", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const drivers = await storage.getDotDrivers(userId);
+      const now = new Date();
+
+      const addList    = drivers.filter(d => d.status === "active" && !d.clearinghouseExportedAt);
+      const removeList = drivers.filter(d =>
+        d.status !== "active" && !!d.clearinghouseExportedAt && !d.clearinghouseRemovalExported
+      );
+
+      if (addList.length === 0 && removeList.length === 0) {
+        return res.status(200).json({ message: "No changes to export" });
+      }
+
+      const header = "Record Type,First Name,Last Name,Date of Birth,CDL/CLP Number,State of Issuance,Country of Issuance,Query Type";
+      const addRows = addList.map(d => {
+        const qt = d.queryType === "full" ? "2" : "1";
+        return `"ADD","${d.firstName}","${d.lastName}","${d.dateOfBirth || ""}","${d.cdlNumber || ""}","${d.cdlState || ""}","US","${qt}"`;
+      });
+      const removeRows = removeList.map(d => {
+        const qt = d.queryType === "full" ? "2" : "1";
+        return `"REMOVE","${d.firstName}","${d.lastName}","${d.dateOfBirth || ""}","${d.cdlNumber || ""}","${d.cdlState || ""}","US","${qt}"`;
+      });
+
+      const csv = [header, ...addRows, ...removeRows].join("\n");
+
+      // Mark drivers as exported AFTER building the CSV (don't block the download)
+      await storage.markDotDriversExported(addList.map(d => d.id), userId, now);
+      await storage.markDotDriversRemovalExported(removeList.map(d => d.id), userId);
+
+      const dateStr = now.toISOString().slice(0, 10);
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="clearinghouse-delta-${dateStr}.csv"`);
+      res.send(csv);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   // DQ Documents
   app.get("/api/dot/drivers/:driverId/dq", async (req: any, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });

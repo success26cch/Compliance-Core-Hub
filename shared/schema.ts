@@ -1069,6 +1069,9 @@ export const dotDrivers = pgTable("dot_drivers", {
   // Random pool
   randomPoolIncluded: boolean("random_pool_included").default(true),
   notes: text("notes"),
+  // Clearinghouse sync tracking
+  clearinghouseExportedAt: timestamp("clearinghouse_exported_at"),       // when last exported as ACTIVE
+  clearinghouseRemovalExported: boolean("clearinghouse_removal_exported").default(false), // removal record generated
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

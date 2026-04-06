@@ -1442,6 +1442,24 @@ export class DatabaseStorage implements IStorage {
   async deleteDotEquipment(id: number, userId: string): Promise<void> {
     await db.delete(dotEquipment).where(and(eq(dotEquipment.id, id), eq(dotEquipment.userId, userId)));
   }
+
+  async markDotDriversExported(ids: number[], userId: string, exportedAt: Date): Promise<void> {
+    if (ids.length === 0) return;
+    for (const id of ids) {
+      await db.update(dotDrivers)
+        .set({ clearinghouseExportedAt: exportedAt, updatedAt: new Date() })
+        .where(and(eq(dotDrivers.id, id), eq(dotDrivers.userId, userId)));
+    }
+  }
+
+  async markDotDriversRemovalExported(ids: number[], userId: string): Promise<void> {
+    if (ids.length === 0) return;
+    for (const id of ids) {
+      await db.update(dotDrivers)
+        .set({ clearinghouseRemovalExported: true, updatedAt: new Date() })
+        .where(and(eq(dotDrivers.id, id), eq(dotDrivers.userId, userId)));
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

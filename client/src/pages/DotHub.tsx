@@ -36,6 +36,8 @@ interface DotDriver {
   lastMvrDate?: string;
   randomPoolIncluded?: boolean;
   notes?: string;
+  clearinghouseExportedAt?: string;
+  clearinghouseRemovalExported?: boolean;
   updatedAt?: string;
 }
 
@@ -470,6 +472,10 @@ export default function DotHub() {
     queryKey: ["/api/dot/equipment"],
   });
 
+  const { data: deltaStatus, refetch: refetchDelta } = useQuery<{
+    pendingAdd: number; synced: number; pendingRemove: number; total: number;
+  }>({ queryKey: ["/api/dot/clearinghouse-delta-status"] });
+
   const deleteDriver = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/dot/drivers/${id}`);
@@ -495,10 +501,37 @@ export default function DotHub() {
   });
 
   const handleExportCsv = async () => {
-    const url = "/api/dot/drivers-export-csv";
     const link = document.createElement("a");
-    link.href = url;
+    link.href = "/api/dot/drivers-export-csv";
     link.click();
+  };
+
+  const [deltaExporting, setDeltaExporting] = useState(false);
+  const handleDeltaExport = async () => {
+    setDeltaExporting(true);
+    try {
+      const res = await fetch("/api/dot/drivers-delta-csv", { credentials: "include" });
+      if (!res.ok) { toast({ title: "Export failed", variant: "destructive" }); return; }
+      const contentType = res.headers.get("Content-Type") ?? "";
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        toast({ title: "No changes to export", description: data.message });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const date = new Date().toISOString().slice(0, 10);
+      link.download = `clearinghouse-delta-${date}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Delta file generated", description: "Drivers marked as synced. Upload this file to clearinghouse.fmcsa.dot.gov" });
+      refetchDelta();
+      qc.invalidateQueries({ queryKey: ["/api/dot/drivers"] });
+    } finally {
+      setDeltaExporting(false);
+    }
   };
 
   const activeDrivers = drivers.filter(d => d.status === "active");
@@ -745,45 +778,111 @@ export default function DotHub() {
 
           {/* ── Clearinghouse Export Tab ──────────────────────────────────────── */}
           <TabsContent value="clearinghouse">
-            <div className="max-w-2xl mx-auto py-8">
-              <div className="bg-white border border-border/60 rounded-2xl p-8 text-center shadow-sm">
-                <Download className="w-12 h-12 text-accent mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-primary mb-2">FMCSA Clearinghouse Bulk Query Export</h2>
-                <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                  Generates a properly formatted CSV file for all active drivers, ready to upload directly to <strong>clearinghouse.fmcsa.dot.gov</strong>. Includes CDL number, state of issuance, date of birth, and query type for each driver.
-                </p>
-                <div className="bg-muted/40 rounded-xl p-4 text-left mb-6 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Active Drivers in Roster</span>
-                    <span className="font-semibold text-primary">{activeDrivers.length}</span>
+            <div className="max-w-2xl mx-auto py-8 space-y-6">
+
+              {/* ── Delta Sync (hero) ──────────────────────────────────────────── */}
+              <div className="bg-white border-2 border-accent/30 rounded-2xl p-8 shadow-sm">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="bg-accent/10 rounded-xl p-3">
+                    <RefreshCcw className="w-7 h-7 text-accent" />
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">With Consent on File</span>
-                    <span className="font-semibold text-emerald-600">{activeDrivers.filter(d => d.clearinghouseConsentOnFile).length}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Missing Consent (excluded)</span>
-                    <span className="font-semibold text-red-500">{activeDrivers.filter(d => !d.clearinghouseConsentOnFile).length}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Query Overdue (≥ 365 days)</span>
-                    <span className="font-semibold text-red-500">{metrics?.clearinghouse.overdue ?? "—"}</span>
+                  <div>
+                    <h2 className="text-xl font-semibold text-primary">Clearinghouse Sync — Changes Only</h2>
+                    <p className="text-muted-foreground text-sm mt-1 leading-relaxed">
+                      Generates a <strong>delta file</strong> containing only what changed since your last export — new hires to <span className="text-emerald-600 font-medium">ADD</span> and terminated drivers to <span className="text-red-500 font-medium">REMOVE</span>. Upload directly to <strong>clearinghouse.fmcsa.dot.gov</strong> on the 1st of each month.
+                    </p>
                   </div>
                 </div>
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-8" onClick={handleExportCsv} data-testid="button-export-csv">
-                  <Download className="w-5 h-5 mr-2" />
-                  Generate Query File
+
+                {/* Status grid */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-emerald-600" data-testid="stat-pending-add">{deltaStatus?.pendingAdd ?? 0}</div>
+                    <div className="text-xs text-emerald-700 mt-1 font-medium">Pending ADD</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">New hires</div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-600" data-testid="stat-synced">{deltaStatus?.synced ?? 0}</div>
+                    <div className="text-xs text-blue-700 mt-1 font-medium">Synced</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Already in CH</div>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-red-500" data-testid="stat-pending-remove">{deltaStatus?.pendingRemove ?? 0}</div>
+                    <div className="text-xs text-red-600 mt-1 font-medium">Pending REMOVE</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Terminated</div>
+                  </div>
+                </div>
+
+                {/* How it works steps */}
+                <div className="bg-muted/30 rounded-xl p-4 mb-6">
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">Monthly Workflow</p>
+                  <ol className="space-y-2 text-sm text-muted-foreground list-none">
+                    {[
+                      "Manage your driver roster in CCH throughout the month (add new hires, terminate departures).",
+                      "On the 1st of the month, click \"Generate Changes File\" below.",
+                      "CCH produces a delta CSV with only the additions and removals since last export.",
+                      "Upload the file to clearinghouse.fmcsa.dot.gov — done.",
+                    ].map((step, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                <Button
+                  size="lg"
+                  className="w-full bg-accent hover:bg-accent/90 text-white"
+                  onClick={handleDeltaExport}
+                  disabled={deltaExporting || ((deltaStatus?.pendingAdd ?? 0) + (deltaStatus?.pendingRemove ?? 0) === 0)}
+                  data-testid="button-delta-export"
+                >
+                  {deltaExporting ? (
+                    <RefreshCcw className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5 mr-2" />
+                  )}
+                  {deltaExporting ? "Generating…" : (deltaStatus?.pendingAdd ?? 0) + (deltaStatus?.pendingRemove ?? 0) === 0
+                    ? "No Changes to Export"
+                    : `Generate Changes File (${(deltaStatus?.pendingAdd ?? 0) + (deltaStatus?.pendingRemove ?? 0)} change${(deltaStatus?.pendingAdd ?? 0) + (deltaStatus?.pendingRemove ?? 0) !== 1 ? "s" : ""})`}
                 </Button>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  File format: FMCSA Clearinghouse bulk upload CSV · 49 CFR § 382.701
+                <p className="mt-3 text-xs text-center text-muted-foreground">
+                  After download, drivers are automatically marked as synced · 49 CFR § 382.701
                 </p>
               </div>
 
-              <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4">
+              {/* ── Full Bulk Query Export (secondary) ────────────────────────── */}
+              <div className="bg-white border border-border/60 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <Download className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <h3 className="font-semibold text-primary text-sm">Full Roster Export</h3>
+                    <p className="text-xs text-muted-foreground">All active drivers — use for initial setup or audits, not monthly sync.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                  <div className="flex justify-between bg-muted/30 rounded-lg px-3 py-2">
+                    <span className="text-muted-foreground text-xs">Active Drivers</span>
+                    <span className="font-semibold text-primary text-xs">{activeDrivers.length}</span>
+                  </div>
+                  <div className="flex justify-between bg-muted/30 rounded-lg px-3 py-2">
+                    <span className="text-muted-foreground text-xs">Query Overdue</span>
+                    <span className="font-semibold text-red-500 text-xs">{metrics?.clearinghouse.overdue ?? 0}</span>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={handleExportCsv} data-testid="button-export-csv">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Full Roster CSV
+                </Button>
+              </div>
+
+              {/* ── Consent warning ─────────────────────────────────────────────── */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4">
                 <div className="flex gap-3">
                   <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-yellow-800">
-                    <strong>Before uploading:</strong> Verify that every driver in the file has a signed Limited Inquiry Consent form on file. Running a query without written consent is a violation of 49 CFR Part 382. Our system flags drivers without consent — those drivers are still included in the CSV so you can see who needs follow-up before submitting.
+                    <strong>Consent reminder:</strong> Every driver in the export must have a signed Limited Inquiry Consent form on file before you submit the query. Running without written consent violates 49 CFR Part 382. CCH flags drivers without consent in the driver roster.
                   </div>
                 </div>
               </div>
