@@ -456,6 +456,7 @@ function EquipmentFormDialog({ open, onClose, existing }: { open: boolean; onClo
 export default function DotHub() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("drivers");
   const [driverDialog, setDriverDialog] = useState<{ open: boolean; driver?: DotDriver | null }>({ open: false });
   const [equipDialog, setEquipDialog] = useState<{ open: boolean; equip?: DotEquipment | null }>({ open: false });
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "driver" | "equip"; id: number } | null>(null);
@@ -537,6 +538,36 @@ export default function DotHub() {
   const activeDrivers = drivers.filter(d => d.status === "active");
   const nonActiveDrivers = drivers.filter(d => d.status !== "active");
 
+  // ── Urgency calculation for action banner ──────────────────────────────────
+  const overdueChDrivers  = activeDrivers.filter(d => chStatus(d) === "red");
+  const warnChDrivers     = activeDrivers.filter(d => chStatus(d) === "yellow");
+  const overdueMedDrivers = activeDrivers.filter(d => {
+    const days = daysUntil(d.medicalCardExpiry);
+    return days !== null && days < 0;
+  });
+  const warnMedDrivers = activeDrivers.filter(d => {
+    const days = daysUntil(d.medicalCardExpiry);
+    return days !== null && days >= 0 && days <= 30;
+  });
+
+  // Find nearest Clearinghouse query expiry date among yellow-status drivers
+  const nearestChExpiry = warnChDrivers.reduce((nearest, d) => {
+    if (!d.lastClearinghouseQueryDate) return nearest;
+    const expiry = new Date(new Date(d.lastClearinghouseQueryDate).getTime() + 365 * 86400000);
+    return nearest === null || expiry < nearest ? expiry : nearest;
+  }, null as Date | null);
+
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const nearestChDays = nearestChExpiry
+    ? Math.ceil((nearestChExpiry.getTime() - Date.now()) / 86400000)
+    : null;
+  const nearestChLabel = nearestChExpiry && nearestChDays !== null
+    ? nearestChDays <= 0   ? "today"
+    : nearestChDays === 1  ? "tomorrow"
+    : nearestChDays <= 7   ? `this ${dayNames[nearestChExpiry.getDay()]}`
+    : null
+    : null;
+
   return (
     <ProtectedLayout>
       <div className="p-6 max-w-7xl mx-auto">
@@ -590,8 +621,95 @@ export default function DotHub() {
           </div>
         )}
 
+        {/* ── Action Alert Banner ────────────────────────────────────────────── */}
+        {!driversLoading && (overdueChDrivers.length > 0 || (warnChDrivers.length > 0 && nearestChLabel) || overdueMedDrivers.length > 0 || warnMedDrivers.length > 0) && (
+          <div className="mb-6 space-y-2" data-testid="action-alert-banner">
+
+            {/* Critical: CH queries overdue */}
+            {overdueChDrivers.length > 0 && (
+              <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">
+                      {overdueChDrivers.length} driver{overdueChDrivers.length > 1 ? "s" : ""} {overdueChDrivers.length > 1 ? "are" : "is"} overdue for an annual Clearinghouse query
+                    </p>
+                    <p className="text-xs text-red-600 mt-0.5">Annual queries required under 49 CFR § 382.701 — action needed now</p>
+                  </div>
+                </div>
+                <Button size="sm" className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white" onClick={() => setActiveTab("clearinghouse")} data-testid="button-alert-ch-overdue">
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  Generate Query File
+                </Button>
+              </div>
+            )}
+
+            {/* Warning: CH queries due soon with specific day */}
+            {warnChDrivers.length > 0 && nearestChLabel && (
+              <div className="flex items-center justify-between gap-4 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-orange-800">
+                      {warnChDrivers.length} driver{warnChDrivers.length > 1 ? "s" : ""} need annual Clearinghouse {warnChDrivers.length > 1 ? "queries" : "query"} by {nearestChLabel}
+                    </p>
+                    <p className="text-xs text-orange-600 mt-0.5">Export the query file now to stay ahead of the deadline</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" className="flex-shrink-0 border-orange-300 text-orange-700 hover:bg-orange-100" onClick={() => setActiveTab("clearinghouse")} data-testid="button-alert-ch-warn">
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  Generate Query File
+                </Button>
+              </div>
+            )}
+
+            {/* Medical card expiry alerts */}
+            {overdueMedDrivers.length > 0 && (
+              <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">
+                      {overdueMedDrivers.length} driver{overdueMedDrivers.length > 1 ? "s" : ""} {overdueMedDrivers.length > 1 ? "have" : "has"} an expired medical card
+                    </p>
+                    <p className="text-xs text-red-600 mt-0.5">Drivers cannot operate a CMV with an expired medical certificate — 49 CFR § 391.45</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" className="flex-shrink-0 border-red-300 text-red-700 hover:bg-red-100" onClick={() => setActiveTab("drivers")} data-testid="button-alert-med-expired">
+                  View Drivers
+                </Button>
+              </div>
+            )}
+
+            {warnMedDrivers.length > 0 && overdueMedDrivers.length === 0 && (
+              <div className="flex items-center justify-between gap-4 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <Bell className="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-800">
+                      {warnMedDrivers.length} driver{warnMedDrivers.length > 1 ? "s" : ""} {warnMedDrivers.length > 1 ? "have" : "has"} a medical card expiring within 30 days
+                    </p>
+                    <p className="text-xs text-yellow-600 mt-0.5">Schedule DOT physicals before expiry to avoid driving disqualification</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" className="flex-shrink-0 border-yellow-300 text-yellow-700 hover:bg-yellow-100" onClick={() => setActiveTab("drivers")} data-testid="button-alert-med-warn">
+                  View Drivers
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Tabs */}
-        <Tabs defaultValue="drivers">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="drivers" data-testid="tab-dot-drivers">
               <Users className="w-4 h-4 mr-1.5" />
