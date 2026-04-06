@@ -13,7 +13,7 @@ import {
   Truck, Users, Download, Bell, AlertTriangle, CheckCircle2,
   Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X
 } from "lucide-react";
-import Layout from "@/components/Layout";
+import { ProtectedLayout } from "@/components/Layout";
 
 // ─── Types (matching schema) ─────────────────────────────────────────────────
 
@@ -507,7 +507,7 @@ export default function DotHub() {
   const nonActiveDrivers = drivers.filter(d => d.status !== "active");
 
   return (
-    <Layout>
+    <ProtectedLayout>
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -882,6 +882,6 @@ export default function DotHub() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </ProtectedLayout>
   );
 }
