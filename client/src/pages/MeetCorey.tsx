@@ -70,13 +70,6 @@ const CAPABILITIES = [
     bg: "bg-cyan-500/10",
   },
   {
-    icon: Target,
-    title: "Gap Analysis",
-    description: "Corey walks through your compliance programs one by one — asking targeted questions, identifying gaps, and prioritizing fixes by risk level.",
-    color: "text-orange-400",
-    bg: "bg-orange-500/10",
-  },
-  {
     icon: Scale,
     title: "OSHA Recordability Guidance",
     description: "Not sure if an incident is recordable? Corey walks you through the 29 CFR 1904 decision tree and explains exactly why or why not.",
@@ -159,7 +152,6 @@ const REGULATIONS_COVERED = [
   "Crane & Derrick Standards (29 CFR 1926 Subpart CC)",
   "Bloodborne Pathogens (29 CFR 1910.1030)",
   "Hearing Conservation (29 CFR 1910.95)",
-  "ISO 9001, 14001, 45001, and more",
   "NFPA 70E Electrical Safety",
   "ANSI/ASSE Z359 Fall Protection",
 ];
