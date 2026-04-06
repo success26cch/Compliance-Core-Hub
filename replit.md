@@ -88,6 +88,39 @@ All email logic lives in `server/emailService.ts`. Uses MailerSend REST API (`ht
 **Admin emails:** `raulv9471@gmail.com`, `evillarreal@acsi-quality.com`
 **All sends are fire-and-forget** — wrapped in try/catch; email failures never block the primary action.
 
+## DOT Compliance Hub
+A complete fleet compliance management platform for FMCSA/DOT-regulated employers. Built as a separate product from the OSHA/EPA employer platform.
+
+**Marketing page:** `/dot-compliance-hub` — public sales page with pain points, feature grid, 3-tier pricing, workflow visualization, and FAQ.
+**Platform module:** `/dot-hub` — authenticated dashboard accessible from the sidebar under "DOT Compliance Hub".
+**Sidebar link:** "DOT Fleet Dashboard" → `/dot-hub` (between Safety & Occ Med and ACSI ISO Manager sections).
+**Landing page nav:** "DOT Compliance Hub" link added to top nav.
+
+**Pricing:**
+- DOT Compliance Hub: $249/mo (≤50 drivers)
+- DOT + Corey AI Bundle: $399/mo
+- DOT + Employer Platform: $799/mo
+- Onboarding setup: $299 (≤25 drivers) · $599 (26–100) · $999 (100+)
+
+**Database tables (3):**
+- `dot_drivers` — CDL info, Clearinghouse consent/query date, MVR date, medical card expiry, random pool enrollment, hire/termination dates
+- `dot_dq_documents` — Per-driver DQ file checklist per 49 CFR 391 (upsert by driverId + documentType)
+- `dot_equipment` — Trucks/trailers, annual inspection date, PM dates, active status
+
+**API routes:** `GET/POST/PUT/DELETE /api/dot/drivers`, `GET/POST /api/dot/drivers/:id/dq`, `GET/POST/PUT/DELETE /api/dot/equipment`, `GET /api/dot/metrics`, `GET /api/dot/drivers-export-csv`
+
+**Key features:**
+- Clearinghouse 365-day countdown with Red/Yellow/Green status badges per driver
+- FMCSA bulk query CSV export (one click → ready to upload to clearinghouse.fmcsa.dot.gov)
+- Medical card expiration alerts (60/30/15 day thresholds displayed)
+- Annual MVR tracking
+- DQ file checklist tab per driver
+- Driver roster: Add/Edit/Terminate/Archive with 3-year record retention compliance note
+- Fleet equipment tracking with annual inspection status
+- Consent form tracker (flags drivers without signed Limited Inquiry consent)
+- Aggregate metrics dashboard (6 metric cards)
+- Archive tab for terminated/archived drivers (read-only with FMCSA retention note)
+
 ## Payment Infrastructure — Paddle Migration (IN PROGRESS — coming within days)
 - **Decision confirmed:** Replacing Stripe with **Paddle** as Merchant of Record. Paddle handles sales tax, VAT, and invoicing automatically. No Replit connector — use Paddle API keys directly.
 - **Migration plan:** Remove all Stripe code and replace with Paddle Billing API. Owner has Paddle integration code ready (from Gemini). When ready: add `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` environment secrets, install Paddle SDK, replace checkout flows.

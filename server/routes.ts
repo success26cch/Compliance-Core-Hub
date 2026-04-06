@@ -5398,5 +5398,172 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     }
   });
 
+  // ─── DOT COMPLIANCE HUB ROUTES ────────────────────────────────────────────
+
+  // Drivers
+  app.get("/api/dot/drivers", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const drivers = await storage.getDotDrivers(userId);
+      res.json(drivers);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/dot/drivers", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const driver = await storage.createDotDriver({ ...req.body, userId });
+      res.status(201).json(driver);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/dot/drivers/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const updated = await storage.updateDotDriver(parseInt(req.params.id), userId, req.body);
+      if (!updated) return res.status(404).json({ message: "Driver not found" });
+      res.json(updated);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/dot/drivers/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteDotDriver(parseInt(req.params.id), userId);
+      res.json({ message: "Driver deleted" });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // FMCSA Clearinghouse CSV export — must be before :id routes
+  app.get("/api/dot/drivers-export-csv", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const drivers = await storage.getDotDrivers(userId);
+      const active = drivers.filter(d => d.status === "active");
+      const header = "First Name,Last Name,Date of Birth,CDL/CLP Number,State of Issuance,Country of Issuance,Query Type";
+      const rows = active.map(d => {
+        const queryTypeCode = d.queryType === "full" ? "2" : "1";
+        return `"${d.firstName}","${d.lastName}","${d.dateOfBirth || ""}","${d.cdlNumber || ""}","${d.cdlState || ""}","US","${queryTypeCode}"`;
+      });
+      const csv = [header, ...rows].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="clearinghouse-bulk-query-${new Date().toISOString().slice(0, 10)}.csv"`);
+      res.send(csv);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // DQ Documents
+  app.get("/api/dot/drivers/:driverId/dq", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const docs = await storage.getDotDqDocuments(parseInt(req.params.driverId), userId);
+      res.json(docs);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/dot/drivers/:driverId/dq", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const doc = await storage.upsertDotDqDocument({ ...req.body, driverId: parseInt(req.params.driverId), userId });
+      res.json(doc);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Equipment
+  app.get("/api/dot/equipment", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const equip = await storage.getDotEquipment(userId);
+      res.json(equip);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/dot/equipment", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const equip = await storage.createDotEquipment({ ...req.body, userId });
+      res.status(201).json(equip);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/dot/equipment/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const updated = await storage.updateDotEquipment(parseInt(req.params.id), userId, req.body);
+      if (!updated) return res.status(404).json({ message: "Equipment not found" });
+      res.json(updated);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/dot/equipment/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteDotEquipment(parseInt(req.params.id), userId);
+      res.json({ message: "Equipment deleted" });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // DOT metrics summary
+  app.get("/api/dot/metrics", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const drivers = await storage.getDotDrivers(userId);
+      const equipment = await storage.getDotEquipment(userId);
+      const now = new Date();
+      const day = 1000 * 60 * 60 * 24;
+
+      const active = drivers.filter(d => d.status === "active");
+
+      const chOverdue = active.filter(d => {
+        if (!d.lastClearinghouseQueryDate) return true;
+        return (now.getTime() - new Date(d.lastClearinghouseQueryDate).getTime()) > 365 * day;
+      });
+      const chWarning = active.filter(d => {
+        if (!d.lastClearinghouseQueryDate) return false;
+        const diff = now.getTime() - new Date(d.lastClearinghouseQueryDate).getTime();
+        return diff > 335 * day && diff <= 365 * day;
+      });
+
+      const medOverdue = active.filter(d => d.medicalCardExpiry && new Date(d.medicalCardExpiry) < now);
+      const medWarning = active.filter(d => {
+        if (!d.medicalCardExpiry) return false;
+        const diff = new Date(d.medicalCardExpiry).getTime() - now.getTime();
+        return diff > 0 && diff < 60 * day;
+      });
+
+      const mvrOverdue = active.filter(d => {
+        if (!d.lastMvrDate) return true;
+        return (now.getTime() - new Date(d.lastMvrDate).getTime()) > 365 * day;
+      });
+
+      const activeEquip = equipment.filter(e => e.isActive);
+      const equipOverdue = activeEquip.filter(e => {
+        if (!e.lastAnnualInspectionDate) return true;
+        return (now.getTime() - new Date(e.lastAnnualInspectionDate).getTime()) > 365 * day;
+      });
+
+      res.json({
+        totalDrivers: active.length,
+        clearinghouse: { overdue: chOverdue.length, warning: chWarning.length },
+        medicalCards: { overdue: medOverdue.length, warning: medWarning.length },
+        mvr: { overdue: mvrOverdue.length },
+        equipment: { total: activeEquip.length, overdue: equipOverdue.length },
+        noConsentOnFile: active.filter(d => !d.clearinghouseConsentOnFile).length,
+      });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }

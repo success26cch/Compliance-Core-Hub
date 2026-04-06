@@ -23,7 +23,8 @@ import {
   ClipboardCheck,
   FileText,
   BookOpen,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -183,6 +184,12 @@ export function Sidebar({ className = "" }: { className?: string }) {
           {safetyLinks.map((link) => (
             <LinkItem key={link.href} {...link} />
           ))}
+        </div>
+
+        {/* DOT Compliance Hub section */}
+        <SectionLabel label="DOT Compliance Hub" />
+        <div className="space-y-1 mb-2">
+          <LinkItem href="/dot-hub" label="DOT Fleet Dashboard" icon={Truck} />
         </div>
 
         {/* ACSI ISO Manager section */}

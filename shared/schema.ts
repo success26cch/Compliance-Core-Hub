@@ -1042,3 +1042,100 @@ export const coreyProfiles = pgTable("corey_profiles", {
 export const insertCoreyProfileSchema = createInsertSchema(coreyProfiles).omit({ id: true, updatedAt: true });
 export type CoreyProfile = typeof coreyProfiles.$inferSelect;
 export type InsertCoreyProfile = z.infer<typeof insertCoreyProfileSchema>;
+
+// ─── DOT COMPLIANCE HUB ─────────────────────────────────────────────────────
+
+// DOT Drivers — Clearinghouse Orchestrator + Driver Qualification tracking
+export const dotDrivers = pgTable("dot_drivers", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  dateOfBirth: text("date_of_birth"), // MM/DD/YYYY string for FMCSA format
+  cdlNumber: text("cdl_number"),
+  cdlState: text("cdl_state"),
+  cdlExpiry: timestamp("cdl_expiry"),
+  hireDate: timestamp("hire_date"),
+  terminationDate: timestamp("termination_date"),
+  status: text("status").notNull().default("active"), // 'active', 'inactive', 'archived'
+  // Clearinghouse tracking
+  lastClearinghouseQueryDate: timestamp("last_clearinghouse_query_date"),
+  clearinghouseConsentOnFile: boolean("clearinghouse_consent_on_file").default(false),
+  queryType: text("query_type").default("limited"), // 'limited', 'full'
+  // MVR tracking
+  lastMvrDate: timestamp("last_mvr_date"),
+  // Medical card
+  medicalCardExpiry: timestamp("medical_card_expiry"),
+  // Random pool
+  randomPoolIncluded: boolean("random_pool_included").default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+const dotDateOrString = z.union([
+  z.date(),
+  z.string().transform((val) => val ? new Date(val) : undefined),
+]).optional().nullable();
+
+export const insertDotDriverSchema = createInsertSchema(dotDrivers, {
+  cdlExpiry: dotDateOrString,
+  hireDate: dotDateOrString,
+  terminationDate: dotDateOrString,
+  lastClearinghouseQueryDate: dotDateOrString,
+  lastMvrDate: dotDateOrString,
+  medicalCardExpiry: dotDateOrString,
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type DotDriver = typeof dotDrivers.$inferSelect;
+export type InsertDotDriver = z.infer<typeof insertDotDriverSchema>;
+
+// DOT DQ File Documents — per-driver document checklist
+export const dotDqDocuments = pgTable("dot_dq_documents", {
+  id: serial("id").primaryKey(),
+  driverId: integer("driver_id").notNull(),
+  userId: text("user_id").notNull(),
+  // Document types per 49 CFR 391 DQ file requirements
+  documentType: text("document_type").notNull(),
+  // 'application' | 'cdl_copy' | 'mvr' | 'annual_mvr_review' | 'road_test'
+  // | 'pre_employment_drug' | 'medical_card' | 'annual_review'
+  // | 'certificate_of_violations' | 'previous_employer_inquiry' | 'sph_inquiry' | 'other'
+  documentName: text("document_name"),
+  onFile: boolean("on_file").default(false),
+  expirationDate: timestamp("expiration_date"),
+  fileUrl: text("file_url"),
+  notes: text("notes"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+export const insertDotDqDocumentSchema = createInsertSchema(dotDqDocuments, {
+  expirationDate: dotDateOrString,
+}).omit({ id: true, uploadedAt: true });
+export type DotDqDocument = typeof dotDqDocuments.$inferSelect;
+export type InsertDotDqDocument = z.infer<typeof insertDotDqDocumentSchema>;
+
+// DOT Equipment / Asset Tracking — trucks, trailers, inspection dates
+export const dotEquipment = pgTable("dot_equipment", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  unitNumber: text("unit_number").notNull(),
+  type: text("type").notNull().default("truck"), // 'truck' | 'trailer' | 'other'
+  make: text("make"),
+  model: text("model"),
+  year: text("year"),
+  vin: text("vin"),
+  licensePlate: text("license_plate"),
+  licenseState: text("license_state"),
+  lastAnnualInspectionDate: timestamp("last_annual_inspection_date"),
+  lastPmDate: timestamp("last_pm_date"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDotEquipmentSchema = createInsertSchema(dotEquipment, {
+  lastAnnualInspectionDate: dotDateOrString,
+  lastPmDate: dotDateOrString,
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type DotEquipment = typeof dotEquipment.$inferSelect;
+export type InsertDotEquipment = z.infer<typeof insertDotEquipmentSchema>;

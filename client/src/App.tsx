@@ -54,6 +54,8 @@ import WatchDemo from "@/pages/WatchDemo";
 import PlatformBrief from "@/pages/PlatformBrief";
 import Cesar from "@/pages/Cesar";
 import ISOManagerMarketing from "@/pages/ISOManagerMarketing";
+import DotComplianceHub from "@/pages/DotComplianceHub";
+import DotHub from "@/pages/DotHub";
 import WelcomeCorey from "@/pages/WelcomeCorey";
 import CoreyProfile from "@/pages/CoreyProfile";
 import IsaStandalone from "@/pages/Isa";
@@ -152,6 +154,8 @@ function Router() {
       <Route path="/refund-policy" component={RefundPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/dot-compliance-hub" component={DotComplianceHub} />
+      <Route path="/dot-hub" component={DotHub} />
       <Route component={NotFound} />
     </Switch>
   );

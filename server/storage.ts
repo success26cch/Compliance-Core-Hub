@@ -1,4 +1,7 @@
-import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, teamDepartments, teamAnnouncements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent, type TeamDepartment, type InsertTeamDepartment, type TeamAnnouncement, type InsertTeamAnnouncement } from "@shared/schema";
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, teamDepartments, teamAnnouncements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent, type TeamDepartment, type InsertTeamDepartment, type TeamAnnouncement, type InsertTeamAnnouncement,
+  dotDrivers, dotDqDocuments, dotEquipment,
+  type DotDriver, type InsertDotDriver, type DotDqDocument, type InsertDotDqDocument, type DotEquipment, type InsertDotEquipment
+} from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
 
@@ -222,6 +225,19 @@ export interface IStorage {
   createIsoDocument(data: InsertIsoDocument): Promise<IsoDocument>;
   updateIsoDocument(id: number, userId: string, data: Partial<InsertIsoDocument>): Promise<IsoDocument | undefined>;
   deleteIsoDocument(id: number, userId: string): Promise<void>;
+
+  // DOT Compliance Hub
+  getDotDrivers(userId: string): Promise<DotDriver[]>;
+  getDotDriver(id: number, userId: string): Promise<DotDriver | undefined>;
+  createDotDriver(data: InsertDotDriver): Promise<DotDriver>;
+  updateDotDriver(id: number, userId: string, data: Partial<InsertDotDriver>): Promise<DotDriver | undefined>;
+  deleteDotDriver(id: number, userId: string): Promise<void>;
+  getDotDqDocuments(driverId: number, userId: string): Promise<DotDqDocument[]>;
+  upsertDotDqDocument(data: InsertDotDqDocument): Promise<DotDqDocument>;
+  getDotEquipment(userId: string): Promise<DotEquipment[]>;
+  createDotEquipment(data: InsertDotEquipment): Promise<DotEquipment>;
+  updateDotEquipment(id: number, userId: string, data: Partial<InsertDotEquipment>): Promise<DotEquipment | undefined>;
+  deleteDotEquipment(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1368,6 +1384,63 @@ export class DatabaseStorage implements IStorage {
 
   async deleteIsoDocument(id: number, userId: string): Promise<void> {
     await db.delete(isoDocuments).where(and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId)));
+  }
+
+  // ─── DOT COMPLIANCE HUB ───────────────────────────────────────────────────
+
+  async getDotDrivers(userId: string): Promise<DotDriver[]> {
+    return db.select().from(dotDrivers).where(eq(dotDrivers.userId, userId)).orderBy(dotDrivers.lastName, dotDrivers.firstName);
+  }
+
+  async getDotDriver(id: number, userId: string): Promise<DotDriver | undefined> {
+    const [driver] = await db.select().from(dotDrivers).where(and(eq(dotDrivers.id, id), eq(dotDrivers.userId, userId)));
+    return driver;
+  }
+
+  async createDotDriver(data: InsertDotDriver): Promise<DotDriver> {
+    const [driver] = await db.insert(dotDrivers).values(data).returning();
+    return driver;
+  }
+
+  async updateDotDriver(id: number, userId: string, data: Partial<InsertDotDriver>): Promise<DotDriver | undefined> {
+    const [updated] = await db.update(dotDrivers).set({ ...data, updatedAt: new Date() }).where(and(eq(dotDrivers.id, id), eq(dotDrivers.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteDotDriver(id: number, userId: string): Promise<void> {
+    await db.delete(dotDrivers).where(and(eq(dotDrivers.id, id), eq(dotDrivers.userId, userId)));
+  }
+
+  async getDotDqDocuments(driverId: number, userId: string): Promise<DotDqDocument[]> {
+    return db.select().from(dotDqDocuments).where(and(eq(dotDqDocuments.driverId, driverId), eq(dotDqDocuments.userId, userId)));
+  }
+
+  async upsertDotDqDocument(data: InsertDotDqDocument): Promise<DotDqDocument> {
+    const existing = await db.select().from(dotDqDocuments).where(and(eq(dotDqDocuments.driverId, data.driverId), eq(dotDqDocuments.userId, data.userId), eq(dotDqDocuments.documentType, data.documentType)));
+    if (existing.length > 0) {
+      const [updated] = await db.update(dotDqDocuments).set(data).where(eq(dotDqDocuments.id, existing[0].id)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(dotDqDocuments).values(data).returning();
+    return created;
+  }
+
+  async getDotEquipment(userId: string): Promise<DotEquipment[]> {
+    return db.select().from(dotEquipment).where(eq(dotEquipment.userId, userId)).orderBy(dotEquipment.unitNumber);
+  }
+
+  async createDotEquipment(data: InsertDotEquipment): Promise<DotEquipment> {
+    const [equip] = await db.insert(dotEquipment).values(data).returning();
+    return equip;
+  }
+
+  async updateDotEquipment(id: number, userId: string, data: Partial<InsertDotEquipment>): Promise<DotEquipment | undefined> {
+    const [updated] = await db.update(dotEquipment).set({ ...data, updatedAt: new Date() }).where(and(eq(dotEquipment.id, id), eq(dotEquipment.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteDotEquipment(id: number, userId: string): Promise<void> {
+    await db.delete(dotEquipment).where(and(eq(dotEquipment.id, id), eq(dotEquipment.userId, userId)));
   }
 }
 
