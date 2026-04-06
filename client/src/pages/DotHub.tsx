@@ -22,11 +22,9 @@ interface DotDriver {
   userId: string;
   firstName: string;
   lastName: string;
-  employeeId?: string;
   status: string;
   cdlNumber?: string;
   cdlState?: string;
-  cdlClass?: string;
   cdlExpiry?: string;
   dateOfBirth?: string;
   hireDate?: string;
@@ -36,7 +34,7 @@ interface DotDriver {
   queryType?: string;
   medicalCardExpiry?: string;
   lastMvrDate?: string;
-  randomPoolEnrolled?: boolean;
+  randomPoolIncluded?: boolean;
   notes?: string;
   updatedAt?: string;
 }
@@ -45,15 +43,15 @@ interface DotEquipment {
   id: number;
   userId: string;
   unitNumber: string;
-  equipmentType: string;
-  year?: number;
+  type: string;
+  year?: string;
   make?: string;
   model?: string;
   vin?: string;
   licensePlate?: string;
   isActive?: boolean;
   lastAnnualInspectionDate?: string;
-  nextPmDueDate?: string;
+  lastPmDate?: string;
   notes?: string;
   updatedAt?: string;
 }
@@ -184,7 +182,7 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
       queryType: existing.queryType ?? "limited",
       medicalCardExpiry: existing.medicalCardExpiry?.slice(0, 10) ?? "",
       lastMvrDate: existing.lastMvrDate?.slice(0, 10) ?? "",
-      randomPoolEnrolled: existing.randomPoolEnrolled ?? true,
+      randomPoolEnrolled: existing.randomPoolIncluded ?? true,
       notes: existing.notes ?? "",
     } : EMPTY_DRIVER
   );
@@ -347,12 +345,12 @@ function EquipmentFormDialog({ open, onClose, existing }: { open: boolean; onClo
   const { toast } = useToast();
   const isEdit = !!existing;
   const [form, setForm] = useState<EquipFormData>(existing ? {
-    unitNumber: existing.unitNumber ?? "", equipmentType: existing.equipmentType ?? "truck",
+    unitNumber: existing.unitNumber ?? "", equipmentType: existing.type ?? "truck",
     year: existing.year?.toString() ?? "", make: existing.make ?? "", model: existing.model ?? "",
     vin: existing.vin ?? "", licensePlate: existing.licensePlate ?? "",
     isActive: existing.isActive ?? true,
     lastAnnualInspectionDate: existing.lastAnnualInspectionDate?.slice(0, 10) ?? "",
-    nextPmDueDate: existing.nextPmDueDate?.slice(0, 10) ?? "",
+    nextPmDueDate: existing.lastPmDate?.slice(0, 10) ?? "",
     notes: existing.notes ?? "",
   } : EMPTY_EQUIP);
 
@@ -619,11 +617,10 @@ export default function DotHub() {
                           <tr key={d.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-driver-${d.id}`}>
                             <td className="px-4 py-3">
                               <div className="font-medium text-primary">{d.firstName} {d.lastName}</div>
-                              {d.employeeId && <div className="text-xs text-muted-foreground">{d.employeeId}</div>}
                             </td>
                             <td className="px-4 py-3">
                               <div className="text-xs">{d.cdlNumber || "—"} {d.cdlState ? `(${d.cdlState})` : ""}</div>
-                              <div className="text-xs text-muted-foreground">Class {d.cdlClass || "—"} · Exp {formatDate(d.cdlExpiry)}</div>
+                              <div className="text-xs text-muted-foreground">Exp {formatDate(d.cdlExpiry)}</div>
                             </td>
                             <td className="px-3 py-3 text-center">
                               <div className="flex flex-col items-center gap-1">
@@ -646,7 +643,7 @@ export default function DotHub() {
                                 : <X className="w-4 h-4 text-red-400 mx-auto" />}
                             </td>
                             <td className="px-3 py-3 text-center">
-                              {d.randomPoolEnrolled
+                              {d.randomPoolIncluded
                                 ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" />
                                 : <X className="w-4 h-4 text-slate-300 mx-auto" />}
                             </td>
@@ -707,7 +704,7 @@ export default function DotHub() {
                           <tr key={e.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-equip-${e.id}`}>
                             <td className="px-4 py-3 font-medium text-primary">{e.unitNumber}</td>
                             <td className="px-4 py-3">
-                              <div className="capitalize">{e.equipmentType?.replace("_", " ")}</div>
+                              <div className="capitalize">{e.type?.replace("_", " ")}</div>
                               <div className="text-xs text-muted-foreground">{[e.year, e.make, e.model].filter(Boolean).join(" ")}</div>
                             </td>
                             <td className="px-4 py-3 text-xs">
@@ -720,7 +717,7 @@ export default function DotHub() {
                                 {e.lastAnnualInspectionDate && <div className="text-xs text-muted-foreground">{formatDate(e.lastAnnualInspectionDate)}</div>}
                               </div>
                             </td>
-                            <td className="px-3 py-3 text-center text-xs">{formatDate(e.nextPmDueDate)}</td>
+                            <td className="px-3 py-3 text-center text-xs">{formatDate(e.lastPmDate)}</td>
                             <td className="px-3 py-3 text-center">
                               {e.isActive
                                 ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">Active</Badge>
@@ -822,7 +819,6 @@ export default function DotHub() {
                         <tr key={d.id} className="hover:bg-muted/20 transition-colors opacity-75" data-testid={`row-archive-${d.id}`}>
                           <td className="px-4 py-3">
                             <div className="font-medium text-primary">{d.firstName} {d.lastName}</div>
-                            {d.employeeId && <div className="text-xs text-muted-foreground">{d.employeeId}</div>}
                           </td>
                           <td className="px-4 py-3">
                             <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-xs capitalize">{d.status}</Badge>

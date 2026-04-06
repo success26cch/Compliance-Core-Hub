@@ -5400,6 +5400,49 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
 
   // ─── DOT COMPLIANCE HUB ROUTES ────────────────────────────────────────────
 
+  // Normalizers: convert date strings → Date objects + map frontend field names to schema names
+  const toDateOrNull = (v: any) => (v && v !== "") ? new Date(v) : null;
+
+  const normalizeDotDriver = (body: any) => ({
+    userId: body.userId,
+    firstName: body.firstName,
+    lastName: body.lastName,
+    dateOfBirth: body.dateOfBirth || null,        // stored as text (FMCSA MM/DD/YYYY)
+    cdlNumber: body.cdlNumber || null,
+    cdlState: body.cdlState || null,
+    cdlExpiry: toDateOrNull(body.cdlExpiry),
+    hireDate: toDateOrNull(body.hireDate),
+    terminationDate: toDateOrNull(body.terminationDate),
+    status: body.status || "active",
+    lastClearinghouseQueryDate: toDateOrNull(body.lastClearinghouseQueryDate),
+    clearinghouseConsentOnFile: !!body.clearinghouseConsentOnFile,
+    queryType: body.queryType || "limited",
+    lastMvrDate: toDateOrNull(body.lastMvrDate),
+    medicalCardExpiry: toDateOrNull(body.medicalCardExpiry),
+    randomPoolIncluded: body.randomPoolEnrolled !== undefined
+      ? !!body.randomPoolEnrolled
+      : body.randomPoolIncluded !== undefined
+        ? !!body.randomPoolIncluded
+        : true,
+    notes: body.notes || null,
+  });
+
+  const normalizeDotEquipment = (body: any) => ({
+    userId: body.userId,
+    unitNumber: body.unitNumber,
+    type: body.equipmentType || body.type || "truck",  // frontend sends equipmentType
+    make: body.make || null,
+    model: body.model || null,
+    year: body.year ? String(body.year) : null,         // schema stores as text
+    vin: body.vin || null,
+    licensePlate: body.licensePlate || null,
+    licenseState: body.licenseState || null,
+    lastAnnualInspectionDate: toDateOrNull(body.lastAnnualInspectionDate),
+    lastPmDate: toDateOrNull(body.nextPmDueDate || body.lastPmDate),  // frontend sends nextPmDueDate
+    notes: body.notes || null,
+    isActive: body.isActive !== undefined ? !!body.isActive : true,
+  });
+
   // Drivers
   app.get("/api/dot/drivers", async (req: any, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
@@ -5414,7 +5457,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = req.user.claims.sub;
-      const driver = await storage.createDotDriver({ ...req.body, userId });
+      const driver = await storage.createDotDriver(normalizeDotDriver({ ...req.body, userId }));
       res.status(201).json(driver);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -5423,7 +5466,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = req.user.claims.sub;
-      const updated = await storage.updateDotDriver(parseInt(req.params.id), userId, req.body);
+      const updated = await storage.updateDotDriver(parseInt(req.params.id), userId, normalizeDotDriver(req.body));
       if (!updated) return res.status(404).json({ message: "Driver not found" });
       res.json(updated);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -5490,7 +5533,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = req.user.claims.sub;
-      const equip = await storage.createDotEquipment({ ...req.body, userId });
+      const equip = await storage.createDotEquipment(normalizeDotEquipment({ ...req.body, userId }));
       res.status(201).json(equip);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -5499,7 +5542,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = req.user.claims.sub;
-      const updated = await storage.updateDotEquipment(parseInt(req.params.id), userId, req.body);
+      const updated = await storage.updateDotEquipment(parseInt(req.params.id), userId, normalizeDotEquipment(req.body));
       if (!updated) return res.status(404).json({ message: "Equipment not found" });
       res.json(updated);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
