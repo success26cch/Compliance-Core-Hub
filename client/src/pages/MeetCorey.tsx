@@ -8,7 +8,7 @@ import {
   Users, Zap, MessageSquare, Shield, Lock, Brain,
   Target, Award, Lightbulb, BarChart3, FileCheck,
   Mic, Download, Layers, ArrowLeft, Sparkles,
-  ChevronDown, HardHat, Siren, Scale
+  ChevronDown, HardHat, Siren, Scale, Leaf
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -75,6 +75,13 @@ const CAPABILITIES = [
     description: "Not sure if an incident is recordable? Corey walks you through the 29 CFR 1904 decision tree and explains exactly why or why not.",
     color: "text-pink-400",
     bg: "bg-pink-500/10",
+  },
+  {
+    icon: Leaf,
+    title: "EPA Environmental Compliance (40 CFR)",
+    description: "Hazardous waste generator requirements (RCRA), SPCC oil spill plans, EPCRA Tier II and TRI reporting, industrial stormwater permits, Clean Air Act, TSCA asbestos and lead, RMP, CERCLA reportable quantities — all cited to the exact 40 CFR part and section.",
+    color: "text-green-400",
+    bg: "bg-green-500/10",
   },
 ];
 
@@ -154,13 +161,26 @@ const REGULATIONS_COVERED = [
   "Hearing Conservation (29 CFR 1910.95)",
   "NFPA 70E Electrical Safety",
   "ANSI/ASSE Z359 Fall Protection",
+  "Hazardous Waste — RCRA (40 CFR Parts 261–270)",
+  "Spill Prevention — SPCC (40 CFR Part 112)",
+  "Emergency Planning — EPCRA (40 CFR Parts 355, 370, 372)",
+  "Toxic Release Inventory — TRI / Form R (40 CFR Part 372)",
+  "Risk Management Program — RMP (40 CFR Part 68)",
+  "Industrial Stormwater — NPDES/MSGP (40 CFR Part 122)",
+  "Clean Air Act — NSPS (40 CFR Part 60)",
+  "Clean Air Act — NESHAPs/MACT (40 CFR Parts 61 & 63)",
+  "Title V Air Operating Permits (40 CFR Part 70)",
+  "TSCA Asbestos — AHERA (40 CFR Part 763)",
+  "Lead Renovation & Repair — RRP (40 CFR Part 745)",
+  "Refrigerant Management — Section 608 (40 CFR Part 82)",
+  "CERCLA Reportable Quantities (40 CFR Part 302)",
 ];
 
 const TESTIMONIAL_STATS = [
   { value: "29 CFR", label: "Built from the DNA of federal regulations" },
   { value: "42", label: "Ready-to-generate document templates" },
   { value: "24/7", label: "Available whenever you need compliance guidance" },
-  { value: "18+", label: "Major regulatory standards covered" },
+  { value: "30+", label: "Major regulatory standards covered" },
 ];
 
 export default function MeetCorey() {

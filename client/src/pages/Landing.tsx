@@ -1509,7 +1509,7 @@ export default function Landing() {
             <FeatureCard 
               imageSrc={coreyImg}
               title="Meet Corey — Your AI Compliance Expert"
-              description="Corey is the only AI built for Occ-Health. Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, and more — citing specific OSHA 1904 and DOT FMCSA codes. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
+              description="Corey is the only AI built for Occ-Health and environmental compliance. Get instant, expert answers on OSHA recordability, DOT physicals, drug testing, EPA hazardous waste, spill prevention, Tier II reporting, and more — all cited to the exact CFR section. Includes our interactive OSHA 300 'Log it or Not' decision tool so you never second-guess a recordability call again."
             />
             <FeatureCard 
               imageSrc={acsiLogo}
@@ -1847,6 +1847,7 @@ export default function Landing() {
                 "Compliance Checklist Library (downloadable PDFs)",
                 "Interactive Audit Prep Tools with progress tracking",
                 "DOT physical & drug testing guidance",
+                "EPA / 40 CFR environmental compliance guidance",
                 "Workers' comp documentation help",
                 "Custom compliance reports",
                 "Priority response times",
@@ -2145,7 +2146,7 @@ export default function Landing() {
                 Is the AI guidance legally binding?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                CCHUB provides educational guidance based on OSHA 29 CFR 1904 and DOT 49 CFR Part 40. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal matters, please consult with a qualified employment attorney. ISO management system guidance is provided separately through the ACSI ISO Manager.
+                CCHUB provides educational guidance based on OSHA 29 CFR, DOT 49 CFR, and EPA 40 CFR. While our AI cites specific regulations and provides expert-level interpretations, the final compliance decisions remain with your organization. For complex legal or environmental matters, please consult with a qualified attorney or licensed environmental professional. ISO management system guidance is provided separately through the ACSI ISO Manager.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2" className="bg-muted/30 rounded-lg border border-border/50 px-6">
