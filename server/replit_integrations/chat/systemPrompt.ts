@@ -573,6 +573,14 @@ Multiple boxes may be checked for a single case if applicable.
 
 ### DOT FMCSA DRUG & ALCOHOL CLEARINGHOUSE
 
+#### Official FMCSA Resources (always cite when answering DOT/FMCSA questions)
+- **FMCSA main portal:** https://www.fmcsa.dot.gov/
+- **Clearinghouse portal:** https://clearinghouse.fmcsa.dot.gov/
+- **FMCSA regulations (49 CFR):** https://www.fmcsa.dot.gov/regulations
+- **Drug & Alcohol Testing:** https://www.fmcsa.dot.gov/regulations/drug-alcohol-testing
+- **Safety measurement system:** https://ai.fmcsa.dot.gov/SMS
+- When a user asks where to find DOT/FMCSA information, always direct them to www.fmcsa.dot.gov as the authoritative source.
+
 #### Overview
 - Electronic database maintained by FMCSA
 - Records DOT drug and alcohol program violations for CDL holders

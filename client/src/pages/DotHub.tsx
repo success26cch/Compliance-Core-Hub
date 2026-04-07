@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Truck, Users, Download, Bell, AlertTriangle, CheckCircle2,
-  Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X
+  Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X, Printer
 } from "lucide-react";
 import { ProtectedLayout } from "@/components/Layout";
 
@@ -204,6 +204,166 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
 
   const set = (k: keyof DriverFormData, v: any) => setForm(f => ({ ...f, [k]: v }));
 
+  function printConsentForm() {
+    const driverName = [form.firstName, form.lastName].filter(Boolean).join(" ") || "________________________";
+    const cdl = form.cdlNumber || "________________________";
+    const cdlState = form.cdlState || "__________";
+    const dob = form.dateOfBirth || "________________________";
+    const hireDate = form.hireDate || "________________________";
+    const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FMCSA Clearinghouse Limited Inquiry Consent Form</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000; max-width: 760px; margin: 36px auto; padding: 0 24px; }
+    .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 18px; }
+    .header h1 { font-size: 14pt; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .header h2 { font-size: 12pt; font-weight: bold; margin-bottom: 4px; }
+    .header .subtitle { font-size: 9pt; color: #444; }
+    .authority { font-size: 9pt; color: #555; text-align: center; margin-bottom: 18px; border: 1px solid #ccc; padding: 6px 12px; background: #f9f9f9; }
+    .section-label { font-size: 9pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; color: #333; border-bottom: 1px solid #999; padding-bottom: 3px; margin: 18px 0 10px; }
+    .row { display: flex; gap: 24px; margin-bottom: 12px; }
+    .field { flex: 1; }
+    .field .lbl { font-size: 8.5pt; font-weight: bold; color: #555; margin-bottom: 3px; }
+    .field .val { border-bottom: 1px solid #000; min-height: 22px; padding: 2px 4px; font-size: 11pt; }
+    .auth-box { border: 1px solid #000; padding: 14px 16px; margin: 16px 0; background: #fff; }
+    .auth-box p { font-size: 10.5pt; line-height: 1.6; margin-bottom: 10px; }
+    .auth-box ol { margin-left: 20px; font-size: 10pt; line-height: 1.7; }
+    .auth-box ol li { margin-bottom: 4px; }
+    .sig-section { margin-top: 26px; }
+    .sig-row { display: flex; gap: 40px; margin-top: 18px; align-items: flex-end; }
+    .sig-field { flex: 1; }
+    .sig-line { border-bottom: 1px solid #000; min-height: 28px; }
+    .sig-label { font-size: 8.5pt; color: #555; margin-top: 3px; }
+    .notice { margin-top: 24px; font-size: 8.5pt; color: #555; border-top: 1px solid #ccc; padding-top: 10px; line-height: 1.5; }
+    .footer { margin-top: 18px; text-align: center; font-size: 8pt; color: #666; }
+    @media print {
+      body { margin: 18px; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>FEDERAL MOTOR CARRIER SAFETY ADMINISTRATION</h1>
+    <h2>Drug &amp; Alcohol Clearinghouse</h2>
+    <div class="subtitle">Limited Inquiry Consent &amp; Authorization Form</div>
+  </div>
+
+  <div class="authority">
+    As required by 49 CFR Part 382, Subpart G &nbsp;|&nbsp; 49 CFR § 382.701(b) &nbsp;|&nbsp; clearinghouse.fmcsa.dot.gov
+  </div>
+
+  <div class="section-label">Driver Information</div>
+  <div class="row">
+    <div class="field"><div class="lbl">Driver Full Name</div><div class="val">${driverName}</div></div>
+    <div class="field"><div class="lbl">Date of Birth</div><div class="val">${dob}</div></div>
+  </div>
+  <div class="row">
+    <div class="field"><div class="lbl">CDL / CLP Number</div><div class="val">${cdl}</div></div>
+    <div class="field"><div class="lbl">State of CDL Issuance</div><div class="val">${cdlState}</div></div>
+    <div class="field"><div class="lbl">Hire Date</div><div class="val">${hireDate}</div></div>
+  </div>
+
+  <div class="section-label">Employer Information</div>
+  <div class="row">
+    <div class="field"><div class="lbl">Employer / Company Name</div><div class="val"></div></div>
+    <div class="field"><div class="lbl">USDOT Number</div><div class="val"></div></div>
+  </div>
+  <div class="row">
+    <div class="field"><div class="lbl">Employer Address</div><div class="val"></div></div>
+    <div class="field"><div class="lbl">City, State, ZIP</div><div class="val"></div></div>
+  </div>
+
+  <div class="section-label">Authorization &amp; Consent</div>
+  <div class="auth-box">
+    <p>
+      I, the undersigned CDL/CLP holder, hereby <strong>authorize the employer identified above</strong> to conduct
+      a <strong>Limited Inquiry</strong> of the FMCSA Commercial Driver's License Drug and Alcohol Clearinghouse
+      (Clearinghouse) pursuant to 49 CFR § 382.701(b)(1) to determine whether drug or alcohol violation
+      information pertaining to me exists in the Clearinghouse.
+    </p>
+    <p>I understand and acknowledge the following:</p>
+    <ol>
+      <li>A <strong>Limited Inquiry</strong> will reveal only whether a violation record exists — it does <strong>not</strong> disclose the nature or details of any violation.</li>
+      <li>If a record is found to exist, my employer <strong>must conduct a Full Query</strong> within 24 hours and obtain my separate electronic consent through the Clearinghouse before accessing violation details.</li>
+      <li>This consent is valid for a period of <strong>twelve (12) months</strong> from the date signed below, or until withdrawn in writing, whichever occurs first.</li>
+      <li>I have the right to review any information in the Clearinghouse pertaining to me by registering at <strong>clearinghouse.fmcsa.dot.gov</strong>.</li>
+      <li>Withdrawal of this consent does not remove information already in the Clearinghouse and may affect my ability to perform safety-sensitive functions under 49 CFR Part 382.</li>
+      <li>This form will be retained in my Driver Qualification (DQ) file as required by <strong>49 CFR § 391.51</strong>.</li>
+    </ol>
+  </div>
+
+  <div class="sig-section">
+    <div class="section-label">Signatures</div>
+    <div class="sig-row">
+      <div class="sig-field">
+        <div class="sig-line"></div>
+        <div class="sig-label">Driver Signature</div>
+      </div>
+      <div class="sig-field" style="max-width:180px">
+        <div class="sig-line"></div>
+        <div class="sig-label">Date</div>
+      </div>
+    </div>
+    <div class="sig-row">
+      <div class="sig-field">
+        <div class="sig-line"></div>
+        <div class="sig-label">Driver Printed Name</div>
+      </div>
+    </div>
+    <div class="sig-row">
+      <div class="sig-field">
+        <div class="sig-line"></div>
+        <div class="sig-label">Employer Representative Signature</div>
+      </div>
+      <div class="sig-field" style="max-width:180px">
+        <div class="sig-line"></div>
+        <div class="sig-label">Date</div>
+      </div>
+    </div>
+    <div class="sig-row">
+      <div class="sig-field">
+        <div class="sig-line"></div>
+        <div class="sig-label">Employer Representative Printed Name &amp; Title</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>Retention Notice:</strong> This signed consent form must be retained in the driver's DQ file for the duration of employment and for <strong>three (3) years</strong> after the driver leaves the company,
+    in accordance with 49 CFR § 391.51. Annual re-consent is required by January 5 of each calendar year for all active CDL drivers performing safety-sensitive functions.
+    <br/><br/>
+    <strong>References:</strong> 49 CFR Part 382 (Controlled Substances and Alcohol Use and Testing) &nbsp;|&nbsp;
+    49 CFR § 382.701 (Clearinghouse) &nbsp;|&nbsp; 49 CFR § 391.51 (Driver Qualification Files) &nbsp;|&nbsp;
+    FMCSA: <strong>www.fmcsa.dot.gov</strong>
+  </div>
+
+  <div class="footer">
+    Form prepared by Core Compliance Hub &nbsp;|&nbsp; corecompliancehub.com &nbsp;|&nbsp; Generated: ${today}
+  </div>
+
+  <div class="no-print" style="margin-top:24px; text-align:center;">
+    <button onclick="window.print()" style="padding:10px 28px; font-size:12pt; cursor:pointer; background:#e85c0d; color:#fff; border:none; border-radius:6px;">
+      Print / Save as PDF
+    </button>
+    &nbsp;
+    <button onclick="window.close()" style="padding:10px 20px; font-size:12pt; cursor:pointer; background:#666; color:#fff; border:none; border-radius:6px;">
+      Close
+    </button>
+  </div>
+</body>
+</html>`;
+    const w = window.open("", "_blank", "width=820,height=900,scrollbars=yes");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+    }
+  }
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = { ...form };
@@ -327,7 +487,7 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-2 flex gap-6">
+          <div className="col-span-2 flex flex-wrap items-center gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.clearinghouseConsentOnFile} onChange={e => set("clearinghouseConsentOnFile", e.target.checked)} data-testid="check-driver-consent" />
               <span className="text-sm">Consent Form on File</span>
@@ -336,6 +496,20 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
               <input type="checkbox" checked={form.randomPoolEnrolled} onChange={e => set("randomPoolEnrolled", e.target.checked)} data-testid="check-driver-random" />
               <span className="text-sm">Random Pool Enrolled</span>
             </label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-auto flex items-center gap-1.5 text-xs border-accent/40 text-accent hover:bg-accent/5"
+              onClick={printConsentForm}
+              data-testid="button-print-consent"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              Generate Consent Form
+            </Button>
+          </div>
+          <div className="col-span-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
+            <strong>Note:</strong> Annual Limited Inquiry consent is required under 49 CFR § 382.701(b). Print, have the driver sign, and keep the original in their DQ file. Re-consent is required by January 5 each calendar year.
           </div>
           <div className="col-span-2">
             <Label>Notes</Label>
