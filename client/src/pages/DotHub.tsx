@@ -123,8 +123,9 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 
 // ─── Metric Card ─────────────────────────────────────────────────────────────
 
-function MetricCard({ icon: Icon, label, value, sub, variant }: {
-  icon: any; label: string; value: number | string; sub?: string; variant: "red" | "yellow" | "green" | "neutral";
+function MetricCard({ icon: Icon, label, value, sub, variant, onClick }: {
+  icon: any; label: string; value: number | string; sub?: string;
+  variant: "red" | "yellow" | "green" | "neutral"; onClick?: () => void;
 }) {
   const colors = {
     red: "border-red-200 bg-red-50",
@@ -134,10 +135,17 @@ function MetricCard({ icon: Icon, label, value, sub, variant }: {
   };
   const iconColors = { red: "text-red-500", yellow: "text-yellow-500", green: "text-emerald-500", neutral: "text-primary" };
   return (
-    <div className={`rounded-xl border p-4 ${colors[variant]}`}>
+    <div
+      className={`rounded-xl border p-4 ${colors[variant]} ${onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.02] transition-all duration-150 select-none" : ""}`}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined}
+    >
       <div className="flex items-center gap-2 mb-2">
         <Icon className={`w-4 h-4 ${iconColors[variant]}`} />
         <span className="text-xs text-muted-foreground font-medium">{label}</span>
+        {onClick && <span className="ml-auto text-[10px] text-muted-foreground/60">↗</span>}
       </div>
       <div className="text-3xl font-bold text-primary">{value}</div>
       {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
@@ -232,10 +240,6 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
             <Input value={form.lastName} onChange={e => set("lastName", e.target.value)} data-testid="input-driver-last" />
           </div>
           <div>
-            <Label>Employee ID</Label>
-            <Input value={form.employeeId} onChange={e => set("employeeId", e.target.value)} data-testid="input-driver-empid" />
-          </div>
-          <div>
             <Label>Status</Label>
             <Select value={form.status} onValueChange={v => set("status", v)}>
               <SelectTrigger data-testid="select-driver-status"><SelectValue /></SelectTrigger>
@@ -245,6 +249,11 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
                 <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* CDL section */}
+          <div className="col-span-2 border-t border-border/50 pt-3 mt-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">CDL Information</p>
           </div>
           <div>
             <Label>CDL Number</Label>
@@ -274,6 +283,11 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
             <Label>CDL Expiry</Label>
             <Input type="date" value={form.cdlExpiry} onChange={e => set("cdlExpiry", e.target.value)} data-testid="input-driver-cdlexpiry" />
           </div>
+
+          {/* Employment section */}
+          <div className="col-span-2 border-t border-border/50 pt-3 mt-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Employment</p>
+          </div>
           <div>
             <Label>Date of Birth</Label>
             <Input type="date" value={form.dateOfBirth} onChange={e => set("dateOfBirth", e.target.value)} data-testid="input-driver-dob" />
@@ -286,19 +300,10 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
             <Label>Termination Date</Label>
             <Input type="date" value={form.terminationDate} onChange={e => set("terminationDate", e.target.value)} data-testid="input-driver-term" />
           </div>
-          <div>
-            <Label>Query Type</Label>
-            <Select value={form.queryType} onValueChange={v => set("queryType", v)}>
-              <SelectTrigger data-testid="select-driver-querytype"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="limited">Limited Inquiry</SelectItem>
-                <SelectItem value="full">Full Query</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Last Clearinghouse Query Date</Label>
-            <Input type="date" value={form.lastClearinghouseQueryDate} onChange={e => set("lastClearinghouseQueryDate", e.target.value)} data-testid="input-driver-chdate" />
+
+          {/* Compliance Tracking section */}
+          <div className="col-span-2 border-t border-border/50 pt-3 mt-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Compliance Tracking</p>
           </div>
           <div>
             <Label>Medical Card Expiry</Label>
@@ -307,6 +312,20 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
           <div>
             <Label>Last MVR Pull Date</Label>
             <Input type="date" value={form.lastMvrDate} onChange={e => set("lastMvrDate", e.target.value)} data-testid="input-driver-mvrdate" />
+          </div>
+          <div>
+            <Label>Last Clearinghouse Query Date</Label>
+            <Input type="date" value={form.lastClearinghouseQueryDate} onChange={e => set("lastClearinghouseQueryDate", e.target.value)} data-testid="input-driver-chdate" />
+          </div>
+          <div>
+            <Label>Clearinghouse Query Type</Label>
+            <Select value={form.queryType} onValueChange={v => set("queryType", v)}>
+              <SelectTrigger data-testid="select-driver-querytype"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="limited">Limited Inquiry</SelectItem>
+                <SelectItem value="full">Full Query</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="col-span-2 flex gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -462,6 +481,7 @@ export default function DotHub() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("drivers");
+  const [driverFilter, setDriverFilter] = useState<"all"|"ch-overdue"|"ch-warn"|"med-expired"|"mvr-overdue">("all");
   const [driverDialog, setDriverDialog] = useState<{ open: boolean; driver?: DotDriver | null }>({ open: false });
   const [equipDialog, setEquipDialog] = useState<{ open: boolean; equip?: DotEquipment | null }>({ open: false });
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "driver" | "equip"; id: number } | null>(null);
@@ -543,6 +563,23 @@ export default function DotHub() {
   const activeDrivers = drivers.filter(d => d.status === "active");
   const nonActiveDrivers = drivers.filter(d => d.status !== "active");
 
+  const filteredDrivers = driverFilter === "all"       ? activeDrivers
+    : driverFilter === "ch-overdue"  ? activeDrivers.filter(d => chStatus(d) === "red")
+    : driverFilter === "ch-warn"     ? activeDrivers.filter(d => chStatus(d) === "yellow")
+    : driverFilter === "med-expired" ? activeDrivers.filter(d => {
+        const days = daysUntil(d.medicalCardExpiry);
+        return days !== null && days < 0;
+      })
+    : driverFilter === "mvr-overdue" ? activeDrivers.filter(d => mvrStatus(d) === "red")
+    : activeDrivers;
+
+  const filterLabels: Record<string, string> = {
+    "ch-overdue": "CH Query Overdue",
+    "ch-warn": "CH Query Due Soon",
+    "med-expired": "Med Cards Expired",
+    "mvr-overdue": "MVR Overdue",
+  };
+
   // ── Urgency calculation for action banner ──────────────────────────────────
   const overdueChDrivers  = activeDrivers.filter(d => chStatus(d) === "red");
   const warnChDrivers     = activeDrivers.filter(d => chStatus(d) === "yellow");
@@ -603,12 +640,23 @@ export default function DotHub() {
 
         {/* Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <MetricCard icon={Users} label="Active Drivers" value={metrics?.totalDrivers ?? "—"} variant="neutral" />
-          <MetricCard icon={Clock} label="CH Query Overdue" value={metrics?.clearinghouse.overdue ?? "—"} sub="Annual query required" variant={metrics?.clearinghouse.overdue ? "red" : "green"} />
-          <MetricCard icon={Bell} label="CH Query Due Soon" value={metrics?.clearinghouse.warning ?? "—"} sub="Within 30 days" variant={metrics?.clearinghouse.warning ? "yellow" : "green"} />
-          <MetricCard icon={Car} label="Med Cards Expired" value={metrics?.medicalCards.overdue ?? "—"} sub="Immediate action" variant={metrics?.medicalCards.overdue ? "red" : "green"} />
-          <MetricCard icon={FileText} label="MVR Overdue" value={metrics?.mvr.overdue ?? "—"} sub="365-day limit" variant={metrics?.mvr.overdue ? "red" : "green"} />
-          <MetricCard icon={Truck} label="Equipment Overdue" value={metrics?.equipment.overdue ?? "—"} sub="Annual inspection" variant={metrics?.equipment.overdue ? "red" : "green"} />
+          <MetricCard icon={Users} label="Active Drivers" value={metrics?.totalDrivers ?? "—"} variant="neutral"
+            onClick={() => { setActiveTab("drivers"); setDriverFilter("all"); }} />
+          <MetricCard icon={Clock} label="CH Query Overdue" value={metrics?.clearinghouse.overdue ?? "—"} sub="Annual query required"
+            variant={metrics?.clearinghouse.overdue ? "red" : "green"}
+            onClick={() => { setActiveTab("drivers"); setDriverFilter("ch-overdue"); }} />
+          <MetricCard icon={Bell} label="CH Query Due Soon" value={metrics?.clearinghouse.warning ?? "—"} sub="Within 30 days"
+            variant={metrics?.clearinghouse.warning ? "yellow" : "green"}
+            onClick={() => { setActiveTab("drivers"); setDriverFilter("ch-warn"); }} />
+          <MetricCard icon={Car} label="Med Cards Expired" value={metrics?.medicalCards.overdue ?? "—"} sub="Immediate action"
+            variant={metrics?.medicalCards.overdue ? "red" : "green"}
+            onClick={() => { setActiveTab("drivers"); setDriverFilter("med-expired"); }} />
+          <MetricCard icon={FileText} label="MVR Overdue" value={metrics?.mvr.overdue ?? "—"} sub="365-day limit"
+            variant={metrics?.mvr.overdue ? "red" : "green"}
+            onClick={() => { setActiveTab("drivers"); setDriverFilter("mvr-overdue"); }} />
+          <MetricCard icon={Truck} label="Equipment Overdue" value={metrics?.equipment.overdue ?? "—"} sub="Annual inspection"
+            variant={metrics?.equipment.overdue ? "red" : "green"}
+            onClick={() => { setActiveTab("equipment"); }} />
         </div>
 
         {/* No consent banner */}
@@ -714,7 +762,7 @@ export default function DotHub() {
         )}
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== "drivers") setDriverFilter("all"); }}>
           <TabsList className="mb-6">
             <TabsTrigger value="drivers" data-testid="tab-dot-drivers">
               <Users className="w-4 h-4 mr-1.5" />
@@ -748,6 +796,21 @@ export default function DotHub() {
               </div>
             ) : (
               <div className="bg-white border border-border/60 rounded-xl overflow-hidden">
+                {/* Active filter badge */}
+                {driverFilter !== "all" && (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-accent/5 border-b border-accent/20">
+                    <span className="text-xs text-muted-foreground">Filtered:</span>
+                    <span className="inline-flex items-center gap-1.5 bg-accent/10 text-accent text-xs font-medium px-2.5 py-1 rounded-full">
+                      {filterLabels[driverFilter]}
+                      <button onClick={() => setDriverFilter("all")} className="ml-1 hover:text-accent/70" data-testid="button-clear-filter">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {filteredDrivers.length} of {activeDrivers.length} driver{activeDrivers.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                )}
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/40 border-b border-border/60">
@@ -763,7 +826,14 @@ export default function DotHub() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
-                      {activeDrivers.map(d => {
+                      {filteredDrivers.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="text-center py-8 text-muted-foreground text-sm">
+                            No drivers match this filter.
+                            <button onClick={() => setDriverFilter("all")} className="ml-2 text-accent underline text-sm">Show all</button>
+                          </td>
+                        </tr>
+                      ) : filteredDrivers.map(d => {
                         const ch = chStatus(d);
                         const med = medStatus(d);
                         const mvr = mvrStatus(d);
