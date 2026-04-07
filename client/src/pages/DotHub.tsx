@@ -1458,37 +1458,35 @@ export default function DotHub() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== "drivers") setDriverFilter("all"); }}>
-          <div className="overflow-x-auto mb-6">
-            <TabsList className="flex w-max gap-0.5 min-w-full">
-              <TabsTrigger value="drivers" data-testid="tab-dot-drivers" className="text-xs whitespace-nowrap">
-                <Users className="w-3.5 h-3.5 mr-1" />Drivers ({activeDrivers.length})
-              </TabsTrigger>
-              <TabsTrigger value="equipment" data-testid="tab-dot-equipment" className="text-xs whitespace-nowrap">
-                <Truck className="w-3.5 h-3.5 mr-1" />Equipment ({equipment.length})
-              </TabsTrigger>
-              <TabsTrigger value="clearinghouse" data-testid="tab-dot-clearinghouse" className="text-xs whitespace-nowrap">
-                <Download className="w-3.5 h-3.5 mr-1" />Clearinghouse
-              </TabsTrigger>
-              <TabsTrigger value="random_testing" data-testid="tab-dot-random" className="text-xs whitespace-nowrap">
-                <RefreshCcw className="w-3.5 h-3.5 mr-1" />Random Testing
-              </TabsTrigger>
-              <TabsTrigger value="accidents" data-testid="tab-dot-accidents" className="text-xs whitespace-nowrap">
-                <AlertTriangle className="w-3.5 h-3.5 mr-1" />Accidents ({accidents.length})
-              </TabsTrigger>
-              <TabsTrigger value="inspections" data-testid="tab-dot-inspections" className="text-xs whitespace-nowrap">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />Inspections ({inspections.length})
-              </TabsTrigger>
-              <TabsTrigger value="dvir" data-testid="tab-dot-dvir" className="text-xs whitespace-nowrap">
-                <Car className="w-3.5 h-3.5 mr-1" />DVIR ({dvirLogs.length})
-              </TabsTrigger>
-              <TabsTrigger value="calendar" data-testid="tab-dot-calendar" className="text-xs whitespace-nowrap">
-                <Clock className="w-3.5 h-3.5 mr-1" />Compliance Calendar
-              </TabsTrigger>
-              <TabsTrigger value="archive" data-testid="tab-dot-archive" className="text-xs whitespace-nowrap">
-                <FileText className="w-3.5 h-3.5 mr-1" />Archive ({nonActiveDrivers.length})
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="flex flex-wrap h-auto gap-1 p-1.5 mb-6 bg-slate-100 rounded-xl">
+            <TabsTrigger value="drivers" data-testid="tab-dot-drivers" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Users className="w-3.5 h-3.5" />Drivers ({activeDrivers.length})
+            </TabsTrigger>
+            <TabsTrigger value="equipment" data-testid="tab-dot-equipment" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Truck className="w-3.5 h-3.5" />Equipment ({equipment.length})
+            </TabsTrigger>
+            <TabsTrigger value="clearinghouse" data-testid="tab-dot-clearinghouse" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Download className="w-3.5 h-3.5" />Clearinghouse
+            </TabsTrigger>
+            <TabsTrigger value="random_testing" data-testid="tab-dot-random" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <RefreshCcw className="w-3.5 h-3.5" />Random Testing
+            </TabsTrigger>
+            <TabsTrigger value="accidents" data-testid="tab-dot-accidents" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <AlertTriangle className="w-3.5 h-3.5" />Accidents ({accidents.length})
+            </TabsTrigger>
+            <TabsTrigger value="inspections" data-testid="tab-dot-inspections" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <CheckCircle2 className="w-3.5 h-3.5" />Inspections ({inspections.length})
+            </TabsTrigger>
+            <TabsTrigger value="dvir" data-testid="tab-dot-dvir" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Car className="w-3.5 h-3.5" />DVIR ({dvirLogs.length})
+            </TabsTrigger>
+            <TabsTrigger value="calendar" data-testid="tab-dot-calendar" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Clock className="w-3.5 h-3.5" />Cal. Deadlines
+            </TabsTrigger>
+            <TabsTrigger value="archive" data-testid="tab-dot-archive" className="text-xs flex items-center gap-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <FileText className="w-3.5 h-3.5" />Archive ({nonActiveDrivers.length})
+            </TabsTrigger>
+          </TabsList>
 
           {/* ── Drivers Tab ─────────────────────────────────────────────────── */}
           <TabsContent value="drivers">

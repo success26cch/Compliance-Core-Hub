@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle, Check, BarChart3, Ambulance, Bell, Globe, Play } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle, Check, BarChart3, Ambulance, Bell, Globe, Play, Truck } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import jsPDF from "jspdf";
@@ -642,6 +642,7 @@ export default function Landing() {
             <Link href="/about" className="px-3 py-2 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0 animate-pulse" data-testid="nav-about">About</Link>
             <Link href="/meet-corey" className="px-3 py-2 text-sm font-bold bg-blue-500 text-white rounded-md hover:bg-blue-400 transition-colors shrink-0 animate-pulse shadow-lg shadow-blue-500/50" data-testid="nav-meet-corey">Meet Corey</Link>
             <Link href="/employer-dashboard" className="px-3 py-2 text-sm font-bold bg-[#8B0000] text-white rounded-md hover:bg-[#a00000] transition-colors shrink-0 animate-pulse shadow-lg shadow-red-900/60" data-testid="nav-employer-dashboard">Employer Dashboard</Link>
+            <Link href="/dot-compliance-hub" className="px-3 py-2 text-sm font-bold bg-green-600 text-white rounded-md hover:bg-green-500 transition-colors shrink-0 animate-pulse shadow-lg shadow-green-600/50" data-testid="nav-dot-hub-featured">DOT Fleet Hub</Link>
             <Link href="/meet-isa" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
             <Link href="/meet-iso-manager" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
             <Link href="/watch-demo" className="px-3 py-2 text-sm font-bold text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0 flex items-center gap-1" data-testid="nav-watch-demo"><Play className="w-3 h-3" />Watch Demo</Link>
@@ -651,7 +652,6 @@ export default function Landing() {
             <a href="#courses" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-training">Training</a>
             <Link href="/mentorship" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-mentorship">Mentorship</Link>
             <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-brandnswag">BrandNSwag</a>
-            <Link href="/dot-compliance-hub" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-dot-hub">DOT Compliance Hub</Link>
             <Link href="/bma" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Bilingual Med Assist</Link>
             <a href="#faq" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
           </div>
@@ -1148,148 +1148,122 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Meet Isa — ACSI ISO Manager Spotlight */}
-      <section data-testid="section-meet-isa" className="relative overflow-hidden border-t-4 border-accent py-16">
-        {/* Warm amber gradient background — distinctly different from the navy BMA section */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,16%)] via-[hsl(20,50%,10%)] to-[hsl(222,47%,10%)]" />
-        {/* Accent glow at top center */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-accent/10 blur-3xl rounded-full pointer-events-none" />
-        {/* Bottom separator line */}
-        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+      {/* Is This Recordable? Decision Tree */}
+      <RecordabilityDecisionTree />
 
-        <div className="relative max-w-5xl mx-auto px-4">
+      {/* DOT Fleet Compliance Command Center */}
+      <section data-testid="section-dot-hub" className="relative overflow-hidden border-t-4 border-green-500 py-16">
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,8%)] via-[hsl(140,30%,8%)] to-[hsl(222,47%,11%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-48 bg-green-500/10 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute bottom-right-0 w-80 h-80 rounded-full bg-green-500/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
 
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-bold uppercase tracking-widest mb-5">
-              <Sparkles className="w-3 h-3" />
-              ACSI ISO Management Platform
-            </div>
-            <div className="flex justify-center mb-5">
-              <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
-                <img src={acsiLogo} alt="ACSI" className="w-16 h-16 object-contain" />
-              </div>
+        <div className="relative max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-400 text-xs font-bold uppercase tracking-widest mb-5">
+              <Truck className="w-3 h-3" />
+              FMCSA DOT Fleet Compliance
             </div>
             <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
-              Meet <span className="text-accent">Isa</span> &amp; the ACSI ISO Manager
+              Your Fleet's <span className="text-green-400">Compliance Command Center</span>
             </h2>
-            <p className="text-sm text-white/40 font-medium mb-4 tracking-wide">
-              ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
-            </p>
             <p className="text-base text-white/60 max-w-2xl mx-auto leading-relaxed mb-7">
-              Isa is ACSI's Lead ISO Auditor AI — built for gap analysis, audit readiness, and management system guidance. The ISO Manager gives you the full platform: Isa AI, document generation, a secure vault, and KPI tracking.
+              Everything FMCSA requires — in one dashboard. Track Clearinghouse queries, random drug &amp; alcohol testing rates, accident registers, roadside inspections, DVIR logs, and every driver's DQ file. Never miss a deadline.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Link href="/meet-isa">
-                <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-6" data-testid="button-talk-to-isa">
-                  Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
+              <Link href="/dot-compliance-hub">
+                <Button className="bg-green-600 hover:bg-green-500 text-white font-bold px-6 gap-2" data-testid="button-dot-hub-landing-cta">
+                  Explore DOT Fleet Hub <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <Link href="/iso-manager">
-                <Button variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-bold px-6" data-testid="button-iso-manager-plans">
-                  ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
+              <Link href="/get-started">
+                <Button variant="outline" className="border-green-500/50 text-green-400 hover:bg-green-500/10 font-bold px-6" data-testid="button-dot-see-pricing">
+                  See Pricing
                 </Button>
               </Link>
             </div>
           </div>
 
-          {/* 3-column feature highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-              <Sparkles className="w-5 h-5 text-accent mb-3" />
-              <p className="font-bold text-white text-sm mb-1.5">Isa AI Guidance</p>
-              <p className="text-xs text-white/40 leading-relaxed">Clause-by-clause gap analysis, internal audit checklists, and corrective action guidance across 7 major standards.</p>
+          {/* Dashboard mockup */}
+          <div className="rounded-2xl overflow-hidden border border-white/10 max-w-5xl mx-auto" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)" }}>
+            <div className="bg-slate-800 px-4 py-3 flex items-center gap-3">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-green-400" />
+              </div>
+              <div className="flex-1 bg-slate-700 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
+                app.corecompliancehub.com/dot-hub
+              </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-              <FileText className="w-5 h-5 text-accent mb-3" />
-              <p className="font-bold text-white text-sm mb-1.5">Document Generation</p>
-              <p className="text-xs text-white/40 leading-relaxed">AI-powered quality manuals, procedures, and an audit-ready document library built to your management system.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-              <Shield className="w-5 h-5 text-accent mb-3" />
-              <p className="font-bold text-white text-sm mb-1.5">Secure Vault &amp; Tracking</p>
-              <p className="text-xs text-white/40 leading-relaxed">Version-controlled document storage with audit trail, KPI tracking, and evidence management for certification readiness.</p>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* Spanish Bilingual Medical Assistant — Teaser Card */}
-      <section className="relative overflow-hidden py-16">
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,11%)] via-[hsl(222,47%,15%)] to-[hsl(222,47%,8%)]" />
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full" style={{ background: "radial-gradient(circle, hsla(24,95%,53%,0.08), transparent 70%)" }} />
-
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <Badge className="bg-accent/20 text-accent border border-accent/30 text-sm px-3 py-1" data-testid="badge-bma-teaser">
-                <Stethoscope className="w-4 h-4 mr-2" />
-                For Occupational Health Clinics
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-display font-black text-white leading-tight" data-testid="text-bma-teaser-title">
-                Because Your Occupational Health Employees Speak Spanish.<br />
-                <span style={{ color: "#38bdf8" }}>And So Do Your Patients.</span>
-              </h2>
-              <p className="text-white/60 text-lg leading-relaxed">
-                The CCHUB Spanish Bilingual Medical Assistant gives your MAs instant Spanish translation, one-tap clinical commands, and printable bilingual documentation — no interpreter needed.
-              </p>
-              <ul className="space-y-3">
-                {[
-                  "Real-time bidirectional Spanish translation",
-                  "One-tap clinical commands spoken in Spanish",
-                  "Interactive body map for injury reporting",
-                  "Printable bilingual visit summaries"
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-white/70 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                    {item}
-                  </li>
+            <div className="bg-[#0d1a2e] flex" style={{ minHeight: 380 }}>
+              <div className="w-40 bg-[#091422] flex-shrink-0 py-4 px-3 flex flex-col gap-1 border-r border-white/5">
+                <div className="text-white/30 text-xs font-bold uppercase tracking-widest px-2 mb-2">DOT HUB</div>
+                {["Drivers", "Equipment", "Clearinghouse", "Random Testing", "Accidents", "Inspections", "DVIR Logs", "Cal. Deadlines"].map((label, i) => (
+                  <div key={label} className={`px-2 py-1.5 rounded-md text-xs font-medium ${i === 0 ? "bg-green-600 text-white" : "text-white/40 hover:text-white/60"}`}>
+                    {label}
+                  </div>
                 ))}
-              </ul>
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Link href="/bma">
-                  <Button className="bg-accent hover:bg-accent/90 text-white font-bold gap-2" data-testid="button-bma-teaser-demo">
-                    See It in Action <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
               </div>
-            </div>
-            <div className="hidden md:flex flex-col items-center justify-center">
-              <div className="w-full max-w-sm bg-white/5 rounded-2xl border border-white/10 p-8 text-center space-y-5 backdrop-blur-sm">
-                <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto">
-                  <Mic className="w-8 h-8 text-accent" />
+              <div className="flex-1 p-5 overflow-hidden">
+                <div className="grid grid-cols-4 gap-3 mb-4">
+                  {[
+                    { label: "Active Drivers", value: "24", sub: "18 in random pool", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
+                    { label: "Clearinghouse", value: "2", sub: "queries overdue", color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
+                    { label: "Drug Test Rate", value: "62%", sub: "✓ Meets 50% req.", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
+                    { label: "Med Cards", value: "3", sub: "expiring in 60d", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
+                  ].map(({ label, value, sub, color, bg }) => (
+                    <div key={label} className={`rounded-lg border p-3 ${bg}`}>
+                      <p className="text-xs text-white/40 mb-1">{label}</p>
+                      <p className={`text-2xl font-black ${color}`}>{value}</p>
+                      <p className="text-xs text-white/30 mt-0.5">{sub}</p>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-white font-bold text-lg">Bidirectional Translation</p>
-                <div className="space-y-3">
-                  <div className="bg-white/5 rounded-lg p-3 text-left">
-                    <p className="text-xs text-white/40 mb-1">Provider speaks English:</p>
-                    <p className="text-white text-sm font-medium">"Take a deep breath and hold it."</p>
+                <div className="bg-white/[0.03] rounded-lg border border-white/10 p-3">
+                  <p className="text-xs font-bold text-white/50 mb-2 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" /> Driver Roster — Compliance Status
+                  </p>
+                  <div className="space-y-1.5">
+                    {[
+                      { name: "Michael Torres", ch: "green", med: "green", mvr: "green" },
+                      { name: "Sandra Kim", ch: "red", med: "yellow", mvr: "green" },
+                      { name: "James Rivera", ch: "green", med: "green", mvr: "yellow" },
+                      { name: "Patricia Nguyen", ch: "green", med: "green", mvr: "green" },
+                    ].map(({ name, ch, med, mvr }) => (
+                      <div key={name} className="flex items-center gap-2 text-xs py-1 border-b border-white/5 last:border-0">
+                        <span className="flex-1 font-medium text-white/80">{name}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ch === "green" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>CH</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${med === "green" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>Med</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${mvr === "green" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>MVR</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-center">
-                    <ArrowRight className="w-4 h-4 text-accent rotate-90" />
-                  </div>
-                  <div className="bg-accent/10 rounded-lg p-3 text-left border border-accent/20">
-                    <p className="text-xs text-accent/60 mb-1">Patient hears Spanish:</p>
-                    <p className="text-accent text-sm font-medium">"Respire profundo y manténgalo."</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-center gap-2 text-white/30 text-xs">
-                  <Volume2 className="w-3 h-3" />
-                  <span>Audio plays automatically</span>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Feature pills */}
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            {[
+              "FMCSA Clearinghouse Tracking",
+              "Drug & Alcohol Random Testing",
+              "DOT Accident Register",
+              "Roadside Inspection Log",
+              "DVIR Management",
+              "Compliance Calendar",
+              "DQ File Checklist (49 CFR 391)",
+              "Clearinghouse Bulk Export CSV",
+            ].map(cap => (
+              <span key={cap} className="flex items-center gap-2 bg-white/5 border border-white/10 text-white/70 text-sm font-medium px-4 py-2 rounded-full">
+                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                {cap}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
-
-      {/* Tagline bridge */}
-      <div className="py-10 bg-white border-t border-border/50 text-center">
-        <p className="text-2xl font-display font-bold text-primary" data-testid="text-tagline-bridge">
-          From question to compliant answer in seconds.
-        </p>
-      </div>
 
       {/* Employer Platform Preview */}
       <section className="py-24 bg-slate-50 border-t border-border/50 overflow-hidden">
@@ -1493,8 +1467,148 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Is This Recordable? Decision Tree */}
-      <RecordabilityDecisionTree />
+      {/* Spanish Bilingual Medical Assistant — Teaser Card */}
+      <section className="relative overflow-hidden py-16">
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,11%)] via-[hsl(222,47%,15%)] to-[hsl(222,47%,8%)]" />
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full" style={{ background: "radial-gradient(circle, hsla(24,95%,53%,0.08), transparent 70%)" }} />
+
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <Badge className="bg-accent/20 text-accent border border-accent/30 text-sm px-3 py-1" data-testid="badge-bma-teaser">
+                <Stethoscope className="w-4 h-4 mr-2" />
+                For Occupational Health Clinics
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-display font-black text-white leading-tight" data-testid="text-bma-teaser-title">
+                Because Your Occupational Health Employees Speak Spanish.<br />
+                <span style={{ color: "#38bdf8" }}>And So Do Your Patients.</span>
+              </h2>
+              <p className="text-white/60 text-lg leading-relaxed">
+                The CCHUB Spanish Bilingual Medical Assistant gives your MAs instant Spanish translation, one-tap clinical commands, and printable bilingual documentation — no interpreter needed.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "Real-time bidirectional Spanish translation",
+                  "One-tap clinical commands spoken in Spanish",
+                  "Interactive body map for injury reporting",
+                  "Printable bilingual visit summaries"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-white/70 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Link href="/bma">
+                  <Button className="bg-accent hover:bg-accent/90 text-white font-bold gap-2" data-testid="button-bma-teaser-demo">
+                    See It in Action <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:flex flex-col items-center justify-center">
+              <div className="w-full max-w-sm bg-white/5 rounded-2xl border border-white/10 p-8 text-center space-y-5 backdrop-blur-sm">
+                <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto">
+                  <Mic className="w-8 h-8 text-accent" />
+                </div>
+                <p className="text-white font-bold text-lg">Bidirectional Translation</p>
+                <div className="space-y-3">
+                  <div className="bg-white/5 rounded-lg p-3 text-left">
+                    <p className="text-xs text-white/40 mb-1">Provider speaks English:</p>
+                    <p className="text-white text-sm font-medium">"Take a deep breath and hold it."</p>
+                  </div>
+                  <div className="flex justify-center">
+                    <ArrowRight className="w-4 h-4 text-accent rotate-90" />
+                  </div>
+                  <div className="bg-accent/10 rounded-lg p-3 text-left border border-accent/20">
+                    <p className="text-xs text-accent/60 mb-1">Patient hears Spanish:</p>
+                    <p className="text-accent text-sm font-medium">"Respire profundo y manténgalo."</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-white/30 text-xs">
+                  <Volume2 className="w-3 h-3" />
+                  <span>Audio plays automatically</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Meet Isa — ACSI ISO Manager Spotlight */}
+      <section data-testid="section-meet-isa" className="relative overflow-hidden border-t-4 border-accent py-16">
+        {/* Warm amber gradient background — distinctly different from the navy BMA section */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,16%)] via-[hsl(20,50%,10%)] to-[hsl(222,47%,10%)]" />
+        {/* Accent glow at top center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-accent/10 blur-3xl rounded-full pointer-events-none" />
+        {/* Bottom separator line */}
+        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
+        <div className="relative max-w-5xl mx-auto px-4">
+
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-bold uppercase tracking-widest mb-5">
+              <Sparkles className="w-3 h-3" />
+              ACSI ISO Management Platform
+            </div>
+            <div className="flex justify-center mb-5">
+              <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
+                <img src={acsiLogo} alt="ACSI" className="w-16 h-16 object-contain" />
+              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
+              Meet <span className="text-accent">Isa</span> &amp; the ACSI ISO Manager
+            </h2>
+            <p className="text-sm text-white/40 font-medium mb-4 tracking-wide">
+              ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
+            </p>
+            <p className="text-base text-white/60 max-w-2xl mx-auto leading-relaxed mb-7">
+              Isa is ACSI's Lead ISO Auditor AI — built for gap analysis, audit readiness, and management system guidance. The ISO Manager gives you the full platform: Isa AI, document generation, a secure vault, and KPI tracking.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link href="/meet-isa">
+                <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-6" data-testid="button-talk-to-isa">
+                  Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+              <Link href="/iso-manager">
+                <Button variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-bold px-6" data-testid="button-iso-manager-plans">
+                  ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* 3-column feature highlights */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <Sparkles className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Isa AI Guidance</p>
+              <p className="text-xs text-white/40 leading-relaxed">Clause-by-clause gap analysis, internal audit checklists, and corrective action guidance across 7 major standards.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <FileText className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Document Generation</p>
+              <p className="text-xs text-white/40 leading-relaxed">AI-powered quality manuals, procedures, and an audit-ready document library built to your management system.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <Shield className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Secure Vault &amp; Tracking</p>
+              <p className="text-xs text-white/40 leading-relaxed">Version-controlled document storage with audit trail, KPI tracking, and evidence management for certification readiness.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* Tagline bridge */}
+      <div className="py-10 bg-white border-t border-border/50 text-center">
+        <p className="text-2xl font-display font-bold text-primary" data-testid="text-tagline-bridge">
+          From question to compliant answer in seconds.
+        </p>
+      </div>
 
       {/* Features Grid */}
       <section id="features" className="py-24 bg-muted/30 border-t border-border/50">
