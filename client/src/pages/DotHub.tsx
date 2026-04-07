@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -170,24 +170,29 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
   const { toast } = useToast();
   const isEdit = !!existing;
 
-  const [form, setForm] = useState<DriverFormData>(
-    existing ? {
-      firstName: existing.firstName ?? "", lastName: existing.lastName ?? "",
-      employeeId: existing.employeeId ?? "", status: existing.status ?? "active",
-      cdlNumber: existing.cdlNumber ?? "", cdlState: existing.cdlState ?? "",
-      cdlClass: existing.cdlClass ?? "A", cdlExpiry: existing.cdlExpiry?.slice(0, 10) ?? "",
-      dateOfBirth: existing.dateOfBirth?.slice(0, 10) ?? "",
-      hireDate: existing.hireDate?.slice(0, 10) ?? "",
-      terminationDate: existing.terminationDate?.slice(0, 10) ?? "",
-      clearinghouseConsentOnFile: existing.clearinghouseConsentOnFile ?? false,
-      lastClearinghouseQueryDate: existing.lastClearinghouseQueryDate?.slice(0, 10) ?? "",
-      queryType: existing.queryType ?? "limited",
-      medicalCardExpiry: existing.medicalCardExpiry?.slice(0, 10) ?? "",
-      lastMvrDate: existing.lastMvrDate?.slice(0, 10) ?? "",
-      randomPoolEnrolled: existing.randomPoolIncluded ?? true,
-      notes: existing.notes ?? "",
-    } : EMPTY_DRIVER
-  );
+  const buildForm = (d?: DotDriver | null): DriverFormData => d ? {
+    firstName: d.firstName ?? "", lastName: d.lastName ?? "",
+    employeeId: "", status: d.status ?? "active",
+    cdlNumber: d.cdlNumber ?? "", cdlState: d.cdlState ?? "",
+    cdlClass: "A", cdlExpiry: d.cdlExpiry?.slice(0, 10) ?? "",
+    dateOfBirth: d.dateOfBirth?.slice(0, 10) ?? "",
+    hireDate: d.hireDate?.slice(0, 10) ?? "",
+    terminationDate: d.terminationDate?.slice(0, 10) ?? "",
+    clearinghouseConsentOnFile: d.clearinghouseConsentOnFile ?? false,
+    lastClearinghouseQueryDate: d.lastClearinghouseQueryDate?.slice(0, 10) ?? "",
+    queryType: d.queryType ?? "limited",
+    medicalCardExpiry: d.medicalCardExpiry?.slice(0, 10) ?? "",
+    lastMvrDate: d.lastMvrDate?.slice(0, 10) ?? "",
+    randomPoolEnrolled: d.randomPoolIncluded ?? true,
+    notes: d.notes ?? "",
+  } : EMPTY_DRIVER;
+
+  const [form, setForm] = useState<DriverFormData>(() => buildForm(existing));
+
+  // Reset form to clean state every time the dialog opens
+  useEffect(() => {
+    if (open) setForm(buildForm(existing));
+  }, [open]);
 
   const set = (k: keyof DriverFormData, v: any) => setForm(f => ({ ...f, [k]: v }));
 
