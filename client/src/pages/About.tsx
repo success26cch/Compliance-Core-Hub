@@ -61,6 +61,37 @@ export default function About() {
         </div>
       </section>
 
+      {/* Currency of Compliance — Featured Statement */}
+      <section className="py-16 bg-[hsl(222,47%,11%)]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-2xl overflow-hidden">
+            {/* Gradient glow border */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/30 via-accent/10 to-accent/20 blur-xl -z-10 scale-105 pointer-events-none" />
+            <div className="relative bg-[hsl(222,47%,8%)] border border-accent/30 rounded-2xl px-8 py-10 md:px-12 md:py-12 text-center shadow-2xl">
+              {/* Top accent line */}
+              <div className="w-16 h-1 bg-accent rounded-full mx-auto mb-6" />
+              <h2 className="text-2xl md:text-3xl font-black text-white mb-6 leading-tight" data-testid="text-currency-title">
+                The Currency of Compliance:<br />
+                <span className="text-accent">Reclaiming Your Greatest Asset</span>
+              </h2>
+              <div className="space-y-4 text-left max-w-3xl mx-auto">
+                <p className="text-white/80 text-base md:text-lg leading-relaxed">
+                  In the fast-paced worlds of manufacturing and transportation, time is the only commodity you can't manufacture, recruit, or buy back. Every minute your leadership team spends buried in fragmented spreadsheets, chasing expiring DOT medical cards, or manually auditing OSHA logs is a minute lost to growth, safety oversight, and innovation.
+                </p>
+                <p className="text-white/80 text-base md:text-lg leading-relaxed">
+                  At Core Compliance Hub, we recognize that "platform fatigue" — the stress of juggling disconnected systems — is a silent thief of your company's profitability. By consolidating DOT, OSHA, and HR requirements into a single, automated <strong className="text-white">Source of Truth</strong>, we don't just eliminate the risk of five-figure regulatory fines; we eliminate the administrative drag that costs your business thousands in lost productivity every year.
+                </p>
+                <p className="text-white/80 text-base md:text-lg leading-relaxed">
+                  We built CCH to put your compliance on autopilot, giving your team the freedom to stop managing paperwork and start leading your mission. <strong className="text-accent">We don't just protect your company; we give you your Friday back.</strong>
+                </p>
+              </div>
+              {/* Bottom accent line */}
+              <div className="w-16 h-1 bg-accent rounded-full mx-auto mt-8" />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 bg-card/50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
