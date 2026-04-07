@@ -706,6 +706,16 @@ export default function Landing() {
                 </Button>
               </div>
             </div>
+
+            {/* Value prop strip — directly under video */}
+            <div className="max-w-4xl mx-auto text-center px-4 pt-6 pb-2">
+              <p className="text-lg md:text-xl font-bold text-primary leading-snug">
+                One login, zero spreadsheets, and the total recovery of your most valuable commodity: <span className="text-accent">Time.</span>
+              </p>
+              <p className="text-base md:text-lg text-muted-foreground mt-2 leading-relaxed">
+                Stop managing paperwork and start leading your team — we give you back <span className="font-bold text-primary">10 hours a week</span> by putting your compliance on autopilot. Core Compliance Hub handles the clock so you can handle the business.
+              </p>
+            </div>
             
             {/* ── SaaS / Digital Product Identifier ── */}
             <div className="text-center py-3 px-4">
@@ -779,9 +789,6 @@ export default function Landing() {
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
               Welcome to the future of compliance, welcome, to<br /><span className="text-accent">Core Compliance Hub.</span>
             </h1>
-            <p className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
-              Compliance Isn't a Guessing Game,<br /><span className="text-accent">It's Your Reputation.</span>
-            </p>
             <div className="max-w-4xl mx-auto text-center">
               <div className="relative inline-block">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent/30 via-accent/10 to-accent/30 blur-xl -z-10 scale-110"></div>
