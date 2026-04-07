@@ -1142,3 +1142,103 @@ export const insertDotEquipmentSchema = createInsertSchema(dotEquipment, {
 }).omit({ id: true, createdAt: true, updatedAt: true });
 export type DotEquipment = typeof dotEquipment.$inferSelect;
 export type InsertDotEquipment = z.infer<typeof insertDotEquipmentSchema>;
+
+// ─── DOT Random Drug & Alcohol Testing Pool (49 CFR Part 382) ────────────────
+export const dotRandomTests = pgTable("dot_random_tests", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  driverId: integer("driver_id").notNull(),
+  testType: text("test_type").notNull(), // 'drug' | 'alcohol'
+  selectedDate: timestamp("selected_date").notNull(),
+  testDate: timestamp("test_date"),
+  result: text("result"), // 'negative' | 'positive' | 'refused' | 'cancelled' | 'pending'
+  collectionSite: text("collection_site"),
+  mroReviewed: boolean("mro_reviewed").default(false),
+  programYear: integer("program_year").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDotRandomTestSchema = createInsertSchema(dotRandomTests, {
+  selectedDate: dotDateOrString,
+  testDate: dotDateOrString,
+}).omit({ id: true, createdAt: true });
+export type DotRandomTest = typeof dotRandomTests.$inferSelect;
+export type InsertDotRandomTest = z.infer<typeof insertDotRandomTestSchema>;
+
+// ─── DOT Accident Register (49 CFR § 390.15) ─────────────────────────────────
+export const dotAccidents = pgTable("dot_accidents", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  driverId: integer("driver_id"),
+  accidentDate: timestamp("accident_date").notNull(),
+  city: text("city"),
+  state: text("state"),
+  fatalities: integer("fatalities").notNull().default(0),
+  injuries: integer("injuries").notNull().default(0),
+  towAway: boolean("tow_away").default(false),
+  hazmatRelease: boolean("hazmat_release").default(false),
+  vehicleUnitNumber: text("vehicle_unit_number"),
+  description: text("description"),
+  citationIssued: boolean("citation_issued").default(false),
+  preventable: text("preventable"), // 'yes' | 'no' | 'undetermined'
+  policeReportNumber: text("police_report_number"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDotAccidentSchema = createInsertSchema(dotAccidents, {
+  accidentDate: dotDateOrString,
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type DotAccident = typeof dotAccidents.$inferSelect;
+export type InsertDotAccident = z.infer<typeof insertDotAccidentSchema>;
+
+// ─── DOT Roadside Inspections / CSA Violations ───────────────────────────────
+export const dotRoadsideInspections = pgTable("dot_roadside_inspections", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  driverId: integer("driver_id"),
+  vehicleUnitNumber: text("vehicle_unit_number"),
+  inspectionDate: timestamp("inspection_date").notNull(),
+  inspectionLevel: text("inspection_level").default("I"), // I-VI
+  state: text("state"),
+  city: text("city"),
+  reportNumber: text("report_number"),
+  outOfServiceDriver: boolean("out_of_service_driver").default(false),
+  outOfServiceVehicle: boolean("out_of_service_vehicle").default(false),
+  // violations stored as JSON array: [{code, description, basic, oos}]
+  violations: jsonb("violations").$type<Array<{ code: string; description: string; basic: string; oos: boolean }>>().default([]),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDotRoadsideInspectionSchema = createInsertSchema(dotRoadsideInspections, {
+  inspectionDate: dotDateOrString,
+}).omit({ id: true, createdAt: true });
+export type DotRoadsideInspection = typeof dotRoadsideInspections.$inferSelect;
+export type InsertDotRoadsideInspection = z.infer<typeof insertDotRoadsideInspectionSchema>;
+
+// ─── DOT DVIR Log — Driver Vehicle Inspection Reports (49 CFR § 396.11) ──────
+export const dotDvirLogs = pgTable("dot_dvir_logs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  driverId: integer("driver_id"),
+  vehicleUnitNumber: text("vehicle_unit_number").notNull(),
+  inspectionDate: timestamp("inspection_date").notNull(),
+  inspectionType: text("inspection_type").notNull().default("pre_trip"), // 'pre_trip' | 'post_trip'
+  defectsFound: boolean("defects_found").default(false),
+  defectsList: jsonb("defects_list").$type<string[]>().default([]),
+  safeToOperate: boolean("safe_to_operate").default(true),
+  driverName: text("driver_name"),
+  defectsCorrected: boolean("defects_corrected").default(false),
+  correctionDate: timestamp("correction_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDotDvirLogSchema = createInsertSchema(dotDvirLogs, {
+  inspectionDate: dotDateOrString,
+  correctionDate: dotDateOrString,
+}).omit({ id: true, createdAt: true });
+export type DotDvirLog = typeof dotDvirLogs.$inferSelect;
+export type InsertDotDvirLog = z.infer<typeof insertDotDvirLogSchema>;

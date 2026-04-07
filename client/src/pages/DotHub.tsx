@@ -67,6 +67,38 @@ interface DotMetrics {
   noConsentOnFile: number;
 }
 
+interface DotRandomTest {
+  id: number; userId: string; driverId: number; testType: string;
+  selectedDate: string; testDate?: string; result?: string;
+  collectionSite?: string; mroReviewed?: boolean; programYear: number; notes?: string; createdAt?: string;
+}
+interface DotAccident {
+  id: number; userId: string; driverId?: number; accidentDate: string;
+  city?: string; state?: string; fatalities: number; injuries: number;
+  towAway?: boolean; hazmatRelease?: boolean; vehicleUnitNumber?: string;
+  description?: string; citationIssued?: boolean; preventable?: string;
+  policeReportNumber?: string; createdAt?: string;
+}
+interface DotRoadsideInspection {
+  id: number; userId: string; driverId?: number; vehicleUnitNumber?: string;
+  inspectionDate: string; inspectionLevel?: string; state?: string; city?: string;
+  reportNumber?: string; outOfServiceDriver?: boolean; outOfServiceVehicle?: boolean;
+  violations?: Array<{ code: string; description: string; basic: string; oos: boolean }>;
+  notes?: string; createdAt?: string;
+}
+interface DotDvirLog {
+  id: number; userId: string; driverId?: number; vehicleUnitNumber: string;
+  inspectionDate: string; inspectionType: string;
+  defectsFound?: boolean; defectsList?: string[];
+  safeToOperate?: boolean; driverName?: string;
+  defectsCorrected?: boolean; correctionDate?: string; notes?: string; createdAt?: string;
+}
+interface RandomTestStats {
+  year: number; poolSize: number;
+  drug: { required: number; completed: number; pending: number; positives: number; rate: number };
+  alcohol: { required: number; completed: number; pending: number; positives: number; rate: number };
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const DAY = 1000 * 60 * 60 * 24;
@@ -649,6 +681,469 @@ function EquipmentFormDialog({ open, onClose, existing }: { open: boolean; onClo
   );
 }
 
+// ─── DQ File Dialog ──────────────────────────────────────────────────────────
+
+const DQ_REQUIRED_DOCS: Array<{ type: string; label: string; ref: string }> = [
+  { type: "application", label: "Application for Employment", ref: "49 CFR § 391.21" },
+  { type: "cdl_copy", label: "CDL / License Copy", ref: "49 CFR § 391.51" },
+  { type: "mvr", label: "Pre-Employment MVR (Motor Vehicle Record)", ref: "49 CFR § 391.23" },
+  { type: "annual_mvr_review", label: "Annual MVR Review", ref: "49 CFR § 391.25" },
+  { type: "road_test", label: "Road Test / Certificate of Competency", ref: "49 CFR § 391.31" },
+  { type: "pre_employment_drug", label: "Pre-Employment Drug Test Result", ref: "49 CFR § 382.301" },
+  { type: "medical_card", label: "Medical Examiner's Certificate", ref: "49 CFR § 391.43" },
+  { type: "annual_review", label: "Annual Review of Driving Record", ref: "49 CFR § 391.25" },
+  { type: "certificate_of_violations", label: "Annual Certificate of Violations", ref: "49 CFR § 391.27" },
+  { type: "previous_employer_inquiry", label: "Previous Employer Safety Performance History", ref: "49 CFR § 391.23" },
+  { type: "sph_inquiry", label: "SPH Inquiry (FMCSARegistration.dot.gov)", ref: "49 CFR § 391.23(g)" },
+];
+
+interface DqDoc { id: number; documentType: string; onFile: boolean; expirationDate?: string; notes?: string; }
+
+function DqFileDialog({ open, onClose, driver }: { open: boolean; onClose: () => void; driver: DotDriver | null }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [docs, setDocs] = useState<Record<string, DqDoc | null>>({});
+  const [saving, setSaving] = useState(false);
+  const { data: dqData, isLoading } = useQuery<DqDoc[]>({
+    queryKey: ["/api/dot/drivers", driver?.id, "dq"],
+    queryFn: async () => { const res = await fetch(`/api/dot/drivers/${driver!.id}/dq`, { credentials: "include" }); return res.json(); },
+    enabled: open && !!driver?.id,
+  });
+  useEffect(() => {
+    if (dqData) {
+      const m: Record<string, DqDoc | null> = {};
+      for (const req of DQ_REQUIRED_DOCS) { m[req.type] = dqData.find(d => d.documentType === req.type) ?? null; }
+      setDocs(m);
+    }
+  }, [dqData]);
+
+  const toggleDoc = (docType: string, onFile: boolean) => {
+    setDocs(prev => ({ ...prev, [docType]: { ...(prev[docType] ?? { id: 0, documentType: docType }), onFile } }));
+  };
+  const setExpiry = (docType: string, val: string) => {
+    setDocs(prev => ({ ...prev, [docType]: { ...(prev[docType] ?? { id: 0, documentType: docType, onFile: false }), expirationDate: val } }));
+  };
+
+  const saveAll = async () => {
+    if (!driver) return;
+    setSaving(true);
+    try {
+      for (const req of DQ_REQUIRED_DOCS) {
+        const doc = docs[req.type];
+        if (doc !== null) {
+          await apiRequest("POST", `/api/dot/drivers/${driver.id}/dq`, {
+            driverId: driver.id, documentType: req.type,
+            onFile: doc?.onFile ?? false,
+            expirationDate: doc?.expirationDate || null,
+            notes: doc?.notes || null,
+          });
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["/api/dot/drivers", driver.id, "dq"] });
+      toast({ title: "DQ file saved" });
+      onClose();
+    } catch (e: any) {
+      toast({ title: "Error saving DQ file", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  const onFileCount = Object.values(docs).filter(d => d?.onFile).length;
+  const total = DQ_REQUIRED_DOCS.length;
+  const pct = Math.round((onFileCount / total) * 100);
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>DQ File — {driver ? `${driver.firstName} ${driver.lastName}` : ""}</DialogTitle>
+        </DialogHeader>
+        <div className="mb-3 flex items-center gap-4">
+          <div className="flex-1">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>Document Completeness</span>
+              <span className={`font-semibold ${pct === 100 ? "text-emerald-600" : pct >= 70 ? "text-yellow-600" : "text-red-600"}`}>{onFileCount}/{total} ({pct}%)</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded h-2">
+              <div className={`h-2 rounded transition-all ${pct === 100 ? "bg-emerald-500" : pct >= 70 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+          <Badge className={`text-xs border ${pct === 100 ? "bg-emerald-100 text-emerald-700 border-emerald-200" : pct >= 70 ? "bg-yellow-100 text-yellow-700 border-yellow-200" : "bg-red-100 text-red-700 border-red-200"}`}>
+            {pct === 100 ? "Complete" : pct >= 70 ? "Partial" : "Incomplete"}
+          </Badge>
+        </div>
+        {isLoading ? (
+          <div className="text-sm text-muted-foreground py-4">Loading DQ file…</div>
+        ) : (
+          <div className="space-y-2">
+            {DQ_REQUIRED_DOCS.map(req => {
+              const doc = docs[req.type];
+              const isOnFile = doc?.onFile ?? false;
+              return (
+                <div key={req.type} className={`rounded-lg border px-4 py-3 flex items-start gap-3 ${isOnFile ? "bg-emerald-50/50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
+                  <input type="checkbox" checked={isOnFile} onChange={e => toggleDoc(req.type, e.target.checked)} className="mt-0.5 cursor-pointer" />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${isOnFile ? "text-emerald-800" : "text-slate-700"}`}>{req.label}</p>
+                    <p className="text-xs text-muted-foreground">{req.ref}</p>
+                    {isOnFile && (["annual_mvr_review","medical_card","certificate_of_violations"].includes(req.type)) && (
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Expiry/Date:</span>
+                        <input type="date" value={doc?.expirationDate?.slice(0,10) ?? ""} onChange={e => setExpiry(req.type, e.target.value)} className="text-xs border rounded px-2 py-0.5 h-6" />
+                      </div>
+                    )}
+                  </div>
+                  {isOnFile ? <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" /> : <div className="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5" />}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button onClick={saveAll} disabled={saving || isLoading} className="bg-accent hover:bg-accent/90 text-white">{saving ? "Saving…" : "Save DQ File"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const CSA_BASICS = ["Unsafe Driving","HOS Compliance","Driver Fitness","Controlled Substances/Alcohol","Vehicle Maintenance","Hazardous Materials","Crash Indicator"];
+
+function RandomTestDialog({ open, onClose, existing, drivers, year }: { open: boolean; onClose: () => void; existing?: DotRandomTest | null; drivers: DotDriver[]; year: number }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const isEdit = !!existing;
+  const blank = { driverId: "", testType: "drug", selectedDate: "", testDate: "", result: "pending", collectionSite: "", mroReviewed: false, notes: "" };
+  const [form, setForm] = useState<any>(blank);
+  useEffect(() => {
+    if (open) setForm(existing ? { driverId: String(existing.driverId), testType: existing.testType, selectedDate: existing.selectedDate?.slice(0,10) ?? "", testDate: existing.testDate?.slice(0,10) ?? "", result: existing.result ?? "pending", collectionSite: existing.collectionSite ?? "", mroReviewed: existing.mroReviewed ?? false, notes: existing.notes ?? "" } : blank);
+  }, [open]);
+  const s = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { ...form, driverId: Number(form.driverId), programYear: year };
+      const res = await apiRequest(isEdit ? "PUT" : "POST", isEdit ? `/api/dot/random-tests/${existing!.id}` : "/api/dot/random-tests", payload);
+      return res.json();
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/random-tests"] }); qc.invalidateQueries({ queryKey: ["/api/dot/random-tests/stats"] }); toast({ title: isEdit ? "Test record updated" : "Test logged" }); onClose(); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>{isEdit ? "Edit Test Record" : "Log Random Test"}</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 gap-3 py-2">
+          <div className="col-span-2"><Label>Driver *</Label>
+            <Select value={form.driverId} onValueChange={v => s("driverId", v)}>
+              <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+              <SelectContent>{drivers.filter(d => d.status === "active").map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Test Type</Label>
+            <Select value={form.testType} onValueChange={v => s("testType", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="drug">Drug</SelectItem><SelectItem value="alcohol">Alcohol</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <div><Label>Result</Label>
+            <Select value={form.result} onValueChange={v => s("result", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="negative">Negative</SelectItem>
+                <SelectItem value="positive">Positive</SelectItem>
+                <SelectItem value="refused">Refused</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label>Selection Date *</Label><Input type="date" value={form.selectedDate} onChange={e => s("selectedDate", e.target.value)} /></div>
+          <div><Label>Test Date</Label><Input type="date" value={form.testDate} onChange={e => s("testDate", e.target.value)} /></div>
+          <div className="col-span-2"><Label>Collection Site</Label><Input value={form.collectionSite} onChange={e => s("collectionSite", e.target.value)} placeholder="Lab or clinic name" /></div>
+          <div className="col-span-2 flex items-center gap-2">
+            <input type="checkbox" checked={form.mroReviewed} onChange={e => s("mroReviewed", e.target.checked)} id="mro-reviewed" />
+            <label htmlFor="mro-reviewed" className="text-sm cursor-pointer">MRO Review Completed</label>
+          </div>
+          <div className="col-span-2"><Label>Notes</Label><Input value={form.notes} onChange={e => s("notes", e.target.value)} /></div>
+          {form.result === "positive" || form.result === "refused" ? (
+            <div className="col-span-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+              <strong>REGULATORY ACTION REQUIRED:</strong> A positive test or refusal requires immediate removal from safety-sensitive functions and referral to a Substance Abuse Professional (SAP). 49 CFR § 382.605.
+            </div>
+          ) : null}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={!form.driverId || !form.selectedDate || save.isPending} className="bg-accent hover:bg-accent/90 text-white">{save.isPending ? "Saving…" : isEdit ? "Save Changes" : "Log Test"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Accident Dialog ─────────────────────────────────────────────────────────
+
+function AccidentDialog({ open, onClose, existing, drivers }: { open: boolean; onClose: () => void; existing?: DotAccident | null; drivers: DotDriver[] }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const isEdit = !!existing;
+  const blank = { driverId: "", accidentDate: "", city: "", state: "", vehicleUnitNumber: "", fatalities: 0, injuries: 0, towAway: false, hazmatRelease: false, citationIssued: false, preventable: "undetermined", policeReportNumber: "", description: "" };
+  const [form, setForm] = useState<any>(blank);
+  useEffect(() => {
+    if (open) setForm(existing ? { ...blank, ...existing, driverId: existing.driverId ? String(existing.driverId) : "", accidentDate: existing.accidentDate?.slice(0,10) ?? "" } : blank);
+  }, [open]);
+  const s = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { ...form, driverId: form.driverId ? Number(form.driverId) : null, fatalities: Number(form.fatalities), injuries: Number(form.injuries) };
+      const res = await apiRequest(isEdit ? "PUT" : "POST", isEdit ? `/api/dot/accidents/${existing!.id}` : "/api/dot/accidents", payload);
+      return res.json();
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/accidents"] }); toast({ title: isEdit ? "Accident updated" : "Accident logged" }); onClose(); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  const isFatal = Number(form.fatalities) > 0;
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{isEdit ? "Edit Accident Record" : "Log DOT Accident"}</DialogTitle></DialogHeader>
+        <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800 mb-2">
+          DOT-recordable: any CMV accident involving a fatality, injury requiring immediate off-scene medical treatment, or disabling tow-away. Per 49 CFR § 390.15. Keep on file 3 years.
+        </div>
+        <div className="grid grid-cols-2 gap-3 py-1">
+          <div><Label>Accident Date *</Label><Input type="date" value={form.accidentDate} onChange={e => s("accidentDate", e.target.value)} /></div>
+          <div><Label>Driver (optional)</Label>
+            <Select value={form.driverId} onValueChange={v => s("driverId", v)}>
+              <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+              <SelectContent><SelectItem value="">Unknown / Not Applicable</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>City</Label><Input value={form.city} onChange={e => s("city", e.target.value)} /></div>
+          <div><Label>State</Label>
+            <Select value={form.state} onValueChange={v => s("state", v)}>
+              <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+              <SelectContent>{US_STATES.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Vehicle Unit #</Label><Input value={form.vehicleUnitNumber} onChange={e => s("vehicleUnitNumber", e.target.value)} /></div>
+          <div><Label>Police Report #</Label><Input value={form.policeReportNumber} onChange={e => s("policeReportNumber", e.target.value)} /></div>
+          <div><Label>Fatalities</Label><Input type="number" min={0} value={form.fatalities} onChange={e => s("fatalities", e.target.value)} /></div>
+          <div><Label>Injuries</Label><Input type="number" min={0} value={form.injuries} onChange={e => s("injuries", e.target.value)} /></div>
+          <div className="col-span-2 flex gap-6 flex-wrap">
+            {[["towAway","Tow-Away"],["hazmatRelease","Hazmat Release"],["citationIssued","Citation Issued"]].map(([k, lbl]) => (
+              <label key={k} className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={!!form[k]} onChange={e => s(k, e.target.checked)} />
+                <span className="text-sm">{lbl}</span>
+              </label>
+            ))}
+          </div>
+          <div><Label>Preventability</Label>
+            <Select value={form.preventable} onValueChange={v => s("preventable", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="yes">Preventable</SelectItem><SelectItem value="no">Not Preventable</SelectItem><SelectItem value="undetermined">Undetermined</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2"><Label>Description</Label><Input value={form.description} onChange={e => s("description", e.target.value)} placeholder="Brief description of accident circumstances" /></div>
+          {isFatal && (
+            <div className="col-span-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+              <strong>FATAL ACCIDENT:</strong> Post-accident alcohol test required within 8 hours; drug test within 32 hours. Notify FMCSA as required. 49 CFR § 382.303.
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={!form.accidentDate || save.isPending} className="bg-accent hover:bg-accent/90 text-white">{save.isPending ? "Saving…" : isEdit ? "Save Changes" : "Log Accident"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Inspection Dialog ───────────────────────────────────────────────────────
+
+function InspectionDialog({ open, onClose, existing, drivers }: { open: boolean; onClose: () => void; existing?: DotRoadsideInspection | null; drivers: DotDriver[] }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const isEdit = !!existing;
+  const blank = { driverId: "", vehicleUnitNumber: "", inspectionDate: "", inspectionLevel: "I", state: "", city: "", reportNumber: "", outOfServiceDriver: false, outOfServiceVehicle: false, notes: "" };
+  const [form, setForm] = useState<any>(blank);
+  const [violations, setViolations] = useState<Array<{ code: string; description: string; basic: string; oos: boolean }>>([]);
+  useEffect(() => {
+    if (open) {
+      setForm(existing ? { ...blank, ...existing, driverId: existing.driverId ? String(existing.driverId) : "", inspectionDate: existing.inspectionDate?.slice(0,10) ?? "" } : blank);
+      setViolations(existing?.violations ?? []);
+    }
+  }, [open]);
+  const s = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const addViolation = () => setViolations(v => [...v, { code: "", description: "", basic: "Vehicle Maintenance", oos: false }]);
+  const updateViolation = (i: number, k: string, v: any) => setViolations(vs => vs.map((viol, idx) => idx === i ? { ...viol, [k]: v } : viol));
+  const removeViolation = (i: number) => setViolations(vs => vs.filter((_, idx) => idx !== i));
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { ...form, driverId: form.driverId ? Number(form.driverId) : null, violations };
+      const res = await apiRequest(isEdit ? "PUT" : "POST", isEdit ? `/api/dot/inspections/${existing!.id}` : "/api/dot/inspections", payload);
+      return res.json();
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/inspections"] }); toast({ title: isEdit ? "Inspection updated" : "Inspection logged" }); onClose(); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{isEdit ? "Edit Inspection" : "Log Roadside Inspection"}</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 gap-3 py-1">
+          <div><Label>Inspection Date *</Label><Input type="date" value={form.inspectionDate} onChange={e => s("inspectionDate", e.target.value)} /></div>
+          <div><Label>Inspection Level</Label>
+            <Select value={form.inspectionLevel} onValueChange={v => s("inspectionLevel", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="I">Level I — Full (Driver + Vehicle)</SelectItem>
+                <SelectItem value="II">Level II — Walk-Around</SelectItem>
+                <SelectItem value="III">Level III — Driver Only</SelectItem>
+                <SelectItem value="IV">Level IV — Special Study</SelectItem>
+                <SelectItem value="V">Level V — Vehicle Only</SelectItem>
+                <SelectItem value="VI">Level VI — Radioactive Materials</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label>Driver</Label>
+            <Select value={form.driverId} onValueChange={v => s("driverId", v)}>
+              <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+              <SelectContent><SelectItem value="">Unknown</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Vehicle Unit #</Label><Input value={form.vehicleUnitNumber} onChange={e => s("vehicleUnitNumber", e.target.value)} /></div>
+          <div><Label>City</Label><Input value={form.city} onChange={e => s("city", e.target.value)} /></div>
+          <div><Label>State</Label>
+            <Select value={form.state} onValueChange={v => s("state", v)}>
+              <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+              <SelectContent>{US_STATES.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2"><Label>Report Number</Label><Input value={form.reportNumber} onChange={e => s("reportNumber", e.target.value)} /></div>
+          <div className="col-span-2 flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.outOfServiceDriver} onChange={e => s("outOfServiceDriver", e.target.checked)} /><span className="text-sm text-red-600 font-medium">Driver Placed OOS</span></label>
+            <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.outOfServiceVehicle} onChange={e => s("outOfServiceVehicle", e.target.checked)} /><span className="text-sm text-red-600 font-medium">Vehicle Placed OOS</span></label>
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Violations ({violations.length})</p>
+            <Button type="button" size="sm" variant="outline" onClick={addViolation} className="text-xs h-7"><Plus className="w-3 h-3 mr-1" />Add Violation</Button>
+          </div>
+          {violations.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic py-2">No violations recorded — clean inspection.</p>
+          ) : (
+            <div className="space-y-2">
+              {violations.map((v, i) => (
+                <div key={i} className="grid grid-cols-12 gap-2 items-start bg-slate-50 rounded p-2">
+                  <div className="col-span-2"><Label className="text-xs">Code</Label><Input value={v.code} onChange={e => updateViolation(i, "code", e.target.value)} placeholder="393.9" className="h-7 text-xs" /></div>
+                  <div className="col-span-4"><Label className="text-xs">Description</Label><Input value={v.description} onChange={e => updateViolation(i, "description", e.target.value)} placeholder="Inoperative required lamp" className="h-7 text-xs" /></div>
+                  <div className="col-span-4"><Label className="text-xs">BASIC Category</Label>
+                    <Select value={v.basic} onValueChange={val => updateViolation(i, "basic", val)}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>{CSA_BASICS.map(b => <SelectItem key={b} value={b} className="text-xs">{b}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-1 flex flex-col items-center gap-1 pt-4">
+                    <label className="text-xs text-red-600 font-medium">OOS</label>
+                    <input type="checkbox" checked={v.oos} onChange={e => updateViolation(i, "oos", e.target.checked)} />
+                  </div>
+                  <div className="col-span-1 flex items-end justify-end pb-1">
+                    <Button type="button" size="sm" variant="ghost" onClick={() => removeViolation(i)} className="h-7 w-7 p-0 text-red-400"><X className="w-3 h-3" /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="mt-2"><Label>Notes</Label><Input value={form.notes} onChange={e => s("notes", e.target.value)} /></div>
+        <DialogFooter className="mt-3">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={!form.inspectionDate || save.isPending} className="bg-accent hover:bg-accent/90 text-white">{save.isPending ? "Saving…" : isEdit ? "Save Changes" : "Log Inspection"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── DVIR Dialog ─────────────────────────────────────────────────────────────
+
+function DvirDialog({ open, onClose, existing, drivers }: { open: boolean; onClose: () => void; existing?: DotDvirLog | null; drivers: DotDriver[] }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const isEdit = !!existing;
+  const blank = { driverId: "", vehicleUnitNumber: "", inspectionDate: "", inspectionType: "pre_trip", defectsFound: false, defectsList: [] as string[], safeToOperate: true, driverName: "", defectsCorrected: false, correctionDate: "", notes: "" };
+  const [form, setForm] = useState<any>(blank);
+  const [newDefect, setNewDefect] = useState("");
+  useEffect(() => {
+    if (open) {
+      setForm(existing ? { ...blank, ...existing, driverId: existing.driverId ? String(existing.driverId) : "", inspectionDate: existing.inspectionDate?.slice(0,10) ?? "", correctionDate: existing.correctionDate?.slice(0,10) ?? "", defectsList: existing.defectsList ?? [] } : blank);
+      setNewDefect("");
+    }
+  }, [open]);
+  const s = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const addDefect = () => { if (newDefect.trim()) { s("defectsList", [...(form.defectsList || []), newDefect.trim()]); setNewDefect(""); } };
+  const removeDefect = (i: number) => s("defectsList", form.defectsList.filter((_: any, idx: number) => idx !== i));
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { ...form, driverId: form.driverId ? Number(form.driverId) : null };
+      const res = await apiRequest(isEdit ? "PUT" : "POST", isEdit ? `/api/dot/dvir/${existing!.id}` : "/api/dot/dvir", payload);
+      return res.json();
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/dvir"] }); toast({ title: isEdit ? "DVIR updated" : "DVIR logged" }); onClose(); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{isEdit ? "Edit DVIR" : "Log Vehicle Inspection (DVIR)"}</DialogTitle></DialogHeader>
+        <div className="text-xs text-muted-foreground mb-3 bg-blue-50 border border-blue-200 rounded px-3 py-2">Required daily per 49 CFR § 396.11. Driver must complete at end of each shift. Keep signed copies for 3 months.</div>
+        <div className="grid grid-cols-2 gap-3 py-1">
+          <div><Label>Inspection Date *</Label><Input type="date" value={form.inspectionDate} onChange={e => s("inspectionDate", e.target.value)} /></div>
+          <div><Label>Type</Label>
+            <Select value={form.inspectionType} onValueChange={v => s("inspectionType", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="pre_trip">Pre-Trip</SelectItem><SelectItem value="post_trip">Post-Trip</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <div><Label>Driver</Label>
+            <Select value={form.driverId} onValueChange={v => { s("driverId", v); if (v) { const d = drivers.find(dr => String(dr.id) === v); if (d) s("driverName", `${d.firstName} ${d.lastName}`); } }}>
+              <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+              <SelectContent><SelectItem value="">Select…</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Vehicle Unit # *</Label><Input value={form.vehicleUnitNumber} onChange={e => s("vehicleUnitNumber", e.target.value)} /></div>
+          <div className="col-span-2 flex gap-6 flex-wrap">
+            <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.defectsFound} onChange={e => s("defectsFound", e.target.checked)} /><span className="text-sm">Defects Found</span></label>
+            <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.safeToOperate} onChange={e => s("safeToOperate", e.target.checked)} /><span className="text-sm text-emerald-700 font-medium">Safe to Operate</span></label>
+            {form.defectsFound && <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.defectsCorrected} onChange={e => s("defectsCorrected", e.target.checked)} /><span className="text-sm text-blue-700">Defects Corrected</span></label>}
+          </div>
+          {form.defectsCorrected && <div className="col-span-2"><Label>Correction Date</Label><Input type="date" value={form.correctionDate} onChange={e => s("correctionDate", e.target.value)} /></div>}
+        </div>
+        {form.defectsFound && (
+          <div className="mt-3">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Defects List</Label>
+            <div className="flex gap-2 mt-1 mb-2">
+              <Input value={newDefect} onChange={e => setNewDefect(e.target.value)} onKeyDown={e => e.key === "Enter" && addDefect()} placeholder="e.g., Left rear brake light inoperative" className="text-sm" />
+              <Button type="button" size="sm" variant="outline" onClick={addDefect}>Add</Button>
+            </div>
+            {(form.defectsList || []).map((def: string, i: number) => (
+              <div key={i} className="flex items-center justify-between bg-red-50 border border-red-100 rounded px-2 py-1 mb-1 text-sm">
+                <span>{def}</span>
+                <Button type="button" size="sm" variant="ghost" onClick={() => removeDefect(i)} className="h-6 w-6 p-0 text-red-400"><X className="w-3 h-3" /></Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-2"><Label>Notes</Label><Input value={form.notes} onChange={e => s("notes", e.target.value)} /></div>
+        <DialogFooter className="mt-3">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={!form.vehicleUnitNumber || !form.inspectionDate || save.isPending} className="bg-accent hover:bg-accent/90 text-white">{save.isPending ? "Saving…" : isEdit ? "Save Changes" : "Log DVIR"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DotHub() {
@@ -659,6 +1154,7 @@ export default function DotHub() {
   const [driverDialog, setDriverDialog] = useState<{ open: boolean; driver?: DotDriver | null }>({ open: false });
   const [equipDialog, setEquipDialog] = useState<{ open: boolean; equip?: DotEquipment | null }>({ open: false });
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "driver" | "equip"; id: number } | null>(null);
+  const [dqDialog, setDqDialog] = useState<{ open: boolean; driver?: DotDriver | null }>({ open: false });
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<DotMetrics>({
     queryKey: ["/api/dot/metrics"],
@@ -705,6 +1201,31 @@ export default function DotHub() {
     link.href = "/api/dot/drivers-export-csv";
     link.click();
   };
+
+  // ── New module state ──────────────────────────────────────────────────────
+  const currentYear = new Date().getFullYear();
+  const [testYear, setTestYear] = useState(currentYear);
+  const [testDialog, setTestDialog] = useState<{ open: boolean; test?: DotRandomTest | null }>({ open: false });
+  const [accidentDialog, setAccidentDialog] = useState<{ open: boolean; accident?: DotAccident | null }>({ open: false });
+  const [inspectionDialog, setInspectionDialog] = useState<{ open: boolean; inspection?: DotRoadsideInspection | null }>({ open: false });
+  const [dvirDialog2, setDvirDialog2] = useState<{ open: boolean; dvir?: DotDvirLog | null }>({ open: false });
+
+  const { data: randomTests = [], isLoading: testsLoading } = useQuery<DotRandomTest[]>({
+    queryKey: ["/api/dot/random-tests", testYear],
+    queryFn: async () => { const res = await fetch(`/api/dot/random-tests?year=${testYear}`, { credentials: "include" }); return res.json(); },
+  });
+  const { data: testStats, isLoading: statsLoading } = useQuery<RandomTestStats>({
+    queryKey: ["/api/dot/random-tests/stats", testYear],
+    queryFn: async () => { const res = await fetch(`/api/dot/random-tests/stats?year=${testYear}`, { credentials: "include" }); return res.json(); },
+  });
+  const { data: accidents = [], isLoading: accidentsLoading } = useQuery<DotAccident[]>({ queryKey: ["/api/dot/accidents"] });
+  const { data: inspections = [], isLoading: inspectionsLoading } = useQuery<DotRoadsideInspection[]>({ queryKey: ["/api/dot/inspections"] });
+  const { data: dvirLogs = [], isLoading: dvirLoading } = useQuery<DotDvirLog[]>({ queryKey: ["/api/dot/dvir"] });
+
+  const deleteTest = useMutation({ mutationFn: async (id: number) => { await apiRequest("DELETE", `/api/dot/random-tests/${id}`); }, onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/random-tests"] }); qc.invalidateQueries({ queryKey: ["/api/dot/random-tests/stats"] }); toast({ title: "Test removed" }); } });
+  const deleteAccident = useMutation({ mutationFn: async (id: number) => { await apiRequest("DELETE", `/api/dot/accidents/${id}`); }, onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/accidents"] }); toast({ title: "Accident removed" }); } });
+  const deleteInspection = useMutation({ mutationFn: async (id: number) => { await apiRequest("DELETE", `/api/dot/inspections/${id}`); }, onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/inspections"] }); toast({ title: "Inspection removed" }); } });
+  const deleteDvir = useMutation({ mutationFn: async (id: number) => { await apiRequest("DELETE", `/api/dot/dvir/${id}`); }, onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/dot/dvir"] }); toast({ title: "DVIR removed" }); } });
 
   const [deltaExporting, setDeltaExporting] = useState(false);
   const handleDeltaExport = async () => {
@@ -937,24 +1458,37 @@ export default function DotHub() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== "drivers") setDriverFilter("all"); }}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="drivers" data-testid="tab-dot-drivers">
-              <Users className="w-4 h-4 mr-1.5" />
-              Drivers ({activeDrivers.length})
-            </TabsTrigger>
-            <TabsTrigger value="equipment" data-testid="tab-dot-equipment">
-              <Truck className="w-4 h-4 mr-1.5" />
-              Equipment ({equipment.length})
-            </TabsTrigger>
-            <TabsTrigger value="clearinghouse" data-testid="tab-dot-clearinghouse">
-              <Download className="w-4 h-4 mr-1.5" />
-              Clearinghouse Export
-            </TabsTrigger>
-            <TabsTrigger value="archive" data-testid="tab-dot-archive">
-              <FileText className="w-4 h-4 mr-1.5" />
-              Archive ({nonActiveDrivers.length})
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto mb-6">
+            <TabsList className="flex w-max gap-0.5 min-w-full">
+              <TabsTrigger value="drivers" data-testid="tab-dot-drivers" className="text-xs whitespace-nowrap">
+                <Users className="w-3.5 h-3.5 mr-1" />Drivers ({activeDrivers.length})
+              </TabsTrigger>
+              <TabsTrigger value="equipment" data-testid="tab-dot-equipment" className="text-xs whitespace-nowrap">
+                <Truck className="w-3.5 h-3.5 mr-1" />Equipment ({equipment.length})
+              </TabsTrigger>
+              <TabsTrigger value="clearinghouse" data-testid="tab-dot-clearinghouse" className="text-xs whitespace-nowrap">
+                <Download className="w-3.5 h-3.5 mr-1" />Clearinghouse
+              </TabsTrigger>
+              <TabsTrigger value="random_testing" data-testid="tab-dot-random" className="text-xs whitespace-nowrap">
+                <RefreshCcw className="w-3.5 h-3.5 mr-1" />Random Testing
+              </TabsTrigger>
+              <TabsTrigger value="accidents" data-testid="tab-dot-accidents" className="text-xs whitespace-nowrap">
+                <AlertTriangle className="w-3.5 h-3.5 mr-1" />Accidents ({accidents.length})
+              </TabsTrigger>
+              <TabsTrigger value="inspections" data-testid="tab-dot-inspections" className="text-xs whitespace-nowrap">
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />Inspections ({inspections.length})
+              </TabsTrigger>
+              <TabsTrigger value="dvir" data-testid="tab-dot-dvir" className="text-xs whitespace-nowrap">
+                <Car className="w-3.5 h-3.5 mr-1" />DVIR ({dvirLogs.length})
+              </TabsTrigger>
+              <TabsTrigger value="calendar" data-testid="tab-dot-calendar" className="text-xs whitespace-nowrap">
+                <Clock className="w-3.5 h-3.5 mr-1" />Compliance Calendar
+              </TabsTrigger>
+              <TabsTrigger value="archive" data-testid="tab-dot-archive" className="text-xs whitespace-nowrap">
+                <FileText className="w-3.5 h-3.5 mr-1" />Archive ({nonActiveDrivers.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ── Drivers Tab ─────────────────────────────────────────────────── */}
           <TabsContent value="drivers">
@@ -1049,6 +1583,9 @@ export default function DotHub() {
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
+                                <Button size="sm" variant="ghost" onClick={() => setDqDialog({ open: true, driver: d })} title="DQ File" data-testid={`button-dq-driver-${d.id}`} className="text-blue-500 hover:text-blue-700">
+                                  <FileText className="w-3.5 h-3.5" />
+                                </Button>
                                 <Button size="sm" variant="ghost" onClick={() => setDriverDialog({ open: true, driver: d })} data-testid={`button-edit-driver-${d.id}`}>
                                   <Pencil className="w-3.5 h-3.5" />
                                 </Button>
@@ -1305,6 +1842,364 @@ export default function DotHub() {
               </div>
             )}
           </TabsContent>
+
+          {/* ── Random Testing Tab ──────────────────────────────────────────── */}
+          <TabsContent value="random_testing">
+            <div className="space-y-4">
+              {/* Header row */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">Random Drug & Alcohol Testing</h2>
+                  <p className="text-xs text-muted-foreground">49 CFR Part 382 — Drug: 50% pool/yr · Alcohol: 10% pool/yr</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={String(testYear)} onValueChange={v => setTestYear(Number(v))}>
+                    <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                    <SelectContent>{[currentYear, currentYear - 1, currentYear - 2].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Button size="sm" onClick={() => setTestDialog({ open: true })} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-test">
+                    <Plus className="w-4 h-4 mr-1" />Log Test
+                  </Button>
+                </div>
+              </div>
+
+              {/* Stats cards */}
+              {testStats ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Drug rate */}
+                  <div className={`rounded-xl border p-4 ${testStats.drug.rate >= 50 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Drug Tests {testYear}</p>
+                    <p className="text-2xl font-bold">{testStats.drug.completed}<span className="text-sm font-normal text-muted-foreground">/{testStats.drug.required} req'd</span></p>
+                    <div className="w-full bg-gray-200 rounded h-1.5 mt-2">
+                      <div className={`h-1.5 rounded ${testStats.drug.rate >= 50 ? "bg-emerald-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, (testStats.drug.completed / Math.max(1, testStats.drug.required)) * 100)}%` }} />
+                    </div>
+                    <p className={`text-xs font-semibold mt-1 ${testStats.drug.rate >= 50 ? "text-emerald-700" : "text-red-700"}`}>{testStats.drug.rate.toFixed(0)}% of pool {testStats.drug.rate >= 50 ? "✓ Compliant" : "⚠ Below 50%"}</p>
+                  </div>
+                  {/* Alcohol rate */}
+                  <div className={`rounded-xl border p-4 ${testStats.alcohol.rate >= 10 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Alcohol Tests {testYear}</p>
+                    <p className="text-2xl font-bold">{testStats.alcohol.completed}<span className="text-sm font-normal text-muted-foreground">/{testStats.alcohol.required} req'd</span></p>
+                    <div className="w-full bg-gray-200 rounded h-1.5 mt-2">
+                      <div className={`h-1.5 rounded ${testStats.alcohol.rate >= 10 ? "bg-emerald-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, (testStats.alcohol.completed / Math.max(1, testStats.alcohol.required)) * 100)}%` }} />
+                    </div>
+                    <p className={`text-xs font-semibold mt-1 ${testStats.alcohol.rate >= 10 ? "text-emerald-700" : "text-red-700"}`}>{testStats.alcohol.rate.toFixed(0)}% of pool {testStats.alcohol.rate >= 10 ? "✓ Compliant" : "⚠ Below 10%"}</p>
+                  </div>
+                  {/* Positives */}
+                  <div className={`rounded-xl border p-4 ${(testStats.drug.positives + testStats.alcohol.positives) > 0 ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"}`}>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Positive / Refused</p>
+                    <p className="text-2xl font-bold text-red-700">{testStats.drug.positives + testStats.alcohol.positives}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Requires SAP referral + removal from safety-sensitive duties</p>
+                  </div>
+                  {/* Pool */}
+                  <div className="rounded-xl border p-4 bg-blue-50 border-blue-200">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Random Pool Size</p>
+                    <p className="text-2xl font-bold text-blue-700">{testStats.poolSize}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Active drivers enrolled in random pool</p>
+                  </div>
+                </div>
+              ) : statsLoading ? <div className="text-sm text-muted-foreground">Loading stats…</div> : null}
+
+              {/* Tests table */}
+              {testsLoading ? (
+                <div className="text-sm text-muted-foreground py-4">Loading tests…</div>
+              ) : randomTests.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                  <RefreshCcw className="w-8 h-8 opacity-20" />
+                  <p className="text-sm font-medium">No test records for {testYear}</p>
+                  <p className="text-xs">Click "Log Test" to record a selection or completed test.</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        {["Driver","Type","Selected","Test Date","Result","Site","MRO",""].map(h => (
+                          <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {randomTests.map(t => {
+                        const driver = drivers.find(d => d.id === t.driverId);
+                        const resultColor = { positive: "bg-red-100 text-red-700 border-red-200", negative: "bg-emerald-100 text-emerald-700 border-emerald-200", pending: "bg-yellow-100 text-yellow-700 border-yellow-200", refused: "bg-red-100 text-red-800 border-red-200", cancelled: "bg-slate-100 text-slate-600 border-slate-200" }[t.result ?? "pending"] ?? "bg-slate-100 text-slate-600";
+                        return (
+                          <tr key={t.id} className="hover:bg-slate-50" data-testid={`row-test-${t.id}`}>
+                            <td className="px-4 py-3 text-sm font-medium">{driver ? `${driver.firstName} ${driver.lastName}` : `#${t.driverId}`}</td>
+                            <td className="px-4 py-3"><Badge className={`text-xs capitalize ${t.testType === "drug" ? "bg-purple-100 text-purple-700 border-purple-200" : "bg-orange-100 text-orange-700 border-orange-200"}`}>{t.testType}</Badge></td>
+                            <td className="px-4 py-3 text-xs">{formatDate(t.selectedDate)}</td>
+                            <td className="px-4 py-3 text-xs">{formatDate(t.testDate)}</td>
+                            <td className="px-4 py-3"><Badge className={`text-xs capitalize border ${resultColor}`}>{t.result ?? "pending"}</Badge></td>
+                            <td className="px-4 py-3 text-xs">{t.collectionSite || "—"}</td>
+                            <td className="px-4 py-3 text-xs">{t.mroReviewed ? <span className="text-emerald-600 font-medium">✓</span> : <span className="text-slate-400">—</span>}</td>
+                            <td className="px-4 py-3 text-right">
+                              <Button size="sm" variant="ghost" onClick={() => setTestDialog({ open: true, test: t })} data-testid={`button-edit-test-${t.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteTest.mutate(t.id)} className="text-red-400 hover:text-red-600" data-testid={`button-delete-test-${t.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── Accidents Tab ────────────────────────────────────────────────── */}
+          <TabsContent value="accidents">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">DOT Accident Register</h2>
+                  <p className="text-xs text-muted-foreground">49 CFR § 390.15 — Must retain 3 years. Fatal accidents require post-accident testing within 8/32 hrs.</p>
+                </div>
+                <Button size="sm" onClick={() => setAccidentDialog({ open: true })} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-accident">
+                  <Plus className="w-4 h-4 mr-1" />Log Accident
+                </Button>
+              </div>
+              {accidentsLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : accidents.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                  <AlertTriangle className="w-8 h-8 opacity-20" />
+                  <p className="text-sm font-medium">No accidents on record</p>
+                  <p className="text-xs">Log any DOT-recordable accidents here to maintain your register.</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        {["Date","Driver","Location","Unit #","Fatalities","Injuries","Tow-Away","Hazmat","Preventable","Police Rpt",""].map(h => (
+                          <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {accidents.map(a => {
+                        const driver = a.driverId ? drivers.find(d => d.id === a.driverId) : null;
+                        return (
+                          <tr key={a.id} className="hover:bg-slate-50" data-testid={`row-accident-${a.id}`}>
+                            <td className="px-3 py-3 text-xs font-medium">{formatDate(a.accidentDate)}</td>
+                            <td className="px-3 py-3 text-xs">{driver ? `${driver.firstName} ${driver.lastName}` : "—"}</td>
+                            <td className="px-3 py-3 text-xs">{[a.city, a.state].filter(Boolean).join(", ") || "—"}</td>
+                            <td className="px-3 py-3 text-xs">{a.vehicleUnitNumber || "—"}</td>
+                            <td className="px-3 py-3 text-center"><span className={`text-xs font-bold ${a.fatalities > 0 ? "text-red-700" : "text-slate-500"}`}>{a.fatalities}</span></td>
+                            <td className="px-3 py-3 text-center"><span className={`text-xs font-bold ${a.injuries > 0 ? "text-orange-700" : "text-slate-500"}`}>{a.injuries}</span></td>
+                            <td className="px-3 py-3 text-center text-xs">{a.towAway ? <span className="text-red-600 font-medium">Yes</span> : "No"}</td>
+                            <td className="px-3 py-3 text-center text-xs">{a.hazmatRelease ? <span className="text-red-600 font-medium">Yes</span> : "No"}</td>
+                            <td className="px-3 py-3"><Badge className={`text-xs capitalize border ${a.preventable === "yes" ? "bg-red-100 text-red-700 border-red-200" : a.preventable === "no" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}`}>{a.preventable ?? "—"}</Badge></td>
+                            <td className="px-3 py-3 text-xs">{a.policeReportNumber || "—"}</td>
+                            <td className="px-3 py-3 text-right">
+                              <Button size="sm" variant="ghost" onClick={() => setAccidentDialog({ open: true, accident: a })} data-testid={`button-edit-accident-${a.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteAccident.mutate(a.id)} className="text-red-400 hover:text-red-600" data-testid={`button-delete-accident-${a.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── Inspections Tab ──────────────────────────────────────────────── */}
+          <TabsContent value="inspections">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">Roadside Inspections</h2>
+                  <p className="text-xs text-muted-foreground">Track all FMCSA roadside inspections and violations. OOS violations affect CSA BASIC scores for 24 months.</p>
+                </div>
+                <Button size="sm" onClick={() => setInspectionDialog({ open: true })} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-inspection">
+                  <Plus className="w-4 h-4 mr-1" />Log Inspection
+                </Button>
+              </div>
+              {inspectionsLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : inspections.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="w-8 h-8 opacity-20" />
+                  <p className="text-sm font-medium">No inspections recorded</p>
+                  <p className="text-xs">Log roadside inspections to track CSA score impact and OOS events.</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        {["Date","Level","Driver","Unit #","Location","Report #","OOS Driver","OOS Vehicle","Violations",""].map(h => (
+                          <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {inspections.map(ins => {
+                        const driver = ins.driverId ? drivers.find(d => d.id === ins.driverId) : null;
+                        const hasOos = ins.outOfServiceDriver || ins.outOfServiceVehicle;
+                        return (
+                          <tr key={ins.id} className={`hover:bg-slate-50 ${hasOos ? "bg-red-50/30" : ""}`} data-testid={`row-inspection-${ins.id}`}>
+                            <td className="px-3 py-3 text-xs font-medium">{formatDate(ins.inspectionDate)}</td>
+                            <td className="px-3 py-3"><Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">Level {ins.inspectionLevel}</Badge></td>
+                            <td className="px-3 py-3 text-xs">{driver ? `${driver.firstName} ${driver.lastName}` : "—"}</td>
+                            <td className="px-3 py-3 text-xs">{ins.vehicleUnitNumber || "—"}</td>
+                            <td className="px-3 py-3 text-xs">{[ins.city, ins.state].filter(Boolean).join(", ") || "—"}</td>
+                            <td className="px-3 py-3 text-xs">{ins.reportNumber || "—"}</td>
+                            <td className="px-3 py-3 text-center text-xs">{ins.outOfServiceDriver ? <span className="text-red-600 font-bold">OOS</span> : <span className="text-slate-400">—</span>}</td>
+                            <td className="px-3 py-3 text-center text-xs">{ins.outOfServiceVehicle ? <span className="text-red-600 font-bold">OOS</span> : <span className="text-slate-400">—</span>}</td>
+                            <td className="px-3 py-3">
+                              {(ins.violations?.length ?? 0) === 0
+                                ? <span className="text-xs text-emerald-600 font-medium">Clean ✓</span>
+                                : <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs">{ins.violations!.length} violation{ins.violations!.length > 1 ? "s" : ""}</Badge>}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <Button size="sm" variant="ghost" onClick={() => setInspectionDialog({ open: true, inspection: ins })} data-testid={`button-edit-inspection-${ins.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteInspection.mutate(ins.id)} className="text-red-400 hover:text-red-600" data-testid={`button-delete-inspection-${ins.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── DVIR Tab ─────────────────────────────────────────────────────── */}
+          <TabsContent value="dvir">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">Driver Vehicle Inspection Reports (DVIR)</h2>
+                  <p className="text-xs text-muted-foreground">49 CFR § 396.11 — Required daily pre-/post-trip. Keep signed originals 3 months.</p>
+                </div>
+                <Button size="sm" onClick={() => setDvirDialog2({ open: true })} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-dvir">
+                  <Plus className="w-4 h-4 mr-1" />Log DVIR
+                </Button>
+              </div>
+              {dvirLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : dvirLogs.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                  <Car className="w-8 h-8 opacity-20" />
+                  <p className="text-sm font-medium">No DVIR logs recorded</p>
+                  <p className="text-xs">Log daily vehicle inspections here for compliance and defect tracking.</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        {["Date","Type","Driver","Unit #","Defects","Safe?","Corrected","Defect Items",""].map(h => (
+                          <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {dvirLogs.map(dv => {
+                        const driver = dv.driverId ? drivers.find(d => d.id === dv.driverId) : null;
+                        return (
+                          <tr key={dv.id} className={`hover:bg-slate-50 ${dv.defectsFound && !dv.safeToOperate ? "bg-red-50/30" : ""}`} data-testid={`row-dvir-${dv.id}`}>
+                            <td className="px-3 py-3 text-xs font-medium">{formatDate(dv.inspectionDate)}</td>
+                            <td className="px-3 py-3"><Badge className={`text-xs capitalize border ${dv.inspectionType === "pre_trip" ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-slate-100 text-slate-700 border-slate-200"}`}>{dv.inspectionType === "pre_trip" ? "Pre-Trip" : "Post-Trip"}</Badge></td>
+                            <td className="px-3 py-3 text-xs">{driver ? `${driver.firstName} ${driver.lastName}` : dv.driverName || "—"}</td>
+                            <td className="px-3 py-3 text-xs font-medium">{dv.vehicleUnitNumber}</td>
+                            <td className="px-3 py-3 text-xs">{dv.defectsFound ? <span className="text-red-600 font-medium">{dv.defectsList?.length ?? 0} defect{(dv.defectsList?.length ?? 0) !== 1 ? "s" : ""}</span> : <span className="text-emerald-600">None ✓</span>}</td>
+                            <td className="px-3 py-3 text-xs">{dv.safeToOperate ? <span className="text-emerald-600 font-medium">Yes</span> : <span className="text-red-600 font-bold">NO</span>}</td>
+                            <td className="px-3 py-3 text-xs">{dv.defectsFound ? (dv.defectsCorrected ? <span className="text-emerald-600">✓ {formatDate(dv.correctionDate)}</span> : <span className="text-orange-600 font-medium">Pending</span>) : "—"}</td>
+                            <td className="px-3 py-3 text-xs max-w-[200px] truncate">{dv.defectsList?.join(", ") || "—"}</td>
+                            <td className="px-3 py-3 text-right">
+                              <Button size="sm" variant="ghost" onClick={() => setDvirDialog2({ open: true, dvir: dv })} data-testid={`button-edit-dvir-${dv.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteDvir.mutate(dv.id)} className="text-red-400 hover:text-red-600" data-testid={`button-delete-dvir-${dv.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── Compliance Calendar Tab ───────────────────────────────────────── */}
+          <TabsContent value="calendar">
+            {(() => {
+              interface CalItem { id: string; label: string; sublabel: string; dueDate: Date; days: number; cat: string; }
+              const now = Date.now();
+              const items: CalItem[] = [];
+              const addItem = (id: string, label: string, sublabel: string, dueDate: Date, cat: string) => {
+                items.push({ id, label, sublabel, dueDate, days: Math.floor((dueDate.getTime() - now) / DAY), cat });
+              };
+              for (const d of activeDrivers) {
+                const name = `${d.firstName} ${d.lastName}`;
+                // Clearinghouse
+                if (d.clearinghouseConsentOnFile) {
+                  const base = d.lastClearinghouseQueryDate ? new Date(d.lastClearinghouseQueryDate) : new Date(0);
+                  addItem(`ch-${d.id}`, `Clearinghouse Query — ${name}`, "Annual re-query due", new Date(base.getTime() + 365 * DAY), "clearinghouse");
+                }
+                // Medical card
+                if (d.medicalCardExpiry) addItem(`med-${d.id}`, `Medical Card — ${name}`, "Card expiration", new Date(d.medicalCardExpiry), "medical");
+                // MVR
+                const mvrBase = d.lastMvrDate ? new Date(d.lastMvrDate) : new Date(0);
+                addItem(`mvr-${d.id}`, `Annual MVR Review — ${name}`, "Annual MVR pull due", new Date(mvrBase.getTime() + 365 * DAY), "mvr");
+                // CDL expiry
+                if (d.cdlExpiry) addItem(`cdl-${d.id}`, `CDL Expiry — ${name}`, "Commercial Driver's License", new Date(d.cdlExpiry), "cdl");
+              }
+              for (const eq of equipment.filter(e => e.isActive)) {
+                const inspBase = eq.lastAnnualInspectionDate ? new Date(eq.lastAnnualInspectionDate) : new Date(0);
+                addItem(`insp-${eq.id}`, `Annual Inspection — Unit ${eq.unitNumber}`, `${eq.year ?? ""} ${eq.make ?? ""} ${eq.model ?? ""}`.trim(), new Date(inspBase.getTime() + 365 * DAY), "equipment");
+              }
+              // Sort by due date ascending
+              items.sort((a, b) => a.days - b.days);
+              const urgency = (days: number) => days < 0 ? "overdue" : days < 14 ? "critical" : days < 30 ? "warning" : "ok";
+              const urgencyStyle = { overdue: "border-red-300 bg-red-50", critical: "border-orange-300 bg-orange-50", warning: "border-yellow-300 bg-yellow-50", ok: "border-emerald-200 bg-emerald-50/40" };
+              const urgencyBadge = { overdue: "bg-red-100 text-red-700 border-red-200", critical: "bg-orange-100 text-orange-700 border-orange-200", warning: "bg-yellow-100 text-yellow-700 border-yellow-200", ok: "bg-emerald-100 text-emerald-700 border-emerald-200" };
+              const catIcon: Record<string, string> = { clearinghouse: "🔍", medical: "🏥", mvr: "🚦", cdl: "📋", equipment: "🚛" };
+              const overdueCount = items.filter(i => i.days < 0).length;
+              const criticalCount = items.filter(i => i.days >= 0 && i.days < 14).length;
+              const warningCount = items.filter(i => i.days >= 14 && i.days < 30).length;
+              return (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold">Compliance Calendar</h2>
+                      <p className="text-xs text-muted-foreground">All driver and equipment compliance deadlines — sorted by urgency.</p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {overdueCount > 0 && <Badge className="bg-red-100 text-red-700 border-red-200 border">{overdueCount} Overdue</Badge>}
+                      {criticalCount > 0 && <Badge className="bg-orange-100 text-orange-700 border-orange-200 border">{criticalCount} Due &lt; 14 days</Badge>}
+                      {warningCount > 0 && <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 border">{warningCount} Due &lt; 30 days</Badge>}
+                    </div>
+                  </div>
+                  {items.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-slate-300 py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                      <Clock className="w-8 h-8 opacity-20" />
+                      <p className="text-sm font-medium">No compliance items to display</p>
+                      <p className="text-xs">Add drivers and equipment to see their deadlines here.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {items.map(item => {
+                        const u = urgency(item.days);
+                        return (
+                          <div key={item.id} className={`rounded-lg border px-4 py-3 flex items-center justify-between gap-3 ${urgencyStyle[u]}`}>
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{catIcon[item.cat] ?? "📌"}</span>
+                              <div>
+                                <p className="text-sm font-semibold">{item.label}</p>
+                                <p className="text-xs text-muted-foreground">{item.sublabel} · Due {item.dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                              </div>
+                            </div>
+                            <Badge className={`text-xs border whitespace-nowrap ${urgencyBadge[u]}`}>
+                              {item.days < 0 ? `${Math.abs(item.days)}d overdue` : item.days === 0 ? "Due today" : `${item.days}d left`}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </TabsContent>
+
         </Tabs>
       </div>
 
@@ -1319,6 +2214,41 @@ export default function DotHub() {
         open={equipDialog.open}
         onClose={() => setEquipDialog({ open: false })}
         existing={equipDialog.equip}
+      />
+
+      <DqFileDialog
+        open={dqDialog.open}
+        onClose={() => setDqDialog({ open: false })}
+        driver={dqDialog.driver ?? null}
+      />
+
+      <RandomTestDialog
+        open={testDialog.open}
+        onClose={() => setTestDialog({ open: false })}
+        existing={testDialog.test}
+        drivers={drivers}
+        year={testYear}
+      />
+
+      <AccidentDialog
+        open={accidentDialog.open}
+        onClose={() => setAccidentDialog({ open: false })}
+        existing={accidentDialog.accident}
+        drivers={drivers}
+      />
+
+      <InspectionDialog
+        open={inspectionDialog.open}
+        onClose={() => setInspectionDialog({ open: false })}
+        existing={inspectionDialog.inspection}
+        drivers={drivers}
+      />
+
+      <DvirDialog
+        open={dvirDialog2.open}
+        onClose={() => setDvirDialog2({ open: false })}
+        existing={dvirDialog2.dvir}
+        drivers={drivers}
       />
 
       {/* Delete confirm */}

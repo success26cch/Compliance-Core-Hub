@@ -5682,5 +5682,164 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ── DOT Random Testing ──────────────────────────────────────────────────────
+  app.get("/api/dot/random-tests", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+      const records = await storage.getDotRandomTests(req.user.claims.sub, year);
+      res.json(records);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/dot/random-tests", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.createDotRandomTest({ ...req.body, userId: req.user.claims.sub });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/dot/random-tests/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.updateDotRandomTest(parseInt(req.params.id), req.user.claims.sub, req.body);
+      if (!record) return res.status(404).json({ message: "Not found" });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/dot/random-tests/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteDotRandomTest(parseInt(req.params.id), req.user.claims.sub);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Random testing program stats (rate compliance)
+  app.get("/api/dot/random-tests/stats", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = req.user.claims.sub;
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      const [tests, drivers] = await Promise.all([
+        storage.getDotRandomTests(userId, year),
+        storage.getDotDrivers(userId),
+      ]);
+      const poolSize = drivers.filter(d => d.status === "active" && d.randomPoolIncluded).length;
+      const drugTests = tests.filter(t => t.testType === "drug");
+      const alcoholTests = tests.filter(t => t.testType === "alcohol");
+      const drugCompleted = drugTests.filter(t => t.result && t.result !== "pending" && t.result !== "cancelled");
+      const alcoholCompleted = alcoholTests.filter(t => t.result && t.result !== "pending" && t.result !== "cancelled");
+      const requiredDrug = Math.ceil(poolSize * 0.50);
+      const requiredAlcohol = Math.ceil(poolSize * 0.10);
+      res.json({
+        year, poolSize,
+        drug: { required: requiredDrug, completed: drugCompleted.length, pending: drugTests.filter(t => t.result === "pending" || !t.result).length, positives: drugTests.filter(t => t.result === "positive").length, rate: poolSize ? Math.round((drugCompleted.length / poolSize) * 100) : 0 },
+        alcohol: { required: requiredAlcohol, completed: alcoholCompleted.length, pending: alcoholTests.filter(t => t.result === "pending" || !t.result).length, positives: alcoholTests.filter(t => t.result === "positive").length, rate: poolSize ? Math.round((alcoholCompleted.length / poolSize) * 100) : 0 },
+      });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ── DOT Accident Register ───────────────────────────────────────────────────
+  app.get("/api/dot/accidents", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      res.json(await storage.getDotAccidents(req.user.claims.sub));
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/dot/accidents", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.createDotAccident({ ...req.body, userId: req.user.claims.sub });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/dot/accidents/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.updateDotAccident(parseInt(req.params.id), req.user.claims.sub, req.body);
+      if (!record) return res.status(404).json({ message: "Not found" });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/dot/accidents/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteDotAccident(parseInt(req.params.id), req.user.claims.sub);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ── DOT Roadside Inspections ────────────────────────────────────────────────
+  app.get("/api/dot/inspections", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      res.json(await storage.getDotRoadsideInspections(req.user.claims.sub));
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/dot/inspections", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.createDotRoadsideInspection({ ...req.body, userId: req.user.claims.sub });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/dot/inspections/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.updateDotRoadsideInspection(parseInt(req.params.id), req.user.claims.sub, req.body);
+      if (!record) return res.status(404).json({ message: "Not found" });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/dot/inspections/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteDotRoadsideInspection(parseInt(req.params.id), req.user.claims.sub);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ── DOT DVIR Logs ───────────────────────────────────────────────────────────
+  app.get("/api/dot/dvir", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      res.json(await storage.getDotDvirLogs(req.user.claims.sub));
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/dot/dvir", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.createDotDvirLog({ ...req.body, userId: req.user.claims.sub });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/dot/dvir/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const record = await storage.updateDotDvirLog(parseInt(req.params.id), req.user.claims.sub, req.body);
+      if (!record) return res.status(404).json({ message: "Not found" });
+      res.json(record);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/dot/dvir/:id", async (req: any, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteDotDvirLog(parseInt(req.params.id), req.user.claims.sub);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }

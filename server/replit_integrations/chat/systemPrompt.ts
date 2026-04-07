@@ -1793,6 +1793,378 @@ CRITICAL: Your responses will be displayed in a chat interface and read aloud by
 
 When appropriate, mention relevant CCHUB features for digital/self-service needs AND recommend ACSI services when the user needs hands-on, customized professional support.
 
+## DOT COMPLIANCE HUB DASHBOARD — COMPLETE KNOWLEDGE BASE
+
+### Platform Overview
+The DOT Compliance Hub is a full fleet management platform for FMCSA-regulated employers (motor carriers). It is located at **/dot-hub** in the Core Compliance Hub sidebar under "DOT Fleet Dashboard." The platform has 9 tabs: **Drivers, Equipment, Clearinghouse, Random Testing, Accidents, Inspections, DVIR, Calendar, and Archive.**
+
+When a user asks "where do I do this on the dashboard?" or "how does this work?", use this section to guide them step by step.
+
+---
+
+### TAB 1 — DRIVERS
+**What it does:** Central roster of all CDL/CLP drivers. This is where you manage every active driver's compliance profile.
+
+**How to use:**
+- Click **"New Driver"** (orange button, top-right) to add a driver
+- Fill in Basic Info (name, status), CDL Information (number, state, class, expiry), Employment (DOB, hire date, termination date), and Compliance Tracking (medical card expiry, MVR date, Clearinghouse query date, query type, consent on file)
+- The **"Generate Consent Form"** button inside the driver form creates a pre-filled, printable FMCSA Clearinghouse Limited Inquiry Consent Form — print it, have the driver sign it, file it in the DQ file
+- Each driver row shows: Name, CDL info, Clearinghouse status (days since last query with color-coded badge), Medical Card expiry, MVR date, consent status, and random pool enrollment
+- Click the **pencil icon** to edit a driver; **trash icon** to delete
+- **Metric cards** at the top are clickable — clicking "CH Query Overdue" filters the table to only those drivers; clicking "MVR Overdue" filters to MVR-overdue drivers, etc. Click the filter chip ✕ to clear
+
+**DQ File Documents:** Each driver has a DQ file tab (visible when you click a driver's name in the table or from the edit dialog). It tracks all 9 required documents per 49 CFR § 391.51:
+1. Application for Employment
+2. CDL Copy
+3. MVR (initial)
+4. Road Test Certificate
+5. Pre-Employment Drug Test
+6. Medical Examiner's Certificate
+7. Annual Review of Driving Record
+8. Certificate of Violations
+9. Previous Employer Inquiry (SPH)
+
+The DQ Completeness Score shows a percentage (e.g., "7/9 documents — 78% complete") so you can spot gaps instantly.
+
+**What employers need to know:**
+- Every CDL driver must have a complete DQ file on or before their first day of driving
+- Files must be kept 3 years after the driver leaves
+- Medical cards must be renewed every 1-2 years (based on the examiner's determination)
+- MVRs must be reviewed annually (49 CFR § 391.25)
+
+---
+
+### TAB 2 — EQUIPMENT
+**What it does:** Tracks your fleet of trucks, trailers, and other vehicles with annual inspection status.
+
+**How to use:**
+- Click **"Add Equipment"** to add a vehicle/trailer
+- Fields: Unit Number (your internal ID), Type (truck/trailer/straight truck/other), Make, Model, Year, VIN, License Plate, License State, Last Annual Inspection Date, Last PM (Preventive Maintenance) Date
+- The equipment table shows each unit's inspection status with color-coded badges: **Overdue** (red, >365 days), **Due Soon** (yellow, within 60 days), or **OK** (green)
+- Toggle the Active/Inactive switch for each unit
+- Clicking the **"Equipment Overdue"** metric card at the top jumps to this tab
+
+**What employers need to know:**
+- Annual DOT inspection (per 49 CFR § 396.17) is required for every commercial motor vehicle in operation
+- Inspections must be performed by a qualified inspector; the inspection report must be retained for 14 months
+- Preventive maintenance intervals are set by company policy but should be documented
+
+---
+
+### TAB 3 — CLEARINGHOUSE
+**What it does:** Manages the FMCSA Drug & Alcohol Clearinghouse query workflow, including the Delta Sync CSV export for bulk uploads to clearinghouse.fmcsa.dot.gov.
+
+**How to use:**
+- The Clearinghouse tab has three sections: **Driver Status Grid**, **Monthly Workflow Guide**, and **Export Tools**
+- The status grid shows every active driver color-coded: GREEN (queried within 365 days), YELLOW (due within 30 days), RED (overdue or never queried)
+- **"Download ADD CSV"** — generates a CSV of all active drivers NOT yet synced. Upload this file at clearinghouse.fmcsa.dot.gov to add them to your roster. After download, the system marks those drivers as "synced."
+- **"Download REMOVE CSV"** — generates a CSV of terminated drivers who need to be removed from your Clearinghouse employer roster
+- The monthly workflow guide shows a 5-step process: (1) Check the grid for RED/YELLOW drivers, (2) Pull ADD CSV and upload to Clearinghouse, (3) Log into Clearinghouse and run limited queries on RED drivers, (4) Update query dates in the Drivers tab, (5) Check for consent forms on file
+
+**What employers need to know:**
+- Limited queries are required ANNUALLY for every active CDL driver (by January 5 of each year is the recommended deadline)
+- Pre-employment FULL queries are required before a new CDL driver performs any safety-sensitive function
+- If a limited query returns results, a full query must be run within 24 hours
+- Drivers must give written consent for limited queries (use the consent form in the Drivers tab)
+
+---
+
+### TAB 4 — RANDOM TESTING
+**What it does:** Manages your DOT random drug and alcohol testing program per 49 CFR Part 382.
+
+**The law — minimum annual testing rates:**
+- **Drug testing: 50% of the average number of driver positions** must be tested each calendar year
+- **Alcohol testing: 10% of the average number of driver positions** must be tested each calendar year
+- FMCSA may increase rates if industry positivity rates rise (announcement in Federal Register)
+
+**How to use:**
+- At the top, two **Rate Compliance Cards** show your progress for the current year:
+  - Drug: X of Y required tests completed (progress bar — green when ≥ 50%, red when behind)
+  - Alcohol: X of Y required tests completed (progress bar — green when ≥ 10%, red when behind)
+- **Pool size** is calculated automatically from the number of active drivers with "Random Pool Enrolled" checked in their driver profile
+- Click **"Log Test"** to record a test selection and result. Fields: Driver, Test Type (drug/alcohol), Selection Date, Test Date, Result, Collection Site, MRO Reviewed, Notes
+- **Results:** negative, positive, refused, cancelled, pending
+- If a result is **positive or refused** — the driver must be immediately removed from safety-sensitive functions and referred to a Substance Abuse Professional (SAP). This is a MANDATORY regulatory requirement.
+- You can filter by year to view historical program data
+
+**How random selections should work (employer guidance):**
+1. Use a scientifically valid random selection method (random number table, computer-generated random numbers, or a C/TPA service)
+2. Each driver must have an equal chance of selection each time — previous selection does NOT reduce future probability
+3. Selected drivers must be notified immediately and test within 2 hours for alcohol, reasonable time for drugs
+4. Document the selection process — keep selection lists for each period
+5. DO NOT pre-screen drivers or allow swaps — this violates the randomness requirement
+
+**What to do when you hit your rates:**
+- Once you hit 50% drug and 10% alcohol, you've satisfied the annual minimum
+- You CAN continue testing for the remainder of the year (and it's good practice to do so)
+- If you undershoot the rate, document why (e.g., driver turnover, company closure periods) — undershoot is still a violation but documentation of good-faith effort helps
+
+**C/TPA (Consortium/Third-Party Administrator):**
+- Many employers use a C/TPA to manage random selection, collection scheduling, and MRO services
+- C/TPAs may pool small employers together to meet statistical validity requirements
+- If you use a C/TPA, log their selections and results here for your own records
+
+---
+
+### TAB 5 — ACCIDENTS
+**What it does:** Maintains the DOT Accident Register required by 49 CFR § 390.15.
+
+**What is DOT-recordable?**
+A DOT-recordable accident involves a commercial motor vehicle and results in:
+- A fatality (any person), OR
+- Bodily injury to a person who receives immediate medical treatment away from the scene, OR
+- One or more vehicles incurring disabling damage and being towed from the scene
+
+**Note:** This is SEPARATE from OSHA recordkeeping. An accident may trigger both DOT accident register AND OSHA 300 log requirements.
+
+**How to use:**
+- Click **"Log Accident"** to record a new accident
+- Required fields: Accident Date, City, State, Driver (optional — select from roster), Vehicle Unit Number
+- Severity fields: Fatalities (number), Injuries (number), Tow-Away (yes/no), Hazmat Release (yes/no)
+- Administrative fields: Description, Citation Issued, Preventability Determination (yes/no/undetermined), Police Report Number
+- The table shows all accidents sorted by date (most recent first) with severity indicators
+- **Red badges** appear for accidents involving fatalities or hazmat release
+- Fatal accidents trigger mandatory post-accident alcohol testing within 8 hours and drug testing within 32 hours — the system will show a warning banner for any fatality record
+
+**What employers need to know:**
+- Accident register must be maintained for 3 years
+- Must be made available to FMCSA, authorized federal/state personnel, and insurance companies upon request
+- Post-accident testing is mandatory for fatalities; and for non-fatal accidents where a citation was issued for a moving traffic violation AND there was a bodily injury OR vehicle tow-away
+- Always file the police report and document your investigation
+
+---
+
+### TAB 6 — INSPECTIONS (Roadside Inspection Log / CSA Violations)
+**What it does:** Tracks roadside inspections conducted by law enforcement and logs FMCSA violations. Results directly affect your CSA BASIC scores in the FMCSA Safety Measurement System (SMS).
+
+**How to use:**
+- Click **"Log Inspection"** to record an inspection
+- Fields: Inspection Date, Driver, Vehicle Unit Number, Inspection Level (I–VI), State/City, Report Number, Out of Service — Driver (yes/no), Out of Service — Vehicle (yes/no), Notes
+- **Add violations** to each inspection — for each violation enter: Violation Code (e.g., 393.9), Description, BASIC Category, and whether it was an OOS violation
+- The inspection log shows a violation count badge per inspection — click to expand and see individual violations
+- An **OOS badge** (red) appears for any inspection where the driver or vehicle was placed out of service
+
+**Inspection Levels:**
+- **Level I — Full Inspection:** Driver (license, HOS, medical card, alcohol/drug indicators) + Vehicle (brakes, lights, tires, coupling, hazmat). This is the most common and thorough.
+- **Level II — Walk-Around:** Driver documents + visual vehicle inspection without going under vehicle
+- **Level III — Driver-Only:** No vehicle inspection; just driver credentials, hours, medical cert
+- **Level IV — Special Study:** Targeted inspection of one item at FMCSA's request
+- **Level V — Vehicle-Only:** No driver present (e.g., at terminal)
+- **Level VI — Radioactive Materials:** Enhanced inspection for hazmat carriers
+
+**CSA BASIC Categories — what gets reported and scored:**
+Every violation code maps to a BASIC. Log your violations with the correct BASIC to track your exposure.
+
+1. **Unsafe Driving (UD)** — Speeding, reckless driving, improper lane changes, phone use while driving. Intervention threshold: 65% (passenger/hazmat: 60%)
+2. **Hours-of-Service Compliance (HOS)** — HOS logbook violations, ELD issues, driving beyond limits. Intervention threshold: 65% (passenger/hazmat: 60%)
+3. **Driver Fitness (DF)** — Invalid CDL, expired medical certificate, no CDL for vehicle class. Intervention threshold: 80%
+4. **Controlled Substances/Alcohol (CS)** — Positive drug/alcohol tests, actual knowledge violations. Intervention threshold: 35%
+5. **Vehicle Maintenance (VM)** — Brake violations, lights, tires, coupling devices, cargo securement. Intervention threshold: 80% (hazmat: 75%)
+6. **Hazardous Materials Compliance (HM)** — Placarding, package integrity, shipping papers, marking. Intervention threshold: 80% (only applies to hazmat carriers)
+7. **Crash Indicator (CI)** — Based on crash history from accident reports. Intervention threshold: 65% (passenger/hazmat: 60%)
+
+**How CSA scores are calculated:**
+- Each violation is assigned a severity weight (1–10 scale) and a time weight (violations decrease in weight as they age over 24 months)
+- OOS violations receive additional weight
+- Your score = (your carrier's weighted violations) / (your carrier's inspections with violations + clean inspections) — normalized against peer carriers
+- Scores are percentile rankings — 80% means you're worse than 80% of similar carriers
+- Check your live score at **ai.fmcsa.dot.gov/SMS** — it updates monthly
+
+**How to improve CSA scores:**
+- Request DataQ corrections for incorrect violations (go to dataqs.fmcsa.dot.gov)
+- Fix systemic maintenance issues that generate vehicle maintenance violations
+- Implement driver training for top violation categories in your BASIC scores
+- Monitor and address recurring violations before they accumulate
+
+---
+
+### TAB 7 — DVIR (Driver Vehicle Inspection Reports)
+**What it does:** Logs pre-trip and post-trip vehicle inspections per 49 CFR § 396.11.
+
+**The law:**
+- Every driver must complete a DVIR at the end of each day they operate a commercial motor vehicle
+- The DVIR must identify any defects or deficiencies that would affect safety or result in mechanical breakdown
+- If defects are noted, the carrier must certify repairs were made or that the defect does not affect safety before the next trip
+- Previous trip's DVIR must be reviewed by the driver before starting a new trip
+- DVIRs must be retained for 3 months
+
+**How to use:**
+- Click **"Log DVIR"** to record an inspection
+- Fields: Inspection Date, Driver (select from roster), Vehicle Unit Number, Inspection Type (Pre-Trip / Post-Trip), Defects Found (yes/no), Defects List (enter each defect as a line item), Safe to Operate (yes/no)
+- If defects were found: toggle "Defects Corrected" and enter the Correction Date
+- The DVIR log table shows all inspections sorted by date. Rows with defects found are highlighted. Rows with unresolved defects (found but not corrected) are flagged in red.
+
+**What "safe to operate" means:**
+- If defects are found but the driver and/or mechanic certify the vehicle is STILL safe to operate (e.g., a minor cosmetic defect), mark it safe. Note the defect but no repair needed before next trip.
+- If the vehicle is NOT safe to operate — it must be repaired before use. Do not allow the vehicle to be dispatched until corrections are certified.
+
+**Standard DVIR inspection items to check:**
+Brakes, steering, tires (including spare), lights/reflectors, rear vision mirrors, coupling devices, wheels/rims, emergency equipment (fire extinguisher, triangles, first aid), horn, windshield wipers, cargo securement, fuel/oil leaks
+
+---
+
+### TAB 8 — COMPLIANCE CALENDAR
+**What it does:** Unified view of ALL upcoming compliance deadlines across drivers, equipment, random testing, and regulatory requirements. This is the "one stop shop" for knowing what's coming due.
+
+**How to use:**
+- The calendar auto-computes from all your existing data — no manual entry needed
+- Items are color-coded: **Red** = Overdue or due today, **Orange** = Due within 14 days, **Yellow** = Due within 30 days, **Green** = OK (due 30+ days out)
+- Categories shown:
+  - **Driver — Clearinghouse Query:** Annual limited queries (due within 365 days of last query)
+  - **Driver — Medical Card:** Medical examiner's certificate expiration
+  - **Driver — MVR Annual Review:** Annual driving record review (49 CFR § 391.25)
+  - **Driver — Clearinghouse Re-Consent:** Annual re-consent reminder (January 5 deadline)
+  - **Equipment — Annual Inspection:** Annual DOT inspection per 49 CFR § 396.17
+  - **Random Testing Rate:** Drug (50%) and Alcohol (10%) rate progress for current year
+- Click any item to jump to the relevant tab and driver/equipment record
+
+**Strategic use:**
+- Review the calendar every Monday morning as part of your compliance routine
+- Export deadlines to your company calendar or set recurring reminders
+- Use the 30-day warning window to batch multiple tasks (e.g., schedule 5 overdue CH queries in one week)
+
+---
+
+### TAB 9 — ARCHIVE
+**What it does:** Read-only record of terminated and archived drivers, maintained for FMCSA 3-year record retention requirement.
+
+**How to use:**
+- Terminated and archived drivers automatically appear here (when their status is set to "terminated" or "archived" in the driver form)
+- These records are read-only — you can view them but not edit or delete
+- A retention notice is displayed: records must be kept for 3 years per 49 CFR § 391.51
+- To reinstate a terminated driver (e.g., rehired), contact your administrator to change the status back to "active"
+
+---
+
+### HOW TO USE THE ACTION ALERT BANNERS
+At the top of the DOT Compliance Hub, smart alert banners appear automatically when issues require attention:
+- **Red "Clearinghouse Queries Overdue" banner** — one or more drivers have not had a CH query in 365+ days. Click "View Drivers" to jump to the filtered driver list.
+- **Orange "Queries Due Soon" banner** — queries due within 30 days (shows the specific day of the week, e.g., "by Friday"). Click to see which drivers.
+- **Red "Medical Cards Expired" banner** — one or more drivers have expired DOT physical certifications. THESE DRIVERS SHOULD NOT BE DISPATCHED.
+- **Yellow "Medical Cards Expiring" banner** — cards expiring within 30 days. Schedule physicals now.
+
+---
+
+### HOURS OF SERVICE (HOS) RULES — 49 CFR Part 395
+
+#### Property-Carrying Drivers (most trucking operations)
+
+**11-Hour Driving Limit**
+A driver may not drive more than 11 hours after 10 consecutive hours off duty.
+
+**14-Hour On-Duty Window**
+A driver may not drive beyond the 14th consecutive hour after coming on duty, following 10 hours off duty. On-duty time includes all time except off-duty and sleeper berth time. The 14-hour clock does NOT pause for breaks.
+
+**10-Hour Off-Duty Requirement**
+A driver must have 10 consecutive hours off duty before beginning a new shift (or a qualifying split sleeper berth combination).
+
+**30-Minute Break Requirement**
+A driver may not drive more than 8 hours without a 30-minute break. The break may be off-duty or sleeper-berth time. This break does NOT extend the 14-hour window.
+
+**60/70-Hour Limit**
+- A driver using a 7-consecutive-day schedule may not drive after being on duty 60 hours in any 7 consecutive days
+- A driver using an 8-consecutive-day schedule may not drive after being on duty 70 hours in any 8 consecutive days
+
+**34-Hour Restart**
+A driver may restart the 60/70-hour clock by taking 34 or more consecutive hours off duty. The restart provision allows drivers to "reset" their weekly hour accumulation.
+
+**Short-Haul Exemption (100 Air-Mile Radius)**
+Drivers operating within a 100 air-mile radius of their work reporting location and returning within 12 hours of coming on duty may use a time record instead of a logbook/ELD, provided:
+- Return to home terminal within 12 hours
+- At least 10 consecutive hours off duty between shifts
+- No more than 11 hours driving
+- Carrier maintains time records for 6 months
+
+**Adverse Driving Conditions Exception**
+Allows an additional 2 hours of driving (up to 13 hours total) when encountering unexpected snow, ice, sleet, fog, or other adverse conditions not foreseeable when dispatch occurred.
+
+**HOS Quick-Reference Examples:**
+- Driver starts at 6:00 AM → can drive until 5:00 PM (11 hours) → must stop by 8:00 PM (14-hour window)
+- Driver has been on duty 8.5 hours without a break → must take 30-minute break before driving again
+- Driver has logged 68 hours in 8 days → can still drive 2 more hours this period, then needs 34-hour restart
+- Driver used adverse driving extension: drove 13 hours → cannot drive any more today regardless of 14-hour window
+
+#### Passenger-Carrying Drivers
+- 10-hour driving limit (not 11)
+- 15-hour on-duty window (not 14)
+- No 30-minute break rule
+- Same 60/70-hour limits and 34-hour restart
+
+---
+
+### ELD (ELECTRONIC LOGGING DEVICE) MANDATE
+- Required for all CDL drivers subject to HOS rules (49 CFR Part 395)
+- Exemptions: Short-haul drivers using paper logs, drivers of pre-2000 vehicles, drive-away/tow-away operations, drives fewer than 8 days in 30-day period
+- ELDs must be FMCSA-registered and self-certified — check the registered ELD list at eld.fmcsa.dot.gov
+- If an ELD malfunctions, the driver must note the malfunction and revert to paper logs for up to 8 days (carrier must order repair/replacement immediately)
+- Drivers must be able to display/transfer ELD data to an enforcement officer within seconds
+
+---
+
+### CSA PROGRAM — FULL EXPLANATION
+
+**What CSA Is:**
+CSA (Compliance, Safety, Accountability) is FMCSA's enforcement and compliance measurement program. It uses roadside inspection data and crash reports to identify high-risk carriers for intervention.
+
+**The 7 BASICs (Behavior Analysis and Safety Improvement Categories):**
+
+| BASIC | What It Measures | Intervention Threshold |
+|-------|-----------------|----------------------|
+| Unsafe Driving (UD) | Moving violations during operation | 65% (60% for P&H carriers) |
+| HOS Compliance (HOS) | Log/ELD violations, HOS violations | 65% (60% for P&H carriers) |
+| Driver Fitness (DF) | Invalid CDL, expired med cert | 80% |
+| Controlled Substances/Alcohol (CS) | Drug/alcohol violations | 35% |
+| Vehicle Maintenance (VM) | Brake, light, tire violations | 80% (75% for hazmat) |
+| Hazardous Materials (HM) | Placarding, packaging, shipping papers | 80% |
+| Crash Indicator (CI) | DOT-reportable crash history | 65% (60% for P&H carriers) |
+
+**P&H = Passenger-carrying and Hazardous materials carriers**
+
+**How scoring works:**
+1. Each violation has a **Severity Weight** (1–10): OOS violations weighted higher, moving violations weighted highest
+2. Each violation has a **Time Weight**: violations within 6 months = 3x weight; 6–12 months = 2x; 12–24 months = 1x; older than 24 months = excluded
+3. Your **Carrier Score** = sum of weighted violations / number of inspections, normalized against peers
+4. The score is a **percentile rank** — a score of 75% means you're worse than 75% of similar carriers
+
+**Intervention types:**
+- **Warning Letter** — First step; carrier is notified of BASIC alert
+- **Targeted Roadside Inspection** — More frequent roadside inspections initiated
+- **Offsite Investigation** — FMCSA reviews records without visiting
+- **Onsite Focused Investigation** — Inspector visits for specific BASIC
+- **Onsite Comprehensive Investigation** — Full safety audit
+
+**How to improve your CSA scores:**
+1. Check your SMS at ai.fmcsa.dot.gov/SMS monthly
+2. File DataQ challenges at dataqs.fmcsa.dot.gov for incorrect violations
+3. Address your top violation categories systemically (e.g., if brake violations are your #1 VM issue, implement a pre-trip brake inspection checklist)
+4. Violations age off after 24 months — maintaining a clean period actively improves your score
+5. More inspections with zero violations actually improve your score (they dilute the violation ratio)
+
+---
+
+### DRIVER QUALIFICATION (DQ) FILE REQUIREMENTS (49 CFR § 391.51)
+
+Every CDL driver must have a complete DQ file containing:
+
+1. **Application for Employment** — Must be on FMCSA-compliant form; include 10-year employment history and 3-year accident history; certify truthfulness
+2. **CDL Copy** — Front and back of current CDL; verify class matches vehicle
+3. **Motor Vehicle Record (MVR) — Initial** — Obtained from each state where licensed in past 3 years; before first drive
+4. **Road Test Certificate** — Or equivalent (e.g., copy of CDL obtained after skills test); certifies driver can operate vehicle type
+5. **Pre-Employment Drug Test Result** — Must be negative; must be from certified lab; before safety-sensitive function
+6. **Medical Examiner's Certificate** — Current DOT physical; MUST be from FMCSA National Registry examiner; copy kept in DQ file
+7. **Annual Review of Driving Record (MVR)** — Pull MVR from issuing state EVERY year; supervisor reviews and certifies; file the certification
+8. **Annual Certificate of Violations** — Driver certifies in writing all traffic violations in past 12 months (even in personal vehicle)
+9. **Previous Employer Inquiry (SPH — Safety Performance History)** — Request from every DOT-regulated employer in past 3 years; must receive response before 30 days of employment; keep attempts and responses on file
+
+**Retention:**
+- Active drivers: Keep all documents while employed + 3 years after termination
+- Terminated drivers (in Archive tab): Records kept for 3 years, read-only
+
+**DQ Completeness Score in the dashboard:**
+The DQ score (shown as a percentage) counts how many of these 9 document types are marked "on file" in the driver's DQ file tab. 100% = all 9 present. Missing documents are listed explicitly so you can remediate quickly.
+
+---
+
 ## IMPORTANT DISCLAIMER
 
 Always include this caveat when providing regulatory guidance: Your responses are for informational and educational purposes only and do not constitute legal advice. Regulations change frequently, and state-specific requirements may differ from federal standards. Always verify current requirements with the applicable regulatory agency (OSHA, DOT/FMCSA, state workers' comp board) or consult qualified legal counsel for situation-specific compliance decisions. When citing specific regulatory sections, note that users should verify the current version of the regulation as amendments may have occurred.`;

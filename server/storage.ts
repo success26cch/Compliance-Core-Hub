@@ -1,6 +1,11 @@
 import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, teamDepartments, teamAnnouncements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent, type TeamDepartment, type InsertTeamDepartment, type TeamAnnouncement, type InsertTeamAnnouncement,
   dotDrivers, dotDqDocuments, dotEquipment,
-  type DotDriver, type InsertDotDriver, type DotDqDocument, type InsertDotDqDocument, type DotEquipment, type InsertDotEquipment
+  dotRandomTests, dotAccidents, dotRoadsideInspections, dotDvirLogs,
+  type DotDriver, type InsertDotDriver, type DotDqDocument, type InsertDotDqDocument, type DotEquipment, type InsertDotEquipment,
+  type DotRandomTest, type InsertDotRandomTest,
+  type DotAccident, type InsertDotAccident,
+  type DotRoadsideInspection, type InsertDotRoadsideInspection,
+  type DotDvirLog, type InsertDotDvirLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
@@ -238,6 +243,26 @@ export interface IStorage {
   createDotEquipment(data: InsertDotEquipment): Promise<DotEquipment>;
   updateDotEquipment(id: number, userId: string, data: Partial<InsertDotEquipment>): Promise<DotEquipment | undefined>;
   deleteDotEquipment(id: number, userId: string): Promise<void>;
+  // Random Testing
+  getDotRandomTests(userId: string, year?: number): Promise<DotRandomTest[]>;
+  createDotRandomTest(data: InsertDotRandomTest): Promise<DotRandomTest>;
+  updateDotRandomTest(id: number, userId: string, data: Partial<InsertDotRandomTest>): Promise<DotRandomTest | undefined>;
+  deleteDotRandomTest(id: number, userId: string): Promise<void>;
+  // Accident Register
+  getDotAccidents(userId: string): Promise<DotAccident[]>;
+  createDotAccident(data: InsertDotAccident): Promise<DotAccident>;
+  updateDotAccident(id: number, userId: string, data: Partial<InsertDotAccident>): Promise<DotAccident | undefined>;
+  deleteDotAccident(id: number, userId: string): Promise<void>;
+  // Roadside Inspections
+  getDotRoadsideInspections(userId: string): Promise<DotRoadsideInspection[]>;
+  createDotRoadsideInspection(data: InsertDotRoadsideInspection): Promise<DotRoadsideInspection>;
+  updateDotRoadsideInspection(id: number, userId: string, data: Partial<InsertDotRoadsideInspection>): Promise<DotRoadsideInspection | undefined>;
+  deleteDotRoadsideInspection(id: number, userId: string): Promise<void>;
+  // DVIR Logs
+  getDotDvirLogs(userId: string): Promise<DotDvirLog[]>;
+  createDotDvirLog(data: InsertDotDvirLog): Promise<DotDvirLog>;
+  updateDotDvirLog(id: number, userId: string, data: Partial<InsertDotDvirLog>): Promise<DotDvirLog | undefined>;
+  deleteDotDvirLog(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1459,6 +1484,84 @@ export class DatabaseStorage implements IStorage {
         .set({ clearinghouseRemovalExported: true, updatedAt: new Date() })
         .where(and(eq(dotDrivers.id, id), eq(dotDrivers.userId, userId)));
     }
+  }
+
+  // ── Random Testing ──────────────────────────────────────────────────────────
+  async getDotRandomTests(userId: string, year?: number): Promise<DotRandomTest[]> {
+    const conditions = [eq(dotRandomTests.userId, userId)];
+    if (year) conditions.push(eq(dotRandomTests.programYear, year));
+    return db.select().from(dotRandomTests).where(and(...conditions)).orderBy(desc(dotRandomTests.selectedDate));
+  }
+
+  async createDotRandomTest(data: InsertDotRandomTest): Promise<DotRandomTest> {
+    const [rec] = await db.insert(dotRandomTests).values(data).returning();
+    return rec;
+  }
+
+  async updateDotRandomTest(id: number, userId: string, data: Partial<InsertDotRandomTest>): Promise<DotRandomTest | undefined> {
+    const [rec] = await db.update(dotRandomTests).set(data).where(and(eq(dotRandomTests.id, id), eq(dotRandomTests.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteDotRandomTest(id: number, userId: string): Promise<void> {
+    await db.delete(dotRandomTests).where(and(eq(dotRandomTests.id, id), eq(dotRandomTests.userId, userId)));
+  }
+
+  // ── Accident Register ───────────────────────────────────────────────────────
+  async getDotAccidents(userId: string): Promise<DotAccident[]> {
+    return db.select().from(dotAccidents).where(eq(dotAccidents.userId, userId)).orderBy(desc(dotAccidents.accidentDate));
+  }
+
+  async createDotAccident(data: InsertDotAccident): Promise<DotAccident> {
+    const [rec] = await db.insert(dotAccidents).values(data).returning();
+    return rec;
+  }
+
+  async updateDotAccident(id: number, userId: string, data: Partial<InsertDotAccident>): Promise<DotAccident | undefined> {
+    const [rec] = await db.update(dotAccidents).set({ ...data, updatedAt: new Date() }).where(and(eq(dotAccidents.id, id), eq(dotAccidents.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteDotAccident(id: number, userId: string): Promise<void> {
+    await db.delete(dotAccidents).where(and(eq(dotAccidents.id, id), eq(dotAccidents.userId, userId)));
+  }
+
+  // ── Roadside Inspections ────────────────────────────────────────────────────
+  async getDotRoadsideInspections(userId: string): Promise<DotRoadsideInspection[]> {
+    return db.select().from(dotRoadsideInspections).where(eq(dotRoadsideInspections.userId, userId)).orderBy(desc(dotRoadsideInspections.inspectionDate));
+  }
+
+  async createDotRoadsideInspection(data: InsertDotRoadsideInspection): Promise<DotRoadsideInspection> {
+    const [rec] = await db.insert(dotRoadsideInspections).values(data).returning();
+    return rec;
+  }
+
+  async updateDotRoadsideInspection(id: number, userId: string, data: Partial<InsertDotRoadsideInspection>): Promise<DotRoadsideInspection | undefined> {
+    const [rec] = await db.update(dotRoadsideInspections).set(data).where(and(eq(dotRoadsideInspections.id, id), eq(dotRoadsideInspections.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteDotRoadsideInspection(id: number, userId: string): Promise<void> {
+    await db.delete(dotRoadsideInspections).where(and(eq(dotRoadsideInspections.id, id), eq(dotRoadsideInspections.userId, userId)));
+  }
+
+  // ── DVIR Logs ───────────────────────────────────────────────────────────────
+  async getDotDvirLogs(userId: string): Promise<DotDvirLog[]> {
+    return db.select().from(dotDvirLogs).where(eq(dotDvirLogs.userId, userId)).orderBy(desc(dotDvirLogs.inspectionDate));
+  }
+
+  async createDotDvirLog(data: InsertDotDvirLog): Promise<DotDvirLog> {
+    const [rec] = await db.insert(dotDvirLogs).values(data).returning();
+    return rec;
+  }
+
+  async updateDotDvirLog(id: number, userId: string, data: Partial<InsertDotDvirLog>): Promise<DotDvirLog | undefined> {
+    const [rec] = await db.update(dotDvirLogs).set(data).where(and(eq(dotDvirLogs.id, id), eq(dotDvirLogs.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteDotDvirLog(id: number, userId: string): Promise<void> {
+    await db.delete(dotDvirLogs).where(and(eq(dotDvirLogs.id, id), eq(dotDvirLogs.userId, userId)));
   }
 }
 
