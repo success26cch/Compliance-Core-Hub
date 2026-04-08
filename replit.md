@@ -1,129 +1,42 @@
 # Core Compliance Hub
 
 ## Overview
-Core Compliance Hub (CCHUB) is a comprehensive occupational health and compliance platform for employers. It provides AI-powered compliance assistance, ISO management tools, OSHA recordability guidance, professional training, and employee recognition solutions. The platform aims to streamline compliance processes, enhance workplace safety, and improve employee engagement through innovative technology and expert resources.
+Core Compliance Hub (CCHUB) is a comprehensive occupational health and compliance platform designed for employers. It offers AI-powered assistance for compliance, ISO management, OSHA recordability, professional training, and employee recognition. The platform's core purpose is to streamline compliance processes, enhance workplace safety, and boost employee engagement through advanced technology and expert resources, aiming for a significant impact on occupational health and compliance markets.
 
 ## User Preferences
 - Large logo display preferred
 - Focus on Occupational Medicine terminology
 - AI personas: Senior Occupational Health & Safety Compliance Expert (CCHUB), Lead ISO Auditor (ACSI)
 
-## Future Product: Corey MD (On Deck — Post-CCHUB Launch)
-**Concept:** A clinical decision-support AI for occupational health providers — not a diagnostic tool, a reasoning tool. Helps providers treat without bias while protecting both patient and employer interests.
-**Core capabilities planned:**
-- OSHA 29 CFR 1904 recordability reasoning with full clinical documentation rationale
-- Work restriction recommendations with defensible medical reasoning (lifting, RTW timelines, modified duty)
-- Case note language the provider can use to support non-recordability determinations
-- Dual-loyalty framework: patient welfare + employer interests balanced without compromising either
-- Workers' comp documentation support — reduces claim disputes and denial risk
-- Strict recommendation-only mode (no diagnosis, no prescriptions) — licensed provider makes every decision
-**Build plan:** Start narrow — OSHA recordability reasoning + restriction documentation only (v1), then expand to RTW timelines, DOT physicals, and case note generation (v2).
-**Prompt development:** Requires 20–30 real occupational medicine case scenarios (messy ones) reviewed by the owner as subject matter expert. Engineering: ~3–4 days. Prompt iteration: 3–5 weeks.
-**Market:** Occupational health clinics, urgent care with occ med programs, employer-embedded health clinics.
-**Name confirmed:** Corey MD
-
 ## System Architecture
-The CCHUB platform is built with a modern web stack, utilizing React, Vite, TailwindCSS, and shadcn/ui for the frontend, and Express with Node.js for the backend. PostgreSQL with Drizzle ORM handles data persistence. AI functionalities are powered by Anthropic Claude, integrated via Replit AI. User authentication uses a custom email/password system (Node.js `crypto` scrypt, session-based with PostgreSQL session store via `connect-pg-simple`).
-
-**Authentication Architecture (custom — no Replit OIDC):**
-- `server/auth/index.ts` — auth module: `setupAuth()` (session middleware), `registerAuthRoutes()` (register/login/logout routes), `authMiddleware()` (patches `req.isAuthenticated()` + `req.user.claims` from session)
-- Routes: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/user`, `GET /api/logout`
-- Password hashing: `crypto.scrypt` with random salt — no external packages
-- Session: stored in PostgreSQL `sessions` table via `connect-pg-simple`; `req.session.userId` + `req.session.userEmail`
-- All existing route guards (`req.isAuthenticated()`, `req.user.claims.sub`) work unchanged
-- Frontend: `/login` page with Sign In / Create Account tabs; `use-auth.ts` queries `/api/auth/user`
+The CCHUB platform utilizes a modern web stack, featuring React, Vite, TailwindCSS, and shadcn/ui for the frontend, and Express with Node.js for the backend. PostgreSQL with Drizzle ORM manages data persistence. AI functionalities are integrated via Anthropic Claude (through Replit AI). User authentication is handled by a custom email/password system built with Node.js `crypto` for hashing and `connect-pg-simple` for session management in PostgreSQL.
 
 **Key Architectural Decisions & Features:**
-- **AI-Powered Assistance:**
-  - **Corey (CCHUB):** A Senior Occupational Health, Safety & Compliance Expert AI. Features an anti-hallucination protocol, mandatory recordability rules, OSHA 300 Log guidance, Team Meeting Mode, Audit Mode, 23 document templates, and Quick Action cards.
-  - **Isa (ACSI ISO Manager):** A Lead ISO Auditor AI with a dedicated knowledge base for multiple ISO standards (9001, 14001, 45001, 13485, 27001, AS9100, IATF 16949). Isa conversations are isolated. Isa also has standalone app versions (Isa and Isa Pro) with a full-page chat interface and a dedicated onboarding flow.
-  - **CESAR / CSR Connect Hub:** Handles Customer Specific Requirements (CSRs) exclusively for IATF 16949, with a hard redirect from Isa for CSR-related questions.
-- **Modular Platform Design:**
-    - **Client Compliance Dashboard:** Provides real-time metrics, incident heatmaps, and action queues.
-    - **Employee & Incident Management:** Tools for tracking employee medical surveillance, drug screens, and logging/managing workplace incidents with OSHA 300 reporting and Corrective Action Plans (CAPA). Incident forms use standardized OSHA-aligned dropdowns and support multi-site analytics.
-    - **Enhanced CAPA (Corrective Action Plans):** Includes SMS notifications via Twilio, effectiveness verification, overdue highlighting, recurrence warnings, and an "Ask Corey for Suggestions" feature.
-    - **ISO Manager NC & CAPA Module:** Nonconformance tracking integrated into the ISO Manager with a full status workflow, CAPA sections, effectiveness verification, SMS notification, and an "Ask Isa to Guide Me Through This" button.
-    - **ISO Manager Module Navigation Shell:** A sidebar navigation with sections for AI Consultation, NC & CAPA, Documentation, and placeholders for future modules.
-    - **ISO Manager Documentation Module:** A document library with filterable documents, status badges, version tracking, ISO clause references, and "Ask Isa" buttons for guidance and review.
-    - **Training Courses:** A Learning Management System (LMS) with video modules, quizzes, progress tracking, and certificate generation.
-    - **Team Management:** Supports multi-seat billing and private conversation isolation for AI users.
-    - **BrandNSwag:** An employee recognition platform using QR-code recognition for points-based rewards.
-    - **Spanish Bilingual Medical Assistant (BMA):** A standalone tool featuring bidirectional speech-to-text translation, interactive body maps, and multi-step bilingual forms. Has a dedicated showcase page at `/bma` with hero, live demo, ROI calculator, comparison table, and pricing. The landing page links to `/bma` with a teaser card instead of embedding the full demo inline.
-    - **Digital Medical Passport (CCHUB Handshake):** A QR-based clinic check-in system with digital authorization forms, employer notifications, and time-away tracking.
-- **Demo Video Page (`/watch-demo`):** A platform walkthrough video page. Video is served via the Express route `GET /api/demo-video` (bypasses the Replit CDN static layer). File is `client/public/demo.mp4` — kept at ~9MB (re-encoded to 720p, H.264, no audio, faststart). Player has click-to-toggle play/pause and a fullscreen button; no mute button.
-- **Dark Mode:** Disabled; app is locked to light mode via `forcedTheme="light"` in `App.tsx`. Theme toggle removed from all pages.
-- **"Is This Recordable?" Decision Tree:** An interactive 5-question OSHA recordability tool on the landing page.
-- **Compare Plans Table:** A feature comparison table on the Get Started page for different subscription tiers.
-- **Corey Subscriber Profile & Onboarding Flow:** A 5-step intake form that collects user information to personalize Corey AI conversations, followed by a welcome flow with PWA installation instructions. A trial page is available via QR code.
-- **Meet Corey Marketing Page:** A dedicated sales page showcasing Corey's capabilities, document templates, regulatory coverage, and FAQs.
-- **Meet Isa Marketing Page:** A dedicated sales page for Isa and Isa Pro standalone AI products, including bundle options.
-- **ISO Manager Marketing Page (`/meet-iso-manager`):** A public-facing marketing page for the ISO Manager platform showing the 9-module suite (3 live, 6 coming soon), 7 standards coverage, 3-phase setup wizard overview, 4-tier pricing, and FAQ. The top nav "ISO Manager" link points here; the actual app is at `/iso-manager`.
-- **ISO Manager Pricing:** A 4-tier pricing structure for the ISO Manager platform, including various ISO standards and features.
-- **ISO Manager Setup Wizard:** A guided 3-phase onboarding wizard to collect organizational context (organizational context, process architecture, quality policy fundamentals) for personalized Isa consultations.
-- **PWA (Progressive Web App):** The standalone Corey application is designed as a PWA, offering an installable, dark-themed experience with offline caching.
-- **Data Management Routes:** Dedicated routes for dashboard, employee management, incident logging, account settings, team seat management, digital passport generation, clinic assistant interface, and specialized letter generators.
-- **Branded Divisions:** Includes BrandNSwag and ACSI Mentorship Program integrated within the CCHUB ecosystem.
+-   **AI-Powered Assistance:**
+    -   **Corey (CCHUB):** An AI expert in occupational health, safety, and compliance with anti-hallucination protocols, OSHA 300 Log guidance, and 23 document templates.
+    -   **Isa (ACSI ISO Manager):** An AI lead ISO Auditor with a dedicated knowledge base for multiple ISO standards (9001, 14001, 45001, 13485, 27001, AS9100, IATF 16949). Isa conversations are isolated, and standalone app versions are available.
+    -   **CESAR / CSR Connect Hub:** Manages Customer Specific Requirements (CSRs) exclusively for IATF 16949.
+-   **Modular Platform Design:**
+    -   **Client Compliance Dashboard:** Provides real-time metrics and incident management.
+    -   **Employee & Incident Management:** Tools for tracking medical surveillance, drug screens, and logging workplace incidents with OSHA 300 reporting and Corrective Action Plans (CAPA).
+    -   **Enhanced CAPA:** Includes SMS notifications via Twilio, effectiveness verification, and AI suggestions.
+    -   **ISO Manager NC & CAPA Module:** Integrated nonconformance tracking with status workflows and AI guidance.
+    -   **ISO Manager Documentation Module:** A filterable document library with version tracking and ISO clause references.
+    -   **Training Courses:** An LMS with video modules, quizzes, and progress tracking.
+    -   **Team Management:** Supports multi-seat billing and private AI conversations.
+    -   **BrandNSwag:** An employee recognition platform using QR-code based rewards.
+    -   **Spanish Bilingual Medical Assistant (BMA):** A standalone tool offering bidirectional speech-to-text translation, interactive body maps, and multi-step bilingual forms.
+    -   **Digital Medical Passport (CCHUB Handshake):** A QR-based clinic check-in system with digital authorizations.
+    -   **DOT Compliance Hub:** A separate platform for FMCSA/DOT-regulated employers for fleet compliance management, including driver and equipment tracking, and compliance alerts.
+-   **User Onboarding & Marketing:** Dedicated marketing pages for Corey, Isa, and the ISO Manager, along with a 5-step onboarding flow for Corey subscribers and a 3-phase setup wizard for the ISO Manager.
+-   **Progressive Web App (PWA):** The standalone Corey application is designed as a PWA, offering an installable, dark-themed experience with offline caching.
+-   **Data Management Routes:** API routes are provided for dashboard data, employee management, incident logging, account settings, team seat management, digital passport generation, clinic assistant interface, and specialized letter generators.
+-   **Branded Divisions:** Integrates BrandNSwag and ACSI Mentorship Program.
+-   **ISO Manager Product Roadmap:** Future enhancements include a 3-tier role model (Librarian, Trainer, Auditor) and a Clause Coverage Map to track ISO compliance.
 
 ## External Dependencies
-- **AI Integration:** Anthropic Claude (via Replit AI)
-- **Authentication:** Replit Auth
-- **Database:** PostgreSQL with Drizzle ORM
-- **Payment Processing:** Stripe
-- **Communication:** Twilio (for SMS notifications); SendGrid (transactional email)
-- **Speech Services:** Web Speech API (for Spanish text-to-speech and speech-to-text)
-
-## Transactional Email System (MailerSend)
-All email logic lives in `server/emailService.ts`. Uses MailerSend REST API (`https://api.mailersend.com/v1/email`) with `MAILERSEND_API_KEY` environment secret. No SDK — pure fetch() call. From address: `noreply@corecompliancehub.com`.
-
-**Four automatic email triggers:**
-1. **Incident logged** → `POST /api/incidents` → notifies DER email + Workers' Comp agent email + CCHUB admins
-2. **CAPA created** → `POST /api/corrective-actions` → notifies assignee (`responsibleEmail`) + DER email
-3. **CAPA overdue** → `GET /api/capa/check-overdue` (called silently on Dashboard load) → sends once per 24h per CAPA via `overdueNotifiedAt` column
-4. **Contact inquiry** → `POST /api/contact-inquiries` → admin notification + confirmation to submitter
-
-**Schema additions (all nullable):**
-- `company_profiles`: `workers_comp_contact`, `workers_comp_email`
-- `corrective_actions`: `responsible_email`, `overdue_notified_at`
-
-**Admin emails:** `raulv9471@gmail.com`, `evillarreal@acsi-quality.com`
-**All sends are fire-and-forget** — wrapped in try/catch; email failures never block the primary action.
-
-## DOT Compliance Hub
-A complete fleet compliance management platform for FMCSA/DOT-regulated employers. Built as a separate product from the OSHA/EPA employer platform.
-
-**Marketing page:** `/dot-compliance-hub` — public sales page with pain points, feature grid, 3-tier pricing, workflow visualization, and FAQ.
-**Platform module:** `/dot-hub` — authenticated dashboard accessible from the sidebar under "DOT Compliance Hub".
-**Sidebar link:** "DOT Fleet Dashboard" → `/dot-hub` (between Safety & Occ Med and ACSI ISO Manager sections).
-**Landing page nav:** "DOT Compliance Hub" link added to top nav.
-
-**Pricing:**
-- DOT Compliance Hub: $249/mo (≤50 drivers)
-- DOT + Corey AI Bundle: $399/mo
-- DOT + Employer Platform: $799/mo
-- Onboarding setup: $299 (≤25 drivers) · $599 (26–100) · $999 (100+)
-
-**Database tables (3):**
-- `dot_drivers` — CDL info, Clearinghouse consent/query date, MVR date, medical card expiry, random pool enrollment, hire/termination dates
-- `dot_dq_documents` — Per-driver DQ file checklist per 49 CFR 391 (upsert by driverId + documentType)
-- `dot_equipment` — Trucks/trailers, annual inspection date, PM dates, active status
-
-**API routes:** `GET/POST/PUT/DELETE /api/dot/drivers`, `GET/POST /api/dot/drivers/:id/dq`, `GET/POST/PUT/DELETE /api/dot/equipment`, `GET /api/dot/metrics`, `GET /api/dot/drivers-export-csv`
-
-**Key features:**
-- Clearinghouse 365-day countdown with Red/Yellow/Green status badges per driver
-- FMCSA bulk query CSV export (one click → ready to upload to clearinghouse.fmcsa.dot.gov)
-- Medical card expiration alerts (60/30/15 day thresholds displayed)
-- Annual MVR tracking
-- DQ file checklist tab per driver
-- Driver roster: Add/Edit/Terminate/Archive with 3-year record retention compliance note
-- Fleet equipment tracking with annual inspection status
-- Consent form tracker (flags drivers without signed Limited Inquiry consent)
-- Aggregate metrics dashboard (6 metric cards)
-- Archive tab for terminated/archived drivers (read-only with FMCSA retention note)
-
-## Payment Infrastructure — Paddle Migration (IN PROGRESS — coming within days)
-- **Decision confirmed:** Replacing Stripe with **Paddle** as Merchant of Record. Paddle handles sales tax, VAT, and invoicing automatically. No Replit connector — use Paddle API keys directly.
-- **Migration plan:** Remove all Stripe code and replace with Paddle Billing API. Owner has Paddle integration code ready (from Gemini). When ready: add `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` environment secrets, install Paddle SDK, replace checkout flows.
-- **Invoice billing (Net 30):** Add a "Request Invoice Billing" form on Get Started/pricing page. Captures company name, billing contact, email, PO number, desired plan. Admin notification sent; admin creates invoice in Paddle with Net 30 terms. Customer pays via Paddle-generated payment link.
-- **Account suspension for non-payment:** Architecture already ready — `PlatformGate` (frontend) and `requirePlatformAccess` (backend) gate all protected features. Add `suspended` boolean to `company_profiles`, check in both gate points. Flip to suspend on non-payment, reinstate on payment. Grace period configurable.
-- **Do not touch Stripe code until owner provides the Paddle integration code to implement.**
+-   **AI Integration:** Anthropic Claude (via Replit AI)
+-   **Database:** PostgreSQL with Drizzle ORM
+-   **Payment Processing:** Paddle (transitioning from Stripe)
+-   **Communication:** Twilio (SMS notifications); MailerSend (transactional email)
+-   **Speech Services:** Web Speech API (for Spanish text-to-speech and speech-to-text)
