@@ -234,8 +234,9 @@ export default function IsaApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
-  const isIsaSubscriber = subStatus?.isIsaSubscriber || subStatus?.isAdmin;
-  const loading = subStatus === undefined;
+  const isAdminUser = user?.isSuperadmin === true || subStatus?.isAdmin === true;
+  const isIsaSubscriber = isAdminUser || subStatus?.isIsaSubscriber;
+  const loading = subStatus === undefined && !user?.isSuperadmin;
 
   useEffect(() => {
     if (isIsaSubscriber && !localStorage.getItem("isa-welcomed")) {
@@ -285,7 +286,7 @@ export default function IsaApp() {
     );
   }
 
-  if (!isaProfile && !subStatus?.isAdmin) {
+  if (!isaProfile && !isAdminUser) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: BG }}>
         <IsaAvatar size={56} />
