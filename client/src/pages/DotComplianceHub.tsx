@@ -147,7 +147,7 @@ const PRICING = [
   },
   {
     tier: "DOT + Employer Platform",
-    price: "$799",
+    price: "$899",
     period: "/mo",
     description: "The full Command Center. DOT Compliance Hub plus the complete OSHA employer platform — incidents, CAPA, medical surveillance, OSHA 300 log, training LMS.",
     features: [
