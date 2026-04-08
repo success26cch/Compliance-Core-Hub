@@ -94,7 +94,7 @@ export function ViewModeBadge() {
 
 export function Sidebar({ className = "" }: { className?: string }) {
   const [location] = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   
   const { data: superadminCheck } = useQuery<{ isSuperadmin: boolean }>({
     queryKey: ['/api/superadmin/check'],
@@ -118,8 +118,11 @@ export function Sidebar({ className = "" }: { className?: string }) {
   ];
 
   const isoLinks = [
-    { href: "/iso-manager", label: "ACSI ISO Manager", icon: FileCheck },
+    { href: "/isa", label: "Ask Isa (AI Auditor)", icon: Bot },
+    { href: "/iso-manager", label: "ISO Manager Platform", icon: FileCheck },
   ];
+
+  const isIsoOnly = user?.isoOnly === true;
 
   const LinkItem = ({ href, label, icon: Icon, external }: any) => {
     const isActive = location === href;
@@ -171,28 +174,32 @@ export function Sidebar({ className = "" }: { className?: string }) {
       </div>
 
       <div className="flex-1 px-4 py-4 overflow-y-auto">
-        {/* Utility links */}
+        {/* Utility links — always visible */}
         <div className="space-y-1 mb-1">
           {utilityLinks.map((link) => (
             <LinkItem key={link.href} {...link} />
           ))}
         </div>
 
-        {/* Safety & Occ Med section */}
-        <SectionLabel label="Safety & Occ Med" />
-        <div className="space-y-1">
-          {safetyLinks.map((link) => (
-            <LinkItem key={link.href} {...link} />
-          ))}
-        </div>
+        {/* Safety & Occ Med — hidden for ISO-only users */}
+        {!isIsoOnly && (
+          <>
+            <SectionLabel label="Safety & Occ Med" />
+            <div className="space-y-1">
+              {safetyLinks.map((link) => (
+                <LinkItem key={link.href} {...link} />
+              ))}
+            </div>
 
-        {/* DOT Compliance Hub section */}
-        <SectionLabel label="DOT Compliance Hub" />
-        <div className="space-y-1 mb-2">
-          <LinkItem href="/dot-hub" label="DOT Fleet Dashboard" icon={Truck} />
-        </div>
+            {/* DOT Compliance Hub */}
+            <SectionLabel label="DOT Compliance Hub" />
+            <div className="space-y-1 mb-2">
+              <LinkItem href="/dot-hub" label="DOT Fleet Dashboard" icon={Truck} />
+            </div>
+          </>
+        )}
 
-        {/* ACSI ISO Manager section */}
+        {/* ACSI ISO Manager — always visible */}
         <SectionLabel label="ACSI ISO Manager" accent />
         <div className="space-y-1 mb-2">
           {isoLinks.map((link) => (
