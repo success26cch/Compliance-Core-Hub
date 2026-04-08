@@ -191,8 +191,8 @@ export function Sidebar({ className = "" }: { className?: string }) {
               ))}
             </div>
 
-            {/* DOT Compliance Hub */}
-            <SectionLabel label="DOT Compliance Hub" />
+            {/* DOT Fleet HUB */}
+            <SectionLabel label="DOT Fleet HUB" />
             <div className="space-y-1 mb-2">
               <LinkItem href="/dot-hub" label="DOT Fleet Dashboard" icon={Truck} />
             </div>

@@ -1313,7 +1313,7 @@ export default function DotHub() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Truck className="w-6 h-6 text-accent" />
-              <h1 className="text-2xl font-display font-bold text-primary">DOT Compliance Hub</h1>
+              <h1 className="text-2xl font-display font-bold text-primary">DOT Fleet HUB</h1>
             </div>
             <p className="text-muted-foreground text-sm">49 CFR Parts 40, 382, 383, 391 compliance management</p>
           </div>

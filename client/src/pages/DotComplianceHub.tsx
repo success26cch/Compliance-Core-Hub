@@ -106,8 +106,8 @@ const FEATURES = [
 
 const PRICING = [
   {
-    tier: "DOT Compliance Hub",
-    price: "$249",
+    tier: "DOT Fleet HUB",
+    price: "$349",
     period: "/mo",
     description: "Everything you need to run a compliant fleet — Clearinghouse, DQ files, medical cards, MVR, and equipment.",
     features: [
@@ -128,11 +128,11 @@ const PRICING = [
   },
   {
     tier: "DOT + Corey AI Bundle",
-    price: "$399",
+    price: "$499",
     period: "/mo",
-    description: "Full DOT Compliance Hub plus Corey — your AI compliance expert for OSHA, EPA, and DOT regulations. Ask anything. Get cited answers.",
+    description: "Full DOT Fleet HUB plus Corey — your AI compliance expert for OSHA, EPA, and DOT regulations. Ask anything. Get cited answers.",
     features: [
-      "Everything in DOT Compliance Hub",
+      "Everything in DOT Fleet HUB",
       "Unlimited Corey AI conversations",
       "OSHA, DOT & EPA regulatory guidance",
       "42 document templates on demand",
@@ -147,11 +147,11 @@ const PRICING = [
   },
   {
     tier: "DOT + Employer Platform",
-    price: "$899",
+    price: "$999",
     period: "/mo",
-    description: "The full Command Center. DOT Compliance Hub plus the complete OSHA employer platform — incidents, CAPA, medical surveillance, OSHA 300 log, training LMS.",
+    description: "The full Command Center. DOT Fleet HUB plus the complete OSHA employer platform — incidents, CAPA, medical surveillance, OSHA 300 log, training LMS.",
     features: [
-      "Everything in DOT Compliance Hub",
+      "Everything in DOT Fleet HUB",
       "Full Employer Compliance Platform",
       "OSHA 300 / 301 incident logging",
       "Medical surveillance tracking (11 types)",
@@ -177,7 +177,7 @@ const FAQS = [
   },
   {
     q: "What happens to terminated drivers — can I just delete them?",
-    a: "No — and this is a common mistake. FMCSA regulations require you to maintain Driver Qualification (DQ) file records for at least 3 years after a driver's employment ends. When you archive a driver in DOT Compliance Hub, their records stay accessible and the system generates a dated removal log for your audit file. Deleting them entirely would be an audit red flag.",
+    a: "No — and this is a common mistake. FMCSA regulations require you to maintain Driver Qualification (DQ) file records for at least 3 years after a driver's employment ends. When you archive a driver in DOT Fleet HUB, their records stay accessible and the system generates a dated removal log for your audit file. Deleting them entirely would be an audit red flag.",
   },
   {
     q: "Can clients manage their own drivers after the initial setup?",
@@ -224,7 +224,7 @@ export default function DotComplianceHub() {
             <motion.div variants={fadeUp}>
               <Badge className="bg-accent/20 text-accent border-accent/30 mb-6 text-sm px-4 py-1">
                 <Truck className="w-3.5 h-3.5 mr-1.5" />
-                DOT Compliance Hub
+                DOT Fleet HUB
               </Badge>
             </motion.div>
             <motion.h1 variants={fadeUp} className="text-4xl md:text-6xl font-display font-bold leading-tight mb-6">
@@ -232,17 +232,17 @@ export default function DotComplianceHub() {
               <span className="text-accent">Start Running a Compliant Fleet.</span>
             </motion.h1>
             <motion.p variants={fadeUp} className="text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed">
-              The Clearinghouse is a trap. One missed annual query, one expired medical card, one incomplete DQ file — and you're exposed. DOT Compliance Hub tracks every driver, every deadline, every document. Automatically.
+              The Clearinghouse is a trap. One missed annual query, one expired medical card, one incomplete DQ file — and you're exposed. DOT Fleet HUB tracks every driver, every deadline, every document. Automatically.
             </motion.p>
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/get-started">
                 <Button size="lg" className="bg-accent hover:bg-accent/90 text-white text-base px-8 h-12" data-testid="button-hero-get-started">
-                  Get Started — $249/mo
+                  Get Started — $349/mo
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
               <Link href="/dashboard">
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 text-base px-8 h-12" data-testid="button-hero-login">
+                <Button size="lg" className="bg-black hover:bg-black/90 text-white text-base px-8 h-12 border border-black/20" data-testid="button-hero-login">
                   Access Your Dashboard
                 </Button>
               </Link>
@@ -302,11 +302,11 @@ export default function DotComplianceHub() {
       <section className="py-20 bg-primary text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Zap className="w-10 h-10 text-accent mx-auto mb-6" />
-          <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-6 text-green-400">
             "We turn a 4-hour headache into a 4-minute task."
           </h2>
           <p className="text-lg text-white/80 leading-relaxed max-w-2xl mx-auto">
-            Most companies manually type 50 drivers into the Clearinghouse every year. It takes hours and one typo leads to a fine. With DOT Compliance Hub, you manage your roster here all year — then hit <strong className="text-accent">Generate Query File</strong> when it's time. One perfectly formatted file. 30 seconds to upload.
+            Most companies manually type 50 drivers into the Clearinghouse every year. It takes hours and one typo leads to a fine. With DOT Fleet HUB, you manage your roster here all year — then hit <strong className="text-accent">Generate Query File</strong> when it's time. One perfectly formatted file. 30 seconds to upload.
           </p>
         </div>
       </section>
@@ -366,7 +366,7 @@ export default function DotComplianceHub() {
           <div className="text-center mb-14">
             <Badge className="bg-accent/10 text-accent border-accent/20 mb-4">Pricing</Badge>
             <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground mt-3 text-lg">One missed Clearinghouse query can cost $16,000. Our platform costs $249/mo.</p>
+            <p className="text-muted-foreground mt-3 text-lg">One missed Clearinghouse query can cost $16,000. Our platform starts at $349/mo.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {PRICING.map((p, i) => (
@@ -445,7 +445,7 @@ export default function DotComplianceHub() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/get-started">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 h-12" data-testid="button-bottom-cta">
-                Get Started — $249/mo
+                Get Started — $349/mo
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -464,7 +464,7 @@ export default function DotComplianceHub() {
       <footer className="border-t border-border/50 bg-white py-8 text-center text-muted-foreground text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <img src={logoUrl} alt="CCHUB" className="h-8 object-contain" />
-          <p>© {new Date().getFullYear()} Core Compliance Hub — DOT Compliance Hub. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Core Compliance Hub — DOT Fleet HUB. All rights reserved.</p>
           <div className="flex gap-6 text-xs">
             <Link href="/"><span className="hover:text-primary cursor-pointer">Home</span></Link>
             <Link href="/contact"><span className="hover:text-primary cursor-pointer">Contact</span></Link>
