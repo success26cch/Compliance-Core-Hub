@@ -107,7 +107,7 @@ const FEATURES = [
 const PRICING = [
   {
     tier: "DOT Compliance Hub",
-    price: "$249",
+    price: "$349",
     period: "/mo",
     description: "Everything you need to run a compliant fleet — Clearinghouse, DQ files, medical cards, MVR, and equipment.",
     features: [
@@ -122,6 +122,7 @@ const PRICING = [
       "Driver archive with removal logs",
     ],
     setupFee: "Onboarding setup: $299 (≤25 drivers) · $599 (26–100) · $999 (100+)",
+    promo: "Launch Promo: 20% off your first 12 months — $279/mo. Ask us about our launch rate.",
     cta: "Get Started",
     href: "/get-started",
     highlighted: false,
@@ -140,7 +141,7 @@ const PRICING = [
       "Weekly safety topics",
       "Priority support",
     ],
-    setupFee: "Saves $49/mo vs. buying separately",
+    setupFee: "Saves $149/mo vs. buying separately",
     cta: "Best Value — Get Bundle",
     href: "/get-started",
     highlighted: true,
@@ -237,7 +238,7 @@ export default function DotComplianceHub() {
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/get-started">
                 <Button size="lg" className="bg-accent hover:bg-accent/90 text-white text-base px-8 h-12" data-testid="button-hero-get-started">
-                  Get Started — $249/mo
+                  Get Started — $349/mo
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
@@ -366,7 +367,7 @@ export default function DotComplianceHub() {
           <div className="text-center mb-14">
             <Badge className="bg-accent/10 text-accent border-accent/20 mb-4">Pricing</Badge>
             <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground mt-3 text-lg">One missed Clearinghouse query can cost $16,000. Our platform costs $249/mo.</p>
+            <p className="text-muted-foreground mt-3 text-lg">One missed Clearinghouse query can cost $16,000. Our platform starts at $349/mo.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {PRICING.map((p, i) => (
@@ -391,7 +392,12 @@ export default function DotComplianceHub() {
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 mb-5">{p.setupFee}</p>
+                  <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 mb-3">{p.setupFee}</p>
+                  {p.promo && (
+                    <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mb-5">
+                      <span className="text-emerald-600 text-xs font-semibold leading-snug">{p.promo}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-auto">
                   <Link href={p.href}>
@@ -445,7 +451,7 @@ export default function DotComplianceHub() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/get-started">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 h-12" data-testid="button-bottom-cta">
-                Get Started — $249/mo
+                Get Started — $349/mo
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
