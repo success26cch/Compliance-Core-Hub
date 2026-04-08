@@ -285,7 +285,7 @@ export default function IsaApp() {
     );
   }
 
-  if (!isaProfile) {
+  if (!isaProfile && !subStatus?.isAdmin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: BG }}>
         <IsaAvatar size={56} />
