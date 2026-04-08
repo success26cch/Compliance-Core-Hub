@@ -47,7 +47,7 @@ export default function Login() {
       apiPost("/api/auth/login", data),
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
-      setLocation("/dashboard");
+      setLocation(user?.isoOnly ? "/isa" : "/dashboard");
     },
     onError: (err: Error) => setErrorMsg(err.message),
   });
@@ -56,7 +56,7 @@ export default function Login() {
     mutationFn: (data: object) => apiPost("/api/auth/register", data),
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
-      setLocation("/dashboard");
+      setLocation(user?.isoOnly ? "/isa" : "/dashboard");
     },
     onError: (err: Error) => setErrorMsg(err.message),
   });
