@@ -6,6 +6,11 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type DotAccident, type InsertDotAccident,
   type DotRoadsideInspection, type InsertDotRoadsideInspection,
   type DotDvirLog, type InsertDotDvirLog,
+  isoAudits, isoAuditFindings, isoAwarenessNotices, isoAwarenessAcknowledgments,
+  type IsoAudit, type InsertIsoAudit,
+  type IsoAuditFinding, type InsertIsoAuditFinding,
+  type IsoAwarenessNotice, type InsertIsoAwarenessNotice,
+  type IsoAwarenessAcknowledgment, type InsertIsoAwarenessAcknowledgment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
@@ -133,6 +138,7 @@ export interface IStorage {
   getUserGrowthLast30Days(): Promise<{ date: string; count: number }[]>;
   getRetainerRequests(): Promise<ContactInquiry[]>;
   setSuperadmin(userId: string, isSuperadmin: boolean): Promise<User | undefined>;
+  setIsoRole(userId: string, isoRole: string | null): Promise<User | undefined>;
   getCompanyUsageStats(): Promise<any[]>;
 
   // Clinic Agreements
@@ -263,6 +269,29 @@ export interface IStorage {
   createDotDvirLog(data: InsertDotDvirLog): Promise<DotDvirLog>;
   updateDotDvirLog(id: number, userId: string, data: Partial<InsertDotDvirLog>): Promise<DotDvirLog | undefined>;
   deleteDotDvirLog(id: number, userId: string): Promise<void>;
+
+  // ISO Audits
+  getIsoAudits(userId: string): Promise<IsoAudit[]>;
+  getIsoAudit(id: number, userId: string): Promise<IsoAudit | undefined>;
+  createIsoAudit(data: InsertIsoAudit): Promise<IsoAudit>;
+  updateIsoAudit(id: number, userId: string, data: Partial<InsertIsoAudit>): Promise<IsoAudit | undefined>;
+  deleteIsoAudit(id: number, userId: string): Promise<void>;
+
+  // ISO Audit Findings
+  getIsoAuditFindings(auditId: number, userId: string): Promise<IsoAuditFinding[]>;
+  createIsoAuditFinding(data: InsertIsoAuditFinding): Promise<IsoAuditFinding>;
+  updateIsoAuditFinding(id: number, userId: string, data: Partial<InsertIsoAuditFinding>): Promise<IsoAuditFinding | undefined>;
+  deleteIsoAuditFinding(id: number, userId: string): Promise<void>;
+
+  // ISO Awareness Notices
+  getIsoAwarenessNotices(userId: string): Promise<IsoAwarenessNotice[]>;
+  createIsoAwarenessNotice(data: InsertIsoAwarenessNotice): Promise<IsoAwarenessNotice>;
+  updateIsoAwarenessNotice(id: number, userId: string, data: Partial<InsertIsoAwarenessNotice>): Promise<IsoAwarenessNotice | undefined>;
+  deleteIsoAwarenessNotice(id: number, userId: string): Promise<void>;
+
+  // ISO Awareness Acknowledgments
+  getIsoAwarenessAcknowledgments(noticeId: number): Promise<IsoAwarenessAcknowledgment[]>;
+  createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -847,6 +876,14 @@ export class DatabaseStorage implements IStorage {
   async setSuperadmin(userId: string, isSuperadminFlag: boolean): Promise<User | undefined> {
     const [updated] = await db.update(users)
       .set({ isSuperadmin: isSuperadminFlag, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async setIsoRole(userId: string, isoRole: string | null): Promise<User | undefined> {
+    const [updated] = await db.update(users)
+      .set({ isoRole, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
     return updated;
@@ -1562,6 +1599,78 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDotDvirLog(id: number, userId: string): Promise<void> {
     await db.delete(dotDvirLogs).where(and(eq(dotDvirLogs.id, id), eq(dotDvirLogs.userId, userId)));
+  }
+
+  // ─── ISO Audits ──────────────────────────────────────────────────────────────
+  async getIsoAudits(userId: string): Promise<IsoAudit[]> {
+    return db.select().from(isoAudits).where(eq(isoAudits.userId, userId)).orderBy(desc(isoAudits.createdAt));
+  }
+
+  async getIsoAudit(id: number, userId: string): Promise<IsoAudit | undefined> {
+    const [rec] = await db.select().from(isoAudits).where(and(eq(isoAudits.id, id), eq(isoAudits.userId, userId)));
+    return rec;
+  }
+
+  async createIsoAudit(data: InsertIsoAudit): Promise<IsoAudit> {
+    const [rec] = await db.insert(isoAudits).values(data).returning();
+    return rec;
+  }
+
+  async updateIsoAudit(id: number, userId: string, data: Partial<InsertIsoAudit>): Promise<IsoAudit | undefined> {
+    const [rec] = await db.update(isoAudits).set({ ...data, updatedAt: new Date() }).where(and(eq(isoAudits.id, id), eq(isoAudits.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteIsoAudit(id: number, userId: string): Promise<void> {
+    await db.delete(isoAudits).where(and(eq(isoAudits.id, id), eq(isoAudits.userId, userId)));
+  }
+
+  // ─── ISO Audit Findings ───────────────────────────────────────────────────────
+  async getIsoAuditFindings(auditId: number, userId: string): Promise<IsoAuditFinding[]> {
+    return db.select().from(isoAuditFindings).where(and(eq(isoAuditFindings.auditId, auditId), eq(isoAuditFindings.userId, userId))).orderBy(isoAuditFindings.clause);
+  }
+
+  async createIsoAuditFinding(data: InsertIsoAuditFinding): Promise<IsoAuditFinding> {
+    const [rec] = await db.insert(isoAuditFindings).values(data).returning();
+    return rec;
+  }
+
+  async updateIsoAuditFinding(id: number, userId: string, data: Partial<InsertIsoAuditFinding>): Promise<IsoAuditFinding | undefined> {
+    const [rec] = await db.update(isoAuditFindings).set({ ...data, updatedAt: new Date() }).where(and(eq(isoAuditFindings.id, id), eq(isoAuditFindings.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteIsoAuditFinding(id: number, userId: string): Promise<void> {
+    await db.delete(isoAuditFindings).where(and(eq(isoAuditFindings.id, id), eq(isoAuditFindings.userId, userId)));
+  }
+
+  // ─── ISO Awareness Notices ────────────────────────────────────────────────────
+  async getIsoAwarenessNotices(userId: string): Promise<IsoAwarenessNotice[]> {
+    return db.select().from(isoAwarenessNotices).where(eq(isoAwarenessNotices.userId, userId)).orderBy(desc(isoAwarenessNotices.createdAt));
+  }
+
+  async createIsoAwarenessNotice(data: InsertIsoAwarenessNotice): Promise<IsoAwarenessNotice> {
+    const [rec] = await db.insert(isoAwarenessNotices).values(data).returning();
+    return rec;
+  }
+
+  async updateIsoAwarenessNotice(id: number, userId: string, data: Partial<InsertIsoAwarenessNotice>): Promise<IsoAwarenessNotice | undefined> {
+    const [rec] = await db.update(isoAwarenessNotices).set(data).where(and(eq(isoAwarenessNotices.id, id), eq(isoAwarenessNotices.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteIsoAwarenessNotice(id: number, userId: string): Promise<void> {
+    await db.delete(isoAwarenessNotices).where(and(eq(isoAwarenessNotices.id, id), eq(isoAwarenessNotices.userId, userId)));
+  }
+
+  // ─── ISO Awareness Acknowledgments ───────────────────────────────────────────
+  async getIsoAwarenessAcknowledgments(noticeId: number): Promise<IsoAwarenessAcknowledgment[]> {
+    return db.select().from(isoAwarenessAcknowledgments).where(eq(isoAwarenessAcknowledgments.noticeId, noticeId)).orderBy(desc(isoAwarenessAcknowledgments.acknowledgedAt));
+  }
+
+  async createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment> {
+    const [rec] = await db.insert(isoAwarenessAcknowledgments).values(data).returning();
+    return rec;
   }
 }
 

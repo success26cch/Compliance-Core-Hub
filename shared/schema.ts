@@ -1242,3 +1242,87 @@ export const insertDotDvirLogSchema = createInsertSchema(dotDvirLogs, {
 }).omit({ id: true, createdAt: true });
 export type DotDvirLog = typeof dotDvirLogs.$inferSelect;
 export type InsertDotDvirLog = z.infer<typeof insertDotDvirLogSchema>;
+
+// ─── ISO Manager: Internal Audits ─────────────────────────────────────────────
+export const isoAudits = pgTable("iso_audits", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  standard: text("standard").notNull().default("ISO 9001:2015"), // e.g. 'ISO 9001:2015', 'ISO 14001:2015'
+  scope: text("scope"),
+  leadAuditor: text("lead_auditor"),
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
+  status: text("status").notNull().default("planned"), // 'planned' | 'in_progress' | 'complete'
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+const isoDateOrString = z.union([z.string(), z.date(), z.null()]).transform((v) => {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (/^\d{4}-\d{2}-\d{2}/.test(v) && parseInt(v.slice(0, 4)) >= 1900 && parseInt(v.slice(0, 4)) <= 2100) return new Date(v);
+  return null;
+});
+
+export const insertIsoAuditSchema = createInsertSchema(isoAudits, {
+  scheduledDate: isoDateOrString,
+  completedDate: isoDateOrString,
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoAudit = typeof isoAudits.$inferSelect;
+export type InsertIsoAudit = z.infer<typeof insertIsoAuditSchema>;
+
+// ─── ISO Manager: Audit Findings ──────────────────────────────────────────────
+export const isoAuditFindings = pgTable("iso_audit_findings", {
+  id: serial("id").primaryKey(),
+  auditId: integer("audit_id").notNull(),
+  userId: text("user_id").notNull(),
+  clause: text("clause").notNull(), // e.g. '4.1', '6.2.1'
+  clauseTitle: text("clause_title"),
+  findingType: text("finding_type").notNull().default("conform"), // 'conform' | 'nonconformance' | 'observation' | 'not_audited'
+  description: text("description"),
+  evidence: text("evidence"),
+  nonconformanceId: integer("nonconformance_id"), // optional link to NC/CAPA
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoAuditFindingSchema = createInsertSchema(isoAuditFindings).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoAuditFinding = typeof isoAuditFindings.$inferSelect;
+export type InsertIsoAuditFinding = z.infer<typeof insertIsoAuditFindingSchema>;
+
+// ─── ISO Manager: Training Awareness Notices ──────────────────────────────────
+export const isoAwarenessNotices = pgTable("iso_awareness_notices", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(), // creator
+  standard: text("standard").notNull().default("ISO 9001:2015"),
+  clause: text("clause"), // specific clause reference
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  processArea: text("process_area"), // e.g. 'Production', 'Quality', 'Shipping'
+  assignedTo: text("assigned_to").array(), // list of process owner names or emails
+  dueDate: timestamp("due_date"),
+  status: text("status").notNull().default("active"), // 'active' | 'archived'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertIsoAwarenessNoticeSchema = createInsertSchema(isoAwarenessNotices, {
+  dueDate: isoDateOrString,
+}).omit({ id: true, createdAt: true });
+export type IsoAwarenessNotice = typeof isoAwarenessNotices.$inferSelect;
+export type InsertIsoAwarenessNotice = z.infer<typeof insertIsoAwarenessNoticeSchema>;
+
+// ─── ISO Manager: Awareness Acknowledgments ───────────────────────────────────
+export const isoAwarenessAcknowledgments = pgTable("iso_awareness_acknowledgments", {
+  id: serial("id").primaryKey(),
+  noticeId: integer("notice_id").notNull(),
+  userId: text("user_id").notNull(),
+  acknowledgedBy: text("acknowledged_by").notNull(), // name
+  acknowledgedAt: timestamp("acknowledged_at").defaultNow(),
+  notes: text("notes"),
+});
+
+export const insertIsoAwarenessAcknowledgmentSchema = createInsertSchema(isoAwarenessAcknowledgments).omit({ id: true, acknowledgedAt: true });
+export type IsoAwarenessAcknowledgment = typeof isoAwarenessAcknowledgments.$inferSelect;
+export type InsertIsoAwarenessAcknowledgment = z.infer<typeof insertIsoAwarenessAcknowledgmentSchema>;

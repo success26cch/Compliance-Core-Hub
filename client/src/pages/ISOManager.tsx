@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from "@/hooks/use-isa-chat";
 import { useQuestionUsage } from "@/hooks/use-subscriptions";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +26,8 @@ import { apiRequest } from "@/lib/queryClient";
 import type { IsoProject } from "@shared/schema";
 import { NonconformanceManager } from "./NonconformanceManager";
 import { DocumentationModule } from "./DocumentationModule";
+import { InternalAuditModule } from "./InternalAuditModule";
+import { TrainingAwarenessModule } from "./TrainingAwarenessModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -243,9 +246,52 @@ function ISOTierCard({
 }
 
 /* ─────────────────────────────────────────────────────── */
+type IsoRoleType = 'librarian' | 'trainer' | 'auditor' | null | undefined;
+
+const ROLE_LABELS: Record<string, string> = {
+  librarian: "Librarian",
+  trainer: "Trainer",
+  auditor: "Auditor",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  librarian: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700/40",
+  trainer: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700/40",
+  auditor: "bg-accent/10 text-accent border-accent/30",
+};
+
+type SectionKey = 'chat' | 'nc' | 'documentation' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
+
+const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
+  chat:              [null, undefined, 'librarian', 'trainer', 'auditor'],
+  nc:                [null, undefined, 'librarian', 'trainer', 'auditor'],
+  documentation:     [null, undefined, 'librarian', 'trainer', 'auditor'],
+  communication:     [null, undefined, 'trainer', 'auditor'],
+  training:          [null, undefined, 'trainer', 'auditor'],
+  risk:              [null, undefined, 'auditor'],
+  management_review: [null, undefined, 'auditor'],
+  internal_audit:    [null, undefined, 'auditor'],
+  measurement:       [null, undefined, 'auditor'],
+};
+
+function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
+  if (isSuperadmin) return true;
+  return ROLE_SECTION_ACCESS[section].includes(role as IsoRoleType);
+}
+
+const ROLE_UPGRADE_MSG: Partial<Record<SectionKey, string>> = {
+  communication: "Communication module requires the Trainer tier or above.",
+  training:      "Training & Awareness requires the Trainer tier or above.",
+  risk:          "Risk Assessment requires the Auditor tier.",
+  management_review: "Management Review requires the Auditor tier.",
+  internal_audit:    "Internal Audits requires the Auditor tier.",
+  measurement:       "Measurement & Monitoring requires the Auditor tier.",
+};
+
 export default function ISOManager() {
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { data: conversations } = useIsaConversations();
   const { mutate: createConversation, isPending: isCreating } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
@@ -310,6 +356,13 @@ export default function ISOManager() {
 
   const isPro = !!usageData?.isPro;
   const canAsk = !!usageData?.canAsk;
+  const isoRole = (user?.isoRole as IsoRoleType) ?? null;
+  const isSuperadmin = !!user?.isSuperadmin;
+
+  const handleSectionChange = (section: SectionKey) => {
+    if (!canAccessSection(section, isoRole, isSuperadmin)) return;
+    setActiveSection(section);
+  };
 
   const handleNewChat = (initialPrompt?: string) => {
     const title = initialPrompt ? initialPrompt.slice(0, 50) + "…" : "New ISO Consultation";
@@ -363,6 +416,36 @@ export default function ISOManager() {
     </div>
   );
 
+  const LockedModuleView = ({ section }: { section: SectionKey }) => {
+    const msg = ROLE_UPGRADE_MSG[section] ?? "This module is not available on your current plan.";
+    const tierNeeded = ['risk','management_review','internal_audit','measurement'].includes(section) ? "Auditor" : "Trainer";
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-muted/10">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md space-y-6">
+          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-10 h-10 text-muted-foreground/40" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-primary mb-2">Module Locked</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">{msg}</p>
+          </div>
+          <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-left">
+            <p className="text-xs font-bold text-accent uppercase tracking-wide mb-1">Required Tier</p>
+            <p className="text-sm font-semibold text-primary">{tierNeeded} — ISO Manager</p>
+            <p className="text-xs text-muted-foreground mt-1">Contact ACSI to upgrade your plan.</p>
+          </div>
+          <Button
+            onClick={() => window.open("mailto:info@acsi-quality.com?subject=ISO Manager Upgrade Request", "_blank")}
+            className="bg-accent hover:bg-accent/90 text-white gap-2"
+            data-testid="button-contact-upgrade"
+          >
+            <Mail className="w-4 h-4" /> Contact ACSI to Upgrade
+          </Button>
+        </motion.div>
+      </div>
+    );
+  };
+
   return (
     <ProtectedLayout>
       <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-muted/30">
@@ -380,10 +463,18 @@ export default function ISOManager() {
                   <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-accent rounded-full border-2 border-white dark:border-card" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-black text-primary text-base">Isa</span>
                     {isPro && (
                       <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px] px-1.5 py-0 font-bold">Isa Pro</Badge>
+                    )}
+                    {isoRole && ROLE_LABELS[isoRole] && (
+                      <Badge
+                        className={`text-[10px] px-1.5 py-0 font-bold border ${ROLE_COLORS[isoRole]}`}
+                        data-testid="badge-iso-role"
+                      >
+                        {ROLE_LABELS[isoRole]}
+                      </Badge>
                     )}
                   </div>
                   {project?.status === "complete" && project.orgName ? (
@@ -424,78 +515,33 @@ export default function ISOManager() {
 
               <div className="mt-6 space-y-1">
                 <p className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Modules</p>
-                
-                <ModuleNavButton 
-                  active={activeSection === 'chat'} 
-                  onClick={() => setActiveSection('chat')}
-                  icon={MessageSquare}
-                  label="AI Consultation"
-                  testId="nav-chat"
-                />
 
-                <ModuleNavButton 
-                  active={activeSection === 'nc'} 
-                  onClick={() => setActiveSection('nc')}
-                  icon={Shield}
-                  label="NC & CAPA"
-                  testId="nav-nc"
-                />
-
-                <ModuleNavButton 
-                  active={activeSection === 'documentation'} 
-                  onClick={() => setActiveSection('documentation')}
-                  icon={FileText}
-                  label="Documentation"
-                  testId="nav-documentation"
-                />
-
-                <ModuleNavButton 
-                  active={activeSection === 'communication'} 
-                  onClick={() => setActiveSection('communication')}
-                  icon={Mail}
-                  label="Communication"
-                  testId="nav-communication"
-                />
-
-                <ModuleNavButton 
-                  active={activeSection === 'risk'} 
-                  onClick={() => setActiveSection('risk')}
-                  icon={AlertTriangle}
-                  label="Risk Assessment"
-                  testId="nav-risk"
-                />
-
-                <ModuleNavButton 
-                  active={activeSection === 'management_review'} 
-                  onClick={() => setActiveSection('management_review')}
-                  icon={BarChart2}
-                  label="Management Review"
-                  testId="nav-management-review"
-                />
-
-                <ModuleNavButton 
-                  active={activeSection === 'internal_audit'} 
-                  onClick={() => setActiveSection('internal_audit')}
-                  icon={ClipboardCheck}
-                  label="Internal Audits"
-                  testId="nav-internal-audit"
-                />
-
-                <ModuleNavButton 
-                  active={activeSection === 'training'} 
-                  onClick={() => setActiveSection('training')}
-                  icon={GraduationCap}
-                  label="Training"
-                  testId="nav-training"
-                />
-
-                <ModuleNavButton 
-                  active={activeSection === 'measurement'} 
-                  onClick={() => setActiveSection('measurement')}
-                  icon={Activity}
-                  label="Measurement & Monitoring"
-                  testId="nav-measurement"
-                />
+                {(["chat","nc","documentation","communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
+                  const META: Record<SectionKey, { icon: any; label: string }> = {
+                    chat:              { icon: MessageSquare,  label: "AI Consultation" },
+                    nc:                { icon: Shield,         label: "NC & CAPA" },
+                    documentation:     { icon: FileText,       label: "Documentation" },
+                    communication:     { icon: Mail,           label: "Communication" },
+                    risk:              { icon: AlertTriangle,  label: "Risk Assessment" },
+                    management_review: { icon: BarChart2,      label: "Management Review" },
+                    internal_audit:    { icon: ClipboardCheck, label: "Internal Audits" },
+                    training:          { icon: GraduationCap,  label: "Training" },
+                    measurement:       { icon: Activity,       label: "Measurement & Monitoring" },
+                  };
+                  const { icon, label } = META[section];
+                  const locked = !canAccessSection(section, isoRole, isSuperadmin);
+                  return (
+                    <ModuleNavButton
+                      key={section}
+                      active={activeSection === section}
+                      onClick={() => handleSectionChange(section)}
+                      icon={icon}
+                      label={label}
+                      testId={`nav-${section.replace(/_/g, '-')}`}
+                      locked={locked}
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -599,17 +645,29 @@ export default function ISOManager() {
             ) : activeSection === 'documentation' ? (
               <DocumentationModule onAskIsa={handleAskIsa} />
             ) : activeSection === 'communication' ? (
-              <ComingSoonModule moduleName="Communication" icon={Mail} />
+              canAccessSection('communication', isoRole, isSuperadmin)
+                ? <ComingSoonModule moduleName="Communication" icon={Mail} />
+                : <LockedModuleView section="communication" />
             ) : activeSection === 'risk' ? (
-              <ComingSoonModule moduleName="Risk Assessment" icon={AlertTriangle} />
+              canAccessSection('risk', isoRole, isSuperadmin)
+                ? <ComingSoonModule moduleName="Risk Assessment" icon={AlertTriangle} />
+                : <LockedModuleView section="risk" />
             ) : activeSection === 'management_review' ? (
-              <ComingSoonModule moduleName="Management Review" icon={BarChart2} />
+              canAccessSection('management_review', isoRole, isSuperadmin)
+                ? <ComingSoonModule moduleName="Management Review" icon={BarChart2} />
+                : <LockedModuleView section="management_review" />
             ) : activeSection === 'internal_audit' ? (
-              <ComingSoonModule moduleName="Internal Audits" icon={ClipboardCheck} />
+              canAccessSection('internal_audit', isoRole, isSuperadmin)
+                ? <InternalAuditModule onAskIsa={handleAskIsa} />
+                : <LockedModuleView section="internal_audit" />
             ) : activeSection === 'training' ? (
-              <ComingSoonModule moduleName="Training" icon={GraduationCap} />
+              canAccessSection('training', isoRole, isSuperadmin)
+                ? <TrainingAwarenessModule onAskIsa={handleAskIsa} />
+                : <LockedModuleView section="training" />
             ) : activeSection === 'measurement' ? (
-              <ComingSoonModule moduleName="Measurement & Monitoring" icon={Activity} />
+              canAccessSection('measurement', isoRole, isSuperadmin)
+                ? <ComingSoonModule moduleName="Measurement & Monitoring" icon={Activity} />
+                : <LockedModuleView section="measurement" />
             ) : (
               <>
             {usageData && !canAsk && !activeConversationId && (
@@ -1834,27 +1892,34 @@ function ModuleNavButton({
   onClick, 
   icon: Icon, 
   label, 
-  testId 
+  testId,
+  locked = false,
 }: { 
   active: boolean; 
   onClick: () => void; 
   icon: any; 
   label: string;
   testId: string;
+  locked?: boolean;
 }) {
   return (
     <Button
       variant="ghost"
-      onClick={onClick}
+      onClick={locked ? undefined : onClick}
+      disabled={locked}
       className={`w-full justify-start gap-3 h-9 px-3 transition-all ${
-        active 
-          ? "bg-accent/10 text-accent font-bold border border-accent/20" 
-          : "text-muted-foreground hover:bg-muted"
+        locked
+          ? "opacity-40 cursor-not-allowed text-muted-foreground"
+          : active 
+            ? "bg-accent/10 text-accent font-bold border border-accent/20" 
+            : "text-muted-foreground hover:bg-muted"
       }`}
       data-testid={testId}
+      title={locked ? "Upgrade your plan to access this module" : undefined}
     >
-      <Icon className={`w-4 h-4 shrink-0 ${active ? "text-accent" : "opacity-70"}`} />
-      <span className="truncate">{label}</span>
+      <Icon className={`w-4 h-4 shrink-0 ${active && !locked ? "text-accent" : "opacity-70"}`} />
+      <span className="truncate flex-1">{label}</span>
+      {locked && <Lock className="w-3 h-3 shrink-0 opacity-50" />}
     </Button>
   );
 }

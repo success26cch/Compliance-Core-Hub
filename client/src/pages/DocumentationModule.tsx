@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  FileMinus
+  FileMinus,
+  Map,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -174,10 +175,15 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               {type.label}
             </TabsTrigger>
           ))}
+          <TabsTrigger value="coverage_map" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-coverage-map">
+            <Map className="w-3.5 h-3.5" /> Coverage Map
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {isLoading ? (
+      {activeTab === "coverage_map" ? (
+        <ClauseCoverageMap documents={documents || []} onAskIsa={onAskIsa} />
+      ) : isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">Loading documents...</p>
         </div>
@@ -516,6 +522,154 @@ function EmptyState({ onNewDoc, onAskIsa }: any) {
           <MessageSquare className="w-5 h-5 text-accent" />
           <span className="text-xs font-bold">Ask Isa What to Create</span>
         </Button>
+      </div>
+    </div>
+  );
+}
+
+const ISO_9001_CLAUSES = [
+  { clause: "4.1", title: "Understanding the organization and its context" },
+  { clause: "4.2", title: "Understanding the needs and expectations of interested parties" },
+  { clause: "4.3", title: "Determining the scope of the QMS" },
+  { clause: "4.4", title: "QMS and its processes" },
+  { clause: "5.1", title: "Leadership and commitment" },
+  { clause: "5.2", title: "Quality policy" },
+  { clause: "5.3", title: "Organizational roles, responsibilities and authorities" },
+  { clause: "6.1", title: "Actions to address risks and opportunities" },
+  { clause: "6.2", title: "Quality objectives and planning to achieve them" },
+  { clause: "6.3", title: "Planning of changes" },
+  { clause: "7.1", title: "Resources" },
+  { clause: "7.2", title: "Competence" },
+  { clause: "7.3", title: "Awareness" },
+  { clause: "7.4", title: "Communication" },
+  { clause: "7.5", title: "Documented information" },
+  { clause: "8.1", title: "Operational planning and control" },
+  { clause: "8.2", title: "Requirements for products and services" },
+  { clause: "8.3", title: "Design and development" },
+  { clause: "8.4", title: "Control of externally provided processes, products and services" },
+  { clause: "8.5", title: "Production and service provision" },
+  { clause: "8.6", title: "Release of products and services" },
+  { clause: "8.7", title: "Control of nonconforming outputs" },
+  { clause: "9.1", title: "Monitoring, measurement, analysis and evaluation" },
+  { clause: "9.2", title: "Internal audit" },
+  { clause: "9.3", title: "Management review" },
+  { clause: "10.2", title: "Nonconformity and corrective action" },
+  { clause: "10.3", title: "Continual improvement" },
+];
+
+function ClauseCoverageMap({ documents, onAskIsa }: { documents: IsoDocument[]; onAskIsa: (prompt: string) => void }) {
+  const covered = ISO_9001_CLAUSES.filter(({ clause }) =>
+    documents.some(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status !== "obsolete")
+  );
+  const partial = ISO_9001_CLAUSES.filter(({ clause }) =>
+    documents.some(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status === "draft")
+    && !documents.some(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status === "approved")
+  );
+  const uncovered = ISO_9001_CLAUSES.filter(({ clause }) =>
+    !documents.some(doc => doc.isoClause && doc.isoClause.includes(clause))
+  );
+  const coveragePct = Math.round((covered.length / ISO_9001_CLAUSES.length) * 100);
+
+  const getStatusForClause = (clause: string) => {
+    const docs = documents.filter(doc => doc.isoClause && doc.isoClause.includes(clause));
+    if (docs.length === 0) return "none";
+    if (docs.some(d => d.status === "approved")) return "approved";
+    if (docs.some(d => d.status === "in_review")) return "review";
+    return "draft";
+  };
+
+  const getDocsForClause = (clause: string) =>
+    documents.filter(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status !== "obsolete");
+
+  return (
+    <div className="space-y-6">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 text-center border-2 border-primary/20 bg-primary/5">
+          <p className="text-3xl font-black text-primary">{coveragePct}%</p>
+          <p className="text-xs text-muted-foreground mt-1">Overall Coverage</p>
+        </Card>
+        <Card className="p-4 text-center border border-green-200 bg-green-50">
+          <p className="text-3xl font-black text-green-700">{covered.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">Clauses Addressed</p>
+        </Card>
+        <Card className="p-4 text-center border border-yellow-200 bg-yellow-50">
+          <p className="text-3xl font-black text-yellow-700">{partial.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">Draft Only</p>
+        </Card>
+        <Card className="p-4 text-center border border-red-200 bg-red-50">
+          <p className="text-3xl font-black text-red-700">{uncovered.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">Not Addressed</p>
+        </Card>
+      </div>
+
+      {/* Progress bar */}
+      <div>
+        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+          <span>ISO 9001:2015 Documentation Coverage</span>
+          <span>{covered.length} of {ISO_9001_CLAUSES.length} clauses</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div className="bg-primary h-2.5 rounded-full transition-all" style={{ width: `${coveragePct}%` }} />
+        </div>
+      </div>
+
+      {/* Ask Isa about gaps */}
+      {uncovered.length > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span className="text-amber-800">{uncovered.length} clauses have no supporting documents. </span>
+          <button
+            className="text-accent font-semibold hover:underline whitespace-nowrap"
+            onClick={() => onAskIsa(`I'm building my ISO 9001:2015 documentation library and these clauses currently have no supporting documents: ${uncovered.slice(0, 8).map(c => c.clause + " (" + c.title + ")").join(", ")}. Which of these should I prioritize first and what document should I create for each?`)}
+          >
+            Ask Isa for Guidance
+          </button>
+        </div>
+      )}
+
+      {/* Clause list */}
+      <div className="overflow-hidden rounded-lg border bg-white">
+        <table className="w-full text-sm" data-testid="table-coverage-map">
+          <thead className="bg-muted/50 border-b">
+            <tr>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-16">Clause</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Requirement</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-28">Status</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Documents</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {ISO_9001_CLAUSES.map(({ clause, title }) => {
+              const status = getStatusForClause(clause);
+              const clauseDocs = getDocsForClause(clause);
+              return (
+                <tr key={clause} className="hover:bg-muted/10" data-testid={`row-coverage-${clause}`}>
+                  <td className="px-4 py-3 font-mono text-xs font-bold text-primary">{clause}</td>
+                  <td className="px-4 py-3 text-foreground">{title}</td>
+                  <td className="px-4 py-3">
+                    {status === "approved" && <Badge className="bg-green-100 text-green-800 border border-green-200 text-xs">Approved</Badge>}
+                    {status === "review" && <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-200 text-xs">In Review</Badge>}
+                    {status === "draft" && <Badge className="bg-gray-100 text-gray-700 border border-gray-200 text-xs">Draft</Badge>}
+                    {status === "none" && <Badge className="bg-red-50 text-red-600 border border-red-200 text-xs">Not Addressed</Badge>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {clauseDocs.length === 0 ? (
+                      <span className="text-xs text-muted-foreground italic">No documents mapped</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {clauseDocs.slice(0, 2).map(doc => (
+                          <span key={doc.id} className="text-xs bg-muted px-2 py-0.5 rounded">{doc.title}</span>
+                        ))}
+                        {clauseDocs.length > 2 && <span className="text-xs text-muted-foreground">+{clauseDocs.length - 2} more</span>}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -32,7 +32,10 @@ The CCHUB platform utilizes a modern web stack, featuring React, Vite, TailwindC
 -   **Progressive Web App (PWA):** The standalone Corey application is designed as a PWA, offering an installable, dark-themed experience with offline caching.
 -   **Data Management Routes:** API routes are provided for dashboard data, employee management, incident logging, account settings, team seat management, digital passport generation, clinic assistant interface, and specialized letter generators.
 -   **Branded Divisions:** Integrates BrandNSwag and ACSI Mentorship Program.
--   **ISO Manager Product Roadmap:** Future enhancements include a 3-tier role model (Librarian, Trainer, Auditor) and a Clause Coverage Map to track ISO compliance.
+-   **ISO Manager 3-Tier Role System (LIVE):** `isoRole` on users (`librarian` | `trainer` | `auditor`). Badge in sidebar. Gating: Librarian → Documentation/NC/Chat; Trainer adds Communication & Training; Auditor adds Internal Audits, Risk, Management Review, Measurement. Superadmins bypass all gates. API: `PATCH /api/superadmin/users/:userId/iso-role`.
+-   **ISO Manager Internal Audit Module (LIVE):** Create audits, clause-by-clause checklist (ISO 9001/14001/45001), finding log with severity, real-time status.
+-   **ISO Manager Training & Awareness Module (LIVE):** Push awareness notices to process owners, track acknowledgments, expiry dates, urgency levels.
+-   **ISO Manager Clause Coverage Map (LIVE):** Per-clause document coverage visualization (approved/in-review/draft/none), overall coverage percentage gauge.
 
 ## External Dependencies
 -   **AI Integration:** Anthropic Claude (via Replit AI)

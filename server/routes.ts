@@ -2777,6 +2777,23 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     }
   });
 
+  // Set ISO role for a user (superadmin only)
+  app.patch("/api/superadmin/users/:userId/iso-role", requireSuperadmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { isoRole } = req.body;
+      const validRoles = ['librarian', 'trainer', 'auditor', null];
+      if (!validRoles.includes(isoRole)) {
+        return res.status(400).json({ message: "Invalid isoRole. Must be 'librarian', 'trainer', 'auditor', or null." });
+      }
+      const updated = await storage.setIsoRole(userId, isoRole);
+      res.json({ success: true, user: updated });
+    } catch (error: any) {
+      console.error('Error updating isoRole:', error);
+      res.status(500).json({ message: "Failed to update ISO role" });
+    }
+  });
+
   // ==========================================
   // DIGITAL MEDICAL PASSPORT (CCHUB Handshake)
   // ==========================================
@@ -5359,6 +5376,198 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
 
       await storage.deleteIsoDocument(id, userId);
       res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── ISO Audits ───────────────────────────────────────────────────────────────
+  app.get("/api/iso-audits", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const audits = await storage.getIsoAudits(userId);
+      res.json(audits);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/iso-audits", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const { insertIsoAuditSchema } = await import("@shared/schema");
+      const parsed = insertIsoAuditSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const audit = await storage.createIsoAudit(parsed.data);
+      res.status(201).json(audit);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/iso-audits/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const audit = await storage.updateIsoAudit(id, userId, req.body);
+      if (!audit) return res.status(404).json({ message: "Not found" });
+      res.json(audit);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/iso-audits/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIsoAudit(id, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── ISO Audit Findings ───────────────────────────────────────────────────────
+  app.get("/api/iso-audits/:auditId/findings", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const auditId = parseInt(req.params.auditId);
+      if (isNaN(auditId)) return res.status(400).json({ message: "Invalid ID" });
+      const findings = await storage.getIsoAuditFindings(auditId, userId);
+      res.json(findings);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/iso-audits/:auditId/findings", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const auditId = parseInt(req.params.auditId);
+      if (isNaN(auditId)) return res.status(400).json({ message: "Invalid ID" });
+      const { insertIsoAuditFindingSchema } = await import("@shared/schema");
+      const parsed = insertIsoAuditFindingSchema.safeParse({ ...req.body, userId, auditId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const finding = await storage.createIsoAuditFinding(parsed.data);
+      res.status(201).json(finding);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/iso-audit-findings/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const finding = await storage.updateIsoAuditFinding(id, userId, req.body);
+      if (!finding) return res.status(404).json({ message: "Not found" });
+      res.json(finding);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/iso-audit-findings/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIsoAuditFinding(id, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── ISO Awareness Notices ────────────────────────────────────────────────────
+  app.get("/api/iso-awareness-notices", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const notices = await storage.getIsoAwarenessNotices(userId);
+      res.json(notices);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/iso-awareness-notices", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const { insertIsoAwarenessNoticeSchema } = await import("@shared/schema");
+      const parsed = insertIsoAwarenessNoticeSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const notice = await storage.createIsoAwarenessNotice(parsed.data);
+      res.status(201).json(notice);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/iso-awareness-notices/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const notice = await storage.updateIsoAwarenessNotice(id, userId, req.body);
+      if (!notice) return res.status(404).json({ message: "Not found" });
+      res.json(notice);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/iso-awareness-notices/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIsoAwarenessNotice(id, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── ISO Awareness Acknowledgments ───────────────────────────────────────────
+  app.get("/api/iso-awareness-notices/:noticeId/acknowledgments", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const noticeId = parseInt(req.params.noticeId);
+      if (isNaN(noticeId)) return res.status(400).json({ message: "Invalid ID" });
+      const acks = await storage.getIsoAwarenessAcknowledgments(noticeId);
+      res.json(acks);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/iso-awareness-notices/:noticeId/acknowledgments", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const noticeId = parseInt(req.params.noticeId);
+      if (isNaN(noticeId)) return res.status(400).json({ message: "Invalid ID" });
+      const { insertIsoAwarenessAcknowledgmentSchema } = await import("@shared/schema");
+      const parsed = insertIsoAwarenessAcknowledgmentSchema.safeParse({ ...req.body, userId, noticeId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const ack = await storage.createIsoAwarenessAcknowledgment(parsed.data);
+      res.status(201).json(ack);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
