@@ -746,7 +746,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button onClick={() => createMutation.mutate({ ...form, isoProjectId })} disabled={createMutation.isPending} data-testid="button-submit-review" className="bg-accent hover:bg-accent/90 text-white">
+              <Button onClick={() => createMutation.mutate({ ...form, isoProjectId })} disabled={createMutation.isPending || !form.title.trim() || !form.meetingDate} data-testid="button-submit-review" className="bg-accent hover:bg-accent/90 text-white">
                 Create Review
               </Button>
             </div>

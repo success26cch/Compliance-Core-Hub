@@ -355,7 +355,7 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={resetForm}>Cancel</Button>
-              <Button onClick={submit} disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-submit-comm" className="bg-accent hover:bg-accent/90 text-white">
+              <Button onClick={submit} disabled={createMutation.isPending || updateMutation.isPending || !form.topic?.trim()} data-testid="button-submit-comm" className="bg-accent hover:bg-accent/90 text-white">
                 {editing ? "Update" : "Log"}
               </Button>
             </div>

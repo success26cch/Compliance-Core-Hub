@@ -439,7 +439,7 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</Button>
-              <Button onClick={submit} disabled={createMutation.isPending || updateMutation.isPending} data-testid="button-submit-risk" className="bg-accent hover:bg-accent/90 text-white">
+              <Button onClick={submit} disabled={createMutation.isPending || updateMutation.isPending || !form.description.trim()} data-testid="button-submit-risk" className="bg-accent hover:bg-accent/90 text-white">
                 {editing ? "Update" : "Add Risk"}
               </Button>
             </div>

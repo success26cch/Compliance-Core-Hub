@@ -95,26 +95,26 @@ function TrendArrow({ actuals, targetVal, unit }: { actuals: IsoKpiActual[]; tar
   );
 }
 
-function periodRange(window: string, customStart: string, customEnd: string): { start: string; end: string } {
+// Returns Date objects for true day-level range filtering via loggedAt
+function periodRange(window: string, customStart: string, customEnd: string): { start: Date | null; end: Date | null } {
   const now = new Date();
-  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   if (window === "last_30d") {
-    const d = new Date(now); d.setDate(d.getDate() - 30);
-    return { start: ymd(d), end: "" };
+    const d = new Date(now); d.setDate(d.getDate() - 30); d.setHours(0, 0, 0, 0);
+    return { start: d, end: null };
   }
   if (window === "current_quarter") {
-    const month = now.getMonth(); // 0-indexed
-    const quarterStartMonth = Math.floor(month / 3) * 3;
-    const d = new Date(now.getFullYear(), quarterStartMonth, 1);
-    return { start: ymd(d), end: "" };
+    const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+    return { start: new Date(now.getFullYear(), quarterStartMonth, 1, 0, 0, 0, 0), end: null };
   }
   if (window === "current_year") {
-    return { start: `${now.getFullYear()}-01`, end: "" };
+    return { start: new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0), end: null };
   }
   if (window === "custom") {
-    return { start: customStart, end: customEnd };
+    const start = customStart ? new Date(customStart + "-01") : null;
+    const end = customEnd ? new Date(new Date(customEnd + "-01").getFullYear(), new Date(customEnd + "-01").getMonth() + 1, 0, 23, 59, 59) : null;
+    return { start, end };
   }
-  return { start: "", end: "" }; // all
+  return { start: null, end: null }; // all time
 }
 
 function KpiCard({ obj, actuals, onLog, onEdit, range }: {
@@ -122,20 +122,17 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   actuals: IsoKpiActual[];
   onLog: () => void;
   onEdit: () => void;
-  range: { start: string; end: string };
+  range: { start: Date | null; end: Date | null };
 }) {
   const [expanded, setExpanded] = useState(false);
-  // Date-based filtering: parse period as YYYY-MM date for proper range comparison
+  // Date-range filtering using loggedAt for accurate day-level comparisons
   const windowActuals = actuals.filter(a => {
     if (!range.start && !range.end) return true;
-    const periodStr = a.period.length >= 7 ? a.period.slice(0, 7) : a.period;
-    const periodDate = new Date(periodStr + "-01");
-    if (range.start && periodDate < new Date(range.start + "-01")) return false;
-    if (range.end) {
-      const endDate = new Date(range.end + "-01");
-      const endOfMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0, 23, 59, 59);
-      if (periodDate > endOfMonth) return false;
-    }
+    // Prefer loggedAt (exact timestamp); fall back to YYYY-MM-01 from period string
+    const entryDate = a.loggedAt ? new Date(a.loggedAt as unknown as string)
+      : new Date(a.period.slice(0, 7) + "-01");
+    if (range.start && entryDate < range.start) return false;
+    if (range.end && entryDate > range.end) return false;
     return true;
   });
   const sorted = [...windowActuals].sort((a, b) => a.period.localeCompare(b.period));
@@ -477,7 +474,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setLogFor(null)}>Cancel</Button>
-              <Button onClick={() => logMutation.mutate({ ...logForm, objectiveId: logFor?.id })} disabled={logMutation.isPending} data-testid="button-submit-log" className="bg-accent hover:bg-accent/90 text-white">
+              <Button onClick={() => logMutation.mutate({ ...logForm, objectiveId: logFor?.id })} disabled={logMutation.isPending || !logForm.period || !logForm.actual} data-testid="button-submit-log" className="bg-accent hover:bg-accent/90 text-white">
                 Log
               </Button>
             </div>
