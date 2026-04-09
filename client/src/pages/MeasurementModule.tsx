@@ -125,9 +125,19 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   range: { start: string; end: string };
 }) {
   const [expanded, setExpanded] = useState(false);
-  const windowActuals = actuals.filter(a =>
-    (!range.start || a.period >= range.start) && (!range.end || a.period <= range.end)
-  );
+  // Date-based filtering: parse period as YYYY-MM date for proper range comparison
+  const windowActuals = actuals.filter(a => {
+    if (!range.start && !range.end) return true;
+    const periodStr = a.period.length >= 7 ? a.period.slice(0, 7) : a.period;
+    const periodDate = new Date(periodStr + "-01");
+    if (range.start && periodDate < new Date(range.start + "-01")) return false;
+    if (range.end) {
+      const endDate = new Date(range.end + "-01");
+      const endOfMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0, 23, 59, 59);
+      if (periodDate > endOfMonth) return false;
+    }
+    return true;
+  });
   const sorted = [...windowActuals].sort((a, b) => a.period.localeCompare(b.period));
   const allSorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
   const latest = allSorted[allSorted.length - 1];
@@ -450,9 +460,12 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label>Period *</Label>
-              <Input value={logForm.period} onChange={e => setLogForm(f => ({ ...f, period: e.target.value }))} placeholder="e.g. 2025-04, 2025-Q1" data-testid="input-log-period" />
-              <p className="text-xs text-muted-foreground mt-1">Format: YYYY-MM (monthly) or YYYY-Q# (quarterly)</p>
+              <Label>Measurement Date (Month) *</Label>
+              <input type="month" value={logForm.period} onChange={e => setLogForm(f => ({ ...f, period: e.target.value }))}
+                data-testid="input-log-period"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Select the month this measurement covers.</p>
             </div>
             <div>
               <Label>Actual Value * ({logFor?.unit})</Label>

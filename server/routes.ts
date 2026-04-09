@@ -6311,7 +6311,9 @@ Output only the document content. No preamble. No closing remarks about the docu
       const existing = (await storage.getIsoRisks(userId)).find(r => r.id === parseInt(req.params.id));
       if (!existing) return res.status(404).json({ message: "Not found" });
       const { insertIsoRiskSchema } = await import("@shared/schema");
-      const parsed = insertIsoRiskSchema.partial().safeParse(req.body);
+      // Strip ownership/linkage fields — they must not be client-mutable in PATCH
+      const patchSchema = insertIsoRiskSchema.omit({ userId: true, isoProjectId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
       // Merge likelihood/severity with existing so score is always correct
       const l: number = parsed.data.likelihood ?? existing.likelihood;
@@ -6367,7 +6369,9 @@ Output only the document content. No preamble. No closing remarks about the docu
     const userId = (req.user as any).claims.sub;
     try {
       const { insertIsoManagementReviewSchema } = await import("@shared/schema");
-      const parsed = insertIsoManagementReviewSchema.partial().safeParse(req.body);
+      // Strip ownership/linkage fields — they must not be client-mutable in PATCH
+      const patchSchema = insertIsoManagementReviewSchema.omit({ userId: true, isoProjectId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
       const review = await storage.updateIsoManagementReview(parseInt(req.params.id), userId, parsed.data);
       if (!review) return res.status(404).json({ message: "Not found" });
@@ -6421,7 +6425,9 @@ Output only the document content. No preamble. No closing remarks about the docu
     const userId = (req.user as any).claims.sub;
     try {
       const { insertIsoReviewActionItemSchema } = await import("@shared/schema");
-      const parsed = insertIsoReviewActionItemSchema.partial().safeParse(req.body);
+      // Strip ownership/linkage fields — they must not be client-mutable in PATCH
+      const patchSchema = insertIsoReviewActionItemSchema.omit({ userId: true, reviewId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
       const item = await storage.updateIsoReviewActionItem(parseInt(req.params.id), userId, parsed.data);
       if (!item) return res.status(404).json({ message: "Not found" });
@@ -6466,7 +6472,9 @@ Output only the document content. No preamble. No closing remarks about the docu
     const userId = (req.user as any).claims.sub;
     try {
       const { insertIsoCommunicationSchema } = await import("@shared/schema");
-      const parsed = insertIsoCommunicationSchema.partial().safeParse(req.body);
+      // Strip ownership/linkage fields — they must not be client-mutable in PATCH
+      const patchSchema = insertIsoCommunicationSchema.omit({ userId: true, isoProjectId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
       const comm = await storage.updateIsoCommunication(parseInt(req.params.id), userId, parsed.data);
       if (!comm) return res.status(404).json({ message: "Not found" });
