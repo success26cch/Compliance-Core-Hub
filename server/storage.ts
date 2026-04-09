@@ -139,6 +139,7 @@ export interface IStorage {
   getRetainerRequests(): Promise<ContactInquiry[]>;
   setSuperadmin(userId: string, isSuperadmin: boolean): Promise<User | undefined>;
   setIsoRole(userId: string, isoRole: string | null): Promise<User | undefined>;
+  setIsoOnly(userId: string, isoOnly: boolean): Promise<User | undefined>;
   getCompanyUsageStats(): Promise<any[]>;
 
   // Clinic Agreements
@@ -884,6 +885,14 @@ export class DatabaseStorage implements IStorage {
   async setIsoRole(userId: string, isoRole: string | null): Promise<User | undefined> {
     const [updated] = await db.update(users)
       .set({ isoRole, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return updated;
+  }
+
+  async setIsoOnly(userId: string, isoOnly: boolean): Promise<User | undefined> {
+    const [updated] = await db.update(users)
+      .set({ isoOnly, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
     return updated;

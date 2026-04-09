@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   LayoutDashboard, 
   Bot, 
@@ -24,7 +25,9 @@ import {
   FileText,
   BookOpen,
   ArrowLeftRight,
-  Truck
+  Truck,
+  Layers,
+  LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +55,38 @@ function ViewModeToggle() {
     >
       <ArrowLeftRight className="w-5 h-5" />
       {isAdmin ? "Switch to Test Co." : "Switch to Admin"}
+    </button>
+  );
+}
+
+function IsoOnlyToggle() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const isIsoOnly = user?.isoOnly === true;
+
+  const toggle = useMutation({
+    mutationFn: () =>
+      apiRequest("PATCH", "/api/user/iso-only", { isoOnly: !isIsoOnly }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+  });
+
+  return (
+    <button
+      onClick={() => toggle.mutate()}
+      disabled={toggle.isPending}
+      className={`
+        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+        ${isIsoOnly
+          ? "bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 dark:text-purple-400"
+          : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"}
+      `}
+      data-testid="button-toggle-iso-only"
+      title={isIsoOnly ? "Switch to Full Platform view" : "Switch to ISO Manager only view"}
+    >
+      {isIsoOnly ? <LayoutGrid className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
+      {toggle.isPending ? "Switching…" : isIsoOnly ? "Show Full Platform" : "ISO Manager Only"}
     </button>
   );
 }
@@ -216,6 +251,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
       <div className="p-4 border-t border-border/50 space-y-2">
         {superadminCheck?.isSuperadmin && (
           <>
+            <IsoOnlyToggle />
             <ViewModeToggle />
             <Link href="/superadmin" className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium

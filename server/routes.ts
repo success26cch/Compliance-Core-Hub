@@ -2777,6 +2777,18 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     }
   });
 
+  // Toggle isoOnly for current user (superadmin only — lets them switch between ISO-only and full platform view)
+  app.patch("/api/user/iso-only", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims?.sub || (req.user as any).id;
+    const isSuperadmin = await storage.isSuperadmin(userId);
+    if (!isSuperadmin) return res.status(403).json({ message: "Superadmin only" });
+    const { isoOnly } = req.body;
+    if (typeof isoOnly !== "boolean") return res.status(400).json({ message: "isoOnly must be a boolean" });
+    const updated = await storage.setIsoOnly(userId, isoOnly);
+    res.json(updated);
+  });
+
   // Set ISO role for a user (superadmin only)
   app.patch("/api/superadmin/users/:userId/iso-role", requireSuperadmin, async (req, res) => {
     try {
