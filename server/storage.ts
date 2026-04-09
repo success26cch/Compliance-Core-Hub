@@ -21,7 +21,7 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type IsoCommunication, type InsertIsoCommunication,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
+import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Corey Profiles
@@ -316,13 +316,13 @@ export interface IStorage {
   deleteIsoKpiActual(id: number, userId: string): Promise<void>;
 
   // ISO Risks
-  getIsoRisks(userId: string): Promise<IsoRisk[]>;
+  getIsoRisks(userId: string, isoProjectId?: number): Promise<IsoRisk[]>;
   createIsoRisk(data: InsertIsoRisk): Promise<IsoRisk>;
   updateIsoRisk(id: number, userId: string, data: Partial<InsertIsoRisk>): Promise<IsoRisk | undefined>;
   deleteIsoRisk(id: number, userId: string): Promise<void>;
 
   // ISO Management Reviews
-  getIsoManagementReviews(userId: string): Promise<IsoManagementReview[]>;
+  getIsoManagementReviews(userId: string, isoProjectId?: number): Promise<IsoManagementReview[]>;
   getIsoManagementReview(id: number, userId: string): Promise<IsoManagementReview | undefined>;
   createIsoManagementReview(data: InsertIsoManagementReview): Promise<IsoManagementReview>;
   updateIsoManagementReview(id: number, userId: string, data: Partial<InsertIsoManagementReview>): Promise<IsoManagementReview | undefined>;
@@ -330,13 +330,13 @@ export interface IStorage {
 
   // ISO Review Action Items
   getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]>;
-  getAllIsoReviewActionItems(userId: string): Promise<IsoReviewActionItem[]>;
+  getAllIsoReviewActionItems(userId: string, isoProjectId?: number): Promise<IsoReviewActionItem[]>;
   createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem>;
   updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>): Promise<IsoReviewActionItem | undefined>;
   deleteIsoReviewActionItem(id: number, userId: string): Promise<void>;
 
   // ISO Communications
-  getIsoCommunications(userId: string): Promise<IsoCommunication[]>;
+  getIsoCommunications(userId: string, isoProjectId?: number): Promise<IsoCommunication[]>;
   createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication>;
   updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>): Promise<IsoCommunication | undefined>;
   deleteIsoCommunication(id: number, userId: string): Promise<void>;
@@ -1783,8 +1783,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO Risks ────────────────────────────────────────────────────────────────
-  async getIsoRisks(userId: string): Promise<IsoRisk[]> {
-    return db.select().from(isoRisks).where(eq(isoRisks.userId, userId)).orderBy(desc(isoRisks.riskScore));
+  async getIsoRisks(userId: string, isoProjectId?: number): Promise<IsoRisk[]> {
+    const cond = isoProjectId != null
+      ? and(eq(isoRisks.userId, userId), eq(isoRisks.isoProjectId, isoProjectId))
+      : eq(isoRisks.userId, userId);
+    return db.select().from(isoRisks).where(cond).orderBy(desc(isoRisks.riskScore));
   }
   async createIsoRisk(data: InsertIsoRisk): Promise<IsoRisk> {
     const [r] = await db.insert(isoRisks).values(data).returning();
@@ -1799,8 +1802,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO Management Reviews ───────────────────────────────────────────────────
-  async getIsoManagementReviews(userId: string): Promise<IsoManagementReview[]> {
-    return db.select().from(isoManagementReviews).where(eq(isoManagementReviews.userId, userId)).orderBy(desc(isoManagementReviews.meetingDate));
+  async getIsoManagementReviews(userId: string, isoProjectId?: number): Promise<IsoManagementReview[]> {
+    const cond = isoProjectId != null
+      ? and(eq(isoManagementReviews.userId, userId), eq(isoManagementReviews.isoProjectId, isoProjectId))
+      : eq(isoManagementReviews.userId, userId);
+    return db.select().from(isoManagementReviews).where(cond).orderBy(desc(isoManagementReviews.meetingDate));
   }
   async getIsoManagementReview(id: number, userId: string): Promise<IsoManagementReview | undefined> {
     const [r] = await db.select().from(isoManagementReviews).where(and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId)));
@@ -1822,7 +1828,16 @@ export class DatabaseStorage implements IStorage {
   async getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]> {
     return db.select().from(isoReviewActionItems).where(and(eq(isoReviewActionItems.reviewId, reviewId), eq(isoReviewActionItems.userId, userId))).orderBy(isoReviewActionItems.createdAt);
   }
-  async getAllIsoReviewActionItems(userId: string): Promise<IsoReviewActionItem[]> {
+  async getAllIsoReviewActionItems(userId: string, isoProjectId?: number): Promise<IsoReviewActionItem[]> {
+    if (isoProjectId != null) {
+      const projectReviews = await db.select({ id: isoManagementReviews.id })
+        .from(isoManagementReviews)
+        .where(and(eq(isoManagementReviews.userId, userId), eq(isoManagementReviews.isoProjectId, isoProjectId)));
+      const ids = projectReviews.map(r => r.id);
+      if (ids.length === 0) return [];
+      return db.select().from(isoReviewActionItems)
+        .where(and(eq(isoReviewActionItems.userId, userId), inArray(isoReviewActionItems.reviewId, ids)));
+    }
     return db.select().from(isoReviewActionItems).where(eq(isoReviewActionItems.userId, userId));
   }
   async createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem> {
@@ -1838,8 +1853,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO Communications ───────────────────────────────────────────────────────
-  async getIsoCommunications(userId: string): Promise<IsoCommunication[]> {
-    return db.select().from(isoCommunications).where(eq(isoCommunications.userId, userId)).orderBy(desc(isoCommunications.date));
+  async getIsoCommunications(userId: string, isoProjectId?: number): Promise<IsoCommunication[]> {
+    const cond = isoProjectId != null
+      ? and(eq(isoCommunications.userId, userId), eq(isoCommunications.isoProjectId, isoProjectId))
+      : eq(isoCommunications.userId, userId);
+    return db.select().from(isoCommunications).where(cond).orderBy(desc(isoCommunications.date));
   }
   async createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication> {
     const [r] = await db.insert(isoCommunications).values(data).returning();

@@ -6266,7 +6266,8 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const risks = await storage.getIsoRisks(userId);
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const risks = await storage.getIsoRisks(userId, isoProjectId);
       res.json(risks);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6318,7 +6319,8 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const reviews = await storage.getIsoManagementReviews(userId);
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const reviews = await storage.getIsoManagementReviews(userId, isoProjectId);
       res.json(reviews);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6356,7 +6358,8 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const items = await storage.getAllIsoReviewActionItems(userId);
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const items = await storage.getAllIsoReviewActionItems(userId, isoProjectId);
       res.json(items);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6403,7 +6406,8 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const comms = await storage.getIsoCommunications(userId);
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const comms = await storage.getIsoCommunications(userId, isoProjectId);
       res.json(comms);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });

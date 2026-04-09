@@ -51,23 +51,27 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
   const [isaMessages, setIsaMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isaLoading, setIsaLoading] = useState(false);
 
-  const { data: comms = [], isLoading } = useQuery<IsoCommunication[]>({ queryKey: ["/api/iso-communications"] });
+  const commsQKey = ["/api/iso-communications", isoProjectId];
+  const { data: comms = [], isLoading } = useQuery<IsoCommunication[]>({
+    queryKey: commsQKey,
+    queryFn: () => fetch(`/api/iso-communications${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
 
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/iso-communications", data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-communications"] }); toast({ title: "Communication logged" }); resetForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: commsQKey }); toast({ title: "Communication logged" }); resetForm(); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-communications/${id}`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-communications"] }); toast({ title: "Updated" }); resetForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: commsQKey }); toast({ title: "Updated" }); resetForm(); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/iso-communications/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-communications"] }); toast({ title: "Deleted" }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: commsQKey }); toast({ title: "Deleted" }); },
   });
 
   const resetForm = () => { setForm({ ...EMPTY_FORM, date: new Date().toISOString().slice(0, 10) }); setEditing(null); setShowForm(false); };

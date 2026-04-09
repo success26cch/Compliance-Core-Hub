@@ -80,23 +80,27 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
   const [filterProcess, setFilterProcess] = useState("");
   const [showHeatmap, setShowHeatmap] = useState(false);
 
-  const { data: risks = [], isLoading } = useQuery<IsoRisk[]>({ queryKey: ["/api/iso-risks"] });
+  const risksQKey = ["/api/iso-risks", isoProjectId];
+  const { data: risks = [], isLoading } = useQuery<IsoRisk[]>({
+    queryKey: risksQKey,
+    queryFn: () => fetch(`/api/iso-risks${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
 
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/iso-risks", data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-risks"] }); toast({ title: "Risk added" }); setShowForm(false); resetForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: risksQKey }); toast({ title: "Risk added" }); setShowForm(false); resetForm(); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-risks/${id}`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-risks"] }); toast({ title: "Risk updated" }); setEditing(null); setShowForm(false); resetForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: risksQKey }); toast({ title: "Risk updated" }); setEditing(null); setShowForm(false); resetForm(); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/iso-risks/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-risks"] }); toast({ title: "Risk deleted" }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: risksQKey }); toast({ title: "Risk deleted" }); },
   });
 
   const resetForm = () => { setForm(EMPTY_FORM); setEditing(null); };

@@ -95,36 +95,39 @@ function TrendArrow({ actuals, targetVal, unit }: { actuals: IsoKpiActual[]; tar
   );
 }
 
-function periodCutoff(window: string): string {
+function periodRange(window: string, customStart: string, customEnd: string): { start: string; end: string } {
   const now = new Date();
-  if (window === "30d") {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 30);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  if (window === "last_30d") {
+    const d = new Date(now); d.setDate(d.getDate() - 30);
+    return { start: ymd(d), end: "" };
   }
-  if (window === "3mo") {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - 3);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  if (window === "current_quarter") {
+    const month = now.getMonth(); // 0-indexed
+    const quarterStartMonth = Math.floor(month / 3) * 3;
+    const d = new Date(now.getFullYear(), quarterStartMonth, 1);
+    return { start: ymd(d), end: "" };
   }
-  if (window === "12mo") {
-    const d = new Date(now);
-    d.setFullYear(d.getFullYear() - 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  if (window === "current_year") {
+    return { start: `${now.getFullYear()}-01`, end: "" };
   }
-  return "";
+  if (window === "custom") {
+    return { start: customStart, end: customEnd };
+  }
+  return { start: "", end: "" }; // all
 }
 
-function KpiCard({ obj, actuals, onLog, onEdit, periodWindow }: {
+function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   obj: IsoObjective;
   actuals: IsoKpiActual[];
   onLog: () => void;
   onEdit: () => void;
-  periodWindow: string;
+  range: { start: string; end: string };
 }) {
   const [expanded, setExpanded] = useState(false);
-  const cutoff = periodCutoff(periodWindow);
-  const windowActuals = cutoff ? actuals.filter(a => a.period >= cutoff) : actuals;
+  const windowActuals = actuals.filter(a =>
+    (!range.start || a.period >= range.start) && (!range.end || a.period <= range.end)
+  );
   const sorted = [...windowActuals].sort((a, b) => a.period.localeCompare(b.period));
   const allSorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
   const latest = allSorted[allSorted.length - 1];
@@ -199,7 +202,7 @@ function KpiCard({ obj, actuals, onLog, onEdit, periodWindow }: {
         )}
         {expanded && (
           <div className="mt-3">
-            <div className="text-xs font-medium text-muted-foreground mb-2">Measurement History {periodWindow !== "all" ? `(${periodWindow})` : ""}</div>
+            <div className="text-xs font-medium text-muted-foreground mb-2">Measurement History</div>
             {windowActuals.length === 0 ? (
               <p className="text-xs text-muted-foreground">{actuals.length === 0 ? "No measurements logged yet." : "No measurements in this time window."}</p>
             ) : (
@@ -224,10 +227,11 @@ const EMPTY_EDIT_FORM = { target: "", unit: "", frequency: "monthly", responsibl
 const EMPTY_LOG_FORM = { period: "", actual: "", notes: "" };
 
 const PERIOD_WINDOWS = [
-  { val: "30d", label: "Last 30 days" },
-  { val: "3mo", label: "Last 3 months" },
-  { val: "12mo", label: "Last 12 months" },
-  { val: "all", label: "All time" },
+  { val: "last_30d", label: "Last 30 days" },
+  { val: "current_quarter", label: "Current Quarter" },
+  { val: "current_year", label: "Current Year" },
+  { val: "custom", label: "Custom Range" },
+  { val: "all", label: "All Time" },
 ];
 
 export default function MeasurementModule({ isoProjectId }: { isoProjectId?: number }) {
@@ -242,7 +246,10 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   const [isaMessages, setIsaMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isaLoading, setIsaLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [periodWindow, setPeriodWindow] = useState("12mo");
+  const [periodWindow, setPeriodWindow] = useState("current_year");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const activePeriodRange = periodRange(periodWindow, customStart, customEnd);
 
   const { data: objectives = [], isLoading } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
   const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({ queryKey: ["/api/iso-kpi-actuals"] });
@@ -355,15 +362,27 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
       </div>
 
       {/* Period window + status filters */}
-      <div className="flex flex-wrap gap-4 items-center">
-        <div className="flex gap-1 items-center flex-wrap">
-          <span className="text-xs text-muted-foreground mr-1">Period:</span>
-          {PERIOD_WINDOWS.map(w => (
-            <button key={w.val} onClick={() => setPeriodWindow(w.val)} data-testid={`filter-period-${w.val}`}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${periodWindow === w.val ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
-              {w.label}
-            </button>
-          ))}
+      <div className="flex flex-wrap gap-4 items-start">
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-1 items-center flex-wrap">
+            <span className="text-xs text-muted-foreground mr-1">Period:</span>
+            {PERIOD_WINDOWS.map(w => (
+              <button key={w.val} onClick={() => setPeriodWindow(w.val)} data-testid={`filter-period-${w.val}`}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${periodWindow === w.val ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+                {w.label}
+              </button>
+            ))}
+          </div>
+          {periodWindow === "custom" && (
+            <div className="flex gap-2 items-center ml-1">
+              <span className="text-xs text-muted-foreground">From:</span>
+              <input type="month" value={customStart} onChange={e => setCustomStart(e.target.value)} data-testid="input-period-start"
+                className="text-xs border border-border rounded px-2 py-0.5 bg-background text-foreground" />
+              <span className="text-xs text-muted-foreground">To:</span>
+              <input type="month" value={customEnd} onChange={e => setCustomEnd(e.target.value)} data-testid="input-period-end"
+                className="text-xs border border-border rounded px-2 py-0.5 bg-background text-foreground" />
+            </div>
+          )}
         </div>
         <div className="flex gap-1 items-center flex-wrap">
           <span className="text-xs text-muted-foreground mr-1">Status:</span>
@@ -401,7 +420,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
               actuals={allActuals.filter(a => a.objectiveId === obj.id)}
               onLog={() => { setLogFor(obj); setLogForm({ ...EMPTY_LOG_FORM, period: currentPeriod() }); }}
               onEdit={() => openEdit(obj)}
-              periodWindow={periodWindow}
+              range={activePeriodRange}
             />
           ))}
         </div>

@@ -137,8 +137,8 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
 }
 
 function ReviewDetail({
-  review, allReviews, onBack,
-}: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void }) {
+  review, allReviews, onBack, isoProjectId,
+}: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void; isoProjectId?: number }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [agenda, setAgenda] = useState<AgendaItem[]>(agendaFromReview(review));
@@ -167,7 +167,7 @@ function ReviewDetail({
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => apiRequest("PATCH", `/api/iso-management-reviews/${review.id}`, data).then(r => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews"] }); toast({ title: "Review saved" }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", isoProjectId] }); toast({ title: "Review saved" }); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -540,15 +540,26 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
   const [isaMessages, setIsaMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isaLoading, setIsaLoading] = useState(false);
 
-  const { data: reviews = [], isLoading } = useQuery<IsoManagementReview[]>({ queryKey: ["/api/iso-management-reviews"] });
+  const reviewsQKey = ["/api/iso-management-reviews", isoProjectId];
+  const actionsQKey = ["/api/iso-review-action-items", isoProjectId];
+
+  const { data: reviews = [], isLoading } = useQuery<IsoManagementReview[]>({
+    queryKey: reviewsQKey,
+    queryFn: () => fetch(`/api/iso-management-reviews${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
   // Fetch all action items to compute open counts per review in the list view
-  const { data: allActionItems = [] } = useQuery<IsoReviewActionItem[]>({ queryKey: ["/api/iso-review-action-items"] });
+  const { data: allActionItems = [] } = useQuery<IsoReviewActionItem[]>({
+    queryKey: actionsQKey,
+    queryFn: () => fetch(`/api/iso-review-action-items${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
+  // Objectives for the "X of Y on track" projector summary
+  const { data: objectives = [] } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
 
   const createMutation = useMutation({
     // Parse JSON from response so onSuccess gets the review object, not a Response
     mutationFn: (data: any) => apiRequest("POST", "/api/iso-management-reviews", data).then(r => r.json()),
     onSuccess: (newReview: any) => {
-      qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews"] });
+      qc.invalidateQueries({ queryKey: reviewsQKey });
       toast({ title: "Review created" });
       setShowForm(false);
       setForm(EMPTY_REVIEW_FORM);
@@ -559,12 +570,12 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/iso-management-reviews/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews"] }); toast({ title: "Review deleted" }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: reviewsQKey }); toast({ title: "Review deleted" }); },
   });
 
   if (selected) {
     const latest = reviews.find(r => r.id === selected.id) ?? selected;
-    return <ReviewDetail review={latest} allReviews={reviews} onBack={() => setSelected(null)} />;
+    return <ReviewDetail review={latest} allReviews={reviews} onBack={() => setSelected(null)} isoProjectId={isoProjectId} />;
   }
 
   const sendIsaMessage = async () => {
@@ -592,6 +603,9 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
 
   const complete = reviews.filter(r => r.status === "complete").length;
   const draft = reviews.filter(r => r.status === "draft").length;
+  const onTrackCount = objectives.filter(o => o.status === "on_track").length;
+  const totalObjectives = objectives.length;
+  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
     <div className="space-y-6">
@@ -612,6 +626,22 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
           </Button>
         </div>
       </div>
+
+      {/* Projector-ready KPI summary statement */}
+      {totalObjectives > 0 && (
+        <Card className={`border-l-4 ${onTrackCount === totalObjectives ? "border-green-400 bg-green-50 dark:bg-green-900/10" : onTrackCount >= totalObjectives * 0.7 ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10" : "border-red-400 bg-red-50 dark:bg-red-900/10"}`}>
+          <CardContent className="p-4">
+            <p className="text-base font-bold text-foreground" data-testid="text-kpi-summary">
+              {onTrackCount} of {totalObjectives} quality objective{totalObjectives !== 1 ? "s" : ""} on track as of {today}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {objectives.filter(o => o.status === "at_risk").length > 0 && `${objectives.filter(o => o.status === "at_risk").length} at risk · `}
+              {objectives.filter(o => o.status === "off_track").length > 0 && `${objectives.filter(o => o.status === "off_track").length} off track · `}
+              See KPI Measurement module for details (§9.1)
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
@@ -659,8 +689,12 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
                       </div>
                       <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                         <span>{new Date(r.meetingDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
-                        {r.attendees && <span>Attendees: {r.attendees}</span>}
-                        <span>Agenda: {covered}/{total} covered</span>
+                        {r.attendees && (
+                          <span>
+                            {r.attendees.split(",").filter(Boolean).length} attendee{r.attendees.split(",").filter(Boolean).length !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                        <span>Agenda: {covered}/{total} covered ({total > 0 ? Math.round((covered / total) * 100) : 0}%)</span>
                       </div>
                       {covered > 0 && (
                         <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden w-32">
