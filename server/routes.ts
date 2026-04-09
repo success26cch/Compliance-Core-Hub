@@ -6143,6 +6143,20 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const parsed = insertIsoKpiActualSchema.safeParse({ ...req.body, userId });
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
       const actual = await storage.createIsoKpiActual(parsed.data);
+      // Auto-derive objective status from this latest actual vs target (live KPI computation)
+      const objectives = await storage.getIsoObjectives(userId);
+      const objective = objectives.find(o => o.id === parsed.data.objectiveId);
+      if (objective && objective.target) {
+        const targetNum = parseFloat(objective.target);
+        const actualNum = parseFloat(parsed.data.actual);
+        if (!isNaN(targetNum) && !isNaN(actualNum) && targetNum > 0) {
+          const ratio = actualNum / targetNum;
+          const derivedStatus = ratio >= 1.0 ? "on_track" : ratio >= 0.8 ? "at_risk" : "off_track";
+          if (derivedStatus !== objective.status) {
+            await storage.updateIsoObjective(objective.id, userId, { status: derivedStatus });
+          }
+        }
+      }
       res.status(201).json(actual);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });

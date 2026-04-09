@@ -271,7 +271,14 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
 
   const logMutation = useMutation({
     mutationFn: (d: Omit<InsertIsoKpiActual, 'userId'>) => apiRequest("POST", "/api/iso-kpi-actuals", d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: actualsQKey }); toast({ title: "Measurement logged" }); setLogFor(null); setLogForm(EMPTY_LOG_FORM); },
+    onSuccess: () => {
+      // Invalidate both actuals and objectives — server auto-recomputes objective status from latest actual
+      qc.invalidateQueries({ queryKey: actualsQKey });
+      qc.invalidateQueries({ queryKey: objQKey });
+      toast({ title: "Measurement logged" });
+      setLogFor(null);
+      setLogForm(EMPTY_LOG_FORM);
+    },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
