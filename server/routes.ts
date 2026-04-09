@@ -6202,7 +6202,10 @@ Output only the document content. No preamble. No closing remarks about the docu
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const anthropicClient = new Anthropic();
+      const anthropicClient = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
       const stream = anthropicClient.messages.stream({
         model: "claude-sonnet-4-5",
         max_tokens: 4096,

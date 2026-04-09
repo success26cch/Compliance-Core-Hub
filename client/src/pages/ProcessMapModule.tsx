@@ -169,33 +169,42 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
 
         <div className="flex-1 p-4 space-y-3">
       {isIATF ? (
-        <div className="space-y-3">
+        <div className="space-y-1">
+          {/* Dedicated IATF site header row — shown once at top */}
+          <div className="grid grid-cols-[120px_1fr_1fr_1fr] border-2 border-border/40 rounded-xl overflow-hidden bg-muted/20">
+            <div className="border-r border-border/30 px-3 py-2 flex items-center">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Process Type</span>
+            </div>
+            {IATF_SITES.map(site => (
+              <div key={site.key} className={`border-r last:border-r-0 border-border/30 px-3 py-2 text-center ${site.headerClass}`}>
+                <p className="text-[10px] font-black uppercase tracking-wider">{site.label}</p>
+              </div>
+            ))}
+          </div>
           {rows.map(row => {
             const rowProcs = processes.filter(p => (p.row || guessRow(p.name, project.standard!)) === row.key);
-            const sites = IATF_SITES;
             return (
               <div key={row.key} className={`border-2 rounded-xl overflow-hidden ${row.color}`}>
-                <div className={`px-4 py-2 flex items-center gap-2`}>
-                  <Badge className={`text-[10px] font-bold px-2 py-0.5 ${row.badge}`}>{row.key}</Badge>
-                  <span className="text-sm font-bold text-primary">{row.label}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-0 border-t border-border/30">
-                  {sites.map(site => {
+                <div className="grid grid-cols-[120px_1fr_1fr_1fr]">
+                  {/* Row label */}
+                  <div className="border-r border-border/30 px-3 py-3 flex flex-col items-start justify-center gap-1">
+                    <Badge className={`text-[10px] font-bold px-2 py-0.5 ${row.badge}`}>{row.key}</Badge>
+                    <span className="text-[10px] font-bold text-primary leading-tight">{row.label}</span>
+                    <span className="text-[9px] text-muted-foreground">{rowProcs.length} proc{rowProcs.length !== 1 ? "s" : ""}</span>
+                  </div>
+                  {/* Site columns — no repeated header, just process boxes */}
+                  {IATF_SITES.map(site => {
                     const siteProcs = rowProcs.filter(p => (p.site || "PLANT") === site.key);
                     return (
-                      <div key={site.key} className="border-r last:border-r-0 border-border/30 p-2">
-                        <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 text-center px-1 py-0.5 rounded ${site.headerClass}`}>{site.label}</p>
-                        <div className="space-y-1.5">
-                          {siteProcs.map(p => (
-                            <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
-                          ))}
-                          {siteProcs.length === 0 && (
-                            <div className="border-2 border-dashed border-border/30 rounded-lg p-3 text-center">
-                              <p className="text-[10px] text-muted-foreground/40">No processes</p>
-                            </div>
-                          )}
-                        </div>
+                      <div key={site.key} className="border-r last:border-r-0 border-border/30 p-2 space-y-1.5">
+                        {siteProcs.map(p => (
+                          <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                        ))}
+                        {siteProcs.length === 0 && (
+                          <div className="border-2 border-dashed border-border/30 rounded-lg p-3 text-center min-h-[60px] flex items-center justify-center">
+                            <p className="text-[10px] text-muted-foreground/40">—</p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -403,12 +412,13 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
       const all = (project.processes || []) as ProcessEntry[];
       const updated = all.map(p => p.name === process.name ? local : p);
       await patchProjectMut.mutateAsync(updated);
-      if (local.kpi?.trim()) {
+      const objName = local.objectives?.trim() || local.kpi?.trim();
+      if (objName) {
         await fetch("/api/iso-objectives/upsert", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ processName: process.name, name: local.kpi.trim(), target: local.kpiTarget ?? "", unit: local.kpiUnit ?? "", responsible: local.owner, isoProjectId: project.id }),
+          body: JSON.stringify({ processName: process.name, name: objName, target: local.kpiTarget ?? "", unit: local.kpiUnit ?? "", responsible: local.owner, isoProjectId: project.id }),
         });
         qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] });
       }

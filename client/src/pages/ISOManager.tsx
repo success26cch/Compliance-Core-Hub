@@ -873,14 +873,15 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
   const goToPhase3 = async () => {
     await patchMut.mutateAsync({ processes, phase: 3 });
     for (const proc of processes) {
-      if (proc.kpi?.trim()) {
+      const objName = proc.objectives?.trim() || proc.kpi?.trim();
+      if (objName) {
         await fetch("/api/iso-objectives/upsert", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
             processName: proc.name,
-            name: proc.kpi.trim(),
+            name: objName,
             target: proc.kpiTarget ?? "",
             unit: proc.kpiUnit ?? "",
             responsible: proc.owner,
