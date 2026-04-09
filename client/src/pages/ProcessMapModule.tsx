@@ -274,25 +274,45 @@ function ObjectiveRow({ obj, onDelete, onChange }: {
     at_risk: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300",
     off_track: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300",
   };
+  const [editTarget, setEditTarget] = React.useState(obj.target ?? "");
+  const [editUnit, setEditUnit] = React.useState(obj.unit ?? "");
   return (
-    <div className="flex items-center gap-2 bg-white/60 dark:bg-black/20 rounded-lg p-2 border border-border/30">
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-xs text-primary truncate">{obj.name}</div>
-        <div className="text-[10px] text-muted-foreground">Target: {obj.target} {obj.unit}</div>
+    <div className="bg-white/60 dark:bg-black/20 rounded-lg p-2 border border-border/30 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <div className="font-semibold text-xs text-primary flex-1 truncate">{obj.name}</div>
+        <Select value={obj.status} onValueChange={v => onChange("status", v)}>
+          <SelectTrigger className="h-6 text-[10px] w-24 border-0 bg-transparent">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="on_track">On Track</SelectItem>
+            <SelectItem value="at_risk">At Risk</SelectItem>
+            <SelectItem value="off_track">Off Track</SelectItem>
+          </SelectContent>
+        </Select>
+        <button onClick={onDelete} className="text-muted-foreground hover:text-red-500 transition-colors">
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
-      <Select value={obj.status} onValueChange={v => onChange("status", v)}>
-        <SelectTrigger className="h-6 text-[10px] w-24 border-0 bg-transparent">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="on_track">On Track</SelectItem>
-          <SelectItem value="at_risk">At Risk</SelectItem>
-          <SelectItem value="off_track">Off Track</SelectItem>
-        </SelectContent>
-      </Select>
-      <button onClick={onDelete} className="text-muted-foreground hover:text-red-500 transition-colors">
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] text-muted-foreground shrink-0">Target:</span>
+        <Input
+          value={editTarget}
+          onChange={e => setEditTarget(e.target.value)}
+          onBlur={() => { if (editTarget !== obj.target) onChange("target", editTarget); }}
+          placeholder="e.g. 95"
+          className="h-5 text-[10px] flex-1 px-1.5 bg-transparent border-border/40"
+          data-testid={`input-obj-target-${obj.id}`}
+        />
+        <Input
+          value={editUnit}
+          onChange={e => setEditUnit(e.target.value)}
+          onBlur={() => { if (editUnit !== obj.unit) onChange("unit", editUnit); }}
+          placeholder="%"
+          className="h-5 text-[10px] w-12 px-1.5 bg-transparent border-border/40"
+          data-testid={`input-obj-unit-${obj.id}`}
+        />
+      </div>
     </div>
   );
 }

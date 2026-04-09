@@ -28,7 +28,7 @@ import { NonconformanceManager } from "./NonconformanceManager";
 import { DocumentationModule } from "./DocumentationModule";
 import { InternalAuditModule } from "./InternalAuditModule";
 import { TrainingAwarenessModule } from "./TrainingAwarenessModule";
-import { ProcessMapModule } from "./ProcessMapModule";
+import { ProcessMapModule, type ProcessEntry } from "./ProcessMapModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -739,7 +739,6 @@ export default function ISOManager() {
 }
 
 /* ─── ISO SETUP WIZARD ──────────────────────────────────── */
-type ProcessEntry = { name: string; owner: string; kpi: string; inputs: string; outputs: string; clauses: string[] };
 
 const WIZARD_STANDARDS = ["ISO 9001", "ISO 14001", "ISO 45001", "IATF 16949", "AS9100 Rev D", "ISO 13485", "ISO 27001"];
 const TECH_OPTIONS = ["Injection Molding", "CNC Machining", "Metal Stamping", "Assembly", "Heat Treating", "Fabrication / Welding", "Software Development", "Service Delivery", "Other"];
