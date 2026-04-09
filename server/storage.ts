@@ -1722,7 +1722,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertIsoObjectiveForProcess(userId: string, isoProjectId: number | undefined, processName: string, name: string, target: string, unit: string, responsible?: string): Promise<IsoObjective> {
-    const [existing] = await db.select().from(isoObjectives).where(and(eq(isoObjectives.userId, userId), eq(isoObjectives.processName, processName), eq(isoObjectives.name, name)));
+    const conditions = isoProjectId != null
+      ? and(eq(isoObjectives.userId, userId), eq(isoObjectives.isoProjectId, isoProjectId), eq(isoObjectives.processName, processName), eq(isoObjectives.name, name))
+      : and(eq(isoObjectives.userId, userId), eq(isoObjectives.processName, processName), eq(isoObjectives.name, name));
+    const [existing] = await db.select().from(isoObjectives).where(conditions);
     if (existing) {
       const [updated] = await db.update(isoObjectives).set({ target, unit, responsible: responsible ?? existing.responsible, updatedAt: new Date() }).where(eq(isoObjectives.id, existing.id)).returning();
       return updated;
