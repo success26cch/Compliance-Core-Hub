@@ -6352,6 +6352,15 @@ Output only the document content. No preamble. No closing remarks about the docu
   });
 
   // ─── ISO Review Action Items ────────────────────────────────────────────────────
+  app.get("/api/iso-review-action-items", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const items = await storage.getAllIsoReviewActionItems(userId);
+      res.json(items);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   app.get("/api/iso-management-reviews/:reviewId/actions", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;

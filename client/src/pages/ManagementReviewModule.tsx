@@ -12,22 +12,30 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft,
-  CheckCircle, Clock, AlertTriangle, AlertCircle,
+  CheckCircle, Clock, AlertTriangle, AlertCircle, Circle, Loader2,
 } from "lucide-react";
 import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
-// ISO 9001:2015 Clause 9.3.2 Required Inputs
+// ─── ISO 9.3.2 Required Inputs (Clause-exact) + 9.3.3 Outputs ────────────────
 const ISO_AGENDA_ITEMS = [
-  { id: "9.3.2a", clause: "9.3.2(a)", title: "Status of actions from previous management reviews" },
-  { id: "9.3.2b", clause: "9.3.2(b)", title: "Changes in external and internal issues relevant to the QMS" },
-  { id: "9.3.2c", clause: "9.3.2(c)", title: "Information on QMS performance and effectiveness — KPIs, objectives, NCs, audits" },
-  { id: "9.3.2d", clause: "9.3.2(d)", title: "Adequacy of resources" },
-  { id: "9.3.2e", clause: "9.3.2(e)", title: "Effectiveness of actions taken to address risks and opportunities" },
-  { id: "9.3.2f", clause: "9.3.2(f)", title: "Opportunities for improvement" },
-  { id: "9.3.3a", clause: "9.3.3(a)", title: "Opportunities for improvement (outputs) — improvement actions" },
-  { id: "9.3.3b", clause: "9.3.3(b)", title: "Any need for changes to the QMS" },
-  { id: "9.3.3c", clause: "9.3.3(c)", title: "Resource needs" },
+  // 9.3.2 Inputs
+  { id: "9.3.2a", clause: "9.3.2(a)", title: "Status of actions from previous management reviews", group: "input" },
+  { id: "9.3.2b", clause: "9.3.2(b)", title: "Changes in external and internal issues relevant to the QMS", group: "input" },
+  { id: "9.3.2c-i",   clause: "9.3.2(c-i)",   title: "Customer satisfaction and feedback from relevant interested parties", group: "input" },
+  { id: "9.3.2c-ii",  clause: "9.3.2(c-ii)",  title: "Extent to which quality objectives have been met", group: "input" },
+  { id: "9.3.2c-iii", clause: "9.3.2(c-iii)", title: "Process performance and conformity of products and services", group: "input" },
+  { id: "9.3.2c-iv",  clause: "9.3.2(c-iv)",  title: "Nonconformities and corrective actions (trend review)", group: "input" },
+  { id: "9.3.2c-v",   clause: "9.3.2(c-v)",   title: "Monitoring and measurement results", group: "input" },
+  { id: "9.3.2c-vi",  clause: "9.3.2(c-vi)",  title: "Audit results (internal and external)", group: "input" },
+  { id: "9.3.2c-vii", clause: "9.3.2(c-vii)", title: "Performance of external providers (suppliers)", group: "input" },
+  { id: "9.3.2d", clause: "9.3.2(d)", title: "Adequacy of resources", group: "input" },
+  { id: "9.3.2e", clause: "9.3.2(e)", title: "Effectiveness of actions taken to address risks and opportunities", group: "input" },
+  { id: "9.3.2f", clause: "9.3.2(f)", title: "Opportunities for improvement", group: "input" },
+  // 9.3.3 Outputs
+  { id: "9.3.3a", clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output" },
+  { id: "9.3.3b", clause: "9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output" },
+  { id: "9.3.3c", clause: "9.3.3(c)", title: "Decisions and actions: Resource needs", group: "output" },
 ];
 
 type AgendaItem = { clause: string; title: string; covered: boolean; notes: string };
@@ -50,6 +58,19 @@ function offTrackStreakCount(actuals: IsoKpiActual[], targetVal: number): number
   return streak;
 }
 
+// Action status cycle: open → in_progress → closed
+const ACTION_STATUS_CYCLE: Record<string, string> = { open: "in_progress", in_progress: "closed", closed: "open" };
+const ACTION_STATUS_ICON = {
+  open: <Circle className="w-4 h-4 text-muted-foreground" />,
+  in_progress: <Loader2 className="w-4 h-4 text-yellow-500" />,
+  closed: <CheckCircle className="w-4 h-4 text-green-500" />,
+};
+const ACTION_STATUS_COLORS: Record<string, string> = {
+  open: "bg-muted/30 border-border",
+  in_progress: "bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200",
+  closed: "bg-green-50 dark:bg-green-900/10 border-green-200",
+};
+
 function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpiActual[] }) {
   const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
   const targetVal = parseFloat(obj.target ?? "0");
@@ -59,15 +80,15 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
   const streak = offTrackStreakCount(actuals, targetVal);
   const flagged = streak >= 2;
   const chartData = sorted.slice(-6).map(a => ({ period: a.period.slice(-4), actual: parseFloat(a.actual) }));
-
   const statusBorder = obj.status === "on_track" ? "border-green-400" : obj.status === "at_risk" ? "border-yellow-400" : "border-red-500";
   const statusBg = obj.status === "on_track" ? "bg-green-50 dark:bg-green-900/10" : obj.status === "at_risk" ? "bg-yellow-50 dark:bg-yellow-900/10" : "bg-red-50 dark:bg-red-900/10";
+  const lineColor = obj.status === "on_track" ? "#22c55e" : obj.status === "at_risk" ? "#f59e0b" : "#ef4444";
 
   return (
     <Card className={`border-l-4 ${statusBorder} ${statusBg}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div>
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-semibold text-sm text-foreground">{obj.name}</span>
               {flagged && (
@@ -76,7 +97,10 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
                 </span>
               )}
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">{obj.processName} · Owner: {obj.responsible || "—"}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {obj.processName && <span>{obj.processName} · </span>}
+              {obj.responsible && <span>Owner: {obj.responsible}</span>}
+            </div>
           </div>
           <div className="text-right shrink-0">
             {latestVal !== null ? (
@@ -90,7 +114,7 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
                 )}
               </>
             ) : (
-              <div className="text-xs text-muted-foreground italic">No data</div>
+              <div className="text-xs text-muted-foreground italic">No data logged</div>
             )}
           </div>
         </div>
@@ -102,7 +126,7 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
                 <YAxis tick={{ fontSize: 9 }} width={28} />
                 <Tooltip contentStyle={{ fontSize: 10 }} />
                 <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="3 2" />
-                <Line type="monotone" dataKey="actual" stroke={obj.status === "on_track" ? "#22c55e" : obj.status === "at_risk" ? "#f59e0b" : "#ef4444"} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="actual" stroke={lineColor} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -128,7 +152,6 @@ function ReviewDetail({
   const { data: objectives = [] } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
   const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({ queryKey: ["/api/iso-kpi-actuals"] });
 
-  // Carryover open actions from the previous review
   const previousReview = [...allReviews]
     .filter(r => r.id !== review.id && new Date(r.meetingDate) < new Date(review.meetingDate))
     .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime())[0];
@@ -140,16 +163,16 @@ function ReviewDetail({
       : Promise.resolve([]),
     enabled: !!previousReview,
   });
-  const openPrevActions = prevActions.filter(a => a.status === "open");
+  const openPrevActions = prevActions.filter(a => a.status === "open" || a.status === "in_progress");
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("PATCH", `/api/iso-management-reviews/${review.id}`, data),
+    mutationFn: (data: any) => apiRequest("PATCH", `/api/iso-management-reviews/${review.id}`, data).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews"] }); toast({ title: "Review saved" }); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const addActionMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", `/api/iso-management-reviews/${review.id}/actions`, data),
+    mutationFn: (data: any) => apiRequest("POST", `/api/iso-management-reviews/${review.id}/actions`, data).then(r => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] });
       toast({ title: "Action item added" });
@@ -160,7 +183,7 @@ function ReviewDetail({
   });
 
   const updateActionMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-review-action-items/${id}`, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-review-action-items/${id}`, data).then(r => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] }),
   });
 
@@ -169,25 +192,79 @@ function ReviewDetail({
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] }),
   });
 
+  const cycleActionStatus = (action: IsoReviewActionItem) => {
+    const next = ACTION_STATUS_CYCLE[action.status] ?? "open";
+    const patch: any = { status: next };
+    if (next === "closed") patch.closedAt = new Date().toISOString();
+    else patch.closedAt = null;
+    updateActionMutation.mutate({ id: action.id, data: patch });
+  };
+
   const saveAgenda = () => updateMutation.mutate({ agendaItems: agenda });
   const toggleCovered = (clause: string) => {
     setAgenda(a => a.map(item => item.clause === clause ? { ...item, covered: !item.covered } : item));
   };
 
   const coveredCount = agenda.filter(a => a.covered).length;
-
   const getActuals = (objId: number) => allActuals.filter(a => a.objectiveId === objId);
-  const getLatestActual = (objId: number) => {
-    const sorted = getActuals(objId).sort((a, b) => b.period.localeCompare(a.period));
-    return sorted[0];
-  };
 
-  // Off-track flags: objectives off-track 2+ consecutive periods
   const flaggedObjectives = objectives.filter(obj => {
-    const actuals = getActuals(obj.id);
-    const targetVal = parseFloat(obj.target ?? "0");
-    return offTrackStreakCount(actuals, targetVal) >= 2;
+    const acts = getActuals(obj.id);
+    const tgt = parseFloat(obj.target ?? "0");
+    return offTrackStreakCount(acts, tgt) >= 2;
   });
+
+  const inputItems = ISO_AGENDA_ITEMS.filter(i => i.group === "input");
+  const outputItems = ISO_AGENDA_ITEMS.filter(i => i.group === "output");
+
+  const AgendaSection = ({ items, label }: { items: typeof ISO_AGENDA_ITEMS; label: string }) => (
+    <div className="space-y-2">
+      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-1">{label}</div>
+      {items.map(item => {
+        const agItem = agenda.find(a => a.clause === item.clause)!;
+        if (!agItem) return null;
+        return (
+          <div key={item.clause} className={`p-3 rounded-lg border transition-colors ${agItem.covered ? "bg-green-50 dark:bg-green-900/20 border-green-200" : "bg-muted/30 border-border"}`}>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                checked={agItem.covered}
+                onCheckedChange={() => toggleCovered(item.clause)}
+                data-testid={`checkbox-agenda-${item.clause}`}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
+                  <span className="text-sm font-medium text-foreground">{item.title}</span>
+                  {agItem.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
+                  {item.clause === "9.3.2(a)" && openPrevActions.length > 0 && (
+                    <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600">
+                      {openPrevActions.length} open/in-progress from prev.
+                    </Badge>
+                  )}
+                  {item.clause === "9.3.2(c-ii)" && flaggedObjectives.length > 0 && (
+                    <Badge variant="outline" className="text-[10px] border-red-400 text-red-600">
+                      {flaggedObjectives.length} KPI flagged
+                    </Badge>
+                  )}
+                </div>
+                {agItem.covered && (
+                  <Textarea
+                    value={agItem.notes}
+                    onChange={e => setAgenda(a => a.map(i => i.clause === item.clause ? { ...i, notes: e.target.value } : i))}
+                    placeholder="Notes for this agenda item…"
+                    data-testid={`textarea-agenda-notes-${item.clause}`}
+                    className="mt-2 text-xs"
+                    rows={2}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -211,13 +288,13 @@ function ReviewDetail({
         </Button>
       </div>
 
-      {/* Carryover open actions from previous review */}
+      {/* Carryover open/in-progress actions from previous review */}
       {openPrevActions.length > 0 && (
         <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/10">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
-              Carryover: {openPrevActions.length} Open Action{openPrevActions.length > 1 ? "s" : ""} from Previous Review
+              Carryover: {openPrevActions.length} Open / In-Progress Action{openPrevActions.length > 1 ? "s" : ""} from Previous Review
             </CardTitle>
             {previousReview && (
               <p className="text-xs text-muted-foreground">From: {previousReview.title} · {new Date(previousReview.meetingDate).toLocaleDateString()}</p>
@@ -229,6 +306,7 @@ function ReviewDetail({
                 <AlertCircle className="w-3 h-3 text-orange-500 mt-0.5 shrink-0" />
                 <div>
                   <span className="font-medium text-foreground">{a.description}</span>
+                  <Badge variant="outline" className="ml-2 text-[10px]">{a.status.replace("_", " ")}</Badge>
                   {a.owner && <span className="text-muted-foreground ml-2">Owner: {a.owner}</span>}
                   {a.dueDate && <span className="text-muted-foreground ml-2">Due: {new Date(a.dueDate).toLocaleDateString()}</span>}
                 </div>
@@ -238,20 +316,20 @@ function ReviewDetail({
         </Card>
       )}
 
-      {/* Flagged off-track KPIs */}
+      {/* Flagged KPIs */}
       {flaggedObjectives.length > 0 && (
         <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" /> {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods
+              <AlertTriangle className="w-4 h-4" />
+              {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods — §9.3.2(c-ii)
             </CardTitle>
-            <p className="text-xs text-muted-foreground">These require management attention per ISO 9.3.2(c)</p>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {flaggedObjectives.map(obj => (
                 <Badge key={obj.id} variant="outline" className="text-xs border-red-400 text-red-700 dark:text-red-400">
-                  {obj.name} ({obj.processName})
+                  {obj.name} {obj.processName ? `(${obj.processName})` : ""}
                 </Badge>
               ))}
             </div>
@@ -259,15 +337,13 @@ function ReviewDetail({
         </Card>
       )}
 
-      {/* KPI Dashboard (projector-ready) */}
+      {/* KPI Dashboard */}
       {objectives.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              KPI Performance Dashboard
-              <span className="text-xs font-normal text-muted-foreground font-mono">§9.3.2(c)</span>
-            </h4>
-          </div>
+          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            KPI Performance Dashboard
+            <span className="text-xs font-normal text-muted-foreground font-mono">§9.3.2(c)</span>
+          </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {objectives.map(obj => (
               <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} />
@@ -276,7 +352,7 @@ function ReviewDetail({
         </div>
       )}
 
-      {/* Tabular KPI snapshot (compact) */}
+      {/* KPI Snapshot Table */}
       {objectives.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
@@ -294,12 +370,14 @@ function ReviewDetail({
                 </thead>
                 <tbody className="divide-y divide-border">
                   {objectives.map(obj => {
-                    const latest = getLatestActual(obj.id);
+                    const acts = getActuals(obj.id);
+                    const sorted = [...acts].sort((a, b) => b.period.localeCompare(a.period));
+                    const latest = sorted[0];
                     const latestVal = latest ? parseFloat(latest.actual) : null;
                     const targetVal = parseFloat(obj.target ?? "0");
                     const variance = latestVal !== null ? latestVal - targetVal : null;
                     const variancePct = variance !== null && targetVal !== 0 ? (variance / targetVal * 100) : null;
-                    const streak = offTrackStreakCount(getActuals(obj.id), targetVal);
+                    const streak = offTrackStreakCount(acts, targetVal);
                     return (
                       <tr key={obj.id} className="hover:bg-muted/20">
                         <td className="px-3 py-2 font-medium">
@@ -341,7 +419,7 @@ function ReviewDetail({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-foreground">
-              ISO 9.3.2 Required Inputs Checklist
+              ISO 9.3 Agenda Checklist
               <span className="ml-2 text-muted-foreground font-normal text-xs">{coveredCount}/{agenda.length} covered</span>
             </CardTitle>
             <Button size="sm" onClick={saveAgenda} disabled={updateMutation.isPending} variant="outline" data-testid="button-save-agenda">
@@ -349,48 +427,9 @@ function ReviewDetail({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {agenda.map(item => (
-            <div key={item.clause} className={`p-3 rounded-lg border transition-colors ${item.covered ? "bg-green-50 dark:bg-green-900/20 border-green-200" : "bg-muted/30 border-border"}`}>
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={item.covered}
-                  onCheckedChange={() => toggleCovered(item.clause)}
-                  data-testid={`checkbox-agenda-${item.clause}`}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
-                    <span className="text-sm font-medium text-foreground">{item.title}</span>
-                    {item.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
-                    {/* Carryover hint for 9.3.2(a) */}
-                    {item.clause === "9.3.2(a)" && openPrevActions.length > 0 && (
-                      <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600">
-                        {openPrevActions.length} open from prev.
-                      </Badge>
-                    )}
-                    {/* Off-track KPI hint for 9.3.2(c) */}
-                    {item.clause === "9.3.2(c)" && flaggedObjectives.length > 0 && (
-                      <Badge variant="outline" className="text-[10px] border-red-400 text-red-600">
-                        {flaggedObjectives.length} KPI flagged
-                      </Badge>
-                    )}
-                  </div>
-                  {item.covered && (
-                    <Textarea
-                      value={item.notes}
-                      onChange={e => setAgenda(a => a.map(i => i.clause === item.clause ? { ...i, notes: e.target.value } : i))}
-                      placeholder="Notes for this agenda item…"
-                      data-testid={`textarea-agenda-notes-${item.clause}`}
-                      className="mt-2 text-xs"
-                      rows={2}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+        <CardContent className="space-y-4">
+          <AgendaSection items={inputItems} label="9.3.2 Required Inputs" />
+          <AgendaSection items={outputItems} label="9.3.3 Required Outputs" />
         </CardContent>
       </Card>
 
@@ -414,14 +453,20 @@ function ReviewDetail({
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-foreground">
+            <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               Action Items
-              <span className="ml-2 text-xs font-normal text-muted-foreground">§9.3.3</span>
+              <span className="text-xs font-normal text-muted-foreground font-mono">§9.3.3</span>
+              {actions.filter(a => a.status !== "closed").length > 0 && (
+                <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600">
+                  {actions.filter(a => a.status !== "closed").length} open
+                </Badge>
+              )}
             </CardTitle>
             <Button size="sm" onClick={() => setShowActionForm(true)} data-testid="button-add-action" className="bg-accent hover:bg-accent/90 text-white">
               <Plus className="w-3.5 h-3.5 mr-1" /> Add Action
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-1">Click the status icon to cycle: Open → In Progress → Closed</p>
         </CardHeader>
         <CardContent className="space-y-2">
           {actions.length === 0 && !showActionForm && (
@@ -452,21 +497,26 @@ function ReviewDetail({
             </div>
           )}
           {actions.map(action => (
-            <div key={action.id} className={`flex items-start gap-3 p-3 rounded-lg border ${action.status === "closed" ? "bg-green-50 dark:bg-green-900/10 border-green-200" : "border-border hover:bg-muted/20"}`}>
-              <Checkbox
-                checked={action.status === "closed"}
-                onCheckedChange={checked => updateActionMutation.mutate({ id: action.id, data: { status: checked ? "closed" : "open", closedAt: checked ? new Date().toISOString() : null } })}
-                data-testid={`checkbox-action-${action.id}`}
-              />
+            <div key={action.id} className={`flex items-start gap-3 p-3 rounded-lg border ${ACTION_STATUS_COLORS[action.status] ?? ACTION_STATUS_COLORS.open}`}>
+              <button
+                onClick={() => cycleActionStatus(action)}
+                data-testid={`button-cycle-action-${action.id}`}
+                title={`Status: ${action.status} — click to advance`}
+                className="mt-0.5 shrink-0"
+              >
+                {ACTION_STATUS_ICON[action.status as keyof typeof ACTION_STATUS_ICON] ?? ACTION_STATUS_ICON.open}
+              </button>
               <div className="flex-1 min-w-0">
                 <p className={`text-sm ${action.status === "closed" ? "line-through text-muted-foreground" : "text-foreground"}`}>{action.description}</p>
                 <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                   {action.owner && <span>Owner: <span className="font-medium">{action.owner}</span></span>}
                   {action.dueDate && <span>Due: <span className="font-medium">{new Date(action.dueDate).toLocaleDateString()}</span></span>}
-                  <Badge variant="outline" className="text-xs">{action.status}</Badge>
+                  <Badge variant="outline" className={`text-xs ${action.status === "in_progress" ? "border-yellow-400 text-yellow-600" : action.status === "closed" ? "border-green-400 text-green-600" : ""}`}>
+                    {action.status.replace("_", " ")}
+                  </Badge>
                 </div>
               </div>
-              <button onClick={() => deleteActionMutation.mutate(action.id)} className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-600 shrink-0">
+              <button onClick={() => deleteActionMutation.mutate(action.id)} className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-600 shrink-0" data-testid={`button-delete-action-${action.id}`}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -491,9 +541,12 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
   const [isaLoading, setIsaLoading] = useState(false);
 
   const { data: reviews = [], isLoading } = useQuery<IsoManagementReview[]>({ queryKey: ["/api/iso-management-reviews"] });
+  // Fetch all action items to compute open counts per review in the list view
+  const { data: allActionItems = [] } = useQuery<IsoReviewActionItem[]>({ queryKey: ["/api/iso-review-action-items"] });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/iso-management-reviews", data),
+    // Parse JSON from response so onSuccess gets the review object, not a Response
+    mutationFn: (data: any) => apiRequest("POST", "/api/iso-management-reviews", data).then(r => r.json()),
     onSuccess: (newReview: any) => {
       qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews"] });
       toast({ title: "Review created" });
@@ -540,8 +593,6 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
   const complete = reviews.filter(r => r.status === "complete").length;
   const draft = reviews.filter(r => r.status === "draft").length;
 
-  // Compute open action counts per review (we fetch all in a later optimization;
-  // for the list view we show this summary from cached data where available)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -586,6 +637,10 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
             const agendaItems = (r.agendaItems as AgendaItem[] | null) ?? [];
             const covered = agendaItems.filter(a => a.covered).length;
             const total = ISO_AGENDA_ITEMS.length;
+            const reviewActions = allActionItems.filter(a => a.reviewId === r.id);
+            const openCount = reviewActions.filter(a => a.status === "open").length;
+            const inProgressCount = reviewActions.filter(a => a.status === "in_progress").length;
+            const openTotal = openCount + inProgressCount;
             return (
               <Card key={r.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => setSelected(r)}>
                 <CardContent className="p-4">
@@ -596,11 +651,16 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
                         <Badge variant={r.status === "complete" ? "default" : "outline"} className="text-xs">
                           {r.status === "complete" ? "Complete" : "Draft"}
                         </Badge>
+                        {openTotal > 0 && (
+                          <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600">
+                            {openTotal} action{openTotal > 1 ? "s" : ""} open
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                         <span>{new Date(r.meetingDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
                         {r.attendees && <span>Attendees: {r.attendees}</span>}
-                        <span>Agenda: {covered}/{total} items covered</span>
+                        <span>Agenda: {covered}/{total} covered</span>
                       </div>
                       {covered > 0 && (
                         <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden w-32">

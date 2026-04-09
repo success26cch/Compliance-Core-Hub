@@ -330,6 +330,7 @@ export interface IStorage {
 
   // ISO Review Action Items
   getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]>;
+  getAllIsoReviewActionItems(userId: string): Promise<IsoReviewActionItem[]>;
   createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem>;
   updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>): Promise<IsoReviewActionItem | undefined>;
   deleteIsoReviewActionItem(id: number, userId: string): Promise<void>;
@@ -1820,6 +1821,9 @@ export class DatabaseStorage implements IStorage {
   // ─── ISO Review Action Items ──────────────────────────────────────────────────
   async getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]> {
     return db.select().from(isoReviewActionItems).where(and(eq(isoReviewActionItems.reviewId, reviewId), eq(isoReviewActionItems.userId, userId))).orderBy(isoReviewActionItems.createdAt);
+  }
+  async getAllIsoReviewActionItems(userId: string): Promise<IsoReviewActionItem[]> {
+    return db.select().from(isoReviewActionItems).where(eq(isoReviewActionItems.userId, userId));
   }
   async createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem> {
     const [r] = await db.insert(isoReviewActionItems).values(data).returning();
