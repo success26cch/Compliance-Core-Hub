@@ -7,12 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft, CheckCircle, Clock } from "lucide-react";
+import {
+  ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft,
+  CheckCircle, Clock, AlertTriangle, AlertCircle,
+} from "lucide-react";
 import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual } from "@shared/schema";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 // ISO 9001:2015 Clause 9.3.2 Required Inputs
 const ISO_AGENDA_ITEMS = [
@@ -37,13 +40,86 @@ function agendaFromReview(review: IsoManagementReview): AgendaItem[] {
   });
 }
 
-function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack: () => void }) {
+function offTrackStreakCount(actuals: IsoKpiActual[], targetVal: number): number {
+  const sorted = [...actuals].sort((a, b) => b.period.localeCompare(a.period));
+  let streak = 0;
+  for (const a of sorted) {
+    if (parseFloat(a.actual) < targetVal) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpiActual[] }) {
+  const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
+  const targetVal = parseFloat(obj.target ?? "0");
+  const latest = sorted[sorted.length - 1];
+  const latestVal = latest ? parseFloat(latest.actual) : null;
+  const pct = latestVal !== null && targetVal > 0 ? Math.min((latestVal / targetVal) * 100, 150) : null;
+  const streak = offTrackStreakCount(actuals, targetVal);
+  const flagged = streak >= 2;
+  const chartData = sorted.slice(-6).map(a => ({ period: a.period.slice(-4), actual: parseFloat(a.actual) }));
+
+  const statusBorder = obj.status === "on_track" ? "border-green-400" : obj.status === "at_risk" ? "border-yellow-400" : "border-red-500";
+  const statusBg = obj.status === "on_track" ? "bg-green-50 dark:bg-green-900/10" : obj.status === "at_risk" ? "bg-yellow-50 dark:bg-yellow-900/10" : "bg-red-50 dark:bg-red-900/10";
+
+  return (
+    <Card className={`border-l-4 ${statusBorder} ${statusBg}`}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-semibold text-sm text-foreground">{obj.name}</span>
+              {flagged && (
+                <span className="inline-flex items-center gap-0.5 text-xs text-red-600 font-medium">
+                  <AlertTriangle className="w-3 h-3" /> {streak} periods off-track
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">{obj.processName} · Owner: {obj.responsible || "—"}</div>
+          </div>
+          <div className="text-right shrink-0">
+            {latestVal !== null ? (
+              <>
+                <div className="text-xl font-bold text-foreground">{latestVal} <span className="text-xs font-normal text-muted-foreground">{obj.unit}</span></div>
+                <div className="text-xs text-muted-foreground">Target: {obj.target} {obj.unit}</div>
+                {pct !== null && (
+                  <div className={`text-sm font-semibold ${pct >= 90 ? "text-green-600" : pct >= 70 ? "text-yellow-600" : "text-red-600"}`}>
+                    {pct.toFixed(0)}% of target
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-xs text-muted-foreground italic">No data</div>
+            )}
+          </div>
+        </div>
+        {chartData.length > 0 && (
+          <div className="h-20">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 2, right: 4, bottom: 2, left: 0 }}>
+                <XAxis dataKey="period" tick={{ fontSize: 9 }} />
+                <YAxis tick={{ fontSize: 9 }} width={28} />
+                <Tooltip contentStyle={{ fontSize: 10 }} />
+                <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="3 2" />
+                <Line type="monotone" dataKey="actual" stroke={obj.status === "on_track" ? "#22c55e" : obj.status === "at_risk" ? "#f59e0b" : "#ef4444"} strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReviewDetail({
+  review, allReviews, onBack,
+}: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [agenda, setAgenda] = useState<AgendaItem[]>(agendaFromReview(review));
   const [actionForm, setActionForm] = useState({ description: "", owner: "", dueDate: "" });
   const [showActionForm, setShowActionForm] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   const { data: actions = [] } = useQuery<IsoReviewActionItem[]>({
     queryKey: ["/api/iso-management-reviews", review.id, "actions"],
@@ -51,6 +127,20 @@ function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack:
   });
   const { data: objectives = [] } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
   const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({ queryKey: ["/api/iso-kpi-actuals"] });
+
+  // Carryover open actions from the previous review
+  const previousReview = [...allReviews]
+    .filter(r => r.id !== review.id && new Date(r.meetingDate) < new Date(review.meetingDate))
+    .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime())[0];
+
+  const { data: prevActions = [] } = useQuery<IsoReviewActionItem[]>({
+    queryKey: ["/api/iso-management-reviews", previousReview?.id, "actions"],
+    queryFn: () => previousReview
+      ? fetch(`/api/iso-management-reviews/${previousReview.id}/actions`).then(r => r.json())
+      : Promise.resolve([]),
+    enabled: !!previousReview,
+  });
+  const openPrevActions = prevActions.filter(a => a.status === "open");
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => apiRequest("PATCH", `/api/iso-management-reviews/${review.id}`, data),
@@ -60,7 +150,12 @@ function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack:
 
   const addActionMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", `/api/iso-management-reviews/${review.id}/actions`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] }); toast({ title: "Action item added" }); setShowActionForm(false); setActionForm({ description: "", owner: "", dueDate: "" }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] });
+      toast({ title: "Action item added" });
+      setShowActionForm(false);
+      setActionForm({ description: "", owner: "", dueDate: "" });
+    },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -74,35 +169,41 @@ function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack:
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] }),
   });
 
-  const saveAgenda = () => {
-    updateMutation.mutate({ agendaItems: agenda });
-  };
-
+  const saveAgenda = () => updateMutation.mutate({ agendaItems: agenda });
   const toggleCovered = (clause: string) => {
     setAgenda(a => a.map(item => item.clause === clause ? { ...item, covered: !item.covered } : item));
   };
 
   const coveredCount = agenda.filter(a => a.covered).length;
 
+  const getActuals = (objId: number) => allActuals.filter(a => a.objectiveId === objId);
   const getLatestActual = (objId: number) => {
-    const sorted = allActuals.filter(a => a.objectiveId === objId).sort((a, b) => b.period.localeCompare(a.period));
+    const sorted = getActuals(objId).sort((a, b) => b.period.localeCompare(a.period));
     return sorted[0];
   };
 
+  // Off-track flags: objectives off-track 2+ consecutive periods
+  const flaggedObjectives = objectives.filter(obj => {
+    const actuals = getActuals(obj.id);
+    const targetVal = parseFloat(obj.target ?? "0");
+    return offTrackStreakCount(actuals, targetVal) >= 2;
+  });
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      {/* Header */}
+      <div className="flex items-center gap-3 flex-wrap">
         <button onClick={onBack} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-foreground">{review.title}</h3>
           <p className="text-sm text-muted-foreground">
             {new Date(review.meetingDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
             {review.attendees && ` · ${review.attendees}`}
           </p>
         </div>
-        <Badge variant={review.status === "complete" ? "default" : "outline"} className="ml-auto">
+        <Badge variant={review.status === "complete" ? "default" : "outline"}>
           {review.status === "complete" ? "Complete" : "Draft"}
         </Badge>
         <Button size="sm" onClick={() => updateMutation.mutate({ status: review.status === "complete" ? "draft" : "complete" })} variant="outline">
@@ -110,18 +211,83 @@ function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack:
         </Button>
       </div>
 
-      {/* KPI Snapshot */}
+      {/* Carryover open actions from previous review */}
+      {openPrevActions.length > 0 && (
+        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Carryover: {openPrevActions.length} Open Action{openPrevActions.length > 1 ? "s" : ""} from Previous Review
+            </CardTitle>
+            {previousReview && (
+              <p className="text-xs text-muted-foreground">From: {previousReview.title} · {new Date(previousReview.meetingDate).toLocaleDateString()}</p>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {openPrevActions.map(a => (
+              <div key={a.id} className="flex items-start gap-2 text-xs">
+                <AlertCircle className="w-3 h-3 text-orange-500 mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium text-foreground">{a.description}</span>
+                  {a.owner && <span className="text-muted-foreground ml-2">Owner: {a.owner}</span>}
+                  {a.dueDate && <span className="text-muted-foreground ml-2">Due: {new Date(a.dueDate).toLocaleDateString()}</span>}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Flagged off-track KPIs */}
+      {flaggedObjectives.length > 0 && (
+        <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">These require management attention per ISO 9.3.2(c)</p>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {flaggedObjectives.map(obj => (
+                <Badge key={obj.id} variant="outline" className="text-xs border-red-400 text-red-700 dark:text-red-400">
+                  {obj.name} ({obj.processName})
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* KPI Dashboard (projector-ready) */}
+      {objectives.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              KPI Performance Dashboard
+              <span className="text-xs font-normal text-muted-foreground font-mono">§9.3.2(c)</span>
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {objectives.map(obj => (
+              <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tabular KPI snapshot (compact) */}
       {objectives.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-foreground">KPI Performance Snapshot</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">KPI Snapshot Table</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-auto">
               <table className="w-full text-xs">
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
-                    {["KPI", "Process", "Target", "Latest Actual", "Period", "Status"].map(h => (
+                    {["KPI", "Process", "Target", "Latest", "Period", "Variance", "Status"].map(h => (
                       <th key={h} className="text-left px-3 py-2 font-semibold text-muted-foreground">{h}</th>
                     ))}
                   </tr>
@@ -129,13 +295,29 @@ function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack:
                 <tbody className="divide-y divide-border">
                   {objectives.map(obj => {
                     const latest = getLatestActual(obj.id);
+                    const latestVal = latest ? parseFloat(latest.actual) : null;
+                    const targetVal = parseFloat(obj.target ?? "0");
+                    const variance = latestVal !== null ? latestVal - targetVal : null;
+                    const variancePct = variance !== null && targetVal !== 0 ? (variance / targetVal * 100) : null;
+                    const streak = offTrackStreakCount(getActuals(obj.id), targetVal);
                     return (
                       <tr key={obj.id} className="hover:bg-muted/20">
-                        <td className="px-3 py-2 font-medium">{obj.name}</td>
+                        <td className="px-3 py-2 font-medium">
+                          {obj.name}
+                          {streak >= 2 && <AlertTriangle className="w-3 h-3 text-red-500 inline ml-1" />}
+                        </td>
                         <td className="px-3 py-2 text-muted-foreground">{obj.processName ?? "—"}</td>
                         <td className="px-3 py-2">{obj.target} {obj.unit}</td>
-                        <td className="px-3 py-2 font-medium">{latest ? `${latest.actual} ${obj.unit}` : "—"}</td>
+                        <td className="px-3 py-2 font-medium">{latestVal !== null ? `${latestVal} ${obj.unit}` : "—"}</td>
                         <td className="px-3 py-2 text-muted-foreground">{latest?.period ?? "—"}</td>
+                        <td className="px-3 py-2">
+                          {variance !== null ? (
+                            <span className={variance >= 0 ? "text-green-600" : "text-red-500"}>
+                              {variance >= 0 ? "+" : ""}{variance.toFixed(1)}
+                              {variancePct !== null && <span className="opacity-60 ml-1">({variancePct >= 0 ? "+" : ""}{variancePct.toFixed(0)}%)</span>}
+                            </span>
+                          ) : "—"}
+                        </td>
                         <td className="px-3 py-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                             obj.status === "on_track" ? "bg-green-100 text-green-700" :
@@ -182,6 +364,18 @@ function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack:
                     <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
                     <span className="text-sm font-medium text-foreground">{item.title}</span>
                     {item.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
+                    {/* Carryover hint for 9.3.2(a) */}
+                    {item.clause === "9.3.2(a)" && openPrevActions.length > 0 && (
+                      <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600">
+                        {openPrevActions.length} open from prev.
+                      </Badge>
+                    )}
+                    {/* Off-track KPI hint for 9.3.2(c) */}
+                    {item.clause === "9.3.2(c)" && flaggedObjectives.length > 0 && (
+                      <Badge variant="outline" className="text-[10px] border-red-400 text-red-600">
+                        {flaggedObjectives.length} KPI flagged
+                      </Badge>
+                    )}
                   </div>
                   {item.covered && (
                     <Textarea
@@ -220,7 +414,10 @@ function ReviewDetail({ review, onBack }: { review: IsoManagementReview; onBack:
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-foreground">Action Items</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">
+              Action Items
+              <span className="ml-2 text-xs font-normal text-muted-foreground">§9.3.3</span>
+            </CardTitle>
             <Button size="sm" onClick={() => setShowActionForm(true)} data-testid="button-add-action" className="bg-accent hover:bg-accent/90 text-white">
               <Plus className="w-3.5 h-3.5 mr-1" /> Add Action
             </Button>
@@ -314,7 +511,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
 
   if (selected) {
     const latest = reviews.find(r => r.id === selected.id) ?? selected;
-    return <ReviewDetail review={latest} onBack={() => setSelected(null)} />;
+    return <ReviewDetail review={latest} allReviews={reviews} onBack={() => setSelected(null)} />;
   }
 
   const sendIsaMessage = async () => {
@@ -343,6 +540,8 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
   const complete = reviews.filter(r => r.status === "complete").length;
   const draft = reviews.filter(r => r.status === "draft").length;
 
+  // Compute open action counts per review (we fetch all in a later optimization;
+  // for the list view we show this summary from cached data where available)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -383,7 +582,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
         </Card>
       ) : (
         <div className="space-y-3">
-          {reviews.map(r => {
+          {[...reviews].sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime()).map(r => {
             const agendaItems = (r.agendaItems as AgendaItem[] | null) ?? [];
             const covered = agendaItems.filter(a => a.covered).length;
             const total = ISO_AGENDA_ITEMS.length;
@@ -444,7 +643,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button onClick={() => createMutation.mutate({ ...form, isoProjectId })} disabled={createMutation.isPending || !form.meetingDate} data-testid="button-create-review" className="bg-accent hover:bg-accent/90 text-white">
+              <Button onClick={() => createMutation.mutate({ ...form, isoProjectId })} disabled={createMutation.isPending} data-testid="button-submit-review" className="bg-accent hover:bg-accent/90 text-white">
                 Create Review
               </Button>
             </div>
@@ -457,7 +656,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
-              <Bot className="w-5 h-5" /> Isa — Management Review Advisor
+              <Bot className="w-5 h-5" /> Isa — Management Review Advisor (ISO §9.3)
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">
@@ -465,10 +664,10 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
               <div className="text-sm text-muted-foreground bg-violet-50 dark:bg-violet-900/20 rounded-lg p-4">
                 <p className="font-medium text-violet-800 dark:text-violet-300 mb-2">Ask me about ISO 9.3 Management Review:</p>
                 <ul className="space-y-1 text-xs">
-                  <li>• What inputs are required for a management review?</li>
-                  <li>• How often should management reviews be held?</li>
-                  <li>• What should the outputs of a management review include?</li>
-                  <li>• How do I document findings to satisfy auditors?</li>
+                  <li>• What are the required inputs for a management review (9.3.2)?</li>
+                  <li>• What outputs must be documented (9.3.3)?</li>
+                  <li>• How often should management reviews be conducted?</li>
+                  <li>• What do auditors look for during management review audits?</li>
                 </ul>
               </div>
             )}

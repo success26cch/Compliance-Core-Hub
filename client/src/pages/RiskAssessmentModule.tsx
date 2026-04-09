@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +18,6 @@ const riskColor = (score: number) => {
   if (score <= 9) return { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-800 dark:text-yellow-300", label: "Moderate" };
   return { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-800 dark:text-red-300", label: "High" };
 };
-
-const HEATMAP_LABELS = ["", "Rare (1)", "Unlikely (2)", "Possible (3)", "Likely (4)", "Almost Certain (5)"];
-const SEV_LABELS = ["Almost Certain (5)", "Likely (4)", "Possible (3)", "Unlikely (2)", "Rare (1)"];
 
 function RiskHeatmap({ risks }: { risks: IsoRisk[] }) {
   const cellCount = (l: number, s: number) => risks.filter(r => r.likelihood === l && r.severity === s).length;
@@ -65,6 +62,8 @@ const EMPTY_FORM = {
   linkedProcess: "", status: "open" as string,
 };
 
+const LEVEL_LABELS: Record<string, string> = { Low: "Low", Moderate: "Moderate", High: "High" };
+
 export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: number }) {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -72,10 +71,13 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
   const [editing, setEditing] = useState<IsoRisk | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [isaOpen, setIsaOpen] = useState(false);
+  const [isaContext, setIsaContext] = useState<IsoRisk | null>(null);
   const [isaInput, setIsaInput] = useState("");
   const [isaMessages, setIsaMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isaLoading, setIsaLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterLevel, setFilterLevel] = useState("all");
+  const [filterProcess, setFilterProcess] = useState("");
   const [showHeatmap, setShowHeatmap] = useState(false);
 
   const { data: risks = [], isLoading } = useQuery<IsoRisk[]>({ queryKey: ["/api/iso-risks"] });
@@ -112,13 +114,31 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
     setShowForm(true);
   };
 
+  const openIsaForRisk = (r: IsoRisk) => {
+    setIsaContext(r);
+    const { label } = riskColor(r.riskScore);
+    const initMsg = {
+      role: "assistant" as const,
+      content: `I can see this risk: **${r.description}** in process area **${r.processArea}**.\n\nCurrent score: **${r.riskScore} (${label})** — Likelihood ${r.likelihood} × Severity ${r.severity}.\n${r.controls ? `Existing controls: ${r.controls}\n` : ""}How can I help? I can suggest additional controls, evaluate whether residual risk is acceptable, or help you align this with ISO 6.1 requirements.`,
+    };
+    setIsaMessages([initMsg]);
+    setIsaOpen(true);
+  };
+
   const submit = () => {
     const payload = { ...form, isoProjectId };
     if (editing) { updateMutation.mutate({ id: editing.id, data: payload }); }
     else { createMutation.mutate(payload); }
   };
 
-  const filtered = filterStatus === "all" ? risks : risks.filter(r => r.status === filterStatus);
+  const filtered = risks
+    .filter(r => filterStatus === "all" || r.status === filterStatus)
+    .filter(r => {
+      if (filterLevel === "all") return true;
+      const { label } = riskColor(r.riskScore);
+      return label === filterLevel;
+    })
+    .filter(r => !filterProcess || r.processArea.toLowerCase().includes(filterProcess.toLowerCase()));
 
   const stats = {
     total: risks.length,
@@ -128,6 +148,8 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
     open: risks.filter(r => r.status === "open").length,
   };
 
+  const processAreas = [...new Set(risks.map(r => r.processArea).filter(Boolean))].sort();
+
   const sendIsaMessage = async () => {
     if (!isaInput.trim()) return;
     const userMsg = { role: "user" as const, content: isaInput.trim() };
@@ -136,12 +158,15 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
     setIsaInput("");
     setIsaLoading(true);
     try {
+      const contextInfo = isaContext
+        ? `\n\nThe user is asking about a specific risk:\n- Description: ${isaContext.description}\n- Process Area: ${isaContext.processArea}\n- Likelihood: ${isaContext.likelihood}, Severity: ${isaContext.severity}, Score: ${isaContext.riskScore}\n- Controls: ${isaContext.controls || "none"}\n- Status: ${isaContext.status}`
+        : "";
       const resp = await fetch("/api/iso/module-isa-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: newMsgs,
-          systemPrompt: `You are Isa, Lead ISO Auditor and risk management expert for ACSI ISO Manager. You specialize in ISO 9001:2015, ISO 14001:2015, and ISO 45001:2018 risk-based thinking. Help users identify risks and opportunities, evaluate likelihood and severity (1–5 scale), suggest controls, and determine residual risk. Reference applicable ISO clauses (e.g., 6.1 Actions to address risks and opportunities). Be practical, specific, and professional. Never hallucinate requirements not in the standard.`,
+          systemPrompt: `You are Isa, Lead ISO Auditor and risk management expert for ACSI ISO Manager. You specialize in ISO 9001:2015, ISO 14001:2015, and ISO 45001:2018 risk-based thinking. Help users identify risks and opportunities, evaluate likelihood and severity (1–5 scale), suggest controls, and determine residual risk. Reference applicable ISO clauses (e.g., 6.1 Actions to address risks and opportunities). Be practical, specific, and professional. Never hallucinate requirements not in the standard.${contextInfo}`,
         }),
       });
       const data = await resp.json();
@@ -151,6 +176,12 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
     } finally {
       setIsaLoading(false);
     }
+  };
+
+  const openGlobalIsa = () => {
+    setIsaContext(null);
+    setIsaMessages([]);
+    setIsaOpen(true);
   };
 
   return (
@@ -169,7 +200,7 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
             {showHeatmap ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
             Heatmap
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsaOpen(true)} data-testid="button-isa-risk" className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20">
+          <Button variant="outline" size="sm" onClick={openGlobalIsa} data-testid="button-isa-risk" className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20">
             <Bot className="w-4 h-4 mr-1" /> Ask Isa
           </Button>
           <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }} data-testid="button-add-risk" className="bg-accent hover:bg-accent/90 text-white">
@@ -205,14 +236,46 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
       )}
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <span className="text-sm text-muted-foreground">Filter:</span>
-        {["all", "open", "mitigated", "accepted"].map(s => (
-          <button key={s} onClick={() => setFilterStatus(s)} data-testid={`filter-risk-${s}`}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filterStatus === s ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
-            {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
-          </button>
-        ))}
+      <div className="space-y-2">
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-sm text-muted-foreground w-16 shrink-0">Status:</span>
+          {["all", "open", "mitigated", "accepted"].map(s => (
+            <button key={s} onClick={() => setFilterStatus(s)} data-testid={`filter-risk-status-${s}`}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filterStatus === s ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+              {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-sm text-muted-foreground w-16 shrink-0">Level:</span>
+          {["all", "Low", "Moderate", "High"].map(l => (
+            <button key={l} onClick={() => setFilterLevel(l)} data-testid={`filter-risk-level-${l}`}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filterLevel === l ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+              {l === "all" ? "All Levels" : l}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 items-center">
+          <span className="text-sm text-muted-foreground w-16 shrink-0">Process:</span>
+          <Input
+            value={filterProcess}
+            onChange={e => setFilterProcess(e.target.value)}
+            placeholder="Filter by process area…"
+            data-testid="filter-risk-process"
+            className="max-w-xs h-8 text-xs"
+          />
+          {processAreas.length > 0 && (
+            <Select value={filterProcess || "all"} onValueChange={v => setFilterProcess(v === "all" ? "" : v)}>
+              <SelectTrigger className="max-w-[160px] h-8 text-xs" data-testid="select-filter-process">
+                <SelectValue placeholder="Pick process" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Processes</SelectItem>
+                {processAreas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       {/* Risk Table */}
@@ -223,7 +286,7 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <ShieldAlert className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="font-medium">No risks recorded</p>
+              <p className="font-medium">{risks.length === 0 ? "No risks recorded" : "No risks match your filters"}</p>
               <p className="text-xs mt-1">Use the ISO 6.1 standard to identify risks and opportunities in your QMS processes.</p>
             </div>
           ) : (
@@ -270,6 +333,10 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">
+                            <button onClick={() => openIsaForRisk(r)} data-testid={`button-isa-risk-row-${r.id}`} title="Ask Isa about this risk"
+                              className="p-1 rounded hover:bg-violet-100 dark:hover:bg-violet-900/30 text-muted-foreground hover:text-violet-600">
+                              <Bot className="w-3.5 h-3.5" />
+                            </button>
                             <button onClick={() => openEdit(r)} data-testid={`button-edit-risk-${r.id}`} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
@@ -377,11 +444,12 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
       </Dialog>
 
       {/* Isa AI Panel */}
-      <Dialog open={isaOpen} onOpenChange={setIsaOpen}>
+      <Dialog open={isaOpen} onOpenChange={v => { if (!v) { setIsaOpen(false); setIsaContext(null); } }}>
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
               <Bot className="w-5 h-5" /> Isa — ISO Risk Advisor
+              {isaContext && <span className="text-xs font-normal text-muted-foreground ml-1">· {isaContext.processArea}</span>}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">

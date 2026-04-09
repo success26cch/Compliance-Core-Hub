@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Plus, Pencil, Trash2, Bot, Globe, Building2 } from "lucide-react";
+import { MessageSquare, Plus, Pencil, Trash2, Bot, Globe, Building2, CalendarRange, Search } from "lucide-react";
 import type { IsoCommunication } from "@shared/schema";
 
 const MEDIUMS = ["email", "meeting", "notice", "bulletin", "training", "report", "poster", "intranet", "other"];
@@ -29,6 +29,11 @@ const EMPTY_FORM: Partial<IsoCommunication> & { date: string } = {
   date: new Date().toISOString().slice(0, 10),
 };
 
+const AUDIENCE_PRESETS = [
+  "All Employees", "Management Team", "Department Heads", "Quality Team",
+  "Production Staff", "Sales Team", "Customers", "Suppliers", "Regulatory Body",
+];
+
 export default function CommunicationModule({ isoProjectId }: { isoProjectId?: number }) {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -37,6 +42,10 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
   const [form, setForm] = useState<typeof EMPTY_FORM>({ ...EMPTY_FORM });
   const [filterDir, setFilterDir] = useState("all");
   const [filterMedium, setFilterMedium] = useState("all");
+  const [filterDateStart, setFilterDateStart] = useState("");
+  const [filterDateEnd, setFilterDateEnd] = useState("");
+  const [filterAudience, setFilterAudience] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [isaOpen, setIsaOpen] = useState(false);
   const [isaInput, setIsaInput] = useState("");
   const [isaMessages, setIsaMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
@@ -80,9 +89,31 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
     else createMutation.mutate(payload);
   };
 
+  const activeFilterCount = [
+    filterDir !== "all",
+    filterMedium !== "all",
+    !!filterDateStart,
+    !!filterDateEnd,
+    !!filterAudience,
+  ].filter(Boolean).length;
+
   const filtered = comms
     .filter(c => filterDir === "all" || c.direction === filterDir)
-    .filter(c => filterMedium === "all" || c.medium === filterMedium);
+    .filter(c => filterMedium === "all" || c.medium === filterMedium)
+    .filter(c => {
+      if (!filterDateStart) return true;
+      const d = c.date ? new Date(c.date).toISOString().slice(0, 10) : "";
+      return d >= filterDateStart;
+    })
+    .filter(c => {
+      if (!filterDateEnd) return true;
+      const d = c.date ? new Date(c.date).toISOString().slice(0, 10) : "";
+      return d <= filterDateEnd;
+    })
+    .filter(c => {
+      if (!filterAudience) return true;
+      return (c.audience ?? "").toLowerCase().includes(filterAudience.toLowerCase());
+    });
 
   const internal = comms.filter(c => c.direction === "internal").length;
   const external = comms.filter(c => c.direction === "external").length;
@@ -123,6 +154,10 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
           <p className="text-sm text-muted-foreground mt-0.5">ISO 7.4 — What, when, with whom, how to communicate about the QMS</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(v => !v)} data-testid="button-toggle-filters"
+            className={activeFilterCount > 0 ? "border-accent text-accent" : ""}>
+            <Search className="w-4 h-4 mr-1" /> Filters {activeFilterCount > 0 && <span className="ml-1 bg-accent text-white rounded-full text-[10px] w-4 h-4 flex items-center justify-center">{activeFilterCount}</span>}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsaOpen(true)} data-testid="button-isa-comms" className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20">
             <Bot className="w-4 h-4 mr-1" /> Ask Isa
           </Button>
@@ -145,31 +180,75 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
         <p className="text-xs text-muted-foreground">The organization must determine: <strong>what</strong> to communicate, <strong>when</strong> to communicate, <strong>with whom</strong> to communicate, <strong>how</strong> to communicate, and <strong>who</strong> communicates. Log all QMS-related communications here to maintain an audit-ready record.</p>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <span className="text-sm text-muted-foreground">Direction:</span>
-        {["all", "internal", "external"].map(d => (
-          <button key={d} onClick={() => setFilterDir(d)} data-testid={`filter-comm-dir-${d}`}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filterDir === d ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
-            {d === "all" ? "All" : d.charAt(0).toUpperCase() + d.slice(1)}
-          </button>
-        ))}
-        {mediumsInUse.length > 0 && (
-          <>
-            <span className="text-sm text-muted-foreground ml-2">Medium:</span>
-            <button onClick={() => setFilterMedium("all")} data-testid="filter-comm-medium-all"
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filterMedium === "all" ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
-              All
-            </button>
-            {mediumsInUse.map(m => (
-              <button key={m} onClick={() => setFilterMedium(m!)} data-testid={`filter-comm-medium-${m}`}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors ${filterMedium === m ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
-                {m}
-              </button>
-            ))}
-          </>
-        )}
-      </div>
+      {/* Filters Panel */}
+      {showFilters && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Direction */}
+              <div>
+                <Label className="text-xs mb-1 block">Direction</Label>
+                <div className="flex gap-1 flex-wrap">
+                  {["all", "internal", "external"].map(d => (
+                    <button key={d} onClick={() => setFilterDir(d)} data-testid={`filter-comm-dir-${d}`}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${filterDir === d ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+                      {d === "all" ? "All" : d.charAt(0).toUpperCase() + d.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Medium */}
+              <div>
+                <Label className="text-xs mb-1 block">Medium</Label>
+                <div className="flex gap-1 flex-wrap">
+                  <button onClick={() => setFilterMedium("all")} data-testid="filter-comm-medium-all"
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${filterMedium === "all" ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+                    All
+                  </button>
+                  {mediumsInUse.map(m => (
+                    <button key={m} onClick={() => setFilterMedium(m!)} data-testid={`filter-comm-medium-${m}`}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${filterMedium === m ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Audience search */}
+              <div>
+                <Label className="text-xs mb-1 block">Audience / Recipient</Label>
+                <Input
+                  value={filterAudience}
+                  onChange={e => setFilterAudience(e.target.value)}
+                  placeholder="Search by audience…"
+                  data-testid="filter-comm-audience"
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              {/* Date range */}
+              <div className="sm:col-span-2 lg:col-span-2">
+                <Label className="text-xs mb-1 block flex items-center gap-1"><CalendarRange className="w-3 h-3" /> Date Range</Label>
+                <div className="flex items-center gap-2">
+                  <Input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} data-testid="filter-comm-date-start" className="h-8 text-xs flex-1" />
+                  <span className="text-xs text-muted-foreground">to</span>
+                  <Input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} data-testid="filter-comm-date-end" className="h-8 text-xs flex-1" />
+                </div>
+              </div>
+            </div>
+            {activeFilterCount > 0 && (
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-xs text-muted-foreground">Showing {filtered.length} of {comms.length} records</span>
+                <button onClick={() => { setFilterDir("all"); setFilterMedium("all"); setFilterDateStart(""); setFilterDateEnd(""); setFilterAudience(""); }}
+                  className="text-xs text-accent hover:underline" data-testid="button-clear-filters">
+                  Clear all filters
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Communications List */}
       {isLoading ? (
@@ -178,7 +257,7 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
             <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No communications logged</p>
+            <p className="font-medium">{comms.length === 0 ? "No communications logged" : "No communications match your filters"}</p>
             <p className="text-xs mt-1">Use this log to document all QMS-related communications — meeting minutes, quality notices, customer communications, regulatory submissions, and more.</p>
           </CardContent>
         </Card>
@@ -247,7 +326,10 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
               </div>
               <div>
                 <Label>Audience / Recipient</Label>
-                <Input value={form.audience ?? ""} onChange={e => setForm(f => ({ ...f, audience: e.target.value }))} placeholder="e.g. All Employees, Customer XYZ" data-testid="input-comm-audience" />
+                <Input value={form.audience ?? ""} onChange={e => setForm(f => ({ ...f, audience: e.target.value }))} placeholder="e.g. All Employees, Customer XYZ" data-testid="input-comm-audience" list="audience-presets" />
+                <datalist id="audience-presets">
+                  {AUDIENCE_PRESETS.map(a => <option key={a} value={a} />)}
+                </datalist>
               </div>
               <div>
                 <Label>Medium / Channel</Label>

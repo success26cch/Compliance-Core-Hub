@@ -10,7 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart2, Plus, Pencil, Trash2, TrendingUp, Bot, ChevronDown, ChevronUp, CheckCircle, AlertCircle, MinusCircle } from "lucide-react";
+import {
+  BarChart2, Plus, Pencil, TrendingUp, TrendingDown, Minus, Bot,
+  ChevronDown, ChevronUp, CheckCircle, AlertCircle, MinusCircle,
+} from "lucide-react";
 import type { IsoObjective, IsoKpiActual } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
@@ -48,19 +51,89 @@ function GaugeChart({ actual, target }: { actual: number; target: number }) {
   );
 }
 
-function KpiCard({ obj, actuals, onLog, onEditObj, onDeleteObj }: {
+function OverallGauge({ onTrack, total }: { onTrack: number; total: number }) {
+  const pct = total > 0 ? (onTrack / total) * 100 : 0;
+  const angle = (pct / 100) * 180 - 90;
+  const rad = (angle * Math.PI) / 180;
+  const cx = 100, cy = 100, r = 80;
+  const x = cx + r * Math.cos(rad);
+  const y = cy + r * Math.sin(rad);
+  const color = pct >= 80 ? "#22c55e" : pct >= 60 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="flex flex-col items-center">
+      <svg viewBox="0 0 200 125" className="w-full max-w-[180px]">
+        <path d="M25,100 A75,75 0 0,1 175,100" fill="none" stroke="#e5e7eb" strokeWidth="16" strokeLinecap="round" />
+        {pct > 0 && (
+          <path d={`M25,100 A75,75 0 ${pct > 50 ? 1 : 0},1 ${cx + r * Math.cos((((pct / 100) * 180 - 90) * Math.PI) / 180)},${cy + r * Math.sin((((pct / 100) * 180 - 90) * Math.PI) / 180)}`}
+            fill="none" stroke={color} strokeWidth="16" strokeLinecap="round" />
+        )}
+        <line x1={cx} y1={cy} x2={x} y2={y} stroke={color} strokeWidth="3" strokeLinecap="round" />
+        <circle cx={cx} cy={cy} r="5" fill={color} />
+        <text x={cx} y={cy + 22} textAnchor="middle" fontSize="20" fontWeight="bold" fill={color}>{pct.toFixed(0)}%</text>
+        <text x={cx} y={cy + 36} textAnchor="middle" fontSize="9" fill="#9ca3af">On Track</text>
+      </svg>
+      <p className="text-xs text-muted-foreground mt-1">{onTrack} of {total} KPIs on track</p>
+    </div>
+  );
+}
+
+function TrendArrow({ actuals, targetVal, unit }: { actuals: IsoKpiActual[]; targetVal: number; unit?: string }) {
+  const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
+  if (sorted.length < 2) return null;
+  const prev = parseFloat(sorted[sorted.length - 2].actual);
+  const curr = parseFloat(sorted[sorted.length - 1].actual);
+  const delta = curr - prev;
+  const pct = prev !== 0 ? ((delta / prev) * 100) : 0;
+  const improving = targetVal > 0 ? curr > prev : curr < prev;
+  const color = improving ? "text-green-600" : "text-red-500";
+  const Icon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${color}`} title={`vs previous period`}>
+      <Icon className="w-3.5 h-3.5" />
+      {delta > 0 ? "+" : ""}{delta.toFixed(1)} {unit} ({pct > 0 ? "+" : ""}{pct.toFixed(1)}%)
+    </span>
+  );
+}
+
+function periodCutoff(window: string): string {
+  const now = new Date();
+  if (window === "30d") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 30);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+  if (window === "3mo") {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - 3);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+  if (window === "12mo") {
+    const d = new Date(now);
+    d.setFullYear(d.getFullYear() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+  return "";
+}
+
+function KpiCard({ obj, actuals, onLog, onEdit, periodWindow }: {
   obj: IsoObjective;
   actuals: IsoKpiActual[];
   onLog: () => void;
-  onEditObj: () => void;
-  onDeleteObj: () => void;
+  onEdit: () => void;
+  periodWindow: string;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
-  const latest = sorted[sorted.length - 1];
+  const cutoff = periodCutoff(periodWindow);
+  const windowActuals = cutoff ? actuals.filter(a => a.period >= cutoff) : actuals;
+  const sorted = [...windowActuals].sort((a, b) => a.period.localeCompare(b.period));
+  const allSorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
+  const latest = allSorted[allSorted.length - 1];
   const latestVal = latest ? parseFloat(latest.actual) : 0;
   const targetVal = parseFloat(obj.target ?? "0");
   const chartData = sorted.map(a => ({ period: a.period, actual: parseFloat(a.actual), target: targetVal }));
+
+  const variance = latest ? latestVal - targetVal : null;
+  const variancePct = (variance !== null && targetVal !== 0) ? (variance / targetVal) * 100 : null;
 
   return (
     <Card className={`border-l-4 ${obj.status === "on_track" ? "border-green-400" : obj.status === "at_risk" ? "border-yellow-400" : "border-red-400"}`}>
@@ -71,6 +144,7 @@ function KpiCard({ obj, actuals, onLog, onEditObj, onDeleteObj }: {
               {statusIcon(obj.status)}
               <span className="font-semibold text-sm text-foreground truncate">{obj.name}</span>
               <Badge variant="outline" className="text-xs shrink-0">{obj.frequency}</Badge>
+              <span className="text-xs font-mono text-accent font-bold">§9.1</span>
             </div>
             <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
               {obj.processName && <span>Process: <span className="font-medium">{obj.processName}</span></span>}
@@ -78,6 +152,18 @@ function KpiCard({ obj, actuals, onLog, onEditObj, onDeleteObj }: {
               <span>Target: <span className="font-medium">{obj.target} {obj.unit}</span></span>
               {latest && <span>Latest: <span className="font-medium text-foreground">{latest.actual} {obj.unit}</span> ({latest.period})</span>}
             </div>
+            {/* Variance + Trend */}
+            {latest && (
+              <div className="mt-1.5 flex flex-wrap gap-3 items-center">
+                {variance !== null && (
+                  <span className={`text-xs font-medium ${variance >= 0 ? "text-green-600" : "text-red-500"}`}>
+                    Variance: {variance >= 0 ? "+" : ""}{variance.toFixed(1)} {obj.unit}
+                    {variancePct !== null && <span className="opacity-70 ml-1">({variancePct >= 0 ? "+" : ""}{variancePct.toFixed(1)}%)</span>}
+                  </span>
+                )}
+                <TrendArrow actuals={actuals} targetVal={targetVal} unit={obj.unit ?? ""} />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {!isNaN(latestVal) && !isNaN(targetVal) && targetVal > 0 && (
@@ -87,13 +173,10 @@ function KpiCard({ obj, actuals, onLog, onEditObj, onDeleteObj }: {
               <button onClick={onLog} data-testid={`button-log-kpi-${obj.id}`} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent" title="Log measurement">
                 <Plus className="w-3.5 h-3.5" />
               </button>
-              <button onClick={onEditObj} data-testid={`button-edit-obj-${obj.id}`} className="p-1 rounded hover:bg-muted text-muted-foreground" title="Edit KPI">
+              <button onClick={onEdit} data-testid={`button-edit-obj-${obj.id}`} className="p-1 rounded hover:bg-muted text-muted-foreground" title="Edit KPI">
                 <Pencil className="w-3.5 h-3.5" />
               </button>
-              <button onClick={onDeleteObj} data-testid={`button-delete-obj-${obj.id}`} className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-600" title="Delete KPI">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => setExpanded(v => !v)} className="p-1 rounded hover:bg-muted text-muted-foreground">
+              <button onClick={() => setExpanded(v => !v)} className="p-1 rounded hover:bg-muted text-muted-foreground" data-testid={`button-expand-kpi-${obj.id}`}>
                 {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -116,12 +199,12 @@ function KpiCard({ obj, actuals, onLog, onEditObj, onDeleteObj }: {
         )}
         {expanded && (
           <div className="mt-3">
-            <div className="text-xs font-medium text-muted-foreground mb-2">Measurement History</div>
-            {actuals.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No measurements logged yet.</p>
+            <div className="text-xs font-medium text-muted-foreground mb-2">Measurement History {periodWindow !== "all" ? `(${periodWindow})` : ""}</div>
+            {windowActuals.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{actuals.length === 0 ? "No measurements logged yet." : "No measurements in this time window."}</p>
             ) : (
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                {[...actuals].sort((a, b) => b.period.localeCompare(a.period)).map(a => (
+                {[...windowActuals].sort((a, b) => b.period.localeCompare(a.period)).map(a => (
                   <div key={a.id} className="flex justify-between text-xs py-1 px-2 rounded bg-muted/40">
                     <span className="font-medium">{a.period}</span>
                     <span>{a.actual} {obj.unit}</span>
@@ -137,41 +220,37 @@ function KpiCard({ obj, actuals, onLog, onEditObj, onDeleteObj }: {
   );
 }
 
-const EMPTY_OBJ_FORM = { name: "", processName: "", target: "", unit: "", frequency: "monthly", responsible: "", status: "on_track", description: "" };
+const EMPTY_EDIT_FORM = { target: "", unit: "", frequency: "monthly", responsible: "", status: "on_track", description: "" };
 const EMPTY_LOG_FORM = { period: "", actual: "", notes: "" };
+
+const PERIOD_WINDOWS = [
+  { val: "30d", label: "Last 30 days" },
+  { val: "3mo", label: "Last 3 months" },
+  { val: "12mo", label: "Last 12 months" },
+  { val: "all", label: "All time" },
+];
 
 export default function MeasurementModule({ isoProjectId }: { isoProjectId?: number }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [logFor, setLogFor] = useState<IsoObjective | null>(null);
   const [logForm, setLogForm] = useState(EMPTY_LOG_FORM);
-  const [objForm, setObjForm] = useState(EMPTY_OBJ_FORM);
+  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
   const [editingObj, setEditingObj] = useState<IsoObjective | null>(null);
-  const [showObjForm, setShowObjForm] = useState(false);
   const [isaOpen, setIsaOpen] = useState(false);
   const [isaInput, setIsaInput] = useState("");
   const [isaMessages, setIsaMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isaLoading, setIsaLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [periodWindow, setPeriodWindow] = useState("12mo");
 
   const { data: objectives = [], isLoading } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
   const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({ queryKey: ["/api/iso-kpi-actuals"] });
 
-  const createObjMutation = useMutation({
-    mutationFn: (d: any) => apiRequest("POST", "/api/iso-objectives", d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] }); toast({ title: "KPI added" }); setShowObjForm(false); setObjForm(EMPTY_OBJ_FORM); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
   const updateObjMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-objectives/${id}`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] }); toast({ title: "KPI updated" }); setShowObjForm(false); setEditingObj(null); setObjForm(EMPTY_OBJ_FORM); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] }); toast({ title: "KPI updated" }); setEditingObj(null); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
-  const deleteObjMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("DELETE", `/api/iso-objectives/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] }); toast({ title: "KPI deleted" }); },
   });
 
   const logMutation = useMutation({
@@ -182,14 +261,16 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
 
   const openEdit = (obj: IsoObjective) => {
     setEditingObj(obj);
-    setObjForm({ name: obj.name, processName: obj.processName ?? "", target: obj.target ?? "", unit: obj.unit ?? "", frequency: obj.frequency ?? "monthly", responsible: obj.responsible ?? "", status: obj.status, description: obj.description ?? "" });
-    setShowObjForm(true);
+    setEditForm({
+      target: obj.target ?? "", unit: obj.unit ?? "",
+      frequency: obj.frequency ?? "monthly", responsible: obj.responsible ?? "",
+      status: obj.status, description: obj.description ?? "",
+    });
   };
 
-  const submitObj = () => {
-    const payload = { ...objForm, isoProjectId };
-    if (editingObj) updateObjMutation.mutate({ id: editingObj.id, data: payload });
-    else createObjMutation.mutate(payload);
+  const submitEdit = () => {
+    if (!editingObj) return;
+    updateObjMutation.mutate({ id: editingObj.id, data: editForm });
   };
 
   const filtered = filterStatus === "all" ? objectives : objectives.filter(o => o.status === filterStatus);
@@ -229,26 +310,30 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-accent" />
             Measurement &amp; Monitoring
+            <span className="text-xs font-mono text-accent font-bold">ISO §9.1</span>
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">ISO 9.1 — Monitor, measure, analyze and evaluate QMS performance</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Monitor, measure, analyze and evaluate QMS performance — objectives come from Process Maps</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setIsaOpen(true)} data-testid="button-isa-measurement" className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20">
             <Bot className="w-4 h-4 mr-1" /> Ask Isa
           </Button>
-          <Button size="sm" onClick={() => { setEditingObj(null); setObjForm(EMPTY_OBJ_FORM); setShowObjForm(true); }} data-testid="button-add-kpi" className="bg-accent hover:bg-accent/90 text-white">
-            <Plus className="w-4 h-4 mr-1" /> Add KPI
-          </Button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Overall gauge + summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card className="sm:col-span-1">
+          <CardContent className="p-4 flex flex-col items-center justify-center">
+            <OverallGauge onTrack={onTrack} total={objectives.length} />
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">{onTrack}</div>
@@ -269,20 +354,31 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <span className="text-sm text-muted-foreground">Filter:</span>
-        {[
-          { val: "all", label: "All" },
-          { val: "on_track", label: "On Track" },
-          { val: "at_risk", label: "At Risk" },
-          { val: "off_track", label: "Off Track" },
-        ].map(s => (
-          <button key={s.val} onClick={() => setFilterStatus(s.val)} data-testid={`filter-kpi-${s.val}`}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filterStatus === s.val ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
-            {s.label}
-          </button>
-        ))}
+      {/* Period window + status filters */}
+      <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex gap-1 items-center flex-wrap">
+          <span className="text-xs text-muted-foreground mr-1">Period:</span>
+          {PERIOD_WINDOWS.map(w => (
+            <button key={w.val} onClick={() => setPeriodWindow(w.val)} data-testid={`filter-period-${w.val}`}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${periodWindow === w.val ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+              {w.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 items-center flex-wrap">
+          <span className="text-xs text-muted-foreground mr-1">Status:</span>
+          {[
+            { val: "all", label: "All" },
+            { val: "on_track", label: "On Track" },
+            { val: "at_risk", label: "At Risk" },
+            { val: "off_track", label: "Off Track" },
+          ].map(s => (
+            <button key={s.val} onClick={() => setFilterStatus(s.val)} data-testid={`filter-kpi-${s.val}`}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${filterStatus === s.val ? "bg-accent text-white border-accent" : "border-border text-muted-foreground hover:border-accent"}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -293,7 +389,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
           <CardContent className="p-8 text-center text-muted-foreground">
             <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="font-medium">No KPIs defined</p>
-            <p className="text-xs mt-1">Add quality objectives with measurable targets (ISO 6.2). KPIs from Process Maps appear here automatically.</p>
+            <p className="text-xs mt-1">Quality objectives (ISO 6.2) are created in <strong>Process Maps</strong>. Open a process map and add measurable objectives with targets — they will appear here automatically for tracking.</p>
           </CardContent>
         </Card>
       ) : (
@@ -304,8 +400,8 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
               obj={obj}
               actuals={allActuals.filter(a => a.objectiveId === obj.id)}
               onLog={() => { setLogFor(obj); setLogForm({ ...EMPTY_LOG_FORM, period: currentPeriod() }); }}
-              onEditObj={() => openEdit(obj)}
-              onDeleteObj={() => deleteObjMutation.mutate(obj.id)}
+              onEdit={() => openEdit(obj)}
+              periodWindow={periodWindow}
             />
           ))}
         </div>
@@ -333,7 +429,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setLogFor(null)}>Cancel</Button>
-              <Button onClick={() => logMutation.mutate({ ...logForm, objectiveId: logFor?.id, userId: "" })} disabled={logMutation.isPending} data-testid="button-submit-log" className="bg-accent hover:bg-accent/90 text-white">
+              <Button onClick={() => logMutation.mutate({ ...logForm, objectiveId: logFor?.id })} disabled={logMutation.isPending} data-testid="button-submit-log" className="bg-accent hover:bg-accent/90 text-white">
                 Log
               </Button>
             </div>
@@ -341,38 +437,26 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         </DialogContent>
       </Dialog>
 
-      {/* Add/Edit KPI Dialog */}
-      <Dialog open={showObjForm} onOpenChange={v => { if (!v) { setShowObjForm(false); setEditingObj(null); setObjForm(EMPTY_OBJ_FORM); } }}>
-        <DialogContent className="max-w-lg">
+      {/* Edit KPI Dialog — only update target/status/frequency/owner, no create/delete */}
+      <Dialog open={!!editingObj} onOpenChange={v => { if (!v) setEditingObj(null); }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingObj ? "Edit KPI" : "Add Quality Objective / KPI"}</DialogTitle>
+            <DialogTitle>Update KPI Settings — {editingObj?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <Label>KPI Name *</Label>
-                <Input value={objForm.name} onChange={e => setObjForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Customer Satisfaction Score, Defect Rate" data-testid="input-kpi-name" />
-              </div>
               <div>
-                <Label>Process Area</Label>
-                <Input value={objForm.processName} onChange={e => setObjForm(f => ({ ...f, processName: e.target.value }))} placeholder="e.g. Production" data-testid="input-kpi-process" />
-              </div>
-              <div>
-                <Label>Responsible Person</Label>
-                <Input value={objForm.responsible} onChange={e => setObjForm(f => ({ ...f, responsible: e.target.value }))} placeholder="e.g. Quality Manager" data-testid="input-kpi-responsible" />
-              </div>
-              <div>
-                <Label>Target Value *</Label>
-                <Input value={objForm.target} onChange={e => setObjForm(f => ({ ...f, target: e.target.value }))} placeholder="e.g. 95" data-testid="input-kpi-target" />
+                <Label>Target Value</Label>
+                <Input value={editForm.target} onChange={e => setEditForm(f => ({ ...f, target: e.target.value }))} placeholder="e.g. 95" data-testid="input-edit-kpi-target" />
               </div>
               <div>
                 <Label>Unit</Label>
-                <Input value={objForm.unit} onChange={e => setObjForm(f => ({ ...f, unit: e.target.value }))} placeholder="e.g. %, ppm, days, score" data-testid="input-kpi-unit" />
+                <Input value={editForm.unit} onChange={e => setEditForm(f => ({ ...f, unit: e.target.value }))} placeholder="e.g. %, ppm" data-testid="input-edit-kpi-unit" />
               </div>
               <div>
                 <Label>Frequency</Label>
-                <Select value={objForm.frequency} onValueChange={v => setObjForm(f => ({ ...f, frequency: v }))}>
-                  <SelectTrigger data-testid="select-kpi-frequency"><SelectValue /></SelectTrigger>
+                <Select value={editForm.frequency} onValueChange={v => setEditForm(f => ({ ...f, frequency: v }))}>
+                  <SelectTrigger data-testid="select-edit-kpi-frequency"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {["daily", "weekly", "monthly", "quarterly", "annual"].map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                   </SelectContent>
@@ -380,8 +464,8 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
               </div>
               <div>
                 <Label>Status</Label>
-                <Select value={objForm.status} onValueChange={v => setObjForm(f => ({ ...f, status: v }))}>
-                  <SelectTrigger data-testid="select-kpi-status"><SelectValue /></SelectTrigger>
+                <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger data-testid="select-edit-kpi-status"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="on_track">On Track</SelectItem>
                     <SelectItem value="at_risk">At Risk</SelectItem>
@@ -389,15 +473,19 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2">
+              <div>
+                <Label>Responsible Person</Label>
+                <Input value={editForm.responsible} onChange={e => setEditForm(f => ({ ...f, responsible: e.target.value }))} placeholder="e.g. Quality Manager" data-testid="input-edit-kpi-responsible" />
+              </div>
+              <div>
                 <Label>Description</Label>
-                <Textarea value={objForm.description} onChange={e => setObjForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional description of this KPI" data-testid="input-kpi-description" rows={2} />
+                <Input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional" data-testid="input-edit-kpi-desc" />
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => { setShowObjForm(false); setEditingObj(null); setObjForm(EMPTY_OBJ_FORM); }}>Cancel</Button>
-              <Button onClick={submitObj} disabled={createObjMutation.isPending || updateObjMutation.isPending} data-testid="button-submit-kpi" className="bg-accent hover:bg-accent/90 text-white">
-                {editingObj ? "Update KPI" : "Add KPI"}
+              <Button variant="outline" onClick={() => setEditingObj(null)}>Cancel</Button>
+              <Button onClick={submitEdit} disabled={updateObjMutation.isPending} data-testid="button-submit-edit-kpi" className="bg-accent hover:bg-accent/90 text-white">
+                Save Changes
               </Button>
             </div>
           </div>
@@ -409,7 +497,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
-              <Bot className="w-5 h-5" /> Isa — Measurement Advisor
+              <Bot className="w-5 h-5" /> Isa — Measurement Advisor (ISO §9.1)
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">
@@ -433,7 +521,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
             {isaLoading && <div className="text-xs text-violet-600 animate-pulse">Isa is thinking…</div>}
           </div>
           <div className="flex gap-2 pt-2 border-t border-border">
-            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendIsaMessage()} placeholder="Ask Isa about KPIs and measurement…" data-testid="input-isa-measurement" className="flex-1" />
+            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendIsaMessage()} placeholder="Ask Isa about ISO 9.1 Measurement…" data-testid="input-isa-measurement" className="flex-1" />
             <Button onClick={sendIsaMessage} disabled={isaLoading} size="sm" className="bg-violet-600 hover:bg-violet-700 text-white">Send</Button>
           </div>
         </DialogContent>

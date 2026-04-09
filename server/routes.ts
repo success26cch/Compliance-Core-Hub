@@ -6288,15 +6288,16 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
+      const existing = (await storage.getIsoRisks(userId)).find(r => r.id === parseInt(req.params.id));
+      if (!existing) return res.status(404).json({ message: "Not found" });
       const data = { ...req.body };
-      if (data.likelihood || data.severity) {
-        const l = data.likelihood ?? 1;
-        const s = data.severity ?? 1;
-        data.riskScore = l * s;
-      }
-      if (data.residualLikelihood && data.residualSeverity) {
-        data.residualScore = data.residualLikelihood * data.residualSeverity;
-      }
+      // Merge with existing values so a partial update doesn't corrupt the score
+      const l = data.likelihood ?? existing.likelihood;
+      const s = data.severity ?? existing.severity;
+      data.riskScore = l * s;
+      const rl = data.residualLikelihood ?? existing.residualLikelihood;
+      const rs = data.residualSeverity ?? existing.residualSeverity;
+      if (rl && rs) data.residualScore = rl * rs;
       const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, data);
       if (!risk) return res.status(404).json({ message: "Not found" });
       res.json(risk);
