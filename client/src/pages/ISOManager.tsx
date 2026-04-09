@@ -786,6 +786,9 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
   const [procName, setProcName] = useState("");
   const [procOwner, setProcOwner] = useState("");
   const [procKPI, setProcKPI] = useState("");
+  const [procKpiTarget, setProcKpiTarget] = useState("");
+  const [procKpiUnit, setProcKpiUnit] = useState("");
+  const [procObjectives, setProcObjectives] = useState("");
   const [procInputs, setProcInputs] = useState("");
   const [procOutputs, setProcOutputs] = useState("");
   const [procClauses, setProcClauses] = useState<string[]>([]);
@@ -848,7 +851,8 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
     if (!procName.trim()) return;
     const isIATF = standard.includes("IATF");
     const newProc: ProcessEntry = {
-      name: procName, owner: procOwner, kpi: procKPI, inputs: procInputs, outputs: procOutputs, clauses: procClauses,
+      name: procName, owner: procOwner, kpi: procKPI, kpiTarget: procKpiTarget || undefined, kpiUnit: procKpiUnit || undefined,
+      objectives: procObjectives || undefined, inputs: procInputs, outputs: procOutputs, clauses: procClauses,
       executors: procExecutors || undefined, resources: procResources || undefined,
       startingPoint: procStartPoint || undefined, endPoint: procEndPoint || undefined,
       keyActivities: procActivities || undefined, risksAndOpportunities: procRisks || undefined,
@@ -858,7 +862,8 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
       row: procRow || undefined,
     };
     setProcesses(prev => [...prev, newProc]);
-    setProcName(""); setProcOwner(""); setProcKPI(""); setProcInputs(""); setProcOutputs(""); setProcClauses([]);
+    setProcName(""); setProcOwner(""); setProcKPI(""); setProcKpiTarget(""); setProcKpiUnit(""); setProcObjectives("");
+    setProcInputs(""); setProcOutputs(""); setProcClauses([]);
     setProcExecutors(""); setProcResources(""); setProcStartPoint(""); setProcEndPoint("");
     setProcActivities(""); setProcRisks(""); setProcDocInfo(""); setProcCSR(""); setProcSite("PLANT"); setProcRow("");
     setShowAdvancedProc(false);
@@ -867,6 +872,23 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
 
   const goToPhase3 = async () => {
     await patchMut.mutateAsync({ processes, phase: 3 });
+    for (const proc of processes) {
+      if (proc.kpi?.trim()) {
+        await fetch("/api/iso-objectives/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            processName: proc.name,
+            name: proc.kpi.trim(),
+            target: proc.kpiTarget ?? "",
+            unit: proc.kpiUnit ?? "",
+            responsible: proc.owner,
+            isoProjectId: project.id,
+          }),
+        });
+      }
+    }
     setPhase(3);
   };
 
@@ -1089,6 +1111,20 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
                           <div>
                             <label className="text-xs font-bold text-muted-foreground mb-1 block">KPI — How do you measure success?</label>
                             <Input value={procKPI} onChange={e => setProcKPI(e.target.value)} placeholder="e.g., Supplier OTD %, Scrap Rate" data-testid="input-wizard-proc-kpi" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="col-span-3">
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Process Objective (what this process aims to achieve)</label>
+                            <Input value={procObjectives} onChange={e => setProcObjectives(e.target.value)} placeholder="e.g., Maintain supplier OTD above 95% to ensure on-time production" data-testid="input-wizard-proc-objectives" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">KPI Target</label>
+                            <Input value={procKpiTarget} onChange={e => setProcKpiTarget(e.target.value)} placeholder="e.g., 95" data-testid="input-wizard-proc-kpi-target" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground mb-1 block">Unit</label>
+                            <Input value={procKpiUnit} onChange={e => setProcKpiUnit(e.target.value)} placeholder="e.g., %" data-testid="input-wizard-proc-kpi-unit" />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2">

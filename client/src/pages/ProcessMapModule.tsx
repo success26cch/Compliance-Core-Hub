@@ -22,6 +22,9 @@ export interface ProcessEntry {
   name: string;
   owner: string;
   kpi: string;
+  kpiTarget?: string;
+  kpiUnit?: string;
+  objectives?: string;
   inputs: string;
   outputs: string;
   clauses: string[];
@@ -37,13 +40,13 @@ export interface ProcessEntry {
   row?: string;
 }
 
-// ─── Row definitions per standard ─────────────────────────────────────────────
+// ─── Row definitions per standard (order: Context → Planning → Operational → Supporting → Management) ──
 const ISO_ROWS = [
-  { key: "management", label: "Management Processes", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
-  { key: "planning", label: "Planning & Support", color: "bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800/40", badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
-  { key: "operational", label: "Operational (COP)", color: "bg-accent/5 border-accent/20 dark:bg-accent/10", badge: "bg-accent/10 text-accent" },
-  { key: "supporting", label: "Support Processes", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
   { key: "context", label: "Context & Interested Parties", color: "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/40", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+  { key: "planning", label: "Planning & Risk Management", color: "bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800/40", badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
+  { key: "operational", label: "Operational / Core Processes (COP)", color: "bg-accent/5 border-accent/20 dark:bg-accent/10", badge: "bg-accent/10 text-accent" },
+  { key: "supporting", label: "Support Processes", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  { key: "management", label: "Management Processes (Leadership)", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
 ];
 
 const IATF_ROWS = [
@@ -53,9 +56,9 @@ const IATF_ROWS = [
 ];
 
 const IATF_SITES = [
-  { key: "PLANT", label: "Plant" },
-  { key: "REMOTE_SITE", label: "Remote Site" },
-  { key: "CORPORATE", label: "Corporate" },
+  { key: "PLANT", label: "Plant", headerClass: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300" },
+  { key: "REMOTE_SITE", label: "Remote Site ★", headerClass: "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 border-x border-amber-200 dark:border-amber-800/40" },
+  { key: "CORPORATE", label: "Corporate", headerClass: "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300" },
 ];
 
 function guessRow(name: string, standard: string): string {
@@ -145,6 +148,16 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
         </div>
       </div>
 
+      {/* AS9100 "Where Applicable" notice */}
+      {project.standard?.includes("AS9100") && (
+        <div className="mx-4 mt-3 px-3 py-2 rounded-lg bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800/40 flex items-center gap-2">
+          <span className="text-[10px] font-black text-violet-700 dark:text-violet-300 px-1.5 py-0.5 bg-violet-100 dark:bg-violet-900/40 rounded shrink-0">W/A</span>
+          <p className="text-[10px] text-violet-700 dark:text-violet-300">
+            AS9100 Rev D: Certain clauses apply only <strong>"Where Applicable"</strong> (e.g., 8.1.4 Project Mgmt, 8.1.5 Risk/Opp, 8.2.4 Customer Docs, 8.4.3 External Providers, 8.5.1.2–8.5.6 Production Controls). Inapplicable clauses must be justified in the QMS.
+          </p>
+        </div>
+      )}
+
       {/* ─── Map Body: Customer Requirements → Processes → Customer Satisfaction ─── */}
       <div className="flex items-stretch min-h-[400px]">
         {/* Left: Customer Requirements */}
@@ -172,7 +185,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                     const siteProcs = rowProcs.filter(p => (p.site || "PLANT") === site.key);
                     return (
                       <div key={site.key} className="border-r last:border-r-0 border-border/30 p-2">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 text-center">{site.label}</p>
+                        <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 text-center px-1 py-0.5 rounded ${site.headerClass}`}>{site.label}</p>
                         <div className="space-y-1.5">
                           {siteProcs.map(p => (
                             <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
@@ -390,13 +403,12 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
       const all = (project.processes || []) as ProcessEntry[];
       const updated = all.map(p => p.name === process.name ? local : p);
       await patchProjectMut.mutateAsync(updated);
-      if (local.kpi?.trim() && objectives.length === 0) {
-        const kpiName = local.kpi.trim();
+      if (local.kpi?.trim()) {
         await fetch("/api/iso-objectives/upsert", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ processName: process.name, name: kpiName, target: "", unit: "", responsible: local.owner, isoProjectId: project.id }),
+          body: JSON.stringify({ processName: process.name, name: local.kpi.trim(), target: local.kpiTarget ?? "", unit: local.kpiUnit ?? "", responsible: local.owner, isoProjectId: project.id }),
         });
         qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] });
       }
