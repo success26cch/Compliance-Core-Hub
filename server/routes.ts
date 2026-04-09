@@ -26,6 +26,7 @@ import {
   buildContactConfirmationEmail,
 } from "./emailService";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema, insertIsoDocumentSchema } from "@shared/schema";
+import type { IsoRisk } from "@shared/schema";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
 import multer from "multer";
@@ -6298,18 +6299,18 @@ Output only the document content. No preamble. No closing remarks about the docu
       const { insertIsoRiskSchema } = await import("@shared/schema");
       const parsed = insertIsoRiskSchema.partial().safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
-      const data: Record<string, unknown> = { ...parsed.data };
-      // Merge with existing values for risk score computation
-      const l = (data.likelihood as number | undefined) ?? existing.likelihood;
-      const s = (data.severity as number | undefined) ?? existing.severity;
-      data.riskScore = l * s;
-      // Residual: use 'in body' check so explicit null clears the field
-      const rl = 'residualLikelihood' in req.body ? (data.residualLikelihood as number | null) : existing.residualLikelihood;
-      const rs = 'residualSeverity' in req.body ? (data.residualSeverity as number | null) : existing.residualSeverity;
-      data.residualScore = (rl && rs) ? rl * rs : null;
-      if (!('residualLikelihood' in req.body)) delete data.residualLikelihood;
-      if (!('residualSeverity' in req.body)) delete data.residualSeverity;
-      const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, data as any);
+      // Merge likelihood/severity with existing so score is always correct
+      const l: number = parsed.data.likelihood ?? existing.likelihood;
+      const s: number = parsed.data.severity ?? existing.severity;
+      // Residual: 'in req.body' check so explicit null clears the field
+      const rl: number | null = 'residualLikelihood' in req.body
+        ? (parsed.data.residualLikelihood ?? null) : existing.residualLikelihood;
+      const rs: number | null = 'residualSeverity' in req.body
+        ? (parsed.data.residualSeverity ?? null) : existing.residualSeverity;
+      const updatePayload: Partial<IsoRisk> = { ...parsed.data, riskScore: l * s, residualScore: (rl && rs) ? rl * rs : null };
+      if (!('residualLikelihood' in req.body)) delete updatePayload.residualLikelihood;
+      if (!('residualSeverity' in req.body)) delete updatePayload.residualSeverity;
+      const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, updatePayload);
       if (!risk) return res.status(404).json({ message: "Not found" });
       res.json(risk);
     } catch (e: any) { res.status(500).json({ message: e.message }); }

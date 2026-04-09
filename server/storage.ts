@@ -318,7 +318,7 @@ export interface IStorage {
   // ISO Risks
   getIsoRisks(userId: string, isoProjectId?: number): Promise<IsoRisk[]>;
   createIsoRisk(data: InsertIsoRisk): Promise<IsoRisk>;
-  updateIsoRisk(id: number, userId: string, data: Partial<InsertIsoRisk>): Promise<IsoRisk | undefined>;
+  updateIsoRisk(id: number, userId: string, data: Partial<IsoRisk>): Promise<IsoRisk | undefined>;
   deleteIsoRisk(id: number, userId: string): Promise<void>;
 
   // ISO Management Reviews
@@ -1806,7 +1806,7 @@ export class DatabaseStorage implements IStorage {
     const [r] = await db.insert(isoRisks).values(data).returning();
     return r;
   }
-  async updateIsoRisk(id: number, userId: string, data: Partial<InsertIsoRisk>): Promise<IsoRisk | undefined> {
+  async updateIsoRisk(id: number, userId: string, data: Partial<IsoRisk>): Promise<IsoRisk | undefined> {
     const [r] = await db.update(isoRisks).set({ ...data, updatedAt: new Date() }).where(and(eq(isoRisks.id, id), eq(isoRisks.userId, userId))).returning();
     return r;
   }
