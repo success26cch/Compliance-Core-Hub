@@ -303,7 +303,7 @@ export interface IStorage {
   createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment>;
 
   // ISO Objectives (KPI tracking — shared by Process Maps, Measurement, Management Review)
-  getIsoObjectives(userId: string): Promise<IsoObjective[]>;
+  getIsoObjectives(userId: string, isoProjectId?: number): Promise<IsoObjective[]>;
   getIsoObjectivesByProcess(userId: string, processName: string): Promise<IsoObjective[]>;
   createIsoObjective(data: InsertIsoObjective): Promise<IsoObjective>;
   updateIsoObjective(id: number, userId: string, data: Partial<InsertIsoObjective>): Promise<IsoObjective | undefined>;
@@ -311,7 +311,7 @@ export interface IStorage {
   upsertIsoObjectiveForProcess(userId: string, isoProjectId: number | undefined, processName: string, name: string, target: string, unit: string, responsible?: string): Promise<IsoObjective>;
 
   // ISO KPI Actuals (measurement log)
-  getIsoKpiActuals(userId: string, objectiveId?: number): Promise<IsoKpiActual[]>;
+  getIsoKpiActuals(userId: string, objectiveId?: number, isoProjectId?: number): Promise<IsoKpiActual[]>;
   createIsoKpiActual(data: InsertIsoKpiActual): Promise<IsoKpiActual>;
   deleteIsoKpiActual(id: number, userId: string): Promise<void>;
 
@@ -1730,8 +1730,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO Objectives ───────────────────────────────────────────────────────────
-  async getIsoObjectives(userId: string): Promise<IsoObjective[]> {
-    return db.select().from(isoObjectives).where(eq(isoObjectives.userId, userId)).orderBy(isoObjectives.processName, isoObjectives.name);
+  async getIsoObjectives(userId: string, isoProjectId?: number): Promise<IsoObjective[]> {
+    const cond = isoProjectId != null
+      ? and(eq(isoObjectives.userId, userId), eq(isoObjectives.isoProjectId, isoProjectId))
+      : eq(isoObjectives.userId, userId);
+    return db.select().from(isoObjectives).where(cond).orderBy(isoObjectives.processName, isoObjectives.name);
   }
 
   async getIsoObjectivesByProcess(userId: string, processName: string): Promise<IsoObjective[]> {
@@ -1766,9 +1769,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO KPI Actuals ──────────────────────────────────────────────────────────
-  async getIsoKpiActuals(userId: string, objectiveId?: number): Promise<IsoKpiActual[]> {
+  async getIsoKpiActuals(userId: string, objectiveId?: number, isoProjectId?: number): Promise<IsoKpiActual[]> {
     if (objectiveId) {
       return db.select().from(isoKpiActuals).where(and(eq(isoKpiActuals.userId, userId), eq(isoKpiActuals.objectiveId, objectiveId))).orderBy(desc(isoKpiActuals.loggedAt));
+    }
+    if (isoProjectId != null) {
+      const projectObjIds = await db.select({ id: isoObjectives.id })
+        .from(isoObjectives)
+        .where(and(eq(isoObjectives.userId, userId), eq(isoObjectives.isoProjectId, isoProjectId)));
+      const ids = projectObjIds.map(o => o.id);
+      if (ids.length === 0) return [];
+      return db.select().from(isoKpiActuals)
+        .where(and(eq(isoKpiActuals.userId, userId), inArray(isoKpiActuals.objectiveId, ids)))
+        .orderBy(desc(isoKpiActuals.loggedAt));
     }
     return db.select().from(isoKpiActuals).where(eq(isoKpiActuals.userId, userId)).orderBy(desc(isoKpiActuals.loggedAt));
   }

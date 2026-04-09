@@ -251,18 +251,27 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   const [customEnd, setCustomEnd] = useState("");
   const activePeriodRange = periodRange(periodWindow, customStart, customEnd);
 
-  const { data: objectives = [], isLoading } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
-  const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({ queryKey: ["/api/iso-kpi-actuals"] });
+  const objQKey = ["/api/iso-objectives", isoProjectId];
+  const actualsQKey = ["/api/iso-kpi-actuals", isoProjectId];
+
+  const { data: objectives = [], isLoading } = useQuery<IsoObjective[]>({
+    queryKey: objQKey,
+    queryFn: () => fetch(`/api/iso-objectives${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
+  const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({
+    queryKey: actualsQKey,
+    queryFn: () => fetch(`/api/iso-kpi-actuals${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
 
   const updateObjMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-objectives/${id}`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] }); toast({ title: "KPI updated" }); setEditingObj(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: objQKey }); toast({ title: "KPI updated" }); setEditingObj(null); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const logMutation = useMutation({
     mutationFn: (d: any) => apiRequest("POST", "/api/iso-kpi-actuals", d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-kpi-actuals"] }); toast({ title: "Measurement logged" }); setLogFor(null); setLogForm(EMPTY_LOG_FORM); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: actualsQKey }); toast({ title: "Measurement logged" }); setLogFor(null); setLogForm(EMPTY_LOG_FORM); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 

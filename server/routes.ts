@@ -6068,9 +6068,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       const userId = (req.user as any).claims.sub;
       const processName = req.query.processName as string | undefined;
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
       const objectives = processName
         ? await storage.getIsoObjectivesByProcess(userId, processName)
-        : await storage.getIsoObjectives(userId);
+        : await storage.getIsoObjectives(userId, isoProjectId);
       res.json(objectives);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6127,7 +6128,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       const userId = (req.user as any).claims.sub;
       const objectiveId = req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined;
-      const actuals = await storage.getIsoKpiActuals(userId, objectiveId);
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const actuals = await storage.getIsoKpiActuals(userId, objectiveId, isoProjectId);
       res.json(actuals);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });

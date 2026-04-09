@@ -149,8 +149,14 @@ function ReviewDetail({
     queryKey: ["/api/iso-management-reviews", review.id, "actions"],
     queryFn: () => fetch(`/api/iso-management-reviews/${review.id}/actions`).then(r => r.json()),
   });
-  const { data: objectives = [] } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
-  const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({ queryKey: ["/api/iso-kpi-actuals"] });
+  const { data: objectives = [] } = useQuery<IsoObjective[]>({
+    queryKey: ["/api/iso-objectives", isoProjectId],
+    queryFn: () => fetch(`/api/iso-objectives${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
+  const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({
+    queryKey: ["/api/iso-kpi-actuals", isoProjectId],
+    queryFn: () => fetch(`/api/iso-kpi-actuals${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
 
   const previousReview = [...allReviews]
     .filter(r => r.id !== review.id && new Date(r.meetingDate) < new Date(review.meetingDate))
@@ -552,8 +558,11 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
     queryKey: actionsQKey,
     queryFn: () => fetch(`/api/iso-review-action-items${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
   });
-  // Objectives for the "X of Y on track" projector summary
-  const { data: objectives = [] } = useQuery<IsoObjective[]>({ queryKey: ["/api/iso-objectives"] });
+  // Objectives for the "X of Y on track" projector summary — scoped to this project
+  const { data: objectives = [] } = useQuery<IsoObjective[]>({
+    queryKey: ["/api/iso-objectives", isoProjectId],
+    queryFn: () => fetch(`/api/iso-objectives${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
 
   const createMutation = useMutation({
     // Parse JSON from response so onSuccess gets the review object, not a Response
