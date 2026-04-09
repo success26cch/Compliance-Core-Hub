@@ -13,7 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plus, Send, Lock, Sparkles, ChevronRight, Award,
+  Plus, Send, Lock, Sparkles, ChevronRight, ChevronDown, ChevronUp, Award,
   ClipboardCheck, FileSearch, BookOpen, Shield, Layers,
   CheckCircle2, MessageSquare, Zap, Star, Activity,
   AlertTriangle, Menu, FileText, Car, Vault,
@@ -790,6 +790,17 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
   const [procInputs, setProcInputs] = useState("");
   const [procOutputs, setProcOutputs] = useState("");
   const [procClauses, setProcClauses] = useState<string[]>([]);
+  const [showAdvancedProc, setShowAdvancedProc] = useState(false);
+  const [procExecutors, setProcExecutors] = useState("");
+  const [procResources, setProcResources] = useState("");
+  const [procStartPoint, setProcStartPoint] = useState("");
+  const [procEndPoint, setProcEndPoint] = useState("");
+  const [procActivities, setProcActivities] = useState("");
+  const [procRisks, setProcRisks] = useState("");
+  const [procDocInfo, setProcDocInfo] = useState("");
+  const [procCSR, setProcCSR] = useState("");
+  const [procSite, setProcSite] = useState<"PLANT" | "REMOTE_SITE" | "CORPORATE">("PLANT");
+  const [procRow, setProcRow] = useState("");
 
   const [coreValues, setCoreValues] = useState<string[]>(project.coreValues?.length ? project.coreValues : ["", "", ""]);
   const [riskPhil, setRiskPhil] = useState<string[]>(project.riskPhilosophy || []);
@@ -836,8 +847,22 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
 
   const addProcess = () => {
     if (!procName.trim()) return;
-    setProcesses(prev => [...prev, { name: procName, owner: procOwner, kpi: procKPI, inputs: procInputs, outputs: procOutputs, clauses: procClauses }]);
+    const isIATF = standard.includes("IATF");
+    const newProc: ProcessEntry = {
+      name: procName, owner: procOwner, kpi: procKPI, inputs: procInputs, outputs: procOutputs, clauses: procClauses,
+      executors: procExecutors || undefined, resources: procResources || undefined,
+      startingPoint: procStartPoint || undefined, endPoint: procEndPoint || undefined,
+      keyActivities: procActivities || undefined, risksAndOpportunities: procRisks || undefined,
+      documentedInfo: procDocInfo || undefined,
+      csrReq: isIATF && procCSR ? procCSR : undefined,
+      site: isIATF ? procSite : undefined,
+      row: procRow || undefined,
+    };
+    setProcesses(prev => [...prev, newProc]);
     setProcName(""); setProcOwner(""); setProcKPI(""); setProcInputs(""); setProcOutputs(""); setProcClauses([]);
+    setProcExecutors(""); setProcResources(""); setProcStartPoint(""); setProcEndPoint("");
+    setProcActivities(""); setProcRisks(""); setProcDocInfo(""); setProcCSR(""); setProcSite("PLANT"); setProcRow("");
+    setShowAdvancedProc(false);
     setAddingProc(false);
   };
 
@@ -1090,6 +1115,74 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
                             </div>
                           </div>
                         )}
+                        {/* Advanced Details toggle */}
+                        <div className="border border-border/40 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary transition-colors bg-muted/30"
+                            onClick={() => setShowAdvancedProc(v => !v)}
+                            data-testid="button-wizard-toggle-advanced"
+                          >
+                            <span>Advanced Turtle Diagram Details (optional)</span>
+                            {showAdvancedProc ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          </button>
+                          {showAdvancedProc && (
+                            <div className="p-3 space-y-2 bg-white dark:bg-card">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Executors / Who Performs</label>
+                                  <Input value={procExecutors} onChange={e => setProcExecutors(e.target.value)} placeholder="Roles executing this process" className="h-7 text-xs" data-testid="input-wizard-proc-executors" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Resources (People, Machines, Tools)</label>
+                                  <Input value={procResources} onChange={e => setProcResources(e.target.value)} placeholder="e.g., CNC Machine, QC Staff" className="h-7 text-xs" data-testid="input-wizard-proc-resources" />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Starting Point / Trigger</label>
+                                  <Input value={procStartPoint} onChange={e => setProcStartPoint(e.target.value)} placeholder="What triggers this process" className="h-7 text-xs" data-testid="input-wizard-proc-start" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground mb-1 block">End Point / Completion</label>
+                                  <Input value={procEndPoint} onChange={e => setProcEndPoint(e.target.value)} placeholder="How you know it's done" className="h-7 text-xs" data-testid="input-wizard-proc-end" />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Key Activities (transformation steps)</label>
+                                <Textarea value={procActivities} onChange={e => setProcActivities(e.target.value)} placeholder="Core steps that transform inputs to outputs…" className="text-xs min-h-[50px] resize-none" data-testid="input-wizard-proc-activities" />
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Risks &amp; Opportunities</label>
+                                  <Input value={procRisks} onChange={e => setProcRisks(e.target.value)} placeholder="Key risks and opportunities" className="h-7 text-xs" data-testid="input-wizard-proc-risks" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Documented Information</label>
+                                  <Input value={procDocInfo} onChange={e => setProcDocInfo(e.target.value)} placeholder="Procedures, records referenced" className="h-7 text-xs" data-testid="input-wizard-proc-docinfo" />
+                                </div>
+                              </div>
+                              {standard.includes("IATF") && (
+                                <>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Customer Specific Requirements (CSR)</label>
+                                    <Input value={procCSR} onChange={e => setProcCSR(e.target.value)} placeholder="Applicable CSR references" className="h-7 text-xs" data-testid="input-wizard-proc-csr" />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-bold text-muted-foreground mb-1 block">Site Assignment</label>
+                                    <div className="flex gap-2">
+                                      {(["PLANT", "REMOTE_SITE", "CORPORATE"] as const).map(s => (
+                                        <button key={s} type="button" onClick={() => setProcSite(s)}
+                                          className={`px-2 py-1 rounded text-[10px] font-bold border transition-all ${procSite === s ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`}
+                                          data-testid={`button-wizard-proc-site-${s.toLowerCase()}`}>{s.replace("_", " ")}</button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         <Button onClick={addProcess} disabled={!procName.trim()} className="w-full bg-accent hover:bg-accent/90 text-white" data-testid="button-wizard-save-process">
                           Save Process →
                         </Button>

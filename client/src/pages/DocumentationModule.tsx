@@ -396,6 +396,7 @@ function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, getIcon
 }
 
 function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isPending, onAskIsa }: any) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<InsertIsoDocument>>({
     docType: 'procedure',
     title: '',
@@ -408,6 +409,45 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     tags: [],
     isoProjectId: project?.id || null,
   });
+  const [isDraftingDialog, setIsDraftingDialog] = useState(false);
+
+  const handleDialogDraft = async () => {
+    if (!doc?.id) return;
+    setIsDraftingDialog(true);
+    setFormData(prev => ({ ...prev, content: "" }));
+    try {
+      const res = await fetch(`/api/iso-documents/${doc.id}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Draft request failed");
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("No stream");
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() || "";
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) setFormData(prev => ({ ...prev, content: (prev.content || "") + data.content }));
+              if (data.done) setIsDraftingDialog(false);
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      toast({ title: "Draft failed", description: "Could not generate draft.", variant: "destructive" });
+    } finally {
+      setIsDraftingDialog(false);
+    }
+  };
 
   // Sync with doc if editing
   useEffect(() => {
@@ -545,24 +585,44 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <Label>Content</Label>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                className="text-accent text-xs h-7 gap-1"
-                onClick={handleAskGuidance}
-              >
-                <Sparkles className="w-3 h-3" /> Ask Isa for Structure Guidance
-              </Button>
+              <div className="flex items-center gap-1.5">
+                {doc && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-violet-600 text-xs h-7 gap-1 hover:bg-violet-50"
+                    onClick={handleDialogDraft}
+                    disabled={isDraftingDialog}
+                    data-testid="button-draft-isa-dialog"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {isDraftingDialog ? "Drafting…" : "Draft with Isa"}
+                  </Button>
+                )}
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-accent text-xs h-7 gap-1"
+                  onClick={handleAskGuidance}
+                >
+                  <Sparkles className="w-3 h-3" /> Ask Isa
+                </Button>
+              </div>
             </div>
             <Textarea 
               value={formData.content || ''} 
               onChange={e => setFormData({...formData, content: e.target.value})} 
               placeholder="Describe the document purpose, scope, and key steps..."
-              className="min-h-[200px]"
+              className={`min-h-[200px] ${isDraftingDialog ? "text-violet-700 dark:text-violet-300" : ""}`}
+              data-testid="textarea-doc-content"
             />
+            {isDraftingDialog && (
+              <p className="text-[10px] text-violet-600 animate-pulse font-semibold">Isa is writing your document…</p>
+            )}
           </div>
 
           {doc && (

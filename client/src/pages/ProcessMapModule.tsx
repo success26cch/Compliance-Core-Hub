@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Edit2, Save, X,
@@ -124,13 +124,37 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
     );
   }
 
+  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
   return (
-    <div className="flex-1 overflow-auto p-4">
-      <div className="mb-4">
-        <h2 className="text-lg font-black text-primary">Process Interaction Map</h2>
-        <p className="text-xs text-muted-foreground">{project.orgName} · {project.standard} · Click any process to view its Turtle Diagram</p>
+    <div className="flex-1 overflow-auto">
+      {/* ─── ISO Process Interaction Map Header ─── */}
+      <div className="border-b border-border/60 bg-white dark:bg-card px-6 py-3 flex items-center gap-4">
+        {/* Logo placeholder */}
+        <div className="w-14 h-14 border-2 border-dashed border-border/60 rounded-lg flex items-center justify-center shrink-0 bg-muted/30">
+          <span className="text-[9px] text-muted-foreground/60 font-bold text-center leading-tight">ORG<br/>LOGO</span>
+        </div>
+        <div className="flex-1 text-center">
+          <h2 className="text-base font-black text-primary uppercase tracking-wide">Process Interaction Map</h2>
+          <p className="text-xs text-muted-foreground">{project.orgName}</p>
+        </div>
+        <div className="text-right text-[10px] text-muted-foreground space-y-0.5 shrink-0">
+          <div><span className="font-bold text-primary">Standard:</span> {project.standard}</div>
+          <div><span className="font-bold text-primary">Rev:</span> 1.0</div>
+          <div><span className="font-bold text-primary">Date:</span> {today}</div>
+        </div>
       </div>
 
+      {/* ─── Map Body: Customer Requirements → Processes → Customer Satisfaction ─── */}
+      <div className="flex items-stretch min-h-[400px]">
+        {/* Left: Customer Requirements */}
+        <div className="w-20 shrink-0 flex items-center justify-center bg-blue-50 dark:bg-blue-950/20 border-r border-blue-200 dark:border-blue-800/40">
+          <p className="text-[9px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-widest" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+            Customer Requirements &amp; Interested Party Expectations →
+          </p>
+        </div>
+
+        <div className="flex-1 p-4 space-y-3">
       {isIATF ? (
         <div className="space-y-3">
           {rows.map(row => {
@@ -196,13 +220,22 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
           })}
         </div>
       )}
+        </div>
+
+        {/* Right: Customer Satisfaction */}
+        <div className="w-20 shrink-0 flex items-center justify-center bg-green-50 dark:bg-green-950/20 border-l border-green-200 dark:border-green-800/40">
+          <p className="text-[9px] font-black text-green-700 dark:text-green-300 uppercase tracking-widest" style={{ writingMode: "vertical-rl" }}>
+            → Customer Satisfaction &amp; Interested Party Fulfillment
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
 // ─── Turtle Diagram Field ──────────────────────────────────────────────────────
 function TurtleField({ label, icon: Icon, value, placeholder, onChange, multiline = false, color }: {
-  label: string; icon: any; value: string; placeholder: string;
+  label: string; icon: React.ComponentType<{ className?: string }>; value: string; placeholder: string;
   onChange: (v: string) => void; multiline?: boolean; color: string;
 }) {
   return (
@@ -337,6 +370,16 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
       const all = (project.processes || []) as ProcessEntry[];
       const updated = all.map(p => p.name === process.name ? local : p);
       await patchProjectMut.mutateAsync(updated);
+      if (local.kpi?.trim() && objectives.length === 0) {
+        const kpiName = local.kpi.trim();
+        await fetch("/api/iso-objectives/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ processName: process.name, name: kpiName, target: "", unit: "", responsible: local.owner, isoProjectId: project.id }),
+        });
+        qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] });
+      }
       onSave(local);
       toast({ title: "Turtle diagram saved" });
     } catch {

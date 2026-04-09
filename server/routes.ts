@@ -6168,8 +6168,9 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (!doc) return res.status(404).json({ message: "Document not found" });
 
       const project = await storage.getIsoProject(userId);
+      interface ProcessJsonEntry { name: string; owner?: string; inputs?: string; outputs?: string; kpi?: string; clauses?: string[]; executors?: string; resources?: string; keyActivities?: string; startingPoint?: string; endPoint?: string; risksAndOpportunities?: string; documentedInfo?: string; csrReq?: string; site?: string; row?: string; }
       const processContext = project?.processes
-        ? (project.processes as any[]).map((p: any) => `  - ${p.name} | Owner: ${p.owner} | Inputs: ${p.inputs} | Outputs: ${p.outputs}`).join("\n")
+        ? (project.processes as ProcessJsonEntry[]).map((p) => `  - ${p.name} | Owner: ${p.owner ?? ""} | Inputs: ${p.inputs ?? ""} | Outputs: ${p.outputs ?? ""}`).join("\n")
         : "No processes defined.";
 
       const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Your task is to draft a professional ISO management system document.
