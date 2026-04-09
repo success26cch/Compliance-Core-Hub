@@ -14,7 +14,7 @@ import {
   BarChart2, Plus, Pencil, TrendingUp, TrendingDown, Minus, Bot,
   ChevronDown, ChevronUp, CheckCircle, AlertCircle, MinusCircle,
 } from "lucide-react";
-import type { IsoObjective, IsoKpiActual } from "@shared/schema";
+import type { IsoObjective, IsoKpiActual, InsertIsoKpiActual, InsertIsoObjective } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const statusIcon = (s: string) => {
@@ -264,15 +264,15 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   });
 
   const updateObjMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-objectives/${id}`, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Omit<InsertIsoObjective, 'userId'>> }) => apiRequest("PATCH", `/api/iso-objectives/${id}`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: objQKey }); toast({ title: "KPI updated" }); setEditingObj(null); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const logMutation = useMutation({
-    mutationFn: (d: any) => apiRequest("POST", "/api/iso-kpi-actuals", d),
+    mutationFn: (d: Omit<InsertIsoKpiActual, 'userId'>) => apiRequest("POST", "/api/iso-kpi-actuals", d),
     onSuccess: () => { qc.invalidateQueries({ queryKey: actualsQKey }); toast({ title: "Measurement logged" }); setLogFor(null); setLogForm(EMPTY_LOG_FORM); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const openEdit = (obj: IsoObjective) => {

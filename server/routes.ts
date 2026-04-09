@@ -6243,7 +6243,7 @@ Output only the document content. No preamble. No closing remarks about the docu
   app.post("/api/iso/module-isa-chat", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
-      const { messages, systemPrompt } = req.body;
+      const { messages, systemPrompt } = req.body as { messages: { role: string; content: string }[]; systemPrompt?: string };
       if (!messages || !Array.isArray(messages)) return res.status(400).json({ message: "messages required" });
       const anthropicClient = new Anthropic({
         apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
@@ -6253,7 +6253,7 @@ Output only the document content. No preamble. No closing remarks about the docu
         model: "claude-sonnet-4-5",
         max_tokens: 1024,
         system: systemPrompt || "You are Isa, Lead ISO Auditor for ACSI ISO Manager. Provide expert ISO guidance.",
-        messages: messages.map((m: any) => ({ role: m.role === "user" ? "user" : "assistant", content: String(m.content) })),
+        messages: messages.map(m => ({ role: m.role === "user" ? "user" as const : "assistant" as const, content: String(m.content) })),
       });
       const content = response.content[0].type === "text" ? response.content[0].text : "";
       res.json({ content });
@@ -6278,11 +6278,13 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const { likelihood = 1, severity = 1, ...rest } = req.body;
+      const { insertIsoRiskSchema } = await import("@shared/schema");
+      const parsed = insertIsoRiskSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const { likelihood = 1, severity = 1, residualLikelihood, residualSeverity } = parsed.data;
       const riskScore = likelihood * severity;
-      const residualScore = (req.body.residualLikelihood && req.body.residualSeverity)
-        ? req.body.residualLikelihood * req.body.residualSeverity : undefined;
-      const risk = await storage.createIsoRisk({ ...rest, userId, likelihood, severity, riskScore, residualScore });
+      const residualScore = (residualLikelihood && residualSeverity) ? residualLikelihood * residualSeverity : undefined;
+      const risk = await storage.createIsoRisk({ ...parsed.data, likelihood, severity, riskScore, residualScore });
       res.status(201).json(risk);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6293,15 +6295,21 @@ Output only the document content. No preamble. No closing remarks about the docu
     try {
       const existing = (await storage.getIsoRisks(userId)).find(r => r.id === parseInt(req.params.id));
       if (!existing) return res.status(404).json({ message: "Not found" });
-      const data = { ...req.body };
-      // Merge with existing values so a partial update doesn't corrupt the score
-      const l = data.likelihood ?? existing.likelihood;
-      const s = data.severity ?? existing.severity;
+      const { insertIsoRiskSchema } = await import("@shared/schema");
+      const parsed = insertIsoRiskSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const data: Record<string, unknown> = { ...parsed.data };
+      // Merge with existing values for risk score computation
+      const l = (data.likelihood as number | undefined) ?? existing.likelihood;
+      const s = (data.severity as number | undefined) ?? existing.severity;
       data.riskScore = l * s;
-      const rl = data.residualLikelihood ?? existing.residualLikelihood;
-      const rs = data.residualSeverity ?? existing.residualSeverity;
-      if (rl && rs) data.residualScore = rl * rs;
-      const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, data);
+      // Residual: use 'in body' check so explicit null clears the field
+      const rl = 'residualLikelihood' in req.body ? (data.residualLikelihood as number | null) : existing.residualLikelihood;
+      const rs = 'residualSeverity' in req.body ? (data.residualSeverity as number | null) : existing.residualSeverity;
+      data.residualScore = (rl && rs) ? rl * rs : null;
+      if (!('residualLikelihood' in req.body)) delete data.residualLikelihood;
+      if (!('residualSeverity' in req.body)) delete data.residualSeverity;
+      const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, data as any);
       if (!risk) return res.status(404).json({ message: "Not found" });
       res.json(risk);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -6331,7 +6339,10 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const review = await storage.createIsoManagementReview({ ...req.body, userId });
+      const { insertIsoManagementReviewSchema } = await import("@shared/schema");
+      const parsed = insertIsoManagementReviewSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const review = await storage.createIsoManagementReview(parsed.data);
       res.status(201).json(review);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6340,7 +6351,10 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const review = await storage.updateIsoManagementReview(parseInt(req.params.id), userId, req.body);
+      const { insertIsoManagementReviewSchema } = await import("@shared/schema");
+      const parsed = insertIsoManagementReviewSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const review = await storage.updateIsoManagementReview(parseInt(req.params.id), userId, parsed.data);
       if (!review) return res.status(404).json({ message: "Not found" });
       res.json(review);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -6379,7 +6393,10 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const item = await storage.createIsoReviewActionItem({ ...req.body, userId, reviewId: parseInt(req.params.reviewId) });
+      const { insertIsoReviewActionItemSchema } = await import("@shared/schema");
+      const parsed = insertIsoReviewActionItemSchema.safeParse({ ...req.body, userId, reviewId: parseInt(req.params.reviewId) });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.createIsoReviewActionItem(parsed.data);
       res.status(201).json(item);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6388,7 +6405,10 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const item = await storage.updateIsoReviewActionItem(parseInt(req.params.id), userId, req.body);
+      const { insertIsoReviewActionItemSchema } = await import("@shared/schema");
+      const parsed = insertIsoReviewActionItemSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.updateIsoReviewActionItem(parseInt(req.params.id), userId, parsed.data);
       if (!item) return res.status(404).json({ message: "Not found" });
       res.json(item);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -6418,7 +6438,10 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const comm = await storage.createIsoCommunication({ ...req.body, userId });
+      const { insertIsoCommunicationSchema } = await import("@shared/schema");
+      const parsed = insertIsoCommunicationSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const comm = await storage.createIsoCommunication(parsed.data);
       res.status(201).json(comm);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6427,7 +6450,10 @@ Output only the document content. No preamble. No closing remarks about the docu
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const comm = await storage.updateIsoCommunication(parseInt(req.params.id), userId, req.body);
+      const { insertIsoCommunicationSchema } = await import("@shared/schema");
+      const parsed = insertIsoCommunicationSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const comm = await storage.updateIsoCommunication(parseInt(req.params.id), userId, parsed.data);
       if (!comm) return res.status(404).json({ message: "Not found" });
       res.json(comm);
     } catch (e: any) { res.status(500).json({ message: e.message }); }

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Plus, Pencil, Trash2, Bot, Globe, Building2, CalendarRange, Search } from "lucide-react";
-import type { IsoCommunication } from "@shared/schema";
+import type { IsoCommunication, InsertIsoCommunication } from "@shared/schema";
 
 const MEDIUMS = ["email", "meeting", "notice", "bulletin", "training", "report", "poster", "intranet", "other"];
 
@@ -58,15 +58,15 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/iso-communications", data),
+    mutationFn: (data: Omit<InsertIsoCommunication, 'userId'>) => apiRequest("POST", "/api/iso-communications", data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: commsQKey }); toast({ title: "Communication logged" }); resetForm(); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-communications/${id}`, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Omit<InsertIsoCommunication, 'userId'>> }) => apiRequest("PATCH", `/api/iso-communications/${id}`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: commsQKey }); toast({ title: "Updated" }); resetForm(); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({

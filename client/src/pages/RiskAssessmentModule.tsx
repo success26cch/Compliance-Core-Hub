@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, ShieldAlert, Bot, ChevronDown, ChevronUp } from "lucide-react";
-import type { IsoRisk } from "@shared/schema";
+import type { IsoRisk, InsertIsoRisk } from "@shared/schema";
 
 const riskColor = (score: number) => {
   if (score <= 4) return { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", label: "Low" };
@@ -87,15 +87,15 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/iso-risks", data),
+    mutationFn: (data: Omit<InsertIsoRisk, 'userId'>) => apiRequest("POST", "/api/iso-risks", data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: risksQKey }); toast({ title: "Risk added" }); setShowForm(false); resetForm(); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-risks/${id}`, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Omit<InsertIsoRisk, 'userId'>> }) => apiRequest("PATCH", `/api/iso-risks/${id}`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: risksQKey }); toast({ title: "Risk updated" }); setEditing(null); setShowForm(false); resetForm(); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({

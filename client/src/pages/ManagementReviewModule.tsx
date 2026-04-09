@@ -14,7 +14,7 @@ import {
   ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft,
   CheckCircle, Clock, AlertTriangle, AlertCircle, Circle, Loader2,
 } from "lucide-react";
-import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual } from "@shared/schema";
+import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual, InsertIsoManagementReview, InsertIsoReviewActionItem } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 // ─── ISO 9.3.2 Required Inputs (Clause-exact) + 9.3.3 Outputs ────────────────
@@ -172,24 +172,24 @@ function ReviewDetail({
   const openPrevActions = prevActions.filter(a => a.status === "open" || a.status === "in_progress");
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("PATCH", `/api/iso-management-reviews/${review.id}`, data).then(r => r.json()),
+    mutationFn: (data: Partial<Omit<InsertIsoManagementReview, 'userId'>>) => apiRequest("PATCH", `/api/iso-management-reviews/${review.id}`, data).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", isoProjectId] }); toast({ title: "Review saved" }); },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const addActionMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", `/api/iso-management-reviews/${review.id}/actions`, data).then(r => r.json()),
+    mutationFn: (data: Omit<InsertIsoReviewActionItem, 'userId' | 'reviewId'>) => apiRequest("POST", `/api/iso-management-reviews/${review.id}/actions`, data).then(r => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] });
       toast({ title: "Action item added" });
       setShowActionForm(false);
       setActionForm({ description: "", owner: "", dueDate: "" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const updateActionMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PATCH", `/api/iso-review-action-items/${id}`, data).then(r => r.json()),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Omit<InsertIsoReviewActionItem, 'userId' | 'reviewId'>> }) => apiRequest("PATCH", `/api/iso-review-action-items/${id}`, data).then(r => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/iso-management-reviews", review.id, "actions"] }),
   });
 
@@ -200,7 +200,7 @@ function ReviewDetail({
 
   const cycleActionStatus = (action: IsoReviewActionItem) => {
     const next = ACTION_STATUS_CYCLE[action.status] ?? "open";
-    const patch: any = { status: next };
+    const patch: { status: string; closedAt?: string | null } = { status: next };
     if (next === "closed") patch.closedAt = new Date().toISOString();
     else patch.closedAt = null;
     updateActionMutation.mutate({ id: action.id, data: patch });
@@ -566,15 +566,15 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
 
   const createMutation = useMutation({
     // Parse JSON from response so onSuccess gets the review object, not a Response
-    mutationFn: (data: any) => apiRequest("POST", "/api/iso-management-reviews", data).then(r => r.json()),
-    onSuccess: (newReview: any) => {
+    mutationFn: (data: Omit<InsertIsoManagementReview, 'userId'>) => apiRequest("POST", "/api/iso-management-reviews", data).then(r => r.json()),
+    onSuccess: (newReview: IsoManagementReview) => {
       qc.invalidateQueries({ queryKey: reviewsQKey });
       toast({ title: "Review created" });
       setShowForm(false);
       setForm(EMPTY_REVIEW_FORM);
       setSelected(newReview);
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
