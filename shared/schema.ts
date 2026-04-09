@@ -1326,3 +1326,40 @@ export const isoAwarenessAcknowledgments = pgTable("iso_awareness_acknowledgment
 export const insertIsoAwarenessAcknowledgmentSchema = createInsertSchema(isoAwarenessAcknowledgments).omit({ id: true, acknowledgedAt: true });
 export type IsoAwarenessAcknowledgment = typeof isoAwarenessAcknowledgments.$inferSelect;
 export type InsertIsoAwarenessAcknowledgment = z.infer<typeof insertIsoAwarenessAcknowledgmentSchema>;
+
+// ─── ISO Manager: Objectives / KPI Tracking ───────────────────────────────────
+// Shared across Turtle Diagrams, Measurement & Monitoring, and Management Review
+export const isoObjectives = pgTable("iso_objectives", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  processName: text("process_name"), // linked process name
+  name: text("name").notNull(), // KPI / objective name
+  description: text("description"),
+  target: text("target"), // target value (numeric or qualitative)
+  unit: text("unit"), // %, count, days, score, etc.
+  frequency: text("frequency").default("monthly"), // 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual'
+  responsible: text("responsible"), // process owner / responsible person
+  status: text("status").notNull().default("on_track"), // 'on_track' | 'at_risk' | 'off_track'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoObjectiveSchema = createInsertSchema(isoObjectives).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoObjective = typeof isoObjectives.$inferSelect;
+export type InsertIsoObjective = z.infer<typeof insertIsoObjectiveSchema>;
+
+// ─── ISO Manager: KPI Actuals (measurement log per objective) ─────────────────
+export const isoKpiActuals = pgTable("iso_kpi_actuals", {
+  id: serial("id").primaryKey(),
+  objectiveId: integer("objective_id").notNull(),
+  userId: text("user_id").notNull(),
+  period: text("period").notNull(), // e.g. '2025-Q1', '2025-04', '2025-W14'
+  actual: text("actual").notNull(), // actual value as string
+  notes: text("notes"),
+  loggedAt: timestamp("logged_at").defaultNow(),
+});
+
+export const insertIsoKpiActualSchema = createInsertSchema(isoKpiActuals).omit({ id: true, loggedAt: true });
+export type IsoKpiActual = typeof isoKpiActuals.$inferSelect;
+export type InsertIsoKpiActual = z.infer<typeof insertIsoKpiActualSchema>;

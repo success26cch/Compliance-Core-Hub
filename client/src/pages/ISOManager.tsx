@@ -28,6 +28,7 @@ import { NonconformanceManager } from "./NonconformanceManager";
 import { DocumentationModule } from "./DocumentationModule";
 import { InternalAuditModule } from "./InternalAuditModule";
 import { TrainingAwarenessModule } from "./TrainingAwarenessModule";
+import { ProcessMapModule } from "./ProcessMapModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -260,12 +261,13 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'chat' | 'nc' | 'documentation' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
+type SectionKey = 'chat' | 'nc' | 'documentation' | 'process_map' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   chat:              [null, undefined, 'librarian', 'trainer', 'auditor'],
   nc:                [null, undefined, 'librarian', 'trainer', 'auditor'],
   documentation:     [null, undefined, 'librarian', 'trainer', 'auditor'],
+  process_map:       [null, undefined, 'librarian', 'trainer', 'auditor'],
   communication:     [null, undefined, 'trainer', 'auditor'],
   training:          [null, undefined, 'trainer', 'auditor'],
   risk:              [null, undefined, 'auditor'],
@@ -298,7 +300,7 @@ export default function ISOManager() {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
-  const [activeSection, setActiveSection] = useState<'chat' | 'nc' | 'documentation' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement'>('chat');
+  const [activeSection, setActiveSection] = useState<SectionKey>('chat');
 
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
@@ -516,11 +518,12 @@ export default function ISOManager() {
               <div className="mt-6 space-y-1">
                 <p className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Modules</p>
 
-                {(["chat","nc","documentation","communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
+                {(["chat","nc","documentation","process_map","communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
                   const META: Record<SectionKey, { icon: any; label: string }> = {
                     chat:              { icon: MessageSquare,  label: "AI Consultation" },
                     nc:                { icon: Shield,         label: "NC & CAPA" },
                     documentation:     { icon: FileText,       label: "Documentation" },
+                    process_map:       { icon: MapPin,         label: "Process Maps" },
                     communication:     { icon: Mail,           label: "Communication" },
                     risk:              { icon: AlertTriangle,  label: "Risk Assessment" },
                     management_review: { icon: BarChart2,      label: "Management Review" },
@@ -644,6 +647,8 @@ export default function ISOManager() {
               <NonconformanceManager onAskIsa={handleAskIsa} />
             ) : activeSection === 'documentation' ? (
               <DocumentationModule onAskIsa={handleAskIsa} />
+            ) : activeSection === 'process_map' ? (
+              <ProcessMapModule project={project ?? null} onStartWizard={handleStartWizard} />
             ) : activeSection === 'communication' ? (
               canAccessSection('communication', isoRole, isSuperadmin)
                 ? <ComingSoonModule moduleName="Communication" icon={Mail} />

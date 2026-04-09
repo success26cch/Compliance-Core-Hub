@@ -7,10 +7,13 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type DotRoadsideInspection, type InsertDotRoadsideInspection,
   type DotDvirLog, type InsertDotDvirLog,
   isoAudits, isoAuditFindings, isoAwarenessNotices, isoAwarenessAcknowledgments,
+  isoObjectives, isoKpiActuals,
   type IsoAudit, type InsertIsoAudit,
   type IsoAuditFinding, type InsertIsoAuditFinding,
   type IsoAwarenessNotice, type InsertIsoAwarenessNotice,
   type IsoAwarenessAcknowledgment, type InsertIsoAwarenessAcknowledgment,
+  type IsoObjective, type InsertIsoObjective,
+  type IsoKpiActual, type InsertIsoKpiActual,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
@@ -293,6 +296,19 @@ export interface IStorage {
   // ISO Awareness Acknowledgments
   getIsoAwarenessAcknowledgments(noticeId: number): Promise<IsoAwarenessAcknowledgment[]>;
   createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment>;
+
+  // ISO Objectives (KPI tracking — shared by Process Maps, Measurement, Management Review)
+  getIsoObjectives(userId: string): Promise<IsoObjective[]>;
+  getIsoObjectivesByProcess(userId: string, processName: string): Promise<IsoObjective[]>;
+  createIsoObjective(data: InsertIsoObjective): Promise<IsoObjective>;
+  updateIsoObjective(id: number, userId: string, data: Partial<InsertIsoObjective>): Promise<IsoObjective | undefined>;
+  deleteIsoObjective(id: number, userId: string): Promise<void>;
+  upsertIsoObjectiveForProcess(userId: string, isoProjectId: number | undefined, processName: string, name: string, target: string, unit: string, responsible?: string): Promise<IsoObjective>;
+
+  // ISO KPI Actuals (measurement log)
+  getIsoKpiActuals(userId: string, objectiveId?: number): Promise<IsoKpiActual[]>;
+  createIsoKpiActual(data: InsertIsoKpiActual): Promise<IsoKpiActual>;
+  deleteIsoKpiActual(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1680,6 +1696,56 @@ export class DatabaseStorage implements IStorage {
   async createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment> {
     const [rec] = await db.insert(isoAwarenessAcknowledgments).values(data).returning();
     return rec;
+  }
+
+  // ─── ISO Objectives ───────────────────────────────────────────────────────────
+  async getIsoObjectives(userId: string): Promise<IsoObjective[]> {
+    return db.select().from(isoObjectives).where(eq(isoObjectives.userId, userId)).orderBy(isoObjectives.processName, isoObjectives.name);
+  }
+
+  async getIsoObjectivesByProcess(userId: string, processName: string): Promise<IsoObjective[]> {
+    return db.select().from(isoObjectives).where(and(eq(isoObjectives.userId, userId), eq(isoObjectives.processName, processName)));
+  }
+
+  async createIsoObjective(data: InsertIsoObjective): Promise<IsoObjective> {
+    const [rec] = await db.insert(isoObjectives).values(data).returning();
+    return rec;
+  }
+
+  async updateIsoObjective(id: number, userId: string, data: Partial<InsertIsoObjective>): Promise<IsoObjective | undefined> {
+    const [rec] = await db.update(isoObjectives).set({ ...data, updatedAt: new Date() }).where(and(eq(isoObjectives.id, id), eq(isoObjectives.userId, userId))).returning();
+    return rec;
+  }
+
+  async deleteIsoObjective(id: number, userId: string): Promise<void> {
+    await db.delete(isoObjectives).where(and(eq(isoObjectives.id, id), eq(isoObjectives.userId, userId)));
+  }
+
+  async upsertIsoObjectiveForProcess(userId: string, isoProjectId: number | undefined, processName: string, name: string, target: string, unit: string, responsible?: string): Promise<IsoObjective> {
+    const [existing] = await db.select().from(isoObjectives).where(and(eq(isoObjectives.userId, userId), eq(isoObjectives.processName, processName), eq(isoObjectives.name, name)));
+    if (existing) {
+      const [updated] = await db.update(isoObjectives).set({ target, unit, responsible: responsible ?? existing.responsible, updatedAt: new Date() }).where(eq(isoObjectives.id, existing.id)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(isoObjectives).values({ userId, isoProjectId, processName, name, target, unit, responsible }).returning();
+    return created;
+  }
+
+  // ─── ISO KPI Actuals ──────────────────────────────────────────────────────────
+  async getIsoKpiActuals(userId: string, objectiveId?: number): Promise<IsoKpiActual[]> {
+    if (objectiveId) {
+      return db.select().from(isoKpiActuals).where(and(eq(isoKpiActuals.userId, userId), eq(isoKpiActuals.objectiveId, objectiveId))).orderBy(desc(isoKpiActuals.loggedAt));
+    }
+    return db.select().from(isoKpiActuals).where(eq(isoKpiActuals.userId, userId)).orderBy(desc(isoKpiActuals.loggedAt));
+  }
+
+  async createIsoKpiActual(data: InsertIsoKpiActual): Promise<IsoKpiActual> {
+    const [rec] = await db.insert(isoKpiActuals).values(data).returning();
+    return rec;
+  }
+
+  async deleteIsoKpiActual(id: number, userId: string): Promise<void> {
+    await db.delete(isoKpiActuals).where(and(eq(isoKpiActuals.id, id), eq(isoKpiActuals.userId, userId)));
   }
 }
 

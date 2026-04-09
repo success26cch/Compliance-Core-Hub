@@ -6062,5 +6062,176 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── ISO Objectives (KPIs shared by Process Maps, Measurement, Mgmt Review) ───
+  app.get("/api/iso-objectives", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const processName = req.query.processName as string | undefined;
+      const objectives = processName
+        ? await storage.getIsoObjectivesByProcess(userId, processName)
+        : await storage.getIsoObjectives(userId);
+      res.json(objectives);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-objectives", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { insertIsoObjectiveSchema } = await import("@shared/schema");
+      const parsed = insertIsoObjectiveSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const obj = await storage.createIsoObjective(parsed.data);
+      res.status(201).json(obj);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-objectives/upsert", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { processName, name, target, unit, responsible, isoProjectId } = req.body;
+      if (!processName || !name) return res.status(400).json({ message: "processName and name are required" });
+      const obj = await storage.upsertIsoObjectiveForProcess(userId, isoProjectId, processName, name, target ?? "", unit ?? "", responsible);
+      res.json(obj);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-objectives/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const obj = await storage.updateIsoObjective(id, userId, req.body);
+      if (!obj) return res.status(404).json({ message: "Not found" });
+      res.json(obj);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-objectives/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIsoObjective(id, userId);
+      res.status(204).send();
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── ISO KPI Actuals (measurement log) ────────────────────────────────────────
+  app.get("/api/iso-kpi-actuals", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const objectiveId = req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined;
+      const actuals = await storage.getIsoKpiActuals(userId, objectiveId);
+      res.json(actuals);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-kpi-actuals", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { insertIsoKpiActualSchema } = await import("@shared/schema");
+      const parsed = insertIsoKpiActualSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const actual = await storage.createIsoKpiActual(parsed.data);
+      res.status(201).json(actual);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-kpi-actuals/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIsoKpiActual(id, userId);
+      res.status(204).send();
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── AI Document Drafting: Isa streams a document draft ───────────────────────
+  app.post("/api/iso-documents/:id/generate", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const docId = parseInt(req.params.id);
+      if (isNaN(docId)) return res.status(400).json({ message: "Invalid ID" });
+
+      const docs = await storage.getIsoDocuments(userId);
+      const doc = docs.find(d => d.id === docId);
+      if (!doc) return res.status(404).json({ message: "Document not found" });
+
+      const project = await storage.getIsoProject(userId);
+      const processContext = project?.processes
+        ? (project.processes as any[]).map((p: any) => `  - ${p.name} | Owner: ${p.owner} | Inputs: ${p.inputs} | Outputs: ${p.outputs}`).join("\n")
+        : "No processes defined.";
+
+      const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Your task is to draft a professional ISO management system document.
+
+ORGANIZATION CONTEXT:
+- Standard: ${project?.standard ?? "ISO 9001:2015"}
+- Organization: ${project?.orgName ?? "Not specified"}
+- Products/Services: ${project?.productsServices ?? "Not specified"}
+- Total Employees: ${project?.totalEmployees ?? "?"}
+
+PROCESSES:
+${processContext}
+
+DOCUMENT TO DRAFT:
+- Title: ${doc.title}
+- Type: ${doc.docType}
+- ISO Clause: ${doc.isoClause ?? "Not specified"}
+- Current Status: ${doc.status}
+
+Write a complete, professional document that:
+1. Conforms to ${project?.standard ?? "ISO 9001:2015"} requirements for this document type
+2. Uses the organization's actual context (not placeholders where you have data)
+3. Includes all mandatory elements required by the standard for this doc type
+4. Is practical and usable — not generic filler
+
+Output only the document content. No preamble. No closing remarks about the document.`;
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const anthropicClient = new Anthropic();
+      const stream = anthropicClient.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: "user", content: `Draft the complete ${doc.docType.replace(/_/g, " ")} document: "${doc.title}"` }],
+      });
+
+      let fullContent = "";
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) {
+            fullContent += text;
+            res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          }
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true, fullContent })}\n\n`);
+      res.end();
+    } catch (e: any) {
+      console.error("AI Document drafting error:", e);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Draft generation failed" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: e.message });
+      }
+    }
+  });
+
   return httpServer;
 }
