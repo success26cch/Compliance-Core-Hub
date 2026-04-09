@@ -6237,5 +6237,194 @@ Output only the document content. No preamble. No closing remarks about the docu
     }
   });
 
+  // ─── ISO Module Isa Chat (shared backend proxy for all 4 new modules) ─────────
+  app.post("/api/iso/module-isa-chat", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { messages, systemPrompt } = req.body;
+      if (!messages || !Array.isArray(messages)) return res.status(400).json({ message: "messages required" });
+      const anthropicClient = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+      const response = await anthropicClient.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: systemPrompt || "You are Isa, Lead ISO Auditor for ACSI ISO Manager. Provide expert ISO guidance.",
+        messages: messages.map((m: any) => ({ role: m.role === "user" ? "user" : "assistant", content: String(m.content) })),
+      });
+      const content = response.content[0].type === "text" ? response.content[0].text : "";
+      res.json({ content });
+    } catch (e: any) {
+      console.error("ISO module Isa chat error:", e);
+      res.status(500).json({ message: e.message });
+    }
+  });
+
+  // ─── ISO Risks ────────────────────────────────────────────────────────────────
+  app.get("/api/iso-risks", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const risks = await storage.getIsoRisks(userId);
+      res.json(risks);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-risks", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { likelihood = 1, severity = 1, ...rest } = req.body;
+      const riskScore = likelihood * severity;
+      const residualScore = (req.body.residualLikelihood && req.body.residualSeverity)
+        ? req.body.residualLikelihood * req.body.residualSeverity : undefined;
+      const risk = await storage.createIsoRisk({ ...rest, userId, likelihood, severity, riskScore, residualScore });
+      res.status(201).json(risk);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-risks/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const data = { ...req.body };
+      if (data.likelihood || data.severity) {
+        const l = data.likelihood ?? 1;
+        const s = data.severity ?? 1;
+        data.riskScore = l * s;
+      }
+      if (data.residualLikelihood && data.residualSeverity) {
+        data.residualScore = data.residualLikelihood * data.residualSeverity;
+      }
+      const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, data);
+      if (!risk) return res.status(404).json({ message: "Not found" });
+      res.json(risk);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-risks/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      await storage.deleteIsoRisk(parseInt(req.params.id), userId);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── ISO Management Reviews ────────────────────────────────────────────────────
+  app.get("/api/iso-management-reviews", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const reviews = await storage.getIsoManagementReviews(userId);
+      res.json(reviews);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-management-reviews", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const review = await storage.createIsoManagementReview({ ...req.body, userId });
+      res.status(201).json(review);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-management-reviews/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const review = await storage.updateIsoManagementReview(parseInt(req.params.id), userId, req.body);
+      if (!review) return res.status(404).json({ message: "Not found" });
+      res.json(review);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-management-reviews/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      await storage.deleteIsoManagementReview(parseInt(req.params.id), userId);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── ISO Review Action Items ────────────────────────────────────────────────────
+  app.get("/api/iso-management-reviews/:reviewId/actions", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const items = await storage.getIsoReviewActionItems(parseInt(req.params.reviewId), userId);
+      res.json(items);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-management-reviews/:reviewId/actions", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const item = await storage.createIsoReviewActionItem({ ...req.body, userId, reviewId: parseInt(req.params.reviewId) });
+      res.status(201).json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-review-action-items/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const item = await storage.updateIsoReviewActionItem(parseInt(req.params.id), userId, req.body);
+      if (!item) return res.status(404).json({ message: "Not found" });
+      res.json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-review-action-items/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      await storage.deleteIsoReviewActionItem(parseInt(req.params.id), userId);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── ISO Communications ────────────────────────────────────────────────────────
+  app.get("/api/iso-communications", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const comms = await storage.getIsoCommunications(userId);
+      res.json(comms);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-communications", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const comm = await storage.createIsoCommunication({ ...req.body, userId });
+      res.status(201).json(comm);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-communications/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const comm = await storage.updateIsoCommunication(parseInt(req.params.id), userId, req.body);
+      if (!comm) return res.status(404).json({ message: "Not found" });
+      res.json(comm);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-communications/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      await storage.deleteIsoCommunication(parseInt(req.params.id), userId);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }

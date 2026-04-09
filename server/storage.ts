@@ -8,12 +8,17 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type DotDvirLog, type InsertDotDvirLog,
   isoAudits, isoAuditFindings, isoAwarenessNotices, isoAwarenessAcknowledgments,
   isoObjectives, isoKpiActuals,
+  isoRisks, isoManagementReviews, isoReviewActionItems, isoCommunications,
   type IsoAudit, type InsertIsoAudit,
   type IsoAuditFinding, type InsertIsoAuditFinding,
   type IsoAwarenessNotice, type InsertIsoAwarenessNotice,
   type IsoAwarenessAcknowledgment, type InsertIsoAwarenessAcknowledgment,
   type IsoObjective, type InsertIsoObjective,
   type IsoKpiActual, type InsertIsoKpiActual,
+  type IsoRisk, type InsertIsoRisk,
+  type IsoManagementReview, type InsertIsoManagementReview,
+  type IsoReviewActionItem, type InsertIsoReviewActionItem,
+  type IsoCommunication, type InsertIsoCommunication,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or } from "drizzle-orm";
@@ -309,6 +314,31 @@ export interface IStorage {
   getIsoKpiActuals(userId: string, objectiveId?: number): Promise<IsoKpiActual[]>;
   createIsoKpiActual(data: InsertIsoKpiActual): Promise<IsoKpiActual>;
   deleteIsoKpiActual(id: number, userId: string): Promise<void>;
+
+  // ISO Risks
+  getIsoRisks(userId: string): Promise<IsoRisk[]>;
+  createIsoRisk(data: InsertIsoRisk): Promise<IsoRisk>;
+  updateIsoRisk(id: number, userId: string, data: Partial<InsertIsoRisk>): Promise<IsoRisk | undefined>;
+  deleteIsoRisk(id: number, userId: string): Promise<void>;
+
+  // ISO Management Reviews
+  getIsoManagementReviews(userId: string): Promise<IsoManagementReview[]>;
+  getIsoManagementReview(id: number, userId: string): Promise<IsoManagementReview | undefined>;
+  createIsoManagementReview(data: InsertIsoManagementReview): Promise<IsoManagementReview>;
+  updateIsoManagementReview(id: number, userId: string, data: Partial<InsertIsoManagementReview>): Promise<IsoManagementReview | undefined>;
+  deleteIsoManagementReview(id: number, userId: string): Promise<void>;
+
+  // ISO Review Action Items
+  getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]>;
+  createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem>;
+  updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>): Promise<IsoReviewActionItem | undefined>;
+  deleteIsoReviewActionItem(id: number, userId: string): Promise<void>;
+
+  // ISO Communications
+  getIsoCommunications(userId: string): Promise<IsoCommunication[]>;
+  createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication>;
+  updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>): Promise<IsoCommunication | undefined>;
+  deleteIsoCommunication(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1749,6 +1779,74 @@ export class DatabaseStorage implements IStorage {
 
   async deleteIsoKpiActual(id: number, userId: string): Promise<void> {
     await db.delete(isoKpiActuals).where(and(eq(isoKpiActuals.id, id), eq(isoKpiActuals.userId, userId)));
+  }
+
+  // ─── ISO Risks ────────────────────────────────────────────────────────────────
+  async getIsoRisks(userId: string): Promise<IsoRisk[]> {
+    return db.select().from(isoRisks).where(eq(isoRisks.userId, userId)).orderBy(desc(isoRisks.riskScore));
+  }
+  async createIsoRisk(data: InsertIsoRisk): Promise<IsoRisk> {
+    const [r] = await db.insert(isoRisks).values(data).returning();
+    return r;
+  }
+  async updateIsoRisk(id: number, userId: string, data: Partial<InsertIsoRisk>): Promise<IsoRisk | undefined> {
+    const [r] = await db.update(isoRisks).set({ ...data, updatedAt: new Date() }).where(and(eq(isoRisks.id, id), eq(isoRisks.userId, userId))).returning();
+    return r;
+  }
+  async deleteIsoRisk(id: number, userId: string): Promise<void> {
+    await db.delete(isoRisks).where(and(eq(isoRisks.id, id), eq(isoRisks.userId, userId)));
+  }
+
+  // ─── ISO Management Reviews ───────────────────────────────────────────────────
+  async getIsoManagementReviews(userId: string): Promise<IsoManagementReview[]> {
+    return db.select().from(isoManagementReviews).where(eq(isoManagementReviews.userId, userId)).orderBy(desc(isoManagementReviews.meetingDate));
+  }
+  async getIsoManagementReview(id: number, userId: string): Promise<IsoManagementReview | undefined> {
+    const [r] = await db.select().from(isoManagementReviews).where(and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId)));
+    return r;
+  }
+  async createIsoManagementReview(data: InsertIsoManagementReview): Promise<IsoManagementReview> {
+    const [r] = await db.insert(isoManagementReviews).values(data).returning();
+    return r;
+  }
+  async updateIsoManagementReview(id: number, userId: string, data: Partial<InsertIsoManagementReview>): Promise<IsoManagementReview | undefined> {
+    const [r] = await db.update(isoManagementReviews).set({ ...data, updatedAt: new Date() }).where(and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId))).returning();
+    return r;
+  }
+  async deleteIsoManagementReview(id: number, userId: string): Promise<void> {
+    await db.delete(isoManagementReviews).where(and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId)));
+  }
+
+  // ─── ISO Review Action Items ──────────────────────────────────────────────────
+  async getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]> {
+    return db.select().from(isoReviewActionItems).where(and(eq(isoReviewActionItems.reviewId, reviewId), eq(isoReviewActionItems.userId, userId))).orderBy(isoReviewActionItems.createdAt);
+  }
+  async createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem> {
+    const [r] = await db.insert(isoReviewActionItems).values(data).returning();
+    return r;
+  }
+  async updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>): Promise<IsoReviewActionItem | undefined> {
+    const [r] = await db.update(isoReviewActionItems).set(data).where(and(eq(isoReviewActionItems.id, id), eq(isoReviewActionItems.userId, userId))).returning();
+    return r;
+  }
+  async deleteIsoReviewActionItem(id: number, userId: string): Promise<void> {
+    await db.delete(isoReviewActionItems).where(and(eq(isoReviewActionItems.id, id), eq(isoReviewActionItems.userId, userId)));
+  }
+
+  // ─── ISO Communications ───────────────────────────────────────────────────────
+  async getIsoCommunications(userId: string): Promise<IsoCommunication[]> {
+    return db.select().from(isoCommunications).where(eq(isoCommunications.userId, userId)).orderBy(desc(isoCommunications.date));
+  }
+  async createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication> {
+    const [r] = await db.insert(isoCommunications).values(data).returning();
+    return r;
+  }
+  async updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>): Promise<IsoCommunication | undefined> {
+    const [r] = await db.update(isoCommunications).set({ ...data, updatedAt: new Date() }).where(and(eq(isoCommunications.id, id), eq(isoCommunications.userId, userId))).returning();
+    return r;
+  }
+  async deleteIsoCommunication(id: number, userId: string): Promise<void> {
+    await db.delete(isoCommunications).where(and(eq(isoCommunications.id, id), eq(isoCommunications.userId, userId)));
   }
 }
 

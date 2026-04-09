@@ -1363,3 +1363,89 @@ export const isoKpiActuals = pgTable("iso_kpi_actuals", {
 export const insertIsoKpiActualSchema = createInsertSchema(isoKpiActuals).omit({ id: true, loggedAt: true });
 export type IsoKpiActual = typeof isoKpiActuals.$inferSelect;
 export type InsertIsoKpiActual = z.infer<typeof insertIsoKpiActualSchema>;
+
+// ─── ISO Manager: Risk Register ───────────────────────────────────────────────
+export const isoRisks = pgTable("iso_risks", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  processArea: text("process_area").notNull(),
+  description: text("description").notNull(),
+  likelihood: integer("likelihood").notNull().default(1), // 1–5
+  severity: integer("severity").notNull().default(1),     // 1–5
+  riskScore: integer("risk_score").notNull().default(1),  // L × S
+  controls: text("controls"),
+  residualLikelihood: integer("residual_likelihood"),
+  residualSeverity: integer("residual_severity"),
+  residualScore: integer("residual_score"),
+  linkedProcess: text("linked_process"),
+  status: text("status").notNull().default("open"), // 'open' | 'mitigated' | 'accepted'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoRiskSchema = createInsertSchema(isoRisks).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoRisk = typeof isoRisks.$inferSelect;
+export type InsertIsoRisk = z.infer<typeof insertIsoRiskSchema>;
+
+// ─── ISO Manager: Management Reviews ─────────────────────────────────────────
+export const isoManagementReviews = pgTable("iso_management_reviews", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  title: text("title").notNull().default("Management Review"),
+  meetingDate: timestamp("meeting_date").notNull(),
+  attendees: text("attendees"),
+  agendaItems: jsonb("agenda_items"), // {clause, title, covered, notes}[]
+  overallNotes: text("overall_notes"),
+  status: text("status").notNull().default("draft"), // 'draft' | 'complete'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoManagementReviewSchema = createInsertSchema(isoManagementReviews, {
+  meetingDate: z.union([z.string(), z.date()]).transform((v) => (v instanceof Date ? v : new Date(v))),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoManagementReview = typeof isoManagementReviews.$inferSelect;
+export type InsertIsoManagementReview = z.infer<typeof insertIsoManagementReviewSchema>;
+
+// ─── ISO Manager: Review Action Items ────────────────────────────────────────
+export const isoReviewActionItems = pgTable("iso_review_action_items", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull(),
+  userId: text("user_id").notNull(),
+  description: text("description").notNull(),
+  owner: text("owner"),
+  dueDate: timestamp("due_date"),
+  status: text("status").notNull().default("open"), // 'open' | 'in_progress' | 'closed'
+  closedAt: timestamp("closed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertIsoReviewActionItemSchema = createInsertSchema(isoReviewActionItems, {
+  dueDate: isoDateOrString,
+}).omit({ id: true, createdAt: true, closedAt: true });
+export type IsoReviewActionItem = typeof isoReviewActionItems.$inferSelect;
+export type InsertIsoReviewActionItem = z.infer<typeof insertIsoReviewActionItemSchema>;
+
+// ─── ISO Manager: Communication Log (ISO 7.4) ─────────────────────────────────
+export const isoCommunications = pgTable("iso_communications", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  date: timestamp("date").notNull().defaultNow(),
+  direction: text("direction").notNull().default("internal"), // 'internal' | 'external'
+  topic: text("topic").notNull(),
+  audience: text("audience"),
+  medium: text("medium"), // 'email' | 'meeting' | 'notice' | 'bulletin' | 'training' | 'other'
+  summary: text("summary"),
+  clauseRef: text("clause_ref"), // e.g. '7.4'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoCommunicationSchema = createInsertSchema(isoCommunications, {
+  date: z.union([z.string(), z.date()]).transform((v) => (v instanceof Date ? v : new Date(v))),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoCommunication = typeof isoCommunications.$inferSelect;
+export type InsertIsoCommunication = z.infer<typeof insertIsoCommunicationSchema>;

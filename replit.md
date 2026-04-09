@@ -36,6 +36,11 @@ The CCHUB platform utilizes a modern web stack, featuring React, Vite, TailwindC
 -   **ISO Manager Internal Audit Module (LIVE):** Create audits, clause-by-clause checklist (ISO 9001/14001/45001), finding log with severity, real-time status.
 -   **ISO Manager Training & Awareness Module (LIVE):** Push awareness notices to process owners, track acknowledgments, expiry dates, urgency levels.
 -   **ISO Manager Clause Coverage Map (LIVE):** Per-clause document coverage visualization (approved/in-review/draft/none), overall coverage percentage gauge.
+-   **ISO Manager Risk Assessment Module (LIVE):** Risk & Opportunity Register per ISO 6.1. L×S risk scoring heatmap (1–25 scale), color-coded risk levels (green/yellow/red), controls & residual risk tracking, status workflow (open/mitigated/accepted). Isa AI integration via backend proxy `/api/iso/module-isa-chat`.
+-   **ISO Manager Measurement & Monitoring Module (LIVE):** KPI dashboard per ISO 9.1. Gauge chart for actual vs. target, line chart trend via Recharts, log measurement actuals by period, status tracking (on_track/at_risk/off_track). Uses `iso_objectives` + `iso_kpi_actuals` tables.
+-   **ISO Manager Management Review Module (LIVE):** Full management review workflow per ISO 9.3. ISO 9.3.2 required inputs checklist (9 agenda items), KPI snapshot table, notes, action items with owner/due-date/status, mark complete/draft. Tables: `iso_management_reviews`, `iso_review_action_items`.
+-   **ISO Manager Communication Log Module (LIVE):** ISO 7.4 communication log. Internal/external direction, topic, audience, medium, clause reference, summary. Filterable by direction and medium. Table: `iso_communications`. Isa AI guidance on 7.4 requirements.
+-   **Backend: `/api/iso/module-isa-chat`:** Shared Anthropic backend proxy for all 4 new ISO modules. Accepts messages[] + systemPrompt, returns content. Avoids browser-side API key exposure.
 
 ## External Dependencies
 -   **AI Integration:** Anthropic Claude (via Replit AI)

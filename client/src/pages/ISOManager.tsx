@@ -29,6 +29,10 @@ import { DocumentationModule } from "./DocumentationModule";
 import { InternalAuditModule } from "./InternalAuditModule";
 import { TrainingAwarenessModule } from "./TrainingAwarenessModule";
 import { ProcessMapModule, type ProcessEntry } from "./ProcessMapModule";
+import RiskAssessmentModule from "./RiskAssessmentModule";
+import MeasurementModule from "./MeasurementModule";
+import ManagementReviewModule from "./ManagementReviewModule";
+import CommunicationModule from "./CommunicationModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -651,15 +655,15 @@ export default function ISOManager() {
               <ProcessMapModule project={project ?? null} onStartWizard={handleStartWizard} />
             ) : activeSection === 'communication' ? (
               canAccessSection('communication', isoRole, isSuperadmin)
-                ? <ComingSoonModule moduleName="Communication" icon={Mail} />
+                ? <CommunicationModule isoProjectId={project?.id} />
                 : <LockedModuleView section="communication" />
             ) : activeSection === 'risk' ? (
               canAccessSection('risk', isoRole, isSuperadmin)
-                ? <ComingSoonModule moduleName="Risk Assessment" icon={AlertTriangle} />
+                ? <RiskAssessmentModule isoProjectId={project?.id} />
                 : <LockedModuleView section="risk" />
             ) : activeSection === 'management_review' ? (
               canAccessSection('management_review', isoRole, isSuperadmin)
-                ? <ComingSoonModule moduleName="Management Review" icon={BarChart2} />
+                ? <ManagementReviewModule isoProjectId={project?.id} />
                 : <LockedModuleView section="management_review" />
             ) : activeSection === 'internal_audit' ? (
               canAccessSection('internal_audit', isoRole, isSuperadmin)
@@ -671,7 +675,7 @@ export default function ISOManager() {
                 : <LockedModuleView section="training" />
             ) : activeSection === 'measurement' ? (
               canAccessSection('measurement', isoRole, isSuperadmin)
-                ? <ComingSoonModule moduleName="Measurement & Monitoring" icon={Activity} />
+                ? <MeasurementModule isoProjectId={project?.id} />
                 : <LockedModuleView section="measurement" />
             ) : (
               <>
