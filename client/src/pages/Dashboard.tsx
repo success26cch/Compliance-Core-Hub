@@ -1723,7 +1723,7 @@ function ComplianceHealthBanner({
       <div className="p-5 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-5">
           {/* Left: Grade + Score */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4 flex-wrap">
             {/* Corey avatar + greeting */}
             <div className="flex flex-col items-center gap-1.5">
               <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-border/50 flex items-center justify-center shadow-sm">

@@ -326,16 +326,16 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
                   <Menu className="w-6 h-6" />
                 </Button>
               </SheetTrigger>
-            <SheetContent side="left" className="p-0">
-              <Sidebar />
+            <SheetContent side="left" className="p-0 w-72 max-w-[85vw]">
+              <Sidebar className="w-full flex" />
             </SheetContent>
           </Sheet>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-8">
-          <div className="max-w-6xl mx-auto w-full">
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
+          <div className="max-w-6xl mx-auto w-full min-w-0">
             <header className="mb-8 flex items-center justify-between">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-primary font-display">
