@@ -353,6 +353,7 @@ export default function ISOManager() {
   const handleStartWizard = () => {
     if (project) {
       setShowWizard(true);
+      setActiveSection('chat');
     } else {
       createProjectMut.mutate();
     }
