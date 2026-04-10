@@ -53,6 +53,7 @@ import {
   buildCapaOverdueEmail,
   buildContactInquiryAdminEmail,
   buildContactConfirmationEmail,
+  brandedHtml,
 } from "./emailService";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema, insertIsoDocumentSchema } from "@shared/schema";
 import type { IsoRisk } from "@shared/schema";
@@ -1194,6 +1195,56 @@ Rules:
   });
 
   // Contact Inquiries (retainer, consultation requests)
+  // Security Package Request
+  app.post("/api/security/request-package", async (req, res) => {
+    try {
+      const { firstName, lastName, company, email, phone, title } = req.body;
+      if (!firstName || !lastName || !company || !email) {
+        return res.status(400).json({ message: "First name, last name, company, and email are required." });
+      }
+      if (!email.includes("@")) {
+        return res.status(400).json({ message: "A valid email address is required." });
+      }
+
+      const adminHtml = `
+        <h2 style="color:#0f172a;margin:0 0 16px;">New Security Package Request</h2>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:8px 0;color:#64748b;font-size:14px;width:140px;">Name</td><td style="padding:8px 0;font-weight:600;color:#0f172a;">${firstName} ${lastName}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Company</td><td style="padding:8px 0;font-weight:600;color:#0f172a;">${company}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Email</td><td style="padding:8px 0;font-weight:600;color:#0f172a;"><a href="mailto:${email}" style="color:#ea6c19;">${email}</a></td></tr>
+          ${phone ? `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Phone</td><td style="padding:8px 0;font-weight:600;color:#0f172a;">${phone}</td></tr>` : ""}
+          ${title ? `<tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Title / Role</td><td style="padding:8px 0;font-weight:600;color:#0f172a;">${title}</td></tr>` : ""}
+        </table>
+        <p style="margin:20px 0 0;color:#64748b;font-size:13px;">Reply directly to this email to follow up with the requester.</p>
+      `;
+
+      const confirmHtml = `
+        <h2 style="color:#0f172a;margin:0 0 12px;">We received your request, ${firstName}.</h2>
+        <p style="color:#475569;line-height:1.6;">Our team will put together a security overview package and send it to <strong>${email}</strong> within 1 business day.</p>
+        <p style="color:#475569;line-height:1.6;">In the meantime, you can review our full security posture at <a href="https://app.corecompliancehub.com/security" style="color:#ea6c19;">app.corecompliancehub.com/security</a>.</p>
+        <p style="color:#475569;line-height:1.6;">If you have urgent questions, reply to this email or reach us at <a href="mailto:team@corecompliancehub.com" style="color:#ea6c19;">team@corecompliancehub.com</a>.</p>
+      `;
+
+      await sendEmail(
+        ["team@corecompliancehub.com"],
+        `Security Package Request — ${company}`,
+        brandedHtml(`Security Package Request — ${company}`, adminHtml),
+      );
+
+      await sendEmail(
+        email,
+        "Your Core Compliance Hub Security Package Request",
+        brandedHtml("Security Package Request Received", confirmHtml),
+      );
+
+      logAudit(req, "security_package_request", "security", null, `company:${company}`, 200);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("[Security] Package request error:", err);
+      res.status(500).json({ message: "Failed to send request. Please email team@corecompliancehub.com directly." });
+    }
+  });
+
   app.post("/api/contact-inquiries", async (req, res) => {
     try {
       const { name, email, company, phone, employeeCount, inquiryType, message } = req.body;

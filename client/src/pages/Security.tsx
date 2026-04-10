@@ -1,10 +1,20 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  ShieldCheck, Lock, FileText, Eye, Server, RefreshCcw,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  ShieldCheck, Lock, FileText, Eye, Server,
   CheckCircle2, AlertTriangle, Key, Activity, Globe, Database,
-  ArrowRight, Mail
+  ArrowRight, Mail, Package, Loader2
 } from "lucide-react";
 import logoUrl from "@assets/6_1770259909295.png";
 
@@ -88,10 +98,10 @@ const PILLARS = [
 ];
 
 const STATUS_CONFIG = {
-  active:      { label: "Active",       class: "bg-green-100 text-green-700 border-green-200" },
-  available:   { label: "Available",    class: "bg-blue-100 text-blue-700 border-blue-200" },
-  "in-progress": { label: "In Progress", class: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  roadmap:     { label: "2026 Roadmap", class: "bg-gray-100 text-gray-600 border-gray-200" },
+  active:        { label: "Active",       class: "bg-green-100 text-green-700 border-green-200" },
+  available:     { label: "Available",    class: "bg-blue-100 text-blue-700 border-blue-200" },
+  "in-progress": { label: "In Progress",  class: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  roadmap:       { label: "2026 Roadmap", class: "bg-gray-100 text-gray-600 border-gray-200" },
 };
 
 const QUICK_ANSWERS = [
@@ -103,7 +113,57 @@ const QUICK_ANSWERS = [
   { q: "How is data separated between customers?", a: "All customer data is logically isolated at the application and database query level. No tenant can access another's data." },
 ];
 
+type FormState = {
+  firstName: string;
+  lastName: string;
+  company: string;
+  email: string;
+  phone: string;
+  title: string;
+};
+
+const EMPTY_FORM: FormState = { firstName: "", lastName: "", company: "", email: "", phone: "", title: "" };
+
 export default function Security() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/security/request-package", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "Something went wrong. Please try again.");
+      } else {
+        setSuccess(true);
+        setForm(EMPTY_FORM);
+      }
+    } catch {
+      setError("Failed to send. Please email team@corecompliancehub.com directly.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleOpenChange(open: boolean) {
+    setModalOpen(open);
+    if (!open) { setSuccess(false); setError(""); }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
@@ -138,11 +198,14 @@ export default function Security() {
             Core Compliance Hub is built with enterprise security in mind. Here is everything your IT team needs to evaluate, verify, and approve our platform.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <a href="mailto:team@corecompliancehub.com">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white gap-2">
-                <Mail className="w-4 h-4" /> Request Security Package
-              </Button>
-            </a>
+            <Button
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-white gap-2"
+              onClick={() => { setSuccess(false); setError(""); setModalOpen(true); }}
+              data-testid="button-request-security-package"
+            >
+              <Package className="w-4 h-4" /> Request Security Package
+            </Button>
             <a href="mailto:team@corecompliancehub.com?subject=BAA%20Request&body=Hello%2C%0A%0AWe%20are%20interested%20in%20a%20Business%20Associate%20Agreement%20(BAA)%20with%20Core%20Compliance%20Hub.%0A%0ACompany%20Name%3A%20%0AContact%20Name%3A%20%0APhone%20Number%3A%20%0A%0APlease%20send%20over%20the%20BAA%20for%20our%20review.%0A%0AThank%20you.">
               <Button size="lg" variant="outline" className="border-white/30 text-accent hover:bg-white/10 gap-2">
                 <FileText className="w-4 h-4" /> Request BAA
@@ -264,14 +327,17 @@ export default function Security() {
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-2xl font-display font-bold text-primary mb-3">Ready to Run Your Security Review?</h2>
           <p className="text-muted-foreground mb-8">
-            We are happy to schedule a technical call with your IT director, provide our Security Whitepaper, or start the BAA process.
+            We are happy to schedule a technical call with your IT director, provide our Security Package, or start the BAA process.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="mailto:team@corecompliancehub.com">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white gap-2 w-full sm:w-auto">
-                <Mail className="w-4 h-4" /> Email Our Security Team
-              </Button>
-            </a>
+            <Button
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-white gap-2 w-full sm:w-auto"
+              onClick={() => { setSuccess(false); setError(""); setModalOpen(true); }}
+              data-testid="button-request-security-package-cta"
+            >
+              <Package className="w-4 h-4" /> Request Security Package
+            </Button>
             <Link href="/contact">
               <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto">
                 Schedule IT Review Call <ArrowRight className="w-4 h-4" />
@@ -287,6 +353,71 @@ export default function Security() {
           © {new Date().getFullYear()} Core Compliance Hub · <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link> · <Link href="/terms-of-service" className="hover:underline">Terms of Service</Link>
         </div>
       </footer>
+
+      {/* Security Package Request Modal */}
+      <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Package className="w-5 h-5 text-accent" />
+              Request Security Package
+            </DialogTitle>
+            <DialogDescription>
+              We will send you our full security overview, data practices document, and information on our BAA process — within 1 business day.
+            </DialogDescription>
+          </DialogHeader>
+
+          {success ? (
+            <div className="py-6 text-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-7 h-7 text-green-500" />
+              </div>
+              <p className="font-semibold text-primary">Request sent!</p>
+              <p className="text-sm text-muted-foreground">Check your inbox — we will follow up within 1 business day with your security package.</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => handleOpenChange(false)}>Close</Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                  <Input id="firstName" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Jane" required data-testid="input-firstName" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                  <Input id="lastName" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Smith" required data-testid="input-lastName" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="company">Company <span className="text-red-500">*</span></Label>
+                <Input id="company" name="company" value={form.company} onChange={handleChange} placeholder="Acme Manufacturing" required data-testid="input-company" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Work Email <span className="text-red-500">*</span></Label>
+                <Input id="email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="jane@acmemfg.com" required data-testid="input-email" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                  <Input id="phone" name="phone" value={form.phone} onChange={handleChange} placeholder="(555) 000-0000" data-testid="input-phone" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="title">Your Title <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                  <Input id="title" name="title" value={form.title} onChange={handleChange} placeholder="IT Director" data-testid="input-title" />
+                </div>
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+              )}
+
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-white gap-2" disabled={loading} data-testid="button-submit-security-package">
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</> : <><Mail className="w-4 h-4" /> Send Request</>}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

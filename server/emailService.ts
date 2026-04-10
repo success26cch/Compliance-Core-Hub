@@ -3,7 +3,7 @@ const FROM_EMAIL = "noreply@corecompliancehub.com";
 const FROM_NAME = "Core Compliance Hub";
 const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 
-function brandedHtml(title: string, bodyHtml: string): string {
+export function brandedHtml(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
