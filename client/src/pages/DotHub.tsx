@@ -14,7 +14,6 @@ import {
   Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X, Printer
 } from "lucide-react";
 import { ProtectedLayout } from "@/components/Layout";
-import dotVideoSrc from "@assets/DOT_regualtions_can_be_confusing_1775780745689.mp4";
 
 // ─── Types (matching schema) ─────────────────────────────────────────────────
 
@@ -1332,16 +1331,6 @@ export default function DotHub() {
               Add Driver
             </Button>
           </div>
-        </div>
-
-        {/* Intro Video */}
-        <div className="mb-6 rounded-xl overflow-hidden border border-border/60 shadow-sm bg-black">
-          <video
-            src={dotVideoSrc}
-            controls
-            className="w-full max-h-[420px] object-contain"
-            data-testid="video-dot-intro"
-          />
         </div>
 
         {/* Metrics */}
