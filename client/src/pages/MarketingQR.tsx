@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Truck, Bot, Stethoscope, LayoutDashboard } from "lucide-react";
 import { ProtectedLayout } from "@/components/Layout";
 
-const BASE = "https://app.corecompliancehub.com";
+const BASE = "https://www.corecompliancehub.com";
 
 const CARDS = [
   {
