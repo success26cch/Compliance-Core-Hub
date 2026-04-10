@@ -131,7 +131,7 @@ export default function Security() {
             Security & Compliance Center
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold leading-tight mb-4">
-            Built for IT Directors.<br />
+            <span className="text-sky-400">Built for IT Directors.</span><br />
             <span className="text-accent">Designed to Pass Your Review.</span>
           </h1>
           <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8 leading-relaxed">
@@ -144,7 +144,7 @@ export default function Security() {
               </Button>
             </a>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 gap-2">
+              <Button size="lg" variant="outline" className="border-white/30 text-accent hover:bg-white/10 gap-2">
                 <FileText className="w-4 h-4" /> Request BAA
               </Button>
             </Link>
@@ -238,7 +238,7 @@ export default function Security() {
       <section className="py-16 bg-primary text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Key className="w-10 h-10 text-accent mx-auto mb-4" />
-          <h2 className="text-3xl font-display font-bold mb-4">What Kind of Data Does CCHUB Handle?</h2>
+          <h2 className="text-3xl font-display font-bold mb-4 text-accent">What Kind of Data Does CCHUB Handle?</h2>
           <p className="text-white/80 text-lg leading-relaxed mb-8 max-w-2xl mx-auto">
             Core Compliance Hub primarily handles <strong className="text-white">compliance documentation, safety records, and OSHA 300 log data</strong> — not clinical ePHI like hospital records.
             For accounts that do handle Protected Health Information, we offer dedicated HIPAA-compliant infrastructure with a signed BAA.
