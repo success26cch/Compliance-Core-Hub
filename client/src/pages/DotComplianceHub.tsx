@@ -10,6 +10,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CartTrigger } from "@/components/CartDrawer";
 import logoUrl from "@assets/7_1772719327857.png";
+import dotVideoSrc from "@assets/DOT_regualtions_can_be_confusing_1775780745689.mp4";
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
@@ -268,6 +269,18 @@ export default function DotComplianceHub() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Intro Video */}
+      <section className="bg-black">
+        <div className="max-w-5xl mx-auto">
+          <video
+            src={dotVideoSrc}
+            controls
+            className="w-full max-h-[500px] object-contain"
+            data-testid="video-dot-compliance-intro"
+          />
         </div>
       </section>
 
