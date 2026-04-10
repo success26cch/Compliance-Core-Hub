@@ -56,6 +56,7 @@ import Cesar from "@/pages/Cesar";
 import ISOManagerMarketing from "@/pages/ISOManagerMarketing";
 import DotComplianceHub from "@/pages/DotComplianceHub";
 import DotHub from "@/pages/DotHub";
+import MarketingQR from "@/pages/MarketingQR";
 import WelcomeCorey from "@/pages/WelcomeCorey";
 import CoreyProfile from "@/pages/CoreyProfile";
 import IsaStandalone from "@/pages/Isa";
@@ -156,6 +157,7 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/dot-compliance-hub" component={DotComplianceHub} />
       <Route path="/dot-hub" component={DotHub} />
+      <Route path="/marketing-qr" component={MarketingQR} />
       <Route component={NotFound} />
     </Switch>
   );

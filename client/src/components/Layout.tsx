@@ -150,6 +150,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/compliance-glossary", label: "Compliance Glossary", icon: BookOpen },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
     { href: "/employee-passport", label: "Medical Passport", icon: QrCode },
+    { href: "/marketing-qr", label: "Marketing QR Codes", icon: QrCode },
   ];
 
   const isoLinks = [
