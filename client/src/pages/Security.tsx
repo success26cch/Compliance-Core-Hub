@@ -143,11 +143,11 @@ export default function Security() {
                 <Mail className="w-4 h-4" /> Request Security Package
               </Button>
             </a>
-            <Link href="/contact">
+            <a href="mailto:security@corecompliancehub.com?subject=BAA%20Request&body=Hello%2C%0A%0AWe%20are%20interested%20in%20a%20Business%20Associate%20Agreement%20(BAA)%20with%20Core%20Compliance%20Hub.%0A%0ACompany%20Name%3A%20%0AContact%20Name%3A%20%0APhone%20Number%3A%20%0A%0APlease%20send%20over%20the%20BAA%20for%20our%20review.%0A%0AThank%20you.">
               <Button size="lg" variant="outline" className="border-white/30 text-accent hover:bg-white/10 gap-2">
                 <FileText className="w-4 h-4" /> Request BAA
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>
