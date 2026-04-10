@@ -156,7 +156,7 @@ export default function MarketingQR() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-8">
-          QR codes link to <span className="font-medium">app.corecompliancehub.com</span> — make sure your production app is live at that domain.
+          QR codes link to <span className="font-medium">www.corecompliancehub.com</span>
         </p>
       </div>
     </ProtectedLayout>
