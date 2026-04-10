@@ -150,7 +150,6 @@ export function Sidebar({ className = "" }: { className?: string }) {
     { href: "/compliance-glossary", label: "Compliance Glossary", icon: BookOpen },
     { href: "/dot-notifications", label: "DOT Notifications", icon: Bell },
     { href: "/employee-passport", label: "Medical Passport", icon: QrCode },
-    { href: "/marketing-qr", label: "Marketing QR Codes", icon: QrCode },
   ];
 
   const isoLinks = [
@@ -231,6 +230,12 @@ export function Sidebar({ className = "" }: { className?: string }) {
             <SectionLabel label="DOT Fleet HUB" />
             <div className="space-y-1 mb-2">
               <LinkItem href="/dot-hub" label="DOT Fleet Dashboard" icon={Truck} />
+            </div>
+
+            {/* Marketing */}
+            <SectionLabel label="Marketing" />
+            <div className="space-y-1 mb-2">
+              <LinkItem href="/marketing-qr" label="QR Codes" icon={QrCode} />
             </div>
           </>
         )}
