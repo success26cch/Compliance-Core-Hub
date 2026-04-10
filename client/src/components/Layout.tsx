@@ -236,6 +236,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
             <SectionLabel label="Marketing" />
             <div className="space-y-1 mb-2">
               <LinkItem href="/marketing-qr" label="QR Codes" icon={QrCode} />
+              <LinkItem href="/security" label="Security Trust Page" icon={ShieldCheck} />
             </div>
           </>
         )}

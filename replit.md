@@ -42,9 +42,16 @@ The CCHUB platform utilizes a modern web stack, featuring React, Vite, TailwindC
 -   **ISO Manager Communication Log Module (LIVE):** ISO 7.4 communication log. Internal/external direction, topic, audience, medium, clause reference, summary. Filterable by direction and medium. Table: `iso_communications`. Isa AI guidance on 7.4 requirements.
 -   **Backend: `/api/iso/module-isa-chat`:** Shared Anthropic backend proxy for all 4 new ISO modules. Accepts messages[] + systemPrompt, returns content. Avoids browser-side API key exposure.
 
+-   **Phase 1 Security Hardening (LIVE):**
+    -   **Helmet.js:** HSTS (1-year preload), X-Content-Type-Options, X-Frame-Options (SAMEORIGIN), Referrer-Policy, Permissions-Policy on all responses.
+    -   **Rate Limiting (express-rate-limit):** Auth endpoints (login/register) → 20 req/15min; all `/api` → 300 req/min.
+    -   **Audit Logs:** `audit_logs` PostgreSQL table — immutable record of login (success + all failure modes), register, employee create/update/delete, incident create. Fields: userId, action, resource, resourceId, ipAddress, userAgent, statusCode, detail, createdAt. Helper: `logAudit()` in routes.ts, `writeAuditLog()` in auth/index.ts.
+    -   **Security Trust Page (`/security`):** Public-facing enterprise security center — 5-pillar layout (Administrative Safeguards, Technical Safeguards, Vulnerability Management, Monitoring & Audit Logs, Infrastructure). Status badges, IT FAQ section, data-type transparency, CTA to security@corecompliancehub.com. Linked in Landing footer + sidebar (Marketing section).
+
 ## External Dependencies
 -   **AI Integration:** Anthropic Claude (via Replit AI)
 -   **Database:** PostgreSQL with Drizzle ORM
 -   **Payment Processing:** Paddle (transitioning from Stripe)
 -   **Communication:** Twilio (SMS notifications); MailerSend (transactional email)
 -   **Speech Services:** Web Speech API (for Spanish text-to-speech and speech-to-text)
+-   **Security:** Helmet.js (headers); express-rate-limit (rate limiting)

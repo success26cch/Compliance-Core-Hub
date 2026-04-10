@@ -67,6 +67,7 @@ import EmployerDashboard from "@/pages/EmployerDashboard";
 import RefundPolicy from "@/pages/RefundPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import Security from "@/pages/Security";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -155,6 +156,7 @@ function Router() {
       <Route path="/refund-policy" component={RefundPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/security" component={Security} />
       <Route path="/dot-compliance-hub" component={DotComplianceHub} />
       <Route path="/dot-hub" component={DotHub} />
       <Route path="/marketing-qr" component={MarketingQR} />

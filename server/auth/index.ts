@@ -4,8 +4,31 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { db } from "../db";
-import { users } from "@shared/schema";
+import { users, auditLogs } from "@shared/schema";
 import { eq } from "drizzle-orm";
+
+async function writeAuditLog(
+  req: any,
+  action: string,
+  resource: string,
+  resourceId: string | null,
+  detail: string | null,
+  statusCode: number,
+) {
+  try {
+    const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? req.socket?.remoteAddress ?? null;
+    await db.insert(auditLogs).values({
+      userId: resourceId,
+      action,
+      resource,
+      resourceId,
+      ipAddress: ip,
+      userAgent: req.headers["user-agent"]?.slice(0, 500) ?? null,
+      statusCode,
+      detail,
+    });
+  } catch { /* never block the request */ }
+}
 
 const scryptAsync = promisify(scrypt);
 
@@ -117,8 +140,10 @@ export function registerAuthRoutes(app: Express): void {
             .returning();
           req.session.userId = updated.id;
           req.session.userEmail = updated.email ?? "";
+          writeAuditLog(req, "register_password_set", "auth", updated.id, null, 200);
           return res.json({ id: updated.id, email: updated.email, firstName: updated.firstName, lastName: updated.lastName });
         }
+        writeAuditLog(req, "register_duplicate", "auth", null, `email:${normalizedEmail}`, 409);
         return res.status(409).json({ message: "An account with this email already exists. Please sign in instead." });
       }
 
@@ -135,6 +160,7 @@ export function registerAuthRoutes(app: Express): void {
 
       req.session.userId = user.id;
       req.session.userEmail = user.email ?? "";
+      writeAuditLog(req, "register", "auth", user.id, null, 200);
       res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName });
     } catch (err: any) {
       console.error("[Auth] Register error:", err);
@@ -154,19 +180,23 @@ export function registerAuthRoutes(app: Express): void {
       const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail));
 
       if (!user) {
+        writeAuditLog(req, "login_failed", "auth", null, `email:${normalizedEmail}`, 401);
         return res.status(401).json({ message: "Invalid email or password" });
       }
       if (!user.passwordHash) {
+        writeAuditLog(req, "login_failed", "auth", null, `no_password:${normalizedEmail}`, 401);
         return res.status(401).json({ message: "No password set for this account. Use 'Create Account' with your email to set one." });
       }
 
       const valid = await verifyPassword(password, user.passwordHash);
       if (!valid) {
+        writeAuditLog(req, "login_failed", "auth", user.id, `bad_password:${normalizedEmail}`, 401);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       req.session.userId = user.id;
       req.session.userEmail = user.email ?? "";
+      writeAuditLog(req, "login", "auth", user.id, null, 200);
       res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName });
     } catch (err: any) {
       console.error("[Auth] Login error:", err);

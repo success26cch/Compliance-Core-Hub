@@ -1449,3 +1449,19 @@ export const insertIsoCommunicationSchema = createInsertSchema(isoCommunications
 }).omit({ id: true, createdAt: true, updatedAt: true });
 export type IsoCommunication = typeof isoCommunications.$inferSelect;
 export type InsertIsoCommunication = z.infer<typeof insertIsoCommunicationSchema>;
+
+// ─── Audit Logs (Security / HIPAA) ───────────────────────────────────────────
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"),                   // null for unauthenticated attempts
+  action: text("action").notNull(),          // e.g. 'view_employee', 'edit_incident', 'login'
+  resource: text("resource"),               // e.g. 'employees', 'incidents', 'auth'
+  resourceId: text("resource_id"),          // e.g. the employee ID
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  statusCode: integer("status_code"),
+  detail: text("detail"),                   // optional JSON detail string
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;

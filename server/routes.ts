@@ -7,6 +7,35 @@ import { registerChatRoutes } from "./replit_integrations/chat";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { db } from "./db";
+import { auditLogs } from "@shared/schema";
+
+// ─── Audit Logging Helper ─────────────────────────────────────────────────────
+async function logAudit(
+  req: Request,
+  action: string,
+  resource?: string,
+  resourceId?: string | number,
+  detail?: string,
+  statusCode?: number,
+) {
+  try {
+    const userId = (req as any).user?.id ?? (req.session as any)?.userId ?? null;
+    const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? req.socket?.remoteAddress ?? null;
+    await db.insert(auditLogs).values({
+      userId: userId ? String(userId) : null,
+      action,
+      resource: resource ?? null,
+      resourceId: resourceId != null ? String(resourceId) : null,
+      ipAddress: ip,
+      userAgent: req.headers["user-agent"]?.slice(0, 500) ?? null,
+      statusCode: statusCode ?? null,
+      detail: detail ?? null,
+    });
+  } catch {
+    // Never let audit logging break the main request
+  }
+}
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey } from "./stripeClient";
 import { verifyPaddleSignature, processPaddleEvent } from "./paddleService";
@@ -1612,6 +1641,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         ...validated,
         userId,
       });
+      logAudit(req, "create_employee", "employees", employee.id, null, 201);
       res.status(201).json(employee);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -1634,6 +1664,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (!updated) {
         return res.status(404).json({ message: "Employee not found or access denied" });
       }
+      logAudit(req, "update_employee", "employees", id, null, 200);
       res.json(updated);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -1656,6 +1687,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         return res.status(404).json({ message: "Employee not found or access denied" });
       }
       await storage.deleteEmployee(id, userId);
+      logAudit(req, "delete_employee", "employees", id, null, 200);
       res.json({ success: true });
     } catch (error: any) {
       console.error('Error deleting employee:', error);
@@ -1827,6 +1859,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         ...validated,
         userId,
       });
+      logAudit(req, "create_incident", "incidents", incident.id, null, 201);
       res.status(201).json(incident);
 
       // Fire-and-forget incident notification email

@@ -2345,6 +2345,7 @@ export default function Landing() {
               <Link href="/terms-of-service" className="hover:text-primary-foreground transition-colors">Terms of Service</Link>
               <Link href="/refund-policy" className="hover:text-primary-foreground transition-colors">Refund &amp; Cancellation Policy</Link>
               <Link href="/privacy-policy" className="hover:text-primary-foreground transition-colors">Privacy Policy</Link>
+              <Link href="/security" className="hover:text-primary-foreground transition-colors">Security</Link>
               <Link href="/contact" className="hover:text-primary-foreground transition-colors">Contact</Link>
               <Link href="/about" className="hover:text-primary-foreground transition-colors">About</Link>
             </div>
