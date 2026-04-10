@@ -217,6 +217,18 @@ export default function DotComplianceHub() {
         </div>
       </nav>
 
+      {/* Intro Video */}
+      <section className="bg-black">
+        <div className="max-w-5xl mx-auto">
+          <video
+            src={dotVideoSrc}
+            controls
+            className="w-full max-h-[500px] object-contain"
+            data-testid="video-dot-compliance-intro"
+          />
+        </div>
+      </section>
+
       {/* Hero */}
       <section className="relative bg-primary text-white overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiA2djZoNnYtNmgtNnptLTEyIDZoNnY2aC02di02em0xMiAwaDZ2NmgtNnYtNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-40" />
@@ -269,18 +281,6 @@ export default function DotComplianceHub() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Intro Video */}
-      <section className="bg-black">
-        <div className="max-w-5xl mx-auto">
-          <video
-            src={dotVideoSrc}
-            controls
-            className="w-full max-h-[500px] object-contain"
-            data-testid="video-dot-compliance-intro"
-          />
         </div>
       </section>
 
