@@ -138,12 +138,12 @@ export default function Security() {
             Core Compliance Hub is built with enterprise security in mind. Here is everything your IT team needs to evaluate, verify, and approve our platform.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <a href="mailto:security@corecompliancehub.com">
+            <a href="mailto:team@corecompliancehub.com">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-white gap-2">
                 <Mail className="w-4 h-4" /> Request Security Package
               </Button>
             </a>
-            <a href="mailto:security@corecompliancehub.com?subject=BAA%20Request&body=Hello%2C%0A%0AWe%20are%20interested%20in%20a%20Business%20Associate%20Agreement%20(BAA)%20with%20Core%20Compliance%20Hub.%0A%0ACompany%20Name%3A%20%0AContact%20Name%3A%20%0APhone%20Number%3A%20%0A%0APlease%20send%20over%20the%20BAA%20for%20our%20review.%0A%0AThank%20you.">
+            <a href="mailto:team@corecompliancehub.com?subject=BAA%20Request&body=Hello%2C%0A%0AWe%20are%20interested%20in%20a%20Business%20Associate%20Agreement%20(BAA)%20with%20Core%20Compliance%20Hub.%0A%0ACompany%20Name%3A%20%0AContact%20Name%3A%20%0APhone%20Number%3A%20%0A%0APlease%20send%20over%20the%20BAA%20for%20our%20review.%0A%0AThank%20you.">
               <Button size="lg" variant="outline" className="border-white/30 text-accent hover:bg-white/10 gap-2">
                 <FileText className="w-4 h-4" /> Request BAA
               </Button>
@@ -267,7 +267,7 @@ export default function Security() {
             We are happy to schedule a technical call with your IT director, provide our Security Whitepaper, or start the BAA process.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="mailto:security@corecompliancehub.com">
+            <a href="mailto:team@corecompliancehub.com">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-white gap-2 w-full sm:w-auto">
                 <Mail className="w-4 h-4" /> Email Our Security Team
               </Button>
@@ -278,7 +278,7 @@ export default function Security() {
               </Button>
             </Link>
           </div>
-          <p className="text-xs text-muted-foreground mt-6">security@corecompliancehub.com · Response within 1 business day</p>
+          <p className="text-xs text-muted-foreground mt-6">team@corecompliancehub.com · Response within 1 business day</p>
         </div>
       </section>
 
