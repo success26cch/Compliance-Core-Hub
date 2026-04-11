@@ -265,13 +265,14 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'chat' | 'nc' | 'documentation' | 'process_map' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
+type SectionKey = 'chat' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   chat:              [null, undefined, 'librarian', 'trainer', 'auditor'],
   nc:                [null, undefined, 'librarian', 'trainer', 'auditor'],
   documentation:     [null, undefined, 'librarian', 'trainer', 'auditor'],
   process_map:       [null, undefined, 'librarian', 'trainer', 'auditor'],
+  system_profile:    [null, undefined, 'librarian', 'trainer', 'auditor'],
   communication:     [null, undefined, 'trainer', 'auditor'],
   training:          [null, undefined, 'trainer', 'auditor'],
   risk:              [null, undefined, 'auditor'],
@@ -523,12 +524,13 @@ export default function ISOManager() {
               <div className="mt-6 space-y-1">
                 <p className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Modules</p>
 
-                {(["chat","nc","documentation","process_map","communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
+                {(["chat","nc","documentation","process_map","system_profile","communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
                   const META: Record<SectionKey, { icon: any; label: string }> = {
                     chat:              { icon: MessageSquare,  label: "AI Consultation" },
                     nc:                { icon: Shield,         label: "NC & CAPA" },
                     documentation:     { icon: FileText,       label: "Documentation" },
                     process_map:       { icon: MapPin,         label: "Process Maps" },
+                    system_profile:    { icon: Building2,      label: "My System Profile" },
                     communication:     { icon: Mail,           label: "Communication" },
                     risk:              { icon: AlertTriangle,  label: "Risk Assessment" },
                     management_review: { icon: BarChart2,      label: "Management Review" },
@@ -654,6 +656,8 @@ export default function ISOManager() {
               <DocumentationModule onAskIsa={handleAskIsa} />
             ) : activeSection === 'process_map' ? (
               <ProcessMapModule project={project ?? null} onStartWizard={handleStartWizard} />
+            ) : activeSection === 'system_profile' ? (
+              <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
             ) : activeSection === 'communication' ? (
               canAccessSection('communication', isoRole, isSuperadmin)
                 ? <CommunicationModule isoProjectId={project?.id} />
@@ -816,7 +820,7 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
   const [phase, setPhase] = useState<1 | 2 | 3>((project.phase as 1 | 2 | 3) || 1);
   const [p1Step, setP1Step] = useState(0);
   const [p3Step, setP3Step] = useState(0);
-  const [showDraftPane, setShowDraftPane] = useState(false);
+
 
   const showOEM = standard === "IATF 16949" || standard === "AS9100 Rev D";
 
@@ -932,26 +936,16 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
   return (
     <div className="flex h-full overflow-hidden" data-testid="wizard-iso-setup">
       {/* ── LEFT: Questions Pane ── */}
-      <div className={`flex flex-col border-r border-border/60 bg-white dark:bg-card overflow-hidden transition-all duration-300 ${showDraftPane ? "w-[58%]" : "flex-1"}`} data-testid="wizard-questions-pane">
-        {/* Progress Bar + Context Toggle */}
+      <div className="flex flex-col flex-1 bg-white dark:bg-card overflow-hidden" data-testid="wizard-questions-pane">
+        {/* Progress Bar */}
         <div className="shrink-0 px-6 py-4 border-b border-border/60 bg-muted/30">
-          <div className="flex gap-2 mb-2">
+          <div className="flex gap-2">
             {phaseLabels.map((label, i) => (
               <div key={label} className="flex-1">
                 <div className={`h-1.5 rounded-full transition-all duration-500 ${phase === i + 1 ? "bg-accent" : phase > i + 1 ? "bg-accent/40" : "bg-border/40"}`} />
                 <p className={`text-[10px] font-bold mt-1 truncate ${phase === i + 1 ? "text-accent" : "text-muted-foreground/50"}`}>{label}</p>
               </div>
             ))}
-          </div>
-          <div className="flex justify-end mt-1">
-            <button
-              onClick={() => setShowDraftPane(p => !p)}
-              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-accent transition-colors px-2 py-1 rounded border border-border/50 hover:border-accent/40 bg-white dark:bg-card"
-              data-testid="button-wizard-toggle-draft-pane"
-            >
-              <FolderOpen className="w-3 h-3" />
-              {showDraftPane ? "Hide Context" : "Show Context Panel"}
-            </button>
           </div>
         </div>
 
@@ -1366,105 +1360,6 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
         </div>
       </div>
 
-      {/* ── RIGHT: Drafting Pane ── */}
-      <div className={`flex flex-col bg-muted/20 overflow-hidden transition-all duration-300 ${showDraftPane ? "w-[42%]" : "w-0 hidden"}`} data-testid="wizard-drafting-pane">
-        <div className="shrink-0 px-5 py-4 border-b border-border/60 bg-white dark:bg-card">
-          <div className="flex items-center gap-2">
-            <FolderOpen className="w-4 h-4 text-accent" />
-            <p className="text-sm font-black text-primary">Your Management System</p>
-            <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 rounded px-1.5 py-0.5 font-bold ml-auto">Building in Real Time</span>
-          </div>
-        </div>
-
-        <ScrollArea className="flex-1">
-          <div className="p-5 space-y-4" data-testid="drafting-pane-content">
-
-            {/* Organization Profile */}
-            <DraftSection title="Organization Profile" icon={<Building2 className="w-3.5 h-3.5" />}>
-              {orgName || orgAddress || totalEmp ? (
-                <div className="space-y-1.5 text-xs">
-                  {orgName && <DraftRow label="Organization" value={orgName} />}
-                  {orgAddress && <DraftRow label="Address" value={orgAddress} />}
-                  {standard && <DraftRow label="Standard" value={standard} highlight />}
-                  {totalEmp && <DraftRow label="Employees" value={`${totalEmp} total${prodEmp ? ` (${prodEmp} prod. / ${adminEmp} admin)` : ""}`} />}
-                </div>
-              ) : <DraftEmpty />}
-            </DraftSection>
-
-            {/* Scope Statement */}
-            <DraftSection title="Scope Statement" icon={<Target className="w-3.5 h-3.5" />}>
-              {products ? (
-                <div className="space-y-2 text-xs">
-                  <p className="text-primary/80 leading-relaxed italic">"{products}"</p>
-                  {mfgTech.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {mfgTech.filter(t => t !== "Other").map(t => (
-                        <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-muted border border-border/60 text-muted-foreground font-medium">{t}</span>
-                      ))}
-                    </div>
-                  )}
-                  {hasDesign !== null && (
-                    <p className={`text-[10px] font-bold ${hasDesign ? "text-accent" : "text-muted-foreground"}`}>
-                      Design & Development (Cl. 8.3): {hasDesign ? "In Scope" : "Excluded"}
-                    </p>
-                  )}
-                </div>
-              ) : <DraftEmpty />}
-            </DraftSection>
-
-            {/* Process Architecture */}
-            <DraftSection title="Process Architecture" icon={<Factory className="w-3.5 h-3.5" />}>
-              {processes.length > 0 ? (
-                <div className="space-y-2">
-                  {processes.map((p, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-card rounded-lg border border-border/60 p-2.5">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-xs font-bold text-primary">{p.name}</span>
-                        <span className="text-[10px] text-muted-foreground">· {p.owner}</span>
-                      </div>
-                      {p.kpi && <p className="text-[10px] text-muted-foreground mb-1"><span className="font-semibold">KPI:</span> {p.kpi}</p>}
-                      {p.clauses.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {p.clauses.map(c => (
-                            <span key={c} className="text-[9px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-bold">{c}</span>
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              ) : <DraftEmpty />}
-            </DraftSection>
-
-            {/* Quality Policy */}
-            <DraftSection title="Quality Policy Draft" icon={<Award className="w-3.5 h-3.5" />}>
-              {coreValues.some(v => v.trim()) ? (
-                <div className="space-y-1.5">
-                  {coreValues.filter(v => v.trim()).map((v, i) => (
-                    <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-xs">
-                      <CheckCircle2 className="w-3 h-3 text-accent shrink-0" />
-                      <span className="font-semibold text-primary">{v}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : <DraftEmpty />}
-            </DraftSection>
-
-            {/* Risk Framework */}
-            <DraftSection title="Risk Framework" icon={<Shield className="w-3.5 h-3.5" />}>
-              {riskPhil.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
-                  {riskPhil.map(r => (
-                    <motion.span key={r} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-muted border border-border/60 text-muted-foreground font-medium">{r}</motion.span>
-                  ))}
-                </div>
-              ) : <DraftEmpty />}
-            </DraftSection>
-
-          </div>
-        </ScrollArea>
-      </div>
     </div>
   );
 }
@@ -1491,7 +1386,214 @@ function DraftRow({ label, value, highlight }: { label: string; value: string; h
 }
 
 function DraftEmpty() {
-  return <p className="text-xs text-muted-foreground/40 italic">Waiting for your answers…</p>;
+  return <p className="text-xs text-muted-foreground/40 italic">Not yet configured.</p>;
+}
+
+/* ─── SYSTEM PROFILE MODULE ───────────────────────────── */
+function SystemProfileModule({ project, onStartWizard }: { project: IsoProject | null; onStartWizard: () => void }) {
+  if (!project || project.status === "not_started") {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 p-12 text-center" data-testid="system-profile-empty">
+        <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+          <Building2 className="w-8 h-8 text-accent" />
+        </div>
+        <div className="max-w-sm">
+          <h2 className="text-xl font-black text-primary mb-2">No System Profile Yet</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Complete the setup wizard to build your ISO Management System Profile. Your organization details, scope, processes, and quality policy will appear here.
+          </p>
+        </div>
+        <Button onClick={onStartWizard} className="bg-accent hover:bg-accent/90 text-white gap-2" data-testid="button-start-wizard-from-profile">
+          <Plus className="w-4 h-4" /> Start Setup Wizard
+        </Button>
+      </div>
+    );
+  }
+
+  const processes = (project.processes as ProcessEntry[]) || [];
+  const coreValues = (project.coreValues || []).filter((v: string) => v.trim());
+  const riskPhil = project.riskPhilosophy || [];
+  const mfgTech = (project.manufacturingTech || []).filter((t: string) => t !== "Other");
+
+  return (
+    <div className="flex-1 overflow-auto" data-testid="system-profile-page">
+      <ScrollArea className="h-full">
+        <div className="max-w-3xl mx-auto px-8 py-8 space-y-6">
+
+          {/* Header */}
+          <div className="flex items-center gap-4 pb-4 border-b border-border/60">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+              <Building2 className="w-6 h-6 text-accent" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-primary">{project.orgName || "My Organization"}</h1>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                {project.standard && (
+                  <span className="text-[11px] bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 font-bold">{project.standard}</span>
+                )}
+                {project.status === "complete" && (
+                  <span className="text-[11px] bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30 rounded px-2 py-0.5 font-bold">Setup Complete</span>
+                )}
+                {project.status === "in_progress" && (
+                  <span className="text-[11px] bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700/30 rounded px-2 py-0.5 font-bold">In Progress</span>
+                )}
+              </div>
+            </div>
+            {project.status === "in_progress" && (
+              <Button variant="outline" size="sm" onClick={onStartWizard} className="ml-auto gap-1.5 border-accent/30 text-accent hover:bg-accent/5" data-testid="button-continue-wizard">
+                Continue Setup <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
+
+          {/* Organization Profile */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Organization Profile</h2>
+            </div>
+            <div className="bg-white dark:bg-card rounded-xl border border-border/60 divide-y divide-border/40">
+              {project.orgName && (
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-xs text-muted-foreground w-36 shrink-0">Organization Name</span>
+                  <span className="text-sm font-semibold text-primary">{project.orgName}</span>
+                </div>
+              )}
+              {project.orgAddress && (
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-xs text-muted-foreground w-36 shrink-0">Address</span>
+                  <span className="text-sm font-semibold text-primary">{project.orgAddress}</span>
+                </div>
+              )}
+              {project.standard && (
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-xs text-muted-foreground w-36 shrink-0">ISO Standard</span>
+                  <span className="text-sm font-bold text-accent">{project.standard}</span>
+                </div>
+              )}
+              {project.totalEmployees && (
+                <div className="flex items-center gap-4 px-5 py-3">
+                  <span className="text-xs text-muted-foreground w-36 shrink-0">Employees</span>
+                  <span className="text-sm font-semibold text-primary">
+                    {project.totalEmployees} total
+                    {project.productionEmployees ? ` · ${project.productionEmployees} production / ${project.adminEmployees} admin` : ""}
+                  </span>
+                </div>
+              )}
+              {!project.orgName && !project.orgAddress && !project.standard && (
+                <div className="px-5 py-4"><DraftEmpty /></div>
+              )}
+            </div>
+          </div>
+
+          {/* Scope Statement */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Scope Statement</h2>
+            </div>
+            <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5 space-y-3">
+              {project.productsServices ? (
+                <>
+                  <p className="text-sm text-primary/80 leading-relaxed italic">"{project.productsServices}"</p>
+                  {mfgTech.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1.5 font-semibold">Manufacturing Technologies</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {mfgTech.map((t: string) => (
+                          <span key={t} className="text-xs px-2 py-0.5 rounded bg-muted border border-border/60 text-muted-foreground font-medium">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {project.hasDesignResponsibility !== null && project.hasDesignResponsibility !== undefined && (
+                    <p className={`text-xs font-bold ${project.hasDesignResponsibility ? "text-accent" : "text-muted-foreground"}`}>
+                      Design & Development (Cl. 8.3): {project.hasDesignResponsibility ? "In Scope" : "Excluded"}
+                    </p>
+                  )}
+                </>
+              ) : <DraftEmpty />}
+            </div>
+          </div>
+
+          {/* Process Architecture */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Factory className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Process Architecture</h2>
+            </div>
+            {processes.length > 0 ? (
+              <div className="grid gap-3">
+                {processes.map((p, i) => (
+                  <div key={i} className="bg-white dark:bg-card rounded-xl border border-border/60 p-4" data-testid={`profile-process-${i}`}>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-sm font-bold text-primary">{p.name}</p>
+                        {p.owner && <p className="text-xs text-muted-foreground">Owner: {p.owner}</p>}
+                      </div>
+                      {p.kpi && (
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">KPI</p>
+                          <p className="text-xs font-semibold text-primary">{p.kpi}</p>
+                        </div>
+                      )}
+                    </div>
+                    {p.clauses && p.clauses.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-border/40">
+                        {p.clauses.map((c: string) => (
+                          <span key={c} className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-bold">{c}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5"><DraftEmpty /></div>
+            )}
+          </div>
+
+          {/* Quality Policy */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Award className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Quality Policy — Core Values</h2>
+            </div>
+            <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5">
+              {coreValues.length > 0 ? (
+                <div className="space-y-2">
+                  {coreValues.map((v: string, i: number) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+                      <span className="text-sm font-semibold text-primary">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <DraftEmpty />}
+            </div>
+          </div>
+
+          {/* Risk Framework */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Risk Identification Methods</h2>
+            </div>
+            <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5">
+              {riskPhil.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {riskPhil.map((r: string) => (
+                    <span key={r} className="text-xs px-3 py-1 rounded-full bg-muted border border-border/60 text-muted-foreground font-medium">{r}</span>
+                  ))}
+                </div>
+              ) : <DraftEmpty />}
+            </div>
+          </div>
+
+        </div>
+      </ScrollArea>
+    </div>
+  );
 }
 
 /* ─── EMPTY STATE ─────────────────────────────────────── */
