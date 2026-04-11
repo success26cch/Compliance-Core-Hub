@@ -459,160 +459,167 @@ export default function ISOManager() {
       <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-muted/30">
 
         {/* ── SIDEBAR ── */}
-        <div className={`${sidebarOpen ? "w-72" : "w-0"} transition-all duration-200 overflow-hidden flex-shrink-0`}>
-          <div className="w-72 h-full flex flex-col bg-white dark:bg-card border-r border-border/60">
+        <div className={`${sidebarOpen ? "w-64" : "w-16"} transition-all duration-200 flex-shrink-0 flex flex-col bg-card border-r border-border/50`}>
 
-            <div className="p-5 border-b border-border/60">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
-                    <img src={acsiLogo} alt="ACSI" className="w-10 h-10 object-contain" />
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-accent rounded-full border-2 border-white dark:border-card" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-black text-primary text-base">Isa</span>
-                    {isPro && (
-                      <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px] px-1.5 py-0 font-bold">Isa Pro</Badge>
-                    )}
-                    {isoRole && ROLE_LABELS[isoRole] && (
-                      <Badge
-                        className={`text-[10px] px-1.5 py-0 font-bold border ${ROLE_COLORS[isoRole]}`}
-                        data-testid="badge-iso-role"
-                      >
-                        {ROLE_LABELS[isoRole]}
-                      </Badge>
-                    )}
-                  </div>
-                  {project?.status === "complete" && project.orgName ? (
-                    <div>
-                      <p className="text-xs font-semibold text-accent truncate">{project.orgName}</p>
-                      <p className="text-[10px] text-muted-foreground">{project.standard}</p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">Lead ISO Auditor AI · ACSI</p>
+          {/* Sidebar Header */}
+          <div className={`flex items-center border-b border-border/50 h-16 px-3 shrink-0 ${sidebarOpen ? "gap-3" : "justify-center"}`}>
+            <div className="relative shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-white dark:bg-muted border border-border/60 flex items-center justify-center shadow-sm">
+                <img src={acsiLogo} alt="ACSI" className="w-7 h-7 object-contain" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border-2 border-card" />
+            </div>
+            {sidebarOpen && (
+              <div className="overflow-hidden">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-sm text-primary">Isa</span>
+                  {isPro && <Badge className="bg-accent/10 text-accent border-accent/30 text-[9px] px-1 py-0 font-bold">Pro</Badge>}
+                  {isoRole && ROLE_LABELS[isoRole] && (
+                    <Badge className={`text-[9px] px-1 py-0 font-bold border ${ROLE_COLORS[isoRole]}`} data-testid="badge-iso-role">
+                      {ROLE_LABELS[isoRole]}
+                    </Badge>
                   )}
                 </div>
+                {project?.status === "complete" && project.orgName ? (
+                  <p className="text-[11px] text-accent font-semibold truncate">{project.orgName}</p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground truncate">Lead ISO Auditor AI</p>
+                )}
               </div>
+            )}
+          </div>
 
-              <div className="flex flex-wrap gap-1 mb-4">
-                {ISA_STANDARDS.map((s) => {
-                  const active = isPro
-                    ? ISA_TIER_STANDARDS.professional.includes(s.code)
-                    : ISA_TIER_STANDARDS.essentials.includes(s.code);
-                  return (
-                    <span key={s.code} title={`ISO ${s.code} — ${s.label}`}
-                      className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold transition-colors ${
-                        active ? "bg-muted text-primary border-border" : "bg-muted text-muted-foreground/40 border-border/40"
-                      }`}>
-                      {s.code}
-                    </span>
-                  );
-                })}
-              </div>
+          {/* Scrollable Nav Content */}
+          <div className="flex-1 overflow-y-auto px-2 py-3">
 
-              <Button onClick={() => {
-                setActiveSection('chat');
-                setActiveConversationId(null);
-                handleNewChat();
-              }} disabled={isCreating}
-                className="w-full gap-2 bg-accent hover:bg-accent/90 text-white" data-testid="button-new-iso-chat">
+            {/* New Consultation */}
+            {sidebarOpen ? (
+              <Button onClick={() => { setActiveSection('chat'); setActiveConversationId(null); handleNewChat(); }}
+                disabled={isCreating}
+                className="w-full gap-2 mb-3 bg-accent hover:bg-accent/90 text-white text-sm"
+                data-testid="button-new-iso-chat">
                 <Plus className="w-4 h-4" /> New Consultation
               </Button>
+            ) : (
+              <button onClick={() => { setActiveSection('chat'); setActiveConversationId(null); handleNewChat(); }}
+                disabled={isCreating}
+                title="New Consultation"
+                className="w-full flex items-center justify-center h-9 mb-3 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                data-testid="button-new-iso-chat">
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
 
-              <div className="mt-6 space-y-1">
-                <p className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Modules</p>
-
-                {(["chat","nc","documentation","process_map","system_profile","communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
-                  const META: Record<SectionKey, { icon: any; label: string }> = {
-                    chat:              { icon: MessageSquare,  label: "AI Consultation" },
-                    nc:                { icon: Shield,         label: "NC & CAPA" },
-                    documentation:     { icon: FileText,       label: "Documentation" },
-                    process_map:       { icon: MapPin,         label: "Process Maps" },
-                    system_profile:    { icon: Building2,      label: "My System Profile" },
-                    communication:     { icon: Mail,           label: "Communication" },
-                    risk:              { icon: AlertTriangle,  label: "Risk Assessment" },
-                    management_review: { icon: BarChart2,      label: "Management Review" },
-                    internal_audit:    { icon: ClipboardCheck, label: "Internal Audits" },
-                    training:          { icon: GraduationCap,  label: "Training" },
-                    measurement:       { icon: Activity,       label: "Measurement & Monitoring" },
-                  };
-                  const { icon, label } = META[section];
-                  const locked = !canAccessSection(section, isoRole, isSuperadmin);
-                  return (
-                    <ModuleNavButton
-                      key={section}
-                      active={activeSection === section}
-                      onClick={() => handleSectionChange(section)}
-                      icon={icon}
-                      label={label}
-                      testId={`nav-${section.replace(/_/g, '-')}`}
-                      locked={locked}
-                    />
-                  );
-                })}
+            {/* Core Modules */}
+            {sidebarOpen && (
+              <div className="pt-1 pb-1">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">Core</span>
+                  <div className="h-px flex-1 bg-border/60" />
+                </div>
               </div>
+            )}
+            <div className="space-y-0.5">
+              {(["chat","nc","documentation","process_map","system_profile"] as SectionKey[]).map((section) => {
+                const META: Record<string, { icon: any; label: string }> = {
+                  chat:           { icon: MessageSquare, label: "AI Consultation" },
+                  nc:             { icon: Shield,        label: "NC & CAPA" },
+                  documentation:  { icon: FileText,      label: "Documentation" },
+                  process_map:    { icon: MapPin,        label: "Process Maps" },
+                  system_profile: { icon: Building2,     label: "My System Profile" },
+                };
+                const { icon, label } = META[section];
+                const locked = !canAccessSection(section, isoRole, isSuperadmin);
+                return (
+                  <ModuleNavButton key={section} active={activeSection === section}
+                    onClick={() => handleSectionChange(section)} icon={icon} label={label}
+                    testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
+                );
+              })}
             </div>
 
-            <div className="p-4 border-b border-border/60 bg-muted/20">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
-                {isPro ? "Isa Pro Capabilities" : "Isa Capabilities"}
-              </p>
-              <ul className="space-y-1.5">
-                {(isPro ? ISA_PRO_CAPABILITIES : ISA_CAPABILITIES).map((cap) => (
-                  <li key={cap} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-accent shrink-0" /> {cap}
-                  </li>
-                ))}
-              </ul>
-              {!isPro && (
-                <Link href="/settings">
-                  <button className="mt-3 w-full text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors">
-                    <Zap className="w-3 h-3" /> Upgrade to Isa Pro — $199/mo
-                    <ChevronRight className="w-3 h-3 ml-auto" />
-                  </button>
-                </Link>
-              )}
+            {/* Advanced Modules */}
+            {sidebarOpen && (
+              <div className="pt-3 pb-1">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">Advanced</span>
+                  <div className="h-px flex-1 bg-border/60" />
+                </div>
+              </div>
+            )}
+            {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
+            <div className="space-y-0.5">
+              {(["communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
+                const META: Record<string, { icon: any; label: string }> = {
+                  communication:     { icon: Mail,           label: "Communication" },
+                  risk:              { icon: AlertTriangle,  label: "Risk Assessment" },
+                  management_review: { icon: BarChart2,      label: "Management Review" },
+                  internal_audit:    { icon: ClipboardCheck, label: "Internal Audits" },
+                  training:          { icon: GraduationCap,  label: "Training" },
+                  measurement:       { icon: Activity,       label: "Measurement" },
+                };
+                const { icon, label } = META[section];
+                const locked = !canAccessSection(section, isoRole, isSuperadmin);
+                return (
+                  <ModuleNavButton key={section} active={activeSection === section}
+                    onClick={() => handleSectionChange(section)} icon={icon} label={label}
+                    testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
+                );
+              })}
             </div>
 
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <p className="px-4 pt-3 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recent Sessions</p>
-              <ScrollArea className="flex-1 px-2 pb-2">
+            {/* Recent Sessions (only when expanded) */}
+            {sidebarOpen && (
+              <>
+                <div className="pt-3 pb-1">
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="h-px flex-1 bg-border/60" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">Recent</span>
+                    <div className="h-px flex-1 bg-border/60" />
+                  </div>
+                </div>
                 <div className="space-y-0.5">
                   {!conversations?.length && (
-                    <p className="text-xs text-muted-foreground/50 text-center py-4">No sessions yet</p>
+                    <p className="text-xs text-muted-foreground/50 text-center py-3">No sessions yet</p>
                   )}
                   {conversations?.map((conv: any) => (
-                    <button key={conv.id} onClick={() => {
-                      setActiveConversationId(conv.id);
-                      setActiveSection('chat');
-                    }}
+                    <button key={conv.id} onClick={() => { setActiveConversationId(conv.id); setActiveSection('chat'); }}
                       data-testid={`button-iso-conversation-${conv.id}`}
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-2 truncate ${
-                        activeConversationId === conv.id && activeSection === 'chat' ? "bg-accent/10 text-accent font-medium" : "text-muted-foreground hover:bg-muted"
+                        activeConversationId === conv.id && activeSection === 'chat'
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       }`}>
-                      <MessageSquare className="w-3 h-3 shrink-0 opacity-50" />
+                      <MessageSquare className="w-3.5 h-3.5 shrink-0 opacity-50" />
                       <span className="truncate">{conv.title}</span>
                     </button>
                   ))}
                 </div>
-              </ScrollArea>
-            </div>
-
-            {usageData && !isPro && (
-              <div className="p-4 border-t border-border/60 bg-muted/20">
-                <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-                  <span>Preview questions used</span>
-                  <span>{usageData.questionCount} / {usageData.freeLimit}</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-1.5">
-                  <div className="bg-accent h-1.5 rounded-full transition-all"
-                    style={{ width: `${Math.min(100, (usageData.questionCount / usageData.freeLimit) * 100)}%` }} />
-                </div>
-              </div>
+              </>
             )}
           </div>
+
+          {/* Sidebar Footer */}
+          {sidebarOpen && usageData && !isPro && (
+            <div className="px-3 py-3 border-t border-border/50">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                <span>Preview questions</span>
+                <span>{usageData.questionCount} / {usageData.freeLimit}</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-1.5">
+                <div className="bg-accent h-1.5 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (usageData.questionCount / usageData.freeLimit) * 100)}%` }} />
+              </div>
+              <Link href="/settings">
+                <button className="mt-2 w-full text-xs text-accent hover:text-accent/80 flex items-center gap-1 font-medium transition-colors">
+                  <Zap className="w-3 h-3" /> Upgrade to Isa Pro
+                  <ChevronRight className="w-3 h-3 ml-auto" />
+                </button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* ── MAIN PANEL ── */}
@@ -2148,6 +2155,7 @@ function ModuleNavButton({
   label, 
   testId,
   locked = false,
+  collapsed = false,
 }: { 
   active: boolean; 
   onClick: () => void; 
@@ -2155,25 +2163,26 @@ function ModuleNavButton({
   label: string;
   testId: string;
   locked?: boolean;
+  collapsed?: boolean;
 }) {
   return (
-    <Button
-      variant="ghost"
+    <button
       onClick={locked ? undefined : onClick}
       disabled={locked}
-      className={`w-full justify-start gap-3 h-9 px-3 transition-all ${
-        locked
-          ? "opacity-40 cursor-not-allowed text-muted-foreground"
-          : active 
-            ? "bg-accent/10 text-accent font-bold border border-accent/20" 
-            : "text-muted-foreground hover:bg-muted"
-      }`}
+      title={collapsed ? (locked ? "Upgrade to access" : label) : (locked ? "Upgrade your plan to access this module" : undefined)}
       data-testid={testId}
-      title={locked ? "Upgrade your plan to access this module" : undefined}
+      className={`w-full flex items-center rounded-lg transition-all duration-150 text-sm font-medium
+        ${collapsed ? "justify-center h-10 px-0" : "gap-3 px-3 py-2.5"}
+        ${locked
+          ? "opacity-40 cursor-not-allowed text-muted-foreground"
+          : active
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        }`}
     >
-      <Icon className={`w-4 h-4 shrink-0 ${active && !locked ? "text-accent" : "opacity-70"}`} />
-      <span className="truncate flex-1">{label}</span>
-      {locked && <Lock className="w-3 h-3 shrink-0 opacity-50" />}
-    </Button>
+      <Icon className={`w-5 h-5 shrink-0 ${active && !locked ? "text-primary" : ""}`} />
+      {!collapsed && <span className="truncate flex-1">{label}</span>}
+      {!collapsed && locked && <Lock className="w-3.5 h-3.5 shrink-0 opacity-50" />}
+    </button>
   );
 }
