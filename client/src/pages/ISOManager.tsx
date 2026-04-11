@@ -354,7 +354,7 @@ export default function ISOManager() {
   const handleStartWizard = () => {
     if (project) {
       setShowWizard(true);
-      setActiveSection('chat');
+      setActiveSection('context_org');
     } else {
       createProjectMut.mutate();
     }
@@ -377,7 +377,7 @@ export default function ISOManager() {
     createConversation(title, {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
-        setActiveSection('chat');
+        setActiveSection('context_org');
         setSidebarOpen(true);
         setShowWizard(false);
       },
@@ -497,14 +497,14 @@ export default function ISOManager() {
 
             {/* New Consultation */}
             {sidebarOpen ? (
-              <Button onClick={() => { setActiveSection('chat'); setActiveConversationId(null); handleNewChat(); }}
+              <Button onClick={() => { setActiveSection('context_org'); setActiveConversationId(null); handleNewChat(); }}
                 disabled={isCreating}
                 className="w-full gap-2 mb-3 bg-accent hover:bg-accent/90 text-white text-sm"
                 data-testid="button-new-iso-chat">
                 <Plus className="w-4 h-4" /> New Consultation
               </Button>
             ) : (
-              <button onClick={() => { setActiveSection('chat'); setActiveConversationId(null); handleNewChat(); }}
+              <button onClick={() => { setActiveSection('context_org'); setActiveConversationId(null); handleNewChat(); }}
                 disabled={isCreating}
                 title="New Consultation"
                 className="w-full flex items-center justify-center h-9 mb-3 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
@@ -588,10 +588,10 @@ export default function ISOManager() {
                     <p className="text-xs text-muted-foreground/50 text-center py-3">No sessions yet</p>
                   )}
                   {conversations?.map((conv: any) => (
-                    <button key={conv.id} onClick={() => { setActiveConversationId(conv.id); setActiveSection('chat'); }}
+                    <button key={conv.id} onClick={() => { setActiveConversationId(conv.id); setActiveSection('context_org'); }}
                       data-testid={`button-iso-conversation-${conv.id}`}
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-2 truncate ${
-                        activeConversationId === conv.id && activeSection === 'chat'
+                        activeConversationId === conv.id
                           ? "bg-primary/10 text-primary font-medium"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       }`}>
@@ -661,7 +661,7 @@ export default function ISOManager() {
 
           <div className="flex-1 overflow-hidden flex flex-col relative">
             {activeSection === 'context_org' ? (
-              <ContextOfOrgModule project={project ?? null} onStartWizard={handleStartWizard} onAskIsa={handleAskIsa} />
+              <ContextOfOrgModule project={project ?? null} onStartWizard={handleStartWizard} onAskIsa={handleAskIsa} onNavigate={setActiveSection} />
             ) : activeSection === 'system_profile' ? (
               <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
             ) : activeSection === 'nc' ? (
@@ -1404,6 +1404,19 @@ function DraftEmpty() {
 
 type PestleKey = 'political' | 'economic' | 'social' | 'technological' | 'legal' | 'environmental';
 type SwotKey = 'strengths' | 'weaknesses' | 'opportunities' | 'threats';
+type PestleItem = { text: string; type: 'risk' | 'opportunity' };
+type InterestedParty = {
+  party: string;
+  group: 'internal' | 'external';
+  relevant: boolean;
+  needs: string;
+  expectations: string;
+  actions: string;
+  monitoringMethod: string;
+  risks: string;
+  opportunities: string;
+  piRanking: 'manage_closely' | 'keep_informed' | 'keep_satisfied' | 'monitor_only' | '';
+};
 
 const PESTLE_CONFIG: { key: PestleKey; label: string; icon: any; color: string; desc: string }[] = [
   { key: 'political',     label: 'Political',     icon: Globe,        color: 'text-blue-600',   desc: 'Government policy, trade regulations, political stability' },
@@ -1421,42 +1434,94 @@ const SWOT_CONFIG: { key: SwotKey; label: string; icon: any; color: string; bg: 
   { key: 'threats',       label: 'Threats',       icon: AlertCircle,  color: 'text-amber-700',  bg: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700/30',  desc: 'External risks — competition, economic downturns, regulatory changes' },
 ];
 
-const DEFAULT_INTERESTED_PARTIES = [
-  { party: "Customers / End Users", needs: "", expectations: "", relevant: true },
-  { party: "Regulatory Bodies (OSHA, EPA, etc.)", needs: "", expectations: "", relevant: true },
-  { party: "Employees & Their Representatives", needs: "", expectations: "", relevant: true },
-  { party: "Suppliers & Contractors", needs: "", expectations: "", relevant: true },
-  { party: "OEM Customers / Tier 1 Customers", needs: "", expectations: "", relevant: false },
-  { party: "Shareholders / Ownership", needs: "", expectations: "", relevant: true },
-  { party: "Local Community", needs: "", expectations: "", relevant: false },
+const PI_RANKING_CONFIG: { value: InterestedParty['piRanking']; label: string; color: string; bg: string }[] = [
+  { value: 'manage_closely', label: 'Manage Closely', color: 'text-red-700',    bg: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-700/40' },
+  { value: 'keep_informed',  label: 'Keep Informed',  color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700/40' },
+  { value: 'keep_satisfied', label: 'Keep Satisfied', color: 'text-green-700',  bg: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700/40' },
+  { value: 'monitor_only',   label: 'Monitor Only',   color: 'text-muted-foreground', bg: 'bg-muted border-border/60' },
 ];
 
-function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
+const DEFAULT_INTERESTED_PARTIES: InterestedParty[] = [
+  { party: "Customers / End Users",                group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { party: "OEM / Tier 1 Customers",               group: 'external', relevant: false, needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { party: "Regulatory Bodies (OSHA, EPA, etc.)",  group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { party: "Certification Body",                   group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_informed' },
+  { party: "Suppliers & Contractors",              group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_informed' },
+  { party: "Employees & Their Representatives",    group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_satisfied' },
+  { party: "Senior Management",                    group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { party: "Shareholders / Ownership",             group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { party: "Corporate / Parent Company",           group: 'internal', relevant: false, needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'monitor_only' },
+];
+
+function normalizePestleItems(raw: any): PestleItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item: any) =>
+    typeof item === 'string' ? { text: item, type: 'risk' as const } : item
+  );
+}
+
+function normalizeParty(raw: any): InterestedParty {
+  return {
+    party:           raw.party || '',
+    group:           raw.group || 'external',
+    relevant:        raw.relevant ?? true,
+    needs:           raw.needs || '',
+    expectations:    raw.expectations || '',
+    actions:         raw.actions || '',
+    monitoringMethod:raw.monitoringMethod || '',
+    risks:           raw.risks || '',
+    opportunities:   raw.opportunities || '',
+    piRanking:       raw.piRanking || '',
+  };
+}
+
+function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   project: IsoProject | null;
   onStartWizard: () => void;
   onAskIsa: (msg: string) => void;
+  onNavigate?: (section: SectionKey) => void;
 }) {
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'pestle' | 'swot' | 'interested'>('pestle');
+  const [activeTab, setActiveTab] = useState<'pestle' | 'swot' | 'interested' | 'bridge'>('pestle');
 
-  // Local state for editable data
-  const [pestle, setPestle] = useState<Record<PestleKey, string[]>>(() => {
+  // ── PESTLE state (normalizes old string[] format to PestleItem[])
+  const [pestle, setPestle] = useState<Record<PestleKey, PestleItem[]>>(() => {
     const d = (project as any)?.pestleData;
-    return d || { political: [], economic: [], social: [], technological: [], legal: [], environmental: [] };
+    if (!d) return { political: [], economic: [], social: [], technological: [], legal: [], environmental: [] };
+    return {
+      political:     normalizePestleItems(d.political),
+      economic:      normalizePestleItems(d.economic),
+      social:        normalizePestleItems(d.social),
+      technological: normalizePestleItems(d.technological),
+      legal:         normalizePestleItems(d.legal),
+      environmental: normalizePestleItems(d.environmental),
+    };
   });
+
+  // ── SWOT state
   const [swot, setSwot] = useState<Record<SwotKey, string[]>>(() => {
     const d = (project as any)?.swotData;
     return d || { strengths: [], weaknesses: [], opportunities: [], threats: [] };
   });
-  const [parties, setParties] = useState<Array<{ party: string; needs: string; expectations: string; relevant: boolean }>>(() => {
+
+  // ── Interested Parties state (normalizes old format)
+  const [parties, setParties] = useState<InterestedParty[]>(() => {
     const d = (project as any)?.interestedParties;
-    return d && d.length > 0 ? d : DEFAULT_INTERESTED_PARTIES;
+    return d && d.length > 0 ? d.map(normalizeParty) : DEFAULT_INTERESTED_PARTIES;
   });
 
+  // ── PESTLE add form state
   const [editingPestle, setEditingPestle] = useState<PestleKey | null>(null);
   const [pestleInput, setPestleInput] = useState('');
+  const [pestleType, setPestleType] = useState<'risk' | 'opportunity'>('risk');
+
+  // ── SWOT add form state
   const [editingSwot, setEditingSwot] = useState<SwotKey | null>(null);
   const [swotInput, setSwotInput] = useState('');
+
+  // ── Party expand/collapse
+  const [expandedParties, setExpandedParties] = useState<Set<number>>(new Set());
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -1479,9 +1544,10 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
   const addPestle = (key: PestleKey) => {
     const val = pestleInput.trim();
     if (!val) return;
-    setPestle(p => ({ ...p, [key]: [...p[key], val] }));
+    setPestle(p => ({ ...p, [key]: [...p[key], { text: val, type: pestleType }] }));
     setPestleInput('');
     setEditingPestle(null);
+    setPestleType('risk');
   };
 
   const removePestle = (key: PestleKey, idx: number) => {
@@ -1500,7 +1566,38 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
     setSwot(s => ({ ...s, [key]: s[key].filter((_, i) => i !== idx) }));
   };
 
-  const totalIssues = Object.values(pestle).reduce((a, b) => a + b.length, 0) + Object.values(swot).reduce((a, b) => a + b.length, 0);
+  const togglePartyExpand = (idx: number) => {
+    setExpandedParties(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
+
+  const updateParty = (idx: number, patch: Partial<InterestedParty>) => {
+    setParties(prev => prev.map((item, i) => i === idx ? { ...item, ...patch } : item));
+  };
+
+  // ── Computed counts for the bridge tab
+  const pestleCount  = Object.values(pestle).reduce((a, b) => a + b.length, 0);
+  const pestleRisks  = Object.values(pestle).reduce((a, b) => a + b.filter(i => i.type === 'risk').length, 0);
+  const pestleOpps   = Object.values(pestle).reduce((a, b) => a + b.filter(i => i.type === 'opportunity').length, 0);
+  const swotCount    = Object.values(swot).reduce((a, b) => a + b.length, 0);
+  const relevantParties = parties.filter(p => p.relevant).length;
+  const externalParties = parties.filter(p => p.relevant && p.group === 'external').length;
+  const internalParties = parties.filter(p => p.relevant && p.group === 'internal').length;
+
+  const pirLabel = (v: InterestedParty['piRanking']) =>
+    PI_RANKING_CONFIG.find(r => r.value === v);
+
+  const isaContextPayload = () => {
+    const pestleSummary = PESTLE_CONFIG.map(cfg => ({
+      category: cfg.label,
+      risks: pestle[cfg.key].filter(i => i.type === 'risk').map(i => i.text),
+      opportunities: pestle[cfg.key].filter(i => i.type === 'opportunity').map(i => i.text),
+    }));
+    return `Based on our 4.1/4.2 context data, help me identify the key risks and opportunities we should register under Clause 6.1 and recommend monitoring approaches for our high-power interested parties.\n\nPESTLE (4.1 External): ${JSON.stringify(pestleSummary)}\n\nSWOT (4.1 Internal): ${JSON.stringify(swot)}\n\nInterested Parties (4.2): ${JSON.stringify(parties.filter(p => p.relevant).map(p => ({ party: p.party, group: p.group, piRanking: p.piRanking, needs: p.needs, expectations: p.expectations, risks: p.risks, opportunities: p.opportunities })))}`;
+  };
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col" data-testid="context-org-module">
@@ -1517,9 +1614,9 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {totalIssues > 0 && (
+            {(pestleCount > 0 || swotCount > 0) && (
               <button
-                onClick={() => onAskIsa(`Based on our PESTLE and SWOT analysis, can you help me understand how these internal and external issues (ISO 4.1) should inform our risk and opportunity register under clause 6.1? Here's our context data: ${JSON.stringify({ pestle, swot }, null, 2)}`)}
+                onClick={() => onAskIsa(isaContextPayload())}
                 className="text-xs text-accent border border-accent/30 hover:bg-accent/5 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors"
                 data-testid="button-ask-isa-context"
               >
@@ -1540,11 +1637,12 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 mt-4">
+        <div className="flex flex-wrap gap-1 mt-4">
           {([
-            { id: 'pestle', label: 'PESTLE Analysis (4.1 External)', icon: Globe },
-            { id: 'swot',   label: 'SWOT Analysis (4.1 Internal)',   icon: TrendingUp },
-            { id: 'interested', label: 'Interested Parties (4.2)',   icon: UserCheck },
+            { id: 'pestle',    label: 'PESTLE (4.1 External)',  icon: Globe },
+            { id: 'swot',      label: 'SWOT (4.1 Internal)',    icon: TrendingUp },
+            { id: 'interested',label: 'Interested Parties (4.2)', icon: UserCheck },
+            { id: 'bridge',    label: '4.1 → 6.1 Summary',     icon: ArrowRight },
           ] as const).map(t => (
             <button
               key={t.id}
@@ -1566,64 +1664,89 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
       <ScrollArea className="flex-1">
         <div className="p-6">
 
-          {/* PESTLE Tab */}
+          {/* ── PESTLE Tab ─────────────────────────────────────────── */}
           {activeTab === 'pestle' && (
             <div className="space-y-4" data-testid="pestle-panel">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
-                <span className="font-bold text-primary">ISO 4.1 — External Issues:</span> Identify external factors (political, economic, social, technological, legal, environmental) that are relevant to your organization's purpose and strategic direction. These become the basis for identifying risks and opportunities under Clause 6.1.
+                <span className="font-bold text-primary">ISO 4.1 — External Issues:</span> Identify external factors relevant to your organization's purpose and strategic direction. Tag each factor as a <span className="font-bold text-red-600">Risk</span> or <span className="font-bold text-green-600">Opportunity</span> — these feed directly into Clause 6.1 Risk Planning.
+                <p className="text-[11px] mt-2 text-muted-foreground">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 · ISO 27001</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {PESTLE_CONFIG.map(cfg => (
-                  <div key={cfg.key} className="bg-white dark:bg-card rounded-xl border border-border/60 p-4" data-testid={`pestle-card-${cfg.key}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <cfg.icon className={`w-4 h-4 ${cfg.color}`} />
-                      <p className="text-sm font-black text-primary">{cfg.label}</p>
-                      {pestle[cfg.key].length > 0 && (
-                        <span className="ml-auto text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{pestle[cfg.key].length}</span>
+                {PESTLE_CONFIG.map(cfg => {
+                  const items = pestle[cfg.key];
+                  const rCount = items.filter(i => i.type === 'risk').length;
+                  const oCount = items.filter(i => i.type === 'opportunity').length;
+                  return (
+                    <div key={cfg.key} className="bg-white dark:bg-card rounded-xl border border-border/60 p-4" data-testid={`pestle-card-${cfg.key}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <cfg.icon className={`w-4 h-4 ${cfg.color}`} />
+                        <p className="text-sm font-black text-primary">{cfg.label}</p>
+                        <div className="ml-auto flex items-center gap-1">
+                          {rCount > 0 && <span className="text-[9px] font-bold bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:border-red-700/40 px-1.5 py-0.5 rounded-full">{rCount}R</span>}
+                          {oCount > 0 && <span className="text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:border-green-700/40 px-1.5 py-0.5 rounded-full">{oCount}O</span>}
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
+                      <div className="space-y-1.5 mb-2">
+                        {items.map((item, idx) => (
+                          <div key={idx} className="flex items-start gap-2 group">
+                            <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border mt-0.5 ${item.type === 'risk' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-700/40' : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-700/40'}`}>
+                              {item.type === 'risk' ? 'RISK' : 'OPP'}
+                            </span>
+                            <span className="text-xs text-primary flex-1 leading-tight">{item.text}</span>
+                            <button onClick={() => removePestle(cfg.key, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0" data-testid={`btn-remove-pestle-${cfg.key}-${idx}`}>
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      {editingPestle === cfg.key ? (
+                        <div className="space-y-2 mt-2">
+                          <Input
+                            autoFocus
+                            value={pestleInput}
+                            onChange={e => setPestleInput(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') addPestle(cfg.key); if (e.key === 'Escape') { setEditingPestle(null); setPestleInput(''); } }}
+                            placeholder="Describe the factor…"
+                            className="h-7 text-xs"
+                            data-testid={`input-pestle-${cfg.key}`}
+                          />
+                          <div className="flex gap-1.5 items-center">
+                            <span className="text-[10px] font-bold text-muted-foreground">Type:</span>
+                            <button
+                              onClick={() => setPestleType('risk')}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${pestleType === 'risk' ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:border-red-600' : 'text-muted-foreground border-border/50 hover:border-red-300'}`}
+                              data-testid={`btn-type-risk-${cfg.key}`}
+                            >Risk</button>
+                            <button
+                              onClick={() => setPestleType('opportunity')}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${pestleType === 'opportunity' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:border-green-600' : 'text-muted-foreground border-border/50 hover:border-green-300'}`}
+                              data-testid={`btn-type-opp-${cfg.key}`}
+                            >Opportunity</button>
+                            <div className="ml-auto flex gap-1">
+                              <button onClick={() => addPestle(cfg.key)} className="text-xs text-white bg-primary px-2 py-0.5 rounded-md hover:bg-primary/90" data-testid={`btn-add-pestle-${cfg.key}`}>Add</button>
+                              <button onClick={() => { setEditingPestle(null); setPestleInput(''); }} className="text-xs text-muted-foreground hover:text-primary px-1"><X className="w-3 h-3" /></button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setEditingPestle(cfg.key); setPestleInput(''); setPestleType('risk'); }} className="w-full text-xs text-muted-foreground hover:text-accent border border-dashed border-border/60 hover:border-accent/40 rounded-lg py-1.5 flex items-center justify-center gap-1 transition-colors mt-2" data-testid={`btn-new-pestle-${cfg.key}`}>
+                          <Plus className="w-3 h-3" /> Add Factor
+                        </button>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
-                    <div className="space-y-1.5 mb-2">
-                      {pestle[cfg.key].map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-2 group">
-                          <ChevronRight className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
-                          <span className="text-xs text-primary flex-1 leading-tight">{item}</span>
-                          <button onClick={() => removePestle(cfg.key, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive" data-testid={`btn-remove-pestle-${cfg.key}-${idx}`}>
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    {editingPestle === cfg.key ? (
-                      <div className="flex gap-1 mt-2">
-                        <Input
-                          autoFocus
-                          value={pestleInput}
-                          onChange={e => setPestleInput(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') addPestle(cfg.key); if (e.key === 'Escape') { setEditingPestle(null); setPestleInput(''); } }}
-                          placeholder="Describe the factor…"
-                          className="h-7 text-xs"
-                          data-testid={`input-pestle-${cfg.key}`}
-                        />
-                        <button onClick={() => addPestle(cfg.key)} className="text-xs text-white bg-primary px-2 rounded-md hover:bg-primary/90" data-testid={`btn-add-pestle-${cfg.key}`}>Add</button>
-                        <button onClick={() => { setEditingPestle(null); setPestleInput(''); }} className="text-xs text-muted-foreground hover:text-primary px-1"><X className="w-3 h-3" /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => { setEditingPestle(cfg.key); setPestleInput(''); }} className="w-full text-xs text-muted-foreground hover:text-accent border border-dashed border-border/60 hover:border-accent/40 rounded-lg py-1.5 flex items-center justify-center gap-1 transition-colors mt-2" data-testid={`btn-new-pestle-${cfg.key}`}>
-                        <Plus className="w-3 h-3" /> Add Factor
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* SWOT Tab */}
+          {/* ── SWOT Tab ──────────────────────────────────────────── */}
           {activeTab === 'swot' && (
             <div className="space-y-4" data-testid="swot-panel">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
-                <span className="font-bold text-primary">ISO 4.1 — Internal Issues:</span> Document your organization's internal strengths, weaknesses, opportunities, and threats. Combined with PESTLE, this informs your risk and opportunity planning under Clause 6.1.
+                <span className="font-bold text-primary">ISO 4.1 — Internal Issues:</span> Document strengths, weaknesses, opportunities, and threats within your organization. Each item feeds into Clause 6.1 Risk &amp; Opportunity planning.
+                <p className="text-[11px] mt-1.5 text-muted-foreground flex items-center gap-1"><ArrowRight className="w-3 h-3" /> All SWOT items link to 6.1 — indicated by the badge on each entry.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {SWOT_CONFIG.map(cfg => (
@@ -1639,7 +1762,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
                     <div className="space-y-1.5 mb-2">
                       {swot[cfg.key].map((item, idx) => (
                         <div key={idx} className="flex items-start gap-2 group">
-                          <ChevronRight className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
+                          <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-white/70 dark:bg-black/20 text-muted-foreground border-border/50 mt-0.5">→ 6.1</span>
                           <span className="text-xs text-primary flex-1 leading-tight">{item}</span>
                           <button onClick={() => removeSwot(cfg.key, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive" data-testid={`btn-remove-swot-${cfg.key}-${idx}`}>
                             <X className="w-3 h-3" />
@@ -1662,7 +1785,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
                         <button onClick={() => { setEditingSwot(null); setSwotInput(''); }} className="text-xs text-muted-foreground hover:text-primary px-1"><X className="w-3 h-3" /></button>
                       </div>
                     ) : (
-                      <button onClick={() => { setEditingSwot(cfg.key); setSwotInput(''); }} className={`w-full text-xs text-muted-foreground hover:${cfg.color} border border-dashed border-current/30 rounded-lg py-1.5 flex items-center justify-center gap-1 transition-colors mt-2 opacity-60 hover:opacity-100`} data-testid={`btn-new-swot-${cfg.key}`}>
+                      <button onClick={() => { setEditingSwot(cfg.key); setSwotInput(''); }} className="w-full text-xs text-muted-foreground hover:text-primary border border-dashed border-current/20 rounded-lg py-1.5 flex items-center justify-center gap-1 transition-colors mt-2 opacity-70 hover:opacity-100" data-testid={`btn-new-swot-${cfg.key}`}>
                         <Plus className="w-3 h-3" /> Add Item
                       </button>
                     )}
@@ -1672,88 +1795,231 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
             </div>
           )}
 
-          {/* Interested Parties Tab */}
+          {/* ── Interested Parties Tab ─────────────────────────────── */}
           {activeTab === 'interested' && (
             <div className="space-y-4" data-testid="interested-parties-panel">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
-                <span className="font-bold text-primary">ISO 4.2 — Interested Parties:</span> Determine the parties that are relevant to your management system, along with their needs and expectations. Their requirements may become compliance obligations and inputs into your scope definition (4.3).
+                <span className="font-bold text-primary">ISO 4.2 — Interested Parties:</span> Determine relevant internal and external parties, their needs/expectations, how you will meet those needs, how you will monitor them, and their associated risks and opportunities. Use the Power & Interest Ranking (PI-R) to prioritize engagement.
               </div>
-              <div className="space-y-3">
-                {parties.map((p, idx) => (
-                  <div key={idx} className={`bg-white dark:bg-card rounded-xl border p-4 transition-all ${p.relevant ? 'border-primary/30' : 'border-border/40 opacity-60'}`} data-testid={`party-card-${idx}`}>
-                    <div className="flex items-start gap-3">
-                      <button
-                        onClick={() => setParties(prev => prev.map((item, i) => i === idx ? { ...item, relevant: !item.relevant } : item))}
-                        className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${p.relevant ? 'bg-primary border-primary' : 'border-border/60 hover:border-primary/40'}`}
-                        data-testid={`toggle-party-relevant-${idx}`}
-                      >
-                        {p.relevant && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <p className="text-sm font-bold text-primary">{p.party}</p>
-                          {p.relevant
-                            ? <span className="text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5">RELEVANT</span>
-                            : <span className="text-[9px] font-bold text-muted-foreground bg-muted border border-border/60 rounded-full px-1.5 py-0.5">NOT RELEVANT</span>
-                          }
-                        </div>
-                        {p.relevant && (
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Needs</label>
-                              <Input
-                                value={p.needs}
-                                onChange={e => setParties(prev => prev.map((item, i) => i === idx ? { ...item, needs: e.target.value } : item))}
-                                placeholder="What do they need from us?"
-                                className="h-7 text-xs"
-                                data-testid={`input-party-needs-${idx}`}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Expectations</label>
-                              <Input
-                                value={p.expectations}
-                                onChange={e => setParties(prev => prev.map((item, i) => i === idx ? { ...item, expectations: e.target.value } : item))}
-                                placeholder="What are their expectations?"
-                                className="h-7 text-xs"
-                                data-testid={`input-party-expectations-${idx}`}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setParties(prev => prev.filter((_, i) => i !== idx))}
-                        className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                        data-testid={`btn-remove-party-${idx}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+
+              {(['external', 'internal'] as const).map(grp => {
+                const grpParties = parties.filter(p => p.group === grp);
+                const grpRelevant = grpParties.filter(p => p.relevant).length;
+                return (
+                  <div key={grp} className="space-y-2" data-testid={`party-group-${grp}`}>
+                    <div className="flex items-center gap-2 px-1">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${grp === 'external' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700/40' : 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700/40'}`}>
+                        {grp === 'external' ? 'EXTERNAL' : 'INTERNAL'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{grpRelevant} relevant of {grpParties.length}</span>
                     </div>
+
+                    {grpParties.map((p) => {
+                      const globalIdx = parties.indexOf(p);
+                      const isExpanded = expandedParties.has(globalIdx);
+                      const pir = pirLabel(p.piRanking);
+                      return (
+                        <div key={globalIdx} className={`bg-white dark:bg-card rounded-xl border transition-all ${p.relevant ? 'border-primary/30' : 'border-border/40 opacity-60'}`} data-testid={`party-card-${globalIdx}`}>
+                          {/* Collapsed header */}
+                          <div className="flex items-center gap-2 p-3 cursor-pointer" onClick={() => togglePartyExpand(globalIdx)}>
+                            <button
+                              onClick={e => { e.stopPropagation(); updateParty(globalIdx, { relevant: !p.relevant }); }}
+                              className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${p.relevant ? 'bg-primary border-primary' : 'border-border/60 hover:border-primary/40'}`}
+                              data-testid={`toggle-party-relevant-${globalIdx}`}
+                            >
+                              {p.relevant && <CheckCircle2 className="w-2.5 h-2.5 text-primary-foreground" />}
+                            </button>
+                            <p className="text-xs font-bold text-primary flex-1">{p.party || <span className="text-muted-foreground italic">Unnamed party</span>}</p>
+                            <div className="flex items-center gap-1.5 mr-1">
+                              {p.relevant
+                                ? <span className="text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5">RELEVANT</span>
+                                : <span className="text-[9px] font-bold text-muted-foreground bg-muted border border-border/60 rounded-full px-1.5 py-0.5">NOT RELEVANT</span>
+                              }
+                              {pir && (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${pir.bg} ${pir.color}`}>{pir.label}</span>
+                              )}
+                            </div>
+                            <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
+                            <button onClick={e => { e.stopPropagation(); setParties(prev => prev.filter((_, i) => i !== globalIdx)); setExpandedParties(prev => { const n = new Set(prev); n.delete(globalIdx); return n; }); }} className="text-muted-foreground hover:text-destructive transition-colors shrink-0 ml-1" data-testid={`btn-remove-party-${globalIdx}`}>
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {/* Expanded body */}
+                          {isExpanded && (
+                            <div className="px-4 pb-4 pt-1 border-t border-border/40 space-y-3">
+                              {/* Party name */}
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Party Name</label>
+                                <Input value={p.party} onChange={e => updateParty(globalIdx, { party: e.target.value })} placeholder="e.g. Certification Body, Insurance Provider" className="h-7 text-xs" data-testid={`input-party-name-${globalIdx}`} />
+                              </div>
+
+                              {/* PI-R Selector */}
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">Power &amp; Interest Ranking (PI-R)</label>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {PI_RANKING_CONFIG.map(r => (
+                                    <button
+                                      key={r.value}
+                                      onClick={() => updateParty(globalIdx, { piRanking: p.piRanking === r.value ? '' : r.value })}
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${p.piRanking === r.value ? `${r.bg} ${r.color}` : 'text-muted-foreground border-border/50 hover:border-primary/30'}`}
+                                      data-testid={`btn-pir-${r.value}-${globalIdx}`}
+                                    >
+                                      {r.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Needs</label>
+                                  <Input value={p.needs} onChange={e => updateParty(globalIdx, { needs: e.target.value })} placeholder="What do they need from us?" className="h-7 text-xs" data-testid={`input-party-needs-${globalIdx}`} />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Expectations</label>
+                                  <Input value={p.expectations} onChange={e => updateParty(globalIdx, { expectations: e.target.value })} placeholder="What are their expectations?" className="h-7 text-xs" data-testid={`input-party-expectations-${globalIdx}`} />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Actions to Meet Needs</label>
+                                  <Input value={p.actions} onChange={e => updateParty(globalIdx, { actions: e.target.value })} placeholder="How do we meet their needs?" className="h-7 text-xs" data-testid={`input-party-actions-${globalIdx}`} />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Monitoring Method</label>
+                                  <Input value={p.monitoringMethod} onChange={e => updateParty(globalIdx, { monitoringMethod: e.target.value })} placeholder="Surveys, audits, reviews…" className="h-7 text-xs" data-testid={`input-party-monitoring-${globalIdx}`} />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Associated Risks</label>
+                                  <Input value={p.risks} onChange={e => updateParty(globalIdx, { risks: e.target.value })} placeholder="Risks from this party" className="h-7 text-xs" data-testid={`input-party-risks-${globalIdx}`} />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Associated Opportunities</label>
+                                  <Input value={p.opportunities} onChange={e => updateParty(globalIdx, { opportunities: e.target.value })} placeholder="Opportunities from this party" className="h-7 text-xs" data-testid={`input-party-opps-${globalIdx}`} />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+
+              {/* Add party buttons */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => { const nextIdx = parties.length; setParties(prev => [...prev, { ...DEFAULT_INTERESTED_PARTIES[0], party: '', group: 'external', piRanking: '' }]); setExpandedParties(prev => { const n = new Set(prev); n.add(nextIdx); return n; }); }}
+                  className="flex-1 text-xs text-muted-foreground hover:text-blue-600 border border-dashed border-border/60 hover:border-blue-300 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-colors"
+                  data-testid="btn-add-external-party"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add External Party
+                </button>
+                <button
+                  onClick={() => { const nextIdx = parties.length; setParties(prev => [...prev, { ...DEFAULT_INTERESTED_PARTIES[0], party: '', group: 'internal', piRanking: '' }]); setExpandedParties(prev => { const n = new Set(prev); n.add(nextIdx); return n; }); }}
+                  className="flex-1 text-xs text-muted-foreground hover:text-purple-600 border border-dashed border-border/60 hover:border-purple-300 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-colors"
+                  data-testid="btn-add-internal-party"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Internal Party
+                </button>
+              </div>
+
+              {/* Summary strip */}
+              <div className="bg-muted/40 border border-border/50 rounded-xl p-3 flex gap-4 text-xs text-muted-foreground">
+                <span><span className="font-bold text-primary">{relevantParties}</span> relevant parties total</span>
+                <span>·</span>
+                <span><span className="font-bold text-blue-700">{externalParties}</span> external</span>
+                <span>·</span>
+                <span><span className="font-bold text-purple-700">{internalParties}</span> internal</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── 4.1 → 6.1 Bridge Tab ──────────────────────────────── */}
+          {activeTab === 'bridge' && (
+            <div className="space-y-5" data-testid="bridge-panel">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl p-4">
+                <p className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-1">Context of the Organization → Risk Planning</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                  ISO standards require that the outputs of Clause 4.1 (internal &amp; external issues) and Clause 4.2 (interested parties) are used as inputs when determining risks and opportunities under <span className="font-bold">Clause 6.1</span>. This summary shows how much context data you have captured and where it needs to go.
+                </p>
+                <p className="text-[10px] text-amber-600 dark:text-amber-500 mt-2 font-semibold">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 D · ISO 27001</p>
+              </div>
+
+              {/* Count cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 text-center">
+                  <p className="text-2xl font-black text-primary">{pestleCount}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">PESTLE Factors</p>
+                  <div className="flex justify-center gap-1.5 mt-1.5">
+                    <span className="text-[9px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/40 px-1.5 py-0.5 rounded-full">{pestleRisks}R</span>
+                    <span className="text-[9px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/40 px-1.5 py-0.5 rounded-full">{pestleOpps}O</span>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 text-center">
+                  <p className="text-2xl font-black text-primary">{swotCount}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">SWOT Items</p>
+                  <p className="text-[9px] text-muted-foreground mt-1.5">All feed → 6.1</p>
+                </div>
+                <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 text-center">
+                  <p className="text-2xl font-black text-primary">{relevantParties}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Relevant Parties</p>
+                  <div className="flex justify-center gap-1.5 mt-1.5">
+                    <span className="text-[9px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 px-1.5 py-0.5 rounded-full">{externalParties}E</span>
+                    <span className="text-[9px] font-bold text-purple-600 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/40 px-1.5 py-0.5 rounded-full">{internalParties}I</span>
+                  </div>
+                </div>
+                <div className={`rounded-xl border p-4 text-center ${(pestleCount + swotCount + relevantParties) > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40' : 'bg-muted border-border/60'}`}>
+                  <p className={`text-2xl font-black ${(pestleCount + swotCount + relevantParties) > 0 ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}>{pestleCount + swotCount + relevantParties}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Total Inputs to 6.1</p>
+                  <p className={`text-[9px] mt-1.5 font-semibold ${(pestleCount + swotCount + relevantParties) > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>{(pestleCount + swotCount + relevantParties) > 0 ? 'Ready for risk planning' : 'Add context data first'}</p>
+                </div>
+              </div>
+
+              {/* Standards reference */}
+              <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 space-y-2.5">
+                <p className="text-sm font-black text-primary">Standard Requirements: 4.1/4.2 → 6.1</p>
+                {[
+                  { std: 'ISO 9001:2015',    clause: '6.1.1', req: 'Actions to address risks and opportunities must consider internal/external issues (4.1) and relevant interested parties (4.2).' },
+                  { std: 'ISO 14001:2015',   clause: '6.1.1', req: 'Environmental aspects, compliance obligations, and risks/opportunities must consider context (4.1) and interested parties (4.2).' },
+                  { std: 'ISO 45001:2018',   clause: '6.1.1', req: 'OH&S risks and opportunities must consider issues (4.1), interested parties (4.2), and OH&S scope.' },
+                  { std: 'IATF 16949:2016',  clause: '6.1.2.1', req: 'Risk analysis must include lessons learned, warranty, field returns — informed by supplier and customer context (4.1/4.2).' },
+                  { std: 'ISO 13485:2016',   clause: '6.1',   req: 'Risk management planning per ISO 14971 must consider applicable regulatory requirements identified in context.' },
+                  { std: 'AS9100 Rev D',     clause: '6.1',   req: 'Aviation/space safety risks must consider product realization context, customer requirements, and regulatory issues.' },
+                  { std: 'ISO 27001:2022',   clause: '6.1.1', req: 'Information security risks must be assessed in the context of organizational issues (4.1) and interested parties (4.2).' },
+                ].map(row => (
+                  <div key={row.std} className="flex items-start gap-3 py-1.5 border-b border-border/40 last:border-0">
+                    <span className="shrink-0 text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">{row.std}</span>
+                    <span className="text-[9px] font-bold text-muted-foreground shrink-0 mt-0.5">§{row.clause}</span>
+                    <p className="text-xs text-muted-foreground leading-snug">{row.req}</p>
                   </div>
                 ))}
-                <button
-                  onClick={() => setParties(prev => [...prev, { party: '', needs: '', expectations: '', relevant: true }])}
-                  className="w-full text-xs text-muted-foreground hover:text-accent border border-dashed border-border/60 hover:border-accent/40 rounded-xl py-3 flex items-center justify-center gap-1.5 transition-colors"
-                  data-testid="btn-add-party"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Interested Party
-                </button>
-                {parties.some(p => !p.party) && (
-                  <div className="space-y-2">
-                    {parties.map((p, idx) => !p.party ? (
-                      <Input
-                        key={idx}
-                        autoFocus
-                        placeholder="Party name (e.g., Certification Body, Insurance Provider)"
-                        className="text-xs"
-                        onChange={e => setParties(prev => prev.map((item, i) => i === idx ? { ...item, party: e.target.value } : item))}
-                        onKeyDown={e => { if (e.key === 'Escape') setParties(prev => prev.filter((_, i) => i !== idx)); }}
-                        data-testid={`input-new-party-${idx}`}
-                      />
-                    ) : null)}
-                  </div>
-                )}
+              </div>
+
+              {/* CTA */}
+              <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4">
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-primary">Ready to register risks?</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Transfer your PESTLE factors and interested party risks into the Risk &amp; Opportunity Register (Clause 6.1) to complete the planning loop.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onAskIsa(isaContextPayload())}
+                    className="text-xs text-accent border border-accent/30 hover:bg-accent/5 px-3 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                    data-testid="btn-ask-isa-bridge"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" /> Ask Isa
+                  </button>
+                  {onNavigate && (
+                    <button
+                      onClick={() => onNavigate('risk')}
+                      className="text-xs text-white bg-primary hover:bg-primary/90 px-3 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                      data-testid="btn-go-to-risk"
+                    >
+                      Go to Risk Assessment <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

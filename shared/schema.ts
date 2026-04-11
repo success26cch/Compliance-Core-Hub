@@ -556,12 +556,12 @@ export const isoProjects = pgTable("iso_projects", {
   }>>(),
   // Context of the Organization — 4.1 & 4.2
   pestleData: jsonb("pestle_data").$type<{
-    political: string[];
-    economic: string[];
-    social: string[];
-    technological: string[];
-    legal: string[];
-    environmental: string[];
+    political: Array<{ text: string; type: 'risk' | 'opportunity' }>;
+    economic: Array<{ text: string; type: 'risk' | 'opportunity' }>;
+    social: Array<{ text: string; type: 'risk' | 'opportunity' }>;
+    technological: Array<{ text: string; type: 'risk' | 'opportunity' }>;
+    legal: Array<{ text: string; type: 'risk' | 'opportunity' }>;
+    environmental: Array<{ text: string; type: 'risk' | 'opportunity' }>;
   }>(),
   swotData: jsonb("swot_data").$type<{
     strengths: string[];
@@ -571,9 +571,15 @@ export const isoProjects = pgTable("iso_projects", {
   }>(),
   interestedParties: jsonb("interested_parties").$type<Array<{
     party: string;
+    group: 'internal' | 'external';
+    relevant: boolean;
     needs: string;
     expectations: string;
-    relevant: boolean;
+    actions: string;
+    monitoringMethod: string;
+    risks: string;
+    opportunities: string;
+    piRanking: 'manage_closely' | 'keep_informed' | 'keep_satisfied' | 'monitor_only' | '';
   }>>(),
   // Phase 3 — Quality Manual Gap Filler
   coreValues: text("core_values").array(),
