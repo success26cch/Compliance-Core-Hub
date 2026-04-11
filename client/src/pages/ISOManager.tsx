@@ -357,7 +357,7 @@ export default function ISOManager() {
   const handleStartWizard = () => {
     if (project) {
       setShowWizard(true);
-      setActiveSection('context_org');
+      setActiveConversationId(null);
     } else {
       createProjectMut.mutate();
     }
@@ -678,7 +678,9 @@ export default function ISOManager() {
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col relative">
-            {activeSection === 'context_org' ? (
+            {showWizard && project ? (
+              <ISOSetupWizard project={project} onComplete={() => { setShowWizard(false); qc.invalidateQueries({ queryKey: ["/api/iso-projects"] }); }} />
+            ) : activeSection === 'context_org' ? (
               <ContextOfOrgModule project={project ?? null} onStartWizard={handleStartWizard} onAskIsa={handleAskIsa} onNavigate={setActiveSection} />
             ) : activeSection === 'system_profile' ? (
               <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
