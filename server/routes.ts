@@ -652,6 +652,14 @@ Rules:
     }
   });
 
+  // Server-side allowlist for product names — never trust client-provided productName
+  const PRODUCT_NAME_ALLOWLIST: Record<string, string> = {
+    iso_manager: "ISO Manager",
+    isa: "Isa — AI Lead ISO Auditor",
+    dot: "DOT Fleet Compliance Hub",
+    employer_platform: "Employer Compliance Platform",
+  };
+
   // Product Access Request — notifies team when someone requests info about a gated product
   app.post("/api/request-access", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -663,8 +671,10 @@ Rules:
       const user = await storage.getUserById(userId);
       const userName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'A user' : 'A user';
       const userEmail = claims.email || 'unknown@unknown.com';
-      const { productKey, productName } = req.body;
-      if (!productKey || !productName) return res.status(400).json({ message: "productKey and productName required" });
+      const { productKey } = req.body;
+      if (!productKey) return res.status(400).json({ message: "productKey required" });
+      const productName = PRODUCT_NAME_ALLOWLIST[productKey];
+      if (!productName) return res.status(400).json({ message: "Unknown product key" });
 
       const { sendEmail, brandedHtml } = await import('./emailService');
       const bodyHtml = `

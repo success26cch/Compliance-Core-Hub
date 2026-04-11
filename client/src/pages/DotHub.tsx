@@ -1310,7 +1310,7 @@ export default function DotHub() {
     : null
     : null;
 
-  const hasDotAccess = !!(subStatus as any)?.hasPlatform || !!user?.isSuperadmin || !!(subStatus as any)?.isAdmin;
+  const hasDotAccess = !!subStatus?.hasPlatform || !!subStatus?.isAdmin || !!user?.isSuperadmin;
 
   if (subLoading) {
     return (

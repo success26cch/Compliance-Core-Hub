@@ -40,7 +40,6 @@ export function ProductGate({ hasAccess, isLoading, product, children, fullPage 
     try {
       await apiRequest("POST", "/api/request-access", {
         productKey: product.key,
-        productName: product.name,
       });
       setRequested(true);
     } catch {

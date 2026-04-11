@@ -454,7 +454,7 @@ export default function ISOManager() {
     );
   };
 
-  const hasIsoAccess = !!(subStatus as any)?.hasIsoManager || !!user?.isSuperadmin;
+  const hasIsoAccess = !!subStatus?.hasIsoManager || !!subStatus?.isAdmin || !!user?.isSuperadmin;
 
   if (isLoading || subLoading) return (
     <div className="flex h-screen items-center justify-center bg-background">
