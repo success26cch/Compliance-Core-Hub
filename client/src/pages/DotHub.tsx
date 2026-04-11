@@ -11,9 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Truck, Users, Download, Bell, AlertTriangle, CheckCircle2,
-  Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X, Printer
+  Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X, Printer, Loader2
 } from "lucide-react";
 import { ProtectedLayout } from "@/components/Layout";
+import { useAuth } from "@/hooks/use-auth";
+import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
+import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
 
 // ─── Types (matching schema) ─────────────────────────────────────────────────
 
@@ -1149,6 +1152,8 @@ function DvirDialog({ open, onClose, existing, drivers }: { open: boolean; onClo
 export default function DotHub() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const [activeTab, setActiveTab] = useState("drivers");
   const [driverFilter, setDriverFilter] = useState<"all"|"ch-overdue"|"ch-warn"|"med-expired"|"mvr-overdue">("all");
   const [driverDialog, setDriverDialog] = useState<{ open: boolean; driver?: DotDriver | null }>({ open: false });
@@ -1304,6 +1309,33 @@ export default function DotHub() {
     : nearestChDays <= 7   ? `this ${dayNames[nearestChExpiry.getDay()]}`
     : null
     : null;
+
+  const hasDotAccess = !!(subStatus as any)?.hasPlatform || !!user?.isSuperadmin || !!(subStatus as any)?.isAdmin;
+
+  if (subLoading) {
+    return (
+      <ProtectedLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      </ProtectedLayout>
+    );
+  }
+
+  if (!hasDotAccess) {
+    return (
+      <ProtectedLayout>
+        <ProductGate
+          hasAccess={false}
+          isLoading={false}
+          product={PRODUCT_CONFIGS.dot}
+          fullPage={false}
+        >
+          {null}
+        </ProductGate>
+      </ProtectedLayout>
+    );
+  }
 
   return (
     <ProtectedLayout>

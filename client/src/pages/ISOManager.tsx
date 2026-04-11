@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from "@/hooks/use-isa-chat";
-import { useQuestionUsage } from "@/hooks/use-subscriptions";
+import { useQuestionUsage, useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { useAuth } from "@/hooks/use-auth";
+import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -299,6 +300,7 @@ export default function ISOManager() {
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
+  const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const { data: conversations } = useIsaConversations();
   const { mutate: createConversation, isPending: isCreating } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
@@ -452,11 +454,26 @@ export default function ISOManager() {
     );
   };
 
-  if (isLoading) return (
+  const hasIsoAccess = !!(subStatus as any)?.hasIsoManager || !!user?.isSuperadmin;
+
+  if (isLoading || subLoading) return (
     <div className="flex h-screen items-center justify-center bg-background">
       <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
     </div>
   );
+
+  if (!hasIsoAccess) {
+    return (
+      <ProductGate
+        hasAccess={false}
+        isLoading={false}
+        product={PRODUCT_CONFIGS.iso_manager}
+        fullPage={true}
+      >
+        {null}
+      </ProductGate>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">

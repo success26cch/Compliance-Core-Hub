@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
+import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -266,23 +267,14 @@ export default function IsaApp() {
 
   if (!isIsaSubscriber) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: BG }}>
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl font-black mb-4"
-          style={{ background: ORANGE }}
-        >
-          I
-        </div>
-        <h1 className="text-2xl font-black text-white mb-2">Meet Isa</h1>
-        <p className="text-white/50 text-sm mb-6 max-w-sm">
-          Isa is your ACSI Lead ISO Auditor AI — clause-cited answers, audit coaching, and corrective action guidance. Available as a standalone subscription.
-        </p>
-        <Link href="/meet-isa">
-          <Button className="font-bold text-white px-8" style={{ background: ORANGE }} data-testid="button-isa-upsell">
-            See Isa Plans <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </Link>
-      </div>
+      <ProductGate
+        hasAccess={false}
+        isLoading={false}
+        product={PRODUCT_CONFIGS.isa}
+        fullPage={true}
+      >
+        {null}
+      </ProductGate>
     );
   }
 

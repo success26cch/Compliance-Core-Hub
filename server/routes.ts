@@ -478,12 +478,14 @@ Rules:
 
     const isIsaSubscriber = isAdmin || (isPro && (sub?.plan === 'isa' || sub?.plan === 'isa_pro' || sub?.plan === 'employer_platform' || sub?.plan === 'employer_platform_with_corey' || sub?.plan === 'enterprise'));
     const isIsaPro = isAdmin || (isPro && (sub?.plan === 'isa_pro'));
+    const hasIsoManager = isAdmin || (isPro && (sub?.plan === 'isa' || sub?.plan === 'isa_pro' || sub?.plan === 'iso_manager' || sub?.plan === 'enterprise'));
 
     res.json({
       status: sub?.status || "inactive",
       plan: sub?.plan,
       isPro: isPro || isAdmin || !!teamMembership,
       hasPlatform,
+      hasIsoManager,
       isAdmin,
       isIsaSubscriber,
       isIsaPro,
@@ -647,6 +649,41 @@ Rules:
     } catch (error: any) {
       console.error('Activation error:', error);
       res.status(500).json({ message: "Failed to activate subscription" });
+    }
+  });
+
+  // Product Access Request — notifies team when someone requests info about a gated product
+  app.post("/api/request-access", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const claims = (req.user as any).claims;
+      const userId = claims.sub;
+      const user = await storage.getUserById(userId);
+      const userName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'A user' : 'A user';
+      const userEmail = claims.email || 'unknown@unknown.com';
+      const { productKey, productName } = req.body;
+      if (!productKey || !productName) return res.status(400).json({ message: "productKey and productName required" });
+
+      const { sendEmail, brandedHtml } = await import('./emailService');
+      const bodyHtml = `
+        <h2 style="color:#0f172a;font-size:20px;font-weight:700;margin-bottom:8px;">New Product Access Request</h2>
+        <p style="color:#64748b;margin-bottom:24px;">Someone is interested in <strong>${productName}</strong> and clicked "Request Access".</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:24px;">
+          <tr style="background:#f8fafc;"><td style="padding:10px 16px;color:#64748b;font-size:13px;width:140px;font-weight:600;">Product</td><td style="padding:10px 16px;color:#0f172a;font-size:13px;">${productName}</td></tr>
+          <tr><td style="padding:10px 16px;color:#64748b;font-size:13px;font-weight:600;">User Name</td><td style="padding:10px 16px;color:#0f172a;font-size:13px;">${userName}</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding:10px 16px;color:#64748b;font-size:13px;font-weight:600;">User Email</td><td style="padding:10px 16px;color:#0f172a;font-size:13px;">${userEmail}</td></tr>
+          <tr><td style="padding:10px 16px;color:#64748b;font-size:13px;font-weight:600;">User ID</td><td style="padding:10px 16px;color:#0f172a;font-size:13px;">${userId}</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding:10px 16px;color:#64748b;font-size:13px;font-weight:600;">Requested At</td><td style="padding:10px 16px;color:#0f172a;font-size:13px;">${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })} CT</td></tr>
+        </table>
+        <a href="mailto:${userEmail}" style="display:inline-block;background:#ea6c19;color:#fff;font-weight:700;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;">Reply to ${userName}</a>
+      `;
+      await sendEmail("team@corecompliancehub.com", `Access Request — ${productName} — ${userName}`, brandedHtml(`Access Request — ${productName}`, bodyHtml));
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error('[request-access] Error:', err);
+      res.status(500).json({ message: "Failed to send request" });
     }
   });
 
