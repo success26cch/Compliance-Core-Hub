@@ -816,6 +816,7 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
   const [phase, setPhase] = useState<1 | 2 | 3>((project.phase as 1 | 2 | 3) || 1);
   const [p1Step, setP1Step] = useState(0);
   const [p3Step, setP3Step] = useState(0);
+  const [showDraftPane, setShowDraftPane] = useState(false);
 
   const showOEM = standard === "IATF 16949" || standard === "AS9100 Rev D";
 
@@ -931,8 +932,8 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
   return (
     <div className="flex h-full overflow-hidden" data-testid="wizard-iso-setup">
       {/* ── LEFT: Questions Pane ── */}
-      <div className="w-[55%] flex flex-col border-r border-border/60 bg-white dark:bg-card overflow-hidden" data-testid="wizard-questions-pane">
-        {/* Progress Bar */}
+      <div className={`flex flex-col border-r border-border/60 bg-white dark:bg-card overflow-hidden transition-all duration-300 ${showDraftPane ? "w-[58%]" : "flex-1"}`} data-testid="wizard-questions-pane">
+        {/* Progress Bar + Context Toggle */}
         <div className="shrink-0 px-6 py-4 border-b border-border/60 bg-muted/30">
           <div className="flex gap-2 mb-2">
             {phaseLabels.map((label, i) => (
@@ -942,10 +943,20 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
               </div>
             ))}
           </div>
+          <div className="flex justify-end mt-1">
+            <button
+              onClick={() => setShowDraftPane(p => !p)}
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-accent transition-colors px-2 py-1 rounded border border-border/50 hover:border-accent/40 bg-white dark:bg-card"
+              data-testid="button-wizard-toggle-draft-pane"
+            >
+              <FolderOpen className="w-3 h-3" />
+              {showDraftPane ? "Hide Context" : "Show Context Panel"}
+            </button>
+          </div>
         </div>
 
         {/* Isa Avatar */}
-        <div className="shrink-0 flex items-center gap-3 px-6 pt-5 pb-2">
+        <div className="shrink-0 flex items-center gap-3 px-8 pt-5 pb-2 max-w-2xl mx-auto w-full">
           <div className="w-9 h-9 rounded-full bg-primary border-2 border-accent/30 flex items-center justify-center shadow-md flex-shrink-0">
             <img src={acsiLogo} alt="Isa" className="w-7 h-7 object-contain" />
           </div>
@@ -957,7 +968,7 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
 
         {/* Question Area */}
         <ScrollArea className="flex-1">
-          <div className="px-6 py-4">
+          <div className="px-8 py-6 max-w-2xl mx-auto">
             <AnimatePresence mode="wait">
               {phase === 1 && (
                 <motion.div key={`p1-${p1Step}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
@@ -1308,7 +1319,8 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
         </ScrollArea>
 
         {/* Navigation Buttons */}
-        <div className="shrink-0 px-6 py-4 border-t border-border/60 bg-muted/20 flex items-center gap-3">
+        <div className="shrink-0 border-t border-border/60 bg-muted/20">
+          <div className="flex items-center gap-3 px-8 py-4 max-w-2xl mx-auto">
           {phase === 1 && p1Step > 0 && (
             <Button variant="outline" onClick={() => setP1Step(s => s - 1)} className="gap-1.5" data-testid="button-wizard-back">
               <ArrowLeft className="w-4 h-4" /> Back
@@ -1350,11 +1362,12 @@ function ISOSetupWizard({ project, onComplete }: { project: IsoProject; onComple
               {!patchMut.isPending && <ArrowRight className="w-4 h-4" />}
             </Button>
           )}
+          </div>
         </div>
       </div>
 
       {/* ── RIGHT: Drafting Pane ── */}
-      <div className="flex-1 flex flex-col bg-muted/20 overflow-hidden" data-testid="wizard-drafting-pane">
+      <div className={`flex flex-col bg-muted/20 overflow-hidden transition-all duration-300 ${showDraftPane ? "w-[42%]" : "w-0 hidden"}`} data-testid="wizard-drafting-pane">
         <div className="shrink-0 px-5 py-4 border-b border-border/60 bg-white dark:bg-card">
           <div className="flex items-center gap-2">
             <FolderOpen className="w-4 h-4 text-accent" />
