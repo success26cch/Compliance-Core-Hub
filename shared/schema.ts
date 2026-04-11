@@ -570,6 +570,7 @@ export const isoProjects = pgTable("iso_projects", {
     threats: string[];
   }>(),
   interestedParties: jsonb("interested_parties").$type<Array<{
+    id: string;
     party: string;
     group: 'internal' | 'external';
     relevant: boolean;

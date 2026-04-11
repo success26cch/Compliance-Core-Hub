@@ -1423,6 +1423,7 @@ type PestleKey = 'political' | 'economic' | 'social' | 'technological' | 'legal'
 type SwotKey = 'strengths' | 'weaknesses' | 'opportunities' | 'threats';
 type PestleItem = { text: string; type: 'risk' | 'opportunity' };
 type InterestedParty = {
+  id: string;
   party: string;
   group: 'internal' | 'external';
   relevant: boolean;
@@ -1459,15 +1460,15 @@ const PI_RANKING_CONFIG: { value: InterestedParty['piRanking']; label: string; c
 ];
 
 const DEFAULT_INTERESTED_PARTIES: InterestedParty[] = [
-  { party: "Customers / End Users",                group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
-  { party: "OEM / Tier 1 Customers",               group: 'external', relevant: false, needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
-  { party: "Regulatory Bodies (OSHA, EPA, etc.)",  group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
-  { party: "Certification Body",                   group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_informed' },
-  { party: "Suppliers & Contractors",              group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_informed' },
-  { party: "Employees & Their Representatives",    group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_satisfied' },
-  { party: "Senior Management",                    group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
-  { party: "Shareholders / Ownership",             group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
-  { party: "Corporate / Parent Company",           group: 'internal', relevant: false, needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'monitor_only' },
+  { id: "ip-customers",     party: "Customers / End Users",                group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { id: "ip-oem",           party: "OEM / Tier 1 Customers",               group: 'external', relevant: false, needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { id: "ip-regulatory",    party: "Regulatory Bodies (OSHA, EPA, etc.)",  group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { id: "ip-certbody",      party: "Certification Body",                   group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_informed' },
+  { id: "ip-suppliers",     party: "Suppliers & Contractors",              group: 'external', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_informed' },
+  { id: "ip-employees",     party: "Employees & Their Representatives",    group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'keep_satisfied' },
+  { id: "ip-management",    party: "Senior Management",                    group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { id: "ip-shareholders",  party: "Shareholders / Ownership",             group: 'internal', relevant: true,  needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'manage_closely' },
+  { id: "ip-corporate",     party: "Corporate / Parent Company",           group: 'internal', relevant: false, needs: "", expectations: "", actions: "", monitoringMethod: "", risks: "", opportunities: "", piRanking: 'monitor_only' },
 ];
 
 function normalizePestleItems(raw: any): PestleItem[] {
@@ -1479,6 +1480,7 @@ function normalizePestleItems(raw: any): PestleItem[] {
 
 function normalizeParty(raw: any): InterestedParty {
   return {
+    id:              raw.id || `ip-${Math.random().toString(36).slice(2, 9)}`,
     party:           raw.party || '',
     group:           raw.group || 'external',
     relevant:        raw.relevant ?? true,
@@ -1536,8 +1538,8 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   const [editingSwot, setEditingSwot] = useState<SwotKey | null>(null);
   const [swotInput, setSwotInput] = useState('');
 
-  // ── Party expand/collapse
-  const [expandedParties, setExpandedParties] = useState<Set<number>>(new Set());
+  // ── Party expand/collapse — uses stable party id, not array index
+  const [expandedParties, setExpandedParties] = useState<Set<string>>(new Set());
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -1583,10 +1585,10 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
     setSwot(s => ({ ...s, [key]: s[key].filter((_, i) => i !== idx) }));
   };
 
-  const togglePartyExpand = (idx: number) => {
+  const togglePartyExpand = (id: string) => {
     setExpandedParties(prev => {
       const next = new Set(prev);
-      next.has(idx) ? next.delete(idx) : next.add(idx);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   };
@@ -1833,12 +1835,12 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
 
                     {grpParties.map((p) => {
                       const globalIdx = parties.indexOf(p);
-                      const isExpanded = expandedParties.has(globalIdx);
+                      const isExpanded = expandedParties.has(p.id);
                       const pir = pirLabel(p.piRanking);
                       return (
-                        <div key={globalIdx} className={`bg-white dark:bg-card rounded-xl border transition-all ${p.relevant ? 'border-primary/30' : 'border-border/40 opacity-60'}`} data-testid={`party-card-${globalIdx}`}>
+                        <div key={p.id} className={`bg-white dark:bg-card rounded-xl border transition-all ${p.relevant ? 'border-primary/30' : 'border-border/40 opacity-60'}`} data-testid={`party-card-${globalIdx}`}>
                           {/* Collapsed header */}
-                          <div className="flex items-center gap-2 p-3 cursor-pointer" onClick={() => togglePartyExpand(globalIdx)}>
+                          <div className="flex items-center gap-2 p-3 cursor-pointer" onClick={() => togglePartyExpand(p.id)}>
                             <button
                               onClick={e => { e.stopPropagation(); updateParty(globalIdx, { relevant: !p.relevant }); }}
                               className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${p.relevant ? 'bg-primary border-primary' : 'border-border/60 hover:border-primary/40'}`}
@@ -1857,7 +1859,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                               )}
                             </div>
                             <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
-                            <button onClick={e => { e.stopPropagation(); setParties(prev => prev.filter((_, i) => i !== globalIdx)); setExpandedParties(prev => { const n = new Set(prev); n.delete(globalIdx); return n; }); }} className="text-muted-foreground hover:text-destructive transition-colors shrink-0 ml-1" data-testid={`btn-remove-party-${globalIdx}`}>
+                            <button onClick={e => { e.stopPropagation(); setParties(prev => prev.filter((_, i) => i !== globalIdx)); setExpandedParties(prev => { const n = new Set(prev); n.delete(p.id); return n; }); }} className="text-muted-foreground hover:text-destructive transition-colors shrink-0 ml-1" data-testid={`btn-remove-party-${globalIdx}`}>
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -1943,14 +1945,14 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               {/* Add party buttons */}
               <div className="flex gap-2 pt-1">
                 <button
-                  onClick={() => { const nextIdx = parties.length; setParties(prev => [...prev, { ...DEFAULT_INTERESTED_PARTIES[0], party: '', group: 'external', piRanking: '' }]); setExpandedParties(prev => { const n = new Set(prev); n.add(nextIdx); return n; }); }}
+                  onClick={() => { const newId = `ip-${Math.random().toString(36).slice(2, 9)}`; setParties(prev => [...prev, { id: newId, party: '', group: 'external', relevant: true, needs: '', expectations: '', actions: '', monitoringMethod: '', risks: '', opportunities: '', piRanking: '' }]); setExpandedParties(prev => { const n = new Set(prev); n.add(newId); return n; }); }}
                   className="flex-1 text-xs text-muted-foreground hover:text-blue-600 border border-dashed border-border/60 hover:border-blue-300 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-colors"
                   data-testid="btn-add-external-party"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add External Party
                 </button>
                 <button
-                  onClick={() => { const nextIdx = parties.length; setParties(prev => [...prev, { ...DEFAULT_INTERESTED_PARTIES[0], party: '', group: 'internal', piRanking: '' }]); setExpandedParties(prev => { const n = new Set(prev); n.add(nextIdx); return n; }); }}
+                  onClick={() => { const newId = `ip-${Math.random().toString(36).slice(2, 9)}`; setParties(prev => [...prev, { id: newId, party: '', group: 'internal', relevant: true, needs: '', expectations: '', actions: '', monitoringMethod: '', risks: '', opportunities: '', piRanking: '' }]); setExpandedParties(prev => { const n = new Set(prev); n.add(newId); return n; }); }}
                   className="flex-1 text-xs text-muted-foreground hover:text-purple-600 border border-dashed border-border/60 hover:border-purple-300 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-colors"
                   data-testid="btn-add-internal-party"
                 >
