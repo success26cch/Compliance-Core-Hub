@@ -9,6 +9,7 @@ import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from 
 import { useQuestionUsage, useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { useAuth } from "@/hooks/use-auth";
 import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
+import { ContextPrintDocuments } from "@/components/ContextPrintDocuments";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +21,7 @@ import {
   Building2, Users, Factory, ArrowRight, ArrowLeft,
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
-  TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft,
+  TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -1541,6 +1542,9 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   // ── Party expand/collapse — uses stable party id, not array index
   const [expandedParties, setExpandedParties] = useState<Set<string>>(new Set());
 
+  // ── Print document state
+  const [printDoc, setPrintDoc] = useState<'pestle' | 'swot' | 'parties' | null>(null);
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -1620,6 +1624,18 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col" data-testid="context-org-module">
+
+      {/* Print document overlay */}
+      <ContextPrintDocuments
+        docType={printDoc}
+        onClose={() => setPrintDoc(null)}
+        orgName={(project as any)?.orgName}
+        standard={(project as any)?.standard}
+        pestle={pestle}
+        swot={swot}
+        parties={parties}
+      />
+
       {/* Header */}
       <div className="shrink-0 px-6 py-4 border-b border-border/60 bg-white dark:bg-card">
         <div className="flex items-center justify-between">
@@ -1686,9 +1702,18 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
           {/* ── PESTLE Tab ─────────────────────────────────────────── */}
           {activeTab === 'pestle' && (
             <div className="space-y-4" data-testid="pestle-panel">
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
-                <span className="font-bold text-primary">ISO 4.1 — External Issues:</span> Identify external factors relevant to your organization's purpose and strategic direction. Tag each factor as a <span className="font-bold text-red-600">Risk</span> or <span className="font-bold text-green-600">Opportunity</span> — these feed directly into Clause 6.1 Risk Planning.
-                <p className="text-[11px] mt-2 text-muted-foreground">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 · ISO 27001</p>
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed flex items-start justify-between gap-4">
+                <div>
+                  <span className="font-bold text-primary">ISO 4.1 — External Issues:</span> Identify external factors relevant to your organization's purpose and strategic direction. Tag each factor as a <span className="font-bold text-red-600">Risk</span> or <span className="font-bold text-green-600">Opportunity</span> — these feed directly into Clause 6.1 Risk Planning.
+                  <p className="text-[11px] mt-2 text-muted-foreground">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 · ISO 27001</p>
+                </div>
+                <button
+                  onClick={() => setPrintDoc('pestle')}
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                  data-testid="button-print-pestle"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print
+                </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {PESTLE_CONFIG.map(cfg => {
@@ -1763,9 +1788,18 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
           {/* ── SWOT Tab ──────────────────────────────────────────── */}
           {activeTab === 'swot' && (
             <div className="space-y-4" data-testid="swot-panel">
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
-                <span className="font-bold text-primary">ISO 4.1 — Internal Issues:</span> Document strengths, weaknesses, opportunities, and threats within your organization. Each item feeds into Clause 6.1 Risk &amp; Opportunity planning.
-                <p className="text-[11px] mt-1.5 text-muted-foreground flex items-center gap-1"><ArrowRight className="w-3 h-3" /> All SWOT items link to 6.1 — indicated by the badge on each entry.</p>
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed flex items-start justify-between gap-4">
+                <div>
+                  <span className="font-bold text-primary">ISO 4.1 — Internal Issues:</span> Document strengths, weaknesses, opportunities, and threats within your organization. Each item feeds into Clause 6.1 Risk &amp; Opportunity planning.
+                  <p className="text-[11px] mt-1.5 text-muted-foreground flex items-center gap-1"><ArrowRight className="w-3 h-3" /> All SWOT items link to 6.1 — indicated by the badge on each entry.</p>
+                </div>
+                <button
+                  onClick={() => setPrintDoc('swot')}
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                  data-testid="button-print-swot"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print
+                </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {SWOT_CONFIG.map(cfg => (
@@ -1817,8 +1851,17 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
           {/* ── Interested Parties Tab ─────────────────────────────── */}
           {activeTab === 'interested' && (
             <div className="space-y-4" data-testid="interested-parties-panel">
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
-                <span className="font-bold text-primary">ISO 4.2 — Interested Parties:</span> Determine relevant internal and external parties, their needs/expectations, how you will meet those needs, how you will monitor them, and their associated risks and opportunities. Use the Power & Interest Ranking (PI-R) to prioritize engagement.
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed flex items-start justify-between gap-4">
+                <div>
+                  <span className="font-bold text-primary">ISO 4.2 — Interested Parties:</span> Determine relevant internal and external parties, their needs/expectations, how you will meet those needs, how you will monitor them, and their associated risks and opportunities. Use the Power &amp; Interest Ranking (PI-R) to prioritize engagement.
+                </div>
+                <button
+                  onClick={() => setPrintDoc('parties')}
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                  data-testid="button-print-parties"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print
+                </button>
               </div>
 
               {(['external', 'internal'] as const).map(grp => {
