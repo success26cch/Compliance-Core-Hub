@@ -1871,6 +1871,23 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                                 <Input value={p.party} onChange={e => updateParty(globalIdx, { party: e.target.value })} placeholder="e.g. Certification Body, Insurance Provider" className="h-7 text-xs" data-testid={`input-party-name-${globalIdx}`} />
                               </div>
 
+                              {/* Group Toggle */}
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">Group</label>
+                                <div className="flex gap-1.5">
+                                  {(['internal', 'external'] as const).map(g => (
+                                    <button
+                                      key={g}
+                                      onClick={() => updateParty(globalIdx, { group: g })}
+                                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border transition-colors ${p.group === g ? (g === 'internal' ? 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:border-purple-700/50' : 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700/50') : 'text-muted-foreground border-border/50 hover:border-primary/30'}`}
+                                      data-testid={`btn-party-group-${g}-${globalIdx}`}
+                                    >
+                                      {g === 'internal' ? 'Internal' : 'External'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
                               {/* PI-R Selector */}
                               <div>
                                 <label className="text-[10px] font-bold text-muted-foreground block mb-1">Power &amp; Interest Ranking (PI-R)</label>
