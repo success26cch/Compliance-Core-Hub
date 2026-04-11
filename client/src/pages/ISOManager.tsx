@@ -18,7 +18,8 @@ import {
   AlertTriangle, Menu, FileText, Car, Vault,
   Building2, Users, Factory, ArrowRight, ArrowLeft,
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
-  Mail, BarChart2, GraduationCap, Loader2,
+  Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
+  TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -264,10 +265,10 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'chat' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
-  chat:              [null, undefined, 'librarian', 'trainer', 'auditor'],
+  context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
   nc:                [null, undefined, 'librarian', 'trainer', 'auditor'],
   documentation:     [null, undefined, 'librarian', 'trainer', 'auditor'],
   process_map:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -304,7 +305,7 @@ export default function ISOManager() {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
-  const [activeSection, setActiveSection] = useState<SectionKey>('chat');
+  const [activeSection, setActiveSection] = useState<SectionKey>('context_org');
 
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
@@ -384,13 +385,11 @@ export default function ISOManager() {
   };
 
   const handleAskIsa = (prompt: string) => {
-    createConversation("NC Guidance: " + prompt.slice(0, 30), {
+    createConversation("Isa: " + prompt.slice(0, 30), {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
-        setActiveSection('chat');
+        setActiveSection('context_org');
         setSidebarOpen(true);
-        // Pre-seed would happen via a useEffect or by passing initialPrompt to a state
-        // For now, using the title as a proxy or we can implement the message sending
       }
     });
   };
@@ -525,13 +524,13 @@ export default function ISOManager() {
               </div>
             )}
             <div className="space-y-0.5">
-              {(["chat","nc","documentation","process_map","system_profile"] as SectionKey[]).map((section) => {
+              {(["context_org","system_profile","process_map","nc","documentation"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
-                  chat:           { icon: MessageSquare, label: "AI Consultation" },
+                  context_org:    { icon: Compass,       label: "Context of the Org" },
+                  system_profile: { icon: Building2,     label: "My System Profile" },
+                  process_map:    { icon: MapPin,        label: "Process Maps" },
                   nc:             { icon: Shield,        label: "NC & CAPA" },
                   documentation:  { icon: FileText,      label: "Documentation" },
-                  process_map:    { icon: MapPin,        label: "Process Maps" },
-                  system_profile: { icon: Building2,     label: "My System Profile" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -661,14 +660,16 @@ export default function ISOManager() {
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col relative">
-            {activeSection === 'nc' ? (
+            {activeSection === 'context_org' ? (
+              <ContextOfOrgModule project={project ?? null} onStartWizard={handleStartWizard} onAskIsa={handleAskIsa} />
+            ) : activeSection === 'system_profile' ? (
+              <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
+            ) : activeSection === 'nc' ? (
               <NonconformanceManager onAskIsa={handleAskIsa} />
             ) : activeSection === 'documentation' ? (
               <DocumentationModule onAskIsa={handleAskIsa} />
             ) : activeSection === 'process_map' ? (
               <ProcessMapModule project={project ?? null} onStartWizard={handleStartWizard} />
-            ) : activeSection === 'system_profile' ? (
-              <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
             ) : activeSection === 'communication' ? (
               canAccessSection('communication', isoRole, isSuperadmin)
                 ? <CommunicationModule isoProjectId={project?.id} />
@@ -1399,6 +1400,370 @@ function DraftEmpty() {
   return <p className="text-xs text-muted-foreground/40 italic">Not yet configured.</p>;
 }
 
+/* ─── CONTEXT OF THE ORGANIZATION MODULE (ISO 4.1 & 4.2) ── */
+
+type PestleKey = 'political' | 'economic' | 'social' | 'technological' | 'legal' | 'environmental';
+type SwotKey = 'strengths' | 'weaknesses' | 'opportunities' | 'threats';
+
+const PESTLE_CONFIG: { key: PestleKey; label: string; icon: any; color: string; desc: string }[] = [
+  { key: 'political',     label: 'Political',     icon: Globe,        color: 'text-blue-600',   desc: 'Government policy, trade regulations, political stability' },
+  { key: 'economic',      label: 'Economic',      icon: TrendingUp,   color: 'text-green-600',  desc: 'Market conditions, interest rates, inflation, supply chain costs' },
+  { key: 'social',        label: 'Social',        icon: Users,        color: 'text-purple-600', desc: 'Workforce demographics, customer expectations, cultural trends' },
+  { key: 'technological', label: 'Technological', icon: Zap,          color: 'text-yellow-600', desc: 'Automation, digitization, emerging technologies, cybersecurity' },
+  { key: 'legal',         label: 'Legal',         icon: Shield,       color: 'text-red-600',    desc: 'Employment law, environmental regulations, product liability' },
+  { key: 'environmental', label: 'Environmental', icon: Compass,      color: 'text-emerald-600',desc: 'Climate impact, sustainability, waste regulations, energy use' },
+];
+
+const SWOT_CONFIG: { key: SwotKey; label: string; icon: any; color: string; bg: string; desc: string }[] = [
+  { key: 'strengths',     label: 'Strengths',     icon: TrendingUp,   color: 'text-green-700',  bg: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/30',  desc: 'Internal advantages — capabilities, certifications, customer relationships' },
+  { key: 'weaknesses',    label: 'Weaknesses',    icon: TrendingDown, color: 'text-red-700',    bg: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/30',          desc: 'Internal gaps — resource constraints, skill gaps, process inefficiencies' },
+  { key: 'opportunities', label: 'Opportunities', icon: Lightbulb,    color: 'text-blue-700',   bg: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/30',      desc: 'External factors that could benefit the organization' },
+  { key: 'threats',       label: 'Threats',       icon: AlertCircle,  color: 'text-amber-700',  bg: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700/30',  desc: 'External risks — competition, economic downturns, regulatory changes' },
+];
+
+const DEFAULT_INTERESTED_PARTIES = [
+  { party: "Customers / End Users", needs: "", expectations: "", relevant: true },
+  { party: "Regulatory Bodies (OSHA, EPA, etc.)", needs: "", expectations: "", relevant: true },
+  { party: "Employees & Their Representatives", needs: "", expectations: "", relevant: true },
+  { party: "Suppliers & Contractors", needs: "", expectations: "", relevant: true },
+  { party: "OEM Customers / Tier 1 Customers", needs: "", expectations: "", relevant: false },
+  { party: "Shareholders / Ownership", needs: "", expectations: "", relevant: true },
+  { party: "Local Community", needs: "", expectations: "", relevant: false },
+];
+
+function ContextOfOrgModule({ project, onStartWizard, onAskIsa }: {
+  project: IsoProject | null;
+  onStartWizard: () => void;
+  onAskIsa: (msg: string) => void;
+}) {
+  const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'pestle' | 'swot' | 'interested'>('pestle');
+
+  // Local state for editable data
+  const [pestle, setPestle] = useState<Record<PestleKey, string[]>>(() => {
+    const d = (project as any)?.pestleData;
+    return d || { political: [], economic: [], social: [], technological: [], legal: [], environmental: [] };
+  });
+  const [swot, setSwot] = useState<Record<SwotKey, string[]>>(() => {
+    const d = (project as any)?.swotData;
+    return d || { strengths: [], weaknesses: [], opportunities: [], threats: [] };
+  });
+  const [parties, setParties] = useState<Array<{ party: string; needs: string; expectations: string; relevant: boolean }>>(() => {
+    const d = (project as any)?.interestedParties;
+    return d && d.length > 0 ? d : DEFAULT_INTERESTED_PARTIES;
+  });
+
+  const [editingPestle, setEditingPestle] = useState<PestleKey | null>(null);
+  const [pestleInput, setPestleInput] = useState('');
+  const [editingSwot, setEditingSwot] = useState<SwotKey | null>(null);
+  const [swotInput, setSwotInput] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const save = async () => {
+    if (!project) return;
+    setSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/iso-projects", {
+        pestleData: pestle,
+        swotData: swot,
+        interestedParties: parties,
+      });
+      await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch { /* silent */ }
+    finally { setSaving(false); }
+  };
+
+  const addPestle = (key: PestleKey) => {
+    const val = pestleInput.trim();
+    if (!val) return;
+    setPestle(p => ({ ...p, [key]: [...p[key], val] }));
+    setPestleInput('');
+    setEditingPestle(null);
+  };
+
+  const removePestle = (key: PestleKey, idx: number) => {
+    setPestle(p => ({ ...p, [key]: p[key].filter((_, i) => i !== idx) }));
+  };
+
+  const addSwot = (key: SwotKey) => {
+    const val = swotInput.trim();
+    if (!val) return;
+    setSwot(s => ({ ...s, [key]: [...s[key], val] }));
+    setSwotInput('');
+    setEditingSwot(null);
+  };
+
+  const removeSwot = (key: SwotKey, idx: number) => {
+    setSwot(s => ({ ...s, [key]: s[key].filter((_, i) => i !== idx) }));
+  };
+
+  const totalIssues = Object.values(pestle).reduce((a, b) => a + b.length, 0) + Object.values(swot).reduce((a, b) => a + b.length, 0);
+
+  return (
+    <div className="flex-1 overflow-hidden flex flex-col" data-testid="context-org-module">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-4 border-b border-border/60 bg-white dark:bg-card">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Compass className="w-4.5 h-4.5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-primary">Context of the Organization</h2>
+              <p className="text-xs text-muted-foreground">ISO Clause 4.1 (Internal & External Issues) · Clause 4.2 (Interested Parties)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {totalIssues > 0 && (
+              <button
+                onClick={() => onAskIsa(`Based on our PESTLE and SWOT analysis, can you help me understand how these internal and external issues (ISO 4.1) should inform our risk and opportunity register under clause 6.1? Here's our context data: ${JSON.stringify({ pestle, swot }, null, 2)}`)}
+                className="text-xs text-accent border border-accent/30 hover:bg-accent/5 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors"
+                data-testid="button-ask-isa-context"
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> Ask Isa
+              </button>
+            )}
+            <Button
+              size="sm"
+              onClick={save}
+              disabled={saving}
+              className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+              data-testid="button-save-context"
+            >
+              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : null}
+              {saved ? 'Saved' : 'Save'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex gap-1 mt-4">
+          {([
+            { id: 'pestle', label: 'PESTLE Analysis (4.1 External)', icon: Globe },
+            { id: 'swot',   label: 'SWOT Analysis (4.1 Internal)',   icon: TrendingUp },
+            { id: 'interested', label: 'Interested Parties (4.2)',   icon: UserCheck },
+          ] as const).map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              data-testid={`tab-context-${t.id}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                activeTab === t.id
+                  ? 'bg-primary/10 text-primary border border-primary/20'
+                  : 'text-muted-foreground hover:text-primary hover:bg-muted/60'
+              }`}
+            >
+              <t.icon className="w-3.5 h-3.5" />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-6">
+
+          {/* PESTLE Tab */}
+          {activeTab === 'pestle' && (
+            <div className="space-y-4" data-testid="pestle-panel">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
+                <span className="font-bold text-primary">ISO 4.1 — External Issues:</span> Identify external factors (political, economic, social, technological, legal, environmental) that are relevant to your organization's purpose and strategic direction. These become the basis for identifying risks and opportunities under Clause 6.1.
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {PESTLE_CONFIG.map(cfg => (
+                  <div key={cfg.key} className="bg-white dark:bg-card rounded-xl border border-border/60 p-4" data-testid={`pestle-card-${cfg.key}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <cfg.icon className={`w-4 h-4 ${cfg.color}`} />
+                      <p className="text-sm font-black text-primary">{cfg.label}</p>
+                      {pestle[cfg.key].length > 0 && (
+                        <span className="ml-auto text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{pestle[cfg.key].length}</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
+                    <div className="space-y-1.5 mb-2">
+                      {pestle[cfg.key].map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-2 group">
+                          <ChevronRight className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
+                          <span className="text-xs text-primary flex-1 leading-tight">{item}</span>
+                          <button onClick={() => removePestle(cfg.key, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive" data-testid={`btn-remove-pestle-${cfg.key}-${idx}`}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {editingPestle === cfg.key ? (
+                      <div className="flex gap-1 mt-2">
+                        <Input
+                          autoFocus
+                          value={pestleInput}
+                          onChange={e => setPestleInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') addPestle(cfg.key); if (e.key === 'Escape') { setEditingPestle(null); setPestleInput(''); } }}
+                          placeholder="Describe the factor…"
+                          className="h-7 text-xs"
+                          data-testid={`input-pestle-${cfg.key}`}
+                        />
+                        <button onClick={() => addPestle(cfg.key)} className="text-xs text-white bg-primary px-2 rounded-md hover:bg-primary/90" data-testid={`btn-add-pestle-${cfg.key}`}>Add</button>
+                        <button onClick={() => { setEditingPestle(null); setPestleInput(''); }} className="text-xs text-muted-foreground hover:text-primary px-1"><X className="w-3 h-3" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setEditingPestle(cfg.key); setPestleInput(''); }} className="w-full text-xs text-muted-foreground hover:text-accent border border-dashed border-border/60 hover:border-accent/40 rounded-lg py-1.5 flex items-center justify-center gap-1 transition-colors mt-2" data-testid={`btn-new-pestle-${cfg.key}`}>
+                        <Plus className="w-3 h-3" /> Add Factor
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SWOT Tab */}
+          {activeTab === 'swot' && (
+            <div className="space-y-4" data-testid="swot-panel">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
+                <span className="font-bold text-primary">ISO 4.1 — Internal Issues:</span> Document your organization's internal strengths, weaknesses, opportunities, and threats. Combined with PESTLE, this informs your risk and opportunity planning under Clause 6.1.
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {SWOT_CONFIG.map(cfg => (
+                  <div key={cfg.key} className={`rounded-xl border p-4 ${cfg.bg}`} data-testid={`swot-card-${cfg.key}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <cfg.icon className={`w-4 h-4 ${cfg.color}`} />
+                      <p className={`text-sm font-black ${cfg.color}`}>{cfg.label}</p>
+                      {swot[cfg.key].length > 0 && (
+                        <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-black/20 ${cfg.color}`}>{swot[cfg.key].length}</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
+                    <div className="space-y-1.5 mb-2">
+                      {swot[cfg.key].map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-2 group">
+                          <ChevronRight className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
+                          <span className="text-xs text-primary flex-1 leading-tight">{item}</span>
+                          <button onClick={() => removeSwot(cfg.key, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive" data-testid={`btn-remove-swot-${cfg.key}-${idx}`}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {editingSwot === cfg.key ? (
+                      <div className="flex gap-1 mt-2">
+                        <Input
+                          autoFocus
+                          value={swotInput}
+                          onChange={e => setSwotInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') addSwot(cfg.key); if (e.key === 'Escape') { setEditingSwot(null); setSwotInput(''); } }}
+                          placeholder="Describe the item…"
+                          className="h-7 text-xs"
+                          data-testid={`input-swot-${cfg.key}`}
+                        />
+                        <button onClick={() => addSwot(cfg.key)} className="text-xs text-white bg-primary px-2 rounded-md hover:bg-primary/90" data-testid={`btn-add-swot-${cfg.key}`}>Add</button>
+                        <button onClick={() => { setEditingSwot(null); setSwotInput(''); }} className="text-xs text-muted-foreground hover:text-primary px-1"><X className="w-3 h-3" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setEditingSwot(cfg.key); setSwotInput(''); }} className={`w-full text-xs text-muted-foreground hover:${cfg.color} border border-dashed border-current/30 rounded-lg py-1.5 flex items-center justify-center gap-1 transition-colors mt-2 opacity-60 hover:opacity-100`} data-testid={`btn-new-swot-${cfg.key}`}>
+                        <Plus className="w-3 h-3" /> Add Item
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Interested Parties Tab */}
+          {activeTab === 'interested' && (
+            <div className="space-y-4" data-testid="interested-parties-panel">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed">
+                <span className="font-bold text-primary">ISO 4.2 — Interested Parties:</span> Determine the parties that are relevant to your management system, along with their needs and expectations. Their requirements may become compliance obligations and inputs into your scope definition (4.3).
+              </div>
+              <div className="space-y-3">
+                {parties.map((p, idx) => (
+                  <div key={idx} className={`bg-white dark:bg-card rounded-xl border p-4 transition-all ${p.relevant ? 'border-primary/30' : 'border-border/40 opacity-60'}`} data-testid={`party-card-${idx}`}>
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => setParties(prev => prev.map((item, i) => i === idx ? { ...item, relevant: !item.relevant } : item))}
+                        className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${p.relevant ? 'bg-primary border-primary' : 'border-border/60 hover:border-primary/40'}`}
+                        data-testid={`toggle-party-relevant-${idx}`}
+                      >
+                        {p.relevant && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="text-sm font-bold text-primary">{p.party}</p>
+                          {p.relevant
+                            ? <span className="text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5">RELEVANT</span>
+                            : <span className="text-[9px] font-bold text-muted-foreground bg-muted border border-border/60 rounded-full px-1.5 py-0.5">NOT RELEVANT</span>
+                          }
+                        </div>
+                        {p.relevant && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Needs</label>
+                              <Input
+                                value={p.needs}
+                                onChange={e => setParties(prev => prev.map((item, i) => i === idx ? { ...item, needs: e.target.value } : item))}
+                                placeholder="What do they need from us?"
+                                className="h-7 text-xs"
+                                data-testid={`input-party-needs-${idx}`}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Expectations</label>
+                              <Input
+                                value={p.expectations}
+                                onChange={e => setParties(prev => prev.map((item, i) => i === idx ? { ...item, expectations: e.target.value } : item))}
+                                placeholder="What are their expectations?"
+                                className="h-7 text-xs"
+                                data-testid={`input-party-expectations-${idx}`}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setParties(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                        data-testid={`btn-remove-party-${idx}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setParties(prev => [...prev, { party: '', needs: '', expectations: '', relevant: true }])}
+                  className="w-full text-xs text-muted-foreground hover:text-accent border border-dashed border-border/60 hover:border-accent/40 rounded-xl py-3 flex items-center justify-center gap-1.5 transition-colors"
+                  data-testid="btn-add-party"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Interested Party
+                </button>
+                {parties.some(p => !p.party) && (
+                  <div className="space-y-2">
+                    {parties.map((p, idx) => !p.party ? (
+                      <Input
+                        key={idx}
+                        autoFocus
+                        placeholder="Party name (e.g., Certification Body, Insurance Provider)"
+                        className="text-xs"
+                        onChange={e => setParties(prev => prev.map((item, i) => i === idx ? { ...item, party: e.target.value } : item))}
+                        onKeyDown={e => { if (e.key === 'Escape') setParties(prev => prev.filter((_, i) => i !== idx)); }}
+                        data-testid={`input-new-party-${idx}`}
+                      />
+                    ) : null)}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
 /* ─── SYSTEM PROFILE MODULE ───────────────────────────── */
 function SystemProfileModule({ project, onStartWizard }: { project: IsoProject | null; onStartWizard: () => void }) {
   if (!project || project.status === "not_started") {
@@ -1583,25 +1948,216 @@ function SystemProfileModule({ project, onStartWizard }: { project: IsoProject |
             </div>
           </div>
 
-          {/* Risk Framework */}
+          {/* Remote Sites */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="w-4 h-4 text-accent" />
-              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Risk Identification Methods</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <MapPin className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Remote Sites</h2>
+              <span className="ml-1 text-[9px] font-bold bg-accent/10 text-accent border border-accent/20 rounded px-1.5 py-0.5">IATF / Multi-Site</span>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5">
-              {riskPhil.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {riskPhil.map((r: string) => (
-                    <span key={r} className="text-xs px-3 py-1 rounded-full bg-muted border border-border/60 text-muted-foreground font-medium">{r}</span>
-                  ))}
-                </div>
-              ) : <DraftEmpty />}
+            <p className="text-xs text-muted-foreground mb-3">For IATF 16949 and multi-site certifications — document any remote locations, support functions, or satellite facilities within your certification scope.</p>
+            <RemoteSitesEditor project={project} />
+          </div>
+
+          {/* Outside Processes */}
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Factory className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-black text-primary uppercase tracking-wide">Outside Processes (Outsourcing)</h2>
             </div>
+            <p className="text-xs text-muted-foreground mb-3">Externally provided processes, products, or services that are part of your management system scope (ISO 4.1 / 8.4). Document how each is controlled.</p>
+            <OutsideProcessesEditor project={project} />
           </div>
 
         </div>
       </ScrollArea>
+    </div>
+  );
+}
+
+/* ─── REMOTE SITES EDITOR ─────────────────────────────── */
+function RemoteSitesEditor({ project }: { project: IsoProject }) {
+  const qc = useQueryClient();
+  const [sites, setSites] = useState<Array<{ name: string; address: string; activities: string; included: boolean }>>(
+    () => (project as any).remoteSites || []
+  );
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: '', address: '', activities: '', included: true });
+  const [saving, setSaving] = useState(false);
+
+  const save = async (updated: typeof sites) => {
+    setSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/iso-projects", { remoteSites: updated });
+      await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+    } catch { /* silent */ }
+    finally { setSaving(false); }
+  };
+
+  const addSite = async () => {
+    if (!form.name.trim()) return;
+    const updated = [...sites, { ...form }];
+    setSites(updated);
+    setAdding(false);
+    setForm({ name: '', address: '', activities: '', included: true });
+    await save(updated);
+  };
+
+  const removeSite = async (idx: number) => {
+    const updated = sites.filter((_, i) => i !== idx);
+    setSites(updated);
+    await save(updated);
+  };
+
+  const toggleIncluded = async (idx: number) => {
+    const updated = sites.map((s, i) => i === idx ? { ...s, included: !s.included } : s);
+    setSites(updated);
+    await save(updated);
+  };
+
+  return (
+    <div className="space-y-2" data-testid="remote-sites-editor">
+      {sites.length === 0 && !adding && (
+        <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5"><DraftEmpty /></div>
+      )}
+      {sites.map((s, idx) => (
+        <div key={idx} className={`bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3 ${s.included ? 'border-primary/30' : 'border-border/40 opacity-60'}`} data-testid={`remote-site-${idx}`}>
+          <button onClick={() => toggleIncluded(idx)} className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${s.included ? 'bg-primary border-primary' : 'border-border/60'}`} data-testid={`toggle-site-${idx}`}>
+            {s.included && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-sm font-bold text-primary">{s.name}</p>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${s.included ? 'text-primary bg-primary/10 border-primary/20' : 'text-muted-foreground bg-muted border-border/60'}`}>{s.included ? 'IN SCOPE' : 'EXCLUDED'}</span>
+            </div>
+            {s.address && <p className="text-xs text-muted-foreground">{s.address}</p>}
+            {s.activities && <p className="text-xs text-primary/70 mt-0.5">{s.activities}</p>}
+          </div>
+          <button onClick={() => removeSite(idx)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0" data-testid={`btn-remove-site-${idx}`}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ))}
+      {adding ? (
+        <div className="bg-white dark:bg-card rounded-xl border border-accent/30 p-4 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Site Name *</label>
+              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g., Chicago Support Office" className="h-7 text-xs" data-testid="input-site-name" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Address</label>
+              <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="City, State or full address" className="h-7 text-xs" data-testid="input-site-address" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Activities / Functions at This Site</label>
+            <Input value={form.activities} onChange={e => setForm(f => ({ ...f, activities: e.target.value }))} placeholder="e.g., Engineering support, Customer service, Warehousing" className="h-7 text-xs" data-testid="input-site-activities" />
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Button size="sm" onClick={addSite} disabled={saving || !form.name.trim()} className="h-7 text-xs bg-accent hover:bg-accent/90 text-white" data-testid="btn-save-site">
+              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null} Add Site
+            </Button>
+            <button onClick={() => { setAdding(false); setForm({ name: '', address: '', activities: '', included: true }); }} className="text-xs text-muted-foreground hover:text-primary">Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setAdding(true)} className="w-full text-xs text-muted-foreground hover:text-accent border border-dashed border-border/60 hover:border-accent/40 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-colors" data-testid="btn-add-site">
+          <Plus className="w-3.5 h-3.5" /> Add Remote Site
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── OUTSIDE PROCESSES EDITOR ───────────────────────── */
+function OutsideProcessesEditor({ project }: { project: IsoProject }) {
+  const qc = useQueryClient();
+  const [procs, setProcs] = useState<Array<{ process: string; provider: string; controlMethod: string; clause: string }>>(
+    () => (project as any).outsideProcesses || []
+  );
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ process: '', provider: '', controlMethod: '', clause: '8.4' });
+  const [saving, setSaving] = useState(false);
+
+  const save = async (updated: typeof procs) => {
+    setSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/iso-projects", { outsideProcesses: updated });
+      await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+    } catch { /* silent */ }
+    finally { setSaving(false); }
+  };
+
+  const addProc = async () => {
+    if (!form.process.trim()) return;
+    const updated = [...procs, { ...form }];
+    setProcs(updated);
+    setAdding(false);
+    setForm({ process: '', provider: '', controlMethod: '', clause: '8.4' });
+    await save(updated);
+  };
+
+  const removeProc = async (idx: number) => {
+    const updated = procs.filter((_, i) => i !== idx);
+    setProcs(updated);
+    await save(updated);
+  };
+
+  return (
+    <div className="space-y-2" data-testid="outside-processes-editor">
+      {procs.length === 0 && !adding && (
+        <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5"><DraftEmpty /></div>
+      )}
+      {procs.map((p, idx) => (
+        <div key={idx} className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 flex items-start justify-between gap-3" data-testid={`outside-proc-${idx}`}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-sm font-bold text-primary">{p.process}</p>
+              <span className="text-[9px] font-bold bg-accent/10 text-accent border border-accent/20 rounded px-1.5 py-0.5">Cl. {p.clause}</span>
+            </div>
+            {p.provider && <p className="text-xs text-muted-foreground">Provider: {p.provider}</p>}
+            {p.controlMethod && <p className="text-xs text-primary/70 mt-0.5">Control: {p.controlMethod}</p>}
+          </div>
+          <button onClick={() => removeProc(idx)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0" data-testid={`btn-remove-proc-${idx}`}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ))}
+      {adding ? (
+        <div className="bg-white dark:bg-card rounded-xl border border-accent/30 p-4 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Process / Service *</label>
+              <Input value={form.process} onChange={e => setForm(f => ({ ...f, process: e.target.value }))} placeholder="e.g., Heat Treating, Plating, Calibration" className="h-7 text-xs" data-testid="input-proc-name" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">External Provider</label>
+              <Input value={form.provider} onChange={e => setForm(f => ({ ...f, provider: e.target.value }))} placeholder="Company or supplier name" className="h-7 text-xs" data-testid="input-proc-provider" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Control Method</label>
+              <Input value={form.controlMethod} onChange={e => setForm(f => ({ ...f, controlMethod: e.target.value }))} placeholder="e.g., Approved supplier, incoming inspection" className="h-7 text-xs" data-testid="input-proc-control" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">ISO Clause Reference</label>
+              <Input value={form.clause} onChange={e => setForm(f => ({ ...f, clause: e.target.value }))} placeholder="e.g., 8.4" className="h-7 text-xs" data-testid="input-proc-clause" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Button size="sm" onClick={addProc} disabled={saving || !form.process.trim()} className="h-7 text-xs bg-accent hover:bg-accent/90 text-white" data-testid="btn-save-proc">
+              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null} Add Process
+            </Button>
+            <button onClick={() => { setAdding(false); setForm({ process: '', provider: '', controlMethod: '', clause: '8.4' }); }} className="text-xs text-muted-foreground hover:text-primary">Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setAdding(true)} className="w-full text-xs text-muted-foreground hover:text-accent border border-dashed border-border/60 hover:border-accent/40 rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-colors" data-testid="btn-add-outside-proc">
+          <Plus className="w-3.5 h-3.5" /> Add Outside Process
+        </button>
+      )}
     </div>
   );
 }
@@ -1618,7 +2174,7 @@ function IsaEmptyState({
   onStartWizard: () => void;
   onResetProject: () => void;
   isResetting: boolean;
-  onModuleSelect?: (section: 'chat' | 'nc' | 'documentation' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement') => void;
+  onModuleSelect?: (section: SectionKey) => void;
 }) {
   return (
     <ScrollArea className="flex-1">
@@ -1782,7 +2338,7 @@ function IsaEmptyState({
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {[
-                { icon: MessageSquare, label: "AI Consultation", desc: "Isa coaching on any ISO clause", status: "live", section: "chat" },
+                { icon: Compass, label: "Context of the Org", desc: "4.1 PESTLE/SWOT · 4.2 Interested Parties", status: "live", section: "context_org" },
                 { icon: Shield, label: "NC & CAPA", desc: "Log, track & close nonconformances", status: "live", section: "nc" },
                 { icon: FileText, label: "Documentation", desc: "Quality Manual, Procedures, WIs", status: "live", section: "documentation" },
                 { icon: AlertTriangle, label: "Risk Assessment", desc: "Clause 6.1 risk & opportunity register", status: "soon", section: "risk" },

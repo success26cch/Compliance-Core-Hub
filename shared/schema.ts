@@ -541,6 +541,40 @@ export const isoProjects = pgTable("iso_projects", {
     outputs: string;
     clauses: string[];
   }>>(),
+  // Remote Sites / Outside Processes (critical for IATF 16949 multi-site)
+  remoteSites: jsonb("remote_sites").$type<Array<{
+    name: string;
+    address: string;
+    activities: string;
+    included: boolean;
+  }>>(),
+  outsideProcesses: jsonb("outside_processes").$type<Array<{
+    process: string;
+    provider: string;
+    controlMethod: string;
+    clause: string;
+  }>>(),
+  // Context of the Organization — 4.1 & 4.2
+  pestleData: jsonb("pestle_data").$type<{
+    political: string[];
+    economic: string[];
+    social: string[];
+    technological: string[];
+    legal: string[];
+    environmental: string[];
+  }>(),
+  swotData: jsonb("swot_data").$type<{
+    strengths: string[];
+    weaknesses: string[];
+    opportunities: string[];
+    threats: string[];
+  }>(),
+  interestedParties: jsonb("interested_parties").$type<Array<{
+    party: string;
+    needs: string;
+    expectations: string;
+    relevant: boolean;
+  }>>(),
   // Phase 3 — Quality Manual Gap Filler
   coreValues: text("core_values").array(),
   riskPhilosophy: text("risk_philosophy").array(),
