@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Edit2, Save, X,
   Plus, Trash2, Target, AlertTriangle, FileText, Users, Zap,
-  BookOpen, Activity, MapPin, CheckCircle2, ExternalLink
+  BookOpen, Activity, MapPin, CheckCircle2, ExternalLink, Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +107,210 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
   );
 }
 
+// ─── Print helpers ─────────────────────────────────────────────────────────────
+function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: typeof ISO_ROWS) {
+  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const rowsHtml = rows.map(row => {
+    const rowProcs = processes.filter(p => (p.row || guessRow(p.name, project.standard ?? "")) === row.key);
+    if (rowProcs.length === 0) return "";
+    return `
+      <tr>
+        <td class="row-label">${row.label}</td>
+        <td class="proc-cells">${rowProcs.map(p => `
+          <div class="proc-box">
+            <div class="proc-name">${p.name}</div>
+            ${p.owner ? `<div class="proc-owner">Owner: ${p.owner}</div>` : ""}
+            ${p.clauses.length ? `<div class="proc-clauses">${p.clauses.slice(0, 3).map(c => `<span class="clause-tag">${c.split("—")[0].trim()}</span>`).join("")}</div>` : ""}
+            ${p.kpi ? `<div class="proc-kpi">KPI: ${p.kpi}${p.kpiTarget ? ` — Target: ${p.kpiTarget}${p.kpiUnit || ""}` : ""}</div>` : ""}
+          </div>`).join("")}
+        </td>
+      </tr>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Process Interaction Map — ${project.orgName}</title>
+  <style>
+    @page { size: A3 landscape; margin: 18mm 14mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 9pt; color: #1e3a5f; }
+    .doc-header { display: flex; align-items: center; gap: 16px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 14px; }
+    .logo-box { width: 60px; height: 60px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #aaa; text-align: center; border-radius: 6px; }
+    .doc-title { flex: 1; text-align: center; }
+    .doc-title h1 { font-size: 14pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; }
+    .doc-title p { font-size: 9pt; color: #555; margin-top: 2px; }
+    .doc-meta { font-size: 8pt; text-align: right; line-height: 1.7; }
+    .doc-meta span { font-weight: bold; }
+    .map-wrapper { display: flex; align-items: stretch; border: 1.5px solid #1e3a5f; border-radius: 8px; overflow: hidden; }
+    .side-label { width: 28px; display: flex; align-items: center; justify-content: center; background: #dbeafe; font-size: 7pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #1d4ed8; writing-mode: vertical-rl; }
+    .side-label.right { transform: rotate(180deg); background: #dcfce7; color: #15803d; }
+    table { width: 100%; border-collapse: collapse; }
+    tr { border-bottom: 1px solid #e2e8f0; }
+    .row-label { width: 130px; vertical-align: top; padding: 8px 8px; font-size: 7.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; background: #f8fafc; border-right: 1.5px solid #e2e8f0; color: #1e3a5f; line-height: 1.4; }
+    .proc-cells { padding: 6px 8px; vertical-align: top; }
+    .proc-cells > div { display: inline-block; vertical-align: top; }
+    .proc-box { display: inline-flex; flex-direction: column; gap: 3px; border: 1.5px solid #c4d4e8; border-radius: 6px; padding: 6px 8px; margin: 3px; min-width: 110px; max-width: 150px; background: #fff; vertical-align: top; }
+    .proc-name { font-weight: 900; font-size: 8pt; color: #1e3a5f; line-height: 1.3; }
+    .proc-owner { font-size: 7pt; color: #666; }
+    .proc-kpi { font-size: 7pt; color: #555; font-style: italic; }
+    .proc-clauses { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
+    .clause-tag { font-size: 6.5pt; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 3px; padding: 0 3px; font-family: monospace; }
+    .doc-footer { margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7pt; color: #999; }
+    .print-btn { position: fixed; bottom: 24px; right: 24px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 11pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    @media print { .print-btn { display: none; } }
+  </style></head><body>
+  <div class="doc-header">
+    <div class="logo-box">ORG<br>LOGO</div>
+    <div class="doc-title"><h1>Process Interaction Map</h1><p>${project.orgName || ""}</p></div>
+    <div class="doc-meta"><span>Standard:</span> ${project.standard || ""}<br><span>Rev:</span> 1.0<br><span>Date:</span> ${today}</div>
+  </div>
+  <div class="map-wrapper">
+    <div class="side-label">Customer Requirements →</div>
+    <table>${rowsHtml}</table>
+    <div class="side-label right">→ Customer Satisfaction</div>
+  </div>
+  <div class="doc-footer">
+    <span>Core Compliance Hub · ISO Manager</span>
+    <span>CONFIDENTIAL — Internal Use Only</span>
+    <span>Printed: ${today}</span>
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+  </body></html>`;
+
+  const w = window.open("", "_blank");
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+function printTurtleDiagram(process: ProcessEntry, project: IsoProject, objectives: Array<{ name: string; target?: string | null; unit?: string | null; status?: string | null }>) {
+  const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const isIATF = project.standard?.includes("IATF");
+
+  const kpisHtml = objectives.length
+    ? objectives.map(o => `<div class="kpi-row"><span class="kpi-name">${o.name}</span>${o.target ? `<span class="kpi-target">Target: ${o.target}${o.unit || ""}</span>` : ""}</div>`).join("")
+    : `<div class="empty-note">No KPIs defined</div>`;
+
+  const clausesHtml = process.clauses.length
+    ? process.clauses.map(c => `<span class="clause-tag">${c.split("—")[0].trim()}</span>`).join("")
+    : `<span class="empty-note">None</span>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Turtle Diagram — ${process.name}</title>
+  <style>
+    @page { size: A4 landscape; margin: 15mm 12mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 9pt; color: #1e3a5f; }
+    .doc-header { display: flex; align-items: center; gap: 16px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 14px; }
+    .logo-box { width: 52px; height: 52px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #aaa; text-align: center; border-radius: 6px; }
+    .doc-title { flex: 1; }
+    .doc-title h1 { font-size: 13pt; font-weight: 900; color: #1e3a5f; }
+    .doc-title p { font-size: 8.5pt; color: #555; margin-top: 2px; }
+    .doc-meta { font-size: 8pt; text-align: right; line-height: 1.7; }
+    .doc-meta span { font-weight: bold; }
+    .turtle { display: grid; grid-template-rows: auto auto auto; gap: 6px; }
+    .row { display: grid; gap: 6px; }
+    .row-2 { grid-template-columns: 1fr 1fr; }
+    .row-3 { grid-template-columns: 1fr 1.4fr 1fr; }
+    .row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .cell { border: 1.5px solid #c4d4e8; border-radius: 7px; padding: 8px 10px; min-height: 70px; background: #f8fafc; }
+    .cell.blue { background: #eff6ff; border-color: #bfdbfe; }
+    .cell.amber { background: #fffbeb; border-color: #fde68a; }
+    .cell.green { background: #f0fdf4; border-color: #bbf7d0; }
+    .cell.orange { background: #fff7ed; border-color: #fed7aa; }
+    .cell.red { background: #fef2f2; border-color: #fecaca; }
+    .cell.slate { background: #f8fafc; border-color: #cbd5e1; }
+    .cell.violet { background: #f5f3ff; border-color: #ddd6fe; }
+    .cell.primary { background: #f0f4ff; border-color: #c3d0f5; }
+    .cell-title { font-size: 7.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+    .cell-body { font-size: 8.5pt; color: #374151; line-height: 1.5; white-space: pre-wrap; }
+    .kpi-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-bottom: 1px solid #fde68a; font-size: 8pt; gap: 8px; }
+    .kpi-name { font-weight: 600; color: #92400e; }
+    .kpi-target { font-size: 7.5pt; color: #78350f; }
+    .clause-tag { font-size: 7.5pt; background: #ede9fe; color: #6d28d9; border: 1px solid #c4b5fd; border-radius: 3px; padding: 0 4px; margin: 1px; display: inline-block; font-family: monospace; }
+    .empty-note { font-size: 8pt; color: #aaa; font-style: italic; }
+    .process-header { background: #1e3a5f; color: white; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .process-header h2 { font-size: 12pt; font-weight: 900; }
+    .process-header .meta { font-size: 8pt; opacity: 0.8; }
+    .process-header .clauses { display: flex; gap: 4px; flex-wrap: wrap; }
+    .process-header .clause-tag { background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.3); }
+    .doc-footer { margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7pt; color: #999; }
+    .print-btn { position: fixed; bottom: 24px; right: 24px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 11pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    @media print { .print-btn { display: none; } }
+  </style></head><body>
+  <div class="doc-header">
+    <div class="logo-box">ORG<br>LOGO</div>
+    <div class="doc-title">
+      <h1>Turtle Diagram</h1>
+      <p>${project.orgName || ""} · ${project.standard || ""}</p>
+    </div>
+    <div class="doc-meta"><span>Process:</span> ${process.name}<br><span>Owner:</span> ${process.owner || "—"}<br><span>Date:</span> ${today}</div>
+  </div>
+
+  <div class="process-header">
+    <div>
+      <h2>${process.name}</h2>
+      <div class="meta">Process Owner: ${process.owner || "—"}${process.executors ? ` · Executors: ${process.executors}` : ""}</div>
+    </div>
+    <div class="clauses">${clausesHtml}</div>
+  </div>
+
+  <div class="turtle">
+    <div class="row row-2">
+      <div class="cell blue">
+        <div class="cell-title">⚡ Resources</div>
+        <div class="cell-body">${process.resources || "—"}</div>
+      </div>
+      <div class="cell amber">
+        <div class="cell-title">🎯 Quality Objectives / KPIs</div>
+        ${kpisHtml}
+      </div>
+    </div>
+
+    <div class="row row-3">
+      <div class="cell green">
+        <div class="cell-title">→ Inputs</div>
+        <div class="cell-body">${process.inputs || "—"}</div>
+        ${process.startingPoint ? `<div class="cell-title" style="margin-top:8px">📍 Starting Point / Trigger</div><div class="cell-body">${process.startingPoint}</div>` : ""}
+      </div>
+      <div class="cell primary">
+        <div class="cell-title">⚙ Key Activities</div>
+        <div class="cell-body">${process.keyActivities || "—"}</div>
+      </div>
+      <div class="cell orange">
+        <div class="cell-title">Outputs →</div>
+        <div class="cell-body">${process.outputs || "—"}</div>
+        ${process.endPoint ? `<div class="cell-title" style="margin-top:8px">✅ End Point / Completion</div><div class="cell-body">${process.endPoint}</div>` : ""}
+      </div>
+    </div>
+
+    <div class="row ${isIATF ? "row-4" : "row-3"}">
+      <div class="cell red">
+        <div class="cell-title">⚠ Risks &amp; Opportunities</div>
+        <div class="cell-body">${process.risksAndOpportunities || "—"}</div>
+      </div>
+      <div class="cell slate">
+        <div class="cell-title">📄 Documented Information</div>
+        <div class="cell-body">${process.documentedInfo || "—"}</div>
+      </div>
+      <div class="cell violet">
+        <div class="cell-title">📘 ISO Clauses</div>
+        <div>${clausesHtml}</div>
+      </div>
+      ${isIATF ? `<div class="cell amber">
+        <div class="cell-title">👥 Customer Specific Requirements</div>
+        <div class="cell-body">${process.csrReq || "—"}</div>
+      </div>` : ""}
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span>Core Compliance Hub · ISO Manager</span>
+    <span>CONFIDENTIAL — Internal Use Only</span>
+    <span>Printed: ${today}</span>
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+  </body></html>`;
+
+  const w = window.open("", "_blank");
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
 // ─── Interaction Map ───────────────────────────────────────────────────────────
 function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProject; onSelectProcess: (p: ProcessEntry) => void }) {
   const processes = (project.processes || []) as ProcessEntry[];
@@ -146,6 +350,13 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
           <div><span className="font-bold text-primary">Rev:</span> 1.0</div>
           <div><span className="font-bold text-primary">Date:</span> {today}</div>
         </div>
+        <button
+          onClick={() => printProcessMap(project, processes, rows)}
+          className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+          data-testid="button-print-process-map"
+        >
+          <Printer className="w-3.5 h-3.5" /> Print Map
+        </button>
       </div>
 
       {/* AS9100 "Where Applicable" notice */}
@@ -448,6 +659,13 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
           {process.clauses.slice(0, 3).map(c => (
             <Badge key={c} className="text-[10px] bg-accent/10 text-accent border-accent/20 font-mono">{c.split("—")[0].trim()}</Badge>
           ))}
+          <button
+            onClick={() => printTurtleDiagram(local, project, objectives)}
+            className="flex items-center gap-1 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-colors h-7"
+            data-testid="button-print-turtle"
+          >
+            <Printer className="w-3.5 h-3.5" /> Print
+          </button>
           <Button size="sm" onClick={handleSave} disabled={saving} className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-7 text-xs" data-testid="button-save-turtle">
             <Save className="w-3 h-3" /> {saving ? "Saving…" : "Save"}
           </Button>
