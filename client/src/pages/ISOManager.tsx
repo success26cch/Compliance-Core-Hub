@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, FormEvent, ReactNode } from "react";
-import { ProtectedLayout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +18,7 @@ import {
   AlertTriangle, Menu, FileText, Car, Vault,
   Building2, Users, Factory, ArrowRight, ArrowLeft,
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
-  Mail, BarChart2, GraduationCap,
+  Mail, BarChart2, GraduationCap, Loader2,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -298,7 +297,7 @@ const ROLE_UPGRADE_MSG: Partial<Record<SectionKey, string>> = {
 export default function ISOManager() {
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { data: conversations } = useIsaConversations();
   const { mutate: createConversation, isPending: isCreating } = useCreateIsaConversation();
   const { data: usageData, refetch: refetchUsage } = useQuestionUsage();
@@ -454,9 +453,14 @@ export default function ISOManager() {
     );
   };
 
+  if (isLoading) return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+
   return (
-    <ProtectedLayout>
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-muted/30">
+    <div className="flex h-screen overflow-hidden bg-muted/30">
 
         {/* ── SIDEBAR ── */}
         <div className={`${sidebarOpen ? "w-64" : "w-16"} transition-all duration-200 flex-shrink-0 flex flex-col bg-card border-r border-border/50`}>
@@ -749,8 +753,7 @@ export default function ISOManager() {
             )}
           </div>
         </div>
-      </div>
-    </ProtectedLayout>
+    </div>
   );
 }
 
