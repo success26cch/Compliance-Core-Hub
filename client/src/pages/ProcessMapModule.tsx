@@ -121,68 +121,196 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
 // ─── Print helpers ─────────────────────────────────────────────────────────────
 function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: typeof ISO_ROWS) {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const rowsHtml = rows.map(row => {
-    const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard ?? "") === row.key);
-    if (rowProcs.length === 0) return "";
-    return `
-      <tr>
-        <td class="row-label">${row.label}</td>
-        <td class="proc-cells">${rowProcs.map(p => `
-          <div class="proc-box">
-            <div class="proc-name">${p.name}</div>
-            ${p.owner ? `<div class="proc-owner">Owner: ${p.owner}</div>` : ""}
-            ${p.clauses.length ? `<div class="proc-clauses">${p.clauses.slice(0, 3).map(c => `<span class="clause-tag">${c.split("—")[0].trim()}</span>`).join("")}</div>` : ""}
-            ${p.kpi ? `<div class="proc-kpi">KPI: ${p.kpi}${p.kpiTarget ? ` — Target: ${p.kpiTarget}${p.kpiUnit || ""}` : ""}</div>` : ""}
-          </div>`).join("")}
-        </td>
-      </tr>`;
-  }).join("");
+  const std = project.standard ?? "";
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Process Interaction Map — ${project.orgName}</title>
+  // Categorise and sort
+  const mgtProcs  = processes.filter(p => normalizeRow(p.row, p.name, std) === "management");
+  const coreProcs = [...processes.filter(p => normalizeRow(p.row, p.name, std) === "core")]
+                      .sort((a, b) => (a.sequence ?? 99) - (b.sequence ?? 99));
+  const supProcs  = processes.filter(p => normalizeRow(p.row, p.name, std) === "support");
+
+  // Which core-sequence numbers each support process interacts with
+  const SUPPORT_LINKS: Record<string, number[]> = {
+    "Purchasing & Supply Chain":                   [3, 4],
+    "Calibration & Measurement Equipment Control": [4],
+    "Maintenance":                                 [4],
+    "Human Resources & Training":                  [1, 2, 3, 4, 5],
+    "Inspection & Testing":                        [4, 5],
+    "Control of Documented Information":           [1, 2, 3, 4, 5],
+  };
+
+  // Helper — process box HTML (used in management & support bands)
+  const mgmtBox = (p: ProcessEntry) => `
+    <div class="mgmt-box">
+      <div class="box-num">▲</div>
+      <div class="box-name">${p.name}</div>
+      <div class="box-owner">${p.owner || ""}</div>
+      ${p.clauses.length ? `<div class="box-clauses">${p.clauses.slice(0,2).map(c=>`<span class="ctag">${c.split("—")[0].trim()}</span>`).join("")}</div>` : ""}
+    </div>`;
+
+  const supBox = (p: ProcessEntry) => {
+    const links = SUPPORT_LINKS[p.name] ?? [];
+    const nums = links.length ? `Supports: ${links.map(n=>`step&nbsp;${n}`).join(", ")}` : "Supports all processes";
+    return `
+    <div class="sup-box">
+      <div class="box-name">${p.name}</div>
+      <div class="box-owner">${p.owner || ""}</div>
+      ${p.clauses.length ? `<div class="box-clauses">${p.clauses.slice(0,2).map(c=>`<span class="ctag">${c.split("—")[0].trim()}</span>`).join("")}</div>` : ""}
+      <div class="sup-links">↑ ${nums}</div>
+    </div>`;
+  };
+
+  // Core process flow boxes with arrows
+  const coreFlowHtml = coreProcs.map((p, i) => `
+    <div class="core-step">
+      ${p.conditionalLabel ? `<div class="cond-label">${p.conditionalLabel}</div>` : ""}
+      <div class="core-box">
+        <div class="core-seq">${p.sequence ?? i + 1}</div>
+        <div class="core-name">${p.name}</div>
+        <div class="core-owner">${p.owner || ""}</div>
+        ${p.clauses.length ? `<div class="box-clauses">${p.clauses.slice(0,2).map(c=>`<span class="ctag">${c.split("—")[0].trim()}</span>`).join("")}</div>` : ""}
+        ${p.kpi ? `<div class="core-kpi">KPI: ${p.kpi}${p.kpiTarget ? ` — ${p.kpiTarget}${p.kpiUnit||""}` : ""}</div>` : ""}
+      </div>
+    </div>
+    ${i < coreProcs.length - 1 ? '<div class="core-arrow">→</div>' : ""}
+  `).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Process Interaction Map — ${project.orgName}</title>
   <style>
-    @page { size: A3 landscape; margin: 18mm 14mm; }
+    @page { size: A3 landscape; margin: 14mm 12mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; font-size: 9pt; color: #1e3a5f; }
-    .doc-header { display: flex; align-items: center; gap: 16px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 14px; }
-    .logo-box { width: 60px; height: 60px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #aaa; text-align: center; border-radius: 6px; }
+    body { font-family: Arial, sans-serif; font-size: 8.5pt; color: #1e3a5f; background: #fff; }
+
+    /* ── Header ── */
+    .doc-header { display: flex; align-items: center; gap: 14px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 9px; margin-bottom: 12px; }
+    .logo-box { width: 52px; height: 52px; border: 2px dashed #c0c0c0; display: flex; align-items: center; justify-content: center; font-size: 6.5pt; color: #aaa; text-align: center; border-radius: 5px; flex-shrink: 0; }
     .doc-title { flex: 1; text-align: center; }
-    .doc-title h1 { font-size: 14pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; }
-    .doc-title p { font-size: 9pt; color: #555; margin-top: 2px; }
-    .doc-meta { font-size: 8pt; text-align: right; line-height: 1.7; }
-    .doc-meta span { font-weight: bold; }
-    .map-wrapper { display: flex; align-items: stretch; border: 1.5px solid #1e3a5f; border-radius: 8px; overflow: hidden; }
-    .side-label { width: 28px; display: flex; align-items: center; justify-content: center; background: #dbeafe; font-size: 7pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #1d4ed8; writing-mode: vertical-rl; }
-    .side-label.right { transform: rotate(180deg); background: #dcfce7; color: #15803d; }
-    table { width: 100%; border-collapse: collapse; }
-    tr { border-bottom: 1px solid #e2e8f0; }
-    .row-label { width: 130px; vertical-align: top; padding: 8px 8px; font-size: 7.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; background: #f8fafc; border-right: 1.5px solid #e2e8f0; color: #1e3a5f; line-height: 1.4; }
-    .proc-cells { padding: 6px 8px; vertical-align: top; }
-    .proc-cells > div { display: inline-block; vertical-align: top; }
-    .proc-box { display: inline-flex; flex-direction: column; gap: 3px; border: 1.5px solid #c4d4e8; border-radius: 6px; padding: 6px 8px; margin: 3px; min-width: 110px; max-width: 150px; background: #fff; vertical-align: top; }
-    .proc-name { font-weight: 900; font-size: 8pt; color: #1e3a5f; line-height: 1.3; }
-    .proc-owner { font-size: 7pt; color: #666; }
-    .proc-kpi { font-size: 7pt; color: #555; font-style: italic; }
-    .proc-clauses { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
-    .clause-tag { font-size: 6.5pt; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 3px; padding: 0 3px; font-family: monospace; }
-    .doc-footer { margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7pt; color: #999; }
-    .print-btn { position: fixed; bottom: 24px; right: 24px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 11pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .doc-title h1 { font-size: 13.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #1e3a5f; }
+    .doc-title p { font-size: 9pt; color: #444; margin-top: 2px; }
+    .doc-meta { font-size: 7.5pt; text-align: right; line-height: 1.8; color: #555; }
+    .doc-meta b { color: #1e3a5f; }
+
+    /* ── Outer frame ── */
+    .frame { border: 2px solid #1e3a5f; border-radius: 8px; overflow: hidden; }
+
+    /* ── MANAGEMENT band ── */
+    .mgmt-band { background: #dbeafe; border-bottom: 2px solid #1e3a5f; padding: 8px 10px; }
+    .band-title { font-size: 7pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: #1d4ed8; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .band-title .arrow-ind { font-size: 9pt; color: #1d4ed8; }
+    .band-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mgmt-box { border: 1.5px solid #93c5fd; border-radius: 5px; background: #eff6ff; padding: 5px 8px; flex: 1; min-width: 120px; }
+    .box-num { font-size: 7pt; color: #2563eb; font-weight: 900; margin-bottom: 2px; }
+    .box-name { font-weight: 900; font-size: 7.5pt; color: #1e3a5f; line-height: 1.3; }
+    .box-owner { font-size: 6.5pt; color: #555; margin-top: 1px; }
+    .box-clauses { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
+    .ctag { font-size: 6pt; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 2px; padding: 0 3px; font-family: monospace; }
+
+    /* ── Interaction arrows between management and core ── */
+    .mgmt-arrow-row { background: #e0effe; border-bottom: 1px solid #bfdbfe; padding: 3px 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .arrow-label { font-size: 6.5pt; font-weight: 700; color: #1d4ed8; letter-spacing: 0.04em; }
+
+    /* ── CORE flow band ── */
+    .core-band { display: flex; align-items: stretch; }
+    .side-col { width: 26px; display: flex; align-items: center; justify-content: center; font-size: 6.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; writing-mode: vertical-rl; padding: 6px 0; }
+    .side-col.left { background: #dbeafe; color: #1d4ed8; border-right: 1.5px solid #bfdbfe; }
+    .side-col.right { background: #dcfce7; color: #15803d; border-left: 1.5px solid #bbf7d0; transform: rotate(180deg); }
+    .core-flow-area { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 10px 8px; gap: 0; flex-wrap: nowrap; overflow: hidden; }
+    .core-step { display: flex; flex-direction: column; align-items: center; }
+    .cond-label { font-size: 6pt; font-weight: 900; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 3px; padding: 1px 5px; margin-bottom: 4px; letter-spacing: 0.03em; }
+    .core-box { border: 2px solid #ea6c19; border-radius: 6px; background: #fff7ed; padding: 7px 8px; min-width: 110px; max-width: 140px; display: flex; flex-direction: column; gap: 2px; }
+    .core-seq { width: 18px; height: 18px; background: #ea6c19; color: #fff; border-radius: 50%; font-size: 8.5pt; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; flex-shrink: 0; }
+    .core-name { font-weight: 900; font-size: 7.5pt; color: #1e3a5f; line-height: 1.3; }
+    .core-owner { font-size: 6.5pt; color: #666; }
+    .core-kpi { font-size: 6pt; color: #555; font-style: italic; margin-top: 2px; }
+    .core-arrow { font-size: 16pt; color: #ea6c19; font-weight: 900; padding: 0 3px; line-height: 1; margin-top: 20px; flex-shrink: 0; }
+
+    /* ── Interaction arrows between core and support ── */
+    .sup-arrow-row { background: #f0fdf4; border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; padding: 3px 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+    /* ── SUPPORT band ── */
+    .sup-band { background: #f0fdf4; border-top: 2px solid #1e3a5f; padding: 8px 10px; }
+    .sup-band .band-title { color: #15803d; }
+    .sup-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sup-box { border: 1.5px solid #86efac; border-radius: 5px; background: #fff; padding: 5px 8px; flex: 1; min-width: 110px; }
+    .sup-links { font-size: 6pt; color: #15803d; font-weight: 700; margin-top: 3px; }
+
+    /* ── Footer ── */
+    .doc-footer { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 5px; display: flex; justify-content: space-between; font-size: 6.5pt; color: #999; }
+    .legend { margin-top: 8px; display: flex; gap: 16px; font-size: 6.5pt; color: #555; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ── Print button ── */
+    .print-btn { position: fixed; bottom: 20px; right: 20px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 10pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     @media print { .print-btn { display: none; } }
   </style></head><body>
+
+  <!-- Header -->
   <div class="doc-header">
     <div class="logo-box">ORG<br>LOGO</div>
-    <div class="doc-title"><h1>Process Interaction Map</h1><p>${project.orgName || ""}</p></div>
-    <div class="doc-meta"><span>Standard:</span> ${project.standard || ""}<br><span>Rev:</span> 1.0<br><span>Date:</span> ${today}</div>
+    <div class="doc-title">
+      <h1>Process Interaction Map</h1>
+      <p>${project.orgName || ""} &nbsp;·&nbsp; ${std} &nbsp;·&nbsp; QMS Clause 4.4</p>
+    </div>
+    <div class="doc-meta"><b>Doc No:</b> QMS-PIM-001<br><b>Rev:</b> 1.0<br><b>Date:</b> ${today}<br><b>Status:</b> Approved</div>
   </div>
-  <div class="map-wrapper">
-    <div class="side-label">Customer Requirements →</div>
-    <table>${rowsHtml}</table>
-    <div class="side-label right">→ Customer Satisfaction</div>
+
+  <!-- Main frame -->
+  <div class="frame">
+
+    <!-- MANAGEMENT band -->
+    <div class="mgmt-band">
+      <div class="band-title"><span class="arrow-ind">⬇</span> MANAGEMENT PROCESSES — Direction, Resources &amp; Continual Improvement <span class="arrow-ind">⬇</span></div>
+      <div class="band-boxes">${mgtProcs.map(p => mgmtBox(p)).join("")}</div>
+    </div>
+
+    <!-- Arrow row: management ↔ core -->
+    <div class="mgmt-arrow-row">
+      <span class="arrow-label">▼ Strategic direction, objectives, resources, audit results, corrective actions ▼</span>
+      <span style="flex:1"></span>
+      <span class="arrow-label">▲ Performance data, KPIs, NC trends, improvement opportunities ▲</span>
+    </div>
+
+    <!-- CORE flow row (with Customer columns) -->
+    <div class="core-band">
+      <div class="side-col left">← Customer Requirements</div>
+      <div class="core-flow-area">
+        ${coreFlowHtml}
+      </div>
+      <div class="side-col right">Customer Satisfaction →</div>
+    </div>
+
+    <!-- Arrow row: core ↔ support -->
+    <div class="sup-arrow-row">
+      <span class="arrow-label">▲ Competent people, maintained equipment, calibrated instruments, controlled documents, inspected product ▲</span>
+      <span style="flex:1"></span>
+      <span class="arrow-label">▼ Requirements, schedules, inspection data, training needs ▼</span>
+    </div>
+
+    <!-- SUPPORT band -->
+    <div class="sup-band">
+      <div class="band-title"><span class="arrow-ind">⬆</span> SUPPORT PROCESSES — Enable &amp; Sustain Core Process Performance <span class="arrow-ind">⬆</span></div>
+      <div class="sup-boxes">${supProcs.map(p => supBox(p)).join("")}</div>
+    </div>
+
+  </div><!-- /frame -->
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#ea6c19"></div> Core / Value-Adding Processes (sequential flow)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div> Management Processes (direction &amp; oversight)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div> Support Processes (enable core performance)</div>
+    <div class="legend-item">① ② ③ ④ ⑤ = Process sequence order</div>
+    <div class="legend-item" style="color:#92400e">★ = Conditional process (applies when noted)</div>
   </div>
+
   <div class="doc-footer">
-    <span>Core Compliance Hub · ISO Manager</span>
+    <span>Core Compliance Hub · ISO Manager · Document: QMS-PIM-001</span>
     <span>CONFIDENTIAL — Internal Use Only</span>
     <span>Printed: ${today}</span>
   </div>
+
   <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
   </body></html>`;
 
