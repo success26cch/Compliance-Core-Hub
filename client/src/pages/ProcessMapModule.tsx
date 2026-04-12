@@ -40,13 +40,11 @@ export interface ProcessEntry {
   row?: string;
 }
 
-// ─── Row definitions per standard (order: Context → Planning → Operational → Supporting → Management) ──
+// ─── Row definitions per standard (order: Core → Support → Management) ──
 const ISO_ROWS = [
-  { key: "context", label: "Context & Interested Parties", color: "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/40", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
-  { key: "planning", label: "Planning & Risk Management", color: "bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800/40", badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
-  { key: "operational", label: "Operational / Core Processes (COP)", color: "bg-accent/5 border-accent/20 dark:bg-accent/10", badge: "bg-accent/10 text-accent" },
-  { key: "supporting", label: "Support Processes", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
-  { key: "management", label: "Management Processes (Leadership)", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  { key: "core", label: "Core Processes", color: "bg-accent/5 border-accent/20 dark:bg-accent/10", badge: "bg-accent/10 text-accent" },
+  { key: "support", label: "Support Processes", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  { key: "management", label: "Management Processes", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
 ];
 
 const IATF_ROWS = [
@@ -61,6 +59,19 @@ const IATF_SITES = [
   { key: "CORPORATE", label: "Corporate", headerClass: "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300" },
 ];
 
+const LEGACY_ROW_MAP: Record<string, string> = {
+  context: "management",
+  planning: "management",
+  operational: "core",
+  supporting: "support",
+};
+
+function normalizeRow(row: string | undefined, name: string, standard: string): string {
+  if (!row) return guessRow(name, standard);
+  if (LEGACY_ROW_MAP[row]) return LEGACY_ROW_MAP[row];
+  return row;
+}
+
 function guessRow(name: string, standard: string): string {
   const n = name.toLowerCase();
   if (standard.includes("IATF")) {
@@ -68,17 +79,15 @@ function guessRow(name: string, standard: string): string {
     if (n.includes("management review") || n.includes("corrective") || n.includes("internal audit") || n.includes("strategy") || n.includes("objective")) return "MOP";
     return "SOP";
   }
-  if (n.includes("management review") || n.includes("strategy") || n.includes("leadership") || n.includes("objective")) return "management";
-  if (n.includes("customer") || n.includes("sales") || n.includes("production") || n.includes("manufactur") || n.includes("design") || n.includes("ship") || n.includes("deliver") || n.includes("order")) return "operational";
-  if (n.includes("mainten") || n.includes("train") || n.includes("purchas") || n.includes("document") || n.includes("hr") || n.includes("it ") || n.includes("information")) return "supporting";
-  if (n.includes("corrective") || n.includes("internal audit") || n.includes("risk") || n.includes("measurement") || n.includes("monitor")) return "planning";
-  return "supporting";
+  if (n.includes("management review") || n.includes("strategy") || n.includes("leadership") || n.includes("context") || n.includes("planning") || n.includes("risk") || n.includes("objective") || n.includes("internal audit") || n.includes("corrective") || n.includes("measurement") || n.includes("monitor")) return "management";
+  if (n.includes("customer") || n.includes("sales") || n.includes("production") || n.includes("manufactur") || n.includes("design") || n.includes("ship") || n.includes("deliver") || n.includes("order") || n.includes("inspection") || n.includes("testing")) return "core";
+  return "support";
 }
 
 // ─── Process Box Component ─────────────────────────────────────────────────────
 function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onClick: () => void; standard: string }) {
   const rows = standard.includes("IATF") ? IATF_ROWS : ISO_ROWS;
-  const rowKey = process.row || guessRow(process.name, standard);
+  const rowKey = normalizeRow(process.row, process.name, standard);
   const rowDef = rows.find(r => r.key === rowKey);
   return (
     <button
@@ -111,7 +120,7 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
 function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: typeof ISO_ROWS) {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const rowsHtml = rows.map(row => {
-    const rowProcs = processes.filter(p => (p.row || guessRow(p.name, project.standard ?? "")) === row.key);
+    const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard ?? "") === row.key);
     if (rowProcs.length === 0) return "";
     return `
       <tr>
@@ -393,7 +402,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
             ))}
           </div>
           {rows.map(row => {
-            const rowProcs = processes.filter(p => (p.row || guessRow(p.name, project.standard!)) === row.key);
+            const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard!) === row.key);
             return (
               <div key={row.key} className={`border-2 rounded-xl overflow-hidden ${row.color}`}>
                 <div className="grid grid-cols-[120px_1fr_1fr_1fr]">
@@ -427,7 +436,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
       ) : (
         <div className="space-y-3">
           {rows.map(row => {
-            const rowProcs = processes.filter(p => (p.row || guessRow(p.name, project.standard!)) === row.key);
+            const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard!) === row.key);
             return (
               <div key={row.key} className={`border-2 rounded-xl overflow-hidden ${row.color}`}>
                 <div className="px-4 py-2 flex items-center gap-2">
@@ -847,7 +856,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
               <button
                 key={r.key}
                 onClick={() => setLocal(prev => ({ ...prev, row: r.key }))}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${(local.row || guessRow(local.name, project.standard!)) === r.key ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${normalizeRow(local.row, local.name, project.standard!) === r.key ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`}
               >
                 {r.key}
               </button>
