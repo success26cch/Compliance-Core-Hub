@@ -38,6 +38,8 @@ export interface ProcessEntry {
   csrReq?: string;
   site?: "PLANT" | "REMOTE_SITE" | "CORPORATE";
   row?: string;
+  sequence?: number;
+  conditionalLabel?: string;
 }
 
 // ─── Row definitions per standard (order: Core → Support → Management) ──
@@ -437,11 +439,16 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
         <div className="space-y-3">
           {rows.map(row => {
             const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard!) === row.key);
+            const isCore = row.key === "core";
+            const sortedCore = isCore
+              ? [...rowProcs].sort((a, b) => (a.sequence ?? 99) - (b.sequence ?? 99))
+              : rowProcs;
             return (
               <div key={row.key} className={`border-2 rounded-xl overflow-hidden ${row.color}`}>
                 <div className="px-4 py-2 flex items-center gap-2">
                   <Badge className={`text-[10px] font-bold px-2 py-0.5 ${row.badge}`}>{row.key}</Badge>
                   <span className="text-sm font-bold text-primary">{row.label}</span>
+                  {isCore && <span className="text-[10px] text-muted-foreground font-medium">— sequence &amp; interaction flow</span>}
                   <span className="text-xs text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
                 </div>
                 <div className="p-3 pt-0">
@@ -449,7 +456,35 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                     <div className="border-2 border-dashed border-border/30 rounded-lg p-4 text-center">
                       <p className="text-xs text-muted-foreground/50">No processes assigned to this row</p>
                     </div>
+                  ) : isCore ? (
+                    /* ── Core: horizontal flow with arrows ─────────────── */
+                    <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
+                      {sortedCore.map((p, i) => (
+                        <div key={p.name} className="flex items-center gap-0 flex-shrink-0">
+                          <div className="relative flex flex-col items-center" style={{ minWidth: 130 }}>
+                            {/* Sequence badge + optional conditional label */}
+                            <div className="flex items-center gap-1 mb-1.5">
+                              <span className="w-5 h-5 rounded-full bg-accent text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                                {p.sequence ?? i + 1}
+                              </span>
+                              {p.conditionalLabel && (
+                                <span className="text-[9px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded px-1.5 py-0.5 leading-none">
+                                  {p.conditionalLabel}
+                                </span>
+                              )}
+                            </div>
+                            <ProcessBox process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                          </div>
+                          {i < sortedCore.length - 1 && (
+                            <div className="flex flex-col items-center px-1 flex-shrink-0 self-center mt-6">
+                              <ArrowRight className="w-5 h-5 text-accent/70" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   ) : (
+                    /* ── Support / Management: grid ────────────────────── */
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                       {rowProcs.map(p => (
                         <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
