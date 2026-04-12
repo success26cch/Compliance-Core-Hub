@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import precisionPartsLogoUrl from "@assets/precision-parts-logo.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Edit2, Save, X,
@@ -178,13 +179,14 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Process Interaction Map — ${project.orgName}</title>
   <style>
-    @page { size: A3 landscape; margin: 14mm 12mm; }
+    @page { size: letter landscape; margin: 9mm 10mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; font-size: 10pt; color: #1e3a5f; background: #fff; }
+    body { font-family: Arial, sans-serif; font-size: 9pt; color: #1e3a5f; background: #fff; }
 
     /* ── Header ── */
     .doc-header { display: flex; align-items: center; gap: 14px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 9px; margin-bottom: 12px; }
-    .logo-box { width: 58px; height: 58px; border: 2px dashed #c0c0c0; display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #aaa; text-align: center; border-radius: 5px; flex-shrink: 0; }
+    .logo-box { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 5px; flex-shrink: 0; overflow: hidden; }
+    .logo-box img { width: 100%; height: 100%; object-fit: contain; }
     .doc-title { flex: 1; text-align: center; }
     .doc-title h1 { font-size: 16pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #1e3a5f; }
     .doc-title p { font-size: 10.5pt; color: #444; margin-top: 3px; }
@@ -204,7 +206,7 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
     .box-name { font-weight: 900; font-size: 9pt; color: #1e3a5f; line-height: 1.3; }
     .box-owner { font-size: 8pt; color: #555; margin-top: 2px; }
     .box-clauses { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
-    .ctag { font-size: 7.5pt; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 2px; padding: 0 4px; font-family: monospace; }
+    .ctag { font-size: 9pt; font-weight: 700; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 2px; padding: 1px 5px; font-family: monospace; }
 
     /* ── Interaction arrows between management and core ── */
     .mgmt-arrow-row { background: #e0effe; border-bottom: 1px solid #bfdbfe; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -218,7 +220,7 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
     .core-flow-area { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 12px 8px; gap: 0; flex-wrap: nowrap; overflow: hidden; }
     .core-step { display: flex; flex-direction: column; align-items: center; }
     .cond-label { font-size: 7.5pt; font-weight: 900; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 3px; padding: 2px 6px; margin-bottom: 5px; letter-spacing: 0.03em; }
-    .core-box { border: 2px solid #ea6c19; border-radius: 6px; background: #fff7ed; padding: 8px 10px; min-width: 125px; max-width: 155px; display: flex; flex-direction: column; gap: 3px; }
+    .core-box { border: 2px solid #ea6c19; border-radius: 6px; background: #fff7ed; padding: 7px 8px; min-width: 108px; max-width: 132px; display: flex; flex-direction: column; gap: 2px; }
     .core-seq { width: 22px; height: 22px; background: #ea6c19; color: #fff; border-radius: 50%; font-size: 10pt; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; flex-shrink: 0; }
     .core-name { font-weight: 900; font-size: 9pt; color: #1e3a5f; line-height: 1.3; }
     .core-owner { font-size: 8pt; color: #666; }
@@ -248,7 +250,7 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
 
   <!-- Header -->
   <div class="doc-header">
-    <div class="logo-box">ORG<br>LOGO</div>
+    <div class="logo-box"><img src="${precisionPartsLogoUrl}" alt="${project.orgName} logo" /></div>
     <div class="doc-title">
       <h1>Process Interaction Map</h1>
       <p>${project.orgName || ""} &nbsp;·&nbsp; ${std} &nbsp;·&nbsp; QMS Clause 4.4</p>
@@ -332,11 +334,12 @@ function printTurtleDiagram(process: ProcessEntry, project: IsoProject, objectiv
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Turtle Diagram — ${process.name}</title>
   <style>
-    @page { size: A4 landscape; margin: 15mm 12mm; }
+    @page { size: letter landscape; margin: 10mm 10mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; font-size: 9pt; color: #1e3a5f; }
     .doc-header { display: flex; align-items: center; gap: 16px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 14px; }
-    .logo-box { width: 52px; height: 52px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #aaa; text-align: center; border-radius: 6px; }
+    .logo-box { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 6px; overflow: hidden; }
+    .logo-box img { width: 100%; height: 100%; object-fit: contain; }
     .doc-title { flex: 1; }
     .doc-title h1 { font-size: 13pt; font-weight: 900; color: #1e3a5f; }
     .doc-title p { font-size: 8.5pt; color: #555; margin-top: 2px; }
@@ -373,7 +376,7 @@ function printTurtleDiagram(process: ProcessEntry, project: IsoProject, objectiv
     @media print { .print-btn { display: none; } }
   </style></head><body>
   <div class="doc-header">
-    <div class="logo-box">ORG<br>LOGO</div>
+    <div class="logo-box"><img src="${precisionPartsLogoUrl}" alt="${project.orgName} logo" /></div>
     <div class="doc-title">
       <h1>Turtle Diagram</h1>
       <p>${project.orgName || ""} · ${project.standard || ""}</p>
@@ -476,9 +479,9 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
     <div className="flex-1 overflow-auto">
       {/* ─── ISO Process Interaction Map Header ─── */}
       <div className="border-b border-border/60 bg-white dark:bg-card px-6 py-3 flex items-center gap-4">
-        {/* Logo placeholder */}
-        <div className="w-14 h-14 border-2 border-dashed border-border/60 rounded-lg flex items-center justify-center shrink-0 bg-muted/30">
-          <span className="text-[9px] text-muted-foreground/60 font-bold text-center leading-tight">ORG<br/>LOGO</span>
+        {/* Company logo */}
+        <div className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+          <img src={precisionPartsLogoUrl} alt="Company logo" className="w-full h-full object-contain" />
         </div>
         <div className="flex-1 text-center">
           <h2 className="text-base font-black text-primary uppercase tracking-wide">Process Interaction Map</h2>

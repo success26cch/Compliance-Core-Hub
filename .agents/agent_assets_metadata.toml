@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "0niItT4WUCviyI-jlYWFv"
+uri = "file://attached_assets/precision-parts-logo.png"
+type = "image"
+title = "precision-parts-manufacturing-logo"
