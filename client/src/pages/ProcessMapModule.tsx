@@ -95,20 +95,20 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
     <button
       onClick={onClick}
       data-testid={`process-box-${process.name.replace(/\s+/g, "-").toLowerCase()}`}
-      className="group relative bg-white dark:bg-card border-2 border-border/40 hover:border-accent/60 rounded-xl p-3 text-left transition-all hover:shadow-md min-h-[80px] w-full"
+      className="group relative bg-white dark:bg-card border-2 border-border/40 hover:border-accent/60 rounded-xl p-3 text-left transition-all hover:shadow-md min-h-[90px] w-full"
     >
-      <div className="font-bold text-primary text-xs leading-tight mb-1 group-hover:text-accent transition-colors line-clamp-2">{process.name}</div>
+      <div className="font-bold text-primary text-sm leading-tight mb-1 group-hover:text-accent transition-colors line-clamp-2">{process.name}</div>
       {process.owner && (
-        <div className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
-          <Users className="w-2.5 h-2.5" />{process.owner}
+        <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+          <Users className="w-3 h-3" />{process.owner}
         </div>
       )}
       {process.clauses.length > 0 && (
         <div className="flex flex-wrap gap-0.5">
           {process.clauses.slice(0, 2).map(c => (
-            <span key={c} className="text-[9px] bg-accent/10 text-accent px-1 py-0.5 rounded font-mono">{c.split("—")[0].trim()}</span>
+            <span key={c} className="text-[11px] bg-accent/10 text-accent px-1.5 py-0.5 rounded font-mono">{c.split("—")[0].trim()}</span>
           ))}
-          {process.clauses.length > 2 && <span className="text-[9px] text-muted-foreground">+{process.clauses.length - 2}</span>}
+          {process.clauses.length > 2 && <span className="text-[11px] text-muted-foreground">+{process.clauses.length - 2}</span>}
         </div>
       )}
       <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -180,66 +180,66 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
   <style>
     @page { size: A3 landscape; margin: 14mm 12mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; font-size: 8.5pt; color: #1e3a5f; background: #fff; }
+    body { font-family: Arial, sans-serif; font-size: 10pt; color: #1e3a5f; background: #fff; }
 
     /* ── Header ── */
     .doc-header { display: flex; align-items: center; gap: 14px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 9px; margin-bottom: 12px; }
-    .logo-box { width: 52px; height: 52px; border: 2px dashed #c0c0c0; display: flex; align-items: center; justify-content: center; font-size: 6.5pt; color: #aaa; text-align: center; border-radius: 5px; flex-shrink: 0; }
+    .logo-box { width: 58px; height: 58px; border: 2px dashed #c0c0c0; display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #aaa; text-align: center; border-radius: 5px; flex-shrink: 0; }
     .doc-title { flex: 1; text-align: center; }
-    .doc-title h1 { font-size: 13.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #1e3a5f; }
-    .doc-title p { font-size: 9pt; color: #444; margin-top: 2px; }
-    .doc-meta { font-size: 7.5pt; text-align: right; line-height: 1.8; color: #555; }
+    .doc-title h1 { font-size: 16pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #1e3a5f; }
+    .doc-title p { font-size: 10.5pt; color: #444; margin-top: 3px; }
+    .doc-meta { font-size: 9pt; text-align: right; line-height: 1.8; color: #555; }
     .doc-meta b { color: #1e3a5f; }
 
     /* ── Outer frame ── */
     .frame { border: 2px solid #1e3a5f; border-radius: 8px; overflow: hidden; }
 
     /* ── MANAGEMENT band ── */
-    .mgmt-band { background: #dbeafe; border-bottom: 2px solid #1e3a5f; padding: 8px 10px; }
-    .band-title { font-size: 7pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: #1d4ed8; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-    .band-title .arrow-ind { font-size: 9pt; color: #1d4ed8; }
+    .mgmt-band { background: #dbeafe; border-bottom: 2px solid #1e3a5f; padding: 9px 12px; }
+    .band-title { font-size: 8.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #1d4ed8; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+    .band-title .arrow-ind { font-size: 10.5pt; color: #1d4ed8; }
     .band-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .mgmt-box { border: 1.5px solid #93c5fd; border-radius: 5px; background: #eff6ff; padding: 5px 8px; flex: 1; min-width: 120px; }
-    .box-num { font-size: 7pt; color: #2563eb; font-weight: 900; margin-bottom: 2px; }
-    .box-name { font-weight: 900; font-size: 7.5pt; color: #1e3a5f; line-height: 1.3; }
-    .box-owner { font-size: 6.5pt; color: #555; margin-top: 1px; }
-    .box-clauses { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
-    .ctag { font-size: 6pt; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 2px; padding: 0 3px; font-family: monospace; }
+    .mgmt-box { border: 1.5px solid #93c5fd; border-radius: 5px; background: #eff6ff; padding: 6px 10px; flex: 1; min-width: 130px; }
+    .box-num { font-size: 8.5pt; color: #2563eb; font-weight: 900; margin-bottom: 2px; }
+    .box-name { font-weight: 900; font-size: 9pt; color: #1e3a5f; line-height: 1.3; }
+    .box-owner { font-size: 8pt; color: #555; margin-top: 2px; }
+    .box-clauses { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
+    .ctag { font-size: 7.5pt; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 2px; padding: 0 4px; font-family: monospace; }
 
     /* ── Interaction arrows between management and core ── */
-    .mgmt-arrow-row { background: #e0effe; border-bottom: 1px solid #bfdbfe; padding: 3px 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .arrow-label { font-size: 6.5pt; font-weight: 700; color: #1d4ed8; letter-spacing: 0.04em; }
+    .mgmt-arrow-row { background: #e0effe; border-bottom: 1px solid #bfdbfe; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .arrow-label { font-size: 8pt; font-weight: 700; color: #1d4ed8; letter-spacing: 0.03em; }
 
     /* ── CORE flow band ── */
     .core-band { display: flex; align-items: stretch; }
-    .side-col { width: 26px; display: flex; align-items: center; justify-content: center; font-size: 6.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; writing-mode: vertical-rl; padding: 6px 0; }
+    .side-col { width: 30px; display: flex; align-items: center; justify-content: center; font-size: 8pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; writing-mode: vertical-rl; padding: 6px 0; }
     .side-col.left { background: #dbeafe; color: #1d4ed8; border-right: 1.5px solid #bfdbfe; }
     .side-col.right { background: #dcfce7; color: #15803d; border-left: 1.5px solid #bbf7d0; transform: rotate(180deg); }
-    .core-flow-area { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 10px 8px; gap: 0; flex-wrap: nowrap; overflow: hidden; }
+    .core-flow-area { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 12px 8px; gap: 0; flex-wrap: nowrap; overflow: hidden; }
     .core-step { display: flex; flex-direction: column; align-items: center; }
-    .cond-label { font-size: 6pt; font-weight: 900; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 3px; padding: 1px 5px; margin-bottom: 4px; letter-spacing: 0.03em; }
-    .core-box { border: 2px solid #ea6c19; border-radius: 6px; background: #fff7ed; padding: 7px 8px; min-width: 110px; max-width: 140px; display: flex; flex-direction: column; gap: 2px; }
-    .core-seq { width: 18px; height: 18px; background: #ea6c19; color: #fff; border-radius: 50%; font-size: 8.5pt; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-bottom: 3px; flex-shrink: 0; }
-    .core-name { font-weight: 900; font-size: 7.5pt; color: #1e3a5f; line-height: 1.3; }
-    .core-owner { font-size: 6.5pt; color: #666; }
-    .core-kpi { font-size: 6pt; color: #555; font-style: italic; margin-top: 2px; }
-    .core-arrow { font-size: 16pt; color: #ea6c19; font-weight: 900; padding: 0 3px; line-height: 1; margin-top: 20px; flex-shrink: 0; }
+    .cond-label { font-size: 7.5pt; font-weight: 900; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 3px; padding: 2px 6px; margin-bottom: 5px; letter-spacing: 0.03em; }
+    .core-box { border: 2px solid #ea6c19; border-radius: 6px; background: #fff7ed; padding: 8px 10px; min-width: 125px; max-width: 155px; display: flex; flex-direction: column; gap: 3px; }
+    .core-seq { width: 22px; height: 22px; background: #ea6c19; color: #fff; border-radius: 50%; font-size: 10pt; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; flex-shrink: 0; }
+    .core-name { font-weight: 900; font-size: 9pt; color: #1e3a5f; line-height: 1.3; }
+    .core-owner { font-size: 8pt; color: #666; }
+    .core-kpi { font-size: 7.5pt; color: #555; font-style: italic; margin-top: 3px; }
+    .core-arrow { font-size: 20pt; color: #ea6c19; font-weight: 900; padding: 0 4px; line-height: 1; margin-top: 22px; flex-shrink: 0; }
 
     /* ── Interaction arrows between core and support ── */
-    .sup-arrow-row { background: #f0fdf4; border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; padding: 3px 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sup-arrow-row { background: #f0fdf4; border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
     /* ── SUPPORT band ── */
-    .sup-band { background: #f0fdf4; border-top: 2px solid #1e3a5f; padding: 8px 10px; }
+    .sup-band { background: #f0fdf4; border-top: 2px solid #1e3a5f; padding: 9px 12px; }
     .sup-band .band-title { color: #15803d; }
     .sup-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .sup-box { border: 1.5px solid #86efac; border-radius: 5px; background: #fff; padding: 5px 8px; flex: 1; min-width: 110px; }
-    .sup-links { font-size: 6pt; color: #15803d; font-weight: 700; margin-top: 3px; }
+    .sup-box { border: 1.5px solid #86efac; border-radius: 5px; background: #fff; padding: 6px 10px; flex: 1; min-width: 120px; }
+    .sup-links { font-size: 7.5pt; color: #15803d; font-weight: 700; margin-top: 4px; }
 
     /* ── Footer ── */
-    .doc-footer { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 5px; display: flex; justify-content: space-between; font-size: 6.5pt; color: #999; }
-    .legend { margin-top: 8px; display: flex; gap: 16px; font-size: 6.5pt; color: #555; }
+    .doc-footer { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 5px; display: flex; justify-content: space-between; font-size: 8pt; color: #999; }
+    .legend { margin-top: 8px; display: flex; gap: 16px; font-size: 8pt; color: #555; }
     .legend-item { display: flex; align-items: center; gap: 5px; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-dot { width: 11px; height: 11px; border-radius: 50%; }
 
     /* ── Print button ── */
     .print-btn { position: fixed; bottom: 20px; right: 20px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 10pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
@@ -573,11 +573,11 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
               : rowProcs;
             return (
               <div key={row.key} className={`border-2 rounded-xl overflow-hidden ${row.color}`}>
-                <div className="px-4 py-2 flex items-center gap-2">
-                  <Badge className={`text-[10px] font-bold px-2 py-0.5 ${row.badge}`}>{row.key}</Badge>
-                  <span className="text-sm font-bold text-primary">{row.label}</span>
-                  {isCore && <span className="text-[10px] text-muted-foreground font-medium">— sequence &amp; interaction flow</span>}
-                  <span className="text-xs text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
+                <div className="px-4 py-2.5 flex items-center gap-2">
+                  <Badge className={`text-xs font-bold px-2.5 py-0.5 ${row.badge}`}>{row.key}</Badge>
+                  <span className="text-base font-bold text-primary">{row.label}</span>
+                  {isCore && <span className="text-xs text-muted-foreground font-medium">— sequence &amp; interaction flow</span>}
+                  <span className="text-sm text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
                 </div>
                 <div className="p-3 pt-0">
                   {rowProcs.length === 0 ? (
@@ -589,14 +589,14 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                     <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
                       {sortedCore.map((p, i) => (
                         <div key={p.name} className="flex items-center gap-0 flex-shrink-0">
-                          <div className="relative flex flex-col items-center" style={{ minWidth: 130 }}>
+                          <div className="relative flex flex-col items-center" style={{ minWidth: 150 }}>
                             {/* Sequence badge + optional conditional label */}
-                            <div className="flex items-center gap-1 mb-1.5">
-                              <span className="w-5 h-5 rounded-full bg-accent text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <span className="w-6 h-6 rounded-full bg-accent text-white text-xs font-black flex items-center justify-center flex-shrink-0">
                                 {p.sequence ?? i + 1}
                               </span>
                               {p.conditionalLabel && (
-                                <span className="text-[9px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded px-1.5 py-0.5 leading-none">
+                                <span className="text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded px-1.5 py-0.5 leading-none">
                                   {p.conditionalLabel}
                                 </span>
                               )}
@@ -604,8 +604,8 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                             <ProcessBox process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
                           </div>
                           {i < sortedCore.length - 1 && (
-                            <div className="flex flex-col items-center px-1 flex-shrink-0 self-center mt-6">
-                              <ArrowRight className="w-5 h-5 text-accent/70" />
+                            <div className="flex flex-col items-center px-2 flex-shrink-0 self-center mt-7">
+                              <ArrowRight className="w-6 h-6 text-accent/70" />
                             </div>
                           )}
                         </div>
