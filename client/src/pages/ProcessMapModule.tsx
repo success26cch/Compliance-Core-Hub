@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import precisionPartsLogoUrl from "@assets/precision-parts-logo.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Edit2, Save, X,
   Plus, Trash2, Target, AlertTriangle, FileText, Users, Zap,
-  BookOpen, Activity, MapPin, CheckCircle2, ExternalLink, Printer
+  BookOpen, Activity, MapPin, CheckCircle2, ExternalLink, Printer, Palette
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +61,53 @@ const IATF_SITES = [
   { key: "REMOTE_SITE", label: "Remote Site ★", headerClass: "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 border-x border-amber-200 dark:border-amber-800/40" },
   { key: "CORPORATE", label: "Corporate", headerClass: "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300" },
 ];
+
+// ─── Process Map Color Schemes ────────────────────────────────────────────────
+interface BandColors { bg: string; border: string; text: string; badgeBg: string; badgeText: string; }
+interface MapScheme {
+  label: string;
+  swatches: string[];
+  management: BandColors;
+  core: BandColors & { seqBg: string; arrowHex: string };
+  support: BandColors;
+}
+const MAP_COLOR_SCHEMES: Record<string, MapScheme> = {
+  "navy-orange": {
+    label: "Navy & Orange",
+    swatches: ["#1D4ED8", "#EA6C19", "#15803D"],
+    management: { bg: "#EFF6FF", border: "#93C5FD", text: "#1D4ED8", badgeBg: "#1D4ED8", badgeText: "#fff" },
+    core:       { bg: "#FFF7ED", border: "#EA6C19", text: "#1e3a5f", badgeBg: "#EA6C19", badgeText: "#fff", seqBg: "#EA6C19", arrowHex: "#EA6C19" },
+    support:    { bg: "#F0FDF4", border: "#86EFAC", text: "#15803D", badgeBg: "#15803D", badgeText: "#fff" },
+  },
+  "forest-gold": {
+    label: "Forest & Gold",
+    swatches: ["#15803D", "#D97706", "#4D7C0F"],
+    management: { bg: "#DCFCE7", border: "#86EFAC", text: "#15803D", badgeBg: "#15803D", badgeText: "#fff" },
+    core:       { bg: "#FFFBEB", border: "#D97706", text: "#1c1917", badgeBg: "#D97706", badgeText: "#fff", seqBg: "#D97706", arrowHex: "#D97706" },
+    support:    { bg: "#F7FEE7", border: "#BEF264", text: "#4D7C0F", badgeBg: "#4D7C0F", badgeText: "#fff" },
+  },
+  "slate-purple": {
+    label: "Slate & Purple",
+    swatches: ["#475569", "#7C3AED", "#4338CA"],
+    management: { bg: "#F1F5F9", border: "#94A3B8", text: "#475569", badgeBg: "#475569", badgeText: "#fff" },
+    core:       { bg: "#F5F3FF", border: "#7C3AED", text: "#1e1b4b", badgeBg: "#7C3AED", badgeText: "#fff", seqBg: "#7C3AED", arrowHex: "#7C3AED" },
+    support:    { bg: "#EEF2FF", border: "#A5B4FC", text: "#4338CA", badgeBg: "#4338CA", badgeText: "#fff" },
+  },
+  "burgundy-steel": {
+    label: "Burgundy & Steel",
+    swatches: ["#9F1239", "#2563EB", "#4B5563"],
+    management: { bg: "#FFF1F2", border: "#FDA4AF", text: "#9F1239", badgeBg: "#9F1239", badgeText: "#fff" },
+    core:       { bg: "#EFF6FF", border: "#2563EB", text: "#1e3a5f", badgeBg: "#2563EB", badgeText: "#fff", seqBg: "#2563EB", arrowHex: "#2563EB" },
+    support:    { bg: "#F9FAFB", border: "#9CA3AF", text: "#4B5563", badgeBg: "#4B5563", badgeText: "#fff" },
+  },
+  "teal-coral": {
+    label: "Teal & Coral",
+    swatches: ["#0F766E", "#F43F5E", "#0369A1"],
+    management: { bg: "#F0FDFA", border: "#5EEAD4", text: "#0F766E", badgeBg: "#0F766E", badgeText: "#fff" },
+    core:       { bg: "#FFF1F2", border: "#F43F5E", text: "#4c0519", badgeBg: "#F43F5E", badgeText: "#fff", seqBg: "#F43F5E", arrowHex: "#F43F5E" },
+    support:    { bg: "#F0F9FF", border: "#7DD3FC", text: "#0369A1", badgeBg: "#0369A1", badgeText: "#fff" },
+  },
+};
 
 const LEGACY_ROW_MAP: Record<string, string> = {
   context: "management",
@@ -120,9 +167,10 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
 }
 
 // ─── Print helpers ─────────────────────────────────────────────────────────────
-function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: typeof ISO_ROWS) {
+function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: typeof ISO_ROWS, schemeKey = "navy-orange") {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const std = project.standard ?? "";
+  const sch = MAP_COLOR_SCHEMES[schemeKey] ?? MAP_COLOR_SCHEMES["navy-orange"];
 
   // Categorise and sort
   const mgtProcs  = processes.filter(p => normalizeRow(p.row, p.name, std) === "management");
@@ -197,45 +245,45 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
     .frame { border: 2px solid #1e3a5f; border-radius: 8px; overflow: hidden; }
 
     /* ── MANAGEMENT band ── */
-    .mgmt-band { background: #dbeafe; border-bottom: 2px solid #1e3a5f; padding: 9px 12px; }
-    .band-title { font-size: 8.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #1d4ed8; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
-    .band-title .arrow-ind { font-size: 10.5pt; color: #1d4ed8; }
+    .mgmt-band { background: ${sch.management.bg}; border-bottom: 2px solid ${sch.management.border}; padding: 9px 12px; }
+    .band-title { font-size: 8.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: ${sch.management.text}; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+    .band-title .arrow-ind { font-size: 10.5pt; color: ${sch.management.text}; }
     .band-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .mgmt-box { border: 1.5px solid #93c5fd; border-radius: 5px; background: #eff6ff; padding: 6px 10px; flex: 1; min-width: 130px; }
-    .box-num { font-size: 8.5pt; color: #2563eb; font-weight: 900; margin-bottom: 2px; }
+    .mgmt-box { border: 1.5px solid ${sch.management.border}; border-radius: 5px; background: #fff; padding: 6px 10px; flex: 1; min-width: 130px; }
+    .box-num { font-size: 8.5pt; color: ${sch.management.text}; font-weight: 900; margin-bottom: 2px; }
     .box-name { font-weight: 900; font-size: 9pt; color: #1e3a5f; line-height: 1.3; }
     .box-owner { font-size: 8pt; color: #555; margin-top: 2px; }
     .box-clauses { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
-    .ctag { font-size: 9pt; font-weight: 700; background: #fff7ed; color: #ea6c19; border: 1px solid #f5c09a; border-radius: 2px; padding: 1px 5px; font-family: monospace; }
+    .ctag { font-size: 9pt; font-weight: 700; background: ${sch.core.bg}; color: ${sch.core.seqBg}; border: 1px solid ${sch.core.border}; border-radius: 2px; padding: 1px 5px; font-family: monospace; }
 
     /* ── Interaction arrows between management and core ── */
-    .mgmt-arrow-row { background: #e0effe; border-bottom: 1px solid #bfdbfe; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .arrow-label { font-size: 8pt; font-weight: 700; color: #1d4ed8; letter-spacing: 0.03em; }
+    .mgmt-arrow-row { background: ${sch.management.bg}cc; border-bottom: 1px solid ${sch.management.border}; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .arrow-label { font-size: 8pt; font-weight: 700; color: ${sch.management.text}; letter-spacing: 0.03em; }
 
     /* ── CORE flow band ── */
     .core-band { display: flex; align-items: stretch; }
     .side-col { width: 30px; display: flex; align-items: center; justify-content: center; font-size: 8pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; writing-mode: vertical-rl; padding: 6px 0; }
-    .side-col.left { background: #dbeafe; color: #1d4ed8; border-right: 1.5px solid #bfdbfe; }
-    .side-col.right { background: #dcfce7; color: #15803d; border-left: 1.5px solid #bbf7d0; transform: rotate(180deg); }
+    .side-col.left { background: ${sch.management.bg}; color: ${sch.management.text}; border-right: 1.5px solid ${sch.management.border}; }
+    .side-col.right { background: ${sch.support.bg}; color: ${sch.support.text}; border-left: 1.5px solid ${sch.support.border}; transform: rotate(180deg); }
     .core-flow-area { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 12px 8px; gap: 0; flex-wrap: nowrap; overflow: hidden; }
     .core-step { display: flex; flex-direction: column; align-items: center; }
     .cond-label { font-size: 7.5pt; font-weight: 900; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 3px; padding: 2px 6px; margin-bottom: 5px; letter-spacing: 0.03em; }
-    .core-box { border: 2px solid #ea6c19; border-radius: 6px; background: #fff7ed; padding: 7px 8px; min-width: 108px; max-width: 132px; display: flex; flex-direction: column; gap: 2px; }
-    .core-seq { width: 22px; height: 22px; background: #ea6c19; color: #fff; border-radius: 50%; font-size: 10pt; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; flex-shrink: 0; }
-    .core-name { font-weight: 900; font-size: 9pt; color: #1e3a5f; line-height: 1.3; }
+    .core-box { border: 2px solid ${sch.core.border}; border-radius: 6px; background: ${sch.core.bg}; padding: 7px 8px; min-width: 108px; max-width: 132px; display: flex; flex-direction: column; gap: 2px; }
+    .core-seq { width: 22px; height: 22px; background: ${sch.core.seqBg}; color: #fff; border-radius: 50%; font-size: 10pt; font-weight: 900; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; flex-shrink: 0; }
+    .core-name { font-weight: 900; font-size: 9pt; color: ${sch.core.text}; line-height: 1.3; }
     .core-owner { font-size: 8pt; color: #666; }
     .core-kpi { font-size: 7.5pt; color: #555; font-style: italic; margin-top: 3px; }
-    .core-arrow { font-size: 20pt; color: #ea6c19; font-weight: 900; padding: 0 4px; line-height: 1; margin-top: 22px; flex-shrink: 0; }
+    .core-arrow { font-size: 20pt; color: ${sch.core.arrowHex}; font-weight: 900; padding: 0 4px; line-height: 1; margin-top: 22px; flex-shrink: 0; }
 
     /* ── Interaction arrows between core and support ── */
-    .sup-arrow-row { background: #f0fdf4; border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sup-arrow-row { background: ${sch.support.bg}cc; border-top: 1px solid ${sch.support.border}; border-bottom: 1px solid ${sch.support.border}; padding: 4px 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
     /* ── SUPPORT band ── */
-    .sup-band { background: #f0fdf4; border-top: 2px solid #1e3a5f; padding: 9px 12px; }
-    .sup-band .band-title { color: #15803d; }
+    .sup-band { background: ${sch.support.bg}; border-top: 2px solid ${sch.support.border}; padding: 9px 12px; }
+    .sup-band .band-title { color: ${sch.support.text}; }
     .sup-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .sup-box { border: 1.5px solid #86efac; border-radius: 5px; background: #fff; padding: 6px 10px; flex: 1; min-width: 120px; }
-    .sup-links { font-size: 7.5pt; color: #15803d; font-weight: 700; margin-top: 4px; }
+    .sup-box { border: 1.5px solid ${sch.support.border}; border-radius: 5px; background: #fff; padding: 6px 10px; flex: 1; min-width: 120px; }
+    .sup-links { font-size: 7.5pt; color: ${sch.support.text}; font-weight: 700; margin-top: 4px; }
 
     /* ── Footer ── */
     .doc-footer { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 5px; display: flex; justify-content: space-between; font-size: 8pt; color: #999; }
@@ -458,6 +506,41 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
   const processes = (project.processes || []) as ProcessEntry[];
   const isIATF = project.standard?.includes("IATF");
   const rows = isIATF ? IATF_ROWS : ISO_ROWS;
+  const qc = useQueryClient();
+  const [schemeKey, setSchemeKey] = useState<string>(project.mapColorScheme ?? "navy-orange");
+  const [showPicker, setShowPicker] = useState(false);
+  const sch = MAP_COLOR_SCHEMES[schemeKey] ?? MAP_COLOR_SCHEMES["navy-orange"];
+
+  const saveSchemeMutation = useMutation({
+    mutationFn: (key: string) => apiRequest("PATCH", "/api/iso-projects", { mapColorScheme: key }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/iso-projects"] }),
+  });
+
+  const applyScheme = (key: string) => {
+    setSchemeKey(key);
+    setShowPicker(false);
+    saveSchemeMutation.mutate(key);
+  };
+
+  const pickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setShowPicker(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showPicker]);
+
+  // Band styling helpers (row.key: "core" | "support" | "management")
+  const bandStyle = (rowKey: string): React.CSSProperties => {
+    const c = sch[rowKey as keyof typeof sch] as BandColors;
+    return { backgroundColor: c?.bg ?? "#f9fafb", borderColor: c?.border ?? "#e5e7eb" };
+  };
+  const badgeStyle = (rowKey: string): React.CSSProperties => {
+    const c = sch[rowKey as keyof typeof sch] as BandColors;
+    return { backgroundColor: c?.badgeBg ?? "#374151", color: c?.badgeText ?? "#fff" };
+  };
 
   if (processes.length === 0) {
     return (
@@ -492,8 +575,40 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
           <div><span className="font-bold text-primary">Rev:</span> 1.0</div>
           <div><span className="font-bold text-primary">Date:</span> {today}</div>
         </div>
+        {/* Color scheme picker */}
+        <div className="relative" ref={pickerRef}>
+          <button
+            onClick={() => setShowPicker(v => !v)}
+            className="shrink-0 flex items-center gap-1.5 text-xs font-semibold border px-3 py-1.5 rounded-lg transition-colors"
+            style={{ color: sch.core.seqBg, borderColor: sch.core.border, backgroundColor: sch.core.bg }}
+            data-testid="button-color-scheme"
+          >
+            <Palette className="w-3.5 h-3.5" /> Theme
+          </button>
+          {showPicker && (
+            <div className="absolute top-full right-0 mt-1 z-50 bg-white dark:bg-card border border-border rounded-xl shadow-2xl p-3 w-56">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Map Color Theme</p>
+              {Object.entries(MAP_COLOR_SCHEMES).map(([key, scheme]) => (
+                <button
+                  key={key}
+                  onClick={() => applyScheme(key)}
+                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors text-left ${schemeKey === key ? "bg-muted" : "hover:bg-muted/50"}`}
+                  data-testid={`scheme-option-${key}`}
+                >
+                  <div className="flex gap-1 shrink-0">
+                    {scheme.swatches.map((c, i) => (
+                      <div key={i} className="w-3.5 h-3.5 rounded-full border border-border/30" style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                  <span className="text-xs font-medium text-primary flex-1">{scheme.label}</span>
+                  {schemeKey === key && <span className="text-[10px] font-bold" style={{ color: sch.core.seqBg }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
-          onClick={() => printProcessMap(project, processes, rows)}
+          onClick={() => printProcessMap(project, processes, rows, schemeKey)}
           className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
           data-testid="button-print-process-map"
         >
@@ -575,9 +690,12 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
               ? [...rowProcs].sort((a, b) => (a.sequence ?? 99) - (b.sequence ?? 99))
               : rowProcs;
             return (
-              <div key={row.key} className={`border-2 rounded-xl overflow-hidden ${row.color}`}>
+              <div key={row.key} className="border-2 rounded-xl overflow-hidden" style={bandStyle(row.key)}>
                 <div className="px-4 py-2.5 flex items-center gap-2">
-                  <Badge className={`text-xs font-bold px-2.5 py-0.5 ${row.badge}`}>{row.key}</Badge>
+                  <span
+                    className="text-xs font-bold px-2.5 py-0.5 rounded-md"
+                    style={badgeStyle(row.key)}
+                  >{row.key}</span>
                   <span className="text-base font-bold text-primary">{row.label}</span>
                   {isCore && <span className="text-xs text-muted-foreground font-medium">— sequence &amp; interaction flow</span>}
                   <span className="text-sm text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
@@ -595,7 +713,10 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                           <div className="relative flex flex-col items-center" style={{ minWidth: 150 }}>
                             {/* Sequence badge + optional conditional label */}
                             <div className="flex items-center gap-1.5 mb-2">
-                              <span className="w-6 h-6 rounded-full bg-accent text-white text-xs font-black flex items-center justify-center flex-shrink-0">
+                              <span
+                                className="w-6 h-6 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: sch.core.seqBg }}
+                              >
                                 {p.sequence ?? i + 1}
                               </span>
                               {p.conditionalLabel && (
@@ -608,7 +729,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                           </div>
                           {i < sortedCore.length - 1 && (
                             <div className="flex flex-col items-center px-2 flex-shrink-0 self-center mt-7">
-                              <ArrowRight className="w-6 h-6 text-accent/70" />
+                              <ArrowRight className="w-6 h-6" style={{ color: sch.core.arrowHex }} />
                             </div>
                           )}
                         </div>

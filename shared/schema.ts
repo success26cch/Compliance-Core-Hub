@@ -582,6 +582,8 @@ export const isoProjects = pgTable("iso_projects", {
     opportunities: string;
     piRanking: 'manage_closely' | 'keep_informed' | 'keep_satisfied' | 'monitor_only' | '';
   }>>(),
+  // Process Map color scheme
+  mapColorScheme: text("map_color_scheme").default("navy-orange"),
   // Phase 3 — Quality Manual Gap Filler
   coreValues: text("core_values").array(),
   riskPhilosophy: text("risk_philosophy").array(),
