@@ -109,8 +109,10 @@ function periodRange(window: string, customStart: string, customEnd: string): { 
     return { start: d, end: null };
   }
   if (window === "rolling_12m") {
+    // True trailing 12-month window: start = 1st of the month 11 months before the current month
+    // e.g. if today is Apr 2026, start = May 2025 → Apr 2026 (12 months inclusive)
     const d = new Date(now);
-    d.setMonth(d.getMonth() - 12);
+    d.setMonth(d.getMonth() - 11);
     d.setDate(1); d.setHours(0, 0, 0, 0);
     return { start: d, end: null };
   }
