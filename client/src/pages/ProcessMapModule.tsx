@@ -233,7 +233,7 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
 
     /* ── Header ── */
     .doc-header { display: flex; align-items: center; gap: 14px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 9px; margin-bottom: 12px; }
-    .logo-box { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 5px; flex-shrink: 0; overflow: hidden; }
+    .logo-box { width: 128px; height: 128px; display: flex; align-items: center; justify-content: center; border-radius: 5px; flex-shrink: 0; overflow: hidden; }
     .logo-box img { width: 100%; height: 100%; object-fit: contain; }
     .doc-title { flex: 1; text-align: center; }
     .doc-title h1 { font-size: 16pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #1e3a5f; }
@@ -386,7 +386,7 @@ function printTurtleDiagram(process: ProcessEntry, project: IsoProject, objectiv
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; font-size: 9pt; color: #1e3a5f; }
     .doc-header { display: flex; align-items: center; gap: 16px; border-bottom: 2.5px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 14px; }
-    .logo-box { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 6px; overflow: hidden; }
+    .logo-box { width: 112px; height: 112px; display: flex; align-items: center; justify-content: center; border-radius: 6px; overflow: hidden; }
     .logo-box img { width: 100%; height: 100%; object-fit: contain; }
     .doc-title { flex: 1; }
     .doc-title h1 { font-size: 13pt; font-weight: 900; color: #1e3a5f; }
@@ -563,7 +563,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
       {/* ─── ISO Process Interaction Map Header ─── */}
       <div className="border-b border-border/60 bg-white dark:bg-card px-6 py-3 flex items-center gap-4">
         {/* Company logo */}
-        <div className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="w-28 h-28 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
           <img src={precisionPartsLogoUrl} alt="Company logo" className="w-full h-full object-contain" />
         </div>
         <div className="flex-1 text-center">
