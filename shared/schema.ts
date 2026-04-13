@@ -588,6 +588,20 @@ export const isoProjects = pgTable("iso_projects", {
   coreValues: text("core_values").array(),
   riskPhilosophy: text("risk_philosophy").array(),
   oemSuppliers: text("oem_suppliers").array(),
+  // Clause 5.3 — Roles, Responsibilities & Authorities
+  jobDescriptions: jsonb("job_descriptions").$type<Array<{
+    id: string;
+    title: string;
+    department: string;
+    reportsTo: string;
+    content: string;
+    clauses: string[];
+    createdAt: string;
+  }>>(),
+  raciMatrix: jsonb("raci_matrix").$type<{
+    roles: Array<{ id: string; title: string; department: string }>;
+    assignments: Record<string, Record<string, string>>;
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
