@@ -12,37 +12,177 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft,
-  CheckCircle, Clock, AlertTriangle, AlertCircle, Circle, Loader2,
+  CheckCircle, Clock, AlertTriangle, AlertCircle, Circle, Loader2, Calendar, Users,
 } from "lucide-react";
 import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual, InsertIsoManagementReview, InsertIsoReviewActionItem } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
-// ─── ISO 9.3.2 Required Inputs (Clause-exact) + 9.3.3 Outputs ────────────────
-const ISO_AGENDA_ITEMS = [
-  // 9.3.2 Inputs
-  { id: "9.3.2a", clause: "9.3.2(a)", title: "Status of actions from previous management reviews", group: "input" },
-  { id: "9.3.2b", clause: "9.3.2(b)", title: "Changes in external and internal issues relevant to the QMS", group: "input" },
-  { id: "9.3.2c-i",   clause: "9.3.2(c-i)",   title: "Customer satisfaction and feedback from relevant interested parties", group: "input" },
-  { id: "9.3.2c-ii",  clause: "9.3.2(c-ii)",  title: "Extent to which quality objectives have been met", group: "input" },
-  { id: "9.3.2c-iii", clause: "9.3.2(c-iii)", title: "Process performance and conformity of products and services", group: "input" },
-  { id: "9.3.2c-iv",  clause: "9.3.2(c-iv)",  title: "Nonconformities and corrective actions (trend review)", group: "input" },
-  { id: "9.3.2c-v",   clause: "9.3.2(c-v)",   title: "Monitoring and measurement results", group: "input" },
-  { id: "9.3.2c-vi",  clause: "9.3.2(c-vi)",  title: "Audit results (internal and external)", group: "input" },
-  { id: "9.3.2c-vii", clause: "9.3.2(c-vii)", title: "Performance of external providers (suppliers)", group: "input" },
-  { id: "9.3.2d", clause: "9.3.2(d)", title: "Adequacy of resources", group: "input" },
-  { id: "9.3.2e", clause: "9.3.2(e)", title: "Effectiveness of actions taken to address risks and opportunities", group: "input" },
-  { id: "9.3.2f", clause: "9.3.2(f)", title: "Opportunities for improvement", group: "input" },
-  // 9.3.3 Outputs
-  { id: "9.3.3a", clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output" },
-  { id: "9.3.3b", clause: "9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output" },
-  { id: "9.3.3c", clause: "9.3.3(c)", title: "Decisions and actions: Resource needs", group: "output" },
+// ─── Agenda Template Types ────────────────────────────────────────────────────
+type AgendaTemplateItem = {
+  clause: string;
+  title: string;
+  group: "input" | "output";
+  section: string;
+  frequency: string;
+};
+
+// ─── ISO 9001:2015 Agenda Template (from FM-9.3-1 PDF) ───────────────────────
+const ISO_9001_AGENDA_ITEMS: AgendaTemplateItem[] = [
+  // Previous Meeting Follow-up
+  { clause: "9.3.2(a)", title: "Follow-up on open issues from previous meeting", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Quarterly" },
+
+  // External/Internal Issues
+  { clause: "9.3.2(b)", title: "Review of Interested Parties Matrix and Internal/External Issues List", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
+
+  // Customer Satisfaction
+  { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-i)-survey", title: "Customer Satisfaction Survey", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Annually" },
+  { clause: "9.3.2(c-i)-visits", title: "Customer Feedback (Visits)", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Quarterly" },
+
+  // KPI Dashboard by Department
+  { clause: "9.3.2(c-iii)-sales", title: "Sales KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-purchasing", title: "Purchasing KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-warehousing", title: "Warehousing KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-logistics", title: "Logistics / On-Time Delivery KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-qa", title: "QA / Calibration KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-training", title: "Training Completion KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-audits", title: "Internal Audits KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-mgmt", title: "Management / Improvement (Customer Complaints) KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-car", title: "Corrective Action (Repeat NCs) KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-doc", title: "Document / Record Control KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+
+  // Corrective & Preventive Actions
+  { clause: "9.3.2(c-iv)", title: "Past due CARs / Completion Status", group: "input", section: "Corrective & Preventive Actions — 9.3.2(c-iv)", frequency: "Quarterly" },
+
+  // Internal Audit Results
+  { clause: "9.3.2(c-vi)-ia", title: "Internal Audit Review Results", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Bi-Annually" },
+
+  // External Audit Results
+  { clause: "9.3.2(c-vi)-ea1", title: "External Audit Schedule Review", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+  { clause: "9.3.2(c-vi)-ea2", title: "Review of External Findings / Action", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+
+  // Supplier Performance
+  { clause: "9.3.2(c-vii)-1", title: "Supplier Performance — Scorecard Summary", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vii)-2", title: "Supplier CAR's", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+
+  // New Business Update
+  { clause: "nb-quotes", title: "Quotes — Potential New Customers", group: "input", section: "New Business Update", frequency: "Quarterly" },
+
+  // Adequacy of Resources
+  { clause: "9.3.2(d)-1", title: "Talent — Personnel", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+  { clause: "9.3.2(d)-2", title: "Other (Equipment, Technology, Infrastructure)", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+
+  // Risk & Opportunities
+  { clause: "9.3.2(e)-1", title: "Internal / External Issues Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-2", title: "Contingency Plan Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-3", title: "Interested Parties Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+
+  // Quality Policy Review
+  { clause: "qpr-suitability", title: "Quality Policy Suitability", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
+
+  // Changes to KPIs/Objectives
+  { clause: "kpi-changes", title: "KPI / Objectives Suitability & Target Review", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
+
+  // Opportunities for Improvement
+  { clause: "9.3.2(f)", title: "Open Discussion & Opportunities for Improvement", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
+
+  // Required Outputs
+  { clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "9.3.3(c)", title: "Decisions and actions: Resource needs", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
 ];
 
+// ─── IATF 16949 Agenda Template (from IATF PDF — Monthly frequency + IATF-specific items) ──
+const IATF_16949_AGENDA_ITEMS: AgendaTemplateItem[] = [
+  // Previous Meeting Follow-up (Monthly for IATF)
+  { clause: "9.3.2(a)", title: "Follow-up on open issues from previous meeting", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Monthly" },
+
+  // External/Internal Issues (Quarterly for IATF)
+  { clause: "9.3.2(b)", title: "Review of Interested Parties Matrix and Internal/External Issues List", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
+
+  // Customer Satisfaction (Monthly for IATF)
+  { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Monthly" },
+  { clause: "9.3.2(c-i)-survey", title: "Customer Satisfaction Survey", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Annually" },
+  { clause: "9.3.2(c-i)-visits", title: "Customer Feedback (Visits / Portal Review)", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Quarterly" },
+
+  // KPI Dashboard — IATF includes Sales, Production, Quality, Materials, HR, Maintenance KPIs (Monthly)
+  { clause: "9.3.2(c-iii)-quote-timing", title: "Quote Timing", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-quote-budget", title: "Quote to Budget", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-ppap", title: "On Time PPAP", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-apqp", title: "APQP on Budget", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-scrap", title: "Scrap Cost", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-copq", title: "COPQ (Cost of Poor Quality)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-supplier-scrap", title: "Supplier Scrap", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-supplier-cost", title: "Supplier Cost Reductions", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-otd", title: "On Time Delivery (OTD)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-premium-freight", title: "Premium Freight", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-pm-schedule", title: "On Time to PM Schedule", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-calibrations", title: "On Time Calibrations", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-turnover", title: "Employee Turnover", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-inventory", title: "Inventory Accuracy", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-lost-time", title: "Lost Time (Safety)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+
+  // Corrective & Preventive Actions (Monthly for IATF)
+  { clause: "9.3.2(c-iv)", title: "Past due CARs / Completion Status", group: "input", section: "Corrective & Preventive Actions — 9.3.2(c-iv)", frequency: "Monthly" },
+
+  // Internal Audit Results (Quarterly for IATF)
+  { clause: "9.3.2(c-vi)-ia", title: "Internal Audit Review Results", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vi)-lpa-results", title: "LPA (Layered Process Audit) Results", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vi)-lpa-metrics", title: "LPA Metrics (Level Completion, Findings Trend)", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
+
+  // External Audit Results (Annual)
+  { clause: "9.3.2(c-vi)-ea1", title: "External Audit Schedule Review", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+  { clause: "9.3.2(c-vi)-ea2", title: "Review of External Findings / Action", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+
+  // Supplier Performance (Quarterly)
+  { clause: "9.3.2(c-vii)-assess", title: "Supplier Assessment / Audit Results", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vii)-1", title: "Supplier Performance — Scorecard Summary", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vii)-2", title: "Supplier CAR's (Open / Chargebacks)", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+
+  // New Business Update (Quarterly)
+  { clause: "nb-quotes", title: "Quotes — Potential New Customers", group: "input", section: "New Business Update", frequency: "Quarterly" },
+
+  // Manufacturing Assessment (IATF-specific — Monthly)
+  { clause: "iatf-fmea", title: "FMEA Review (PFMEA actions, updated ratings)", group: "input", section: "Manufacturing Assessment (Monitoring & Measurement) — IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "iatf-feasibility", title: "Feasibility or Capacity Concern Review", group: "input", section: "Manufacturing Assessment (Monitoring & Measurement) — IATF §9.3.2.1", frequency: "Monthly" },
+
+  // Adequacy of Resources (Monthly for IATF)
+  { clause: "9.3.2(d)-1", title: "Talent — Personnel (Open Positions, Skills Gaps)", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+  { clause: "9.3.2(d)-2", title: "Other (Equipment, Technology, Infrastructure Upgrades)", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+
+  // Risk & Opportunities (Annual)
+  { clause: "9.3.2(e)-1", title: "Internal / External Issues Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-2", title: "Contingency Plan Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-3", title: "Interested Parties Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+
+  // Quality Policy Review (Annual)
+  { clause: "qpr-suitability", title: "Quality Policy Suitability", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
+
+  // Changes to KPIs/Objectives (Annual)
+  { clause: "kpi-changes", title: "KPI / Objectives Suitability & Target Review", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
+
+  // Opportunities for Improvement (Annual)
+  { clause: "9.3.2(f)", title: "Open Discussion & Opportunities for Improvement", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
+
+  // Required Outputs
+  { clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "9.3.3(c)", title: "Decisions and actions: Resource needs", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+];
+
+// Generic fallback (same as 9001 for all other standards)
+function getAgendaTemplate(standard?: string | null): AgendaTemplateItem[] {
+  const s = (standard ?? "").toUpperCase();
+  if (s.includes("IATF")) return IATF_16949_AGENDA_ITEMS;
+  return ISO_9001_AGENDA_ITEMS;
+}
+
+// ─── AgendaItem (saved state per review) ─────────────────────────────────────
 type AgendaItem = { clause: string; title: string; covered: boolean; notes: string };
 
-function agendaFromReview(review: IsoManagementReview): AgendaItem[] {
+function agendaFromReview(review: IsoManagementReview, template: AgendaTemplateItem[]): AgendaItem[] {
   const existing = (review.agendaItems as AgendaItem[] | null) ?? [];
-  return ISO_AGENDA_ITEMS.map(item => {
+  return template.map(item => {
     const found = existing.find(e => e.clause === item.clause);
     return { clause: item.clause, title: item.title, covered: found?.covered ?? false, notes: found?.notes ?? "" };
   });
@@ -58,7 +198,6 @@ function offTrackStreakCount(actuals: IsoKpiActual[], targetVal: number): number
   return streak;
 }
 
-// Action status cycle: open → in_progress → closed
 const ACTION_STATUS_CYCLE: Record<string, string> = { open: "in_progress", in_progress: "closed", closed: "open" };
 const ACTION_STATUS_ICON = {
   open: <Circle className="w-4 h-4 text-muted-foreground" />,
@@ -70,6 +209,19 @@ const ACTION_STATUS_COLORS: Record<string, string> = {
   in_progress: "bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200",
   closed: "bg-green-50 dark:bg-green-900/10 border-green-200",
 };
+
+const FREQ_BADGE_COLORS: Record<string, string> = {
+  "Monthly":     "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  "Quarterly":   "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
+  "Bi-Annually": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  "Annually":    "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+};
+
+function FrequencyBadge({ frequency }: { frequency: string }) {
+  if (!frequency) return null;
+  const cls = FREQ_BADGE_COLORS[frequency] ?? "bg-muted text-muted-foreground";
+  return <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${cls}`}>{frequency}</span>;
+}
 
 function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpiActual[] }) {
   const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
@@ -137,11 +289,12 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
 }
 
 function ReviewDetail({
-  review, allReviews, onBack, isoProjectId,
-}: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void; isoProjectId?: number }) {
+  review, allReviews, onBack, isoProjectId, standard,
+}: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void; isoProjectId?: number; standard?: string | null }) {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [agenda, setAgenda] = useState<AgendaItem[]>(agendaFromReview(review));
+  const template = getAgendaTemplate(standard);
+  const [agenda, setAgenda] = useState<AgendaItem[]>(agendaFromReview(review, template));
   const [actionForm, setActionForm] = useState({ description: "", owner: "", dueDate: "" });
   const [showActionForm, setShowActionForm] = useState(false);
 
@@ -220,57 +373,17 @@ function ReviewDetail({
     return offTrackStreakCount(acts, tgt) >= 2;
   });
 
-  const inputItems = ISO_AGENDA_ITEMS.filter(i => i.group === "input");
-  const outputItems = ISO_AGENDA_ITEMS.filter(i => i.group === "output");
+  const inputItems = template.filter(i => i.group === "input");
+  const outputItems = template.filter(i => i.group === "output");
 
-  const AgendaSection = ({ items, label }: { items: typeof ISO_AGENDA_ITEMS; label: string }) => (
-    <div className="space-y-2">
-      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-1">{label}</div>
-      {items.map(item => {
-        const agItem = agenda.find(a => a.clause === item.clause)!;
-        if (!agItem) return null;
-        return (
-          <div key={item.clause} className={`p-3 rounded-lg border transition-colors ${agItem.covered ? "bg-green-50 dark:bg-green-900/20 border-green-200" : "bg-muted/30 border-border"}`}>
-            <div className="flex items-start gap-3">
-              <Checkbox
-                checked={agItem.covered}
-                onCheckedChange={() => toggleCovered(item.clause)}
-                data-testid={`checkbox-agenda-${item.clause}`}
-                className="mt-0.5"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
-                  <span className="text-sm font-medium text-foreground">{item.title}</span>
-                  {agItem.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600" />}
-                  {item.clause === "9.3.2(a)" && openPrevActions.length > 0 && (
-                    <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600">
-                      {openPrevActions.length} open/in-progress from prev.
-                    </Badge>
-                  )}
-                  {item.clause === "9.3.2(c-ii)" && flaggedObjectives.length > 0 && (
-                    <Badge variant="outline" className="text-[10px] border-red-400 text-red-600">
-                      {flaggedObjectives.length} KPI flagged
-                    </Badge>
-                  )}
-                </div>
-                {agItem.covered && (
-                  <Textarea
-                    value={agItem.notes}
-                    onChange={e => setAgenda(a => a.map(i => i.clause === item.clause ? { ...i, notes: e.target.value } : i))}
-                    placeholder="Notes for this agenda item…"
-                    data-testid={`textarea-agenda-notes-${item.clause}`}
-                    className="mt-2 text-xs"
-                    rows={2}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  // Group input items by section for display
+  const inputSections = inputItems.reduce<Record<string, AgendaTemplateItem[]>>((acc, item) => {
+    if (!acc[item.section]) acc[item.section] = [];
+    acc[item.section].push(item);
+    return acc;
+  }, {});
+
+  const standardLabel = standard?.includes("IATF") ? "IATF 16949" : "ISO 9001:2015";
 
   return (
     <div className="space-y-6">
@@ -286,6 +399,7 @@ function ReviewDetail({
             {review.attendees && ` · ${review.attendees}`}
           </p>
         </div>
+        <Badge variant="outline" className="text-xs border-accent text-accent">{standardLabel}</Badge>
         <Badge variant={review.status === "complete" ? "default" : "outline"}>
           {review.status === "complete" ? "Complete" : "Draft"}
         </Badge>
@@ -328,7 +442,7 @@ function ReviewDetail({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" />
-              {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods — §9.3.2(c-ii)
+              {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods — §9.3.2(c)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -420,22 +534,131 @@ function ReviewDetail({
         </Card>
       )}
 
-      {/* ISO 9.3.2 Agenda Checklist */}
+      {/* ISO 9.3 Agenda Checklist — Grouped by section */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-foreground">
-              ISO 9.3 Agenda Checklist
-              <span className="ml-2 text-muted-foreground font-normal text-xs">{coveredCount}/{agenda.length} covered</span>
-            </CardTitle>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="text-sm font-semibold text-foreground">
+                {standardLabel} §9.3 Agenda Checklist
+                <span className="ml-2 text-muted-foreground font-normal text-xs">{coveredCount}/{agenda.length} covered</span>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">Check items as they are reviewed during the meeting. Add notes for each covered item.</p>
+            </div>
             <Button size="sm" onClick={saveAgenda} disabled={updateMutation.isPending} variant="outline" data-testid="button-save-agenda">
               Save Agenda
             </Button>
           </div>
+          {/* Progress bar */}
+          <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${agenda.length > 0 ? (coveredCount / agenda.length) * 100 : 0}%` }} />
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <AgendaSection items={inputItems} label="9.3.2 Required Inputs" />
-          <AgendaSection items={outputItems} label="9.3.3 Required Outputs" />
+        <CardContent className="space-y-5">
+          {/* Required Inputs — grouped by section */}
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">9.3.2 Required Inputs</div>
+          {Object.entries(inputSections).map(([section, items]) => {
+            const coveredInSection = items.filter(item => agenda.find(a => a.clause === item.clause)?.covered).length;
+            const freq = items[0]?.frequency;
+            return (
+              <div key={section} className="rounded-lg border border-border overflow-hidden">
+                {/* Section header */}
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border">
+                  <span className="text-xs font-semibold text-foreground">{section}</span>
+                  <div className="flex items-center gap-2">
+                    <FrequencyBadge frequency={freq} />
+                    <span className="text-[10px] text-muted-foreground">{coveredInSection}/{items.length}</span>
+                  </div>
+                </div>
+                {/* Section items */}
+                <div className="divide-y divide-border/50">
+                  {items.map(item => {
+                    const agItem = agenda.find(a => a.clause === item.clause);
+                    if (!agItem) return null;
+                    const isFreqDifferent = item.frequency !== freq; // Sub-item has different frequency
+                    return (
+                      <div key={item.clause} className={`p-3 transition-colors ${agItem.covered ? "bg-green-50 dark:bg-green-900/20" : "bg-background"}`}>
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={agItem.covered}
+                            onCheckedChange={() => toggleCovered(item.clause)}
+                            data-testid={`checkbox-agenda-${item.clause}`}
+                            className="mt-0.5 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
+                              <span className="text-sm text-foreground">{item.title}</span>
+                              {agItem.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />}
+                              {isFreqDifferent && <FrequencyBadge frequency={item.frequency} />}
+                              {item.clause === "9.3.2(a)" && openPrevActions.length > 0 && (
+                                <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600">
+                                  {openPrevActions.length} open from prev.
+                                </Badge>
+                              )}
+                              {(item.clause === "9.3.2(c-iii)-sales" || item.clause === "9.3.2(c-iii)-quote-timing") && flaggedObjectives.length > 0 && (
+                                <Badge variant="outline" className="text-[10px] border-red-400 text-red-600">
+                                  {flaggedObjectives.length} KPI flagged
+                                </Badge>
+                              )}
+                            </div>
+                            {agItem.covered && (
+                              <Textarea
+                                value={agItem.notes}
+                                onChange={e => setAgenda(a => a.map(i => i.clause === item.clause ? { ...i, notes: e.target.value } : i))}
+                                placeholder="Status, notes, reported by…"
+                                data-testid={`textarea-agenda-notes-${item.clause}`}
+                                className="mt-2 text-xs"
+                                rows={2}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Required Outputs — 9.3.3 */}
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-1">9.3.3 Required Outputs</div>
+          <div className="rounded-lg border border-border overflow-hidden divide-y divide-border/50">
+            {outputItems.map(item => {
+              const agItem = agenda.find(a => a.clause === item.clause);
+              if (!agItem) return null;
+              return (
+                <div key={item.clause} className={`p-3 transition-colors ${agItem.covered ? "bg-green-50 dark:bg-green-900/20" : "bg-background"}`}>
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={agItem.covered}
+                      onCheckedChange={() => toggleCovered(item.clause)}
+                      data-testid={`checkbox-agenda-${item.clause}`}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
+                        <span className="text-sm text-foreground">{item.title}</span>
+                        {agItem.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />}
+                      </div>
+                      {agItem.covered && (
+                        <Textarea
+                          value={agItem.notes}
+                          onChange={e => setAgenda(a => a.map(i => i.clause === item.clause ? { ...i, notes: e.target.value } : i))}
+                          placeholder="Decisions made, actions assigned…"
+                          data-testid={`textarea-agenda-notes-${item.clause}`}
+                          className="mt-2 text-xs"
+                          rows={2}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 
@@ -460,7 +683,7 @@ function ReviewDetail({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-              Action Items
+              Action Register
               <span className="text-xs font-normal text-muted-foreground font-mono">§9.3.3</span>
               {actions.filter(a => a.status !== "closed").length > 0 && (
                 <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600">
@@ -535,7 +758,7 @@ function ReviewDetail({
 
 const EMPTY_REVIEW_FORM = { title: "Management Review", meetingDate: "", attendees: "", status: "draft" };
 
-export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?: number }) {
+export default function ManagementReviewModule({ isoProjectId, standard }: { isoProjectId?: number; standard?: string | null }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -546,6 +769,10 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
   const [isaMessages, setIsaMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isaLoading, setIsaLoading] = useState(false);
 
+  const template = getAgendaTemplate(standard);
+  const standardLabel = standard?.includes("IATF") ? "IATF 16949" : "ISO 9001:2015";
+  const defaultFrequency = standard?.includes("IATF") ? "monthly" : "quarterly";
+
   const reviewsQKey = ["/api/iso-management-reviews", isoProjectId];
   const actionsQKey = ["/api/iso-review-action-items", isoProjectId];
 
@@ -553,19 +780,16 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
     queryKey: reviewsQKey,
     queryFn: () => fetch(`/api/iso-management-reviews${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
   });
-  // Fetch all action items to compute open counts per review in the list view
   const { data: allActionItems = [] } = useQuery<IsoReviewActionItem[]>({
     queryKey: actionsQKey,
     queryFn: () => fetch(`/api/iso-review-action-items${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
   });
-  // Objectives for the "X of Y on track" projector summary — scoped to this project
   const { data: objectives = [] } = useQuery<IsoObjective[]>({
     queryKey: ["/api/iso-objectives", isoProjectId],
     queryFn: () => fetch(`/api/iso-objectives${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
   });
 
   const createMutation = useMutation({
-    // Parse JSON from response so onSuccess gets the review object, not a Response
     mutationFn: (data: Omit<InsertIsoManagementReview, 'userId'>) => apiRequest("POST", "/api/iso-management-reviews", data).then(r => r.json()),
     onSuccess: (newReview: IsoManagementReview) => {
       qc.invalidateQueries({ queryKey: reviewsQKey });
@@ -584,7 +808,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
 
   if (selected) {
     const latest = reviews.find(r => r.id === selected.id) ?? selected;
-    return <ReviewDetail review={latest} allReviews={reviews} onBack={() => setSelected(null)} isoProjectId={isoProjectId} />;
+    return <ReviewDetail review={latest} allReviews={reviews} onBack={() => setSelected(null)} isoProjectId={isoProjectId} standard={standard} />;
   }
 
   const sendIsaMessage = async () => {
@@ -600,7 +824,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: newMsgs,
-          systemPrompt: `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You specialize in ISO 9001:2015 Clause 9.3 Management Review. Help organizations conduct effective management reviews that meet ISO requirements, including required inputs (9.3.2) and expected outputs (9.3.3). Provide practical, clause-referenced guidance.`,
+          systemPrompt: `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You specialize in ${standardLabel} Clause 9.3 Management Review. Help organizations conduct effective management reviews that meet ISO requirements, including required inputs (9.3.2) and expected outputs (9.3.3).${standard?.includes("IATF") ? " For IATF 16949, emphasize monthly frequency requirements, FMEA review, LPA audit results, COPQ, scrap cost, on-time PPAP, and manufacturing-specific KPIs (9.3.2.1)." : ""} Provide practical, clause-referenced guidance.`,
         }),
       });
       const data = await resp.json();
@@ -624,7 +848,10 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
             <ClipboardList className="w-5 h-5 text-accent" />
             Management Review
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">ISO 9.3 — Top management reviews the QMS at planned intervals</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {standardLabel} §9.3 — Top management reviews the QMS at planned intervals
+            <span className="ml-2 text-accent font-medium capitalize">({defaultFrequency})</span>
+          </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setIsaOpen(true)} data-testid="button-isa-review" className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20">
@@ -634,6 +861,15 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
             <Plus className="w-4 h-4 mr-1" /> New Review
           </Button>
         </div>
+      </div>
+
+      {/* Standard badge + agenda item count info */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Badge variant="outline" className="text-xs border-accent text-accent">{standardLabel}</Badge>
+        <span className="text-xs text-muted-foreground">{template.length} agenda items · {template.filter(i => i.group === "input").length} required inputs · {template.filter(i => i.group === "output").length} required outputs</span>
+        {standard?.includes("IATF") && (
+          <Badge variant="outline" className="text-xs border-blue-400 text-blue-600">Monthly frequency required</Badge>
+        )}
       </div>
 
       {/* Projector-ready KPI summary statement */}
@@ -667,7 +903,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
           <CardContent className="p-8 text-center text-muted-foreground">
             <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="font-medium">No management reviews recorded</p>
-            <p className="text-xs mt-1">ISO 9001 Clause 9.3 requires top management to review the QMS at planned intervals. Start by creating your first review.</p>
+            <p className="text-xs mt-1">{standardLabel} Clause 9.3 requires top management to review the QMS at planned intervals ({defaultFrequency}). Start by creating your first review.</p>
           </CardContent>
         </Card>
       ) : (
@@ -675,7 +911,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
           {[...reviews].sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime()).map(r => {
             const agendaItems = (r.agendaItems as AgendaItem[] | null) ?? [];
             const covered = agendaItems.filter(a => a.covered).length;
-            const total = ISO_AGENDA_ITEMS.length;
+            const total = template.length;
             const reviewActions = allActionItems.filter(a => a.reviewId === r.id);
             const openCount = reviewActions.filter(a => a.status === "open").length;
             const inProgressCount = reviewActions.filter(a => a.status === "in_progress").length;
@@ -697,9 +933,13 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
                         )}
                       </div>
                       <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                        <span>{new Date(r.meetingDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(r.meetingDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                        </span>
                         {r.attendees && (
-                          <span>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
                             {r.attendees.split(",").filter(Boolean).length} attendee{r.attendees.split(",").filter(Boolean).length !== 1 ? "s" : ""}
                           </span>
                         )}
@@ -731,10 +971,11 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
           <DialogHeader>
             <DialogTitle>New Management Review</DialogTitle>
           </DialogHeader>
+          <p className="text-xs text-muted-foreground -mt-1">Template: <span className="font-medium text-accent">{standardLabel}</span> · {template.length} agenda items will be pre-loaded</p>
           <div className="space-y-4 py-2">
             <div>
               <Label>Review Title</Label>
-              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Q1 2025 Management Review" data-testid="input-review-title" />
+              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Q2 2025 Management Review" data-testid="input-review-title" />
             </div>
             <div>
               <Label>Meeting Date *</Label>
@@ -742,7 +983,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
             </div>
             <div>
               <Label>Attendees</Label>
-              <Input value={form.attendees} onChange={e => setForm(f => ({ ...f, attendees: e.target.value }))} placeholder="e.g. CEO, Quality Manager, Department Heads" data-testid="input-review-attendees" />
+              <Input value={form.attendees} onChange={e => setForm(f => ({ ...f, attendees: e.target.value }))} placeholder="e.g. Top Management, Quality Manager, Department Heads" data-testid="input-review-attendees" />
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
@@ -759,18 +1000,28 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
-              <Bot className="w-5 h-5" /> Isa — Management Review Advisor (ISO §9.3)
+              <Bot className="w-5 h-5" /> Isa — Management Review Advisor ({standardLabel} §9.3)
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">
             {isaMessages.length === 0 && (
               <div className="text-sm text-muted-foreground bg-violet-50 dark:bg-violet-900/20 rounded-lg p-4">
-                <p className="font-medium text-violet-800 dark:text-violet-300 mb-2">Ask me about ISO 9.3 Management Review:</p>
+                <p className="font-medium text-violet-800 dark:text-violet-300 mb-2">Ask me about {standardLabel} §9.3 Management Review:</p>
                 <ul className="space-y-1 text-xs">
                   <li>• What are the required inputs for a management review (9.3.2)?</li>
                   <li>• What outputs must be documented (9.3.3)?</li>
-                  <li>• How often should management reviews be conducted?</li>
-                  <li>• What do auditors look for during management review audits?</li>
+                  {standard?.includes("IATF") ? (
+                    <>
+                      <li>• What does IATF 16949 §9.3.2.1 require beyond ISO 9001?</li>
+                      <li>• How should LPA results be presented in management review?</li>
+                      <li>• What COPQ and scrap metrics are expected?</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>• How often should management reviews be conducted?</li>
+                      <li>• What do auditors look for during management review audits?</li>
+                    </>
+                  )}
                 </ul>
               </div>
             )}
@@ -783,7 +1034,7 @@ export default function ManagementReviewModule({ isoProjectId }: { isoProjectId?
             {isaLoading && <div className="text-xs text-violet-600 animate-pulse">Isa is thinking…</div>}
           </div>
           <div className="flex gap-2 pt-2 border-t border-border">
-            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendIsaMessage()} placeholder="Ask Isa about management review…" data-testid="input-isa-review" className="flex-1" />
+            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendIsaMessage()} placeholder={`Ask Isa about ${standardLabel} management review…`} data-testid="input-isa-review" className="flex-1" />
             <Button onClick={sendIsaMessage} disabled={isaLoading} size="sm" className="bg-violet-600 hover:bg-violet-700 text-white">Send</Button>
           </div>
         </DialogContent>

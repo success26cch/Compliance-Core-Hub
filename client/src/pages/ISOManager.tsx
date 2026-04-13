@@ -700,7 +700,7 @@ export default function ISOManager() {
                 : <LockedModuleView section="risk" />
             ) : activeSection === 'management_review' ? (
               canAccessSection('management_review', isoRole, isSuperadmin)
-                ? <ManagementReviewModule isoProjectId={project?.id} />
+                ? <ManagementReviewModule isoProjectId={project?.id} standard={project?.standard} />
                 : <LockedModuleView section="management_review" />
             ) : activeSection === 'internal_audit' ? (
               canAccessSection('internal_audit', isoRole, isSuperadmin)
