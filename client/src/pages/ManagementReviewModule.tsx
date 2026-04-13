@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft,
   CheckCircle, Clock, AlertTriangle, AlertCircle, Circle, Loader2, Calendar, Users,
+  BarChart2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual, InsertIsoManagementReview, InsertIsoReviewActionItem } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -26,158 +27,384 @@ type AgendaTemplateItem = {
   frequency: string;
 };
 
-// ─── ISO 9001:2015 Agenda Template (from FM-9.3-1 PDF) ───────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// ISO 9001:2015  §9.3 Management Review Template
+// Source: FM-9.3-1 Management Review Agenda PDF
+// ─────────────────────────────────────────────────────────────────────────────
 const ISO_9001_AGENDA_ITEMS: AgendaTemplateItem[] = [
-  // Previous Meeting Follow-up
-  { clause: "9.3.2(a)", title: "Follow-up on open issues from previous meeting", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Quarterly" },
+  // 9.3.2(a) Previous Review
+  { clause: "9.3.2(a)", title: "Follow-up on open issues from previous management review", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Quarterly" },
 
-  // External/Internal Issues
-  { clause: "9.3.2(b)", title: "Review of Interested Parties Matrix and Internal/External Issues List", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
+  // 9.3.2(b) External/Internal Issues
+  { clause: "9.3.2(b)-issues", title: "Changes in external and internal issues relevant to the QMS (§4.1)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
+  { clause: "9.3.2(b)-parties", title: "Review of Interested Parties Matrix (§4.2) — needs and expectations", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
 
-  // Customer Satisfaction
-  { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-i)-survey", title: "Customer Satisfaction Survey", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Annually" },
-  { clause: "9.3.2(c-i)-visits", title: "Customer Feedback (Visits)", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Quarterly" },
+  // 9.3.2(c-i) Customer Satisfaction
+  { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-i)-survey", title: "Customer Satisfaction Survey results", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Annually" },
+  { clause: "9.3.2(c-i)-visits", title: "Customer Feedback from visits / complaints / portal reviews", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Quarterly" },
 
-  // KPI Dashboard by Department
-  { clause: "9.3.2(c-iii)-sales", title: "Sales KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-purchasing", title: "Purchasing KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-warehousing", title: "Warehousing KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-logistics", title: "Logistics / On-Time Delivery KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-qa", title: "QA / Calibration KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-training", title: "Training Completion KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-audits", title: "Internal Audits KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-mgmt", title: "Management / Improvement (Customer Complaints) KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-car", title: "Corrective Action (Repeat NCs) KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-iii)-doc", title: "Document / Record Control KPI", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  // 9.3.2(c-ii) Quality Objectives
+  { clause: "9.3.2(c-ii)-objectives", title: "Extent to which quality objectives have been met", group: "input", section: "Quality Objectives Achievement — 9.3.2(c-ii)", frequency: "Quarterly" },
 
-  // Corrective & Preventive Actions
-  { clause: "9.3.2(c-iv)", title: "Past due CARs / Completion Status", group: "input", section: "Corrective & Preventive Actions — 9.3.2(c-iv)", frequency: "Quarterly" },
+  // 9.3.2(c-iii) KPI Dashboard by Department
+  { clause: "9.3.2(c-iii)-sales", title: "Sales KPI (quote hit rate, new business pipeline)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-purchasing", title: "Purchasing KPI (supplier scorecards, on-time PO delivery)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-warehousing", title: "Warehousing KPI (order fulfillment accuracy, inventory compliance)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-logistics", title: "Logistics KPI (on-time delivery / OTD rate)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-qa", title: "QA KPI (calibration on schedule, inspection results)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-training", title: "Training KPI (completion rate, overdue sessions)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-audits", title: "Internal Audits KPI (completion to schedule, findings closure)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-mgmt", title: "Management / Improvement KPI (customer complaints, improvement actions)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-car", title: "Corrective Action KPI (repeat NCs, CAR closure rate)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iii)-doc", title: "Document / Record Control KPI (non-conformities, overdue reviews)", group: "input", section: "KPI Dashboard by Department — 9.3.2(c-iii)", frequency: "Quarterly" },
 
-  // Internal Audit Results
-  { clause: "9.3.2(c-vi)-ia", title: "Internal Audit Review Results", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Bi-Annually" },
+  // 9.3.2(c-iv) Nonconformities & Corrective Actions
+  { clause: "9.3.2(c-iv)-cars", title: "Nonconformities and corrective action status — past due CARs", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iv)-trends", title: "NC trend analysis — repeat nonconformances, systemic issues", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Quarterly" },
 
-  // External Audit Results
-  { clause: "9.3.2(c-vi)-ea1", title: "External Audit Schedule Review", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
-  { clause: "9.3.2(c-vi)-ea2", title: "Review of External Findings / Action", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+  // 9.3.2(c-v) Monitoring & Measurement
+  { clause: "9.3.2(c-v)-results", title: "Monitoring and measurement results (process performance data)", group: "input", section: "Monitoring & Measurement Results — 9.3.2(c-v)", frequency: "Quarterly" },
 
-  // Supplier Performance
-  { clause: "9.3.2(c-vii)-1", title: "Supplier Performance — Scorecard Summary", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-vii)-2", title: "Supplier CAR's", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  // 9.3.2(c-vi) Audit Results
+  { clause: "9.3.2(c-vi)-ia", title: "Internal audit review results — findings, NCs, OFIs, closure status", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Bi-Annually" },
+  { clause: "9.3.2(c-vi)-ea1", title: "External audit schedule review — upcoming certification/surveillance audits", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+  { clause: "9.3.2(c-vi)-ea2", title: "External audit findings and corrective action status", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+
+  // 9.3.2(c-vii) Supplier Performance
+  { clause: "9.3.2(c-vii)-1", title: "Supplier performance — scorecard summary (quality, delivery, cost)", group: "input", section: "Supplier / External Provider Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vii)-2", title: "Supplier CARs — open items, chargebacks, escalation status", group: "input", section: "Supplier / External Provider Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
 
   // New Business Update
-  { clause: "nb-quotes", title: "Quotes — Potential New Customers", group: "input", section: "New Business Update", frequency: "Quarterly" },
+  { clause: "nb-quotes", title: "Quotes — potential new customers and business development pipeline", group: "input", section: "New Business Update", frequency: "Quarterly" },
 
-  // Adequacy of Resources
-  { clause: "9.3.2(d)-1", title: "Talent — Personnel", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
-  { clause: "9.3.2(d)-2", title: "Other (Equipment, Technology, Infrastructure)", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+  // 9.3.2(d) Adequacy of Resources
+  { clause: "9.3.2(d)-1", title: "Talent — personnel, open positions, skills gaps, training matrix", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+  { clause: "9.3.2(d)-2", title: "Infrastructure, equipment, technology and financial resources", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
 
-  // Risk & Opportunities
-  { clause: "9.3.2(e)-1", title: "Internal / External Issues Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
-  { clause: "9.3.2(e)-2", title: "Contingency Plan Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
-  { clause: "9.3.2(e)-3", title: "Interested Parties Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+  // 9.3.2(e) Risk & Opportunities
+  { clause: "9.3.2(e)-1", title: "Effectiveness of actions taken to address risks and opportunities", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-2", title: "Contingency plan review", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-3", title: "Interested parties review — changes in needs/expectations", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
 
   // Quality Policy Review
-  { clause: "qpr-suitability", title: "Quality Policy Suitability", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
+  { clause: "qpr-suitability", title: "Quality policy suitability — remains aligned with strategic direction?", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
 
   // Changes to KPIs/Objectives
-  { clause: "kpi-changes", title: "KPI / Objectives Suitability & Target Review", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
+  { clause: "kpi-changes", title: "KPI targets and quality objectives — suitability for next period", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
 
-  // Opportunities for Improvement
-  { clause: "9.3.2(f)", title: "Open Discussion & Opportunities for Improvement", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
+  // 9.3.2(f) Opportunities for Improvement
+  { clause: "9.3.2(f)", title: "Open discussion — opportunities for improvement across the QMS", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
 
-  // Required Outputs
-  { clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  // Required Outputs — 9.3.3
+  { clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement of QMS effectiveness", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
   { clause: "9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
-  { clause: "9.3.3(c)", title: "Decisions and actions: Resource needs", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "9.3.3(c)", title: "Decisions and actions: Resource needs identified", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
 ];
 
-// ─── IATF 16949 Agenda Template (from IATF PDF — Monthly frequency + IATF-specific items) ──
+// ─────────────────────────────────────────────────────────────────────────────
+// IATF 16949  §9.3 Management Review Template (Monthly + IATF-specific inputs)
+// Source: IATF Management Review Agenda PDF
+// ─────────────────────────────────────────────────────────────────────────────
 const IATF_16949_AGENDA_ITEMS: AgendaTemplateItem[] = [
-  // Previous Meeting Follow-up (Monthly for IATF)
-  { clause: "9.3.2(a)", title: "Follow-up on open issues from previous meeting", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Monthly" },
+  { clause: "9.3.2(a)", title: "Follow-up on open issues from previous management review", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Monthly" },
 
-  // External/Internal Issues (Quarterly for IATF)
-  { clause: "9.3.2(b)", title: "Review of Interested Parties Matrix and Internal/External Issues List", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
+  { clause: "9.3.2(b)-issues", title: "Changes in external and internal issues relevant to the QMS (§4.1)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
+  { clause: "9.3.2(b)-parties", title: "Review of Interested Parties Matrix (§4.2) — needs and expectations", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
 
-  // Customer Satisfaction (Monthly for IATF)
-  { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Monthly" },
-  { clause: "9.3.2(c-i)-survey", title: "Customer Satisfaction Survey", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Annually" },
-  { clause: "9.3.2(c-i)-visits", title: "Customer Feedback (Visits / Portal Review)", group: "input", section: "Customer Satisfaction — 9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards (all customer portals / report cards)", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Monthly" },
+  { clause: "9.3.2(c-i)-survey", title: "Customer Satisfaction Survey results", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Annually" },
+  { clause: "9.3.2(c-i)-visits", title: "Customer Feedback from visits / complaints / portal reviews", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Quarterly" },
 
-  // KPI Dashboard — IATF includes Sales, Production, Quality, Materials, HR, Maintenance KPIs (Monthly)
-  { clause: "9.3.2(c-iii)-quote-timing", title: "Quote Timing", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-quote-budget", title: "Quote to Budget", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-ppap", title: "On Time PPAP", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-apqp", title: "APQP on Budget", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-scrap", title: "Scrap Cost", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-copq", title: "COPQ (Cost of Poor Quality)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-supplier-scrap", title: "Supplier Scrap", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-supplier-cost", title: "Supplier Cost Reductions", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-otd", title: "On Time Delivery (OTD)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-premium-freight", title: "Premium Freight", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-pm-schedule", title: "On Time to PM Schedule", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-calibrations", title: "On Time Calibrations", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-turnover", title: "Employee Turnover", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-inventory", title: "Inventory Accuracy", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-lost-time", title: "Lost Time (Safety)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-ii)-objectives", title: "Extent to which quality objectives have been met", group: "input", section: "Quality Objectives Achievement — 9.3.2(c-ii)", frequency: "Monthly" },
 
-  // Corrective & Preventive Actions (Monthly for IATF)
-  { clause: "9.3.2(c-iv)", title: "Past due CARs / Completion Status", group: "input", section: "Corrective & Preventive Actions — 9.3.2(c-iv)", frequency: "Monthly" },
+  // IATF-specific KPI Dashboard (§9.3.2.1 automotive supplement)
+  { clause: "9.3.2(c-iii)-quote-timing", title: "Quote Timing (positive to goal)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-quote-budget", title: "Quote to Budget (new business won)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-ppap", title: "On Time PPAP (program milestones)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-apqp", title: "APQP on Budget (program cost vs. budget)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-scrap", title: "Scrap Cost (rolling 12-month target %)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-copq", title: "COPQ — Cost of Poor Quality (rework, returns, warranty)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-supplier-scrap", title: "Supplier Scrap (vendor quality performance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-supplier-cost", title: "Supplier Cost Reductions (goal vs. actual savings)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-otd", title: "On Time Delivery (OTD) — by plant / customer", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-premium-freight", title: "Premium Freight (cost and root cause trends)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-pm-schedule", title: "On Time to PM Schedule (preventive maintenance compliance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-calibrations", title: "On Time Calibrations (gage/equipment calibration compliance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-turnover", title: "Employee Turnover (by plant)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-inventory", title: "Inventory Accuracy (cycle count results)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-lost-time", title: "Lost Time (safety — days without lost-time incident)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
 
-  // Internal Audit Results (Quarterly for IATF)
-  { clause: "9.3.2(c-vi)-ia", title: "Internal Audit Review Results", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-vi)-lpa-results", title: "LPA (Layered Process Audit) Results", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-vi)-lpa-metrics", title: "LPA Metrics (Level Completion, Findings Trend)", group: "input", section: "Internal Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-iv)-cars", title: "Past due CARs / Completion Status", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Monthly" },
+  { clause: "9.3.2(c-iv)-trends", title: "NC trend analysis — repeat nonconformances, systemic issues", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Monthly" },
 
-  // External Audit Results (Annual)
-  { clause: "9.3.2(c-vi)-ea1", title: "External Audit Schedule Review", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
-  { clause: "9.3.2(c-vi)-ea2", title: "Review of External Findings / Action", group: "input", section: "External Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+  { clause: "9.3.2(c-v)-results", title: "Monitoring and measurement results (process performance data)", group: "input", section: "Monitoring & Measurement Results — 9.3.2(c-v)", frequency: "Monthly" },
 
-  // Supplier Performance (Quarterly)
-  { clause: "9.3.2(c-vii)-assess", title: "Supplier Assessment / Audit Results", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-vii)-1", title: "Supplier Performance — Scorecard Summary", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
-  { clause: "9.3.2(c-vii)-2", title: "Supplier CAR's (Open / Chargebacks)", group: "input", section: "Supplier Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vi)-ia", title: "Internal audit review results — findings, NCs, OFIs", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vi)-lpa-results", title: "LPA (Layered Process Audit) results by level", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vi)-lpa-metrics", title: "LPA metrics — level completion rate, findings trends", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vi)-ea1", title: "External audit schedule review — upcoming certification/surveillance audits", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+  { clause: "9.3.2(c-vi)-ea2", title: "External audit findings and corrective action status", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
 
-  // New Business Update (Quarterly)
-  { clause: "nb-quotes", title: "Quotes — Potential New Customers", group: "input", section: "New Business Update", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vii)-assess", title: "Supplier Assessment / Audit results (new assessments, re-evaluations)", group: "input", section: "Supplier / External Provider Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vii)-1", title: "Supplier performance — scorecard summary (quality, delivery, cost)", group: "input", section: "Supplier / External Provider Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "9.3.2(c-vii)-2", title: "Supplier CARs — open items, chargebacks, escalation status", group: "input", section: "Supplier / External Provider Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
 
-  // Manufacturing Assessment (IATF-specific — Monthly)
-  { clause: "iatf-fmea", title: "FMEA Review (PFMEA actions, updated ratings)", group: "input", section: "Manufacturing Assessment (Monitoring & Measurement) — IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "iatf-feasibility", title: "Feasibility or Capacity Concern Review", group: "input", section: "Manufacturing Assessment (Monitoring & Measurement) — IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "nb-quotes", title: "New business — quotes submitted, RFQs, customer pipeline", group: "input", section: "New Business Update", frequency: "Quarterly" },
 
-  // Adequacy of Resources (Monthly for IATF)
-  { clause: "9.3.2(d)-1", title: "Talent — Personnel (Open Positions, Skills Gaps)", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
-  { clause: "9.3.2(d)-2", title: "Other (Equipment, Technology, Infrastructure Upgrades)", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+  // IATF Manufacturing Assessment §9.3.2.1
+  { clause: "iatf-fmea", title: "FMEA Review — PFMEA open actions, updated risk ratings", group: "input", section: "Manufacturing Assessment — IATF §9.3.2.1", frequency: "Monthly" },
+  { clause: "iatf-feasibility", title: "Feasibility or Capacity Concern review (quoting & mfg phases)", group: "input", section: "Manufacturing Assessment — IATF §9.3.2.1", frequency: "Monthly" },
 
-  // Risk & Opportunities (Annual)
-  { clause: "9.3.2(e)-1", title: "Internal / External Issues Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
-  { clause: "9.3.2(e)-2", title: "Contingency Plan Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
-  { clause: "9.3.2(e)-3", title: "Interested Parties Review", group: "input", section: "Risk & Opportunities — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(d)-1", title: "Talent — personnel, open positions, skills gaps", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
+  { clause: "9.3.2(d)-2", title: "Infrastructure, equipment, technology upgrades", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
 
-  // Quality Policy Review (Annual)
-  { clause: "qpr-suitability", title: "Quality Policy Suitability", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
+  { clause: "9.3.2(e)-1", title: "Effectiveness of actions taken to address risks and opportunities", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-2", title: "Contingency plan review", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
+  { clause: "9.3.2(e)-3", title: "Interested parties review", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
 
-  // Changes to KPIs/Objectives (Annual)
-  { clause: "kpi-changes", title: "KPI / Objectives Suitability & Target Review", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
+  { clause: "qpr-suitability", title: "Quality policy suitability — aligned with strategic direction?", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
+  { clause: "kpi-changes", title: "KPI targets and quality objectives — suitability for next period", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
+  { clause: "9.3.2(f)", title: "Open discussion — opportunities for improvement across the QMS", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
 
-  // Opportunities for Improvement (Annual)
-  { clause: "9.3.2(f)", title: "Open Discussion & Opportunities for Improvement", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
-
-  // Required Outputs
-  { clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "9.3.3(a)", title: "Decisions and actions: Opportunities for improvement of QMS effectiveness", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
   { clause: "9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
-  { clause: "9.3.3(c)", title: "Decisions and actions: Resource needs", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "9.3.3(c)", title: "Decisions and actions: Resource needs identified", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
 ];
 
-// Generic fallback (same as 9001 for all other standards)
+// ─────────────────────────────────────────────────────────────────────────────
+// ISO 14001:2015  §9.3 Management Review Template (Environmental)
+// ─────────────────────────────────────────────────────────────────────────────
+const ISO_14001_AGENDA_ITEMS: AgendaTemplateItem[] = [
+  { clause: "14.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3(a)", frequency: "Quarterly" },
+
+  { clause: "14.9.3(b)-issues", title: "Changes in external/internal issues relevant to the EMS (§4.1)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
+  { clause: "14.9.3(b)-parties", title: "Changes in needs and expectations of interested parties, including compliance obligations (§4.2)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
+  { clause: "14.9.3(b)-aspects", title: "Changes in significant environmental aspects (new/modified operations)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
+  { clause: "14.9.3(b)-risks", title: "Changes in risks and opportunities (risk register updates)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
+
+  { clause: "14.9.3(c)-objectives", title: "Extent to which environmental objectives have been achieved", group: "input", section: "Environmental Objectives Achievement — §9.3(c)", frequency: "Quarterly" },
+
+  { clause: "14.9.3(d)-ncs", title: "Environmental nonconformities and corrective actions (trend review)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "14.9.3(d)-monitoring", title: "Environmental monitoring and measurement results (emissions, waste, water, energy)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "14.9.3(d)-compliance", title: "Fulfillment of compliance obligations (legal, regulatory, permit requirements)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "14.9.3(d)-audits", title: "Audit results (internal EMS audits, external/regulatory audits)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Bi-Annually" },
+
+  { clause: "14.9.3(e)-resources", title: "Adequacy of resources for maintaining the EMS", group: "input", section: "Adequacy of Resources — §9.3(e)", frequency: "Quarterly" },
+
+  { clause: "14.9.3(f)-comms", title: "Relevant communications from interested parties, including complaints (environmental grievances)", group: "input", section: "Stakeholder Communications — §9.3(f)", frequency: "Quarterly" },
+
+  { clause: "14.9.3(g)", title: "Opportunities for continual improvement of EMS performance", group: "input", section: "Opportunities for Continual Improvement — §9.3(g)", frequency: "Annually" },
+
+  { clause: "14.9.3-out-a", title: "Conclusions on continuing suitability, adequacy and effectiveness of the EMS", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "14.9.3-out-b", title: "Decisions related to continual improvement opportunities", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "14.9.3-out-c", title: "Actions related to any need for changes to the EMS, including resources", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "14.9.3-out-d", title: "Actions needed when environmental objectives have not been achieved", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "14.9.3-out-e", title: "Opportunities to improve integration of EMS with other business processes", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ISO 45001:2018  §9.3 Management Review Template (Occupational Health & Safety)
+// ─────────────────────────────────────────────────────────────────────────────
+const ISO_45001_AGENDA_ITEMS: AgendaTemplateItem[] = [
+  { clause: "45.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3(a)", frequency: "Quarterly" },
+
+  { clause: "45.9.3(b)", title: "Changes in external and internal issues relevant to the OH&S MS (§4.1, §4.2)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
+
+  { clause: "45.9.3(c)-policy", title: "Extent to which the OH&S policy has been fulfilled", group: "input", section: "OH&S Policy & Objectives Fulfillment — §9.3(c)", frequency: "Annually" },
+  { clause: "45.9.3(c)-objectives", title: "Extent to which OH&S objectives have been achieved", group: "input", section: "OH&S Policy & Objectives Fulfillment — §9.3(c)", frequency: "Quarterly" },
+
+  { clause: "45.9.3(d)-incidents", title: "Incidents, nonconformities, corrective actions and continual improvement (trend analysis)", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-monitoring", title: "Monitoring and measurement results (leading and lagging indicators)", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-compliance", title: "Evaluation of compliance with legal requirements and other OH&S requirements", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-audits", title: "Audit results (internal OH&S audits, external/regulatory inspections)", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Bi-Annually" },
+  { clause: "45.9.3(d)-participation", title: "Consultation and participation of workers in OH&S decisions", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-risks", title: "Risks and opportunities — hazard identification results, risk register status", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
+
+  { clause: "45.9.3(e)-kpi-lti", title: "Lost Time Injuries (LTI) and Lost Time Injury Rate (LTIR)", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
+  { clause: "45.9.3(e)-kpi-trir", title: "Total Recordable Incident Rate (TRIR) — OSHA 300 Log summary", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
+  { clause: "45.9.3(e)-kpi-near-miss", title: "Near Miss Reports — count, trend, and actions taken", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
+  { clause: "45.9.3(e)-kpi-training", title: "Safety Training Completion Rate", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
+  { clause: "45.9.3(e)-kpi-hazards", title: "Hazard Reports Submitted and Closed (leading indicator)", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
+  { clause: "45.9.3(e)-kpi-inspections", title: "Safety Inspections / Workplace Assessments completed vs. scheduled", group: "input", section: "OH&S KPI Dashboard", frequency: "Quarterly" },
+
+  { clause: "45.9.3(e)-resources", title: "Adequacy of resources for maintaining an effective OH&S MS", group: "input", section: "Adequacy of Resources — §9.3(e)", frequency: "Quarterly" },
+
+  { clause: "45.9.3(f)-comms", title: "Relevant communication with interested parties — regulatory, worker concerns", group: "input", section: "Stakeholder Communications — §9.3(f)", frequency: "Quarterly" },
+  { clause: "45.9.3(f)-legal", title: "New or revised legal and regulatory OH&S requirements", group: "input", section: "Stakeholder Communications — §9.3(f)", frequency: "Quarterly" },
+
+  { clause: "45.9.3(g)", title: "Opportunities for continual improvement of OH&S performance", group: "input", section: "Opportunities for Continual Improvement — §9.3(g)", frequency: "Annually" },
+
+  { clause: "45.9.3-out-a", title: "Conclusions on continuing suitability, adequacy and effectiveness of OH&S MS", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "45.9.3-out-b", title: "Continual improvement opportunities identified", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "45.9.3-out-c", title: "Any changes needed to the OH&S policy, objectives, or other OH&S MS elements", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "45.9.3-out-d", title: "Resources needed to maintain the OH&S MS", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "45.9.3-out-e", title: "Actions needed when OH&S objectives have not been achieved", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ISO 13485:2016  §5.6 Management Review Template (Medical Devices)
+// Note: ISO 13485 uses §5.6 (not §9.3) for management review
+// ─────────────────────────────────────────────────────────────────────────────
+const ISO_13485_AGENDA_ITEMS: AgendaTemplateItem[] = [
+  { clause: "5.6.1-prev", title: "Follow-up on actions from previous management reviews (§5.6.1)", group: "input", section: "Previous Management Review — §5.6.1", frequency: "Annually" },
+
+  { clause: "5.6.2(a)-feedback", title: "Customer feedback — complaints, advisory notices, MDR/vigilance reports", group: "input", section: "Customer Feedback — §5.6.2(a)", frequency: "Quarterly" },
+  { clause: "5.6.2(a)-csat", title: "Customer satisfaction survey results and trends", group: "input", section: "Customer Feedback — §5.6.2(a)", frequency: "Annually" },
+
+  { clause: "5.6.2(b)-complaints", title: "Complaint handling — open complaints, trends, MDR reporting status", group: "input", section: "Complaint Handling — §5.6.2(b)", frequency: "Quarterly" },
+
+  { clause: "5.6.2(c)-regulatory", title: "Reporting to regulatory authorities — MDR/vigilance filings, FDA 510(k), CE/MDD submissions", group: "input", section: "Regulatory Reporting — §5.6.2(c)", frequency: "Quarterly" },
+
+  { clause: "5.6.2(d)-ia", title: "Internal audit results — findings, NCs, OFIs, closure status", group: "input", section: "Audit Results — §5.6.2(d)", frequency: "Annually" },
+  { clause: "5.6.2(d)-ea", title: "External audit results — notified body, registrar, regulatory inspections", group: "input", section: "Audit Results — §5.6.2(d)", frequency: "Annually" },
+
+  { clause: "5.6.2(e)-processes", title: "Monitoring and measurement of processes — process capability, control chart results", group: "input", section: "Process Monitoring & Measurement — §5.6.2(e)", frequency: "Quarterly" },
+
+  { clause: "5.6.2(f)-nc-product", title: "Nonconforming product — scope, disposition, CAPA status", group: "input", section: "Nonconforming Product — §5.6.2(f)", frequency: "Quarterly" },
+
+  { clause: "5.6.2(g)-ca", title: "Corrective action status — open CARs, effectiveness reviews, repeat NCs", group: "input", section: "Corrective & Preventive Actions — §5.6.2(g)", frequency: "Quarterly" },
+  { clause: "5.6.2(g)-pa", title: "Preventive action status — risk-identified PAs, trend-based actions", group: "input", section: "Corrective & Preventive Actions — §5.6.2(g)", frequency: "Quarterly" },
+
+  { clause: "5.6.2(h)-changes", title: "Changes that could affect the QMS — new regulations, product changes, design changes, supplier changes", group: "input", section: "Changes Affecting the QMS — §5.6.2(h)", frequency: "Quarterly" },
+
+  { clause: "5.6.2(i)-improvement", title: "Recommendations for improvement across the QMS", group: "input", section: "Recommendations for Improvement — §5.6.2(i)", frequency: "Annually" },
+
+  { clause: "5.6.2(j)-regulatory", title: "New or revised regulatory requirements affecting product or QMS", group: "input", section: "New/Revised Regulatory Requirements — §5.6.2(j)", frequency: "Quarterly" },
+
+  { clause: "5.6.2-kpi-oee", title: "Process KPIs — OEE, yield, defect rate, sterilization validation status", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
+  { clause: "5.6.2-kpi-complaint-rate", title: "Complaint rate (per unit sold or per procedure)", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
+  { clause: "5.6.2-kpi-mdr-rate", title: "MDR/vigilance reporting timeliness and count", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
+  { clause: "5.6.2-kpi-supplier", title: "Supplier performance — quality, delivery, approved supplier list status", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
+  { clause: "5.6.2-kpi-training", title: "Training compliance — personnel qualification, competency records", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
+
+  { clause: "5.6.3-out-a", title: "Actions to maintain suitability, adequacy and effectiveness of the QMS", group: "output", section: "Required Outputs — §5.6.3", frequency: "" },
+  { clause: "5.6.3-out-b", title: "Improvement of product to meet customer and regulatory requirements", group: "output", section: "Required Outputs — §5.6.3", frequency: "" },
+  { clause: "5.6.3-out-c", title: "Resource needs — personnel, equipment, training, infrastructure", group: "output", section: "Required Outputs — §5.6.3", frequency: "" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AS9100 Rev D  §9.3 Management Review Template (Aerospace)
+// Extends ISO 9001 §9.3 with aerospace-specific inputs per §9.3.2.1
+// ─────────────────────────────────────────────────────────────────────────────
+const AS9100_AGENDA_ITEMS: AgendaTemplateItem[] = [
+  { clause: "as.9.3.2(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3.2(a)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2(b)-issues", title: "Changes in external/internal issues relevant to the QMS (§4.1)", group: "input", section: "External & Internal Issues — §9.3.2(b)", frequency: "Annually" },
+  { clause: "as.9.3.2(b)-parties", title: "Changes in needs and expectations of interested parties (§4.2)", group: "input", section: "External & Internal Issues — §9.3.2(b)", frequency: "Annually" },
+
+  { clause: "as.9.3.2(c-i)-scorecards", title: "Customer scorecards and satisfaction surveys (by customer)", group: "input", section: "Customer Satisfaction & Feedback — §9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-i)-complaints", title: "Customer complaints — warranty claims, escapes, corrective requests", group: "input", section: "Customer Satisfaction & Feedback — §9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-i)-feedback", title: "Customer feedback from surveys, visits, and program reviews", group: "input", section: "Customer Satisfaction & Feedback — §9.3.2(c-i)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2(c-ii)-objectives", title: "Extent to which quality objectives have been achieved", group: "input", section: "Quality Objectives Achievement — §9.3.2(c-ii)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2(c-iii)-otd", title: "On Time Delivery (OTD) — by customer and program", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-quality-escape", title: "Quality escapes (defects shipped to customer, PPM)", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-scrap", title: "Scrap cost and yield trends", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-rework", title: "Rework — hours and cost trends", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-supplier", title: "Supplier quality performance (PPM, OTD, approved source list)", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iii)-training", title: "Training completion and personnel certification status", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iii)-audits-kpi", title: "Internal audit schedule compliance and findings trend", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iii)-first-pass", title: "First Pass Yield (FPY) by process/product", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
+
+  { clause: "as.9.3.2(c-iv)-cars", title: "Nonconformities and corrective action status — past due CARs", group: "input", section: "Nonconformities & Corrective Actions — §9.3.2(c-iv)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iv)-trends", title: "NC trend analysis — repeat nonconformances, systemic issues", group: "input", section: "Nonconformities & Corrective Actions — §9.3.2(c-iv)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2(c-v)-results", title: "Monitoring and measurement results — process capability, SPC charts", group: "input", section: "Monitoring & Measurement Results — §9.3.2(c-v)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2(c-vi)-ia", title: "Internal audit results — AS9100 clause-by-clause findings", group: "input", section: "Audit Results — §9.3.2(c-vi)", frequency: "Bi-Annually" },
+  { clause: "as.9.3.2(c-vi)-ea", title: "External/Registrar audit schedule and findings status", group: "input", section: "Audit Results — §9.3.2(c-vi)", frequency: "Annually" },
+  { clause: "as.9.3.2(c-vi)-customer-audit", title: "Customer source inspections / delegated quality audits", group: "input", section: "Audit Results — §9.3.2(c-vi)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2(c-vii)-1", title: "Supplier performance — scorecard summary and approved supplier list review", group: "input", section: "Supplier / External Provider Performance — §9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-vii)-2", title: "Supplier CARs and corrective action status", group: "input", section: "Supplier / External Provider Performance — §9.3.2(c-vii)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2-risk", title: "Operational risk management — risk register status, mitigations effectiveness", group: "input", section: "Risk Management Review — AS9100 §9.3.2", frequency: "Quarterly" },
+  { clause: "as.9.3.2-safety", title: "Safety-related product/process issues and actions", group: "input", section: "Risk Management Review — AS9100 §9.3.2", frequency: "Quarterly" },
+  { clause: "as.9.3.2-config", title: "Configuration management effectiveness review", group: "input", section: "Risk Management Review — AS9100 §9.3.2", frequency: "Annually" },
+
+  { clause: "as.9.3.2(d)-1", title: "Talent — personnel, certifications, skills gaps", group: "input", section: "Adequacy of Resources — §9.3.2(d)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(d)-2", title: "Infrastructure, tooling, special process equipment adequacy", group: "input", section: "Adequacy of Resources — §9.3.2(d)", frequency: "Quarterly" },
+
+  { clause: "as.9.3.2(e)", title: "Effectiveness of actions taken to address risks and opportunities", group: "input", section: "Risks & Opportunities Effectiveness — §9.3.2(e)", frequency: "Annually" },
+
+  { clause: "as.9.3.2(f)", title: "Opportunities for continual improvement across the QMS", group: "input", section: "Opportunities for Improvement — §9.3.2(f)", frequency: "Annually" },
+
+  { clause: "as.9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output", section: "Required Outputs — §9.3.3", frequency: "" },
+  { clause: "as.9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output", section: "Required Outputs — §9.3.3", frequency: "" },
+  { clause: "as.9.3.3(c)", title: "Decisions and actions: Resource needs identified", group: "output", section: "Required Outputs — §9.3.3", frequency: "" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ISO 27001:2022  §9.3 Management Review Template (Information Security)
+// ─────────────────────────────────────────────────────────────────────────────
+const ISO_27001_AGENDA_ITEMS: AgendaTemplateItem[] = [
+  { clause: "27.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3(a)", frequency: "Annually" },
+
+  { clause: "27.9.3(b)-issues", title: "Changes in external and internal issues relevant to the ISMS (§4.1)", group: "input", section: "Changes in ISMS Context — §9.3(b)", frequency: "Annually" },
+  { clause: "27.9.3(b)-parties", title: "Changes in needs and expectations of interested parties relevant to the ISMS (§4.2)", group: "input", section: "Changes in ISMS Context — §9.3(b)", frequency: "Annually" },
+
+  { clause: "27.9.3(c)-ncs", title: "Nonconformities and corrective actions (security incidents, deviations from SoA)", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Quarterly" },
+  { clause: "27.9.3(c)-monitoring", title: "Monitoring and measurement results — security metrics, KPIs, control effectiveness", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Quarterly" },
+  { clause: "27.9.3(c)-audits", title: "Internal audit results (ISMS controls, Annex A coverage)", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Annually" },
+  { clause: "27.9.3(c)-objectives", title: "Fulfillment of information security objectives", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Quarterly" },
+
+  { clause: "27.9.3-kpi-incidents", title: "Security Incidents — count, severity, MTTR (Mean Time to Resolve)", group: "input", section: "Information Security KPI Dashboard", frequency: "Monthly" },
+  { clause: "27.9.3-kpi-vulnerabilities", title: "Vulnerability Management — open critical/high vulnerabilities, patch rate", group: "input", section: "Information Security KPI Dashboard", frequency: "Monthly" },
+  { clause: "27.9.3-kpi-access", title: "Access Control Reviews — privileged access certifications, orphan accounts", group: "input", section: "Information Security KPI Dashboard", frequency: "Quarterly" },
+  { clause: "27.9.3-kpi-training", title: "Security Awareness Training completion rate", group: "input", section: "Information Security KPI Dashboard", frequency: "Quarterly" },
+  { clause: "27.9.3-kpi-phishing", title: "Phishing simulation results and trend", group: "input", section: "Information Security KPI Dashboard", frequency: "Quarterly" },
+  { clause: "27.9.3-kpi-backups", title: "Backup success rates and recovery test results (BCP/DRP)", group: "input", section: "Information Security KPI Dashboard", frequency: "Quarterly" },
+  { clause: "27.9.3-kpi-compliance", title: "Compliance obligations — GDPR, HIPAA, SOC 2, contractual requirements", group: "input", section: "Information Security KPI Dashboard", frequency: "Quarterly" },
+
+  { clause: "27.9.3(d)-interested-parties", title: "Feedback from interested parties — customers, regulators, auditors", group: "input", section: "Feedback from Interested Parties — §9.3(d)", frequency: "Quarterly" },
+
+  { clause: "27.9.3(e)-risk-assessment", title: "Results of risk assessment — updated risk register, residual risk acceptance", group: "input", section: "Risk Assessment & Treatment — §9.3(e)", frequency: "Annually" },
+  { clause: "27.9.3(e)-risk-treatment", title: "Status of risk treatment plan — control implementation progress, SoA review", group: "input", section: "Risk Assessment & Treatment — §9.3(e)", frequency: "Annually" },
+  { clause: "27.9.3(e)-third-party", title: "Third-party / supplier risk — vendor security assessments, contracts", group: "input", section: "Risk Assessment & Treatment — §9.3(e)", frequency: "Annually" },
+
+  { clause: "27.9.3-resources", title: "Adequacy of resources for maintaining the ISMS", group: "input", section: "Adequacy of Resources", frequency: "Annually" },
+
+  { clause: "27.9.3(f)", title: "Opportunities for continual improvement of the ISMS", group: "input", section: "Opportunities for Continual Improvement — §9.3(f)", frequency: "Annually" },
+
+  { clause: "27.9.3-out-a", title: "Decisions related to continual improvement opportunities", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "27.9.3-out-b", title: "Any need for changes to the ISMS — policy, scope, controls, SoA", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "27.9.3-out-c", title: "Resource needs — personnel, technology, budget for ISMS improvements", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Template selector — returns the right template for any of the 7 standards
+// ─────────────────────────────────────────────────────────────────────────────
 function getAgendaTemplate(standard?: string | null): AgendaTemplateItem[] {
-  const s = (standard ?? "").toUpperCase();
-  if (s.includes("IATF")) return IATF_16949_AGENDA_ITEMS;
-  return ISO_9001_AGENDA_ITEMS;
+  const s = (standard ?? "").toUpperCase().replace(/[-:\s]/g, "");
+  if (s.includes("IATF") || s.includes("16949")) return IATF_16949_AGENDA_ITEMS;
+  if (s.includes("14001")) return ISO_14001_AGENDA_ITEMS;
+  if (s.includes("45001")) return ISO_45001_AGENDA_ITEMS;
+  if (s.includes("13485")) return ISO_13485_AGENDA_ITEMS;
+  if (s.includes("AS9100") || s.includes("AS91")) return AS9100_AGENDA_ITEMS;
+  if (s.includes("27001")) return ISO_27001_AGENDA_ITEMS;
+  return ISO_9001_AGENDA_ITEMS; // default: ISO 9001
 }
 
-// ─── AgendaItem (saved state per review) ─────────────────────────────────────
+function getStandardLabel(standard?: string | null): string {
+  const s = (standard ?? "").toUpperCase().replace(/[-:\s]/g, "");
+  if (s.includes("IATF") || s.includes("16949")) return "IATF 16949";
+  if (s.includes("14001")) return "ISO 14001:2015";
+  if (s.includes("45001")) return "ISO 45001:2018";
+  if (s.includes("13485")) return "ISO 13485:2016";
+  if (s.includes("AS9100") || s.includes("AS91")) return "AS9100 Rev D";
+  if (s.includes("27001")) return "ISO 27001:2022";
+  return "ISO 9001:2015";
+}
+
+function getManagementClause(standard?: string | null): string {
+  const s = (standard ?? "").toUpperCase().replace(/[-:\s]/g, "");
+  if (s.includes("13485")) return "§5.6";
+  return "§9.3";
+}
+
+// ─── AgendaItem (saved per-review state) ─────────────────────────────────────
 type AgendaItem = { clause: string; title: string; covered: boolean; notes: string };
 
 function agendaFromReview(review: IsoManagementReview, template: AgendaTemplateItem[]): AgendaItem[] {
@@ -209,7 +436,6 @@ const ACTION_STATUS_COLORS: Record<string, string> = {
   in_progress: "bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200",
   closed: "bg-green-50 dark:bg-green-900/10 border-green-200",
 };
-
 const FREQ_BADGE_COLORS: Record<string, string> = {
   "Monthly":     "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
   "Quarterly":   "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
@@ -235,47 +461,33 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
   const statusBorder = obj.status === "on_track" ? "border-green-400" : obj.status === "at_risk" ? "border-yellow-400" : "border-red-500";
   const statusBg = obj.status === "on_track" ? "bg-green-50 dark:bg-green-900/10" : obj.status === "at_risk" ? "bg-yellow-50 dark:bg-yellow-900/10" : "bg-red-50 dark:bg-red-900/10";
   const lineColor = obj.status === "on_track" ? "#22c55e" : obj.status === "at_risk" ? "#f59e0b" : "#ef4444";
-
   return (
     <Card className={`border-l-4 ${statusBorder} ${statusBg}`}>
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-semibold text-sm text-foreground">{obj.name}</span>
-              {flagged && (
-                <span className="inline-flex items-center gap-0.5 text-xs text-red-600 font-medium">
-                  <AlertTriangle className="w-3 h-3" /> {streak} periods off-track
-                </span>
-              )}
+              {flagged && <span className="inline-flex items-center gap-0.5 text-xs text-red-600 font-medium"><AlertTriangle className="w-3 h-3" /> {streak} off-track</span>}
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {obj.processName && <span>{obj.processName} · </span>}
-              {obj.responsible && <span>Owner: {obj.responsible}</span>}
-            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">{obj.processName && <span>{obj.processName}</span>}</div>
           </div>
           <div className="text-right shrink-0">
             {latestVal !== null ? (
               <>
-                <div className="text-xl font-bold text-foreground">{latestVal} <span className="text-xs font-normal text-muted-foreground">{obj.unit}</span></div>
-                <div className="text-xs text-muted-foreground">Target: {obj.target} {obj.unit}</div>
-                {pct !== null && (
-                  <div className={`text-sm font-semibold ${pct >= 90 ? "text-green-600" : pct >= 70 ? "text-yellow-600" : "text-red-600"}`}>
-                    {pct.toFixed(0)}% of target
-                  </div>
-                )}
+                <div className="text-lg font-bold text-foreground">{latestVal} <span className="text-xs font-normal text-muted-foreground">{obj.unit}</span></div>
+                <div className="text-xs text-muted-foreground">Target: {obj.target}</div>
+                {pct !== null && <div className={`text-xs font-semibold ${pct >= 90 ? "text-green-600" : pct >= 70 ? "text-yellow-600" : "text-red-600"}`}>{pct.toFixed(0)}%</div>}
               </>
-            ) : (
-              <div className="text-xs text-muted-foreground italic">No data logged</div>
-            )}
+            ) : <div className="text-xs text-muted-foreground italic">No data</div>}
           </div>
         </div>
         {chartData.length > 0 && (
-          <div className="h-20">
+          <div className="h-14">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 2, right: 4, bottom: 2, left: 0 }}>
-                <XAxis dataKey="period" tick={{ fontSize: 9 }} />
-                <YAxis tick={{ fontSize: 9 }} width={28} />
+              <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 0 }}>
+                <XAxis dataKey="period" tick={{ fontSize: 8 }} />
+                <YAxis tick={{ fontSize: 8 }} width={24} />
                 <Tooltip contentStyle={{ fontSize: 10 }} />
                 <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="3 2" />
                 <Line type="monotone" dataKey="actual" stroke={lineColor} strokeWidth={2} dot={false} />
@@ -294,9 +506,12 @@ function ReviewDetail({
   const { toast } = useToast();
   const qc = useQueryClient();
   const template = getAgendaTemplate(standard);
+  const standardLabel = getStandardLabel(standard);
+  const clause = getManagementClause(standard);
   const [agenda, setAgenda] = useState<AgendaItem[]>(agendaFromReview(review, template));
   const [actionForm, setActionForm] = useState({ description: "", owner: "", dueDate: "" });
   const [showActionForm, setShowActionForm] = useState(false);
+  const [kpiExpanded, setKpiExpanded] = useState(false);
 
   const { data: actions = [] } = useQuery<IsoReviewActionItem[]>({
     queryKey: ["/api/iso-management-reviews", review.id, "actions"],
@@ -317,9 +532,7 @@ function ReviewDetail({
 
   const { data: prevActions = [] } = useQuery<IsoReviewActionItem[]>({
     queryKey: ["/api/iso-management-reviews", previousReview?.id, "actions"],
-    queryFn: () => previousReview
-      ? fetch(`/api/iso-management-reviews/${previousReview.id}/actions`).then(r => r.json())
-      : Promise.resolve([]),
+    queryFn: () => previousReview ? fetch(`/api/iso-management-reviews/${previousReview.id}/actions`).then(r => r.json()) : Promise.resolve([]),
     enabled: !!previousReview,
   });
   const openPrevActions = prevActions.filter(a => a.status === "open" || a.status === "in_progress");
@@ -360,30 +573,23 @@ function ReviewDetail({
   };
 
   const saveAgenda = () => updateMutation.mutate({ agendaItems: agenda });
-  const toggleCovered = (clause: string) => {
-    setAgenda(a => a.map(item => item.clause === clause ? { ...item, covered: !item.covered } : item));
+  const toggleCovered = (clause_: string) => {
+    setAgenda(a => a.map(item => item.clause === clause_ ? { ...item, covered: !item.covered } : item));
   };
 
   const coveredCount = agenda.filter(a => a.covered).length;
   const getActuals = (objId: number) => allActuals.filter(a => a.objectiveId === objId);
-
-  const flaggedObjectives = objectives.filter(obj => {
-    const acts = getActuals(obj.id);
-    const tgt = parseFloat(obj.target ?? "0");
-    return offTrackStreakCount(acts, tgt) >= 2;
-  });
+  const flaggedObjectives = objectives.filter(obj => offTrackStreakCount(getActuals(obj.id), parseFloat(obj.target ?? "0")) >= 2);
 
   const inputItems = template.filter(i => i.group === "input");
   const outputItems = template.filter(i => i.group === "output");
 
-  // Group input items by section for display
+  // Group inputs by section
   const inputSections = inputItems.reduce<Record<string, AgendaTemplateItem[]>>((acc, item) => {
     if (!acc[item.section]) acc[item.section] = [];
     acc[item.section].push(item);
     return acc;
   }, {});
-
-  const standardLabel = standard?.includes("IATF") ? "IATF 16949" : "ISO 9001:2015";
 
   return (
     <div className="space-y-6">
@@ -416,9 +622,7 @@ function ReviewDetail({
               <AlertCircle className="w-4 h-4" />
               Carryover: {openPrevActions.length} Open / In-Progress Action{openPrevActions.length > 1 ? "s" : ""} from Previous Review
             </CardTitle>
-            {previousReview && (
-              <p className="text-xs text-muted-foreground">From: {previousReview.title} · {new Date(previousReview.meetingDate).toLocaleDateString()}</p>
-            )}
+            {previousReview && <p className="text-xs text-muted-foreground">From: {previousReview.title} · {new Date(previousReview.meetingDate).toLocaleDateString()}</p>}
           </CardHeader>
           <CardContent className="space-y-2">
             {openPrevActions.map(a => (
@@ -442,7 +646,7 @@ function ReviewDetail({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" />
-              {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods — §9.3.2(c)
+              {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -457,125 +661,50 @@ function ReviewDetail({
         </Card>
       )}
 
-      {/* KPI Dashboard */}
-      {objectives.length > 0 && (
-        <div>
-          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            KPI Performance Dashboard
-            <span className="text-xs font-normal text-muted-foreground font-mono">§9.3.2(c)</span>
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {objectives.map(obj => (
-              <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* KPI Snapshot Table */}
-      {objectives.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-foreground">KPI Snapshot Table</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/50 border-b border-border">
-                  <tr>
-                    {["KPI", "Process", "Target", "Latest", "Period", "Variance", "Status"].map(h => (
-                      <th key={h} className="text-left px-3 py-2 font-semibold text-muted-foreground">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {objectives.map(obj => {
-                    const acts = getActuals(obj.id);
-                    const sorted = [...acts].sort((a, b) => b.period.localeCompare(a.period));
-                    const latest = sorted[0];
-                    const latestVal = latest ? parseFloat(latest.actual) : null;
-                    const targetVal = parseFloat(obj.target ?? "0");
-                    const variance = latestVal !== null ? latestVal - targetVal : null;
-                    const variancePct = variance !== null && targetVal !== 0 ? (variance / targetVal * 100) : null;
-                    const streak = offTrackStreakCount(acts, targetVal);
-                    return (
-                      <tr key={obj.id} className="hover:bg-muted/20">
-                        <td className="px-3 py-2 font-medium">
-                          {obj.name}
-                          {streak >= 2 && <AlertTriangle className="w-3 h-3 text-red-500 inline ml-1" />}
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">{obj.processName ?? "—"}</td>
-                        <td className="px-3 py-2">{obj.target} {obj.unit}</td>
-                        <td className="px-3 py-2 font-medium">{latestVal !== null ? `${latestVal} ${obj.unit}` : "—"}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{latest?.period ?? "—"}</td>
-                        <td className="px-3 py-2">
-                          {variance !== null ? (
-                            <span className={variance >= 0 ? "text-green-600" : "text-red-500"}>
-                              {variance >= 0 ? "+" : ""}{variance.toFixed(1)}
-                              {variancePct !== null && <span className="opacity-60 ml-1">({variancePct >= 0 ? "+" : ""}{variancePct.toFixed(0)}%)</span>}
-                            </span>
-                          ) : "—"}
-                        </td>
-                        <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            obj.status === "on_track" ? "bg-green-100 text-green-700" :
-                            obj.status === "at_risk" ? "bg-yellow-100 text-yellow-700" :
-                            "bg-red-100 text-red-700"}`}>
-                            {obj.status.replace("_", " ")}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ISO 9.3 Agenda Checklist — Grouped by section */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          AGENDA CHECKLIST — FIRST: All required inputs per standard §9.3
+          ══════════════════════════════════════════════════════════════════════ */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <CardTitle className="text-sm font-semibold text-foreground">
-                {standardLabel} §9.3 Agenda Checklist
+                {standardLabel} {clause} Agenda Checklist
                 <span className="ml-2 text-muted-foreground font-normal text-xs">{coveredCount}/{agenda.length} covered</span>
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">Check items as they are reviewed during the meeting. Add notes for each covered item.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Check each item as it is reviewed during the meeting and add notes / status.</p>
             </div>
             <Button size="sm" onClick={saveAgenda} disabled={updateMutation.isPending} variant="outline" data-testid="button-save-agenda">
               Save Agenda
             </Button>
           </div>
-          {/* Progress bar */}
           <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${agenda.length > 0 ? (coveredCount / agenda.length) * 100 : 0}%` }} />
           </div>
         </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Required Inputs — grouped by section */}
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">9.3.2 Required Inputs</div>
+        <CardContent className="space-y-4">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{clause} Required Inputs</div>
+
           {Object.entries(inputSections).map(([section, items]) => {
             const coveredInSection = items.filter(item => agenda.find(a => a.clause === item.clause)?.covered).length;
             const freq = items[0]?.frequency;
             return (
               <div key={section} className="rounded-lg border border-border overflow-hidden">
-                {/* Section header */}
                 <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border">
                   <span className="text-xs font-semibold text-foreground">{section}</span>
                   <div className="flex items-center gap-2">
                     <FrequencyBadge frequency={freq} />
-                    <span className="text-[10px] text-muted-foreground">{coveredInSection}/{items.length}</span>
+                    <span className={`text-[10px] font-medium ${coveredInSection === items.length ? "text-green-600" : "text-muted-foreground"}`}>
+                      {coveredInSection}/{items.length}
+                      {coveredInSection === items.length && " ✓"}
+                    </span>
                   </div>
                 </div>
-                {/* Section items */}
                 <div className="divide-y divide-border/50">
                   {items.map(item => {
                     const agItem = agenda.find(a => a.clause === item.clause);
                     if (!agItem) return null;
-                    const isFreqDifferent = item.frequency !== freq; // Sub-item has different frequency
+                    const itemFreqDiffers = item.frequency && item.frequency !== freq;
                     return (
                       <div key={item.clause} className={`p-3 transition-colors ${agItem.covered ? "bg-green-50 dark:bg-green-900/20" : "bg-background"}`}>
                         <div className="flex items-start gap-3">
@@ -587,19 +716,12 @@ function ReviewDetail({
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
-                              <span className="text-sm text-foreground">{item.title}</span>
+                              <span className="text-[10px] font-mono text-accent font-bold">{item.clause}</span>
+                              <span className="text-sm text-foreground leading-snug">{item.title}</span>
                               {agItem.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />}
-                              {isFreqDifferent && <FrequencyBadge frequency={item.frequency} />}
-                              {item.clause === "9.3.2(a)" && openPrevActions.length > 0 && (
-                                <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600">
-                                  {openPrevActions.length} open from prev.
-                                </Badge>
-                              )}
-                              {(item.clause === "9.3.2(c-iii)-sales" || item.clause === "9.3.2(c-iii)-quote-timing") && flaggedObjectives.length > 0 && (
-                                <Badge variant="outline" className="text-[10px] border-red-400 text-red-600">
-                                  {flaggedObjectives.length} KPI flagged
-                                </Badge>
+                              {itemFreqDiffers && <FrequencyBadge frequency={item.frequency} />}
+                              {(item.clause === "9.3.2(a)" || item.clause === "14.9.3(a)" || item.clause === "45.9.3(a)" || item.clause === "5.6.1-prev" || item.clause === "as.9.3.2(a)" || item.clause === "27.9.3(a)") && openPrevActions.length > 0 && (
+                                <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600">{openPrevActions.length} open from prev.</Badge>
                               )}
                             </div>
                             {agItem.covered && (
@@ -622,8 +744,7 @@ function ReviewDetail({
             );
           })}
 
-          {/* Required Outputs — 9.3.3 */}
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-1">9.3.3 Required Outputs</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-1">Required Outputs</div>
           <div className="rounded-lg border border-border overflow-hidden divide-y divide-border/50">
             {outputItems.map(item => {
               const agItem = agenda.find(a => a.clause === item.clause);
@@ -639,8 +760,8 @@ function ReviewDetail({
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-mono text-accent font-bold">{item.clause}</span>
-                        <span className="text-sm text-foreground">{item.title}</span>
+                        <span className="text-[10px] font-mono text-accent font-bold">{item.clause}</span>
+                        <span className="text-sm text-foreground leading-snug">{item.title}</span>
                         {agItem.covered && <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />}
                       </div>
                       {agItem.covered && (
@@ -662,7 +783,87 @@ function ReviewDetail({
         </CardContent>
       </Card>
 
-      {/* Overall Notes */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          KPI PERFORMANCE DATA — Collapsible, comes AFTER the agenda
+          ══════════════════════════════════════════════════════════════════════ */}
+      {objectives.length > 0 && (
+        <Card>
+          <CardHeader className="pb-0">
+            <button
+              className="w-full flex items-center justify-between text-left"
+              onClick={() => setKpiExpanded(v => !v)}
+            >
+              <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-accent" />
+                KPI Performance Data
+                <span className="text-xs font-normal text-muted-foreground font-mono">
+                  {objectives.filter(o => o.status === "on_track").length}/{objectives.length} on track
+                </span>
+              </CardTitle>
+              <span className="text-muted-foreground ml-2">
+                {kpiExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </span>
+            </button>
+            <p className="text-xs text-muted-foreground mt-1 pb-3">Supporting data for agenda items. Click to expand.</p>
+          </CardHeader>
+          {kpiExpanded && (
+            <CardContent className="pt-0 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {objectives.map(obj => (
+                  <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} />
+                ))}
+              </div>
+              <div className="overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 border-b border-border">
+                    <tr>
+                      {["KPI", "Process", "Target", "Latest", "Period", "Variance", "Status"].map(h => (
+                        <th key={h} className="text-left px-3 py-2 font-semibold text-muted-foreground">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {objectives.map(obj => {
+                      const acts = getActuals(obj.id);
+                      const sorted = [...acts].sort((a, b) => b.period.localeCompare(a.period));
+                      const latest = sorted[0];
+                      const latestVal = latest ? parseFloat(latest.actual) : null;
+                      const targetVal = parseFloat(obj.target ?? "0");
+                      const variance = latestVal !== null ? latestVal - targetVal : null;
+                      const variancePct = variance !== null && targetVal !== 0 ? (variance / targetVal * 100) : null;
+                      const streak = offTrackStreakCount(acts, targetVal);
+                      return (
+                        <tr key={obj.id} className="hover:bg-muted/20">
+                          <td className="px-3 py-2 font-medium">{obj.name}{streak >= 2 && <AlertTriangle className="w-3 h-3 text-red-500 inline ml-1" />}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{obj.processName ?? "—"}</td>
+                          <td className="px-3 py-2">{obj.target} {obj.unit}</td>
+                          <td className="px-3 py-2 font-medium">{latestVal !== null ? `${latestVal} ${obj.unit}` : "—"}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{latest?.period ?? "—"}</td>
+                          <td className="px-3 py-2">
+                            {variance !== null ? (
+                              <span className={variance >= 0 ? "text-green-600" : "text-red-500"}>
+                                {variance >= 0 ? "+" : ""}{variance.toFixed(1)}
+                                {variancePct !== null && <span className="opacity-60 ml-1">({variancePct >= 0 ? "+" : ""}{variancePct.toFixed(0)}%)</span>}
+                              </span>
+                            ) : "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${obj.status === "on_track" ? "bg-green-100 text-green-700" : obj.status === "at_risk" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+                              {obj.status.replace("_", " ")}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
+      {/* Meeting Notes */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-foreground">Meeting Notes / Conclusions</CardTitle>
@@ -671,20 +872,20 @@ function ReviewDetail({
           <Textarea
             defaultValue={review.overallNotes ?? ""}
             onBlur={e => updateMutation.mutate({ overallNotes: e.target.value })}
-            placeholder="Overall conclusions, decisions made, improvement directions…"
+            placeholder="Overall conclusions, decisions made, QMS suitability determination…"
             data-testid="textarea-review-notes"
             rows={4}
           />
         </CardContent>
       </Card>
 
-      {/* Action Items */}
+      {/* Action Register — 9.3.3 */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               Action Register
-              <span className="text-xs font-normal text-muted-foreground font-mono">§9.3.3</span>
+              <span className="text-xs font-normal text-muted-foreground font-mono">{clause.replace("§", "§")}3</span>
               {actions.filter(a => a.status !== "closed").length > 0 && (
                 <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600">
                   {actions.filter(a => a.status !== "closed").length} open
@@ -699,7 +900,7 @@ function ReviewDetail({
         </CardHeader>
         <CardContent className="space-y-2">
           {actions.length === 0 && !showActionForm && (
-            <p className="text-sm text-muted-foreground text-center py-4">No action items yet. Add outputs from this review.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">No action items yet. Add improvement actions and decisions from this review.</p>
           )}
           {showActionForm && (
             <div className="p-3 rounded-lg border border-border bg-muted/30 space-y-3">
@@ -719,20 +920,13 @@ function ReviewDetail({
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" onClick={() => setShowActionForm(false)}>Cancel</Button>
-                <Button size="sm" onClick={() => addActionMutation.mutate(actionForm)} disabled={addActionMutation.isPending} data-testid="button-submit-action" className="bg-accent hover:bg-accent/90 text-white">
-                  Add
-                </Button>
+                <Button size="sm" onClick={() => addActionMutation.mutate(actionForm)} disabled={addActionMutation.isPending} data-testid="button-submit-action" className="bg-accent hover:bg-accent/90 text-white">Add</Button>
               </div>
             </div>
           )}
           {actions.map(action => (
             <div key={action.id} className={`flex items-start gap-3 p-3 rounded-lg border ${ACTION_STATUS_COLORS[action.status] ?? ACTION_STATUS_COLORS.open}`}>
-              <button
-                onClick={() => cycleActionStatus(action)}
-                data-testid={`button-cycle-action-${action.id}`}
-                title={`Status: ${action.status} — click to advance`}
-                className="mt-0.5 shrink-0"
-              >
+              <button onClick={() => cycleActionStatus(action)} data-testid={`button-cycle-action-${action.id}`} title={`Status: ${action.status} — click to advance`} className="mt-0.5 shrink-0">
                 {ACTION_STATUS_ICON[action.status as keyof typeof ACTION_STATUS_ICON] ?? ACTION_STATUS_ICON.open}
               </button>
               <div className="flex-1 min-w-0">
@@ -756,6 +950,9 @@ function ReviewDetail({
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Module (List View)
+// ─────────────────────────────────────────────────────────────────────────────
 const EMPTY_REVIEW_FORM = { title: "Management Review", meetingDate: "", attendees: "", status: "draft" };
 
 export default function ManagementReviewModule({ isoProjectId, standard }: { isoProjectId?: number; standard?: string | null }) {
@@ -770,8 +967,9 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
   const [isaLoading, setIsaLoading] = useState(false);
 
   const template = getAgendaTemplate(standard);
-  const standardLabel = standard?.includes("IATF") ? "IATF 16949" : "ISO 9001:2015";
-  const defaultFrequency = standard?.includes("IATF") ? "monthly" : "quarterly";
+  const standardLabel = getStandardLabel(standard);
+  const clause = getManagementClause(standard);
+  const defaultFrequency = standard?.toUpperCase().includes("IATF") ? "monthly" : "quarterly";
 
   const reviewsQKey = ["/api/iso-management-reviews", isoProjectId];
   const actionsQKey = ["/api/iso-review-action-items", isoProjectId];
@@ -824,7 +1022,7 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: newMsgs,
-          systemPrompt: `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You specialize in ${standardLabel} Clause 9.3 Management Review. Help organizations conduct effective management reviews that meet ISO requirements, including required inputs (9.3.2) and expected outputs (9.3.3).${standard?.includes("IATF") ? " For IATF 16949, emphasize monthly frequency requirements, FMEA review, LPA audit results, COPQ, scrap cost, on-time PPAP, and manufacturing-specific KPIs (9.3.2.1)." : ""} Provide practical, clause-referenced guidance.`,
+          systemPrompt: `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You specialize in ${standardLabel} ${clause} Management Review. Help organizations conduct effective management reviews that meet ISO requirements, covering all required inputs and expected outputs.${standard?.toUpperCase().includes("IATF") ? " For IATF 16949, emphasize monthly frequency requirements (§9.3.2.1), FMEA review, LPA audit results, COPQ, scrap cost, on-time PPAP, and manufacturing-specific KPIs." : ""}${standard?.toUpperCase().includes("13485") ? " For ISO 13485, emphasize §5.6 inputs including customer feedback, MDR/vigilance reporting, regulatory authority communications, and CAPA status." : ""}${standard?.toUpperCase().includes("45001") ? " For ISO 45001, emphasize incident trends, leading/lagging safety indicators, legal compliance evaluation, and worker consultation/participation." : ""}${standard?.toUpperCase().includes("14001") ? " For ISO 14001, emphasize significant environmental aspects, compliance obligations, environmental performance data, and stakeholder communications." : ""}${standard?.toUpperCase().includes("27001") ? " For ISO 27001, emphasize risk assessment results, risk treatment plan status, security incident trends, and Statement of Applicability review." : ""} Provide practical, clause-referenced guidance.`,
         }),
       });
       const data = await resp.json();
@@ -849,7 +1047,7 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
             Management Review
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {standardLabel} §9.3 — Top management reviews the QMS at planned intervals
+            {standardLabel} {clause} — Top management reviews the management system at planned intervals
             <span className="ml-2 text-accent font-medium capitalize">({defaultFrequency})</span>
           </p>
         </div>
@@ -863,26 +1061,25 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
         </div>
       </div>
 
-      {/* Standard badge + agenda item count info */}
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* Standard info strip */}
+      <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
         <Badge variant="outline" className="text-xs border-accent text-accent">{standardLabel}</Badge>
-        <span className="text-xs text-muted-foreground">{template.length} agenda items · {template.filter(i => i.group === "input").length} required inputs · {template.filter(i => i.group === "output").length} required outputs</span>
-        {standard?.includes("IATF") && (
-          <Badge variant="outline" className="text-xs border-blue-400 text-blue-600">Monthly frequency required</Badge>
-        )}
+        <span>{template.filter(i => i.group === "input").length} required inputs · {template.filter(i => i.group === "output").length} required outputs · {template.length} total agenda items</span>
+        {standard?.toUpperCase().includes("IATF") && <Badge variant="outline" className="text-xs border-blue-400 text-blue-600">Monthly frequency — IATF §9.3.2.1</Badge>}
+        {standard?.toUpperCase().includes("13485") && <Badge variant="outline" className="text-xs border-purple-400 text-purple-600">§5.6 — Medical Device QMS</Badge>}
       </div>
 
-      {/* Projector-ready KPI summary statement */}
+      {/* KPI summary */}
       {totalObjectives > 0 && (
         <Card className={`border-l-4 ${onTrackCount === totalObjectives ? "border-green-400 bg-green-50 dark:bg-green-900/10" : onTrackCount >= totalObjectives * 0.7 ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10" : "border-red-400 bg-red-50 dark:bg-red-900/10"}`}>
           <CardContent className="p-4">
             <p className="text-base font-bold text-foreground" data-testid="text-kpi-summary">
-              {onTrackCount} of {totalObjectives} quality objective{totalObjectives !== 1 ? "s" : ""} on track as of {today}
+              {onTrackCount} of {totalObjectives} objectives on track as of {today}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {objectives.filter(o => o.status === "at_risk").length > 0 && `${objectives.filter(o => o.status === "at_risk").length} at risk · `}
               {objectives.filter(o => o.status === "off_track").length > 0 && `${objectives.filter(o => o.status === "off_track").length} off track · `}
-              See KPI Measurement module for details (§9.1)
+              See KPI Measurement module for details
             </p>
           </CardContent>
         </Card>
@@ -903,7 +1100,7 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
           <CardContent className="p-8 text-center text-muted-foreground">
             <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="font-medium">No management reviews recorded</p>
-            <p className="text-xs mt-1">{standardLabel} Clause 9.3 requires top management to review the QMS at planned intervals ({defaultFrequency}). Start by creating your first review.</p>
+            <p className="text-xs mt-1">{standardLabel} {clause} requires top management to review the management system at planned intervals ({defaultFrequency}). Start by creating your first review.</p>
           </CardContent>
         </Card>
       ) : (
@@ -913,9 +1110,7 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
             const covered = agendaItems.filter(a => a.covered).length;
             const total = template.length;
             const reviewActions = allActionItems.filter(a => a.reviewId === r.id);
-            const openCount = reviewActions.filter(a => a.status === "open").length;
-            const inProgressCount = reviewActions.filter(a => a.status === "in_progress").length;
-            const openTotal = openCount + inProgressCount;
+            const openTotal = reviewActions.filter(a => a.status !== "closed").length;
             return (
               <Card key={r.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => setSelected(r)}>
                 <CardContent className="p-4">
@@ -926,23 +1121,11 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
                         <Badge variant={r.status === "complete" ? "default" : "outline"} className="text-xs">
                           {r.status === "complete" ? "Complete" : "Draft"}
                         </Badge>
-                        {openTotal > 0 && (
-                          <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600">
-                            {openTotal} action{openTotal > 1 ? "s" : ""} open
-                          </Badge>
-                        )}
+                        {openTotal > 0 && <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600">{openTotal} action{openTotal > 1 ? "s" : ""} open</Badge>}
                       </div>
                       <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(r.meetingDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                        </span>
-                        {r.attendees && (
-                          <span className="flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            {r.attendees.split(",").filter(Boolean).length} attendee{r.attendees.split(",").filter(Boolean).length !== 1 ? "s" : ""}
-                          </span>
-                        )}
+                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(r.meetingDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+                        {r.attendees && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{r.attendees.split(",").filter(Boolean).length} attendee{r.attendees.split(",").filter(Boolean).length !== 1 ? "s" : ""}</span>}
                         <span>Agenda: {covered}/{total} covered ({total > 0 ? Math.round((covered / total) * 100) : 0}%)</span>
                       </div>
                       {covered > 0 && (
@@ -971,7 +1154,7 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
           <DialogHeader>
             <DialogTitle>New Management Review</DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground -mt-1">Template: <span className="font-medium text-accent">{standardLabel}</span> · {template.length} agenda items will be pre-loaded</p>
+          <p className="text-xs text-muted-foreground -mt-1">Template: <span className="font-medium text-accent">{standardLabel}</span> · {template.length} agenda items pre-loaded ({template.filter(i => i.group === "input").length} inputs + {template.filter(i => i.group === "output").length} outputs)</p>
           <div className="space-y-4 py-2">
             <div>
               <Label>Review Title</Label>
@@ -1000,28 +1183,21 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
-              <Bot className="w-5 h-5" /> Isa — Management Review Advisor ({standardLabel} §9.3)
+              <Bot className="w-5 h-5" /> Isa — Management Review Advisor ({standardLabel} {clause})
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">
             {isaMessages.length === 0 && (
               <div className="text-sm text-muted-foreground bg-violet-50 dark:bg-violet-900/20 rounded-lg p-4">
-                <p className="font-medium text-violet-800 dark:text-violet-300 mb-2">Ask me about {standardLabel} §9.3 Management Review:</p>
+                <p className="font-medium text-violet-800 dark:text-violet-300 mb-2">Ask me about {standardLabel} {clause} Management Review:</p>
                 <ul className="space-y-1 text-xs">
-                  <li>• What are the required inputs for a management review (9.3.2)?</li>
-                  <li>• What outputs must be documented (9.3.3)?</li>
-                  {standard?.includes("IATF") ? (
-                    <>
-                      <li>• What does IATF 16949 §9.3.2.1 require beyond ISO 9001?</li>
-                      <li>• How should LPA results be presented in management review?</li>
-                      <li>• What COPQ and scrap metrics are expected?</li>
-                    </>
-                  ) : (
-                    <>
-                      <li>• How often should management reviews be conducted?</li>
-                      <li>• What do auditors look for during management review audits?</li>
-                    </>
-                  )}
+                  <li>• What are all the required inputs for a management review?</li>
+                  <li>• What outputs must be documented and retained as records?</li>
+                  {standard?.toUpperCase().includes("IATF") && <><li>• What does IATF 16949 §9.3.2.1 require beyond ISO 9001?</li><li>• How should LPA and FMEA results be presented?</li></>}
+                  {standard?.toUpperCase().includes("13485") && <><li>• What regulatory reporting must be reviewed in §5.6?</li><li>• How should complaint and MDR data be presented?</li></>}
+                  {standard?.toUpperCase().includes("45001") && <><li>• How should incident data and TRIR be presented?</li><li>• What worker consultation evidence is needed?</li></>}
+                  {standard?.toUpperCase().includes("27001") && <><li>• How should the risk treatment plan status be reviewed?</li><li>• What security metrics should be included?</li></>}
+                  {!standard || (!standard.toUpperCase().includes("IATF") && !standard.toUpperCase().includes("13485") && !standard.toUpperCase().includes("45001") && !standard.toUpperCase().includes("27001")) && <><li>• How often should management reviews be conducted?</li><li>• What do auditors look for during management review audits?</li></>}
                 </ul>
               </div>
             )}
