@@ -13,9 +13,22 @@ import { useToast } from "@/hooks/use-toast";
 import {
   BarChart2, Plus, Pencil, TrendingUp, TrendingDown, Minus, Bot,
   ChevronDown, ChevronUp, CheckCircle, AlertCircle, MinusCircle,
+  LayoutDashboard, List,
 } from "lucide-react";
 import type { IsoObjective, IsoKpiActual, InsertIsoKpiActual, InsertIsoObjective } from "@shared/schema";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import {
+  LineChart, Line, AreaChart, Area, BarChart, Bar, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ReferenceLine, Legend,
+} from "recharts";
+
+const STATUS_COLORS = {
+  on_track: { border: "border-green-400", text: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20", hex: "#22c55e" },
+  at_risk: { border: "border-yellow-400", text: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-900/20", hex: "#f59e0b" },
+  off_track: { border: "border-red-400", text: "text-red-600", bg: "bg-red-50 dark:bg-red-900/20", hex: "#ef4444" },
+};
+
+const KPI_CHART_COLORS = ["#3b82f6", "#f97316", "#8b5cf6", "#10b981", "#ec4899", "#06b6d4"];
 
 const statusIcon = (s: string) => {
   if (s === "on_track") return <CheckCircle className="w-4 h-4 text-green-500" />;
@@ -23,13 +36,7 @@ const statusIcon = (s: string) => {
   return <MinusCircle className="w-4 h-4 text-red-500" />;
 };
 
-const statusColor = (s: string) => {
-  if (s === "on_track") return "text-green-600 bg-green-50 dark:bg-green-900/20";
-  if (s === "at_risk") return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20";
-  return "text-red-600 bg-red-50 dark:bg-red-900/20";
-};
-
-function GaugeChart({ actual, target }: { actual: number; target: number }) {
+function GaugeChart({ actual, target, size = 160 }: { actual: number; target: number; size?: number }) {
   const pct = target > 0 ? Math.min((actual / target) * 100, 100) : 0;
   const angle = (pct / 100) * 180 - 90;
   const rad = (angle * Math.PI) / 180;
@@ -38,7 +45,7 @@ function GaugeChart({ actual, target }: { actual: number; target: number }) {
   const y = cy + r * Math.sin(rad);
   const color = pct >= 90 ? "#22c55e" : pct >= 70 ? "#f59e0b" : "#ef4444";
   return (
-    <svg viewBox="0 0 160 100" className="w-full max-w-[160px]">
+    <svg viewBox="0 0 160 100" style={{ width: size, height: size * 0.625 }}>
       <path d="M20,80 A60,60 0 0,1 140,80" fill="none" stroke="#e5e7eb" strokeWidth="12" strokeLinecap="round" />
       {pct > 0 && (
         <path d={`M20,80 A60,60 0 ${pct > 50 ? 1 : 0},1 ${cx + r * Math.cos((((pct / 100) * 180 - 90) * Math.PI) / 180)},${cy + r * Math.sin((((pct / 100) * 180 - 90) * Math.PI) / 180)}`}
@@ -88,14 +95,13 @@ function TrendArrow({ actuals, targetVal, unit }: { actuals: IsoKpiActual[]; tar
   const color = improving ? "text-green-600" : "text-red-500";
   const Icon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${color}`} title={`vs previous period`}>
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${color}`}>
       <Icon className="w-3.5 h-3.5" />
       {delta > 0 ? "+" : ""}{delta.toFixed(1)} {unit} ({pct > 0 ? "+" : ""}{pct.toFixed(1)}%)
     </span>
   );
 }
 
-// Returns Date objects for true day-level range filtering via loggedAt
 function periodRange(window: string, customStart: string, customEnd: string): { start: Date | null; end: Date | null } {
   const now = new Date();
   if (window === "last_30d") {
@@ -114,7 +120,7 @@ function periodRange(window: string, customStart: string, customEnd: string): { 
     const end = customEnd ? new Date(new Date(customEnd + "-01").getFullYear(), new Date(customEnd + "-01").getMonth() + 1, 0, 23, 59, 59) : null;
     return { start, end };
   }
-  return { start: null, end: null }; // all time
+  return { start: null, end: null };
 }
 
 function KpiCard({ obj, actuals, onLog, onEdit, range }: {
@@ -125,10 +131,8 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   range: { start: Date | null; end: Date | null };
 }) {
   const [expanded, setExpanded] = useState(false);
-  // Date-range filtering using loggedAt for accurate day-level comparisons
   const windowActuals = actuals.filter(a => {
     if (!range.start && !range.end) return true;
-    // Prefer loggedAt (exact timestamp); fall back to YYYY-MM-01 from period string
     const entryDate = a.loggedAt ? new Date(a.loggedAt as unknown as string)
       : new Date(a.period.slice(0, 7) + "-01");
     if (range.start && entryDate < range.start) return false;
@@ -141,12 +145,12 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   const latestVal = latest ? parseFloat(latest.actual) : 0;
   const targetVal = parseFloat(obj.target ?? "0");
   const chartData = sorted.map(a => ({ period: a.period, actual: parseFloat(a.actual), target: targetVal }));
-
   const variance = latest ? latestVal - targetVal : null;
   const variancePct = (variance !== null && targetVal !== 0) ? (variance / targetVal) * 100 : null;
+  const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
 
   return (
-    <Card className={`border-l-4 ${obj.status === "on_track" ? "border-green-400" : obj.status === "at_risk" ? "border-yellow-400" : "border-red-400"}`}>
+    <Card className={`border-l-4 ${sc.border}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -162,7 +166,6 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
               <span>Target: <span className="font-medium">{obj.target} {obj.unit}</span></span>
               {latest && <span>Latest: <span className="font-medium text-foreground">{latest.actual} {obj.unit}</span> ({latest.period})</span>}
             </div>
-            {/* Variance + Trend */}
             {latest && (
               <div className="mt-1.5 flex flex-wrap gap-3 items-center">
                 {variance !== null && (
@@ -177,7 +180,7 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {!isNaN(latestVal) && !isNaN(targetVal) && targetVal > 0 && (
-              <div className="w-16"><GaugeChart actual={latestVal} target={targetVal} /></div>
+              <div className="w-16"><GaugeChart actual={latestVal} target={targetVal} size={64} /></div>
             )}
             <div className="flex flex-col gap-1">
               <button onClick={onLog} data-testid={`button-log-kpi-${obj.id}`} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent" title="Log measurement">
@@ -230,6 +233,210 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   );
 }
 
+function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit }: {
+  obj: IsoObjective;
+  actuals: IsoKpiActual[];
+  colorHex: string;
+  onLog: () => void;
+  onEdit: () => void;
+}) {
+  const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
+  const latest = sorted[sorted.length - 1];
+  const latestVal = latest ? parseFloat(latest.actual) : 0;
+  const targetVal = parseFloat(obj.target ?? "0");
+  const variance = latest ? latestVal - targetVal : null;
+  const chartData = sorted.map(a => ({ period: a.period, actual: parseFloat(a.actual), target: targetVal }));
+  const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    const actualEntry = payload.find((p: any) => p.dataKey === "actual");
+    const actualVal = actualEntry?.value;
+    const varVal = actualVal !== undefined ? (actualVal - targetVal) : null;
+    const note = sorted.find(a => a.period === label)?.notes;
+    return (
+      <div className="bg-white dark:bg-card border border-border rounded-lg shadow-lg p-3 text-xs max-w-[200px]">
+        <p className="font-bold text-foreground mb-1">{label}</p>
+        {actualVal !== undefined && <p style={{ color: colorHex }}>Actual: <strong>{actualVal} {obj.unit}</strong></p>}
+        <p className="text-muted-foreground">Target: {targetVal} {obj.unit}</p>
+        {varVal !== null && (
+          <p className={varVal >= 0 ? "text-green-600" : "text-red-500"}>
+            {varVal >= 0 ? "▲" : "▼"} {Math.abs(varVal).toFixed(1)} {obj.unit} vs target
+          </p>
+        )}
+        {note && <p className="text-muted-foreground mt-1 italic border-t border-border pt-1">{note}</p>}
+      </div>
+    );
+  };
+
+  return (
+    <Card className={`border-t-4 ${sc.border} flex flex-col`}>
+      <CardHeader className="pb-2 pt-4 px-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              {statusIcon(obj.status)}
+              <CardTitle className="text-sm font-bold text-foreground leading-tight">{obj.name}</CardTitle>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {obj.processName && <span className="mr-2">📌 {obj.processName}</span>}
+              {obj.responsible && <span>👤 {obj.responsible}</span>}
+            </p>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <button onClick={onLog} data-testid={`button-dash-log-${obj.id}`} title="Log measurement"
+              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-accent border border-border">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={onEdit} data-testid={`button-dash-edit-${obj.id}`} title="Edit KPI"
+              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground border border-border">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* KPI stats row */}
+        <div className="flex items-center gap-4 mt-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <GaugeChart actual={latestVal} target={targetVal} size={80} />
+            <div>
+              <div className="text-2xl font-black" style={{ color: colorHex }}>
+                {latest ? latest.actual : "—"}
+                <span className="text-sm font-normal text-muted-foreground ml-1">{obj.unit}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">Latest ({latest?.period ?? "—"})</div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <div className="text-xs"><span className="text-muted-foreground">Target: </span><span className="font-bold">{obj.target} {obj.unit}</span></div>
+            {variance !== null && (
+              <div className={`text-xs font-semibold ${variance >= 0 ? "text-green-600" : "text-red-500"}`}>
+                {variance >= 0 ? "▲" : "▼"} {Math.abs(variance).toFixed(1)} {obj.unit} vs target
+              </div>
+            )}
+            <TrendArrow actuals={actuals} targetVal={targetVal} unit={obj.unit ?? ""} />
+          </div>
+          <Badge className={`ml-auto text-xs ${sc.bg} ${sc.text} border-0 font-semibold`}>
+            {obj.status === "on_track" ? "On Track" : obj.status === "at_risk" ? "At Risk" : "Off Track"}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="px-4 pb-4 flex-1">
+        {chartData.length === 0 ? (
+          <div className="h-48 flex items-center justify-center text-xs text-muted-foreground">No measurement data yet</div>
+        ) : (
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                <defs>
+                  <linearGradient id={`grad-${obj.id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={colorHex} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={colorHex} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                <XAxis dataKey="period" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false}
+                  domain={[
+                    (dataMin: number) => Math.floor(Math.min(dataMin, targetVal) * 0.97),
+                    (dataMax: number) => Math.ceil(Math.max(dataMax, targetVal) * 1.02),
+                  ]}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <ReferenceLine
+                  y={targetVal}
+                  stroke="#f97316"
+                  strokeDasharray="5 3"
+                  strokeWidth={1.5}
+                  label={{ value: `Target: ${targetVal}${obj.unit}`, position: "insideTopRight", fontSize: 10, fill: "#f97316", fontWeight: "bold" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="actual"
+                  stroke={colorHex}
+                  strokeWidth={2.5}
+                  fill={`url(#grad-${obj.id})`}
+                  dot={{ r: 4, fill: colorHex, strokeWidth: 2, stroke: "#fff" }}
+                  activeDot={{ r: 6, fill: colorHex, strokeWidth: 2, stroke: "#fff" }}
+                  name={obj.name}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MultiKpiSummaryChart({ objectives, allActuals }: { objectives: IsoObjective[]; allActuals: IsoKpiActual[] }) {
+  const data = objectives.map((obj, i) => {
+    const objActuals = allActuals.filter(a => a.objectiveId === obj.id);
+    const sorted = [...objActuals].sort((a, b) => a.period.localeCompare(b.period));
+    const latest = sorted[sorted.length - 1];
+    const latestVal = latest ? parseFloat(latest.actual) : 0;
+    const targetVal = parseFloat(obj.target ?? "1");
+    const pctOfTarget = targetVal > 0 ? Math.round((latestVal / targetVal) * 100) : 0;
+    return {
+      name: obj.name.length > 22 ? obj.name.slice(0, 20) + "…" : obj.name,
+      fullName: obj.name,
+      pctOfTarget,
+      actual: latestVal,
+      target: targetVal,
+      unit: obj.unit ?? "",
+      status: obj.status,
+      color: KPI_CHART_COLORS[i % KPI_CHART_COLORS.length],
+    };
+  });
+
+  const CustomBarTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0]?.payload;
+    if (!d) return null;
+    return (
+      <div className="bg-white dark:bg-card border border-border rounded-lg shadow-lg p-3 text-xs">
+        <p className="font-bold text-foreground mb-1">{d.fullName}</p>
+        <p>Actual: <strong>{d.actual} {d.unit}</strong></p>
+        <p className="text-muted-foreground">Target: {d.target} {d.unit}</p>
+        <p style={{ color: d.color }} className="font-bold mt-1">{d.pctOfTarget}% of target</p>
+      </div>
+    );
+  };
+
+  return (
+    <Card className="border border-border/60">
+      <CardHeader className="pb-2 pt-4 px-4">
+        <CardTitle className="text-sm font-bold flex items-center gap-2">
+          <BarChart2 className="w-4 h-4 text-accent" />
+          KPI Performance vs. Target (All Metrics)
+          <span className="text-xs font-mono text-accent font-bold ml-1">§9.1</span>
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">Latest actual as % of target — 100% = on target, orange line = target threshold</p>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
+        <div className="h-52">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: 0 }} barCategoryGap="30%">
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} unit="%" domain={[0, 110]} />
+              <Tooltip content={<CustomBarTooltip />} />
+              <ReferenceLine y={100} stroke="#f97316" strokeDasharray="5 3" strokeWidth={1.5}
+                label={{ value: "100% Target", position: "insideTopRight", fontSize: 10, fill: "#f97316", fontWeight: "bold" }} />
+              <Bar dataKey="pctOfTarget" radius={[4, 4, 0, 0]} name="% of Target">
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} opacity={0.85} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 const EMPTY_EDIT_FORM = { target: "", unit: "", frequency: "monthly", responsible: "", status: "on_track", description: "" };
 const EMPTY_LOG_FORM = { period: "", actual: "", notes: "" };
 
@@ -256,6 +463,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   const [periodWindow, setPeriodWindow] = useState("current_year");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
+  const [viewMode, setViewMode] = useState<"cards" | "dashboard">("dashboard");
   const activePeriodRange = periodRange(periodWindow, customStart, customEnd);
 
   const objQKey = ["/api/iso-objectives", isoProjectId];
@@ -279,7 +487,6 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   const logMutation = useMutation({
     mutationFn: (d: Omit<InsertIsoKpiActual, 'userId'>) => apiRequest("POST", "/api/iso-kpi-actuals", d),
     onSuccess: () => {
-      // Invalidate both actuals and objectives — server auto-recomputes objective status from latest actual
       qc.invalidateQueries({ queryKey: actualsQKey });
       qc.invalidateQueries({ queryKey: objQKey });
       toast({ title: "Measurement logged" });
@@ -304,7 +511,6 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   };
 
   const filtered = filterStatus === "all" ? objectives : objectives.filter(o => o.status === filterStatus);
-
   const onTrack = objectives.filter(o => o.status === "on_track").length;
   const atRisk = objectives.filter(o => o.status === "at_risk").length;
   const offTrack = objectives.filter(o => o.status === "off_track").length;
@@ -350,14 +556,29 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">Monitor, measure, analyze and evaluate QMS performance — objectives come from Process Maps</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          {/* View toggle */}
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode("dashboard")}
+              data-testid="toggle-dashboard-view"
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "dashboard" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>
+              <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+            </button>
+            <button
+              onClick={() => setViewMode("cards")}
+              data-testid="toggle-card-view"
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "cards" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>
+              <List className="w-3.5 h-3.5" /> Cards
+            </button>
+          </div>
           <Button variant="outline" size="sm" onClick={() => setIsaOpen(true)} data-testid="button-isa-measurement" className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20">
             <Bot className="w-4 h-4 mr-1" /> Ask Isa
           </Button>
         </div>
       </div>
 
-      {/* Overall gauge + summary cards */}
+      {/* Summary strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card className="sm:col-span-1">
           <CardContent className="p-4 flex flex-col items-center justify-center">
@@ -384,7 +605,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         </Card>
       </div>
 
-      {/* Period window + status filters */}
+      {/* Period + Status filters */}
       <div className="flex flex-wrap gap-4 items-start">
         <div className="flex flex-col gap-2">
           <div className="flex gap-1 items-center flex-wrap">
@@ -423,7 +644,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Main content area */}
       {isLoading ? (
         <div className="text-center text-muted-foreground py-8">Loading KPIs…</div>
       ) : filtered.length === 0 ? (
@@ -434,6 +655,26 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
             <p className="text-xs mt-1">Quality objectives (ISO 6.2) are created in <strong>Process Maps</strong>. Open a process map and add measurable objectives with targets — they will appear here automatically for tracking.</p>
           </CardContent>
         </Card>
+      ) : viewMode === "dashboard" ? (
+        <div className="space-y-4">
+          {/* Multi-KPI comparison bar */}
+          {filtered.length >= 2 && (
+            <MultiKpiSummaryChart objectives={filtered} allActuals={allActuals} />
+          )}
+          {/* Individual big charts in 2-col grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {filtered.map((obj, i) => (
+              <BigKpiChart
+                key={obj.id}
+                obj={obj}
+                actuals={allActuals.filter(a => a.objectiveId === obj.id)}
+                colorHex={KPI_CHART_COLORS[i % KPI_CHART_COLORS.length]}
+                onLog={() => { setLogFor(obj); setLogForm({ ...EMPTY_LOG_FORM, period: currentPeriod() }); }}
+                onEdit={() => openEdit(obj)}
+              />
+            ))}
+          </div>
+        </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(obj => (
@@ -460,7 +701,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
               <Label>Measurement Date (Month) *</Label>
               <input type="month" value={logForm.period} onChange={e => setLogForm(f => ({ ...f, period: e.target.value }))}
                 data-testid="input-log-period"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
               <p className="text-xs text-muted-foreground mt-1">Select the month this measurement covers.</p>
             </div>
@@ -482,7 +723,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         </DialogContent>
       </Dialog>
 
-      {/* Edit KPI Dialog — only update target/status/frequency/owner, no create/delete */}
+      {/* Edit KPI Dialog */}
       <Dialog open={!!editingObj} onOpenChange={v => { if (!v) setEditingObj(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -547,27 +788,26 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">
             {isaMessages.length === 0 && (
-              <div className="text-sm text-muted-foreground bg-violet-50 dark:bg-violet-900/20 rounded-lg p-4">
-                <p className="font-medium text-violet-800 dark:text-violet-300 mb-2">Ask me about ISO 9.1 Measurement:</p>
-                <ul className="space-y-1 text-xs">
-                  <li>• What KPIs should we track for our QMS?</li>
-                  <li>• How do I select meaningful quality objectives?</li>
-                  <li>• What does ISO 9001 clause 9.1 require?</li>
-                  <li>• How often should I measure [KPI name]?</li>
-                </ul>
+              <div className="text-xs text-muted-foreground p-3 bg-muted/40 rounded-lg">
+                Ask Isa about ISO 9.1 requirements, how to set meaningful KPIs, interpret your trends, or align your measurement plan with your standard.
               </div>
             )}
             {isaMessages.map((m, i) => (
-              <div key={i} className={`text-sm rounded-lg p-3 ${m.role === "user" ? "bg-muted ml-8" : "bg-violet-50 dark:bg-violet-900/20 mr-8"}`}>
-                <div className="font-medium text-xs mb-1 text-muted-foreground">{m.role === "user" ? "You" : "Isa"}</div>
+              <div key={i} className={`text-sm p-3 rounded-lg ${m.role === "user" ? "bg-primary/10 ml-8" : "bg-violet-50 dark:bg-violet-900/20 mr-8"}`}>
+                <p className="text-xs font-bold mb-1 text-muted-foreground">{m.role === "user" ? "You" : "Isa"}</p>
                 <p className="whitespace-pre-wrap">{m.content}</p>
               </div>
             ))}
-            {isaLoading && <div className="text-xs text-violet-600 animate-pulse">Isa is thinking…</div>}
+            {isaLoading && <div className="text-xs text-violet-500 animate-pulse p-3">Isa is thinking…</div>}
           </div>
           <div className="flex gap-2 pt-2 border-t border-border">
-            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendIsaMessage()} placeholder="Ask Isa about ISO 9.1 Measurement…" data-testid="input-isa-measurement" className="flex-1" />
-            <Button onClick={sendIsaMessage} disabled={isaLoading} size="sm" className="bg-violet-600 hover:bg-violet-700 text-white">Send</Button>
+            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} placeholder="Ask Isa about §9.1…" data-testid="input-isa-message"
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendIsaMessage(); } }}
+              className="text-sm"
+            />
+            <Button onClick={sendIsaMessage} disabled={isaLoading || !isaInput.trim()} data-testid="button-isa-send" className="bg-violet-600 hover:bg-violet-700 text-white shrink-0">
+              Send
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
