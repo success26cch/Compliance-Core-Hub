@@ -677,43 +677,67 @@ export default function ISOManager() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden flex flex-col relative">
+          <div className="flex-1 min-h-0 flex flex-col relative">
             {showWizard && project ? (
-              <ISOSetupWizard project={project} onComplete={() => { setShowWizard(false); qc.invalidateQueries({ queryKey: ["/api/iso-projects"] }); }} />
-            ) : activeSection === 'context_org' ? (
-              <ContextOfOrgModule project={project ?? null} onStartWizard={handleStartWizard} onAskIsa={handleAskIsa} onNavigate={setActiveSection} />
-            ) : activeSection === 'system_profile' ? (
-              <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
-            ) : activeSection === 'nc' ? (
-              <NonconformanceManager onAskIsa={handleAskIsa} />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ISOSetupWizard project={project} onComplete={() => { setShowWizard(false); qc.invalidateQueries({ queryKey: ["/api/iso-projects"] }); }} />
+              </div>
             ) : activeSection === 'documentation' ? (
-              <DocumentationModule onAskIsa={handleAskIsa} />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <DocumentationModule onAskIsa={handleAskIsa} />
+              </div>
+            ) : activeSection === 'context_org' ? (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ContextOfOrgModule project={project ?? null} onStartWizard={handleStartWizard} onAskIsa={handleAskIsa} onNavigate={setActiveSection} />
+              </div>
+            ) : activeSection === 'system_profile' ? (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
+              </div>
+            ) : activeSection === 'nc' ? (
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <NonconformanceManager onAskIsa={handleAskIsa} />
+              </div>
             ) : activeSection === 'process_map' ? (
-              <ProcessMapModule project={project ?? null} onStartWizard={handleStartWizard} />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ProcessMapModule project={project ?? null} onStartWizard={handleStartWizard} />
+              </div>
             ) : activeSection === 'communication' ? (
-              canAccessSection('communication', isoRole, isSuperadmin)
-                ? <CommunicationModule isoProjectId={project?.id} />
-                : <LockedModuleView section="communication" />
+              <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6">
+                {canAccessSection('communication', isoRole, isSuperadmin)
+                  ? <CommunicationModule isoProjectId={project?.id} />
+                  : <LockedModuleView section="communication" />}
+              </div>
             ) : activeSection === 'risk' ? (
-              canAccessSection('risk', isoRole, isSuperadmin)
-                ? <RiskAssessmentModule isoProjectId={project?.id} />
-                : <LockedModuleView section="risk" />
+              <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6">
+                {canAccessSection('risk', isoRole, isSuperadmin)
+                  ? <RiskAssessmentModule isoProjectId={project?.id} />
+                  : <LockedModuleView section="risk" />}
+              </div>
             ) : activeSection === 'management_review' ? (
-              canAccessSection('management_review', isoRole, isSuperadmin)
-                ? <ManagementReviewModule isoProjectId={project?.id} standard={project?.standard} />
-                : <LockedModuleView section="management_review" />
+              <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6">
+                {canAccessSection('management_review', isoRole, isSuperadmin)
+                  ? <ManagementReviewModule isoProjectId={project?.id} standard={project?.standard} />
+                  : <LockedModuleView section="management_review" />}
+              </div>
             ) : activeSection === 'internal_audit' ? (
-              canAccessSection('internal_audit', isoRole, isSuperadmin)
-                ? <InternalAuditModule onAskIsa={handleAskIsa} />
-                : <LockedModuleView section="internal_audit" />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                {canAccessSection('internal_audit', isoRole, isSuperadmin)
+                  ? <InternalAuditModule onAskIsa={handleAskIsa} />
+                  : <div className="overflow-y-auto p-4 sm:p-6 h-full"><LockedModuleView section="internal_audit" /></div>}
+              </div>
             ) : activeSection === 'training' ? (
-              canAccessSection('training', isoRole, isSuperadmin)
-                ? <TrainingAwarenessModule onAskIsa={handleAskIsa} />
-                : <LockedModuleView section="training" />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                {canAccessSection('training', isoRole, isSuperadmin)
+                  ? <TrainingAwarenessModule onAskIsa={handleAskIsa} />
+                  : <div className="overflow-y-auto p-4 sm:p-6 h-full"><LockedModuleView section="training" /></div>}
+              </div>
             ) : activeSection === 'measurement' ? (
-              canAccessSection('measurement', isoRole, isSuperadmin)
-                ? <MeasurementModule isoProjectId={project?.id} />
-                : <LockedModuleView section="measurement" />
+              <div className="flex-1 overflow-y-auto min-h-0">
+                {canAccessSection('measurement', isoRole, isSuperadmin)
+                  ? <MeasurementModule isoProjectId={project?.id} />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="measurement" /></div>}
+              </div>
             ) : (
               <>
             {usageData && !canAsk && !activeConversationId && (
