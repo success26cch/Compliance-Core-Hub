@@ -591,7 +591,7 @@ function KpiAttentionStrip({
   if (attention.length === 0) {
     return (
       <div className="flex items-center gap-1.5 px-3 py-2 bg-green-50/60 dark:bg-green-950/20 border-b border-green-200/60 dark:border-green-800/30 text-[11px] text-green-700 dark:text-green-400 font-medium">
-        <CheckCircle className="w-3.5 h-3.5 shrink-0" /> All KPIs currently on track ✓
+        <CheckCircle className="w-3.5 h-3.5 shrink-0" /> No KPIs with logged data require attention ✓
       </div>
     );
   }
