@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -405,13 +405,25 @@ function getManagementClause(standard?: string | null): string {
 }
 
 // ─── AgendaItem (saved per-review state) ─────────────────────────────────────
-type AgendaItem = { clause: string; title: string; covered: boolean; notes: string };
+type AgendaItem = {
+  clause: string;
+  title: string;
+  covered: boolean;
+  notes: string;
+  kpiResponses?: Record<string, string>; // keyed by objectiveId as string → explanation text
+};
 
 function agendaFromReview(review: IsoManagementReview, template: AgendaTemplateItem[]): AgendaItem[] {
   const existing = (review.agendaItems as AgendaItem[] | null) ?? [];
   return template.map(item => {
     const found = existing.find(e => e.clause === item.clause);
-    return { clause: item.clause, title: item.title, covered: found?.covered ?? false, notes: found?.notes ?? "" };
+    return {
+      clause: item.clause,
+      title: item.title,
+      covered: found?.covered ?? false,
+      notes: found?.notes ?? "",
+      kpiResponses: found?.kpiResponses ?? {},
+    };
   });
 }
 
@@ -542,6 +554,133 @@ function isLiveDataSection(section: string): boolean {
   );
 }
 
+// ─── KPI Attention Strip ──────────────────────────────────────────────────────
+// Shows at_risk / off_track objectives within a live data section, with
+// collapsible explanation textareas and "Add to Action Register" shortcuts.
+function KpiAttentionStrip({
+  objectives, getActuals, sectionFirstClause, agenda, setAgenda, onAddAction,
+}: {
+  objectives: IsoObjective[];
+  getActuals: (id: number) => IsoKpiActual[];
+  sectionFirstClause: string;
+  agenda: AgendaItem[];
+  setAgenda: (updater: (prev: AgendaItem[]) => AgendaItem[]) => void;
+  onAddAction: (description: string, owner: string) => void;
+}) {
+  const [expandedKpi, setExpandedKpi] = useState<number | null>(null);
+
+  const attention = objectives.filter(obj =>
+    (obj.status === "at_risk" || obj.status === "off_track") && getActuals(obj.id).length > 0
+  );
+
+  const sectionItem = agenda.find(a => a.clause === sectionFirstClause);
+  const kpiResponses = sectionItem?.kpiResponses ?? {};
+
+  const setKpiResponse = useCallback((objId: number, text: string) => {
+    setAgenda(prev => prev.map(item =>
+      item.clause === sectionFirstClause
+        ? { ...item, kpiResponses: { ...(item.kpiResponses ?? {}), [String(objId)]: text } }
+        : item
+    ));
+  }, [sectionFirstClause, setAgenda]);
+
+  if (objectives.length === 0) return null;
+
+  if (attention.length === 0) {
+    return (
+      <div className="flex items-center gap-1.5 px-3 py-2 bg-green-50/60 dark:bg-green-950/20 border-b border-green-200/60 dark:border-green-800/30 text-[11px] text-green-700 dark:text-green-400 font-medium">
+        <CheckCircle className="w-3.5 h-3.5 shrink-0" /> All KPIs currently on track ✓
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-amber-200/60 dark:border-amber-800/30">
+      <div className="px-3 py-1.5 bg-amber-50/70 dark:bg-amber-950/25 flex items-center gap-1.5">
+        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+        <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+          {attention.length} KPI{attention.length > 1 ? "s" : ""} Require Attention — explanation &amp; corrective action needed
+        </span>
+      </div>
+      <div className="divide-y divide-border/40">
+        {attention.map(obj => {
+          const acts = getActuals(obj.id);
+          const sorted = [...acts].sort((a, b) => a.period.localeCompare(b.period));
+          const latest = sorted[sorted.length - 1];
+          const prev = sorted[sorted.length - 2];
+          const latestVal = latest ? parseFloat(latest.actual) : null;
+          const prevVal = prev ? parseFloat(prev.actual) : null;
+          const targetVal = parseFloat(obj.target ?? "0");
+          const pct = latestVal !== null && targetVal > 0 ? (latestVal / targetVal) * 100 : null;
+          const trend = latestVal === null || prevVal === null ? "none"
+            : latestVal > prevVal ? "up" : latestVal < prevVal ? "down" : "flat";
+          const isExpanded = expandedKpi === obj.id;
+          const explanation = kpiResponses[String(obj.id)] ?? "";
+
+          return (
+            <div key={obj.id} className="bg-background">
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/30 transition-colors"
+                onClick={() => setExpandedKpi(isExpanded ? null : obj.id)}
+                data-testid={`button-kpi-attention-${obj.id}`}
+              >
+                <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${obj.status === "at_risk" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                  {obj.status === "at_risk" ? "At Risk" : "Off Track"}
+                </span>
+                <span className="flex-1 text-xs font-medium text-foreground truncate">{obj.name}</span>
+                {latestVal !== null && (
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {latestVal} {obj.unit} / {obj.target} {obj.unit}
+                    {pct !== null && (
+                      <span className={`ml-1 font-semibold ${pct >= 80 ? "text-yellow-600" : "text-red-600"}`}>
+                        ({pct.toFixed(0)}%)
+                      </span>
+                    )}
+                  </span>
+                )}
+                {trend === "up" && <span className="shrink-0 text-green-600 text-sm font-bold" title="Trending up vs prior period">↑</span>}
+                {trend === "down" && <span className="shrink-0 text-red-500 text-sm font-bold" title="Trending down vs prior period">↓</span>}
+                {trend === "flat" && <span className="shrink-0 text-muted-foreground text-sm" title="No change vs prior period">→</span>}
+                <span className="shrink-0 text-muted-foreground">
+                  {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </span>
+              </button>
+
+              {isExpanded && (
+                <div className="px-3 pb-3 pt-1 space-y-2 bg-amber-50/40 dark:bg-amber-950/15">
+                  <Label className="text-xs font-semibold text-foreground">
+                    Why is <span className="text-accent">{obj.name}</span> not meeting its target this period?
+                  </Label>
+                  <Textarea
+                    value={explanation}
+                    onChange={e => setKpiResponse(obj.id, e.target.value)}
+                    placeholder={`Root cause, contributing factors, or explanation for missing target…`}
+                    rows={2}
+                    className="text-xs"
+                    data-testid={`textarea-kpi-explanation-${obj.id}`}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-7 text-xs border-accent text-accent hover:bg-accent/10"
+                    onClick={() => onAddAction(
+                      `Corrective action for ${obj.name}${latestVal !== null ? ` — ${latestVal} ${obj.unit} vs ${obj.target} ${obj.unit} target` : ""}`,
+                      obj.responsible ?? ""
+                    )}
+                    data-testid={`button-kpi-add-action-${obj.id}`}
+                  >
+                    <Plus className="w-3 h-3" /> Add to Action Register
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ReviewDetail({
   review, allReviews, onBack, isoProjectId, standard, onGoToMeasurement,
 }: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void; isoProjectId?: number; standard?: string | null; onGoToMeasurement?: () => void }) {
@@ -554,6 +693,15 @@ function ReviewDetail({
   const [actionForm, setActionForm] = useState({ description: "", owner: "", dueDate: "" });
   const [showActionForm, setShowActionForm] = useState(false);
   const [kpiExpanded, setKpiExpanded] = useState(false);
+  const actionRegisterRef = useRef<HTMLDivElement>(null);
+
+  const prefillAction = useCallback((description: string, owner: string) => {
+    setActionForm(f => ({ ...f, description, owner }));
+    setShowActionForm(true);
+    setTimeout(() => {
+      actionRegisterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }, []);
 
   const { data: actions = [] } = useQuery<IsoReviewActionItem[]>({
     queryKey: ["/api/iso-management-reviews", review.id, "actions"],
@@ -765,6 +913,18 @@ function ReviewDetail({
                   </div>
                 )}
 
+                {/* KPI Attention Required strip — only for live data sections */}
+                {isLiveDataSection(section) && objectives.length > 0 && (
+                  <KpiAttentionStrip
+                    objectives={objectives}
+                    getActuals={getActuals}
+                    sectionFirstClause={items[0]?.clause ?? ""}
+                    agenda={agenda}
+                    setAgenda={setAgenda}
+                    onAddAction={prefillAction}
+                  />
+                )}
+
                 <div className="divide-y divide-border/50">
                   {items.map(item => {
                     const agItem = agenda.find(a => a.clause === item.clause);
@@ -945,7 +1105,7 @@ function ReviewDetail({
       </Card>
 
       {/* Action Register — 9.3.3 */}
-      <Card>
+      <Card ref={actionRegisterRef}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">

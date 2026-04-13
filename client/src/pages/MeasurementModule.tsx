@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import type { IsoObjective, IsoKpiActual, InsertIsoKpiActual, InsertIsoObjective } from "@shared/schema";
 import {
-  LineChart, Line, AreaChart, Area, BarChart, Bar, Cell,
+  LineChart, Line, AreaChart, Area, BarChart, Bar, Cell, ComposedChart,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceLine, Legend,
 } from "recharts";
@@ -108,6 +108,12 @@ function periodRange(window: string, customStart: string, customEnd: string): { 
     const d = new Date(now); d.setDate(d.getDate() - 30); d.setHours(0, 0, 0, 0);
     return { start: d, end: null };
   }
+  if (window === "rolling_12m") {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - 12);
+    d.setDate(1); d.setHours(0, 0, 0, 0);
+    return { start: d, end: null };
+  }
   if (window === "current_quarter") {
     const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
     return { start: new Date(now.getFullYear(), quarterStartMonth, 1, 0, 0, 0, 0), end: null };
@@ -123,12 +129,19 @@ function periodRange(window: string, customStart: string, customEnd: string): { 
   return { start: null, end: null };
 }
 
-function KpiCard({ obj, actuals, onLog, onEdit, range }: {
+/** Shift a YYYY-MM period string back by exactly one year */
+function priorYearPeriod(period: string): string {
+  const [y, m] = period.split("-");
+  return `${parseInt(y) - 1}-${m}`;
+}
+
+function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY }: {
   obj: IsoObjective;
   actuals: IsoKpiActual[];
   onLog: () => void;
   onEdit: () => void;
   range: { start: Date | null; end: Date | null };
+  showYoY?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const windowActuals = actuals.filter(a => {
@@ -144,7 +157,17 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   const latest = allSorted[allSorted.length - 1];
   const latestVal = latest ? parseFloat(latest.actual) : 0;
   const targetVal = parseFloat(obj.target ?? "0");
-  const chartData = sorted.map(a => ({ period: a.period, actual: parseFloat(a.actual), target: targetVal }));
+  // Build chart data with optional prior-year series
+  const actualsByPeriod = Object.fromEntries(actuals.map(a => [a.period, parseFloat(a.actual)]));
+  const chartData = sorted.map(a => {
+    const row: Record<string, number | string> = { period: a.period, actual: parseFloat(a.actual), target: targetVal };
+    if (showYoY) {
+      const py = priorYearPeriod(a.period);
+      if (actualsByPeriod[py] !== undefined) row.priorYear = actualsByPeriod[py];
+    }
+    return row;
+  });
+  const hasYoY = showYoY && chartData.some(d => d.priorYear !== undefined);
   const variance = latest ? latestVal - targetVal : null;
   const variancePct = (variance !== null && targetVal !== 0) ? (variance / targetVal) * 100 : null;
   const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
@@ -205,9 +228,18 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12 }} />
                 <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="4 2" label={{ value: "Target", position: "insideTopRight", fontSize: 10, fill: "#f97316" }} />
-                <Line type="monotone" dataKey="actual" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name={`${obj.name} (${obj.unit})`} />
+                <Line type="monotone" dataKey="actual" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name="This Year" />
+                {hasYoY && (
+                  <Line type="monotone" dataKey="priorYear" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 3" dot={{ r: 2 }} name="Prior Year" connectNulls={false} />
+                )}
               </LineChart>
             </ResponsiveContainer>
+            {hasYoY && (
+              <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-blue-500"></span> This Year</span>
+                <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-slate-400" style={{ borderTop: "1.5px dashed #94a3b8" }}></span> Prior Year</span>
+              </div>
+            )}
           </div>
         )}
         {expanded && (
@@ -233,31 +265,45 @@ function KpiCard({ obj, actuals, onLog, onEdit, range }: {
   );
 }
 
-function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit }: {
+function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit, showYoY }: {
   obj: IsoObjective;
   actuals: IsoKpiActual[];
   colorHex: string;
   onLog: () => void;
   onEdit: () => void;
+  showYoY?: boolean;
 }) {
   const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
   const latest = sorted[sorted.length - 1];
   const latestVal = latest ? parseFloat(latest.actual) : 0;
   const targetVal = parseFloat(obj.target ?? "0");
   const variance = latest ? latestVal - targetVal : null;
-  const chartData = sorted.map(a => ({ period: a.period, actual: parseFloat(a.actual), target: targetVal }));
   const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
+
+  // Build chart data with optional prior-year overlay
+  const actualsByPeriod = Object.fromEntries(actuals.map(a => [a.period, parseFloat(a.actual)]));
+  const chartData = sorted.map(a => {
+    const row: Record<string, number | string> = { period: a.period, actual: parseFloat(a.actual), target: targetVal };
+    if (showYoY) {
+      const py = priorYearPeriod(a.period);
+      if (actualsByPeriod[py] !== undefined) row.priorYear = actualsByPeriod[py];
+    }
+    return row;
+  });
+  const hasYoY = showYoY && chartData.some(d => d.priorYear !== undefined);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const actualEntry = payload.find((p: any) => p.dataKey === "actual");
+    const priorEntry = payload.find((p: any) => p.dataKey === "priorYear");
     const actualVal = actualEntry?.value;
     const varVal = actualVal !== undefined ? (actualVal - targetVal) : null;
     const note = sorted.find(a => a.period === label)?.notes;
     return (
       <div className="bg-white dark:bg-card border border-border rounded-lg shadow-lg p-3 text-xs max-w-[200px]">
         <p className="font-bold text-foreground mb-1">{label}</p>
-        {actualVal !== undefined && <p style={{ color: colorHex }}>Actual: <strong>{actualVal} {obj.unit}</strong></p>}
+        {actualVal !== undefined && <p style={{ color: colorHex }}>This Year: <strong>{actualVal} {obj.unit}</strong></p>}
+        {priorEntry?.value !== undefined && <p className="text-slate-500">Prior Year: <strong>{priorEntry.value} {obj.unit}</strong></p>}
         <p className="text-muted-foreground">Target: {targetVal} {obj.unit}</p>
         {varVal !== null && (
           <p className={varVal >= 0 ? "text-green-600" : "text-red-500"}>
@@ -328,7 +374,7 @@ function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit }: {
         ) : (
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+              <ComposedChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                 <defs>
                   <linearGradient id={`grad-${obj.id}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={colorHex} stopOpacity={0.25} />
@@ -359,10 +405,28 @@ function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit }: {
                   fill={`url(#grad-${obj.id})`}
                   dot={{ r: 4, fill: colorHex, strokeWidth: 2, stroke: "#fff" }}
                   activeDot={{ r: 6, fill: colorHex, strokeWidth: 2, stroke: "#fff" }}
-                  name={obj.name}
+                  name="This Year"
                 />
-              </AreaChart>
+                {hasYoY && (
+                  <Line
+                    type="monotone"
+                    dataKey="priorYear"
+                    stroke="#94a3b8"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 3"
+                    dot={{ r: 2.5, fill: "#94a3b8" }}
+                    name="Prior Year"
+                    connectNulls={false}
+                  />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
+            {hasYoY && (
+              <div className="flex items-center gap-4 mt-1 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1.5"><span className="inline-block w-5 h-0.5 rounded" style={{ background: colorHex }}></span> This Year</span>
+                <span className="flex items-center gap-1.5"><span className="inline-block w-5 h-px border-t border-dashed border-slate-400"></span> Prior Year</span>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -444,6 +508,7 @@ const PERIOD_WINDOWS = [
   { val: "last_30d", label: "Last 30 days" },
   { val: "current_quarter", label: "Current Quarter" },
   { val: "current_year", label: "Current Year" },
+  { val: "rolling_12m", label: "Rolling 12 Mo" },
   { val: "custom", label: "Custom Range" },
   { val: "all", label: "All Time" },
 ];
@@ -464,6 +529,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "dashboard">("dashboard");
+  const [showYoY, setShowYoY] = useState(false);
   const activePeriodRange = periodRange(periodWindow, customStart, customEnd);
 
   const objQKey = ["/api/iso-objectives", isoProjectId];
@@ -643,6 +709,15 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
             </button>
           ))}
         </div>
+        {/* Year-over-Year toggle */}
+        <button
+          onClick={() => setShowYoY(v => !v)}
+          data-testid="toggle-yoy"
+          className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${showYoY ? "bg-indigo-600 text-white border-indigo-600" : "border-border text-muted-foreground hover:border-indigo-400 hover:text-indigo-600"}`}
+          title="Overlay prior-year values on trend charts for year-over-year comparison"
+        >
+          YoY Compare {showYoY ? "ON" : "OFF"}
+        </button>
       </div>
 
       {/* Main content area */}
@@ -672,6 +747,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
                 colorHex={KPI_CHART_COLORS[i % KPI_CHART_COLORS.length]}
                 onLog={() => { setLogFor(obj); setLogForm({ ...EMPTY_LOG_FORM, period: currentPeriod() }); }}
                 onEdit={() => openEdit(obj)}
+                showYoY={showYoY}
               />
             ))}
           </div>
@@ -686,6 +762,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
               onLog={() => { setLogFor(obj); setLogForm({ ...EMPTY_LOG_FORM, period: currentPeriod() }); }}
               onEdit={() => openEdit(obj)}
               range={activePeriodRange}
+              showYoY={showYoY}
             />
           ))}
         </div>
