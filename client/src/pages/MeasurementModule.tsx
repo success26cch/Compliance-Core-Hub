@@ -135,13 +135,36 @@ function priorYearPeriod(period: string): string {
   return `${parseInt(y) - 1}-${m}`;
 }
 
-function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY }: {
+const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+type YoyEntry = { month: string; current: number | null; prior: number | null; target: number };
+
+/** Build month-aligned year-over-year data (Jan–Dec) for both current and prior calendar year */
+function buildYoyData(actuals: IsoKpiActual[], targetVal: number): { data: YoyEntry[]; thisYear: number; lastYear: number } {
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const lastYear = thisYear - 1;
+  const actualsByPeriod = Object.fromEntries(actuals.map(a => [a.period, parseFloat(a.actual)]));
+  const data: YoyEntry[] = MONTH_ABBR.map((month, i) => {
+    const mm = String(i + 1).padStart(2, "0");
+    return {
+      month,
+      current: actualsByPeriod[`${thisYear}-${mm}`] ?? null,
+      prior: actualsByPeriod[`${lastYear}-${mm}`] ?? null,
+      target: targetVal,
+    };
+  });
+  return { data, thisYear, lastYear };
+}
+
+function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY, compareMode }: {
   obj: IsoObjective;
   actuals: IsoKpiActual[];
   onLog: () => void;
   onEdit: () => void;
   range: { start: Date | null; end: Date | null };
   showYoY?: boolean;
+  compareMode?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const windowActuals = actuals.filter(a => {
@@ -157,20 +180,24 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY }: {
   const latest = allSorted[allSorted.length - 1];
   const latestVal = latest ? parseFloat(latest.actual) : 0;
   const targetVal = parseFloat(obj.target ?? "0");
-  // Build chart data with optional prior-year series
+  const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
+  const variance = latest ? latestVal - targetVal : null;
+  const variancePct = (variance !== null && targetVal !== 0) ? (variance / targetVal) * 100 : null;
+
+  // YoY comparison mode (prev_year_compare period window) — month-aligned Jan–Dec
+  const yoyData = compareMode ? buildYoyData(actuals, targetVal) : null;
+
+  // Overlay mode (showYoY toggle) — prior year data on top of current period
   const actualsByPeriod = Object.fromEntries(actuals.map(a => [a.period, parseFloat(a.actual)]));
-  const chartData = sorted.map(a => {
+  const overlayChartData = sorted.map(a => {
     const row: Record<string, number | string> = { period: a.period, actual: parseFloat(a.actual), target: targetVal };
-    if (showYoY) {
+    if (showYoY && !compareMode) {
       const py = priorYearPeriod(a.period);
       if (actualsByPeriod[py] !== undefined) row.priorYear = actualsByPeriod[py];
     }
     return row;
   });
-  const hasYoY = showYoY && chartData.some(d => d.priorYear !== undefined);
-  const variance = latest ? latestVal - targetVal : null;
-  const variancePct = (variance !== null && targetVal !== 0) ? (variance / targetVal) * 100 : null;
-  const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
+  const hasOverlayYoY = showYoY && !compareMode && overlayChartData.some(d => d.priorYear !== undefined);
 
   return (
     <Card className={`border-l-4 ${sc.border}`}>
@@ -180,7 +207,8 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY }: {
             <div className="flex items-center gap-2 flex-wrap">
               {statusIcon(obj.status)}
               <span className="font-semibold text-sm text-foreground truncate">{obj.name}</span>
-              <Badge variant="outline" className="text-xs shrink-0">{obj.frequency}</Badge>
+              {compareMode && <Badge variant="outline" className="text-xs shrink-0 border-indigo-300 text-indigo-600">Year-over-year comparison</Badge>}
+              {!compareMode && <Badge variant="outline" className="text-xs shrink-0">{obj.frequency}</Badge>}
               <span className="text-xs font-mono text-accent font-bold">§9.1</span>
             </div>
             <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -219,22 +247,57 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY }: {
           </div>
         </div>
 
-        {expanded && chartData.length > 0 && (
+        {/* YoY compare mode chart (month-aligned Jan–Dec dual-line) */}
+        {expanded && compareMode && yoyData && (
+          <div className="mt-4">
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={yoyData.data} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }}
+                    formatter={(value: number, name: string) => [
+                      value !== null ? `${value} ${obj.unit}` : "No data",
+                      name === "current" ? `${yoyData.thisYear}` : `${yoyData.lastYear}`,
+                    ]}
+                  />
+                  <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="4 2" label={{ value: "Target", position: "insideTopRight", fontSize: 10, fill: "#f97316" }} />
+                  <Line type="monotone" dataKey="current" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name="current" connectNulls={false} />
+                  <Line type="monotone" dataKey="prior" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 3" dot={{ r: 2 }} name="prior" connectNulls={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex items-center gap-4 mt-1 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-5 h-0.5 bg-blue-500 rounded"></span>
+                ● {yoyData.thisYear}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-5 h-px border-t border-dashed border-slate-400"></span>
+                ○ {yoyData.lastYear}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Standard chart (or overlay YoY mode) */}
+        {expanded && !compareMode && overlayChartData.length > 0 && (
           <div className="mt-4 h-40">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <LineChart data={overlayChartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="period" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip contentStyle={{ fontSize: 12 }} />
                 <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="4 2" label={{ value: "Target", position: "insideTopRight", fontSize: 10, fill: "#f97316" }} />
                 <Line type="monotone" dataKey="actual" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name="This Year" />
-                {hasYoY && (
+                {hasOverlayYoY && (
                   <Line type="monotone" dataKey="priorYear" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 3" dot={{ r: 2 }} name="Prior Year" connectNulls={false} />
                 )}
               </LineChart>
             </ResponsiveContainer>
-            {hasYoY && (
+            {hasOverlayYoY && (
               <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
                 <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-blue-500"></span> This Year</span>
                 <span className="flex items-center gap-1"><span className="inline-block w-4 h-0.5 bg-slate-400" style={{ borderTop: "1.5px dashed #94a3b8" }}></span> Prior Year</span>
@@ -242,14 +305,17 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY }: {
             )}
           </div>
         )}
+
         {expanded && (
           <div className="mt-3">
-            <div className="text-xs font-medium text-muted-foreground mb-2">Measurement History</div>
-            {windowActuals.length === 0 ? (
+            <div className="text-xs font-medium text-muted-foreground mb-2">
+              {compareMode ? "Measurement History (all)" : "Measurement History"}
+            </div>
+            {windowActuals.length === 0 && !compareMode ? (
               <p className="text-xs text-muted-foreground">{actuals.length === 0 ? "No measurements logged yet." : "No measurements in this time window."}</p>
             ) : (
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                {[...windowActuals].sort((a, b) => b.period.localeCompare(a.period)).map(a => (
+                {(compareMode ? [...actuals] : [...windowActuals]).sort((a, b) => b.period.localeCompare(a.period)).map(a => (
                   <div key={a.id} className="flex justify-between text-xs py-1 px-2 rounded bg-muted/40">
                     <span className="font-medium">{a.period}</span>
                     <span>{a.actual} {obj.unit}</span>
@@ -265,13 +331,14 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY }: {
   );
 }
 
-function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit, showYoY }: {
+function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit, showYoY, compareMode }: {
   obj: IsoObjective;
   actuals: IsoKpiActual[];
   colorHex: string;
   onLog: () => void;
   onEdit: () => void;
   showYoY?: boolean;
+  compareMode?: boolean;
 }) {
   const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
   const latest = sorted[sorted.length - 1];
@@ -280,17 +347,20 @@ function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit, showYoY }: {
   const variance = latest ? latestVal - targetVal : null;
   const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
 
-  // Build chart data with optional prior-year overlay
+  // YoY comparison mode (prev_year_compare period window) — month-aligned Jan–Dec
+  const yoyData = compareMode ? buildYoyData(actuals, targetVal) : null;
+
+  // Standard / overlay chart data
   const actualsByPeriod = Object.fromEntries(actuals.map(a => [a.period, parseFloat(a.actual)]));
   const chartData = sorted.map(a => {
     const row: Record<string, number | string> = { period: a.period, actual: parseFloat(a.actual), target: targetVal };
-    if (showYoY) {
+    if (showYoY && !compareMode) {
       const py = priorYearPeriod(a.period);
       if (actualsByPeriod[py] !== undefined) row.priorYear = actualsByPeriod[py];
     }
     return row;
   });
-  const hasYoY = showYoY && chartData.some(d => d.priorYear !== undefined);
+  const hasYoY = showYoY && !compareMode && chartData.some(d => d.priorYear !== undefined);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -369,7 +439,50 @@ function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit, showYoY }: {
       </CardHeader>
 
       <CardContent className="px-4 pb-4 flex-1">
-        {chartData.length === 0 ? (
+        {compareMode && yoyData ? (
+          /* Year-over-year comparison mode — month-aligned Jan–Dec dual-line */
+          <div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={yoyData.data} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, background: "white", border: "1px solid #e2e8f0", borderRadius: 8 }}
+                    formatter={(value: number, name: string) => [
+                      value !== null ? `${value} ${obj.unit}` : "No data",
+                      name === "current" ? `${yoyData.thisYear}` : `${yoyData.lastYear}`,
+                    ]}
+                  />
+                  <ReferenceLine
+                    y={targetVal}
+                    stroke="#f97316"
+                    strokeDasharray="5 3"
+                    strokeWidth={1.5}
+                    label={{ value: `Target: ${targetVal}${obj.unit}`, position: "insideTopRight", fontSize: 10, fill: "#f97316", fontWeight: "bold" }}
+                  />
+                  <Line type="monotone" dataKey="current" stroke={colorHex} strokeWidth={2.5}
+                    dot={{ r: 4, fill: colorHex, strokeWidth: 2, stroke: "#fff" }}
+                    activeDot={{ r: 6 }} name="current" connectNulls={false} />
+                  <Line type="monotone" dataKey="prior" stroke="#94a3b8" strokeWidth={1.5}
+                    strokeDasharray="5 3" dot={{ r: 2.5, fill: "#94a3b8" }}
+                    name="prior" connectNulls={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex items-center gap-4 mt-1 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-5 h-0.5 rounded" style={{ background: colorHex }}></span>
+                ● {yoyData.thisYear}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-5 h-px border-t border-dashed border-slate-400"></span>
+                ○ {yoyData.lastYear}
+              </span>
+            </div>
+          </div>
+        ) : chartData.length === 0 ? (
           <div className="h-48 flex items-center justify-center text-xs text-muted-foreground">No measurement data yet</div>
         ) : (
           <div className="h-52">
@@ -434,7 +547,7 @@ function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit, showYoY }: {
   );
 }
 
-function MultiKpiSummaryChart({ objectives, allActuals }: { objectives: IsoObjective[]; allActuals: IsoKpiActual[] }) {
+function MultiKpiSummaryChart({ objectives, allActuals, compareMode }: { objectives: IsoObjective[]; allActuals: IsoKpiActual[]; compareMode?: boolean }) {
   const data = objectives.map((obj, i) => {
     const objActuals = allActuals.filter(a => a.objectiveId === obj.id);
     const sorted = [...objActuals].sort((a, b) => a.period.localeCompare(b.period));
@@ -476,7 +589,11 @@ function MultiKpiSummaryChart({ objectives, allActuals }: { objectives: IsoObjec
           KPI Performance vs. Target (All Metrics)
           <span className="text-xs font-mono text-accent font-bold ml-1">§9.1</span>
         </CardTitle>
-        <p className="text-xs text-muted-foreground">Latest actual as % of target — 100% = on target, orange line = target threshold</p>
+        <p className="text-xs text-muted-foreground">
+          {compareMode
+            ? "Year-over-year view: bars show current-year (latest) actuals vs. target. Individual charts below display the dual-year trend."
+            : "Latest actual as % of target — 100% = on target, orange line = target threshold"}
+        </p>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         <div className="h-52">
@@ -509,6 +626,7 @@ const PERIOD_WINDOWS = [
   { val: "current_quarter", label: "Current Quarter" },
   { val: "current_year", label: "Current Year" },
   { val: "rolling_12m", label: "Rolling 12 Mo" },
+  { val: "prev_year_compare", label: "vs Prev Year" },
   { val: "custom", label: "Custom Range" },
   { val: "all", label: "All Time" },
 ];
@@ -530,6 +648,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   const [customEnd, setCustomEnd] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "dashboard">("dashboard");
   const [showYoY, setShowYoY] = useState(false);
+  const compareMode = periodWindow === "prev_year_compare";
   const activePeriodRange = periodRange(periodWindow, customStart, customEnd);
 
   const objQKey = ["/api/iso-objectives", isoProjectId];
@@ -709,15 +828,22 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
             </button>
           ))}
         </div>
-        {/* Year-over-Year toggle */}
-        <button
-          onClick={() => setShowYoY(v => !v)}
-          data-testid="toggle-yoy"
-          className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${showYoY ? "bg-indigo-600 text-white border-indigo-600" : "border-border text-muted-foreground hover:border-indigo-400 hover:text-indigo-600"}`}
-          title="Overlay prior-year values on trend charts for year-over-year comparison"
-        >
-          YoY Compare {showYoY ? "ON" : "OFF"}
-        </button>
+        {/* Year-over-Year overlay toggle (disabled in prev_year_compare mode) */}
+        {!compareMode && (
+          <button
+            onClick={() => setShowYoY(v => !v)}
+            data-testid="toggle-yoy"
+            className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${showYoY ? "bg-indigo-600 text-white border-indigo-600" : "border-border text-muted-foreground hover:border-indigo-400 hover:text-indigo-600"}`}
+            title="Overlay prior-year values on trend charts for year-over-year comparison"
+          >
+            YoY Overlay {showYoY ? "ON" : "OFF"}
+          </button>
+        )}
+        {compareMode && (
+          <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
+            Showing vs Prev Year — Jan–Dec aligned
+          </span>
+        )}
       </div>
 
       {/* Main content area */}
@@ -735,7 +861,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         <div className="space-y-4">
           {/* Multi-KPI comparison bar */}
           {filtered.length >= 2 && (
-            <MultiKpiSummaryChart objectives={filtered} allActuals={allActuals} />
+            <MultiKpiSummaryChart objectives={filtered} allActuals={allActuals} compareMode={compareMode} />
           )}
           {/* Individual big charts stacked */}
           <div className="grid grid-cols-1 gap-4">
@@ -748,6 +874,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
                 onLog={() => { setLogFor(obj); setLogForm({ ...EMPTY_LOG_FORM, period: currentPeriod() }); }}
                 onEdit={() => openEdit(obj)}
                 showYoY={showYoY}
+                compareMode={compareMode}
               />
             ))}
           </div>
@@ -763,6 +890,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
               onEdit={() => openEdit(obj)}
               range={activePeriodRange}
               showYoY={showYoY}
+              compareMode={compareMode}
             />
           ))}
         </div>
