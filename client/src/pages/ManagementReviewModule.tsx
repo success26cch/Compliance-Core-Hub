@@ -455,48 +455,90 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
   const latest = sorted[sorted.length - 1];
   const latestVal = latest ? parseFloat(latest.actual) : null;
   const pct = latestVal !== null && targetVal > 0 ? Math.min((latestVal / targetVal) * 100, 150) : null;
+  const displayPct = pct !== null ? Math.min(pct, 100) : null;
   const streak = offTrackStreakCount(actuals, targetVal);
   const flagged = streak >= 2;
-  const chartData = sorted.slice(-6).map(a => ({ period: a.period.slice(-4), actual: parseFloat(a.actual) }));
+  const chartData = sorted.slice(-8).map(a => ({ period: a.period.slice(-7), actual: parseFloat(a.actual), target: targetVal }));
   const statusBorder = obj.status === "on_track" ? "border-green-400" : obj.status === "at_risk" ? "border-yellow-400" : "border-red-500";
   const statusBg = obj.status === "on_track" ? "bg-green-50 dark:bg-green-900/10" : obj.status === "at_risk" ? "bg-yellow-50 dark:bg-yellow-900/10" : "bg-red-50 dark:bg-red-900/10";
+  const gaugeColor = obj.status === "on_track" ? "bg-green-500" : obj.status === "at_risk" ? "bg-yellow-500" : "bg-red-500";
   const lineColor = obj.status === "on_track" ? "#22c55e" : obj.status === "at_risk" ? "#f59e0b" : "#ef4444";
+  const statusLabel = obj.status === "on_track" ? "On Track" : obj.status === "at_risk" ? "At Risk" : "Off Track";
   return (
     <Card className={`border-l-4 ${statusBorder} ${statusBg}`}>
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between gap-2 mb-2">
+      <CardContent className="p-3 space-y-2">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-semibold text-sm text-foreground">{obj.name}</span>
-              {flagged && <span className="inline-flex items-center gap-0.5 text-xs text-red-600 font-medium"><AlertTriangle className="w-3 h-3" /> {streak} off-track</span>}
+              <span className="font-semibold text-sm text-foreground leading-tight">{obj.name}</span>
+              {flagged && <span className="inline-flex items-center gap-0.5 text-[10px] text-red-600 font-semibold bg-red-100 px-1 rounded"><AlertTriangle className="w-2.5 h-2.5" /> {streak} off-track</span>}
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">{obj.processName && <span>{obj.processName}</span>}</div>
+            {obj.processName && <div className="text-[10px] text-muted-foreground mt-0.5">{obj.processName}</div>}
           </div>
           <div className="text-right shrink-0">
             {latestVal !== null ? (
               <>
-                <div className="text-lg font-bold text-foreground">{latestVal} <span className="text-xs font-normal text-muted-foreground">{obj.unit}</span></div>
-                <div className="text-xs text-muted-foreground">Target: {obj.target}</div>
-                {pct !== null && <div className={`text-xs font-semibold ${pct >= 90 ? "text-green-600" : pct >= 70 ? "text-yellow-600" : "text-red-600"}`}>{pct.toFixed(0)}%</div>}
+                <div className="text-base font-bold text-foreground leading-none">{latestVal}<span className="text-[10px] font-normal text-muted-foreground ml-0.5">{obj.unit}</span></div>
+                <div className="text-[10px] text-muted-foreground">vs {obj.target} {obj.unit} target</div>
+                <div className={`text-[10px] font-semibold mt-0.5 ${obj.status === "on_track" ? "text-green-600" : obj.status === "at_risk" ? "text-yellow-600" : "text-red-600"}`}>{statusLabel}</div>
               </>
-            ) : <div className="text-xs text-muted-foreground italic">No data</div>}
+            ) : <div className="text-[10px] text-muted-foreground italic mt-1">No data logged</div>}
           </div>
         </div>
-        {chartData.length > 0 && (
-          <div className="h-14">
+
+        {/* Gauge bar */}
+        {displayPct !== null && (
+          <div>
+            <div className="flex justify-between text-[9px] text-muted-foreground mb-0.5">
+              <span>0</span>
+              <span className="text-[9px] font-medium">{pct!.toFixed(0)}% of target</span>
+              <span>{obj.target} {obj.unit}</span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${gaugeColor}`} style={{ width: `${displayPct}%` }} />
+            </div>
+          </div>
+        )}
+
+        {/* Trend chart */}
+        {chartData.length > 1 && (
+          <div className="h-16">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 0 }}>
-                <XAxis dataKey="period" tick={{ fontSize: 8 }} />
-                <YAxis tick={{ fontSize: 8 }} width={24} />
-                <Tooltip contentStyle={{ fontSize: 10 }} />
-                <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="3 2" />
-                <Line type="monotone" dataKey="actual" stroke={lineColor} strokeWidth={2} dot={false} />
+              <LineChart data={chartData} margin={{ top: 2, right: 4, bottom: 0, left: 0 }}>
+                <XAxis dataKey="period" tick={{ fontSize: 7 }} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 7 }} width={22} />
+                <Tooltip contentStyle={{ fontSize: 9 }} formatter={(v: number) => [`${v} ${obj.unit}`, ""]} />
+                <ReferenceLine y={targetVal} stroke="#f97316" strokeDasharray="3 2" strokeWidth={1} label={{ value: "Target", position: "right", fontSize: 7, fill: "#f97316" }} />
+                <Line type="monotone" dataKey="actual" stroke={lineColor} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
+        {chartData.length === 1 && latestVal !== null && (
+          <div className="text-[10px] text-muted-foreground italic">Only 1 period logged — trend will appear as more data is added</div>
+        )}
+        {chartData.length === 0 && (
+          <div className="text-[10px] text-muted-foreground italic">No measurements logged yet in Measurement & Monitoring module</div>
+        )}
+        {latest && <div className="text-[9px] text-muted-foreground text-right">Latest period: {latest.period}</div>}
       </CardContent>
     </Card>
+  );
+}
+
+function isLiveDataSection(section: string): boolean {
+  const s = section.toLowerCase();
+  // Include objective/monitoring/measurement sections; exclude department-level KPI dashboard rows (manual)
+  if (s.includes("kpi dashboard")) return false;
+  return (
+    s.includes("objective") ||
+    s.includes("monitoring") ||
+    s.includes("measurement") ||
+    s.includes("performance kpi") ||
+    s.includes("performance information") ||
+    s.includes("process monitoring") ||
+    s.includes("process performance")
   );
 }
 
@@ -688,6 +730,7 @@ function ReviewDetail({
           {Object.entries(inputSections).map(([section, items]) => {
             const coveredInSection = items.filter(item => agenda.find(a => a.clause === item.clause)?.covered).length;
             const freq = items[0]?.frequency;
+            const showLiveData = isLiveDataSection(section) && objectives.length > 0;
             return (
               <div key={section} className="rounded-lg border border-border overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border">
@@ -700,6 +743,34 @@ function ReviewDetail({
                     </span>
                   </div>
                 </div>
+
+                {/* Live KPI data pulled from Measurement & Monitoring module */}
+                {showLiveData && (
+                  <div className="px-3 py-3 bg-blue-50/60 dark:bg-blue-950/20 border-b border-blue-200/60 dark:border-blue-800/30">
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <BarChart2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">Live KPI Data — from Measurement & Monitoring</span>
+                      <span className="text-[10px] text-muted-foreground ml-1">
+                        ({objectives.filter(o => o.status === "on_track").length}/{objectives.length} on track)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                      {objectives.map(obj => (
+                        <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} />
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-muted-foreground mt-2 italic">
+                      Data sourced from the Measurement &amp; Monitoring module. Log additional measurements there to update these charts.
+                    </p>
+                  </div>
+                )}
+
+                {isLiveDataSection(section) && objectives.length === 0 && (
+                  <div className="px-3 py-2 bg-muted/20 border-b border-border/40 text-[10px] text-muted-foreground italic flex items-center gap-1.5">
+                    <BarChart2 className="w-3 h-3" /> No KPIs set up yet — go to Measurement &amp; Monitoring to add objectives and log data.
+                  </div>
+                )}
+
                 <div className="divide-y divide-border/50">
                   {items.map(item => {
                     const agItem = agenda.find(a => a.clause === item.clause);
@@ -804,7 +875,7 @@ function ReviewDetail({
                 {kpiExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </span>
             </button>
-            <p className="text-xs text-muted-foreground mt-1 pb-3">Supporting data for agenda items. Click to expand.</p>
+            <p className="text-xs text-muted-foreground mt-1 pb-3">Full KPI data from Measurement &amp; Monitoring — same charts shown inline in relevant agenda sections above.</p>
           </CardHeader>
           {kpiExpanded && (
             <CardContent className="pt-0 space-y-4">
