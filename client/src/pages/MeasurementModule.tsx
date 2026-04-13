@@ -179,7 +179,13 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY, compareMode }: {
   });
   const sorted = [...windowActuals].sort((a, b) => a.period.localeCompare(b.period));
   const allSorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
-  const latest = allSorted[allSorted.length - 1];
+  // In compare mode use the most recent current-year entry for gauge/stats so the gauge
+  // reflects "where we are this year" rather than a potentially older historical high
+  const curYearStr = String(new Date().getFullYear());
+  const latestCurrentYear = compareMode
+    ? [...actuals].filter(a => a.period.startsWith(curYearStr)).sort((a, b) => b.period.localeCompare(a.period))[0] ?? null
+    : null;
+  const latest = latestCurrentYear ?? allSorted[allSorted.length - 1];
   const latestVal = latest ? parseFloat(latest.actual) : 0;
   const targetVal = parseFloat(obj.target ?? "0");
   const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
@@ -187,6 +193,8 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY, compareMode }: {
   const variancePct = (variance !== null && targetVal !== 0) ? (variance / targetVal) * 100 : null;
 
   // YoY comparison mode (prev_year_compare period window) — month-aligned Jan–Dec
+  // buildYoyData returns a merged series { data[{ month, current, prior, target }] }
+  // where `current`/`prior` map to current and prior calendar year respectively.
   const yoyData = compareMode ? buildYoyData(actuals, targetVal) : null;
 
   // Overlay mode (showYoY toggle) — prior year data on top of current period
@@ -343,13 +351,19 @@ function BigKpiChart({ obj, actuals, colorHex, onLog, onEdit, showYoY, compareMo
   compareMode?: boolean;
 }) {
   const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
-  const latest = sorted[sorted.length - 1];
+  // In compare mode, show current-year latest for gauge/stats
+  const curYearStr = String(new Date().getFullYear());
+  const latestCurrentYear = compareMode
+    ? [...actuals].filter(a => a.period.startsWith(curYearStr)).sort((a, b) => b.period.localeCompare(a.period))[0] ?? null
+    : null;
+  const latest = latestCurrentYear ?? sorted[sorted.length - 1];
   const latestVal = latest ? parseFloat(latest.actual) : 0;
   const targetVal = parseFloat(obj.target ?? "0");
   const variance = latest ? latestVal - targetVal : null;
   const sc = STATUS_COLORS[obj.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.off_track;
 
   // YoY comparison mode (prev_year_compare period window) — month-aligned Jan–Dec
+  // buildYoyData returns merged series { data[{ month, current, prior, target }] }
   const yoyData = compareMode ? buildYoyData(actuals, targetVal) : null;
 
   // Standard / overlay chart data
