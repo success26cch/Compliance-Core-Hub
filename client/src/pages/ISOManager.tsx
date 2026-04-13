@@ -717,7 +717,7 @@ export default function ISOManager() {
             ) : activeSection === 'management_review' ? (
               <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6">
                 {canAccessSection('management_review', isoRole, isSuperadmin)
-                  ? <ManagementReviewModule isoProjectId={project?.id} standard={project?.standard} />
+                  ? <ManagementReviewModule isoProjectId={project?.id} standard={project?.standard} onGoToMeasurement={() => setActiveSection('measurement')} />
                   : <LockedModuleView section="management_review" />}
               </div>
             ) : activeSection === 'internal_audit' ? (

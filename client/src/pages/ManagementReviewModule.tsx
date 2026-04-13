@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft,
   CheckCircle, Clock, AlertTriangle, AlertCircle, Circle, Loader2, Calendar, Users,
-  BarChart2, ChevronDown, ChevronUp,
+  BarChart2, ChevronDown, ChevronUp, ExternalLink,
 } from "lucide-react";
 import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual, InsertIsoManagementReview, InsertIsoReviewActionItem } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
@@ -543,8 +543,8 @@ function isLiveDataSection(section: string): boolean {
 }
 
 function ReviewDetail({
-  review, allReviews, onBack, isoProjectId, standard,
-}: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void; isoProjectId?: number; standard?: string | null }) {
+  review, allReviews, onBack, isoProjectId, standard, onGoToMeasurement,
+}: { review: IsoManagementReview; allReviews: IsoManagementReview[]; onBack: () => void; isoProjectId?: number; standard?: string | null; onGoToMeasurement?: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const template = getAgendaTemplate(standard);
@@ -730,7 +730,6 @@ function ReviewDetail({
           {Object.entries(inputSections).map(([section, items]) => {
             const coveredInSection = items.filter(item => agenda.find(a => a.clause === item.clause)?.covered).length;
             const freq = items[0]?.frequency;
-            const showLiveData = isLiveDataSection(section) && objectives.length > 0;
             return (
               <div key={section} className="rounded-lg border border-border overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border">
@@ -744,30 +743,25 @@ function ReviewDetail({
                   </div>
                 </div>
 
-                {/* Live KPI data pulled from Measurement & Monitoring module */}
-                {showLiveData && (
-                  <div className="px-3 py-3 bg-blue-50/60 dark:bg-blue-950/20 border-b border-blue-200/60 dark:border-blue-800/30">
-                    <div className="flex items-center gap-1.5 mb-3">
-                      <BarChart2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                      <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">Live KPI Data — from Measurement & Monitoring</span>
-                      <span className="text-[10px] text-muted-foreground ml-1">
-                        ({objectives.filter(o => o.status === "on_track").length}/{objectives.length} on track)
+                {/* Link to Measurement & Monitoring for sections about objectives/KPIs/monitoring */}
+                {isLiveDataSection(section) && (
+                  <div className="flex items-center justify-between px-3 py-2 bg-blue-50/50 dark:bg-blue-950/20 border-b border-blue-200/50 dark:border-blue-800/30 gap-3">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <BarChart2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <span className="text-[11px] text-blue-700 dark:text-blue-300">
+                        Review live trend data, gauges &amp; actuals in the Measurement &amp; Monitoring module
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                      {objectives.map(obj => (
-                        <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} />
-                      ))}
-                    </div>
-                    <p className="text-[9px] text-muted-foreground mt-2 italic">
-                      Data sourced from the Measurement &amp; Monitoring module. Log additional measurements there to update these charts.
-                    </p>
-                  </div>
-                )}
-
-                {isLiveDataSection(section) && objectives.length === 0 && (
-                  <div className="px-3 py-2 bg-muted/20 border-b border-border/40 text-[10px] text-muted-foreground italic flex items-center gap-1.5">
-                    <BarChart2 className="w-3 h-3" /> No KPIs set up yet — go to Measurement &amp; Monitoring to add objectives and log data.
+                    {onGoToMeasurement && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 h-7 text-[11px] border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 gap-1"
+                        onClick={onGoToMeasurement}
+                      >
+                        <ExternalLink className="w-3 h-3" /> Open M&amp;M
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -875,7 +869,7 @@ function ReviewDetail({
                 {kpiExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </span>
             </button>
-            <p className="text-xs text-muted-foreground mt-1 pb-3">Full KPI data from Measurement &amp; Monitoring — same charts shown inline in relevant agenda sections above.</p>
+            <p className="text-xs text-muted-foreground mt-1 pb-3">Snapshot of KPI data from the Measurement &amp; Monitoring module. Open that module for full trend charts and 12-month history.</p>
           </CardHeader>
           {kpiExpanded && (
             <CardContent className="pt-0 space-y-4">
@@ -1026,7 +1020,7 @@ function ReviewDetail({
 // ─────────────────────────────────────────────────────────────────────────────
 const EMPTY_REVIEW_FORM = { title: "Management Review", meetingDate: "", attendees: "", status: "draft" };
 
-export default function ManagementReviewModule({ isoProjectId, standard }: { isoProjectId?: number; standard?: string | null }) {
+export default function ManagementReviewModule({ isoProjectId, standard, onGoToMeasurement }: { isoProjectId?: number; standard?: string | null; onGoToMeasurement?: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -1077,7 +1071,7 @@ export default function ManagementReviewModule({ isoProjectId, standard }: { iso
 
   if (selected) {
     const latest = reviews.find(r => r.id === selected.id) ?? selected;
-    return <ReviewDetail review={latest} allReviews={reviews} onBack={() => setSelected(null)} isoProjectId={isoProjectId} standard={standard} />;
+    return <ReviewDetail review={latest} allReviews={reviews} onBack={() => setSelected(null)} isoProjectId={isoProjectId} standard={standard} onGoToMeasurement={onGoToMeasurement} />;
   }
 
   const sendIsaMessage = async () => {
