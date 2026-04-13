@@ -557,15 +557,17 @@ function isLiveDataSection(section: string): boolean {
 // ─── KPI Attention Strip ──────────────────────────────────────────────────────
 // Shows at_risk / off_track objectives within a live data section, with
 // collapsible explanation textareas and "Add to Action Register" shortcuts.
-// kpiResponses are stored on agenda[0] (one set per review, shared across all sections).
+// kpiResponses are stored under anchorClause (template's first clause) — review-scoped,
+// not section-scoped, so explanations are consistent across all live-data sections.
 function KpiAttentionStrip({
-  objectives, getActuals, agenda, setAgenda, onAddAction,
+  objectives, getActuals, agenda, setAgenda, onAddAction, anchorClause,
 }: {
   objectives: IsoObjective[];
   getActuals: (id: number) => IsoKpiActual[];
   agenda: AgendaItem[];
   setAgenda: (updater: (prev: AgendaItem[]) => AgendaItem[]) => void;
   onAddAction: (description: string, owner: string) => void;
+  anchorClause: string;
 }) {
   const [expandedKpi, setExpandedKpi] = useState<number | null>(null);
 
@@ -573,16 +575,16 @@ function KpiAttentionStrip({
     (obj.status === "at_risk" || obj.status === "off_track") && getActuals(obj.id).length > 0
   );
 
-  // Always read/write kpiResponses from agenda[0] so explanations are review-scoped, not section-scoped
-  const kpiResponses = agenda[0]?.kpiResponses ?? {};
+  // Read/write kpiResponses from the template's first clause item — deterministic, review-scoped
+  const kpiResponses = agenda.find(a => a.clause === anchorClause)?.kpiResponses ?? {};
 
   const setKpiResponse = useCallback((objId: number, text: string) => {
-    setAgenda(prev => prev.map((item, i) =>
-      i === 0
+    setAgenda(prev => prev.map(item =>
+      item.clause === anchorClause
         ? { ...item, kpiResponses: { ...(item.kpiResponses ?? {}), [String(objId)]: text } }
         : item
     ));
-  }, [setAgenda]);
+  }, [anchorClause, setAgenda]);
 
   if (objectives.length === 0) return null;
 
@@ -689,6 +691,8 @@ function ReviewDetail({
   const template = getAgendaTemplate(standard);
   const standardLabel = getStandardLabel(standard);
   const clause = getManagementClause(standard);
+  // Stable anchor for kpiResponses storage — template's first clause for this standard
+  const kpiResponsesAnchorClause = template[0]?.clause ?? "";
   const [agenda, setAgenda] = useState<AgendaItem[]>(agendaFromReview(review, template));
   const [actionForm, setActionForm] = useState({ description: "", owner: "", dueDate: "" });
   const [showActionForm, setShowActionForm] = useState(false);
@@ -921,6 +925,7 @@ function ReviewDetail({
                     agenda={agenda}
                     setAgenda={setAgenda}
                     onAddAction={prefillAction}
+                    anchorClause={kpiResponsesAnchorClause}
                   />
                 )}
 
