@@ -687,11 +687,11 @@ export default function ISOManager() {
                 <DocumentationModule onAskIsa={handleAskIsa} />
               </div>
             ) : activeSection === 'context_org' ? (
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <ContextOfOrgModule project={project ?? null} onStartWizard={handleStartWizard} onAskIsa={handleAskIsa} onNavigate={setActiveSection} />
               </div>
             ) : activeSection === 'system_profile' ? (
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
               </div>
             ) : activeSection === 'nc' ? (
