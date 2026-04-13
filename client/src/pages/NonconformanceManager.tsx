@@ -130,8 +130,8 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
   };
 
   return (
-    <div className="flex flex-col h-full bg-muted/30 p-6 overflow-y-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="bg-muted/30 p-6 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-primary">NC & CAPA Manager</h1>
           <p className="text-sm text-muted-foreground">Log and track nonconformances and corrective actions</p>
@@ -145,14 +145,14 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard title="Open NCs" value={stats.open} icon={AlertTriangle} color="text-gray-500" />
         <StatsCard title="Action In Progress" value={stats.inProgress} icon={Clock} color="text-accent" />
         <StatsCard title="Pending Effectiveness" value={stats.pendingEffectiveness} icon={Search} color="text-yellow-500" />
         <StatsCard title="Closed This Year" value={stats.closedThisYear} icon={CheckCircle2} color="text-green-500" />
       </div>
 
-      <Card className="flex-1 overflow-hidden">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Nonconformance Log</CardTitle>
           <CardDescription>Records of all identified nonconformances</CardDescription>

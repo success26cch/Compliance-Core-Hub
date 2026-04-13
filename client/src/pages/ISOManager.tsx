@@ -695,7 +695,7 @@ export default function ISOManager() {
                 <SystemProfileModule project={project ?? null} onStartWizard={handleStartWizard} />
               </div>
             ) : activeSection === 'nc' ? (
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto min-h-0">
                 <NonconformanceManager onAskIsa={handleAskIsa} />
               </div>
             ) : activeSection === 'process_map' ? (
