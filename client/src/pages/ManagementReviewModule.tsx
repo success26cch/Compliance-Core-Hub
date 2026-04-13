@@ -557,12 +557,12 @@ function isLiveDataSection(section: string): boolean {
 // ─── KPI Attention Strip ──────────────────────────────────────────────────────
 // Shows at_risk / off_track objectives within a live data section, with
 // collapsible explanation textareas and "Add to Action Register" shortcuts.
+// kpiResponses are stored on agenda[0] (one set per review, shared across all sections).
 function KpiAttentionStrip({
-  objectives, getActuals, sectionFirstClause, agenda, setAgenda, onAddAction,
+  objectives, getActuals, agenda, setAgenda, onAddAction,
 }: {
   objectives: IsoObjective[];
   getActuals: (id: number) => IsoKpiActual[];
-  sectionFirstClause: string;
   agenda: AgendaItem[];
   setAgenda: (updater: (prev: AgendaItem[]) => AgendaItem[]) => void;
   onAddAction: (description: string, owner: string) => void;
@@ -573,16 +573,16 @@ function KpiAttentionStrip({
     (obj.status === "at_risk" || obj.status === "off_track") && getActuals(obj.id).length > 0
   );
 
-  const sectionItem = agenda.find(a => a.clause === sectionFirstClause);
-  const kpiResponses = sectionItem?.kpiResponses ?? {};
+  // Always read/write kpiResponses from agenda[0] so explanations are review-scoped, not section-scoped
+  const kpiResponses = agenda[0]?.kpiResponses ?? {};
 
   const setKpiResponse = useCallback((objId: number, text: string) => {
-    setAgenda(prev => prev.map(item =>
-      item.clause === sectionFirstClause
+    setAgenda(prev => prev.map((item, i) =>
+      i === 0
         ? { ...item, kpiResponses: { ...(item.kpiResponses ?? {}), [String(objId)]: text } }
         : item
     ));
-  }, [sectionFirstClause, setAgenda]);
+  }, [setAgenda]);
 
   if (objectives.length === 0) return null;
 
@@ -918,7 +918,6 @@ function ReviewDetail({
                   <KpiAttentionStrip
                     objectives={objectives}
                     getActuals={getActuals}
-                    sectionFirstClause={items[0]?.clause ?? ""}
                     agenda={agenda}
                     setAgenda={setAgenda}
                     onAddAction={prefillAction}
