@@ -545,7 +545,8 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 overflow-y-auto">
+    <div className="space-y-6 p-6 max-w-full">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -661,8 +662,8 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
           {filtered.length >= 2 && (
             <MultiKpiSummaryChart objectives={filtered} allActuals={allActuals} />
           )}
-          {/* Individual big charts in 2-col grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {/* Individual big charts stacked */}
+          <div className="grid grid-cols-1 gap-4">
             {filtered.map((obj, i) => (
               <BigKpiChart
                 key={obj.id}
@@ -811,6 +812,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
           </div>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }
