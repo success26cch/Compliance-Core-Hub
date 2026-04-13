@@ -445,8 +445,8 @@ Please coach me through a root cause analysis and help me develop an appropriate
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="p-6 pb-2 sticky top-0 bg-background z-10 border-b border-border/40">
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -465,7 +465,7 @@ Please coach me through a root cause analysis and help me develop an appropriate
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6 pb-6">
+        <div className="px-6 pb-6">
           <div className="space-y-8 py-4">
             {/* Workflow Progress */}
             <div className="flex items-center justify-between bg-muted/50 rounded-xl p-4 border border-border/60">
@@ -682,7 +682,7 @@ Please coach me through a root cause analysis and help me develop an appropriate
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
