@@ -36,6 +36,7 @@ import MeasurementModule from "./MeasurementModule";
 import ManagementReviewModule from "./ManagementReviewModule";
 import CommunicationModule from "./CommunicationModule";
 import RolesRaciModule from "./RolesRaciModule";
+import GlobalIsaWidget from "./GlobalIsaWidget";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -802,6 +803,10 @@ export default function ISOManager() {
               />
             )}
             </>
+            )}
+            {/* Global Isa widget — always accessible from any module */}
+            {!showWizard && !activeConversationId && (
+              <GlobalIsaWidget project={project ?? null} activeSection={activeSection} />
             )}
           </div>
         </div>
