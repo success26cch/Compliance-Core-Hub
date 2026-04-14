@@ -662,6 +662,7 @@ export const docChangeRequests = pgTable("doc_change_requests", {
   userId: text("user_id").notNull(),
   requestedBy: text("requested_by").notNull(),
   designatedReviewer: text("designated_reviewer"),
+  designatedReviewerEmail: text("designated_reviewer_email"),
   changeDescription: text("change_description").notNull(),
   reason: text("reason").notNull(),
   affectedDepartments: text("affected_departments").array(),

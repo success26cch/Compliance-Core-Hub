@@ -6865,7 +6865,7 @@ Output only the document content. No preamble. No closing remarks.`;
       const [doc] = await db.select().from(isoDocuments).where(and(eq(isoDocuments.id, docId), eq(isoDocuments.userId, userId)));
       if (!doc) return res.status(404).json({ message: "Document not found" });
 
-      const { requestedBy, designatedReviewer, changeDescription, reason, affectedDepartments, proposedEffectiveDate } = req.body;
+      const { requestedBy, designatedReviewer, designatedReviewerEmail, changeDescription, reason, affectedDepartments, proposedEffectiveDate } = req.body;
       if (!requestedBy || !changeDescription || !reason) {
         return res.status(400).json({ message: "requestedBy, changeDescription, and reason are required" });
       }
@@ -6877,6 +6877,7 @@ Output only the document content. No preamble. No closing remarks.`;
         userId,
         requestedBy,
         designatedReviewer: designatedReviewer ?? null,
+        designatedReviewerEmail: designatedReviewerEmail ?? null,
         changeDescription,
         reason,
         affectedDepartments: affectedDepartments ?? [],
@@ -6887,6 +6888,78 @@ Output only the document content. No preamble. No closing remarks.`;
 
       // Move doc to in_review
       await db.execute(sql`UPDATE iso_documents SET status = 'in_review', updated_at = NOW() WHERE id = ${docId} AND user_id = ${userId}`);
+
+      // Send reviewer notification email if an email address was provided
+      if (designatedReviewerEmail && designatedReviewerEmail.includes("@")) {
+        try {
+          const { sendEmail, brandedHtml } = await import("./emailService");
+          const dcrNumber = `DCR-${String(dcr.id).padStart(4, "0")}`;
+          const reviewerName = designatedReviewer || "Reviewer";
+          const deptList = (affectedDepartments ?? []).length > 0
+            ? (affectedDepartments as string[]).join(", ")
+            : "Not specified";
+          const effectiveDate = proposedEffectiveDate
+            ? new Date(proposedEffectiveDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+            : "Not specified";
+
+          const bodyHtml = `
+            <h2 style="color:#0f172a;font-size:20px;font-weight:700;margin:0 0 8px;">Document Change Request — Action Required</h2>
+            <p style="color:#475569;font-size:14px;margin:0 0 24px;">Hello ${reviewerName}, a document change request has been submitted and requires your review and approval.</p>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;">
+              <tr><td style="padding:6px 0;">
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Reference Number</span><br/>
+                <span style="font-size:16px;color:#0f172a;font-weight:700;">${dcrNumber}</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Document</span><br/>
+                <span style="font-size:14px;color:#0f172a;font-weight:600;">${doc.title} (Rev. ${doc.version})</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Requested By</span><br/>
+                <span style="font-size:14px;color:#0f172a;">${requestedBy}</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Description of Change</span><br/>
+                <span style="font-size:14px;color:#0f172a;">${changeDescription}</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Reason</span><br/>
+                <span style="font-size:14px;color:#0f172a;">${reason}</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Departments Requiring Training</span><br/>
+                <span style="font-size:14px;color:#0f172a;">${deptList}</span>
+              </td></tr>
+              <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Proposed Effective Date</span><br/>
+                <span style="font-size:14px;color:#0f172a;">${effectiveDate}</span>
+              </td></tr>
+            </table>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;margin-bottom:24px;">
+              <tr><td>
+                <p style="margin:0;font-size:13px;color:#9a3412;font-weight:700;">⚠ Your Action Is Required</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#c2410c;">
+                  This document is now in <strong>In Review</strong> status. Log in to the ISO Manager Documentation module, navigate to the <strong>Change Control</strong> tab, and click <strong>Approve</strong> or <strong>Reject</strong> on ${dcrNumber}.
+                </p>
+              </td></tr>
+            </table>
+
+            <div style="text-align:center;margin-top:24px;">
+              <a href="https://corecompliancehub.com" style="display:inline-block;background:#ea6c19;color:#ffffff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;">Open ISO Manager →</a>
+            </div>
+          `;
+
+          await sendEmail(
+            designatedReviewerEmail,
+            `[Action Required] Document Change Request ${dcrNumber} — ${doc.title}`,
+            brandedHtml(`Document Change Request — ${dcrNumber}`, bodyHtml)
+          );
+        } catch (emailErr: any) {
+          console.warn("DCR reviewer notification email failed (non-fatal):", emailErr.message);
+        }
+      }
 
       res.status(201).json(dcr);
     } catch (e: any) { res.status(500).json({ message: e.message }); }

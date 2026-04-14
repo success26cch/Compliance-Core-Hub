@@ -29,6 +29,7 @@ import {
   ChevronDown,
   ChevronUp,
   Bell,
+  Mail,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -802,6 +803,7 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
   const [form, setForm] = useState({
     requestedBy: "",
     designatedReviewer: "",
+    designatedReviewerEmail: "",
     changeDescription: "",
     reason: "",
     affectedDepartments: [] as string[],
@@ -856,7 +858,7 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className="text-xs flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-primary" /> Designated Reviewer / Approver
               <span className="text-muted-foreground font-normal">(who must approve this change)</span>
@@ -868,7 +870,25 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
               className="text-sm"
               data-testid="input-designated-reviewer"
             />
-            <p className="text-[10px] text-muted-foreground">This person will review the change request and click Approve or Reject in the Change Control tab.</p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 space-y-1">
+                <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Mail className="w-3 h-3" /> Reviewer Email
+                  <span className="text-muted-foreground/60">(optional — sends notification on submit)</span>
+                </Label>
+                <Input
+                  type="email"
+                  value={form.designatedReviewerEmail}
+                  onChange={e => setForm(f => ({ ...f, designatedReviewerEmail: e.target.value }))}
+                  placeholder="reviewer@yourcompany.com"
+                  className="text-sm h-8"
+                  data-testid="input-reviewer-email"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              If an email is provided, this person will receive an automated notification the moment you submit this request.
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -1259,13 +1279,21 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject, o
                         </div>
                       </div>
                       {req.designated_reviewer ? (
-                        <div className="mt-2.5 flex items-center gap-1.5 bg-white dark:bg-card border border-yellow-300 dark:border-yellow-700/50 rounded-lg px-2.5 py-1.5">
-                          <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-muted-foreground font-medium">Required Approver</p>
-                            <p className="text-xs font-black text-primary truncate">{req.designated_reviewer}</p>
+                        <div className="mt-2.5 space-y-1.5">
+                          <div className="flex items-center gap-1.5 bg-white dark:bg-card border border-yellow-300 dark:border-yellow-700/50 rounded-lg px-2.5 py-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-muted-foreground font-medium">Required Approver</p>
+                              <p className="text-xs font-black text-primary truncate">{req.designated_reviewer}</p>
+                            </div>
+                            <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700 rounded px-1.5 py-0.5 font-bold whitespace-nowrap">Action Required</span>
                           </div>
-                          <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700 rounded px-1.5 py-0.5 font-bold whitespace-nowrap">Action Required</span>
+                          {req.designated_reviewer_email && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-green-700 dark:text-green-400 font-semibold pl-0.5">
+                              <Mail className="w-3 h-3" />
+                              Notification sent to <span className="font-black">{req.designated_reviewer_email}</span>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="mt-2 text-[10px] text-yellow-700 dark:text-yellow-400">
