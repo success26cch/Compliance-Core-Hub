@@ -8,7 +8,7 @@ import {
   ChevronDown, Sparkles, RefreshCw,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
-import acsiLogo from "@assets/Transp1_1768928785892.png";
+import acsiLogoLight from "@assets/Transp1_1770687128577.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -281,7 +281,8 @@ export default function GlobalIsaWidget({
           {/* Header */}
           <div className="shrink-0 flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-[#1e3a5f] to-[#1e3a5f]/90 text-white">
             <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-              <img src={acsiLogo} alt="Isa" className="w-5 h-5 object-contain" />
+              <img src={acsiLogoLight} alt="Isa" className="w-5 h-5 object-contain"
+                style={{ filter: "brightness(0) invert(1)" }} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-bold">Isa · ISO Manager Assistant</div>
@@ -392,7 +393,8 @@ export default function GlobalIsaWidget({
         {open ? (
           <X className="w-5 h-5 text-white" />
         ) : (
-          <img src={acsiLogo} alt="Ask Isa" className="w-8 h-8 object-contain" />
+          <img src={acsiLogoLight} alt="Ask Isa" className="w-8 h-8 object-contain"
+            style={{ filter: "brightness(0) invert(1)" }} />
         )}
         {!open && (
           <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-white flex items-center justify-center">
