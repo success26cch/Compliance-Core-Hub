@@ -7180,6 +7180,51 @@ Output only the document content. No preamble. No closing remarks.`;
         });
       }
 
+      // Notify the submitter that the document was approved
+      try {
+        const { sendEmail, brandedHtml } = await import("./emailService");
+        const userRows = await db.execute(sql`SELECT email, first_name FROM users WHERE id = ${dcr.user_id} LIMIT 1`);
+        const submitter = userRows.rows[0] as any;
+        if (submitter?.email) {
+          const approvedBy = reviewedBy ?? dcr.designated_reviewer ?? "External Reviewer";
+          const body = `
+            <h2 style="margin:0 0 8px;color:#16a34a;font-size:20px;">Document Approved</h2>
+            <p style="margin:0 0 20px;color:#64748b;font-size:14px;">
+              ${submitter.first_name ? `Hi ${submitter.first_name}, ` : ""}A document change request has been <strong style="color:#16a34a;">approved</strong> and the document is now live.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:20px;">
+              <tr><td style="padding:16px 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:5px 0;color:#475569;font-size:13px;width:160px;"><strong>Document:</strong></td>
+                    <td style="padding:5px 0;color:#0f172a;font-size:13px;font-weight:600;">${dcr.doc_title}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:5px 0;color:#475569;font-size:13px;"><strong>New Version:</strong></td>
+                    <td style="padding:5px 0;color:#16a34a;font-size:13px;font-weight:700;">${newVersion}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:5px 0;color:#475569;font-size:13px;"><strong>Approved By:</strong></td>
+                    <td style="padding:5px 0;color:#0f172a;font-size:13px;">${approvedBy}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:5px 0;color:#475569;font-size:13px;"><strong>Change Summary:</strong></td>
+                    <td style="padding:5px 0;color:#0f172a;font-size:13px;">${dcr.change_description}</td>
+                  </tr>
+                  ${reviewerComments ? `<tr>
+                    <td style="padding:5px 0;color:#475569;font-size:13px;vertical-align:top;"><strong>Reviewer Notes:</strong></td>
+                    <td style="padding:5px 0;color:#0f172a;font-size:13px;">${reviewerComments}</td>
+                  </tr>` : ""}
+                </table>
+              </td></tr>
+            </table>
+            ${affectedDepts.length > 0 ? `<p style="margin:0 0 16px;font-size:13px;color:#475569;">A training awareness notice has been automatically created for: <strong>${affectedDepts.join(", ")}</strong>.</p>` : ""}
+            <a href="${process.env.APP_URL ?? "https://corecompliancehub.com"}/iso-manager" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px;">View Document Library →</a>
+          `;
+          await sendEmail(submitter.email, `Document Approved: ${dcr.doc_title} (Rev. ${newVersion})`, brandedHtml("Document Approved", body));
+        }
+      } catch {}
+
       res.json({ success: true, newVersion, trainingTriggered: affectedDepts.length > 0 });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7192,7 +7237,7 @@ Output only the document content. No preamble. No closing remarks.`;
       const token = req.params.token;
       const { reviewerComments, reviewedBy } = req.body;
 
-      const rows = await db.execute(sql`SELECT * FROM doc_change_requests WHERE review_token = ${token} LIMIT 1`);
+      const rows = await db.execute(sql`SELECT dcr.*, d.title AS doc_title FROM doc_change_requests dcr JOIN iso_documents d ON d.id = dcr.document_id WHERE review_token = ${token} LIMIT 1`);
       const dcr = rows.rows[0] as any;
       if (!dcr) return res.status(404).json({ message: "Review link not found" });
       if (dcr.review_token_expires_at && new Date(dcr.review_token_expires_at) < new Date()) {
@@ -7211,6 +7256,47 @@ Output only the document content. No preamble. No closing remarks.`;
 
       // Return doc to approved
       await db.execute(sql`UPDATE iso_documents SET status = 'approved', updated_at = NOW() WHERE id = ${dcr.document_id}`);
+
+      // Notify the submitter that the document was rejected
+      try {
+        const { sendEmail, brandedHtml } = await import("./emailService");
+        const userRows = await db.execute(sql`SELECT email, first_name FROM users WHERE id = ${dcr.user_id} LIMIT 1`);
+        const submitter = userRows.rows[0] as any;
+        if (submitter?.email) {
+          const rejectedBy = reviewedBy ?? dcr.designated_reviewer ?? "External Reviewer";
+          const body = `
+            <h2 style="margin:0 0 8px;color:#dc2626;font-size:20px;">Document Change Request Rejected</h2>
+            <p style="margin:0 0 20px;color:#64748b;font-size:14px;">
+              ${submitter.first_name ? `Hi ${submitter.first_name}, ` : ""}A document change request has been <strong style="color:#dc2626;">rejected</strong>. The document has been returned to its previously approved status.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin-bottom:20px;">
+              <tr><td style="padding:16px 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:5px 0;color:#7f1d1d;font-size:13px;width:160px;"><strong>Document:</strong></td>
+                    <td style="padding:5px 0;color:#0f172a;font-size:13px;font-weight:600;">${dcr.doc_title}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:5px 0;color:#7f1d1d;font-size:13px;"><strong>Rejected By:</strong></td>
+                    <td style="padding:5px 0;color:#0f172a;font-size:13px;">${rejectedBy}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:5px 0;color:#7f1d1d;font-size:13px;"><strong>Change Requested:</strong></td>
+                    <td style="padding:5px 0;color:#0f172a;font-size:13px;">${dcr.change_description}</td>
+                  </tr>
+                  ${reviewerComments ? `<tr>
+                    <td style="padding:5px 0;color:#7f1d1d;font-size:13px;vertical-align:top;"><strong>Reason for Rejection:</strong></td>
+                    <td style="padding:5px 0;color:#dc2626;font-size:13px;">${reviewerComments}</td>
+                  </tr>` : ""}
+                </table>
+              </td></tr>
+            </table>
+            <p style="margin:0 0 16px;font-size:13px;color:#475569;">You may revise and resubmit the change request from the Documentation module.</p>
+            <a href="${process.env.APP_URL ?? "https://corecompliancehub.com"}/iso-manager" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px;">Go to Document Library →</a>
+          `;
+          await sendEmail(submitter.email, `Document Change Rejected: ${dcr.doc_title}`, brandedHtml("Document Change Request Rejected", body));
+        }
+      } catch {}
 
       res.json({ success: true });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
