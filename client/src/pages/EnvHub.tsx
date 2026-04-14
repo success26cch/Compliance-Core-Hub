@@ -710,6 +710,109 @@ function HazWasteModule() {
 
 // ─── SPCC Module ──────────────────────────────────────────────────────────────
 
+// ─── Field Inspection Overlay ─────────────────────────────────────────────────
+// Full-screen, tablet-optimised electronic checklist for field inspectors.
+// Large tap targets, dark high-contrast UI, no printing required.
+
+interface FieldItem { key: string; label: string; hint?: string; citation?: string; }
+
+function FieldInspectionOverlay({
+  title, subtitle, items, initChecks,
+  extraHeader, onSubmit, onClose, isPending,
+}: {
+  title: string; subtitle: string; items: FieldItem[];
+  initChecks?: Record<string, boolean>;
+  extraHeader?: React.ReactNode;
+  onSubmit: (data: { checks: Record<string, boolean>; inspectorName: string; date: string; notes: string }) => void;
+  onClose: () => void; isPending: boolean;
+}) {
+  const defaultChecks = Object.fromEntries(items.map(i => [i.key, true]));
+  const [checks, setChecks] = useState<Record<string, boolean>>(initChecks ?? defaultChecks);
+  const [inspectorName, setInspectorName] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [notes, setNotes] = useState("");
+  const failCount = items.filter(i => checks[i.key] === false).length;
+  const toggle = (key: string) => setChecks(prev => ({ ...prev, [key]: !prev[key] }));
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-slate-900 flex flex-col overflow-hidden select-none">
+      {/* Header */}
+      <div className="shrink-0 bg-slate-800 border-b border-slate-700 px-5 py-4 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-white font-bold text-xl leading-tight">{title}</p>
+          <p className="text-slate-400 text-sm mt-0.5">{subtitle}</p>
+        </div>
+        <button onClick={onClose} className="text-slate-400 hover:text-white p-2.5 rounded-xl hover:bg-slate-700 transition-colors shrink-0 mt-0.5">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Inspector + Date */}
+      <div className="shrink-0 bg-slate-800 border-b border-slate-700 px-5 py-3 flex gap-3 flex-wrap">
+        <div className="flex-1 min-w-[180px] space-y-1">
+          <label className="text-slate-400 text-xs uppercase tracking-widest font-semibold">Inspector Name</label>
+          <input type="text" value={inspectorName} onChange={e => setInspectorName(e.target.value)} placeholder="Your name / title"
+            className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 text-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-500" />
+        </div>
+        <div className="w-44 space-y-1">
+          <label className="text-slate-400 text-xs uppercase tracking-widest font-semibold">Date</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)}
+            className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 text-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        {extraHeader}
+      </div>
+
+      {/* Live status strip */}
+      <div className={`shrink-0 px-5 py-2.5 flex items-center justify-between text-sm font-bold ${failCount === 0 ? "bg-emerald-800 text-emerald-100" : "bg-red-900 text-red-100"}`}>
+        <span>{failCount === 0 ? `✓ All ${items.length} items: PASS` : `⚠ ${failCount} item${failCount !== 1 ? "s" : ""} flagged`}</span>
+        <span className="text-xs font-normal opacity-70">Tap any card to toggle PASS / FAIL</span>
+      </div>
+
+      {/* Checklist cards */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {items.map((item, idx) => {
+          const ok = checks[item.key] !== false;
+          return (
+            <button key={item.key} onClick={() => toggle(item.key)}
+              className={`w-full text-left rounded-2xl border-2 px-5 py-4 flex items-center gap-5 transition-all active:scale-[0.98] touch-manipulation ${ok ? "bg-emerald-900/80 border-emerald-500" : "bg-red-900/80 border-red-500"}`}>
+              <span className={`shrink-0 text-2xl font-black w-8 text-center ${ok ? "text-emerald-400" : "text-red-400"}`}>{String(idx + 1).padStart(2, "0")}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold text-base leading-snug">{item.label}</p>
+                {item.hint && <p className={`text-sm mt-1 leading-snug ${ok ? "text-emerald-300" : "text-red-300"}`}>{item.hint}</p>}
+                {item.citation && <p className="text-slate-500 text-xs mt-1">{item.citation}</p>}
+              </div>
+              <div className={`shrink-0 w-20 h-20 rounded-2xl flex flex-col items-center justify-center gap-1 font-black text-sm ${ok ? "bg-emerald-600 text-white" : "bg-red-600 text-white"}`}>
+                {ok ? <><CheckCircle2 className="w-8 h-8" /><span className="text-base">PASS</span></> : <><X className="w-8 h-8" /><span className="text-base">FAIL</span></>}
+              </div>
+            </button>
+          );
+        })}
+
+        {/* Notes area */}
+        <div className="space-y-2 pt-2 pb-2">
+          <label className="text-slate-400 text-xs uppercase tracking-widest font-semibold">Findings / Notes</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+            placeholder="Describe any deficiencies, corrective actions taken or planned, or additional observations..."
+            className="w-full bg-slate-700 text-white rounded-2xl px-5 py-4 text-base border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none placeholder:text-slate-500" />
+        </div>
+      </div>
+
+      {/* Submit footer */}
+      <div className="shrink-0 bg-slate-800 border-t border-slate-700 px-4 py-4 flex gap-3">
+        <button onClick={onClose}
+          className="flex-1 bg-slate-700 text-slate-200 font-bold text-lg rounded-2xl py-5 active:scale-95 transition-all hover:bg-slate-600 touch-manipulation">
+          Cancel
+        </button>
+        <button onClick={() => onSubmit({ checks, inspectorName, date, notes })}
+          disabled={isPending || !inspectorName.trim()}
+          className="flex-[2] bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-black text-xl rounded-2xl py-5 flex items-center justify-center gap-3 active:scale-95 transition-all touch-manipulation">
+          {isPending ? <><Loader2 className="w-7 h-7 animate-spin" />Submitting…</> : <><CheckCircle2 className="w-7 h-7" />Submit Inspection</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const SPCC_MONTHLY_CHECKLIST = [
   ["tankIntegrity",        "Tank structure integrity — no visible dents, corrosion, or damage"],
   ["containmentIntegrity", "Secondary containment intact — no cracks, breaches, or liquid accumulation"],
@@ -732,12 +835,25 @@ const SPCC_ANNUAL_ADDITIONS = [
   "Overfill prevention procedures and high-level alarm set points confirmed",
 ] as const;
 
+const SPCC_FIELD_ITEMS: FieldItem[] = [
+  { key: "tankIntegrity",        label: "Tank / Container Integrity", hint: "No visible dents, corrosion, deformation, or external damage", citation: "112.8(c)(6)" },
+  { key: "containmentIntegrity", label: "Secondary Containment Intact", hint: "No cracks, breaches, or liquid accumulated in containment dike/berm", citation: "112.7(c)" },
+  { key: "noLeaksOrSpills",      label: "No Active Leaks or Spills", hint: "Check valves, fittings, pipe seams, tank base — no staining or drips", citation: "112.8(c)(10)" },
+  { key: "valvesOperable",       label: "Valves & Fittings Functional", hint: "Shutoff valves operable, flanges tight, emergency isolations labeled", citation: "112.8(c)(8)" },
+  { key: "overfillProtectionOk", label: "Overfill Protection Device OK", hint: "Float switch, high-level alarm, or automatic shutoff tested/functional", citation: "112.8(c)(11)" },
+  { key: "levelGaugeOk",         label: "Liquid Level Gauge Readable", hint: "Sight glass or float gauge consistent with known fill level", citation: "112.8(c)(9)" },
+  { key: "drainageValveClosed",  label: "Drainage Valve Closed & Secured", hint: "Containment sump / dike drain valve closed; locked per plan if required", citation: "112.8(c)(3)" },
+  { key: "spillKitOk",           label: "Spill Response Kit Present & Stocked", hint: "Absorbent pads, absorbent booms, shovels at or near tank — full supply", citation: "112.7(a)(3)" },
+  { key: "responseEquipOk",      label: "Emergency Response Equipment Accessible", hint: "Absorbents, containment plugs, PPE — not blocked or expired", citation: "112.7(a)(3)" },
+];
+
 function SpccModule() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [tab, setTab] = useState("tanks");
   const [showAddTank, setShowAddTank] = useState(false);
   const [showInspect, setShowInspect] = useState<SpccTank | null>(null);
+  const [showFieldMode, setShowFieldMode] = useState<SpccTank | null>(null);
 
   const defaultInsp = () => ({
     inspectedDate: new Date().toISOString().split("T")[0],
@@ -855,7 +971,10 @@ function SpccModule() {
                           {annualOverdue && <Badge className="bg-orange-100 text-orange-700 text-xs">Annual inspection overdue ({annualDays}d)</Badge>}
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4 shrink-0">
+                      <div className="flex gap-2 ml-4 shrink-0 flex-wrap justify-end">
+                        <Button size="sm" variant="outline" className="text-xs bg-slate-800 text-white border-slate-600 hover:bg-slate-700 hover:text-white" onClick={() => setShowFieldMode(tank)}>
+                          <ClipboardList className="w-3 h-3 mr-1" />Field Mode
+                        </Button>
                         <Button size="sm" variant="outline" className="text-xs" onClick={() => { setInspForm(defaultInsp()); setShowInspect(tank); }}>Inspect</Button>
                         <Button size="sm" variant="ghost" className="text-red-500 h-8 w-8 p-0" onClick={() => delTank.mutate(tank.id)}><Trash2 className="w-3 h-3" /></Button>
                       </div>
@@ -953,6 +1072,36 @@ function SpccModule() {
         </DialogContent>
       </Dialog>
 
+      {/* ── Field Mode Overlay (tablet/iPad) ── */}
+      {showFieldMode && (
+        <FieldInspectionOverlay
+          title={`SPCC Monthly Inspection`}
+          subtitle={`${showFieldMode.tankName} · 40 CFR 112.7(e)(8) / 112.8(c)(6)`}
+          items={SPCC_FIELD_ITEMS}
+          onClose={() => setShowFieldMode(null)}
+          isPending={addInspection.isPending}
+          onSubmit={({ checks, inspectorName, date, notes }) => {
+            addInspection.mutate({
+              tankId: showFieldMode.id,
+              inspectedDate: date,
+              inspectedBy: inspectorName,
+              inspectionType: "monthly",
+              tankIntegrity: checks.tankIntegrity !== false,
+              containmentIntegrity: checks.containmentIntegrity !== false,
+              noLeaksOrSpills: checks.noLeaksOrSpills !== false,
+              valvesOperable: checks.valvesOperable !== false,
+              overfillProtectionOk: checks.overfillProtectionOk !== false,
+              levelGaugeOk: checks.levelGaugeOk !== false,
+              drainageValveClosed: checks.drainageValveClosed !== false,
+              spillKitOk: checks.spillKitOk !== false,
+              responseEquipOk: checks.responseEquipOk !== false,
+              findings: notes || null,
+            });
+            setShowFieldMode(null);
+          }}
+        />
+      )}
+
       {/* Inspection Dialog */}
       <Dialog open={!!showInspect} onOpenChange={() => setShowInspect(null)}>
         <DialogContent className="max-w-lg">
@@ -1033,12 +1182,20 @@ function SpccModule() {
 const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
+const BMP_FIELD_ITEMS: FieldItem[] = [
+  { key: "bmpConditionsOk",     label: "Structural BMPs in Good Condition", hint: "Sediment controls, berms, vegetated buffers, catch basin inserts — no erosion or damage", citation: "MSGP Part 3.1" },
+  { key: "drainageAreasOk",     label: "Drainage Areas Free of Spills / Exposed Material", hint: "No oils, chemicals, raw materials, or waste exposed to rain in drainage paths", citation: "MSGP Part 3.1" },
+  { key: "controlStructuresOk", label: "Outfalls & Control Structures Clear", hint: "Outfall pipes and inlet structures unobstructed, no blockage or visible discharge between events", citation: "MSGP Part 3.1" },
+  { key: "housekeepingOk",      label: "Good Housekeeping — No Unsecured Materials", hint: "Drums covered, dumpsters lidded, no debris or equipment fluids in stormwater-exposed areas", citation: "MSGP Part 3.1" },
+];
+
 function StormwaterModule() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [tab, setTab] = useState("quarterly");
   const [showAdd, setShowAdd] = useState(false);
   const [monType, setMonType] = useState("quarterly_visual");
+  const [showBmpFieldMode, setShowBmpFieldMode] = useState(false);
 
   const today = new Date();
   const thisYear = today.getFullYear();
@@ -1202,9 +1359,14 @@ function StormwaterModule() {
 
         {/* ── Monthly BMP Inspections ── */}
         <TabsContent value="monthly" className="space-y-4 pt-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-xs text-muted-foreground">MSGP Part 3.1 · Monthly routine facility inspection — drainage areas, BMPs, potential pollution sources</p>
-            <Button size="sm" onClick={() => openAdd("monthly_inspection")}><Plus className="w-4 h-4 mr-1" />Log Monthly Inspection</Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="bg-slate-800 text-white border-slate-600 hover:bg-slate-700 hover:text-white" onClick={() => setShowBmpFieldMode(true)}>
+                <ClipboardList className="w-4 h-4 mr-1" />Field Mode
+              </Button>
+              <Button size="sm" onClick={() => openAdd("monthly_inspection")}><Plus className="w-4 h-4 mr-1" />Log Monthly Inspection</Button>
+            </div>
           </div>
           {/* 12-month calendar grid */}
           <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
@@ -1496,6 +1658,34 @@ function StormwaterModule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── BMP Monthly Field Mode Overlay (tablet/iPad) ── */}
+      {showBmpFieldMode && (
+        <FieldInspectionOverlay
+          title="Monthly BMP Site Inspection"
+          subtitle={`${MONTHS_FULL[thisMonth]} ${thisYear} · MSGP Part 3.1 · Walk each drainage area and stormwater control`}
+          items={BMP_FIELD_ITEMS}
+          onClose={() => setShowBmpFieldMode(false)}
+          isPending={addEvent.isPending}
+          onSubmit={({ checks, inspectorName, date, notes }) => {
+            addEvent.mutate({
+              monitoringType: "monthly_inspection",
+              monitoringDate: date,
+              conductedBy: inspectorName,
+              month: MONTHS_FULL[thisMonth],
+              year: thisYear,
+              quarter: `Q${currentQ}`,
+              bmpConditionsOk: checks.bmpConditionsOk !== false,
+              drainageAreasOk: checks.drainageAreasOk !== false,
+              controlStructuresOk: checks.controlStructuresOk !== false,
+              housekeepingOk: checks.housekeepingOk !== false,
+              actionRequired: Object.values(checks).some(v => v === false),
+              otherObservations: notes || null,
+            });
+            setShowBmpFieldMode(false);
+          }}
+        />
+      )}
     </div>
   );
 }
