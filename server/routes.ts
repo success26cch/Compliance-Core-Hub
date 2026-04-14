@@ -7583,13 +7583,27 @@ Output only the document content. No preamble. No closing remarks.`;
     const { db } = await import("./db");
     const { sql } = await import("drizzle-orm");
     const d = req.body;
-    const pass = d.tankIntegrity && d.containmentIntegrity && d.noLeaksOrSpills && d.valvesOperable;
+    const coreChecks = [d.tankIntegrity, d.containmentIntegrity, d.noLeaksOrSpills, d.valvesOperable];
+    const extChecks = [d.overfillProtectionOk, d.levelGaugeOk, d.responseEquipOk, d.spillKitOk, d.drainageValveClosed].filter(v => v !== null && v !== undefined);
+    const allChecks = [...coreChecks, ...extChecks];
+    const pass = allChecks.every(v => v !== false);
     const rows = await db.execute(sql`
-      INSERT INTO env_spcc_inspections (user_id, tank_id, inspected_date, inspected_by, inspection_type, tank_integrity, containment_integrity, no_leaks_or_spills, valves_operable, findings, pass)
-      VALUES (${req.session.userId}, ${d.tankId??null}, ${d.inspectedDate}, ${d.inspectedBy??null}, ${d.inspectionType??'monthly'}, ${d.tankIntegrity??null}, ${d.containmentIntegrity??null}, ${d.noLeaksOrSpills??null}, ${d.valvesOperable??null}, ${d.findings??null}, ${pass})
+      INSERT INTO env_spcc_inspections (user_id, tank_id, inspected_date, inspected_by, inspection_type,
+        tank_integrity, containment_integrity, no_leaks_or_spills, valves_operable,
+        overfill_protection_ok, level_gauge_ok, response_equip_ok, spill_kit_ok, drainage_valve_closed,
+        findings, pass)
+      VALUES (${req.session.userId}, ${d.tankId??null}, ${d.inspectedDate}, ${d.inspectedBy??null}, ${d.inspectionType??'monthly'},
+        ${d.tankIntegrity??null}, ${d.containmentIntegrity??null}, ${d.noLeaksOrSpills??null}, ${d.valvesOperable??null},
+        ${d.overfillProtectionOk??null}, ${d.levelGaugeOk??null}, ${d.responseEquipOk??null}, ${d.spillKitOk??null}, ${d.drainageValveClosed??null},
+        ${d.findings??null}, ${pass})
       RETURNING *
     `);
-    if (d.tankId) await db.execute(sql`UPDATE env_spcc_tanks SET last_inspection_date = ${d.inspectedDate} WHERE id = ${d.tankId} AND user_id = ${req.session.userId}`);
+    if (d.tankId) {
+      const typeCol = d.inspectionType === 'annual' || d.inspectionType === 'pe_certification' || d.inspectionType === 'integrity_test'
+        ? sql`last_annual_inspection = ${d.inspectedDate}, last_inspection_date = ${d.inspectedDate}`
+        : sql`last_monthly_inspection = ${d.inspectedDate}, last_inspection_date = ${d.inspectedDate}`;
+      await db.execute(sql`UPDATE env_spcc_tanks SET ${typeCol} WHERE id = ${d.tankId} AND user_id = ${req.session.userId}`);
+    }
     res.status(201).json(rows.rows[0]);
   });
 
@@ -7608,8 +7622,15 @@ Output only the document content. No preamble. No closing remarks.`;
     const { sql } = await import("drizzle-orm");
     const d = req.body;
     const rows = await db.execute(sql`
-      INSERT INTO env_stormwater_monitoring (user_id, monitoring_date, quarter, year, outfall_id, conducted_by, weather_conditions, color, odor, floating, sheen, turbidity, other_observations, action_required, correction_taken)
-      VALUES (${req.session.userId}, ${d.monitoringDate}, ${d.quarter??null}, ${d.year??null}, ${d.outfallId??null}, ${d.conductedBy??null}, ${d.weatherConditions??null}, ${d.color??null}, ${d.odor??null}, ${d.floating??false}, ${d.sheen??false}, ${d.turbidity??null}, ${d.otherObservations??null}, ${d.actionRequired??false}, ${d.correctionTaken??null})
+      INSERT INTO env_stormwater_monitoring (user_id, monitoring_type, monitoring_date, month, quarter, year, outfall_id, conducted_by, weather_conditions,
+        color, odor, floating, sheen, turbidity,
+        bmp_conditions_ok, drainage_areas_ok, control_structures_ok, housekeeping_ok, swppp_updated,
+        other_observations, action_required, correction_taken)
+      VALUES (${req.session.userId}, ${d.monitoringType??'quarterly_visual'}, ${d.monitoringDate}, ${d.month??null}, ${d.quarter??null}, ${d.year??null},
+        ${d.outfallId??null}, ${d.conductedBy??null}, ${d.weatherConditions??null},
+        ${d.color??null}, ${d.odor??null}, ${d.floating??false}, ${d.sheen??false}, ${d.turbidity??null},
+        ${d.bmpConditionsOk??null}, ${d.drainageAreasOk??null}, ${d.controlStructuresOk??null}, ${d.housekeepingOk??null}, ${d.swpppUpdated??null},
+        ${d.otherObservations??null}, ${d.actionRequired??false}, ${d.correctionTaken??null})
       RETURNING *
     `);
     res.status(201).json(rows.rows[0]);

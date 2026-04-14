@@ -29,9 +29,9 @@ interface HazWasteSap { id: number; sapName: string; location: string; wasteType
 interface SapInspection { id: number; sapId: number; inspectedDate: string; inspectedBy: string; containersIntact: boolean; containersLabeled: boolean; areaClean: boolean; noLeaks: boolean; findings: string; pass: boolean; }
 interface Manifest { id: number; manifestNumber: string; shipmentDate: string; tsdfName: string; tsdfEpaId: string; wasteDescription: string; quantity: string; unit: string; returnedDate: string; status: string; notes: string; }
 interface GeneratorMonth { id: number; month: string; wasteKg: number; wasteType: string; notes: string; }
-interface SpccTank { id: number; tankName: string; location: string; contentType: string; capacityGallons: number; hasSecondaryContainment: boolean; containmentCapacityGallons: number; lastInspectionDate: string; isAboveground: boolean; isActive: boolean; notes: string; }
-interface SpccInspection { id: number; tankId: number; inspectedDate: string; inspectedBy: string; inspectionType: string; tankIntegrity: boolean; containmentIntegrity: boolean; noLeaksOrSpills: boolean; valvesOperable: boolean; findings: string; pass: boolean; }
-interface StormwaterMonitor { id: number; monitoringDate: string; quarter: string; year: number; outfallId: string; conductedBy: string; weatherConditions: string; color: string; odor: string; floating: boolean; sheen: boolean; turbidity: string; otherObservations: string; actionRequired: boolean; correctionTaken: string; }
+interface SpccTank { id: number; tankName: string; location: string; contentType: string; capacityGallons: number; hasSecondaryContainment: boolean; containmentCapacityGallons: number; lastInspectionDate: string; lastMonthlyInspection: string; lastAnnualInspection: string; peCertDate: string; isAboveground: boolean; isActive: boolean; notes: string; }
+interface SpccInspection { id: number; tankId: number; inspectedDate: string; inspectedBy: string; inspectionType: string; tankIntegrity: boolean; containmentIntegrity: boolean; noLeaksOrSpills: boolean; valvesOperable: boolean; overfillProtectionOk: boolean; levelGaugeOk: boolean; responseEquipOk: boolean; spillKitOk: boolean; drainageValveClosed: boolean; findings: string; pass: boolean; }
+interface StormwaterMonitor { id: number; monitoringType: string; monitoringDate: string; month: string; quarter: string; year: number; outfallId: string; conductedBy: string; weatherConditions: string; color: string; odor: string; floating: boolean; sheen: boolean; turbidity: string; bmpConditionsOk: boolean; drainageAreasOk: boolean; controlStructuresOk: boolean; housekeepingOk: boolean; swpppUpdated: boolean; otherObservations: string; actionRequired: boolean; correctionTaken: string; }
 interface AirPermit { id: number; permitNumber: string; permitType: string; issuingAgency: string; issueDate: string; expirationDate: string; renewalLeadDays: number; description: string; conditions: string; status: string; }
 interface OpacityLog { id: number; logDate: string; sourceId: string; observerName: string; opacityPercent: number; duration: string; pass: boolean; weatherConditions: string; notes: string; }
 
@@ -710,14 +710,48 @@ function HazWasteModule() {
 
 // ─── SPCC Module ──────────────────────────────────────────────────────────────
 
+const SPCC_MONTHLY_CHECKLIST = [
+  ["tankIntegrity",        "Tank structure integrity — no visible dents, corrosion, or damage"],
+  ["containmentIntegrity", "Secondary containment intact — no cracks, breaches, or liquid accumulation"],
+  ["noLeaksOrSpills",      "No leaks, drips, staining, or residue at fittings, seams, or tank base"],
+  ["valvesOperable",       "All valves, flanges, and fittings properly closed and operable"],
+  ["overfillProtectionOk", "Overfill protection device functional (float, high-level alarm, or sensor)"],
+  ["levelGaugeOk",         "Liquid level gauge readable and consistent with expected fill level"],
+  ["drainageValveClosed",  "Containment dike/sump drainage valve closed and secured (locked if required)"],
+  ["spillKitOk",           "Spill kit stocked, accessible, and located at or near tank area"],
+  ["responseEquipOk",      "Emergency response equipment (absorbents, plugs, PPE) accessible"],
+] as const;
+
+const SPCC_ANNUAL_ADDITIONS = [
+  "Formal internal integrity inspection completed or scheduled per API 653 / STI SP001",
+  "Cathodic protection system inspected and readings documented (if applicable)",
+  "Pressure/vacuum vent valves tested and functional",
+  "SPCC Plan reviewed — all tank info, contacts, and procedures current",
+  "Personnel SPCC training briefings documented (112.7(f)(3))",
+  "Emergency contact list reviewed and updated",
+  "Overfill prevention procedures and high-level alarm set points confirmed",
+] as const;
+
 function SpccModule() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [tab, setTab] = useState("tanks");
   const [showAddTank, setShowAddTank] = useState(false);
   const [showInspect, setShowInspect] = useState<SpccTank | null>(null);
+
+  const defaultInsp = () => ({
+    inspectedDate: new Date().toISOString().split("T")[0],
+    inspectedBy: "",
+    inspectionType: "monthly",
+    tankIntegrity: true, containmentIntegrity: true, noLeaksOrSpills: true, valvesOperable: true,
+    overfillProtectionOk: true, levelGaugeOk: true, drainageValveClosed: true, spillKitOk: true, responseEquipOk: true,
+    findings: "",
+    // annual extras (tracked as text in findings if checked)
+    annualIntegrity: false, annualCathodic: false, annualVents: false, annualPlan: false, annualTraining: false, annualContacts: false, annualOverfill: false,
+  });
+
   const [tankForm, setTankForm] = useState({ tankName: "", location: "", contentType: "", capacityGallons: "", hasSecondaryContainment: false, containmentCapacityGallons: "", isAboveground: true, notes: "" });
-  const [inspForm, setInspForm] = useState({ inspectedDate: new Date().toISOString().split("T")[0], inspectedBy: "", inspectionType: "monthly", tankIntegrity: true, containmentIntegrity: true, noLeaksOrSpills: true, valvesOperable: true, findings: "" });
+  const [inspForm, setInspForm] = useState(defaultInsp());
 
   const { data: tanks = [] } = useQuery<SpccTank[]>({ queryKey: ["/api/env/spcc-tanks"], staleTime: Infinity });
   const { data: inspections = [] } = useQuery<SpccInspection[]>({ queryKey: ["/api/env/spcc-inspections"], staleTime: Infinity });
@@ -726,66 +760,112 @@ function SpccModule() {
   const delTank = useMutation({ mutationFn: (id: number) => apiRequest("DELETE", `/api/env/spcc-tanks/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/env/spcc-tanks"] }) });
   const addInspection = useMutation({
     mutationFn: (d: any) => apiRequest("POST", "/api/env/spcc-inspections", d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/env/spcc-inspections"] }); qc.invalidateQueries({ queryKey: ["/api/env/spcc-tanks"] }); setShowInspect(null); toast({ title: "Inspection logged" }); }
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/env/spcc-inspections"] }); qc.invalidateQueries({ queryKey: ["/api/env/spcc-tanks"] }); setShowInspect(null); setInspForm(defaultInsp()); toast({ title: "Inspection logged" }); }
   });
 
   const totalGallons = (tanks as SpccTank[]).reduce((sum, t) => sum + (t.capacityGallons ?? 0), 0);
+  const isAnnual = inspForm.inspectionType === "annual" || inspForm.inspectionType === "pe_certification" || inspForm.inspectionType === "integrity_test";
+
+  const inspTypeLabel = (t: string) => ({ monthly: "Monthly", annual: "Annual", pe_certification: "PE Certification", integrity_test: "Integrity Test", weekly: "Weekly" }[t] ?? t);
+
+  const handleInspSubmit = () => {
+    const annualNotes = isAnnual ? [
+      inspForm.annualIntegrity ? "✓ Integrity inspection completed/scheduled" : null,
+      inspForm.annualCathodic ? "✓ Cathodic protection inspected" : null,
+      inspForm.annualVents ? "✓ Vent valves tested" : null,
+      inspForm.annualPlan ? "✓ SPCC Plan reviewed and current" : null,
+      inspForm.annualTraining ? "✓ Personnel training documented" : null,
+      inspForm.annualContacts ? "✓ Emergency contacts updated" : null,
+      inspForm.annualOverfill ? "✓ Overfill procedures confirmed" : null,
+    ].filter(Boolean).join("; ") : "";
+    const combinedFindings = [inspForm.findings, annualNotes].filter(Boolean).join(" | ");
+    addInspection.mutate({
+      inspectedDate: inspForm.inspectedDate, inspectedBy: inspForm.inspectedBy, inspectionType: inspForm.inspectionType,
+      tankIntegrity: inspForm.tankIntegrity, containmentIntegrity: inspForm.containmentIntegrity,
+      noLeaksOrSpills: inspForm.noLeaksOrSpills, valvesOperable: inspForm.valvesOperable,
+      overfillProtectionOk: inspForm.overfillProtectionOk, levelGaugeOk: inspForm.levelGaugeOk,
+      drainageValveClosed: inspForm.drainageValveClosed, spillKitOk: inspForm.spillKitOk, responseEquipOk: inspForm.responseEquipOk,
+      findings: combinedFindings || null, tankId: showInspect!.id,
+    });
+  };
 
   return (
     <div className="p-6 space-y-5">
       <div>
         <h2 className="text-xl font-bold">SPCC / Oil Spill Prevention</h2>
-        <p className="text-sm text-muted-foreground">40 CFR Part 112 · Spill Prevention, Control & Countermeasure</p>
+        <p className="text-sm text-muted-foreground">40 CFR Part 112 · Spill Prevention, Control & Countermeasure · Monthly & Annual Inspection Requirements</p>
       </div>
 
-      {totalGallons >= 1320 && (
-        <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 text-xs text-blue-800 flex items-start gap-2">
-          <Shield className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
-          Your logged total storage ({totalGallons.toLocaleString()} gallons) meets or exceeds the 1,320-gallon threshold. SPCC regulations likely apply to this facility.
+      {/* Regulatory Context Banner */}
+      <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+        <p className="font-semibold flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> 40 CFR Part 112 Inspection Schedule</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mt-1">
+          <span>📋 <strong>Monthly:</strong> All bulk containers — 112.7(e)(8) & 112.8(c)(6)</span>
+          <span>📋 <strong>Annual:</strong> Comprehensive facility inspection — 112.7(e)(7)</span>
+          <span>📋 <strong>5-Year:</strong> PE plan certification — 112.5(b)</span>
         </div>
-      )}
+        {totalGallons >= 1320 && <p className="mt-1 text-blue-700">⚠ Your facility has {totalGallons.toLocaleString()} gallons of regulated oil storage — SPCC plan required under 112.3(a).</p>}
+      </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid grid-cols-2 w-full max-w-sm">
+        <TabsList className="grid grid-cols-2 w-full max-w-md">
           <TabsTrigger value="tanks">Tank Registry</TabsTrigger>
-          <TabsTrigger value="inspections">Inspections</TabsTrigger>
+          <TabsTrigger value="inspections">Inspection Log</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tanks" className="space-y-4 pt-2">
           <div className="flex justify-end"><Button size="sm" onClick={() => setShowAddTank(true)}><Plus className="w-4 h-4 mr-1" />Add Tank / Container</Button></div>
           {(tanks as SpccTank[]).length === 0 ? (
-            <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No tanks or oil containers registered yet.</div>
+            <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No tanks or oil containers registered yet. Add each regulated container to track monthly and annual inspection schedules.</div>
           ) : (
             <div className="space-y-3">
               {(tanks as SpccTank[]).map(tank => {
-                const lastDays = tank.lastInspectionDate ? daysSince(tank.lastInspectionDate) : 999;
+                const monthlyDays = tank.lastMonthlyInspection ? daysSince(tank.lastMonthlyInspection) : (tank.lastInspectionDate ? daysSince(tank.lastInspectionDate) : 999);
+                const annualDays = tank.lastAnnualInspection ? daysSince(tank.lastAnnualInspection) : 999;
+                const monthlyOverdue = monthlyDays > 31;
+                const annualOverdue = annualDays > 365;
+                const borderCls = (monthlyOverdue || annualOverdue) ? "border-yellow-300 bg-yellow-50" : "border-border bg-card";
                 return (
-                  <div key={tank.id} className={`border rounded-xl p-4 ${lastDays > 30 ? "border-yellow-300 bg-yellow-50" : "border-border bg-card"}`}>
+                  <div key={tank.id} className={`border rounded-xl p-4 ${borderCls}`}>
                     <div className="flex items-start justify-between">
-                      <div>
+                      <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium">{tank.tankName}</p>
-                          <Badge className="text-xs bg-blue-100 text-blue-700">{tank.contentType || "Oil"}</Badge>
-                          {tank.hasSecondaryContainment ? <Badge className="text-xs bg-emerald-100 text-emerald-700">Secondary Containment ✓</Badge> : <Badge className="text-xs bg-red-100 text-red-700">No Secondary Containment</Badge>}
+                          <p className="font-semibold">{tank.tankName}</p>
+                          <Badge className="text-xs bg-blue-100 text-blue-700 capitalize">{tank.contentType?.replace(/_/g," ") || "Oil"}</Badge>
+                          <Badge className="text-xs bg-slate-100 text-slate-600">{tank.isAboveground ? "AST" : "UST"}</Badge>
+                          {tank.hasSecondaryContainment
+                            ? <Badge className="text-xs bg-emerald-100 text-emerald-700">Secondary Containment ✓</Badge>
+                            : <Badge className="text-xs bg-red-100 text-red-700">⚠ No Secondary Containment</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{tank.location}</p>
-                        <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                          {tank.capacityGallons && <span>{tank.capacityGallons.toLocaleString()} gal capacity</span>}
-                          <span>Last inspection: <strong>{tank.lastInspectionDate ? fmtDate(tank.lastInspectionDate) : "Never"}</strong></span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 mt-2 text-xs">
+                          {tank.capacityGallons && <span className="text-muted-foreground">Capacity: <strong>{tank.capacityGallons.toLocaleString()} gal</strong></span>}
+                          {tank.containmentCapacityGallons && <span className="text-muted-foreground">Containment: <strong>{tank.containmentCapacityGallons.toLocaleString()} gal</strong></span>}
+                          <span className={monthlyOverdue ? "text-yellow-700 font-medium" : "text-muted-foreground"}>
+                            Monthly: <strong>{tank.lastMonthlyInspection ? fmtDate(tank.lastMonthlyInspection) : (tank.lastInspectionDate ? fmtDate(tank.lastInspectionDate) : "Never")}</strong>
+                            {monthlyOverdue && " ⚠"}
+                          </span>
+                          <span className={annualOverdue ? "text-orange-700 font-medium" : "text-muted-foreground"}>
+                            Annual: <strong>{tank.lastAnnualInspection ? fmtDate(tank.lastAnnualInspection) : "Never"}</strong>
+                            {annualOverdue && " ⚠"}
+                          </span>
                         </div>
-                        {lastDays > 30 && <Badge className="mt-2 bg-yellow-100 text-yellow-700 text-xs">Monthly inspection overdue</Badge>}
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {monthlyOverdue && <Badge className="bg-yellow-100 text-yellow-700 text-xs">Monthly inspection overdue ({monthlyDays}d)</Badge>}
+                          {annualOverdue && <Badge className="bg-orange-100 text-orange-700 text-xs">Annual inspection overdue ({annualDays}d)</Badge>}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="text-xs" onClick={() => setShowInspect(tank)}>Inspect</Button>
+                      <div className="flex gap-2 ml-4 shrink-0">
+                        <Button size="sm" variant="outline" className="text-xs" onClick={() => { setInspForm(defaultInsp()); setShowInspect(tank); }}>Inspect</Button>
                         <Button size="sm" variant="ghost" className="text-red-500 h-8 w-8 p-0" onClick={() => delTank.mutate(tank.id)}><Trash2 className="w-3 h-3" /></Button>
                       </div>
                     </div>
                   </div>
                 );
               })}
-              <div className="border border-border rounded-lg p-3 text-sm flex items-center justify-between">
-                <span className="text-muted-foreground">Total Regulated Oil Storage</span>
-                <span className="font-bold">{totalGallons.toLocaleString()} gallons</span>
+              <div className="border border-border rounded-lg p-3 text-sm flex items-center justify-between bg-muted/30">
+                <span className="text-muted-foreground font-medium">Total Regulated Oil Storage</span>
+                <span className="font-bold text-lg">{totalGallons.toLocaleString()} gallons</span>
               </div>
             </div>
           )}
@@ -793,21 +873,34 @@ function SpccModule() {
 
         <TabsContent value="inspections" className="space-y-4 pt-2">
           {(inspections as SpccInspection[]).length === 0 ? (
-            <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No inspections logged yet. Click "Inspect" on a tank to record an inspection.</div>
+            <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No inspections logged yet. Click "Inspect" on a tank in the Tank Registry tab to record an inspection.</div>
           ) : (
-            <div className="border border-border rounded-lg overflow-hidden">
+            <div className="border border-border rounded-lg overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-muted text-xs"><tr><th className="text-left p-3">Date</th><th className="text-left p-3">Type</th><th className="text-left p-3">Inspector</th><th className="text-left p-3">Result</th><th className="text-left p-3">Findings</th></tr></thead>
+                <thead className="bg-muted text-xs">
+                  <tr>
+                    <th className="text-left p-3">Date</th>
+                    <th className="text-left p-3">Type</th>
+                    <th className="text-left p-3">Tank</th>
+                    <th className="text-left p-3">Inspector</th>
+                    <th className="text-left p-3">Result</th>
+                    <th className="text-left p-3">Findings</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {(inspections as SpccInspection[]).map(ins => (
-                    <tr key={ins.id} className="border-t border-border">
-                      <td className="p-3">{fmtDate(ins.inspectedDate)}</td>
-                      <td className="p-3 capitalize">{ins.inspectionType}</td>
-                      <td className="p-3 text-muted-foreground">{ins.inspectedBy || "—"}</td>
-                      <td className="p-3">{ins.pass ? <Badge className="bg-emerald-100 text-emerald-700 text-xs">Pass</Badge> : <Badge variant="destructive" className="text-xs">Fail</Badge>}</td>
-                      <td className="p-3 text-muted-foreground text-xs">{ins.findings || "—"}</td>
-                    </tr>
-                  ))}
+                  {(inspections as SpccInspection[]).map(ins => {
+                    const tank = (tanks as SpccTank[]).find(t => t.id === ins.tankId);
+                    return (
+                      <tr key={ins.id} className="border-t border-border hover:bg-muted/30">
+                        <td className="p-3 whitespace-nowrap">{fmtDate(ins.inspectedDate)}</td>
+                        <td className="p-3"><Badge className="text-xs bg-blue-100 text-blue-700 capitalize">{inspTypeLabel(ins.inspectionType || "monthly")}</Badge></td>
+                        <td className="p-3 text-xs text-muted-foreground">{tank?.tankName || "Facility-Wide"}</td>
+                        <td className="p-3 text-muted-foreground">{ins.inspectedBy || "—"}</td>
+                        <td className="p-3">{ins.pass ? <Badge className="bg-emerald-100 text-emerald-700 text-xs">✓ Pass</Badge> : <Badge variant="destructive" className="text-xs">✗ Fail</Badge>}</td>
+                        <td className="p-3 text-muted-foreground text-xs max-w-xs truncate">{ins.findings || "—"}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -818,24 +911,38 @@ function SpccModule() {
       {/* Add Tank Dialog */}
       <Dialog open={showAddTank} onOpenChange={setShowAddTank}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Add Tank / Oil Container</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Add Tank / Oil Storage Container</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">Register all aboveground and underground containers storing oil ≥ 55 gallons. Aggregate ≥ 1,320 gal triggers SPCC requirements.</p>
+          </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1"><Label>Tank Name *</Label><Input value={tankForm.tankName} onChange={e => setTankForm(f => ({ ...f, tankName: e.target.value }))} placeholder="e.g. Diesel AST #1" /></div>
-            <div className="space-y-1"><Label>Location</Label><Input value={tankForm.location} onChange={e => setTankForm(f => ({ ...f, location: e.target.value }))} /></div>
-            <div className="space-y-1"><Label>Content Type</Label>
+            <div className="space-y-1"><Label>Tank Name *</Label><Input value={tankForm.tankName} onChange={e => setTankForm(f => ({ ...f, tankName: e.target.value }))} placeholder="e.g. Diesel AST #1, Hydraulic Oil Tank" /></div>
+            <div className="space-y-1"><Label>Location / Building</Label><Input value={tankForm.location} onChange={e => setTankForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Tank Farm - West Pad, Pump Room B" /></div>
+            <div className="space-y-1"><Label>Oil Type / Content</Label>
               <Select value={tankForm.contentType} onValueChange={v => setTankForm(f => ({ ...f, contentType: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select content" /></SelectTrigger>
-                <SelectContent><SelectItem value="diesel">Diesel</SelectItem><SelectItem value="used_oil">Used Oil</SelectItem><SelectItem value="hydraulic">Hydraulic Oil</SelectItem><SelectItem value="gasoline">Gasoline</SelectItem><SelectItem value="lube_oil">Lube Oil</SelectItem><SelectItem value="other">Other Oil</SelectItem></SelectContent>
+                <SelectTrigger><SelectValue placeholder="Select oil type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="diesel">Diesel Fuel</SelectItem>
+                  <SelectItem value="used_oil">Used / Waste Oil</SelectItem>
+                  <SelectItem value="hydraulic">Hydraulic Oil</SelectItem>
+                  <SelectItem value="gasoline">Gasoline / Petrol</SelectItem>
+                  <SelectItem value="lube_oil">Lubricating Oil</SelectItem>
+                  <SelectItem value="heating_oil">Heating Oil (#2 / #4 / #6)</SelectItem>
+                  <SelectItem value="transformer_oil">Transformer / Dielectric Oil</SelectItem>
+                  <SelectItem value="crude_oil">Crude Oil / Condensate</SelectItem>
+                  <SelectItem value="other">Other Oil or Petroleum Product</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label>Capacity (gallons)</Label><Input type="number" value={tankForm.capacityGallons} onChange={e => setTankForm(f => ({ ...f, capacityGallons: e.target.value }))} /></div>
-              <div className="space-y-1"><Label>Containment Capacity (gal)</Label><Input type="number" value={tankForm.containmentCapacityGallons} onChange={e => setTankForm(f => ({ ...f, containmentCapacityGallons: e.target.value }))} /></div>
+              <div className="space-y-1"><Label>Capacity (gallons) *</Label><Input type="number" value={tankForm.capacityGallons} onChange={e => setTankForm(f => ({ ...f, capacityGallons: e.target.value }))} /></div>
+              <div className="space-y-1"><Label>Secondary Containment (gal)</Label><Input type="number" value={tankForm.containmentCapacityGallons} onChange={e => setTankForm(f => ({ ...f, containmentCapacityGallons: e.target.value }))} placeholder="110% of tank vol." /></div>
             </div>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={tankForm.hasSecondaryContainment} onChange={e => setTankForm(f => ({ ...f, hasSecondaryContainment: e.target.checked }))} className="accent-primary" /><span className="text-sm">Has Secondary Containment</span></label>
+            <div className="border border-border rounded-lg p-3 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={tankForm.hasSecondaryContainment} onChange={e => setTankForm(f => ({ ...f, hasSecondaryContainment: e.target.checked }))} className="accent-primary" /><span className="text-sm">Has Secondary Containment (dike, berm, or vault)</span></label>
               <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={tankForm.isAboveground} onChange={e => setTankForm(f => ({ ...f, isAboveground: e.target.checked }))} className="accent-primary" /><span className="text-sm">Aboveground Storage Tank (AST)</span></label>
             </div>
+            <div className="space-y-1"><Label>Notes</Label><Textarea value={tankForm.notes} onChange={e => setTankForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Cathodic protection info, vent type, permit notes..." /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddTank(false)}>Cancel</Button>
@@ -848,33 +955,70 @@ function SpccModule() {
 
       {/* Inspection Dialog */}
       <Dialog open={!!showInspect} onOpenChange={() => setShowInspect(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>SPCC Inspection — {showInspect?.tankName}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>SPCC Inspection — {showInspect?.tankName}</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              {isAnnual
+                ? "Annual Inspection per 40 CFR 112.7(e)(7) — complete all items including additional annual requirements."
+                : "Monthly Inspection per 40 CFR 112.7(e)(8) / 112.8(c)(6) — required for all bulk oil storage containers."}
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1"><Label>Date *</Label><Input type="date" value={inspForm.inspectedDate} onChange={e => setInspForm(f => ({ ...f, inspectedDate: e.target.value }))} /></div>
-              <div className="space-y-1"><Label>Type</Label>
+              <div className="space-y-1 col-span-2"><Label>Inspection Type</Label>
                 <Select value={inspForm.inspectionType} onValueChange={v => setInspForm(f => ({ ...f, inspectionType: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="monthly">Monthly</SelectItem><SelectItem value="annual">Annual</SelectItem></SelectContent>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly — 112.7(e)(8)</SelectItem>
+                    <SelectItem value="annual">Annual Comprehensive — 112.7(e)(7)</SelectItem>
+                    <SelectItem value="pe_certification">PE Plan Certification — 112.5(b)</SelectItem>
+                    <SelectItem value="integrity_test">Integrity Test — API 653 / STI SP001</SelectItem>
+                    <SelectItem value="weekly">Weekly — Operational Check</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="space-y-1"><Label>Inspector Name</Label><Input value={inspForm.inspectedBy} onChange={e => setInspForm(f => ({ ...f, inspectedBy: e.target.value }))} /></div>
-            <div className="border border-border rounded-lg p-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Inspection Checklist</p>
-              {([["tankIntegrity","Tank structure integrity — no dents, corrosion, or damage"],["containmentIntegrity","Secondary containment intact and free of water/debris"],["noLeaksOrSpills","No leaks, drips, or staining around tank or fittings"],["valvesOperable","All valves and fittings operable and properly closed"]] as [keyof typeof inspForm, string][]).map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={!!inspForm[key]} onChange={e => setInspForm(f => ({ ...f, [key]: e.target.checked }))} className="accent-primary" />
-                  <span className="text-sm">{label}</span>
+            <div className="space-y-1"><Label>Inspector Name</Label><Input value={inspForm.inspectedBy} onChange={e => setInspForm(f => ({ ...f, inspectedBy: e.target.value }))} placeholder="Full name and title" /></div>
+
+            {/* Core Monthly Checklist */}
+            <div className="border border-border rounded-lg p-3 space-y-2.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Inspection Checklist (Monthly Requirements)</p>
+              {SPCC_MONTHLY_CHECKLIST.map(([key, label]) => (
+                <label key={key} className="flex items-start gap-2 cursor-pointer group">
+                  <input type="checkbox" checked={!!(inspForm as any)[key]} onChange={e => setInspForm(f => ({ ...f, [key]: e.target.checked }))} className="accent-primary mt-0.5" />
+                  <span className="text-sm leading-snug">{label}</span>
                 </label>
               ))}
             </div>
-            <div className="space-y-1"><Label>Findings</Label><Textarea value={inspForm.findings} onChange={e => setInspForm(f => ({ ...f, findings: e.target.value }))} rows={2} placeholder="Any issues or corrective actions needed..." /></div>
+
+            {/* Annual Additional Items */}
+            {isAnnual && (
+              <div className="border border-orange-200 bg-orange-50 rounded-lg p-3 space-y-2.5">
+                <p className="text-xs font-semibold text-orange-800 uppercase tracking-wide">Annual / PE Certification Additional Requirements — 112.7(e)(7)</p>
+                {([
+                  ["annualIntegrity",  SPCC_ANNUAL_ADDITIONS[0]],
+                  ["annualCathodic",   SPCC_ANNUAL_ADDITIONS[1]],
+                  ["annualVents",      SPCC_ANNUAL_ADDITIONS[2]],
+                  ["annualPlan",       SPCC_ANNUAL_ADDITIONS[3]],
+                  ["annualTraining",   SPCC_ANNUAL_ADDITIONS[4]],
+                  ["annualContacts",   SPCC_ANNUAL_ADDITIONS[5]],
+                  ["annualOverfill",   SPCC_ANNUAL_ADDITIONS[6]],
+                ] as [keyof typeof inspForm, string][]).map(([key, label]) => (
+                  <label key={key} className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" checked={!!(inspForm as any)[key]} onChange={e => setInspForm(f => ({ ...f, [key]: e.target.checked }))} className="accent-primary mt-0.5" />
+                    <span className="text-sm leading-snug text-orange-900">{label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-1"><Label>Deficiencies / Corrective Actions</Label><Textarea value={inspForm.findings} onChange={e => setInspForm(f => ({ ...f, findings: e.target.value }))} rows={3} placeholder="Document any deficiencies found. If all items pass, leave blank or note 'No deficiencies observed.'" /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInspect(null)}>Cancel</Button>
-            <Button onClick={() => addInspection.mutate({ ...inspForm, tankId: showInspect!.id })} disabled={addInspection.isPending}>
+            <Button onClick={handleInspSubmit} disabled={addInspection.isPending}>
               {addInspection.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Log Inspection
             </Button>
           </DialogFooter>
@@ -886,151 +1030,468 @@ function SpccModule() {
 
 // ─── Stormwater Module ────────────────────────────────────────────────────────
 
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
 function StormwaterModule() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [tab, setTab] = useState("quarterly");
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({
-    monitoringDate: new Date().toISOString().split("T")[0],
-    quarter: `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`,
-    year: new Date().getFullYear(),
+  const [monType, setMonType] = useState("quarterly_visual");
+
+  const today = new Date();
+  const thisYear = today.getFullYear();
+  const thisMonth = today.getMonth(); // 0-indexed
+  const currentQ = Math.ceil((thisMonth + 1) / 3);
+
+  const defaultQForm = () => ({
+    monitoringType: "quarterly_visual",
+    monitoringDate: today.toISOString().split("T")[0],
+    quarter: `Q${currentQ}`,
+    year: thisYear,
     outfallId: "",
     conductedBy: "",
     weatherConditions: "",
-    color: "clear",
-    odor: "none",
-    floating: false,
-    sheen: false,
-    turbidity: "clear",
+    color: "clear", odor: "none", turbidity: "clear",
+    floating: false, sheen: false,
     otherObservations: "",
-    actionRequired: false,
-    correctionTaken: "",
+    actionRequired: false, correctionTaken: "",
+    month: MONTHS_FULL[thisMonth],
+    bmpConditionsOk: true, drainageAreasOk: true, controlStructuresOk: true, housekeepingOk: true, swpppUpdated: false,
   });
+  const [form, setForm] = useState(defaultQForm());
 
   const { data: events = [] } = useQuery<StormwaterMonitor[]>({ queryKey: ["/api/env/stormwater-monitoring"], staleTime: Infinity });
-  const addEvent = useMutation({ mutationFn: (d: any) => apiRequest("POST", "/api/env/stormwater-monitoring", d), onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/env/stormwater-monitoring"] }); setShowAdd(false); toast({ title: "Monitoring event logged" }); } });
+  const addEvent = useMutation({
+    mutationFn: (d: any) => apiRequest("POST", "/api/env/stormwater-monitoring", d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/env/stormwater-monitoring"] }); setShowAdd(false); setForm(defaultQForm()); toast({ title: "Record logged successfully" }); }
+  });
   const del = useMutation({ mutationFn: (id: number) => apiRequest("DELETE", `/api/env/stormwater-monitoring/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/env/stormwater-monitoring"] }) });
 
-  const thisYear = new Date().getFullYear();
-  const thisYearEvents = (events as StormwaterMonitor[]).filter(e => e.year === thisYear);
-  const quarters = ["Q1", "Q2", "Q3", "Q4"];
-  const completedQuarters = new Set(thisYearEvents.map(e => e.quarter));
-  const currentQ = Math.ceil((new Date().getMonth() + 1) / 3);
+  const allEvents = events as StormwaterMonitor[];
+  const thisYearEvents = allEvents.filter(e => e.year === thisYear);
+  const quarters = ["Q1","Q2","Q3","Q4"];
+  const completedQuarters = new Set(thisYearEvents.filter(e => e.monitoringType === "quarterly_visual" || !e.monitoringType).map(e => e.quarter));
   const dueQuarters = quarters.slice(0, currentQ).filter(q => !completedQuarters.has(q));
+
+  const completedMonthlyMonths = new Set(thisYearEvents.filter(e => e.monitoringType === "monthly_inspection").map(e => e.month));
+  const dueMonths = MONTHS_FULL.slice(0, thisMonth + 1).filter(m => !completedMonthlyMonths.has(m));
+  const hasAnnualThisYear = thisYearEvents.some(e => e.monitoringType === "annual_inspection");
+  const hasSwpppThisYear = thisYearEvents.some(e => e.monitoringType === "swppp_review");
+
+  const monTypeBadge = (t: string) => ({
+    quarterly_visual: { label: "Quarterly Visual", cls: "bg-cyan-100 text-cyan-700" },
+    monthly_inspection: { label: "Monthly BMP Inspection", cls: "bg-blue-100 text-blue-700" },
+    annual_inspection: { label: "Annual Inspection", cls: "bg-purple-100 text-purple-700" },
+    swppp_review: { label: "SWPPP Review", cls: "bg-emerald-100 text-emerald-700" },
+    corrective_action: { label: "Corrective Action", cls: "bg-red-100 text-red-700" },
+  }[t] ?? { label: t, cls: "bg-muted text-muted-foreground" });
+
+  const openAdd = (type: string) => { setMonType(type); setForm({ ...defaultQForm(), monitoringType: type }); setShowAdd(true); };
 
   return (
     <div className="p-6 space-y-5">
       <div>
         <h2 className="text-xl font-bold">Stormwater / SWPPP</h2>
-        <p className="text-sm text-muted-foreground">NPDES Industrial Permit · 40 CFR Part 122 · Quarterly Visual Monitoring</p>
+        <p className="text-sm text-muted-foreground">NPDES Industrial Stormwater · 40 CFR Part 122 · MSGP Multi-Sector General Permit</p>
       </div>
 
+      {/* Regulatory Reference Banner */}
+      <div className="border border-cyan-200 bg-cyan-50 rounded-lg p-3 text-xs text-cyan-900 space-y-1">
+        <p className="font-semibold">40 CFR Part 122 / MSGP Industrial Stormwater Permit Requirements</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0.5 mt-1">
+          <span>📋 <strong>Quarterly Visual Monitoring</strong> — MSGP Appendix B; one discharge event per quarter per outfall</span>
+          <span>📋 <strong>Monthly BMP Inspections</strong> — MSGP Part 3.1; facility walkthrough, drainage areas, structural controls</span>
+          <span>📋 <strong>Annual Comprehensive Inspection</strong> — MSGP Part 3.1; full facility + corrective action status</span>
+          <span>📋 <strong>SWPPP Annual Review</strong> — MSGP Part 5.1.3; update plan after inspection or facility change</span>
+        </div>
+      </div>
+
+      {/* Compliance Status — Alert Banners */}
       {dueQuarters.length > 0 && (
         <div className="border border-yellow-300 bg-yellow-50 rounded-lg p-3 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
           <div className="text-xs">
-            <p className="font-medium text-yellow-800">Monitoring event(s) overdue: {dueQuarters.join(", ")} {thisYear}</p>
-            <p className="text-yellow-700 mt-0.5">NPDES industrial permits require quarterly visual monitoring of outfalls during rain events.</p>
+            <p className="font-semibold text-yellow-800">Quarterly Visual Monitoring overdue: {dueQuarters.join(", ")} {thisYear}</p>
+            <p className="text-yellow-700 mt-0.5">MSGP Appendix B requires visual monitoring of stormwater discharges once per quarter from each outfall during an actual storm event.</p>
+          </div>
+        </div>
+      )}
+      {dueMonths.length > 2 && (
+        <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+          <div className="text-xs">
+            <p className="font-semibold text-blue-800">Monthly BMP site inspections behind — {dueMonths.length} months not logged</p>
+            <p className="text-blue-700 mt-0.5">MSGP Part 3.1 requires routine facility inspections to confirm BMPs are in place and functioning each month.</p>
+          </div>
+        </div>
+      )}
+      {!hasAnnualThisYear && thisMonth >= 2 && (
+        <div className="border border-purple-200 bg-purple-50 rounded-lg p-3 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
+          <div className="text-xs">
+            <p className="font-semibold text-purple-800">Annual comprehensive facility inspection not yet logged for {thisYear}</p>
+            <p className="text-purple-700 mt-0.5">MSGP Part 3.1 requires at least one comprehensive facility inspection per year documenting all exposed material areas and BMP effectiveness.</p>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-3">
-        {quarters.map(q => {
-          const done = completedQuarters.has(q);
-          const due = quarters.indexOf(q) < currentQ;
-          return (
-            <div key={q} className={`border rounded-lg p-3 text-center text-sm ${done ? "border-emerald-200 bg-emerald-50" : due ? "border-yellow-200 bg-yellow-50" : "border-border bg-card"}`}>
-              <p className="font-bold">{q} {thisYear}</p>
-              <p className={`text-xs mt-1 ${done ? "text-emerald-600" : due ? "text-yellow-600" : "text-muted-foreground"}`}>{done ? "✓ Complete" : due ? "⚠ Due" : "Upcoming"}</p>
-            </div>
-          );
-        })}
-      </div>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="quarterly">Quarterly Visual</TabsTrigger>
+          <TabsTrigger value="monthly">Monthly BMP</TabsTrigger>
+          <TabsTrigger value="annual">Annual / SWPPP</TabsTrigger>
+          <TabsTrigger value="all">All Records</TabsTrigger>
+        </TabsList>
 
-      <div className="flex justify-end"><Button size="sm" onClick={() => setShowAdd(true)}><Plus className="w-4 h-4 mr-1" />Log Monitoring Event</Button></div>
-
-      {(events as StormwaterMonitor[]).length === 0 ? (
-        <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No stormwater monitoring events logged yet.</div>
-      ) : (
-        <div className="space-y-3">
-          {(events as StormwaterMonitor[]).map(ev => (
-            <div key={ev.id} className={`border rounded-xl p-4 ${ev.actionRequired ? "border-red-300 bg-red-50" : "border-border bg-card"}`}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <Badge className="bg-cyan-100 text-cyan-700">{ev.quarter} {ev.year}</Badge>
-                    {ev.outfallId && <span className="text-xs text-muted-foreground">Outfall {ev.outfallId}</span>}
-                    {ev.actionRequired && <Badge variant="destructive" className="text-xs">Action Required</Badge>}
-                  </div>
-                  <p className="text-sm font-medium">{fmtDate(ev.monitoringDate)}</p>
-                  <div className="flex gap-4 mt-1 text-xs text-muted-foreground flex-wrap">
-                    <span>By: {ev.conductedBy || "—"}</span>
-                    <span>Color: {ev.color}</span>
-                    <span>Odor: {ev.odor}</span>
-                    {ev.sheen && <span className="text-red-600 font-medium">⚠ Sheen observed</span>}
-                    {ev.floating && <span className="text-red-600 font-medium">⚠ Floating material</span>}
-                  </div>
-                  {ev.correctionTaken && <p className="text-xs text-emerald-600 mt-1">Correction: {ev.correctionTaken}</p>}
+        {/* ── Quarterly Visual Monitoring ── */}
+        <TabsContent value="quarterly" className="space-y-4 pt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">MSGP Appendix B · One visual monitoring event per quarter per outfall during an actual precipitation event</p>
+            <Button size="sm" onClick={() => openAdd("quarterly_visual")}><Plus className="w-4 h-4 mr-1" />Log Quarterly Event</Button>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {quarters.map(q => {
+              const done = completedQuarters.has(q);
+              const qIdx = parseInt(q[1]) - 1;
+              const due = qIdx < currentQ;
+              return (
+                <div key={q} className={`border rounded-xl p-4 text-center ${done ? "border-emerald-200 bg-emerald-50" : due ? "border-yellow-200 bg-yellow-50" : "border-border bg-card"}`}>
+                  <p className="font-bold text-sm">{q} {thisYear}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {q === "Q1" ? "Jan–Mar" : q === "Q2" ? "Apr–Jun" : q === "Q3" ? "Jul–Sep" : "Oct–Dec"}
+                  </p>
+                  <p className={`text-sm font-bold mt-2 ${done ? "text-emerald-600" : due ? "text-yellow-600" : "text-muted-foreground"}`}>
+                    {done ? "✓ Done" : due ? "⚠ Due" : "Upcoming"}
+                  </p>
                 </div>
-                <Button size="sm" variant="ghost" className="text-red-500 h-8 w-8 p-0" onClick={() => del.mutate(ev.id)}><Trash2 className="w-3 h-3" /></Button>
+              );
+            })}
+          </div>
+          <div className="space-y-3">
+            {allEvents.filter(e => e.monitoringType === "quarterly_visual" || !e.monitoringType).length === 0 ? (
+              <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No quarterly visual monitoring events logged yet. Log one when you observe a stormwater discharge during a rain event.</div>
+            ) : allEvents.filter(e => e.monitoringType === "quarterly_visual" || !e.monitoringType).map(ev => (
+              <div key={ev.id} className={`border rounded-xl p-4 ${ev.actionRequired ? "border-red-200 bg-red-50" : "border-border bg-card"}`}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <Badge className="bg-cyan-100 text-cyan-700 text-xs">{ev.quarter} {ev.year}</Badge>
+                      {ev.outfallId && <span className="text-xs text-muted-foreground">Outfall {ev.outfallId}</span>}
+                      {ev.actionRequired && <Badge variant="destructive" className="text-xs">Action Required</Badge>}
+                      {ev.sheen && <Badge className="bg-orange-100 text-orange-700 text-xs">Sheen Observed</Badge>}
+                    </div>
+                    <p className="text-sm font-medium">{fmtDate(ev.monitoringDate)} — {ev.conductedBy || "—"}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{ev.weatherConditions}</p>
+                    <div className="flex gap-4 mt-1 text-xs text-muted-foreground flex-wrap">
+                      <span>Color: <strong>{ev.color || "—"}</strong></span>
+                      <span>Odor: <strong>{ev.odor || "—"}</strong></span>
+                      <span>Turbidity: <strong>{ev.turbidity || "—"}</strong></span>
+                      {ev.floating && <span className="text-red-600 font-medium">⚠ Floating material</span>}
+                    </div>
+                    {ev.otherObservations && <p className="text-xs text-muted-foreground mt-1 italic">{ev.otherObservations}</p>}
+                    {ev.correctionTaken && <p className="text-xs text-emerald-700 mt-1 font-medium">Correction: {ev.correctionTaken}</p>}
+                  </div>
+                  <Button size="sm" variant="ghost" className="text-red-500 h-8 w-8 p-0 ml-3" onClick={() => del.mutate(ev.id)}><Trash2 className="w-3 h-3" /></Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        </TabsContent>
 
+        {/* ── Monthly BMP Inspections ── */}
+        <TabsContent value="monthly" className="space-y-4 pt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">MSGP Part 3.1 · Monthly routine facility inspection — drainage areas, BMPs, potential pollution sources</p>
+            <Button size="sm" onClick={() => openAdd("monthly_inspection")}><Plus className="w-4 h-4 mr-1" />Log Monthly Inspection</Button>
+          </div>
+          {/* 12-month calendar grid */}
+          <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
+            {MONTHS_SHORT.map((m, i) => {
+              const fullM = MONTHS_FULL[i];
+              const done = completedMonthlyMonths.has(fullM);
+              const due = i <= thisMonth;
+              return (
+                <div key={m} className={`border rounded-lg p-2 text-center text-xs ${done ? "border-blue-300 bg-blue-50" : due ? "border-yellow-200 bg-yellow-50" : "border-border bg-card"}`}>
+                  <p className="font-semibold">{m}</p>
+                  <p className={`mt-0.5 font-bold ${done ? "text-blue-600" : due ? "text-yellow-600" : "text-muted-foreground"}`}>{done ? "✓" : due ? "—" : "·"}</p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="space-y-3">
+            {allEvents.filter(e => e.monitoringType === "monthly_inspection").length === 0 ? (
+              <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No monthly BMP inspections logged yet. MSGP Part 3.1 requires routine monthly facility walkthrough inspections.</div>
+            ) : allEvents.filter(e => e.monitoringType === "monthly_inspection").map(ev => (
+              <div key={ev.id} className={`border rounded-xl p-4 ${ev.actionRequired ? "border-red-200 bg-red-50" : "border-border bg-card"}`}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex gap-2 items-center flex-wrap mb-1">
+                      <Badge className="bg-blue-100 text-blue-700 text-xs">{ev.month} {ev.year}</Badge>
+                      {ev.actionRequired && <Badge variant="destructive" className="text-xs">Action Required</Badge>}
+                    </div>
+                    <p className="text-sm font-medium">{fmtDate(ev.monitoringDate)} — {ev.conductedBy || "—"}</p>
+                    <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                      {ev.bmpConditionsOk !== null && <span>{ev.bmpConditionsOk ? "✓" : "✗"} BMPs</span>}
+                      {ev.drainageAreasOk !== null && <span>{ev.drainageAreasOk ? "✓" : "✗"} Drainage</span>}
+                      {ev.controlStructuresOk !== null && <span>{ev.controlStructuresOk ? "✓" : "✗"} Controls</span>}
+                      {ev.housekeepingOk !== null && <span>{ev.housekeepingOk ? "✓" : "✗"} Housekeeping</span>}
+                    </div>
+                    {ev.otherObservations && <p className="text-xs text-muted-foreground mt-1 italic">{ev.otherObservations}</p>}
+                    {ev.correctionTaken && <p className="text-xs text-emerald-700 mt-1 font-medium">Correction: {ev.correctionTaken}</p>}
+                  </div>
+                  <Button size="sm" variant="ghost" className="text-red-500 h-8 w-8 p-0 ml-3" onClick={() => del.mutate(ev.id)}><Trash2 className="w-3 h-3" /></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* ── Annual & SWPPP Review ── */}
+        <TabsContent value="annual" className="space-y-4 pt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">MSGP Parts 3.1 & 5.1.3 · Annual comprehensive inspection + SWPPP annual review and update</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => openAdd("swppp_review")}><Plus className="w-4 h-4 mr-1" />SWPPP Review</Button>
+              <Button size="sm" onClick={() => openAdd("annual_inspection")}><Plus className="w-4 h-4 mr-1" />Annual Inspection</Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`border rounded-xl p-4 ${hasAnnualThisYear ? "border-emerald-200 bg-emerald-50" : "border-yellow-200 bg-yellow-50"}`}>
+              <p className="font-semibold text-sm">Annual Comprehensive Inspection</p>
+              <p className="text-xs text-muted-foreground mt-0.5">MSGP Part 3.1 — full facility walkthrough</p>
+              <p className={`text-xl font-black mt-2 ${hasAnnualThisYear ? "text-emerald-600" : "text-yellow-600"}`}>{hasAnnualThisYear ? "✓ Complete" : "⚠ Not yet logged"} {thisYear}</p>
+            </div>
+            <div className={`border rounded-xl p-4 ${hasSwpppThisYear ? "border-emerald-200 bg-emerald-50" : "border-yellow-200 bg-yellow-50"}`}>
+              <p className="font-semibold text-sm">SWPPP Annual Review</p>
+              <p className="text-xs text-muted-foreground mt-0.5">MSGP Part 5.1.3 — plan review and update</p>
+              <p className={`text-xl font-black mt-2 ${hasSwpppThisYear ? "text-emerald-600" : "text-yellow-600"}`}>{hasSwpppThisYear ? "✓ Complete" : "⚠ Not yet logged"} {thisYear}</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {allEvents.filter(e => e.monitoringType === "annual_inspection" || e.monitoringType === "swppp_review" || e.monitoringType === "corrective_action").length === 0 ? (
+              <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No annual inspections or SWPPP reviews logged yet.</div>
+            ) : allEvents.filter(e => e.monitoringType === "annual_inspection" || e.monitoringType === "swppp_review" || e.monitoringType === "corrective_action").map(ev => {
+              const badge = monTypeBadge(ev.monitoringType || "");
+              return (
+                <div key={ev.id} className={`border rounded-xl p-4 ${ev.actionRequired ? "border-red-200 bg-red-50" : "border-border bg-card"}`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex gap-2 items-center flex-wrap mb-1">
+                        <Badge className={`text-xs ${badge.cls}`}>{badge.label}</Badge>
+                        <span className="text-xs text-muted-foreground">{ev.year}</span>
+                        {ev.actionRequired && <Badge variant="destructive" className="text-xs">Action Required</Badge>}
+                      </div>
+                      <p className="text-sm font-medium">{fmtDate(ev.monitoringDate)} — {ev.conductedBy || "—"}</p>
+                      {ev.otherObservations && <p className="text-xs text-muted-foreground mt-1 italic">{ev.otherObservations}</p>}
+                      {ev.correctionTaken && <p className="text-xs text-emerald-700 mt-1 font-medium">Action: {ev.correctionTaken}</p>}
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-red-500 h-8 w-8 p-0 ml-3" onClick={() => del.mutate(ev.id)}><Trash2 className="w-3 h-3" /></Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        {/* ── All Records ── */}
+        <TabsContent value="all" className="space-y-3 pt-3">
+          <div className="flex justify-end"><Button size="sm" onClick={() => openAdd(monType)}><Plus className="w-4 h-4 mr-1" />Add Record</Button></div>
+          {allEvents.length === 0 ? (
+            <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">No stormwater records logged yet.</div>
+          ) : (
+            <div className="border border-border rounded-lg overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted text-xs">
+                  <tr>
+                    <th className="text-left p-3">Date</th>
+                    <th className="text-left p-3">Type</th>
+                    <th className="text-left p-3">Period</th>
+                    <th className="text-left p-3">Outfall</th>
+                    <th className="text-left p-3">Inspector</th>
+                    <th className="text-left p-3">Issues</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allEvents.map(ev => {
+                    const badge = monTypeBadge(ev.monitoringType || "quarterly_visual");
+                    return (
+                      <tr key={ev.id} className="border-t border-border hover:bg-muted/30">
+                        <td className="p-3 whitespace-nowrap">{fmtDate(ev.monitoringDate)}</td>
+                        <td className="p-3"><Badge className={`text-xs ${badge.cls}`}>{badge.label}</Badge></td>
+                        <td className="p-3 text-muted-foreground text-xs">{ev.quarter || ev.month || "—"} {ev.year}</td>
+                        <td className="p-3 text-muted-foreground">{ev.outfallId || "—"}</td>
+                        <td className="p-3 text-muted-foreground">{ev.conductedBy || "—"}</td>
+                        <td className="p-3">{ev.actionRequired ? <Badge variant="destructive" className="text-xs">Action Req.</Badge> : ev.sheen ? <Badge className="text-xs bg-orange-100 text-orange-700">Sheen</Badge> : <span className="text-muted-foreground text-xs">None</span>}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* ── Add Record Dialog ── */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Log Stormwater Monitoring Event</DialogTitle></DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1"><Label>Date *</Label><Input type="date" value={form.monitoringDate} onChange={e => setForm(f => ({ ...f, monitoringDate: e.target.value }))} /></div>
-              <div className="space-y-1"><Label>Quarter</Label>
-                <Select value={form.quarter} onValueChange={v => setForm(f => ({ ...f, quarter: v }))}>
+          <DialogHeader>
+            <DialogTitle>
+              {form.monitoringType === "quarterly_visual" ? "Log Quarterly Visual Monitoring Event" :
+               form.monitoringType === "monthly_inspection" ? "Log Monthly BMP Inspection" :
+               form.monitoringType === "annual_inspection" ? "Log Annual Comprehensive Inspection" :
+               form.monitoringType === "swppp_review" ? "Log SWPPP Annual Review" :
+               "Log Corrective Action Event"}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              {form.monitoringType === "quarterly_visual" && "MSGP Appendix B — observed during actual precipitation event. Record within 30 minutes of discharge."}
+              {form.monitoringType === "monthly_inspection" && "MSGP Part 3.1 — facility walkthrough. Inspect drainage areas, BMPs, pollutant sources, and control structures."}
+              {form.monitoringType === "annual_inspection" && "MSGP Part 3.1 — full comprehensive facility inspection. Document all exposed areas and corrective action status."}
+              {form.monitoringType === "swppp_review" && "MSGP Part 5.1.3 — annual plan review. Update for facility changes, new pollutant sources, or BMP modifications."}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+            {/* Type Selector — only in All Records tab */}
+            {tab === "all" && (
+              <div className="space-y-1"><Label>Record Type</Label>
+                <Select value={form.monitoringType} onValueChange={v => setForm(f => ({ ...f, monitoringType: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{["Q1","Q2","Q3","Q4"].map(q => <SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    <SelectItem value="quarterly_visual">Quarterly Visual Monitoring</SelectItem>
+                    <SelectItem value="monthly_inspection">Monthly BMP Inspection</SelectItem>
+                    <SelectItem value="annual_inspection">Annual Comprehensive Inspection</SelectItem>
+                    <SelectItem value="swppp_review">SWPPP Annual Review</SelectItem>
+                    <SelectItem value="corrective_action">Corrective Action Event</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1"><Label>Year</Label><Input type="number" value={form.year} onChange={e => setForm(f => ({ ...f, year: Number(e.target.value) }))} /></div>
-            </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label>Outfall ID</Label><Input value={form.outfallId} onChange={e => setForm(f => ({ ...f, outfallId: e.target.value }))} placeholder="e.g. 001" /></div>
-              <div className="space-y-1"><Label>Conducted By</Label><Input value={form.conductedBy} onChange={e => setForm(f => ({ ...f, conductedBy: e.target.value }))} /></div>
+              <div className="space-y-1"><Label>Date *</Label><Input type="date" value={form.monitoringDate} onChange={e => setForm(f => ({ ...f, monitoringDate: e.target.value }))} /></div>
+              <div className="space-y-1"><Label>Conducted By</Label><Input value={form.conductedBy} onChange={e => setForm(f => ({ ...f, conductedBy: e.target.value }))} placeholder="Name / Title" /></div>
             </div>
-            <div className="space-y-1"><Label>Weather Conditions</Label><Input value={form.weatherConditions} onChange={e => setForm(f => ({ ...f, weatherConditions: e.target.value }))} placeholder="e.g. Moderate rain, 55°F" /></div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1"><Label>Color</Label>
-                <Select value={form.color} onValueChange={v => setForm(f => ({ ...f, color: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="clear">Clear</SelectItem><SelectItem value="light_brown">Light Brown</SelectItem><SelectItem value="brown">Brown</SelectItem><SelectItem value="gray">Gray</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
-                </Select>
+
+            {/* Quarterly-specific fields */}
+            {(form.monitoringType === "quarterly_visual" || form.monitoringType === "corrective_action") && (
+              <>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1"><Label>Quarter</Label>
+                    <Select value={form.quarter} onValueChange={v => setForm(f => ({ ...f, quarter: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{["Q1","Q2","Q3","Q4"].map(q => <SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1"><Label>Year</Label><Input type="number" value={form.year} onChange={e => setForm(f => ({ ...f, year: Number(e.target.value) }))} /></div>
+                  <div className="space-y-1"><Label>Outfall ID</Label><Input value={form.outfallId} onChange={e => setForm(f => ({ ...f, outfallId: e.target.value }))} placeholder="e.g. SW-001" /></div>
+                </div>
+                <div className="space-y-1"><Label>Weather / Precipitation Conditions</Label><Input value={form.weatherConditions} onChange={e => setForm(f => ({ ...f, weatherConditions: e.target.value }))} placeholder="e.g. Moderate rain, 55°F, 0.8 in rainfall" /></div>
+                <div className="border border-border rounded-lg p-3 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Visual Observation (MSGP App. B)</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1"><Label className="text-xs">Color</Label>
+                      <Select value={form.color} onValueChange={v => setForm(f => ({ ...f, color: v }))}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="clear">Clear</SelectItem><SelectItem value="light_brown">Light Brown</SelectItem><SelectItem value="brown">Brown</SelectItem><SelectItem value="gray">Gray</SelectItem><SelectItem value="red_orange">Red/Orange</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1"><Label className="text-xs">Odor</Label>
+                      <Select value={form.odor} onValueChange={v => setForm(f => ({ ...f, odor: v }))}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="none">None</SelectItem><SelectItem value="mild">Mild</SelectItem><SelectItem value="strong">Strong</SelectItem><SelectItem value="chemical">Chemical</SelectItem><SelectItem value="sewage">Sewage</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1"><Label className="text-xs">Turbidity</Label>
+                      <Select value={form.turbidity} onValueChange={v => setForm(f => ({ ...f, turbidity: v }))}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="clear">Clear</SelectItem><SelectItem value="slightly_turbid">Slightly Turbid</SelectItem><SelectItem value="turbid">Turbid</SelectItem><SelectItem value="very_turbid">Very Turbid</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" checked={form.floating} onChange={e => setForm(f => ({ ...f, floating: e.target.checked }))} className="accent-primary" />Floating Material</label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" checked={form.sheen} onChange={e => setForm(f => ({ ...f, sheen: e.target.checked }))} className="accent-primary" />Oil / Petroleum Sheen</label>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Monthly BMP Inspection checklist */}
+            {form.monitoringType === "monthly_inspection" && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1"><Label>Month</Label>
+                    <Select value={form.month} onValueChange={v => setForm(f => ({ ...f, month: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{MONTHS_FULL.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1"><Label>Year</Label><Input type="number" value={form.year} onChange={e => setForm(f => ({ ...f, year: Number(e.target.value) }))} /></div>
+                </div>
+                <div className="border border-border rounded-lg p-3 space-y-2.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">BMP Site Inspection Checklist — MSGP Part 3.1</p>
+                  {([
+                    ["bmpConditionsOk",       "All structural BMPs (berms, filters, sediment controls) in good condition"],
+                    ["drainageAreasOk",       "Drainage areas free of spills, leaks, or exposed materials requiring action"],
+                    ["controlStructuresOk",   "Stormwater outfalls and control structures unobstructed and functional"],
+                    ["housekeepingOk",        "Good housekeeping — no unsecured materials in areas exposed to stormwater"],
+                  ] as [keyof typeof form, string][]).map(([key, label]) => (
+                    <label key={key} className="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" checked={!!(form as any)[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="accent-primary mt-0.5" />
+                      <span className="text-sm leading-snug">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Annual / SWPPP Review fields */}
+            {(form.monitoringType === "annual_inspection" || form.monitoringType === "swppp_review") && (
+              <div className="space-y-1">
+                <Label>Year</Label>
+                <Input type="number" value={form.year} onChange={e => setForm(f => ({ ...f, year: Number(e.target.value) }))} />
               </div>
-              <div className="space-y-1"><Label>Odor</Label>
-                <Select value={form.odor} onValueChange={v => setForm(f => ({ ...f, odor: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="none">None</SelectItem><SelectItem value="mild">Mild</SelectItem><SelectItem value="strong">Strong</SelectItem><SelectItem value="chemical">Chemical</SelectItem></SelectContent>
-                </Select>
+            )}
+            {form.monitoringType === "swppp_review" && (
+              <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-3 space-y-2.5">
+                <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wide">SWPPP Review Checklist — MSGP Part 5.1.3</p>
+                {([
+                  ["bmpConditionsOk",    "SWPPP reviewed for accuracy and completeness"],
+                  ["drainageAreasOk",    "Facility changes since last review documented in SWPPP"],
+                  ["controlStructuresOk","BMP effectiveness assessed and modifications noted"],
+                  ["housekeepingOk",     "Annual inspection findings incorporated into SWPPP"],
+                  ["swpppUpdated",       "SWPPP signature page updated and dated"],
+                ] as [keyof typeof form, string][]).map(([key, label]) => (
+                  <label key={key} className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" checked={!!(form as any)[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="accent-primary mt-0.5" />
+                    <span className="text-sm leading-snug text-emerald-900">{label}</span>
+                  </label>
+                ))}
               </div>
-              <div className="space-y-1"><Label>Turbidity</Label>
-                <Select value={form.turbidity} onValueChange={v => setForm(f => ({ ...f, turbidity: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="clear">Clear</SelectItem><SelectItem value="slightly_turbid">Slightly Turbid</SelectItem><SelectItem value="turbid">Turbid</SelectItem></SelectContent>
-                </Select>
-              </div>
+            )}
+
+            {/* Common fields */}
+            <div className="space-y-1"><Label>{form.monitoringType === "quarterly_visual" ? "Other Observations" : "Inspection Notes / Findings"}</Label>
+              <Textarea value={form.otherObservations} onChange={e => setForm(f => ({ ...f, otherObservations: e.target.value }))} rows={2} placeholder={form.monitoringType === "quarterly_visual" ? "Any additional visual observations..." : "Document observations, deficiencies, or areas of concern..."} />
             </div>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" checked={form.floating} onChange={e => setForm(f => ({ ...f, floating: e.target.checked }))} className="accent-primary" />Floating Material</label>
-              <label className="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" checked={form.sheen} onChange={e => setForm(f => ({ ...f, sheen: e.target.checked }))} className="accent-primary" />Oil Sheen</label>
-              <label className="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" checked={form.actionRequired} onChange={e => setForm(f => ({ ...f, actionRequired: e.target.checked }))} className="accent-primary text-red-500" />Action Required</label>
-            </div>
-            <div className="space-y-1"><Label>Other Observations</Label><Textarea value={form.otherObservations} onChange={e => setForm(f => ({ ...f, otherObservations: e.target.value }))} rows={2} /></div>
-            {form.actionRequired && <div className="space-y-1"><Label>Corrective Action Taken</Label><Textarea value={form.correctionTaken} onChange={e => setForm(f => ({ ...f, correctionTaken: e.target.value }))} rows={2} /></div>}
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="checkbox" checked={form.actionRequired} onChange={e => setForm(f => ({ ...f, actionRequired: e.target.checked }))} className="accent-primary" />
+              <span>Corrective action required (triggers MSGP Part 4 response)</span>
+            </label>
+            {form.actionRequired && (
+              <div className="space-y-1"><Label>Corrective Action Taken / Planned</Label>
+                <Textarea value={form.correctionTaken} onChange={e => setForm(f => ({ ...f, correctionTaken: e.target.value }))} rows={2} placeholder="Describe corrective action implemented or planned with target completion date..." />
+              </div>
+            )}
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
             <Button onClick={() => addEvent.mutate(form)} disabled={addEvent.isPending}>
-              {addEvent.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Log Event
+              {addEvent.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Save Record
             </Button>
           </DialogFooter>
         </DialogContent>
