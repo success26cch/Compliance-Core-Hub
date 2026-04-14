@@ -588,6 +588,8 @@ export const isoProjects = pgTable("iso_projects", {
   coreValues: text("core_values").array(),
   riskPhilosophy: text("risk_philosophy").array(),
   oemSuppliers: text("oem_suppliers").array(),
+  // Organization logo for QMS documentation
+  logoUrl: text("logo_url"),
   // Clause 5.3 — Roles, Responsibilities & Authorities
   jobDescriptions: jsonb("job_descriptions").$type<Array<{
     id: string;

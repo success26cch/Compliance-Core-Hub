@@ -6321,30 +6321,234 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         ? (project.processes as ProcessJsonEntry[]).map((p) => `  - ${p.name} | Owner: ${p.owner ?? ""} | Inputs: ${p.inputs ?? ""} | Outputs: ${p.outputs ?? ""}`).join("\n")
         : "No processes defined.";
 
-      const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Your task is to draft a professional ISO management system document.
+      const isQualityManual = doc.docType === "quality_manual";
+      const orgAddr = project?.orgAddress ?? "";
+      const employees = project?.totalEmployees ?? "?";
+      const hasDesign = project?.hasDesignResponsibility ?? false;
 
-ORGANIZATION CONTEXT:
-- Standard: ${project?.standard ?? "ISO 9001:2015"}
-- Organization: ${project?.orgName ?? "Not specified"}
+      const qualityManualPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Draft a COMPLETE, PROFESSIONAL, PUBLICATION-READY Quality Manual for ${project?.orgName ?? "the organization"}.
+
+ORGANIZATION:
+- Name: ${project?.orgName ?? "Organization"}
+- Address: ${orgAddr}
+- Products / Services: ${project?.productsServices ?? "Not specified"}
+- Employees: ${employees}
+- Standard: ${project?.standard ?? "ISO 9001"}:2015
+- Design Responsibility: ${hasDesign ? "Yes — Design & Development (Cl. 8.3) is IN SCOPE" : "No — Design & Development (Cl. 8.3) is EXCLUDED; products manufactured per customer specifications"}
+- QMS Processes:\n${processContext}
+
+QUALITY MANUAL REQUIREMENTS — follow this EXACT structure and depth:
+
+═══════════════════════════════════════════════════════════════════
+INTRODUCTION
+═══════════════════════════════════════════════════════════════════
+Write 2–3 paragraphs introducing the organization, the purpose of the QMS, and its alignment with ISO 9001:2015. Mention that the process interaction map is in Appendix A.
+
+═══════════════════════════════════════════════════════════════════
+1  REVISION CONTROL SHEET
+═══════════════════════════════════════════════════════════════════
+Output a markdown table with columns: DATE | REV. | DESCRIPTION OF REVISION | WRITTEN BY | APPROVED BY
+Include two rows:
+- Today's date, Rev. 0, "Initial Release", "QMS Specialist", "President/CEO"
+- Leave space for future revisions.
+Below the table write: "Doc No: QM-001    Page 1 of [approx pages]    Rev. 0"
+
+═══════════════════════════════════════════════════════════════════
+2  TABLE OF CONTENTS
+═══════════════════════════════════════════════════════════════════
+Output every section listed below with its section number. Format: number | title
+
+═══════════════════════════════════════════════════════════════════
+3  MANUAL ADMINISTRATION
+═══════════════════════════════════════════════════════════════════
+Describe document control, distribution, and review frequency for this manual. Reference Procedure QP-7.5-1 (Documented Information Control).
+
+═══════════════════════════════════════════════════════════════════
+4  CONTEXT OF THE ORGANIZATION
+═══════════════════════════════════════════════════════════════════
+
+4.1  Understanding the Organization and Its Context
+Write 2 substantive paragraphs. Reference the SWOT/PESTLE analysis Form FM-4.1-1 and management review cycle.
+
+4.2  Understanding the Needs and Expectations of Interested Parties
+List interested parties (Customers, Employees, Shareholders/Owners, Certification Body, Regulatory Bodies, Suppliers/Subcontractors, Financial Institutions). State that needs and risks are documented in the Interested Parties Matrix FM-4.2-1.
+
+4.3  Determining the Scope of the QMS
+Write a formal scope statement using the organization's actual products/services and address.
+${hasDesign ? "" : "Explicitly state the exclusion: Design & Development (Clause 8.3) is excluded because products are manufactured per customer specifications."}
+List the factors considered (a–f) per ISO 9001:2015 cl. 4.3.
+
+4.4  QMS and Its Processes
+4.4.1 — Describe the process-based QMS. List each process from the process architecture above, its owner, key inputs, and outputs. State that the Process Interaction Map QPM-001 is in Appendix A. Address all requirements a–h of clause 4.4.1.
+4.4.2 — State that documented information is maintained per ISO 9001:2015 and Procedure QP-7.5-1.
+
+═══════════════════════════════════════════════════════════════════
+5  LEADERSHIP
+═══════════════════════════════════════════════════════════════════
+
+5.1  Leadership and Commitment
+5.1.1 General — Top management demonstrates leadership through active QMS involvement. Reference Leadership Commitment Statement FM-5.1-1.
+5.1.2 Customer Focus — Write 1 paragraph on how top management ensures customer requirements are met, customer satisfaction is measured, and risks/opportunities are addressed.
+
+5.2  Quality Policy
+5.2.1 — Write a full, professional Quality Policy appropriate for ${project?.orgName ?? "the organization"} that includes: commitment to meeting requirements, continual improvement, and customer satisfaction.
+5.2.2 — State how the policy is communicated, displayed, and made available (posted at facility, distributed to employees, available to interested parties).
+
+5.3  Organizational Roles, Responsibilities and Authorities
+Write 2 paragraphs. List the QMS responsibilities assigned to top management (a–e per the standard). Reference the Organization Chart FM-5.3-1 and RACI Matrix. Describe the Management Representative role.
+
+═══════════════════════════════════════════════════════════════════
+6  PLANNING
+═══════════════════════════════════════════════════════════════════
+
+6.1  Actions to Address Risks and Opportunities
+6.1.1 — Two paragraphs covering how the organization identifies risks and opportunities from 4.1 and 4.2 contexts. Reference Risk Register FM-6.1-1.
+6.1.2 — How actions are planned, integrated into QMS processes, and evaluated for effectiveness. Reference Corrective Action Procedure QP-10.2-1 and Risk Assessment Procedure QP-6.1-1.
+
+6.2  Quality Objectives and Planning to Achieve Them
+List 4–6 specific, measurable quality objectives appropriate for the organization. For each, state: objective, measurement, target, frequency, responsible party. Reference QMS Objectives Register FM-6.2-1.
+
+6.3  Planning of Changes
+State how QMS changes are planned, communicated, and controlled. Reference QP-6.3-1 (Change Management).
+
+═══════════════════════════════════════════════════════════════════
+7  SUPPORT
+═══════════════════════════════════════════════════════════════════
+
+7.1  Resources
+7.1.1 General — How resources are determined and provided.
+7.1.2 People — Competent personnel policy.
+7.1.3 Infrastructure — Buildings, equipment, technology maintained per PM-7.1.3-1.
+7.1.4 Environment for Process Operation — Safe, orderly work environment per OH&S requirements.
+7.1.5 Monitoring and Measurement Resources — Calibration program per Calibration Procedure QP-7.1.5-1 and Calibration Log FM-7.1.5-1.
+7.1.6 Organizational Knowledge — How knowledge is retained, documented, and shared.
+
+7.2  Competence
+Describe the competence determination, training, and verification process. Reference Training Procedure QP-7.2-1 and Training Record FM-7.2-1.
+
+7.3  Awareness
+State how all personnel are made aware of the quality policy, objectives, and their contribution to QMS effectiveness. Reference Awareness Communication Form FM-7.3-1.
+
+7.4  Communication
+Describe internal and external communication planning (who, what, when, how). Reference Communication Log Procedure QP-7.4-1.
+
+7.5  Documented Information
+7.5.1 General — List the mandatory documented information maintained by the organization.
+7.5.2 Creating and Updating — Document control process including review, approval, formatting, and version control per QP-7.5-1.
+7.5.3 Control of Documented Information — Distribution, access, storage, retention, and disposition per QP-7.5-1.
+
+═══════════════════════════════════════════════════════════════════
+8  OPERATION
+═══════════════════════════════════════════════════════════════════
+
+8.1  Operational Planning and Control
+Describe how operational processes are planned and controlled, including outsourced processes. Reference applicable work instructions and procedures.
+
+8.2  Requirements for Products and Services
+8.2.1 Customer Communication — How customer requirements are communicated, quotes, orders, complaints handled.
+8.2.2 Determining Requirements — Process for identifying customer, statutory, and regulatory requirements. Reference QP-8.2-1 (Contract Review Procedure) and FM-8.2-1 (Customer Requirements Form).
+8.2.3 Review of Requirements — How requirements are reviewed before commitment. Reference Contract Review Records FM-8.2-2.
+8.2.4 Changes to Requirements — Change management for orders and customer requirements.
+
+8.3  Design and Development
+${hasDesign
+  ? "8.3.1–8.3.6 — Describe the full design and development process, planning, inputs, controls, outputs, changes per QP-8.3-1 (Design and Development Procedure)."
+  : "Design and Development is EXCLUDED from the scope of this QMS. The organization manufactures products exclusively per customer-provided specifications. Reference QP-8.3-Exclusion for documented justification."
+}
+
+8.4  Control of Externally Provided Processes, Products and Services
+8.4.1 General — Supplier/vendor qualification, monitoring, and control. Reference Supplier Evaluation Procedure QP-8.4-1 and Approved Supplier List FM-8.4-1.
+8.4.2 Type and Extent of Control — Describe inspection and verification requirements for purchased products.
+8.4.3 Information for External Providers — Purchasing information requirements communicated to suppliers.
+
+8.5  Production and Service Provision
+8.5.1 Control of Production — Controlled conditions including work instructions, monitoring equipment, competent personnel, and documented information.
+8.5.2 Identification and Traceability — Product identification throughout production per QP-8.5.2-1.
+8.5.3 Property Belonging to Customers/External Providers — Customer property identification, verification, and protection.
+8.5.4 Preservation — Product preservation during processing and delivery.
+8.5.5 Post-Delivery Activities — Warranty, service, customer complaints per QP-8.5.5-1.
+8.5.6 Control of Changes — Managing changes to production processes per Change Control Procedure QP-6.3-1.
+
+8.6  Release of Products and Services
+Describe final inspection and release criteria. Reference Final Inspection Form FM-8.6-1 and QP-8.6-1.
+
+8.7  Control of Nonconforming Outputs
+How nonconforming products/services are identified, segregated, and dispositioned. Reference Nonconformance Procedure QP-8.7-1 and NCR Form FM-8.7-1. Describe disposition options (use as-is, rework, scrap, return to supplier).
+
+═══════════════════════════════════════════════════════════════════
+9  PERFORMANCE EVALUATION
+═══════════════════════════════════════════════════════════════════
+
+9.1  Monitoring, Measurement, Analysis and Evaluation
+9.1.1 General — Key performance indicators monitored. Reference KPI Dashboard FM-9.1-1.
+9.1.2 Customer Satisfaction — How measured (surveys, complaints, on-time delivery). Reference Customer Satisfaction Survey FM-9.1.2-1.
+9.1.3 Analysis and Evaluation — Data analysis methods and frequency. Statistical techniques used.
+
+9.2  Internal Audit
+Describe the internal audit program, planning, scheduling, independence, reporting, and follow-up. Reference Internal Audit Procedure QP-9.2-1, Audit Plan FM-9.2-1, and Audit Report FM-9.2-2.
+
+9.3  Management Review
+9.3.1 General — Frequency and purpose of management reviews.
+9.3.2 Management Review Inputs — List all 9 required inputs per ISO 9001:2015. Reference Management Review Agenda FM-9.3-1.
+9.3.3 Management Review Outputs — Decisions and actions including opportunities for improvement, resource needs, QMS changes. Reference Management Review Minutes FM-9.3-2.
+
+═══════════════════════════════════════════════════════════════════
+10  IMPROVEMENT
+═══════════════════════════════════════════════════════════════════
+
+10.1  General
+State the commitment to continual improvement of QMS suitability, adequacy, and effectiveness.
+
+10.2  Nonconformity and Corrective Action
+Describe the corrective action process: identifying nonconformity, containing it, investigating root cause, implementing corrective actions, verifying effectiveness, updating documentation. Reference Corrective Action Procedure QP-10.2-1, CAR Form FM-10.2-1, and 8D Report FM-10.2-2.
+
+10.3  Continual Improvement
+Describe methods for identifying improvement opportunities: data analysis, audits, management review, Kaizen, employee suggestions. Reference Improvement Register FM-10.3-1.
+
+═══════════════════════════════════════════════════════════════════
+APPENDIX A  —  PROCESS INTERACTION DIAGRAM (REFERENCE)
+═══════════════════════════════════════════════════════════════════
+State: "The QMS Process Interaction Map (QPM-001) is maintained as a separate controlled document and is available in the Document Management System. The diagram illustrates all core, support, and management processes and their interactions."
+Then list all processes from the process architecture with a one-sentence description of inputs → process → outputs.
+
+OUTPUT RULES:
+- Use the organization's ACTUAL name throughout — never write "Company's Name" or "[Organization]"
+- Use the organization's actual products/services and address when referencing scope and context
+- Every procedure reference uses this format: QP-[clause]-[seq] (e.g., QP-7.5-1)
+- Every form reference uses: FM-[clause]-[seq] (e.g., FM-4.2-1)
+- Write in professional, auditable language appropriate for an ISO 9001:2015 Quality Manual
+- Minimum 3,500 words of actual content
+- Output the full document — no truncation, no "…continued…" placeholders
+- Do NOT include any preamble, explanation, or remarks before or after the document`;
+
+      const procedurePrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Draft a professional ISO management system ${doc.docType.replace(/_/g, " ")} document.
+
+ORGANIZATION:
+- Name: ${project?.orgName ?? "Not specified"}
+- Standard: ${project?.standard ?? "ISO 9001"}:2015
 - Products/Services: ${project?.productsServices ?? "Not specified"}
-- Total Employees: ${project?.totalEmployees ?? "?"}
+- Employees: ${project?.totalEmployees ?? "?"}
 
 PROCESSES:
 ${processContext}
 
 DOCUMENT TO DRAFT:
 - Title: ${doc.title}
-- Type: ${doc.docType}
+- Type: ${doc.docType.replace(/_/g, " ")}
 - ISO Clause: ${doc.isoClause ?? "Not specified"}
-- Current Status: ${doc.status}
 
 Write a complete, professional document that:
-1. Conforms to ${project?.standard ?? "ISO 9001:2015"} requirements for this document type
-2. Uses the organization's actual context (not placeholders where you have data)
-3. Includes all mandatory elements required by the standard for this doc type
-4. Is practical and usable — not generic filler
+1. Conforms to ${project?.standard ?? "ISO 9001"}:2015 requirements for clause ${doc.isoClause ?? "this clause"}
+2. Uses the organization's actual context — never leave placeholder text
+3. Includes all mandatory elements required by the standard for this document type
+4. For procedures: include Purpose, Scope, Responsibilities, Definitions, Procedure Steps (numbered), Related Documents, Records Required
+5. For work instructions: step-by-step format, safety notes, required tools/equipment, acceptance criteria
+6. References relevant forms as FM-[clause]-[seq] and procedures as QP-[clause]-[seq]
+7. Is practical, usable, and audit-ready
 
-Output only the document content. No preamble. No closing remarks about the document.`;
+Output only the document content. No preamble. No closing remarks.`;
+
+      const systemPrompt = isQualityManual ? qualityManualPrompt : procedurePrompt;
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -6356,9 +6560,12 @@ Output only the document content. No preamble. No closing remarks about the docu
       });
       const stream = anthropicClient.messages.stream({
         model: "claude-sonnet-4-5",
-        max_tokens: 4096,
+        max_tokens: isQualityManual ? 8192 : 4096,
         system: systemPrompt,
-        messages: [{ role: "user", content: `Draft the complete ${doc.docType.replace(/_/g, " ")} document: "${doc.title}"` }],
+        messages: [{ role: "user", content: isQualityManual
+          ? `Draft the complete Quality Manual for ${project?.orgName ?? "the organization"} per ISO ${project?.standard ?? "9001"}:2015. Follow the exact structure specified. Use the organization's real name throughout.`
+          : `Draft the complete ${doc.docType.replace(/_/g, " ")} document: "${doc.title}"`
+        }],
       });
 
       let fullContent = "";

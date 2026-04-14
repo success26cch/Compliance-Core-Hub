@@ -2147,7 +2147,88 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   );
 }
 
-/* ─── SYSTEM PROFILE MODULE ───────────────────────────── */
+/* ─── ORG LOGO UPLOAD ─────────────────────────────────────────────────────── */
+function OrgLogoUpload({ project }: { project: IsoProject }) {
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const logo = (project as any).logoUrl as string | undefined;
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Logo must be under 2 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setSaving(true);
+      try {
+        await apiRequest("PATCH", "/api/iso-projects", { logoUrl: dataUrl });
+        await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      } catch { /* silent */ }
+      finally { setSaving(false); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = async () => {
+    setSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/iso-projects", { logoUrl: null });
+      await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+    } catch { /* silent */ }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <Printer className="w-4 h-4 text-accent" />
+        <h2 className="text-sm font-black text-primary uppercase tracking-wide">Organization Logo</h2>
+        <span className="text-[10px] text-muted-foreground font-normal ml-1">Used on printed documentation</span>
+      </div>
+      <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-5">
+        <div className="flex items-center gap-5">
+          {logo ? (
+            <div className="w-32 h-20 rounded-lg border border-border/60 bg-muted/30 flex items-center justify-center overflow-hidden">
+              <img src={logo} alt="Organization logo" className="max-w-full max-h-full object-contain" />
+            </div>
+          ) : (
+            <div className="w-32 h-20 rounded-lg border-2 border-dashed border-border/60 bg-muted/20 flex flex-col items-center justify-center gap-1 text-muted-foreground">
+              <Building2 className="w-6 h-6" />
+              <span className="text-[10px]">No logo</span>
+            </div>
+          )}
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Upload your organization's logo to have it automatically appear on all printed documents — Quality Manual, job descriptions, procedures, and more.
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => inputRef.current?.click()}
+                disabled={saving} className="text-xs gap-1.5" data-testid="button-upload-logo">
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                {logo ? "Change Logo" : "Upload Logo"}
+              </Button>
+              {logo && (
+                <Button size="sm" variant="ghost" onClick={removeLogo}
+                  disabled={saving} className="text-xs text-muted-foreground hover:text-red-500 gap-1.5" data-testid="button-remove-logo">
+                  <Trash2 className="w-3.5 h-3.5" /> Remove
+                </Button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground">PNG or JPG · max 2 MB</p>
+          </div>
+        </div>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden"
+          onChange={handleFile} data-testid="input-logo-file" />
+      </div>
+    </div>
+  );
+}
+
 function SystemProfileModule({ project, onStartWizard }: { project: IsoProject | null; onStartWizard: () => void }) {
   if (!project || project.status === "not_started") {
     return (
@@ -2203,6 +2284,9 @@ function SystemProfileModule({ project, onStartWizard }: { project: IsoProject |
               </Button>
             )}
           </div>
+
+          {/* Organization Logo */}
+          <OrgLogoUpload project={project} />
 
           {/* Organization Profile */}
           <div>

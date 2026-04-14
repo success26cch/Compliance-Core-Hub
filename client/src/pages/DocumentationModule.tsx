@@ -20,6 +20,7 @@ import {
   FileMinus,
   Map,
   X,
+  Printer,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,251 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface DocumentationModuleProps {
   onAskIsa: (prompt: string) => void;
+}
+
+// ─── Print helper ─────────────────────────────────────────────────────────────
+
+function formatDocContentForPrint(content: string): string {
+  const lines = content.split("\n");
+  let html = "";
+  let inList = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += "<div style='height:8px'></div>";
+      continue;
+    }
+
+    // Numbered main sections like "4 Context" or "5.1 Leadership and Commitment"
+    const sectionMatch = trimmed.match(/^(\d+(?:\.\d+)*)\s+(.+)$/);
+    if (sectionMatch && trimmed.length < 120) {
+      if (inList) { html += "</ul>"; inList = false; }
+      const level = sectionMatch[1].split(".").length;
+      if (level === 1) {
+        html += `<div class="section-h1"><span class="sec-num">${sectionMatch[1]}</span>${sectionMatch[2]}</div>`;
+      } else if (level === 2) {
+        html += `<div class="section-h2">${sectionMatch[1]}  ${sectionMatch[2]}</div>`;
+      } else {
+        html += `<div class="section-h3">${sectionMatch[1]}  ${sectionMatch[2]}</div>`;
+      }
+      continue;
+    }
+
+    // ALL-CAPS standalone headings
+    if (/^[A-Z][A-Z\s&\/\-:]+$/.test(trimmed) && trimmed.length > 4 && trimmed.length < 80) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += `<div class="section-h2">${trimmed}</div>`;
+      continue;
+    }
+
+    // Table rows (simple pipe-delimited)
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      if (inList) { html += "</ul>"; inList = false; }
+      const cells = trimmed.split("|").filter(c => c.trim());
+      const isHeader = trimmed.includes("---");
+      if (!isHeader) {
+        html += `<tr>${cells.map(c => `<td>${c.trim()}</td>`).join("")}</tr>`;
+      }
+      continue;
+    }
+
+    // Bullet/list items
+    if (/^[-•*▪]\s/.test(trimmed) || /^[a-h]\)\s/.test(trimmed)) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += `<li>${trimmed.replace(/^[-•*▪a-h\)]+\s+/, "")}</li>`;
+      continue;
+    }
+
+    // NOTE / IMPORTANT callouts
+    if (/^NOTE\s*\d*[\s:–—]/.test(trimmed) || /^IMPORTANT[\s:–—]/.test(trimmed)) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += `<div class="note">${trimmed}</div>`;
+      continue;
+    }
+
+    if (inList) { html += "</ul>"; inList = false; }
+    html += `<p>${trimmed}</p>`;
+  }
+
+  if (inList) html += "</ul>";
+  return html;
+}
+
+function printIsoDocument(doc: IsoDocument, project: IsoProject | null) {
+  const orgName = project?.orgName ?? "Organization";
+  const standard = project?.standard ?? "ISO 9001";
+  const logoUrl = (project as any)?.logoUrl as string | undefined;
+  const dateStr = new Date(doc.updatedAt || doc.createdAt || Date.now()).toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+  const docTypeLbl = doc.docType?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) ?? "Document";
+
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" alt="${orgName} logo" style="max-height:60px;max-width:160px;object-fit:contain;" />`
+    : `<div style="font-size:16pt;font-weight:800;color:#1e3a5f;">${orgName}</div>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${doc.title}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 10.5pt; color: #1a1a1a; background:#fff; line-height:1.65;
+    }
+    .page { max-width:8.5in; margin:0 auto; padding:0.6in 0.9in; }
+
+    /* ── Header ── */
+    .doc-header {
+      display:flex; justify-content:space-between; align-items:flex-end;
+      padding-bottom:12px; border-bottom:3px solid #1e3a5f; margin-bottom:20px;
+    }
+    .doc-header-right { text-align:right; font-size:8.5pt; color:#555; }
+    .doc-header-right .doc-num { font-size:9pt; font-weight:700; color:#1e3a5f; }
+
+    /* ── Title block ── */
+    .title-band {
+      background:#1e3a5f; color:#fff;
+      padding:14px 20px; border-radius:6px 6px 0 0;
+      margin-bottom:0;
+    }
+    .title-band .doc-type {
+      font-size:8pt; text-transform:uppercase; letter-spacing:0.12em; opacity:0.8; margin-bottom:4px;
+    }
+    .title-band .doc-title { font-size:17pt; font-weight:800; line-height:1.2; }
+    .meta-row {
+      background:#f0f4fa; border:1px solid #d0dae8; border-top:none;
+      padding:10px 20px; border-radius:0 0 6px 6px;
+      display:flex; flex-wrap:wrap; gap:20px;
+      font-size:8.5pt; color:#444; margin-bottom:22px;
+    }
+    .meta-item .lbl { font-weight:700; color:#1e3a5f; margin-right:4px; }
+    .std-badge {
+      background:#ea6c19; color:#fff;
+      font-size:7.5pt; font-family:monospace; font-weight:700;
+      padding:3px 10px; border-radius:10px; margin-left:auto;
+    }
+
+    /* ── Revision Table ── */
+    .rev-table { width:100%; border-collapse:collapse; margin-bottom:22px; font-size:9pt; }
+    .rev-table th {
+      background:#1e3a5f; color:#fff; font-weight:700;
+      padding:7px 10px; text-align:left; font-size:8pt; letter-spacing:0.04em;
+    }
+    .rev-table td { padding:6px 10px; border-bottom:1px solid #e0e8f0; }
+    .rev-table tr:nth-child(even) td { background:#f7f9fc; }
+
+    /* ── Table of Contents ── */
+    .toc-title {
+      font-size:11pt; font-weight:800; color:#1e3a5f;
+      text-transform:uppercase; letter-spacing:0.06em;
+      margin-bottom:10px; padding-bottom:5px;
+      border-bottom:1.5px solid #e0e8f0;
+    }
+    .toc-entry { display:flex; justify-content:space-between; font-size:9pt; padding:3px 0; }
+    .toc-entry .toc-title-text { color:#1a1a1a; }
+    .toc-entry .toc-dots { flex:1; border-bottom:1px dotted #ccc; margin:0 8px; }
+    .toc-entry .toc-page { color:#1e3a5f; font-weight:600; }
+
+    /* ── Content ── */
+    .divider { border-top:1px solid #d0dae8; margin:18px 0; }
+    .section-h1 {
+      font-size:13pt; font-weight:800; color:#1e3a5f;
+      margin-top:26px; margin-bottom:10px;
+      padding:8px 14px; background:#f0f4fa;
+      border-left:4px solid #1e3a5f; border-radius:0 4px 4px 0;
+      display:flex; align-items:center; gap:10px;
+    }
+    .sec-num {
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width:22px; height:22px; border-radius:11px;
+      background:#1e3a5f; color:#fff;
+      font-size:9pt; font-weight:800; flex-shrink:0; padding:0 5px;
+    }
+    .section-h2 {
+      font-size:10.5pt; font-weight:700; color:#1e3a5f;
+      margin-top:18px; margin-bottom:7px;
+      padding-bottom:4px; border-bottom:1.5px solid #e0e8f0;
+    }
+    .section-h3 {
+      font-size:10pt; font-weight:700; color:#444;
+      margin-top:12px; margin-bottom:5px;
+    }
+    p { margin-bottom:6px; }
+    ul { margin-left:20px; margin-bottom:8px; }
+    li { margin-bottom:3px; }
+    li::marker { color:#ea6c19; }
+    table { width:100%; border-collapse:collapse; margin:10px 0; font-size:9pt; }
+    td { padding:5px 8px; border:1px solid #d0dae8; }
+    .note {
+      background:#fff8f0; border-left:3px solid #ea6c19;
+      padding:8px 12px; margin:10px 0; font-size:9pt;
+      color:#6b4800; border-radius:0 4px 4px 0;
+    }
+
+    /* ── Footer ── */
+    .doc-footer {
+      margin-top:40px; padding-top:10px;
+      border-top:1px solid #e0e0e0;
+      display:flex; justify-content:space-between;
+      font-size:7.5pt; color:#999;
+    }
+    .doc-footer strong { color:#ea6c19; }
+
+    /* ── Print ── */
+    @media print {
+      body { font-size:10pt; }
+      .page { padding:0.4in 0.7in; }
+      @page { margin:0.4in; size:letter portrait; }
+      .section-h1, .toc-title { break-after:avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="doc-header">
+    <div>${logoHtml}</div>
+    <div class="doc-header-right">
+      <div class="doc-num">${docTypeLbl}</div>
+      <div>Rev. ${doc.version ?? 1} · ${standard}</div>
+      <div>${dateStr}</div>
+    </div>
+  </div>
+
+  <div class="title-band">
+    <div class="doc-type">${docTypeLbl}</div>
+    <div class="doc-title">${doc.title}</div>
+  </div>
+  <div class="meta-row">
+    <div class="meta-item"><span class="lbl">Organization:</span>${orgName}</div>
+    ${doc.isoClause ? `<div class="meta-item"><span class="lbl">ISO Clause:</span>${doc.isoClause}</div>` : ""}
+    <div class="meta-item"><span class="lbl">Status:</span>${doc.status ?? "Draft"}</div>
+    <span class="std-badge">${standard}</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="content">
+    ${formatDocContentForPrint(doc.content ?? "")}
+  </div>
+
+  <div class="doc-footer">
+    <span>Generated by <strong>ACSI ISO Manager</strong> · ${standard}</span>
+    <span>${orgName} · ${doc.title} · Rev.${doc.version ?? 1}</span>
+  </div>
+</div>
+<script>window.onload = function() { window.print(); };</script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=900,height=700");
+  if (win) { win.document.write(html); win.document.close(); }
 }
 
 const DOC_TYPES = [
@@ -256,6 +502,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               onDelete={() => deleteMutation.mutate(doc.id)}
               onAskIsa={onAskIsa}
               onDraftWithIsa={handleDraftWithIsa}
+              onPrint={() => printIsoDocument(doc, project ?? null)}
               getIcon={getDocIcon}
               getStatusBadge={getStatusBadge}
             />
@@ -333,7 +580,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   );
 }
 
-function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, getIcon, getStatusBadge }: any) {
+function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint, getIcon, getStatusBadge }: any) {
   return (
     <Card className="hover-elevate cursor-pointer group" onClick={onEdit} data-testid={`card-document-${doc.id}`}>
       <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
@@ -347,6 +594,10 @@ function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, getIcon
           </div>
         </div>
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-accent"
+            title="Print / Export" onClick={onPrint} data-testid={`button-print-doc-${doc.id}`}>
+            <Printer className="w-3.5 h-3.5" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit} data-testid={`button-edit-doc-${doc.id}`}>
             <Pencil className="w-3.5 h-3.5" />
           </Button>

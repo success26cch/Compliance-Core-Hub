@@ -21,7 +21,7 @@ The CCHUB platform utilizes a modern web stack, featuring React, Vite, TailwindC
     -   **Employee & Incident Management:** Tools for tracking medical surveillance, drug screens, and logging workplace incidents with OSHA 300 reporting and Corrective Action Plans (CAPA).
     -   **Enhanced CAPA:** Includes SMS notifications via Twilio, effectiveness verification, and AI suggestions.
     -   **ISO Manager NC & CAPA Module:** Integrated nonconformance tracking with status workflows and AI guidance.
-    -   **ISO Manager Documentation Module:** A filterable document library with version tracking and ISO clause references.
+    -   **ISO Manager Documentation Module:** A filterable document library with version tracking, ISO clause references, print-to-HTML export (org logo, formatted sections, revision header), and comprehensive AI-drafted documents. Quality Manual generation uses a detailed, structured prompt producing all clauses (4–10), revision table, Table of Contents, procedure references (QP-XXX-X), form references (FM-XXX-X), and Appendix A process map. Other doc types (procedures, work instructions) get specialized prompts with Purpose/Scope/Steps structure.
     -   **Training Courses:** An LMS with video modules, quizzes, and progress tracking.
     -   **Team Management:** Supports multi-seat billing and private AI conversations.
     -   **BrandNSwag:** An employee recognition platform using QR-code based rewards.
