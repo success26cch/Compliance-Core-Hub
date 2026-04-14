@@ -1,5 +1,5 @@
 const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "team@corecompliancehub.com"];
-const FROM_EMAIL = "noreply@corecompliancehub.com";
+const FROM_EMAIL = "team@corecompliancehub.com";
 const FROM_NAME = "Core Compliance Hub";
 const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 
