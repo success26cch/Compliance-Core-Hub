@@ -1,0 +1,349 @@
+================================================================
+CCI CHEMICAL, INC. — DEMO SCENARIO GUIDANCE
+Core Compliance Hub (CCHUB)
+================================================================
+Prepared for: Sales / Demo Use
+Platform Modules: Employer Compliance Dashboard | Environmental Compliance Hub
+Demo Account: evillarreal@acsi-quality.com
+================================================================
+
+
+COMPANY OVERVIEW
+================
+
+Company Name:       CCI Chemical, Inc.
+Industry:           Chemical Manufacturing — Brake Fluid & Coolant
+Location:           Dayton, Ohio
+EPA ID:             OHD987654321
+OSHA Generator:     Small Quantity Generator (SQG) — approx. 315–480 kg/month
+Oil Storage:        32,500 gallons regulated petroleum (SPCC required)
+Workforce:          12 employees across Production, Maintenance, QC Lab,
+                    Warehouse, EHS/Administration
+
+
+================================================================
+PART 1 — EMPLOYER COMPLIANCE DASHBOARD (OSHA)
+================================================================
+
+
+SECTION 1.1 — EMPLOYEE ROSTER (12 Employees)
+---------------------------------------------
+
+Department: Production
+  - Aisha Franklin        Chemical Process Operator II    DOT Physical: Active (Sep 2026)
+  - Latoya Greene         Blending Operator               No DOT Physical on file
+  - James Kowalski        Chemical Process Operator I     DOT Physical: EXPIRED Dec 20, 2025
+  - Devon Marsh           Maintenance Mechanic            DOT Physical: EXPIRED Nov 30, 2025
+  - Roberto Sanchez       Chemical Process Operator II    No DOT Physical on file
+  - Diana Torres          Lead Process Chemist            DOT Physical: Active (Oct 2026)
+
+Department: Maintenance
+  - Trevor Bishop         Electrical Maintenance Tech     DOT Physical: Active (Mar 2026)
+
+Department: QC Lab
+  - Brittany Hale         QC Lab Technician               DOT Physical: Active (Jul 2026)
+
+Department: Warehouse
+  - Priya Nair            Shipping & Receiving Lead       DOT Physical: Active (Apr 2026)
+  - Carlos Reyes          Forklift Operator / Logistics   No DOT Physical on file
+
+Department: EHS & Operations
+  - Marcus Webb           EHS Manager / DER               DOT Physical: Active (Jun 2026)
+
+Department: Administration
+  - Angela Kim            HR & Safety Coordinator         No DOT Physical on file
+
+
+KEY DEMO ALERT:
+  Two DOT physicals are expired — Kowalski (Dec 2025) and Marsh (Nov 2025).
+  Platform shows red expired badges and surfaces these in the dashboard
+  compliance alerts. Great talking point for DOT-regulated employers.
+
+
+SECTION 1.2 — OSHA 300 INCIDENT LOG (4 Recordable Incidents)
+--------------------------------------------------------------
+
+Incident #1 — Chemical Eye Exposure
+  Date:          January 14, 2026
+  Employee:      James Kowalski
+  Type:          Chemical Exposure
+  Description:   Brake fluid concentrate (DOT 4) splash to both eyes while
+                 opening a 55-gallon drum with a damaged bung seal. Employee
+                 was not wearing required chemical splash goggles.
+  OSHA Status:   Recordable
+
+Incident #2 — Slip/Fall on Coolant Leak
+  Date:          February 3, 2026
+  Employee:      Devon Marsh
+  Type:          Slip, Trip & Fall
+  Description:   Maintenance mechanic slipped on coolant leak near glycol
+                 transfer pump. Fell and struck left knee on concrete floor.
+                 Area had not been cleaned after a minor pump seal leak
+                 reported the prior shift.
+  OSHA Status:   Recordable
+
+Incident #3 — Chemical Contact Burn (Forearm)
+  Date:          March 11, 2026
+  Employee:      Roberto Sanchez
+  Type:          Chemical Exposure
+  Description:   Contact chemical burns to right hand and forearm from brake
+                 fluid additive concentrate (2-butoxyethanol) dripping from
+                 an overhead fill hose during connection. Employee was wearing
+                 nitrile gloves not rated for this chemical.
+  OSHA Status:   Recordable
+
+Incident #4 — Forklift Load Shift / Struck By
+  Date:          March 28, 2026
+  Employee:      Carlos Reyes
+  Type:          Struck By / Material Handling
+  Description:   Pallet of coolant jugs (270 lbs) shifted unexpectedly on
+                 forks during a turn. Employee braced against seat and twisted,
+                 resulting in lower back strain. Pallet was improperly wrapped
+                 by previous shift.
+  OSHA Status:   Recordable
+
+
+DEMO TALKING POINTS — OSHA DASHBOARD:
+  - All 4 incidents auto-populate the OSHA 300 Log
+  - Platform flags OSHA recordability at time of entry
+  - Corrective Action Plans (CAPA) can be initiated from each incident
+  - SMS notifications via Twilio can alert supervisors on new incidents
+  - AI assistant (Corey) can analyze any incident for OSHA 300/301 guidance
+
+
+================================================================
+PART 2 — ENVIRONMENTAL COMPLIANCE HUB (EPA)
+================================================================
+
+
+SECTION 2.1 — FACILITY PROFILE
+--------------------------------
+
+Facility Name:     CCI Chemical, Inc.
+EPA Facility ID:   OHD987654321
+Location:          Dayton, Ohio
+SIC/NAICS:         Chemical Manufacturing
+Oil Storage:       32,500 gallons (SPCC Plan required — threshold is 1,320 gal)
+Generator Status:  Small Quantity Generator (SQG) — 40 CFR Part 262
+Air Permits:       Yes — includes stacks and permitted emission sources
+SPCC Plan:         On file
+SWPPP:             Active NPDES Industrial Stormwater Permit
+
+
+SECTION 2.2 — UNIVERSAL WASTE (40 CFR Part 273)
+-------------------------------------------------
+
+5 containers tracked with 1-year countdown clocks:
+  - Batteries (Li-Ion, production floor)
+  - Fluorescent lamps (QC Lab and warehouse)
+  - Spent aerosol cans (maintenance shop)
+  - Mercury-containing equipment (lab instruments)
+  - Pesticide containers (grounds maintenance)
+
+Platform Features Demonstrated:
+  - Countdown clock per container (color-coded at 30/14/0 days to expiry)
+  - Disposal workflow to close out containers
+  - Regulatory citation: 40 CFR 273.35 (SQG — 1-year accumulation limit)
+
+
+SECTION 2.3 — HAZARDOUS WASTE / RCRA (40 CFR Parts 260–270)
+-------------------------------------------------------------
+
+Generator Status Calculation:
+  - Last 3 months of waste generation logged
+  - Platform auto-calculates VSQG / SQG / LQG status monthly
+
+KEY DEMO ALERT — November 2025 LQG Spike:
+  Month:     November 2025
+  Waste:     1,240 kg
+  Reason:    Large batch rejection — propylene glycol coolant off-spec pH
+  Status:    LQG threshold exceeded (1,000 kg/month)
+  Action:    Platform flags LQG status — tighter regulatory requirements
+             apply including 90-day accumulation limit and emergency planning
+
+Recent Monthly Generator Data:
+  Nov 2025:  1,240 kg  — LQG (batch rejection)
+  Dec 2025:    290 kg  — SQG
+  Jan 2026:    425 kg  — SQG (off-spec brake fluid)
+  Feb 2026:    390 kg  — SQG
+  Mar 2026:    480 kg  — SQG
+  Apr 2026:    315 kg  — SQG
+
+Satellite Accumulation Points (SAPs) — 3 locations:
+  1. Production Floor SAP — Blending Bay 2 (6 containers)
+     Last Inspection: April 7, 2026 — PASS
+
+  2. Maintenance Shop SAP — Northwest Corner (4 containers)
+     Last Inspection: April 1, 2026 — PASS
+
+  3. QC Laboratory SAP — Fume Hood Room (8 containers)
+     Last Inspection: March 28, 2026 — FAIL
+
+KEY DEMO ALERT — QC Lab SAP Fail:
+  Finding:   Unlabeled containers found during inspection
+  Regulation: 40 CFR 262.15 requires satellite accumulation containers
+              to be labeled with hazardous waste and accumulation start date
+  Platform:   Flags the fail with red badge; records inspector findings
+
+
+SECTION 2.4 — HAZARDOUS WASTE MANIFESTS
+-----------------------------------------
+
+4 manifests on record:
+
+  MFN-2026-003   Sep 3, 2025    Returned Sep 19, 2025    CLOSED
+  MFN-2026-005   Nov 8, 2025    Returned Nov 22, 2025    CLOSED
+  MFN-2026-007   Jan 15, 2026   Returned Jan 28, 2026    CLOSED
+  MFN-2026-009   Feb 24, 2026   No return receipt         PENDING — OVERDUE
+
+KEY DEMO ALERT — MFN-2026-009 Exception Report Required:
+  Shipped:   February 24, 2026
+  Day Count: 49+ days with no signed return receipt from TSDF
+  Regulation: 40 CFR 262.44 — generators must file an Exception Report
+              if signed manifest copy not received within 45 days of shipment
+  Platform:   Red OVERDUE badge; alert on Environmental Overview dashboard
+  Action:     Exception Report must be submitted to EPA Regional Office
+
+
+SECTION 2.5 — SPCC / OIL SPILL PREVENTION (40 CFR Part 112)
+-------------------------------------------------------------
+
+5 Aboveground Storage Tanks (ASTs) — 34,500 gallons total:
+
+  Tank Name                Content Type       Capacity   Secondary Containment
+  ----------------------------------------------------------------------------------
+  Diesel AST #1            Diesel Fuel         5,000 gal  Yes
+  Hydraulic Oil Tank       Hydraulic Oil       2,500 gal  Yes
+  Brake Fluid Bulk Storage Brake Fluid         8,000 gal  Yes
+  Glycol/Coolant Tank #1   Coolant             10,000 gal Yes
+  Glycol/Coolant Tank #2   Coolant             9,000 gal  Yes
+
+8 SPCC Inspections logged — monthly and annual records
+
+Inspection Requirements:
+  Monthly:   40 CFR 112.7(e)(8) — 9-item checklist (tank integrity,
+             secondary containment, no leaks, valves, overfill device,
+             level gauge, drainage valve, spill kit, emergency response equip)
+  Annual:    40 CFR 112.7(e)(7) — comprehensive inspection + integrity test
+             scheduling, cathodic protection, plan review, training documentation
+  5-Year:    40 CFR 112.5(b) — PE plan certification
+
+Platform Feature — Field Mode (NEW):
+  Inspectors in the field can tap "Field Mode" on any tank to launch a
+  full-screen electronic checklist on a tablet or iPad. Large tap-to-toggle
+  cards (green = PASS, red = FAIL), no printing required. Submits directly
+  to the inspection log when complete.
+
+
+SECTION 2.6 — STORMWATER / SWPPP (40 CFR Part 122 / MSGP)
+-----------------------------------------------------------
+
+NPDES Industrial Stormwater Permit — active
+
+2 Monitoring Events Logged:
+
+  Q1 2026 Visual Monitoring Event:
+    Date:      Q1 (January–March 2026)
+    Outfall:   SW-001
+    Findings:  Oil sheen observed — corrective action taken
+    Regulation: MSGP Appendix B — quarterly visual monitoring required
+    Status:    Action Required / Corrective Action Documented
+
+Inspection Types Tracked by Platform:
+  1. Quarterly Visual Monitoring — MSGP Appendix B
+     (one observed discharge event per outfall per quarter)
+  2. Monthly BMP Inspections — MSGP Part 3.1
+     (facility walkthrough: BMPs, drainage areas, outfalls, housekeeping)
+  3. Annual Comprehensive Inspection — MSGP Part 3.1
+  4. SWPPP Annual Review — MSGP Part 5.1.3
+
+Platform Feature — Field Mode for Monthly BMP:
+  Same electronic tablet-based checklist as SPCC. Inspector taps through
+  4 BMP items in the field, submits, and the 12-month calendar grid
+  automatically marks that month complete.
+
+
+SECTION 2.7 — AIR QUALITY / CAA (40 CFR Parts 51–71)
+------------------------------------------------------
+
+2 Air Permits on file:
+  - State Minor Source Permit (Ohio EPA)
+  - Synthetic Minor Source Operating Permit
+
+5 Method 9 Visible Emissions (Opacity) Observations:
+  - Stack-03:  12% opacity — PASS (limit is 20% per 40 CFR 60)
+  - Other stacks within compliance range
+
+Platform Tracks:
+  - Permit renewal alerts at 180, 90, and 30 days prior to expiration
+  - Method 9 opacity log with automatic >= 20% violation flag
+  - Permit filing cabinet with all conditions documented
+
+
+SECTION 2.8 — AI ASSISTANT (ASK COREY — EPA/CFR 40 MODE)
+----------------------------------------------------------
+
+The Environmental Compliance Hub includes a dedicated AI session with Corey
+pre-loaded with the facility's profile context:
+  - Knows the state (Ohio — Ohio EPA regulations apply)
+  - Knows generator status (SQG)
+  - Knows oil storage volume (SPCC applicability)
+  - Quick-start questions for manifest exception reports, LQG transition,
+    SPCC plan review timelines, SWPPP corrective action requirements
+
+Demo suggested prompts:
+  - "We haven't received a signed manifest copy from our TSDF in 49 days.
+     What do we need to do?"
+  - "We hit LQG status in November. What changes do we need to make to
+     stay compliant as an SQG this month?"
+  - "What does our SPCC plan need to cover for a 32,500-gallon facility
+     in Ohio?"
+  - "What corrective actions are required after observing an oil sheen
+     at our stormwater outfall?"
+
+
+================================================================
+PART 3 — PLATFORM FEATURES SUMMARY
+================================================================
+
+
+AI ASSISTANTS
+-------------
+  Corey (CCHUB)    OSHA / Occupational Health / EPA compliance expert
+                   Pre-loaded with facility context; anti-hallucination protocols
+                   23+ document templates; OSHA 300 Log guidance
+
+  Isa (ACSI)       ISO Standards expert (9001, 14001, 45001, IATF 16949, etc.)
+                   Dedicated ISO Manager module
+
+
+ELECTRONIC FIELD INSPECTIONS (TABLET / iPAD)
+--------------------------------------------
+  - SPCC Monthly Inspection: full-screen 9-item checklist on any device
+  - Stormwater BMP Monthly: full-screen 4-item facility walkthrough
+  - Dark high-contrast interface readable in field / sunlight conditions
+  - Large tap-to-toggle cards (green = PASS / red = FAIL)
+  - No printing required — submits directly to compliance database
+
+
+COMPLIANCE ALERTS (OVERVIEW DASHBOARD)
+---------------------------------------
+  - Manifest overdue alert (49+ days, Exception Report required)
+  - LQG threshold exceeded in prior month
+  - SAP inspection fail (QC Lab — unlabeled containers)
+  - Expired DOT physicals (2 employees)
+  - Quarterly stormwater monitoring status
+  - Air permit renewal countdowns
+
+
+OSHA 300 RECORDKEEPING
+-----------------------
+  - Auto-populates from incident entries
+  - OSHA Recordability AI checker
+  - CAPA workflow from any incident
+  - SMS alerts to supervisors via Twilio
+
+
+================================================================
+END OF DOCUMENT
+================================================================

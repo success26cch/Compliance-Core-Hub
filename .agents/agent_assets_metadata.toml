@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "0niItT4WUCviyI-jlYWFv"
 uri = "file://attached_assets/precision-parts-logo.png"
 type = "image"
 title = "precision-parts-manufacturing-logo"
+
+[[outputs]]
+id = "21WI11JF7yNaQrTaig3u7"
+uri = "file://CCI_Chemical_Demo_Guidance.txt"
+type = "text"
+title = "CCI Chemical Demo Guidance — Word Ready"
