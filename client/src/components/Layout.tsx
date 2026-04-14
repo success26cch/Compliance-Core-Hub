@@ -233,6 +233,12 @@ export function Sidebar({ className = "" }: { className?: string }) {
               <LinkItem href="/dot-hub" label="DOT Fleet Dashboard" icon={Truck} />
             </div>
 
+            {/* Environmental Compliance HUB */}
+            <SectionLabel label="Environmental HUB" />
+            <div className="space-y-1 mb-2">
+              <LinkItem href="/env-hub" label="Env Compliance Hub" icon={Leaf} />
+            </div>
+
             {/* Marketing */}
             <SectionLabel label="Marketing" />
             <div className="space-y-1 mb-2">
@@ -248,12 +254,6 @@ export function Sidebar({ className = "" }: { className?: string }) {
           {isoLinks.map((link) => (
             <LinkItem key={link.href} {...link} />
           ))}
-        </div>
-
-        {/* Environmental Compliance Hub — always visible (standalone product) */}
-        <SectionLabel label="Environmental HUB" />
-        <div className="space-y-1 mb-2">
-          <LinkItem href="/env-hub" label="Env Compliance Hub" icon={Leaf} />
         </div>
 
         {/* Contact */}
