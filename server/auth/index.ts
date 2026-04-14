@@ -233,4 +233,23 @@ export function registerAuthRoutes(app: Express): void {
       res.redirect("/login");
     });
   });
+
+  // TEMPORARY — demo account bootstrap (token-gated, remove after demo)
+  app.post("/api/demo-seed-account", async (req: any, res) => {
+    try {
+      const { token } = req.body;
+      if (token !== "cchub-demo-seed-2026") return res.status(403).json({ message: "Forbidden" });
+      const passwordHash = await hashPassword("CCIdemo2026!");
+      const existing = await db.select().from(users).where(eq(users.email, "evillarreal@acsi-quality.com"));
+      if (existing.length > 0) {
+        await db.update(users).set({ passwordHash, isSuperadmin: true, updatedAt: new Date() }).where(eq(users.email, "evillarreal@acsi-quality.com"));
+        return res.json({ message: "updated", email: "evillarreal@acsi-quality.com" });
+      }
+      await db.insert(users).values({ id: "54320068", email: "evillarreal@acsi-quality.com", firstName: "Ebeni", lastName: "Villarreal", passwordHash, isSuperadmin: true });
+      return res.json({ message: "created", email: "evillarreal@acsi-quality.com" });
+    } catch (err: any) {
+      console.error("[DemoSeed] error:", err);
+      res.status(500).json({ message: err.message });
+    }
+  });
 }
