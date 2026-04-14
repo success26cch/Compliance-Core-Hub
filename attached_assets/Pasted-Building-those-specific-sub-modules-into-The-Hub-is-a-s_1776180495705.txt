@@ -1,0 +1,55 @@
+Building those specific sub-modules into The Hub is a smart move. It transforms the platform from a "safety tool" into a comprehensive "Environmental, Health, and Safety" (EHS) command center.
+
+Since Corey is your regulatory expert, these modules should be structured around the CFR 40 (EPA) requirements. Here is a breakdown of how to build those sub-modules to ensure they are audit-ready and functional:
+
+1. Air (Clean Air Act - CAA)
+This is often the most complex area due to permitting and emissions tracking.
+
+Permit Management: A "Digital Filing Cabinet" for Title V or Minor Source permits, with automated alerts for renewal dates.
+
+Emissions Calculator: A tool for users to input run-times or fuel usage to estimate VOCs, HAPs, or Greenhouse Gases.
+
+Visible Emissions (Method 9) Log: A simple mobile-friendly form for "Opacity" checks if the facility has stacks or dust collectors.
+
+2. Waste (RCRA - Resource Conservation & Recovery Act)
+Focus on the "Cradle-to-Grave" tracking that auditors look for.
+
+Satellite Accumulation Point (SAP) Tracker: A digital log for weekly container inspections.
+
+Manifest Manager: A place to upload and link Hazardous Waste manifests. It should flag any manifest that hasn't been "returned/signed" by the TSDF within 45 days.
+
+Generator Status Calculator: Automatically determine if they are a Very Small (VSQG), Small (SQG), or Large Quantity Generator (LQG) based on monthly waste logs.
+
+3. SPCC (Spill Prevention, Control, and Countermeasure)
+This is high-stakes for any facility with significant oil or fuel storage.
+
+Tank & Container Inspections: Scheduled checklists (monthly/annual) specifically for secondary containment integrity.
+
+Spill Kit Inventory: A quick QR-code scan to verify spill kits are stocked and unblocked.
+
+Plan Review Trigger: A reminder to review and re-certify the SPCC plan every 5 years (or whenever a major change occurs).
+
+4. Stormwater (NPDES / SWPPP)
+Focus on the "industrial activity exposed to rain" aspect.
+
+Visual Monitoring Logs: A module for the "Quarterly Visual Assessment" of stormwater outfalls during rain events.
+
+SWPPP Action Tracker: If a "hit" or high concentration is found in sampling, this triggers a corrective action workflow to fix the source of the pollution.
+
+BMP Maintenance: A schedule for cleaning out catch basins or replacing silt socks.
+
+5. Universal Waste & Special Waste
+This is a "catch-all" for common items that are technically hazardous but managed under streamlined rules.
+
+Streamlined Categories: Separate logs for Batteries, Lamps (Bulbs), Pesticides, and Mercury-containing equipment.
+
+Storage Time Tracker: Universal waste can usually only be stored for one year. The Hub should have a "countdown" for each container once the first item is placed in it.
+
+The "Corey" Integration Strategy
+To make these modules stand out, you can have Corey act as the "Intelligence Layer":
+
+Regulatory Alerts: When the EPA updates a rule (like the recent PFOA/PFAS rulings), Corey can send a "Compliance Bulletin" directly to the user's dashboard.
+
+The "Ask Corey" Field: Within the Waste module, a user could ask, "Corey, how should I label a 55-gallon drum of used coolant in Michigan?" and get an instant, regulation-backed answer.
+
+One tip for the "Universal Waste" module: Many clients forget that Aerosol Cans were added to the federal Universal Waste list recently. Adding a specific sub-category for aerosols would be a huge "win" for your users.
