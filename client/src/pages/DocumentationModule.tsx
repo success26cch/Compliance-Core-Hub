@@ -562,6 +562,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           documents={documents ?? []}
           onApprove={(req: any) => setReviewingRequest(req)}
           onReject={(req: any) => setReviewingRequest({ ...req, _action: "reject" })}
+          onRequestChange={(doc: IsoDocument) => setChangeReqDoc(doc)}
         />
       ) : activeTab === "coverage_map" ? (
         <ClauseCoverageMap documents={documents || []} onAskIsa={onAskIsa} />
@@ -1058,11 +1059,16 @@ function bumpVersion(version: string): string {
 }
 
 // ─── Change Requests Panel ────────────────────────────────────────────────────
-function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject }: any) {
+function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject, onRequestChange }: any) {
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [showDocPicker, setShowDocPicker] = useState(false);
 
   const filtered = changeRequests.filter((r: any) => statusFilter === "all" || r.status === statusFilter);
   const pendingCount = changeRequests.filter((r: any) => r.status === "pending").length;
+  const approvedDocs = (documents as IsoDocument[]).filter(d => d.status === "approved");
+  const inReviewDocIds = new Set(
+    changeRequests.filter((r: any) => r.status === "pending").map((r: any) => r.document_id)
+  );
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -1074,14 +1080,15 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject }:
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-black text-primary flex items-center gap-2">
             <GitMerge className="w-5 h-5 text-orange-600" />
             Document Change Control
           </h2>
-          <p className="text-xs text-muted-foreground">ISO 7.5.3 — All change requests with full approval audit trail</p>
+          <p className="text-xs text-muted-foreground">ISO 7.5.3 — Initiate, review, and track all document changes</p>
         </div>
         {pendingCount > 0 && (
           <Badge className="bg-red-500 hover:bg-red-600 text-white gap-1 text-xs">
@@ -1090,96 +1097,162 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject }:
         )}
       </div>
 
-      <div className="flex gap-2">
-        {(["all", "pending", "approved", "rejected"] as const).map(s => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors capitalize ${
-              statusFilter === s ? "bg-primary text-white border-primary" : "bg-white text-muted-foreground border-border hover:border-primary"
-            }`}
-            data-testid={`filter-${s}`}
+      {/* Initiate a Change Request */}
+      <div className="border border-orange-200 rounded-xl bg-orange-50/60 dark:bg-orange-950/20 dark:border-orange-800/40 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-orange-100 rounded-lg dark:bg-orange-900/40">
+              <GitMerge className="w-4 h-4 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-orange-900 dark:text-orange-200">Initiate a Document Change</p>
+              <p className="text-[11px] text-orange-700 dark:text-orange-400">Select an Approved document to begin the change control process</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setShowDocPicker(p => !p)}
+            className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5 text-xs"
+            data-testid="button-show-doc-picker"
           >
-            {s === "all" ? `All (${changeRequests.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${changeRequests.filter((r: any) => r.status === s).length})`}
-          </button>
-        ))}
+            <Plus className="w-3.5 h-3.5" />
+            {showDocPicker ? "Hide Documents" : "Select Document"}
+          </Button>
+        </div>
+
+        {showDocPicker && (
+          <div className="space-y-2 mt-2">
+            {approvedDocs.length === 0 ? (
+              <p className="text-xs text-center text-muted-foreground py-4">No approved documents found. Documents must be in Approved status to request a change.</p>
+            ) : (
+              approvedDocs.map((doc: IsoDocument) => {
+                const hasPending = inReviewDocIds.has(doc.id);
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between bg-white dark:bg-card rounded-lg px-3 py-2.5 border border-orange-100 dark:border-orange-900/40"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-primary truncate">{doc.title}</p>
+                      <p className="text-[10px] text-muted-foreground">Rev. {doc.version} · {doc.isoClause || "No clause"}</p>
+                    </div>
+                    {hasPending ? (
+                      <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300 text-[10px] shrink-0">
+                        Pending Review
+                      </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => { onRequestChange(doc); setShowDocPicker(false); }}
+                        className="h-7 text-[10px] bg-orange-600 hover:bg-orange-700 text-white gap-1 shrink-0"
+                        data-testid={`button-pick-doc-${doc.id}`}
+                      >
+                        <GitMerge className="w-3 h-3" /> Request Change
+                      </Button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="p-4 bg-muted/50 rounded-full mb-4">
-            <GitMerge className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <p className="text-sm font-semibold text-primary">No change requests yet</p>
-          <p className="text-xs text-muted-foreground mt-1">When a document is Approved, click <strong>Request Change</strong> on the document card to initiate a controlled change process.</p>
+      {/* Change Request Log */}
+      <div>
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          {(["all", "pending", "approved", "rejected"] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors capitalize ${
+                statusFilter === s ? "bg-primary text-white border-primary" : "bg-white text-muted-foreground border-border hover:border-primary"
+              }`}
+              data-testid={`filter-${s}`}
+            >
+              {s === "all" ? `All (${changeRequests.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${changeRequests.filter((r: any) => r.status === s).length})`}
+            </button>
+          ))}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((req: any) => (
-            <Card key={req.id} className={`border-l-4 ${req.status === "pending" ? "border-l-yellow-400" : req.status === "approved" ? "border-l-green-500" : "border-l-red-400"}`}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      {getStatusBadge(req.status)}
-                      <span className="text-xs font-bold text-primary truncate">{req.doc_title}</span>
-                      <Badge variant="outline" className="text-[10px]">DCR-{String(req.id).padStart(4, "0")}</Badge>
+
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-muted/20">
+            <div className="p-4 bg-muted/50 rounded-full mb-4">
+              <History className="w-7 h-7 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-semibold text-primary">No change requests yet</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+              Use <strong>Select Document</strong> above to initiate your first document change request.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((req: any) => (
+              <Card key={req.id} className={`border-l-4 ${req.status === "pending" ? "border-l-yellow-400" : req.status === "approved" ? "border-l-green-500" : "border-l-red-400"}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {getStatusBadge(req.status)}
+                        <span className="text-xs font-bold text-primary truncate">{req.doc_title}</span>
+                        <Badge variant="outline" className="text-[10px]">DCR-{String(req.id).padStart(4, "0")}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Submitted by <span className="font-semibold text-foreground">{req.requested_by}</span> · {req.created_at ? format(new Date(req.created_at), "MMM d, yyyy") : "—"}
+                      </p>
+                      <p className="text-xs font-medium text-foreground mb-1">
+                        <span className="text-muted-foreground">Change: </span>{req.change_description}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        <span className="font-medium">Reason: </span>{req.reason}
+                      </p>
+                      {req.affected_departments?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {(req.affected_departments as string[]).map((d: string) => (
+                            <span key={d} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/40">{d}</span>
+                          ))}
+                        </div>
+                      )}
+                      {req.status !== "pending" && req.reviewer_comments && (
+                        <div className="text-[11px] bg-muted/40 rounded p-2 border border-border/40">
+                          <span className="font-bold text-muted-foreground">Reviewer ({req.reviewed_by}): </span>
+                          {req.reviewer_comments}
+                        </div>
+                      )}
+                      {req.status === "approved" && req.training_triggered && (
+                        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-green-700 dark:text-green-400 font-semibold">
+                          <Bell className="w-3 h-3" /> Training notice sent to affected departments
+                        </div>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Submitted by <span className="font-semibold text-foreground">{req.requested_by}</span> · {req.created_at ? format(new Date(req.created_at), "MMM d, yyyy") : "—"}
-                    </p>
-                    <p className="text-xs font-medium text-foreground mb-1">
-                      <span className="text-muted-foreground">Change: </span>{req.change_description}
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      <span className="font-medium">Reason: </span>{req.reason}
-                    </p>
-                    {req.affected_departments?.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {(req.affected_departments as string[]).map((d: string) => (
-                          <span key={d} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/40">{d}</span>
-                        ))}
-                      </div>
-                    )}
-                    {req.status !== "pending" && req.reviewer_comments && (
-                      <div className="text-[11px] bg-muted/40 rounded p-2 border border-border/40">
-                        <span className="font-bold text-muted-foreground">Reviewer ({req.reviewed_by}): </span>
-                        {req.reviewer_comments}
-                      </div>
-                    )}
-                    {req.status === "approved" && req.training_triggered && (
-                      <div className="flex items-center gap-1 mt-1.5 text-[10px] text-green-700 dark:text-green-400 font-semibold">
-                        <Bell className="w-3 h-3" /> Training notice sent to affected departments
+                    {req.status === "pending" && (
+                      <div className="flex flex-col gap-1.5 shrink-0">
+                        <Button
+                          size="sm"
+                          onClick={() => onApprove(req)}
+                          className="h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white gap-1"
+                          data-testid={`button-approve-${req.id}`}
+                        >
+                          <ShieldCheck className="w-3 h-3" /> Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onReject(req)}
+                          className="h-7 text-[10px] border-red-300 text-red-600 hover:bg-red-50 gap-1"
+                          data-testid={`button-reject-${req.id}`}
+                        >
+                          <Ban className="w-3 h-3" /> Reject
+                        </Button>
                       </div>
                     )}
                   </div>
-                  {req.status === "pending" && (
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                      <Button
-                        size="sm"
-                        onClick={() => onApprove(req)}
-                        className="h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white gap-1"
-                        data-testid={`button-approve-${req.id}`}
-                      >
-                        <ShieldCheck className="w-3 h-3" /> Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onReject(req)}
-                        className="h-7 text-[10px] border-red-300 text-red-600 hover:bg-red-50 gap-1"
-                        data-testid={`button-reject-${req.id}`}
-                      >
-                        <Ban className="w-3 h-3" /> Reject
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
