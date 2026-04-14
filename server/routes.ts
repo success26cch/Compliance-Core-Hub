@@ -6865,10 +6865,15 @@ Output only the document content. No preamble. No closing remarks.`;
       const [doc] = await db.select().from(isoDocuments).where(and(eq(isoDocuments.id, docId), eq(isoDocuments.userId, userId)));
       if (!doc) return res.status(404).json({ message: "Document not found" });
 
-      const { requestedBy, designatedReviewer, designatedReviewerEmail, changeDescription, reason, affectedDepartments, proposedEffectiveDate } = req.body;
+      const { requestedBy, designatedReviewer, designatedReviewerEmail, changeDescription, reason, proposedContent, affectedDepartments, proposedEffectiveDate } = req.body;
       if (!requestedBy || !changeDescription || !reason) {
         return res.status(400).json({ message: "requestedBy, changeDescription, and reason are required" });
       }
+
+      // Snapshot current doc content & generate a review token
+      const { randomUUID } = await import("crypto");
+      const reviewToken = randomUUID();
+      const reviewTokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
       // Insert the change request
       const [dcr] = await db.insert(docChangeRequests).values({
@@ -6880,6 +6885,10 @@ Output only the document content. No preamble. No closing remarks.`;
         designatedReviewerEmail: designatedReviewerEmail ?? null,
         changeDescription,
         reason,
+        previousContent: doc.content ?? null,
+        proposedContent: proposedContent ?? null,
+        reviewToken,
+        reviewTokenExpiresAt,
         affectedDepartments: affectedDepartments ?? [],
         proposedEffectiveDate: proposedEffectiveDate ? new Date(proposedEffectiveDate) : null,
         status: "pending",
@@ -6901,10 +6910,17 @@ Output only the document content. No preamble. No closing remarks.`;
           const effectiveDate = proposedEffectiveDate
             ? new Date(proposedEffectiveDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
             : "Not specified";
+          const baseUrl = process.env.APP_URL ?? "https://corecompliancehub.com";
+          const reviewUrl = `${baseUrl}/iso/review/${reviewToken}`;
 
           const bodyHtml = `
-            <h2 style="color:#0f172a;font-size:20px;font-weight:700;margin:0 0 8px;">Document Change Request — Action Required</h2>
-            <p style="color:#475569;font-size:14px;margin:0 0 24px;">Hello ${reviewerName}, a document change request has been submitted and requires your review and approval.</p>
+            <h2 style="color:#0f172a;font-size:20px;font-weight:700;margin:0 0 8px;">Document Change Request — Review Required</h2>
+            <p style="color:#475569;font-size:14px;margin:0 0 24px;">Hello ${reviewerName}, a revised document has been submitted for your review and approval. <strong>No login is required</strong> — click the button below to review the full document and approve or reject.</p>
+
+            <div style="text-align:center;margin-bottom:28px;">
+              <a href="${reviewUrl}" style="display:inline-block;background:#1e3a5f;color:#ffffff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">📄 Review &amp; Approve Document →</a>
+              <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;">This link expires in 30 days and is for your review only.</p>
+            </div>
 
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;">
               <tr><td style="padding:6px 0;">
@@ -6913,14 +6929,14 @@ Output only the document content. No preamble. No closing remarks.`;
               </td></tr>
               <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
                 <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Document</span><br/>
-                <span style="font-size:14px;color:#0f172a;font-weight:600;">${doc.title} (Rev. ${doc.version})</span>
+                <span style="font-size:14px;color:#0f172a;font-weight:600;">${doc.title} (Rev. ${doc.version} → bumped on approval)</span>
               </td></tr>
               <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
-                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Requested By</span><br/>
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Submitted By</span><br/>
                 <span style="font-size:14px;color:#0f172a;">${requestedBy}</span>
               </td></tr>
               <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
-                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Description of Change</span><br/>
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Summary of Changes</span><br/>
                 <span style="font-size:14px;color:#0f172a;">${changeDescription}</span>
               </td></tr>
               <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
@@ -6928,7 +6944,7 @@ Output only the document content. No preamble. No closing remarks.`;
                 <span style="font-size:14px;color:#0f172a;">${reason}</span>
               </td></tr>
               <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
-                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Departments Requiring Training</span><br/>
+                <span style="font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Departments Requiring Training on Approval</span><br/>
                 <span style="font-size:14px;color:#0f172a;">${deptList}</span>
               </td></tr>
               <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;">
@@ -6939,22 +6955,18 @@ Output only the document content. No preamble. No closing remarks.`;
 
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;margin-bottom:24px;">
               <tr><td>
-                <p style="margin:0;font-size:13px;color:#9a3412;font-weight:700;">⚠ Your Action Is Required</p>
+                <p style="margin:0;font-size:13px;color:#9a3412;font-weight:700;">⚠ What happens when you approve?</p>
                 <p style="margin:6px 0 0;font-size:13px;color:#c2410c;">
-                  This document is now in <strong>In Review</strong> status. Log in to the ISO Manager Documentation module, navigate to the <strong>Change Control</strong> tab, and click <strong>Approve</strong> or <strong>Reject</strong> on ${dcrNumber}.
+                  The document version will be bumped automatically, the current version archived, and training notices sent to all affected departments. Rejecting returns the document to the author for revision.
                 </p>
               </td></tr>
             </table>
-
-            <div style="text-align:center;margin-top:24px;">
-              <a href="https://corecompliancehub.com" style="display:inline-block;background:#ea6c19;color:#ffffff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;">Open ISO Manager →</a>
-            </div>
           `;
 
           await sendEmail(
             designatedReviewerEmail,
-            `[Action Required] Document Change Request ${dcrNumber} — ${doc.title}`,
-            brandedHtml(`Document Change Request — ${dcrNumber}`, bodyHtml)
+            `[Review Required] ${dcrNumber} — ${doc.title} awaits your approval`,
+            brandedHtml(`Document Review Required — ${dcrNumber}`, bodyHtml)
           );
         } catch (emailErr: any) {
           console.warn("DCR reviewer notification email failed (non-fatal):", emailErr.message);
@@ -7053,6 +7065,154 @@ Output only the document content. No preamble. No closing remarks.`;
       }
 
       res.json({ success: true, newVersion, trainingTriggered: (dcr.affectedDepartments ?? []).length > 0 });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── Public token-based DCR review endpoints (no login required) ───────────
+
+  // GET /api/dcr-review/:token — return DCR + document info for external reviewer
+  app.get("/api/dcr-review/:token", async (req: Request, res: Response) => {
+    try {
+      const { db } = await import("./db");
+      const { docChangeRequests, isoDocuments } = await import("@shared/schema");
+      const { eq, sql } = await import("drizzle-orm");
+      const token = req.params.token;
+      const rows = await db.execute(sql`
+        SELECT dcr.*, d.title AS doc_title, d.doc_type, d.version AS current_version, d.iso_clause, d.approved_by
+        FROM doc_change_requests dcr
+        JOIN iso_documents d ON d.id = dcr.document_id
+        WHERE dcr.review_token = ${token}
+        LIMIT 1
+      `);
+      const dcr = rows.rows[0];
+      if (!dcr) return res.status(404).json({ message: "Review link not found or expired" });
+      if (dcr.review_token_expires_at && new Date(dcr.review_token_expires_at as string) < new Date()) {
+        return res.status(410).json({ message: "This review link has expired" });
+      }
+      res.json(dcr);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // POST /api/dcr-review/:token/approve — external reviewer approves without login
+  app.post("/api/dcr-review/:token/approve", async (req: Request, res: Response) => {
+    try {
+      const { db } = await import("./db");
+      const { docChangeRequests, isoAwarenessNotices } = await import("@shared/schema");
+      const { sql } = await import("drizzle-orm");
+      const token = req.params.token;
+      const { reviewerComments, reviewedBy } = req.body;
+
+      // Find DCR by token
+      const rows = await db.execute(sql`
+        SELECT dcr.*, d.title AS doc_title, d.version AS current_version, d.content AS current_content
+        FROM doc_change_requests dcr
+        JOIN iso_documents d ON d.id = dcr.document_id
+        WHERE dcr.review_token = ${token}
+        LIMIT 1
+      `);
+      const dcr = rows.rows[0] as any;
+      if (!dcr) return res.status(404).json({ message: "Review link not found" });
+      if (dcr.review_token_expires_at && new Date(dcr.review_token_expires_at) < new Date()) {
+        return res.status(410).json({ message: "This review link has expired" });
+      }
+      if (dcr.status !== "pending") return res.status(400).json({ message: "This change request has already been processed" });
+
+      // Bump version
+      const [major, minor] = ((dcr.current_version as string) || "1.0").split(".").map(Number);
+      const newMinor = (minor ?? 0) + 1;
+      const newVersion = newMinor >= 10 ? `${(major ?? 1) + 1}.0` : `${major ?? 1}.${newMinor}`;
+
+      // Archive current version
+      let archive: any[] = [];
+      try {
+        const archiveRows = await db.execute(sql`SELECT previous_versions FROM iso_documents WHERE id = ${dcr.document_id}`);
+        archive = (archiveRows.rows[0] as any)?.previous_versions ?? [];
+      } catch {}
+      archive.push({
+        version: dcr.current_version,
+        content: dcr.current_content ?? "",
+        approvedBy: dcr.approved_by ?? undefined,
+        archivedAt: new Date().toISOString(),
+        changeReason: dcr.reason,
+      });
+
+      // Determine what content to store (proposedContent if set, otherwise keep current)
+      const newContent = dcr.proposed_content ?? dcr.current_content;
+
+      // Update document
+      await db.execute(sql`
+        UPDATE iso_documents SET
+          version = ${newVersion},
+          status = 'approved',
+          approved_by = ${reviewedBy ?? dcr.designated_reviewer ?? "External Reviewer"},
+          approval_date = NOW(),
+          content = ${newContent},
+          previous_versions = ${JSON.stringify(archive)}::jsonb,
+          updated_at = NOW()
+        WHERE id = ${dcr.document_id}
+      `);
+
+      // Mark DCR approved
+      await db.execute(sql`
+        UPDATE doc_change_requests SET
+          status = 'approved',
+          reviewer_comments = ${reviewerComments ?? null},
+          reviewed_by = ${reviewedBy ?? dcr.designated_reviewer ?? "External Reviewer"},
+          reviewed_at = NOW(),
+          training_triggered = true
+        WHERE review_token = ${token}
+      `);
+
+      // Auto-create training awareness notice
+      const affectedDepts = (dcr.affected_departments as string[]) ?? [];
+      if (affectedDepts.length > 0) {
+        const userId = dcr.user_id as string;
+        await db.insert(isoAwarenessNotices).values({
+          userId,
+          standard: "ISO 9001:2015",
+          clause: "7.5.3",
+          title: `Document Update Training: ${dcr.doc_title} (Rev. ${newVersion})`,
+          message: `The document "${dcr.doc_title}" has been updated to Revision ${newVersion} and approved.\n\nChange Summary: ${dcr.change_description}\n\nReason: ${dcr.reason}\n\nPlease review the updated document and acknowledge.`,
+          processArea: affectedDepts.join(", "),
+          assignedTo: affectedDepts,
+          dueDate: dcr.proposed_effective_date ?? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          status: "active",
+        });
+      }
+
+      res.json({ success: true, newVersion, trainingTriggered: affectedDepts.length > 0 });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // POST /api/dcr-review/:token/reject — external reviewer rejects without login
+  app.post("/api/dcr-review/:token/reject", async (req: Request, res: Response) => {
+    try {
+      const { db } = await import("./db");
+      const { sql } = await import("drizzle-orm");
+      const token = req.params.token;
+      const { reviewerComments, reviewedBy } = req.body;
+
+      const rows = await db.execute(sql`SELECT * FROM doc_change_requests WHERE review_token = ${token} LIMIT 1`);
+      const dcr = rows.rows[0] as any;
+      if (!dcr) return res.status(404).json({ message: "Review link not found" });
+      if (dcr.review_token_expires_at && new Date(dcr.review_token_expires_at) < new Date()) {
+        return res.status(410).json({ message: "This review link has expired" });
+      }
+      if (dcr.status !== "pending") return res.status(400).json({ message: "Already processed" });
+
+      await db.execute(sql`
+        UPDATE doc_change_requests SET
+          status = 'rejected',
+          reviewer_comments = ${reviewerComments ?? null},
+          reviewed_by = ${reviewedBy ?? dcr.designated_reviewer ?? "External Reviewer"},
+          reviewed_at = NOW()
+        WHERE review_token = ${token}
+      `);
+
+      // Return doc to approved
+      await db.execute(sql`UPDATE iso_documents SET status = 'approved', updated_at = NOW() WHERE id = ${dcr.document_id}`);
+
+      res.json({ success: true });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 

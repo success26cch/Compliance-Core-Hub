@@ -665,6 +665,10 @@ export const docChangeRequests = pgTable("doc_change_requests", {
   designatedReviewerEmail: text("designated_reviewer_email"),
   changeDescription: text("change_description").notNull(),
   reason: text("reason").notNull(),
+  previousContent: text("previous_content"),
+  proposedContent: text("proposed_content"),
+  reviewToken: text("review_token"),
+  reviewTokenExpiresAt: timestamp("review_token_expires_at"),
   affectedDepartments: text("affected_departments").array(),
   proposedEffectiveDate: timestamp("proposed_effective_date"),
   status: text("status").notNull().default("pending"), // 'pending' | 'approved' | 'rejected'

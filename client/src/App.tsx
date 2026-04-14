@@ -68,6 +68,7 @@ import RefundPolicy from "@/pages/RefundPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import Security from "@/pages/Security";
+import DCRReviewPage from "@/pages/DCRReviewPage";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -160,6 +161,7 @@ function Router() {
       <Route path="/dot-compliance-hub" component={DotComplianceHub} />
       <Route path="/dot-hub" component={DotHub} />
       <Route path="/marketing-qr" component={MarketingQR} />
+      <Route path="/iso/review/:token" component={DCRReviewPage} />
       <Route component={NotFound} />
     </Switch>
   );

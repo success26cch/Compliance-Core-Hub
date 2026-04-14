@@ -806,6 +806,7 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
     designatedReviewerEmail: "",
     changeDescription: "",
     reason: "",
+    proposedContent: (doc?.content ?? "") as string,
     affectedDepartments: [] as string[],
     proposedEffectiveDate: "",
   });
@@ -827,25 +828,60 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <GitMerge className="w-4 h-4 text-orange-600" />
-            Document Change Request
+            Document Change Request — ISO 7.5.3
           </DialogTitle>
-          <p className="text-[11px] text-muted-foreground">ISO 7.5.3 — Control of Documented Information</p>
+          <p className="text-[11px] text-muted-foreground">Make your revisions directly below, then fill in the request details. The approver will see the full revised document.</p>
         </DialogHeader>
 
         <div className="text-[11px] bg-orange-50 border border-orange-200 rounded-lg p-3 flex gap-2 dark:bg-orange-950/20 dark:border-orange-800/40">
           <AlertCircle className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-orange-800 dark:text-orange-300">Submitting a change request for:</p>
-            <p className="text-orange-700 dark:text-orange-400 font-semibold">{doc.title} (Rev. {doc.version})</p>
-            <p className="text-orange-600 dark:text-orange-500 mt-0.5">Document will move to <strong>In Review</strong> status until approved or rejected.</p>
+            <p className="font-bold text-orange-800 dark:text-orange-300">{doc.title} (Rev. {doc.version})</p>
+            <p className="text-orange-600 dark:text-orange-500 mt-0.5">Edit the document content below, fill in the request fields, then click Submit. The document moves to <strong>In Review</strong> and the reviewer receives a link to the full revised document.</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* STEP 1 — Edit Document Content */}
+          <div className="border border-primary/20 rounded-xl overflow-hidden">
+            <div className="bg-primary/5 px-4 py-2.5 flex items-center gap-2 border-b border-primary/10">
+              <div className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center">1</div>
+              <div>
+                <p className="text-xs font-black text-primary">Revise the Document</p>
+                <p className="text-[10px] text-muted-foreground">Edit the content below. The approver will see this version before deciding.</p>
+              </div>
+            </div>
+            <div className="p-3">
+              <Textarea
+                value={form.proposedContent}
+                onChange={e => setForm(f => ({ ...f, proposedContent: e.target.value }))}
+                rows={16}
+                className="text-xs font-mono resize-y leading-relaxed"
+                placeholder="Document content will appear here for editing..."
+                data-testid="textarea-proposed-content"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                Make all your changes in this editor. The original content is preserved and shown to the reviewer for comparison.
+              </p>
+            </div>
+          </div>
+
+          {/* STEP 2 — Change Request Details */}
+          <div className="border border-border rounded-xl overflow-hidden">
+            <div className="bg-muted/40 px-4 py-2.5 flex items-center gap-2 border-b border-border">
+              <div className="w-5 h-5 rounded-full bg-muted-foreground text-white text-[10px] font-black flex items-center justify-center">2</div>
+              <div>
+                <p className="text-xs font-black">Change Request Details</p>
+                <p className="text-[10px] text-muted-foreground">Fill in the fields below for the audit record.</p>
+              </div>
+            </div>
+            <div className="p-4 space-y-4">
+
           <div className="space-y-1.5">
             <Label className="text-xs">Requested By <span className="text-destructive">*</span></Label>
             <Input
@@ -950,6 +986,9 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
               data-testid="input-effective-date"
             />
           </div>
+
+            </div>{/* end p-4 space-y-4 */}
+          </div>{/* end Step 2 border div */}
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
