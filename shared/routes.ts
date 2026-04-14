@@ -48,6 +48,7 @@ export const api = {
           isPro: z.boolean(),
           hasPlatform: z.boolean().optional(),
           hasIsoManager: z.boolean().optional(),
+          hasEnvHub: z.boolean().optional(),
           isIsaSubscriber: z.boolean().optional(),
           isIsaPro: z.boolean().optional(),
           isAdmin: z.boolean().optional(),

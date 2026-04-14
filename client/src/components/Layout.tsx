@@ -27,7 +27,8 @@ import {
   ArrowLeftRight,
   Truck,
   Layers,
-  LayoutGrid
+  LayoutGrid,
+  Leaf
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -230,6 +231,12 @@ export function Sidebar({ className = "" }: { className?: string }) {
             <SectionLabel label="DOT Fleet HUB" />
             <div className="space-y-1 mb-2">
               <LinkItem href="/dot-hub" label="DOT Fleet Dashboard" icon={Truck} />
+            </div>
+
+            {/* Environmental Compliance Hub */}
+            <SectionLabel label="Environmental HUB" />
+            <div className="space-y-1 mb-2">
+              <LinkItem href="/env-hub" label="Env Compliance Hub" icon={Leaf} />
             </div>
 
             {/* Marketing */}

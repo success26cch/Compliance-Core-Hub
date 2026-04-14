@@ -1550,6 +1550,200 @@ export const insertIsoCommunicationSchema = createInsertSchema(isoCommunications
 export type IsoCommunication = typeof isoCommunications.$inferSelect;
 export type InsertIsoCommunication = z.infer<typeof insertIsoCommunicationSchema>;
 
+// ─── Environmental Compliance Hub ─────────────────────────────────────────────
+
+export const envFacilityProfiles = pgTable("env_facility_profiles", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  facilityName: text("facility_name"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  sicCode: text("sic_code"),
+  naicsCode: text("naics_code"),
+  epaId: text("epa_id"),
+  hasStacks: boolean("has_stacks").default(false),
+  hasBoilers: boolean("has_boilers").default(false),
+  hasStorageTanks: boolean("has_storage_tanks").default(false),
+  oilStorageGallons: integer("oil_storage_gallons").default(0),
+  generatorStatus: text("generator_status"),
+  hasSpccPlan: boolean("has_spcc_plan").default(false),
+  spccPlanDate: timestamp("spcc_plan_date"),
+  hasSwppp: boolean("has_swppp").default(false),
+  hasAirPermit: boolean("has_air_permit").default(false),
+  permitType: text("permit_type"),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export type EnvFacilityProfile = typeof envFacilityProfiles.$inferSelect;
+
+export const envUniversalWaste = pgTable("env_universal_waste", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  wasteType: text("waste_type").notNull(),
+  description: text("description"),
+  location: text("location"),
+  quantity: text("quantity"),
+  unit: text("unit"),
+  startDate: timestamp("start_date").notNull(),
+  disposalDate: timestamp("disposal_date"),
+  status: text("status").notNull().default("active"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertEnvUniversalWasteSchema = createInsertSchema(envUniversalWaste, {
+  startDate: z.union([z.string(), z.date()]).transform((v) => v instanceof Date ? v : new Date(v)),
+  disposalDate: z.union([z.string(), z.date()]).transform((v) => v instanceof Date ? v : new Date(v)).optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type EnvUniversalWaste = typeof envUniversalWaste.$inferSelect;
+
+export const envHazWasteSaps = pgTable("env_haz_waste_saps", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  sapName: text("sap_name").notNull(),
+  location: text("location"),
+  wasteTypes: text("waste_types").array(),
+  maxCapacityGallons: integer("max_capacity_gallons"),
+  containerCount: integer("container_count"),
+  isActive: boolean("is_active").default(true),
+  lastInspectionDate: timestamp("last_inspection_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvHazWasteSap = typeof envHazWasteSaps.$inferSelect;
+
+export const envSapInspections = pgTable("env_sap_inspections", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  sapId: integer("sap_id").notNull(),
+  inspectedDate: timestamp("inspected_date").notNull(),
+  inspectedBy: text("inspected_by"),
+  containersIntact: boolean("containers_intact"),
+  containersLabeled: boolean("containers_labeled"),
+  areaClean: boolean("area_clean"),
+  noLeaks: boolean("no_leaks"),
+  findings: text("findings"),
+  pass: boolean("pass"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvSapInspection = typeof envSapInspections.$inferSelect;
+
+export const envManifests = pgTable("env_manifests", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  manifestNumber: text("manifest_number").notNull(),
+  shipmentDate: timestamp("shipment_date").notNull(),
+  tsdfName: text("tsdf_name"),
+  tsdfEpaId: text("tsdf_epa_id"),
+  wasteDescription: text("waste_description"),
+  quantity: text("quantity"),
+  unit: text("unit"),
+  returnedDate: timestamp("returned_date"),
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvManifest = typeof envManifests.$inferSelect;
+
+export const envGeneratorMonths = pgTable("env_generator_months", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  month: text("month").notNull(),
+  wasteKg: integer("waste_kg").notNull().default(0),
+  wasteType: text("waste_type"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvGeneratorMonth = typeof envGeneratorMonths.$inferSelect;
+
+export const envSpccTanks = pgTable("env_spcc_tanks", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  tankName: text("tank_name").notNull(),
+  location: text("location"),
+  contentType: text("content_type"),
+  capacityGallons: integer("capacity_gallons"),
+  hasSecondaryContainment: boolean("has_secondary_containment").default(false),
+  containmentCapacityGallons: integer("containment_capacity_gallons"),
+  lastInspectionDate: timestamp("last_inspection_date"),
+  isAboveground: boolean("is_aboveground").default(true),
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvSpccTank = typeof envSpccTanks.$inferSelect;
+
+export const envSpccInspections = pgTable("env_spcc_inspections", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  tankId: integer("tank_id"),
+  inspectedDate: timestamp("inspected_date").notNull(),
+  inspectedBy: text("inspected_by"),
+  inspectionType: text("inspection_type"),
+  tankIntegrity: boolean("tank_integrity"),
+  containmentIntegrity: boolean("containment_integrity"),
+  noLeaksOrSpills: boolean("no_leaks_or_spills"),
+  valvesOperable: boolean("valves_operable"),
+  findings: text("findings"),
+  pass: boolean("pass"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvSpccInspection = typeof envSpccInspections.$inferSelect;
+
+export const envStormwaterMonitoring = pgTable("env_stormwater_monitoring", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  monitoringDate: timestamp("monitoring_date").notNull(),
+  quarter: text("quarter"),
+  year: integer("year"),
+  outfallId: text("outfall_id"),
+  conductedBy: text("conducted_by"),
+  weatherConditions: text("weather_conditions"),
+  color: text("color"),
+  odor: text("odor"),
+  floating: boolean("floating").default(false),
+  sheen: boolean("sheen").default(false),
+  turbidity: text("turbidity"),
+  otherObservations: text("other_observations"),
+  actionRequired: boolean("action_required").default(false),
+  correctionTaken: text("correction_taken"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvStormwaterMonitor = typeof envStormwaterMonitoring.$inferSelect;
+
+export const envAirPermits = pgTable("env_air_permits", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  permitNumber: text("permit_number").notNull(),
+  permitType: text("permit_type"),
+  issuingAgency: text("issuing_agency"),
+  issueDate: timestamp("issue_date"),
+  expirationDate: timestamp("expiration_date"),
+  renewalLeadDays: integer("renewal_lead_days").default(180),
+  description: text("description"),
+  conditions: text("conditions"),
+  status: text("status").default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export type EnvAirPermit = typeof envAirPermits.$inferSelect;
+
+export const envOpacityLogs = pgTable("env_opacity_logs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  logDate: timestamp("log_date").notNull(),
+  sourceId: text("source_id"),
+  observerName: text("observer_name"),
+  opacityPercent: integer("opacity_percent"),
+  duration: text("duration"),
+  pass: boolean("pass"),
+  weatherConditions: text("weather_conditions"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type EnvOpacityLog = typeof envOpacityLogs.$inferSelect;
+
 // ─── Audit Logs (Security / HIPAA) ───────────────────────────────────────────
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),

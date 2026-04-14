@@ -69,6 +69,8 @@ import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import Security from "@/pages/Security";
 import DCRReviewPage from "@/pages/DCRReviewPage";
+import EnvComplianceHub from "@/pages/EnvComplianceHub";
+import EnvHub from "@/pages/EnvHub";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -162,6 +164,8 @@ function Router() {
       <Route path="/dot-hub" component={DotHub} />
       <Route path="/marketing-qr" component={MarketingQR} />
       <Route path="/iso/review/:token" component={DCRReviewPage} />
+      <Route path="/env-compliance-hub" component={EnvComplianceHub} />
+      <Route path="/env-hub" component={EnvHub} />
       <Route component={NotFound} />
     </Switch>
   );

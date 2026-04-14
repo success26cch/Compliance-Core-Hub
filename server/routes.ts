@@ -479,6 +479,7 @@ Rules:
     const isIsaSubscriber = isAdmin || (isPro && (sub?.plan === 'isa' || sub?.plan === 'isa_pro' || sub?.plan === 'employer_platform' || sub?.plan === 'employer_platform_with_corey' || sub?.plan === 'enterprise'));
     const isIsaPro = isAdmin || (isPro && (sub?.plan === 'isa_pro'));
     const hasIsoManager = isAdmin || (isPro && (sub?.plan === 'isa' || sub?.plan === 'isa_pro' || sub?.plan === 'iso_manager' || sub?.plan === 'enterprise'));
+    const hasEnvHub = isAdmin || (isPro && (sub?.plan === 'env_hub' || sub?.plan === 'enterprise' || sub?.plan === 'employer_platform' || sub?.plan === 'employer_platform_with_corey'));
 
     res.json({
       status: sub?.status || "inactive",
@@ -486,6 +487,7 @@ Rules:
       isPro: isPro || isAdmin || !!teamMembership,
       hasPlatform,
       hasIsoManager,
+      hasEnvHub,
       isAdmin,
       isIsaSubscriber,
       isIsaPro,
@@ -7333,6 +7335,345 @@ Output only the document content. No preamble. No closing remarks.`;
 
       res.json({ success: true });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── Environmental Compliance Hub API ──────────────────────────────────────
+
+  // Facility Profile
+  app.get("/api/env/facility-profile", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_facility_profiles WHERE user_id = ${req.session.userId} LIMIT 1`);
+    res.json(rows.rows[0] ?? null);
+  });
+
+  app.post("/api/env/facility-profile", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    await db.execute(sql`
+      INSERT INTO env_facility_profiles (user_id, facility_name, address, city, state, sic_code, naics_code, epa_id, has_stacks, has_boilers, has_storage_tanks, oil_storage_gallons, generator_status, has_spcc_plan, spcc_plan_date, has_swppp, has_air_permit, permit_type, notes, updated_at)
+      VALUES (${req.session.userId}, ${d.facilityName??null}, ${d.address??null}, ${d.city??null}, ${d.state??null}, ${d.sicCode??null}, ${d.naicsCode??null}, ${d.epaId??null}, ${d.hasStacks??false}, ${d.hasBoilers??false}, ${d.hasStorageTanks??false}, ${d.oilStorageGallons??0}, ${d.generatorStatus??null}, ${d.hasSpccPlan??false}, ${d.spccPlanDate??null}, ${d.hasSwppp??false}, ${d.hasAirPermit??false}, ${d.permitType??null}, ${d.notes??null}, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        facility_name = EXCLUDED.facility_name, address = EXCLUDED.address, city = EXCLUDED.city, state = EXCLUDED.state,
+        sic_code = EXCLUDED.sic_code, naics_code = EXCLUDED.naics_code, epa_id = EXCLUDED.epa_id,
+        has_stacks = EXCLUDED.has_stacks, has_boilers = EXCLUDED.has_boilers, has_storage_tanks = EXCLUDED.has_storage_tanks,
+        oil_storage_gallons = EXCLUDED.oil_storage_gallons, generator_status = EXCLUDED.generator_status,
+        has_spcc_plan = EXCLUDED.has_spcc_plan, spcc_plan_date = EXCLUDED.spcc_plan_date,
+        has_swppp = EXCLUDED.has_swppp, has_air_permit = EXCLUDED.has_air_permit, permit_type = EXCLUDED.permit_type,
+        notes = EXCLUDED.notes, updated_at = NOW()
+    `);
+    const rows = await db.execute(sql`SELECT * FROM env_facility_profiles WHERE user_id = ${req.session.userId} LIMIT 1`);
+    res.json(rows.rows[0]);
+  });
+
+  // Universal Waste
+  app.get("/api/env/universal-waste", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_universal_waste WHERE user_id = ${req.session.userId} ORDER BY created_at DESC`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/universal-waste", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO env_universal_waste (user_id, waste_type, description, location, quantity, unit, start_date, disposal_date, status, notes)
+      VALUES (${req.session.userId}, ${d.wasteType}, ${d.description??null}, ${d.location??null}, ${d.quantity??null}, ${d.unit??null}, ${d.startDate}, ${d.disposalDate??null}, ${d.status??'active'}, ${d.notes??null})
+      RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.patch("/api/env/universal-waste/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      UPDATE env_universal_waste SET
+        waste_type = COALESCE(${d.wasteType??null}, waste_type),
+        description = ${d.description??null}, location = ${d.location??null},
+        quantity = ${d.quantity??null}, unit = ${d.unit??null},
+        start_date = COALESCE(${d.startDate??null}, start_date),
+        disposal_date = ${d.disposalDate??null}, status = COALESCE(${d.status??null}, status),
+        notes = ${d.notes??null}, updated_at = NOW()
+      WHERE id = ${req.params.id} AND user_id = ${req.session.userId} RETURNING *
+    `);
+    res.json(rows.rows[0]);
+  });
+
+  app.delete("/api/env/universal-waste/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM env_universal_waste WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // SAPs
+  app.get("/api/env/saps", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_haz_waste_saps WHERE user_id = ${req.session.userId} ORDER BY created_at DESC`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/saps", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO env_haz_waste_saps (user_id, sap_name, location, waste_types, max_capacity_gallons, container_count, is_active, notes)
+      VALUES (${req.session.userId}, ${d.sapName}, ${d.location??null}, ${d.wasteTypes??null}, ${d.maxCapacityGallons??null}, ${d.containerCount??null}, ${d.isActive??true}, ${d.notes??null})
+      RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.delete("/api/env/saps/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM env_haz_waste_saps WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // SAP Inspections
+  app.get("/api/env/sap-inspections", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const sapId = req.query.sapId;
+    const rows = sapId
+      ? await db.execute(sql`SELECT * FROM env_sap_inspections WHERE user_id = ${req.session.userId} AND sap_id = ${sapId} ORDER BY inspected_date DESC`)
+      : await db.execute(sql`SELECT * FROM env_sap_inspections WHERE user_id = ${req.session.userId} ORDER BY inspected_date DESC LIMIT 50`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/sap-inspections", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const pass = d.containersIntact && d.containersLabeled && d.areaClean && d.noLeaks;
+    const rows = await db.execute(sql`
+      INSERT INTO env_sap_inspections (user_id, sap_id, inspected_date, inspected_by, containers_intact, containers_labeled, area_clean, no_leaks, findings, pass)
+      VALUES (${req.session.userId}, ${d.sapId}, ${d.inspectedDate}, ${d.inspectedBy??null}, ${d.containersIntact??null}, ${d.containersLabeled??null}, ${d.areaClean??null}, ${d.noLeaks??null}, ${d.findings??null}, ${pass})
+      RETURNING *
+    `);
+    await db.execute(sql`UPDATE env_haz_waste_saps SET last_inspection_date = ${d.inspectedDate} WHERE id = ${d.sapId} AND user_id = ${req.session.userId}`);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  // Manifests
+  app.get("/api/env/manifests", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_manifests WHERE user_id = ${req.session.userId} ORDER BY shipment_date DESC`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/manifests", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO env_manifests (user_id, manifest_number, shipment_date, tsdf_name, tsdf_epa_id, waste_description, quantity, unit, returned_date, status, notes)
+      VALUES (${req.session.userId}, ${d.manifestNumber}, ${d.shipmentDate}, ${d.tsdfName??null}, ${d.tsdfEpaId??null}, ${d.wasteDescription??null}, ${d.quantity??null}, ${d.unit??null}, ${d.returnedDate??null}, ${d.status??'pending'}, ${d.notes??null})
+      RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.patch("/api/env/manifests/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      UPDATE env_manifests SET
+        returned_date = ${d.returnedDate??null}, status = COALESCE(${d.status??null}, status), notes = COALESCE(${d.notes??null}, notes)
+      WHERE id = ${req.params.id} AND user_id = ${req.session.userId} RETURNING *
+    `);
+    res.json(rows.rows[0]);
+  });
+
+  app.delete("/api/env/manifests/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM env_manifests WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // Generator Months
+  app.get("/api/env/generator-months", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_generator_months WHERE user_id = ${req.session.userId} ORDER BY month DESC LIMIT 24`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/generator-months", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO env_generator_months (user_id, month, waste_kg, waste_type, notes)
+      VALUES (${req.session.userId}, ${d.month}, ${d.wasteKg??0}, ${d.wasteType??null}, ${d.notes??null})
+      ON CONFLICT DO NOTHING RETURNING *
+    `);
+    res.status(201).json(rows.rows[0] ?? { message: "Month already exists" });
+  });
+
+  // SPCC Tanks
+  app.get("/api/env/spcc-tanks", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_spcc_tanks WHERE user_id = ${req.session.userId} ORDER BY created_at DESC`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/spcc-tanks", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO env_spcc_tanks (user_id, tank_name, location, content_type, capacity_gallons, has_secondary_containment, containment_capacity_gallons, is_aboveground, is_active, notes)
+      VALUES (${req.session.userId}, ${d.tankName}, ${d.location??null}, ${d.contentType??null}, ${d.capacityGallons??null}, ${d.hasSecondaryContainment??false}, ${d.containmentCapacityGallons??null}, ${d.isAboveground??true}, ${d.isActive??true}, ${d.notes??null})
+      RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.delete("/api/env/spcc-tanks/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM env_spcc_tanks WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // SPCC Inspections
+  app.get("/api/env/spcc-inspections", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_spcc_inspections WHERE user_id = ${req.session.userId} ORDER BY inspected_date DESC LIMIT 50`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/spcc-inspections", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const pass = d.tankIntegrity && d.containmentIntegrity && d.noLeaksOrSpills && d.valvesOperable;
+    const rows = await db.execute(sql`
+      INSERT INTO env_spcc_inspections (user_id, tank_id, inspected_date, inspected_by, inspection_type, tank_integrity, containment_integrity, no_leaks_or_spills, valves_operable, findings, pass)
+      VALUES (${req.session.userId}, ${d.tankId??null}, ${d.inspectedDate}, ${d.inspectedBy??null}, ${d.inspectionType??'monthly'}, ${d.tankIntegrity??null}, ${d.containmentIntegrity??null}, ${d.noLeaksOrSpills??null}, ${d.valvesOperable??null}, ${d.findings??null}, ${pass})
+      RETURNING *
+    `);
+    if (d.tankId) await db.execute(sql`UPDATE env_spcc_tanks SET last_inspection_date = ${d.inspectedDate} WHERE id = ${d.tankId} AND user_id = ${req.session.userId}`);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  // Stormwater Monitoring
+  app.get("/api/env/stormwater-monitoring", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_stormwater_monitoring WHERE user_id = ${req.session.userId} ORDER BY monitoring_date DESC`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/stormwater-monitoring", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO env_stormwater_monitoring (user_id, monitoring_date, quarter, year, outfall_id, conducted_by, weather_conditions, color, odor, floating, sheen, turbidity, other_observations, action_required, correction_taken)
+      VALUES (${req.session.userId}, ${d.monitoringDate}, ${d.quarter??null}, ${d.year??null}, ${d.outfallId??null}, ${d.conductedBy??null}, ${d.weatherConditions??null}, ${d.color??null}, ${d.odor??null}, ${d.floating??false}, ${d.sheen??false}, ${d.turbidity??null}, ${d.otherObservations??null}, ${d.actionRequired??false}, ${d.correctionTaken??null})
+      RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.delete("/api/env/stormwater-monitoring/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM env_stormwater_monitoring WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // Air Permits
+  app.get("/api/env/air-permits", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_air_permits WHERE user_id = ${req.session.userId} ORDER BY created_at DESC`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/air-permits", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO env_air_permits (user_id, permit_number, permit_type, issuing_agency, issue_date, expiration_date, renewal_lead_days, description, conditions, status)
+      VALUES (${req.session.userId}, ${d.permitNumber}, ${d.permitType??null}, ${d.issuingAgency??null}, ${d.issueDate??null}, ${d.expirationDate??null}, ${d.renewalLeadDays??180}, ${d.description??null}, ${d.conditions??null}, ${d.status??'active'})
+      RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.delete("/api/env/air-permits/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM env_air_permits WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // Opacity Logs
+  app.get("/api/env/opacity-logs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT * FROM env_opacity_logs WHERE user_id = ${req.session.userId} ORDER BY log_date DESC LIMIT 50`);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/env/opacity-logs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const pass = (d.opacityPercent ?? 100) < 20;
+    const rows = await db.execute(sql`
+      INSERT INTO env_opacity_logs (user_id, log_date, source_id, observer_name, opacity_percent, duration, pass, weather_conditions, notes)
+      VALUES (${req.session.userId}, ${d.logDate}, ${d.sourceId??null}, ${d.observerName??null}, ${d.opacityPercent??null}, ${d.duration??null}, ${pass}, ${d.weatherConditions??null}, ${d.notes??null})
+      RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
   });
 
   return httpServer;
