@@ -6829,5 +6829,191 @@ Output only the document content. No preamble. No closing remarks.`;
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── Document Change Control (ISO 7.5.3) ──────────────────────────────────────
+
+  // List all change requests for the user's ISO project
+  app.get("/api/doc-change-requests", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { db } = await import("./db");
+      const { docChangeRequests, isoDocuments } = await import("@shared/schema");
+      const { sql } = await import("drizzle-orm");
+      const rows = await db.execute(sql`
+        SELECT dcr.*, d.title AS doc_title, d.doc_type, d.version AS current_version, d.status AS doc_status
+        FROM doc_change_requests dcr
+        JOIN iso_documents d ON d.id = dcr.document_id
+        WHERE dcr.user_id = ${userId}
+        ORDER BY dcr.created_at DESC
+      `);
+      res.json(rows.rows);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Submit a change request for a document
+  app.post("/api/iso-documents/:id/change-requests", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { db } = await import("./db");
+      const { docChangeRequests, isoDocuments } = await import("@shared/schema");
+      const { eq, and, sql } = await import("drizzle-orm");
+      const docId = parseInt(req.params.id);
+      if (isNaN(docId)) return res.status(400).json({ message: "Invalid document ID" });
+
+      // Get the document
+      const [doc] = await db.select().from(isoDocuments).where(and(eq(isoDocuments.id, docId), eq(isoDocuments.userId, userId)));
+      if (!doc) return res.status(404).json({ message: "Document not found" });
+
+      const { requestedBy, changeDescription, reason, affectedDepartments, proposedEffectiveDate } = req.body;
+      if (!requestedBy || !changeDescription || !reason) {
+        return res.status(400).json({ message: "requestedBy, changeDescription, and reason are required" });
+      }
+
+      // Insert the change request
+      const [dcr] = await db.insert(docChangeRequests).values({
+        documentId: docId,
+        isoProjectId: doc.isoProjectId,
+        userId,
+        requestedBy,
+        changeDescription,
+        reason,
+        affectedDepartments: affectedDepartments ?? [],
+        proposedEffectiveDate: proposedEffectiveDate ? new Date(proposedEffectiveDate) : null,
+        status: "pending",
+        trainingTriggered: false,
+      }).returning();
+
+      // Move doc to in_review
+      await db.execute(sql`UPDATE iso_documents SET status = 'in_review', updated_at = NOW() WHERE id = ${docId} AND user_id = ${userId}`);
+
+      res.status(201).json(dcr);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Approve a change request → bumps version, archives old content, triggers training notice
+  app.patch("/api/doc-change-requests/:id/approve", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { db } = await import("./db");
+      const { docChangeRequests, isoDocuments, isoAwarenessNotices } = await import("@shared/schema");
+      const { eq, and, sql } = await import("drizzle-orm");
+      const requestId = parseInt(req.params.id);
+      if (isNaN(requestId)) return res.status(400).json({ message: "Invalid ID" });
+
+      const { reviewerComments, reviewedBy, newContent } = req.body;
+
+      // Get the change request
+      const [dcr] = await db.select().from(docChangeRequests).where(and(eq(docChangeRequests.id, requestId), eq(docChangeRequests.userId, userId)));
+      if (!dcr) return res.status(404).json({ message: "Change request not found" });
+      if (dcr.status !== "pending") return res.status(400).json({ message: "Already processed" });
+
+      // Get current document
+      const [doc] = await db.select().from(isoDocuments).where(and(eq(isoDocuments.id, dcr.documentId), eq(isoDocuments.userId, userId)));
+      if (!doc) return res.status(404).json({ message: "Document not found" });
+
+      // Calculate new version (e.g. 1.0 → 1.1, 1.9 → 2.0)
+      const [major, minor] = (doc.version || "1.0").split(".").map(Number);
+      const newMinor = (minor ?? 0) + 1;
+      const newVersion = newMinor >= 10 ? `${(major ?? 1) + 1}.0` : `${major ?? 1}.${newMinor}`;
+
+      // Archive current version
+      const archive = (doc.previousVersions as any[] ?? []);
+      archive.push({
+        version: doc.version,
+        content: doc.content ?? "",
+        approvedBy: doc.approvedBy ?? undefined,
+        archivedAt: new Date().toISOString(),
+        changeReason: dcr.reason,
+      });
+
+      // Update document: bump version, mark approved, optionally update content
+      const updateFields: Record<string, any> = {
+        version: newVersion,
+        status: "approved",
+        approvedBy: reviewedBy ?? "QMS Manager",
+        approvalDate: new Date(),
+        previousVersions: JSON.stringify(archive),
+        updatedAt: new Date(),
+      };
+      if (newContent) updateFields.content = newContent;
+
+      await db.execute(sql`
+        UPDATE iso_documents SET
+          version = ${updateFields.version},
+          status = 'approved',
+          approved_by = ${updateFields.approvedBy},
+          approval_date = NOW(),
+          previous_versions = ${updateFields.previousVersions}::jsonb,
+          updated_at = NOW()
+          ${newContent ? sql`, content = ${newContent}` : sql``}
+        WHERE id = ${dcr.documentId} AND user_id = ${userId}
+      `);
+
+      // Mark change request approved
+      const [updatedDcr] = await db.execute(sql`
+        UPDATE doc_change_requests SET
+          status = 'approved',
+          reviewer_comments = ${reviewerComments ?? null},
+          reviewed_by = ${reviewedBy ?? null},
+          reviewed_at = NOW(),
+          training_triggered = true
+        WHERE id = ${requestId}
+        RETURNING *
+      `);
+
+      // Auto-create training awareness notice for affected departments
+      if (dcr.affectedDepartments && dcr.affectedDepartments.length > 0) {
+        await db.insert(isoAwarenessNotices).values({
+          userId,
+          standard: "ISO 9001:2015",
+          clause: "7.5.3",
+          title: `Document Update Training: ${doc.title} (Rev. ${newVersion})`,
+          message: `The document "${doc.title}" has been updated to Revision ${newVersion} and approved. All affected personnel must review the changes.\n\nChange Summary: ${dcr.changeDescription}\n\nReason: ${dcr.reason}\n\nPlease acknowledge receipt and confirm you have read and understood the updated document.`,
+          processArea: dcr.affectedDepartments.join(", "),
+          assignedTo: dcr.affectedDepartments,
+          dueDate: dcr.proposedEffectiveDate ?? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          status: "active",
+        });
+      }
+
+      res.json({ success: true, newVersion, trainingTriggered: (dcr.affectedDepartments ?? []).length > 0 });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Reject a change request → doc returns to approved
+  app.patch("/api/doc-change-requests/:id/reject", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { db } = await import("./db");
+      const { docChangeRequests, isoDocuments } = await import("@shared/schema");
+      const { eq, and, sql } = await import("drizzle-orm");
+      const requestId = parseInt(req.params.id);
+      if (isNaN(requestId)) return res.status(400).json({ message: "Invalid ID" });
+
+      const { reviewerComments, reviewedBy } = req.body;
+      const [dcr] = await db.select().from(docChangeRequests).where(and(eq(docChangeRequests.id, requestId), eq(docChangeRequests.userId, userId)));
+      if (!dcr) return res.status(404).json({ message: "Not found" });
+      if (dcr.status !== "pending") return res.status(400).json({ message: "Already processed" });
+
+      // Reject change request
+      await db.execute(sql`
+        UPDATE doc_change_requests SET
+          status = 'rejected',
+          reviewer_comments = ${reviewerComments ?? null},
+          reviewed_by = ${reviewedBy ?? null},
+          reviewed_at = NOW()
+        WHERE id = ${requestId}
+      `);
+
+      // Return doc to approved (it was in_review)
+      await db.execute(sql`UPDATE iso_documents SET status = 'approved', updated_at = NOW() WHERE id = ${dcr.documentId} AND user_id = ${userId}`);
+
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }

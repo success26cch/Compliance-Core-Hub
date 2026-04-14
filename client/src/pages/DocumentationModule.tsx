@@ -21,6 +21,14 @@ import {
   Map,
   X,
   Printer,
+  GitMerge,
+  History,
+  ShieldCheck,
+  Ban,
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
+  Bell,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +54,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { IsoDocument, InsertIsoDocument, IsoProject } from "@shared/schema";
+import type { IsoDocument, InsertIsoDocument, IsoProject, DocChangeRequest } from "@shared/schema";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface DocumentationModuleProps {
@@ -321,6 +329,8 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [draftDoc, setDraftDoc] = useState<IsoDocument | null>(null);
   const [draftContent, setDraftContent] = useState("");
   const [isDrafting, setIsDrafting] = useState(false);
+  const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
+  const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -330,6 +340,60 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
 
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
+  });
+
+  const { data: changeRequests } = useQuery<any[]>({
+    queryKey: ["/api/doc-change-requests"],
+  });
+
+  const pendingCount = changeRequests?.filter(r => r.status === "pending").length ?? 0;
+
+  const submitChangeMutation = useMutation({
+    mutationFn: async (payload: { docId: number; data: any }) => {
+      const res = await apiRequest("POST", `/api/iso-documents/${payload.docId}/change-requests`, payload.data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doc-change-requests"] });
+      setChangeReqDoc(null);
+      toast({ title: "Change Request Submitted", description: "Document moved to In Review. Awaiting approval." });
+    },
+    onError: (e: any) => toast({ title: "Failed", description: e.message, variant: "destructive" }),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (payload: { requestId: number; reviewedBy: string; reviewerComments: string }) => {
+      const res = await apiRequest("PATCH", `/api/doc-change-requests/${payload.requestId}/approve`, payload);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doc-change-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices"] });
+      setReviewingRequest(null);
+      toast({
+        title: `✓ Approved — now Rev. ${data.newVersion}`,
+        description: data.trainingTriggered
+          ? "Document version bumped and training notice sent to affected departments."
+          : "Document version bumped and approved.",
+      });
+    },
+    onError: (e: any) => toast({ title: "Approval Failed", description: e.message, variant: "destructive" }),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (payload: { requestId: number; reviewedBy: string; reviewerComments: string }) => {
+      const res = await apiRequest("PATCH", `/api/doc-change-requests/${payload.requestId}/reject`, payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doc-change-requests"] });
+      setReviewingRequest(null);
+      toast({ title: "Change Request Rejected", description: "Document returned to Approved status." });
+    },
+    onError: (e: any) => toast({ title: "Reject Failed", description: e.message, variant: "destructive" }),
   });
 
   const createMutation = useMutation({
@@ -481,10 +545,25 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           <TabsTrigger value="coverage_map" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-coverage-map">
             <Map className="w-3.5 h-3.5" /> Coverage Map
           </TabsTrigger>
+          <TabsTrigger value="change_requests" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white gap-1.5 relative" data-testid="tab-change-requests">
+            <GitMerge className="w-3.5 h-3.5" /> Change Control
+            {pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                {pendingCount}
+              </span>
+            )}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {activeTab === "coverage_map" ? (
+      {activeTab === "change_requests" ? (
+        <ChangeRequestsPanel
+          changeRequests={changeRequests ?? []}
+          documents={documents ?? []}
+          onApprove={(req: any) => setReviewingRequest(req)}
+          onReject={(req: any) => setReviewingRequest({ ...req, _action: "reject" })}
+        />
+      ) : activeTab === "coverage_map" ? (
         <ClauseCoverageMap documents={documents || []} onAskIsa={onAskIsa} />
       ) : isLoading ? (
         <div className="flex-1 flex items-center justify-center">
@@ -503,6 +582,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               onAskIsa={onAskIsa}
               onDraftWithIsa={handleDraftWithIsa}
               onPrint={() => printIsoDocument(doc, project ?? null)}
+              onRequestChange={() => setChangeReqDoc(doc)}
               getIcon={getDocIcon}
               getStatusBadge={getStatusBadge}
             />
@@ -576,11 +656,35 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
         isPending={createMutation.isPending || updateMutation.isPending}
         onAskIsa={onAskIsa}
       />
+
+      {changeReqDoc && (
+        <ChangeRequestDialog
+          doc={changeReqDoc}
+          onClose={() => setChangeReqDoc(null)}
+          onSubmit={(data: any) => submitChangeMutation.mutate({ docId: changeReqDoc.id, data })}
+          isPending={submitChangeMutation.isPending}
+        />
+      )}
+
+      {reviewingRequest && (
+        <ReviewDialog
+          request={reviewingRequest}
+          onClose={() => setReviewingRequest(null)}
+          onApprove={(payload: any) => approveMutation.mutate({ requestId: reviewingRequest.id, ...payload })}
+          onReject={(payload: any) => rejectMutation.mutate({ requestId: reviewingRequest.id, ...payload })}
+          isApprovePending={approveMutation.isPending}
+          isRejectPending={rejectMutation.isPending}
+          defaultAction={reviewingRequest._action ?? "approve"}
+        />
+      )}
     </div>
   );
 }
 
-function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint, getIcon, getStatusBadge }: any) {
+function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint, onRequestChange, getIcon, getStatusBadge }: any) {
+  const [showHistory, setShowHistory] = useState(false);
+  const prevVersions: any[] = Array.isArray(doc.previousVersions) ? doc.previousVersions : [];
+
   return (
     <Card className="hover-elevate cursor-pointer group" onClick={onEdit} data-testid={`card-document-${doc.id}`}>
       <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
@@ -608,16 +712,57 @@ function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint
       </CardHeader>
       <CardContent className="pb-4">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {getStatusBadge(doc.status)}
-            <Badge variant="outline" className="text-[10px]">v{doc.version}</Badge>
+            <Badge variant="outline" className="text-[10px]">Rev. {doc.version}</Badge>
+            {prevVersions.length > 0 && (
+              <button
+                onClick={e => { e.stopPropagation(); setShowHistory(h => !h); }}
+                className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                data-testid={`button-history-${doc.id}`}
+              >
+                <History className="w-3 h-3" />
+                {prevVersions.length} revision{prevVersions.length > 1 ? "s" : ""}
+                {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
           </div>
         </div>
+
+        {showHistory && prevVersions.length > 0 && (
+          <div className="mb-3 border border-border/50 rounded-lg overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-muted/50 px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+              <History className="w-3 h-3" /> Version History
+            </div>
+            {[...prevVersions].reverse().map((v, i) => (
+              <div key={i} className="px-3 py-2 border-t border-border/30 text-[10px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-primary">Rev. {v.version}</span>
+                  <span className="text-muted-foreground">{v.archivedAt ? format(new Date(v.archivedAt), 'MMM d, yyyy') : "—"}</span>
+                </div>
+                {v.changeReason && <p className="text-muted-foreground mt-0.5 truncate">{v.changeReason}</p>}
+                {v.approvedBy && <p className="text-muted-foreground">Approved by: {v.approvedBy}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] text-muted-foreground">
             Updated {format(new Date(doc.updatedAt || doc.createdAt), 'MMM d, yyyy')}
           </p>
-          <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
+          <div className="flex gap-1.5 flex-wrap justify-end" onClick={e => e.stopPropagation()}>
+            {doc.status === "approved" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[10px] gap-1 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700 font-bold dark:bg-orange-950/30 dark:border-orange-800/40 dark:text-orange-300"
+                onClick={(e) => { e.stopPropagation(); onRequestChange(doc); }}
+                data-testid={`button-request-change-${doc.id}`}
+              >
+                <GitMerge className="w-3 h-3" /> Request Change
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -643,6 +788,399 @@ function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Change Request Dialog ────────────────────────────────────────────────────
+const DEPT_OPTIONS = [
+  "Quality", "Production", "Engineering", "Purchasing", "HR", "Sales", "Shipping/Receiving",
+  "Management", "Maintenance", "Health & Safety", "Finance", "IT", "All Departments",
+];
+
+function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
+  const [form, setForm] = useState({
+    requestedBy: "",
+    changeDescription: "",
+    reason: "",
+    affectedDepartments: [] as string[],
+    proposedEffectiveDate: "",
+  });
+
+  const toggleDept = (dept: string) => {
+    setForm(f => ({
+      ...f,
+      affectedDepartments: f.affectedDepartments.includes(dept)
+        ? f.affectedDepartments.filter(d => d !== dept)
+        : [...f.affectedDepartments, dept],
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.requestedBy || !form.changeDescription || !form.reason) return;
+    onSubmit(form);
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <GitMerge className="w-4 h-4 text-orange-600" />
+            Document Change Request
+          </DialogTitle>
+          <p className="text-[11px] text-muted-foreground">ISO 7.5.3 — Control of Documented Information</p>
+        </DialogHeader>
+
+        <div className="text-[11px] bg-orange-50 border border-orange-200 rounded-lg p-3 flex gap-2 dark:bg-orange-950/20 dark:border-orange-800/40">
+          <AlertCircle className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-orange-800 dark:text-orange-300">Submitting a change request for:</p>
+            <p className="text-orange-700 dark:text-orange-400 font-semibold">{doc.title} (Rev. {doc.version})</p>
+            <p className="text-orange-600 dark:text-orange-500 mt-0.5">Document will move to <strong>In Review</strong> status until approved or rejected.</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Requested By <span className="text-destructive">*</span></Label>
+            <Input
+              value={form.requestedBy}
+              onChange={e => setForm(f => ({ ...f, requestedBy: e.target.value }))}
+              placeholder="Your name or title"
+              className="text-sm"
+              data-testid="input-requested-by"
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Description of Change <span className="text-destructive">*</span></Label>
+            <Textarea
+              value={form.changeDescription}
+              onChange={e => setForm(f => ({ ...f, changeDescription: e.target.value }))}
+              placeholder="What specifically needs to change? (sections, content, procedure steps...)"
+              rows={3}
+              className="text-sm resize-none"
+              data-testid="textarea-change-description"
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Reason for Change <span className="text-destructive">*</span></Label>
+            <Textarea
+              value={form.reason}
+              onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
+              placeholder="Why is this change needed? (audit finding, process improvement, regulatory update, customer requirement...)"
+              rows={2}
+              className="text-sm resize-none"
+              data-testid="textarea-change-reason"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Affected Departments <span className="text-muted-foreground">(triggers training notices on approval)</span></Label>
+            <div className="flex flex-wrap gap-1.5">
+              {DEPT_OPTIONS.map(dept => (
+                <button
+                  key={dept}
+                  type="button"
+                  onClick={() => toggleDept(dept)}
+                  className={`text-[10px] px-2 py-1 rounded-full border font-medium transition-colors ${
+                    form.affectedDepartments.includes(dept)
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white text-muted-foreground border-border hover:border-primary"
+                  }`}
+                  data-testid={`chip-dept-${dept.replace(/\//g, "-")}`}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1">
+              <CalendarDays className="w-3 h-3" /> Proposed Effective Date
+            </Label>
+            <Input
+              type="date"
+              value={form.proposedEffectiveDate}
+              onChange={e => setForm(f => ({ ...f, proposedEffectiveDate: e.target.value }))}
+              className="text-sm"
+              data-testid="input-effective-date"
+            />
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
+            <Button
+              type="submit"
+              disabled={isPending || !form.requestedBy || !form.changeDescription || !form.reason}
+              className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+              data-testid="button-submit-change-request"
+            >
+              <GitMerge className="w-3.5 h-3.5" />
+              {isPending ? "Submitting..." : "Submit Change Request"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Review Dialog (Approve / Reject) ─────────────────────────────────────────
+function ReviewDialog({ request, onClose, onApprove, onReject, isApprovePending, isRejectPending, defaultAction }: any) {
+  const [action, setAction] = useState<"approve" | "reject">(defaultAction === "reject" ? "reject" : "approve");
+  const [reviewedBy, setReviewedBy] = useState("");
+  const [reviewerComments, setReviewerComments] = useState("");
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            {action === "approve" ? <ShieldCheck className="w-4 h-4 text-green-600" /> : <Ban className="w-4 h-4 text-red-500" />}
+            Review Change Request
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="bg-muted/40 rounded-lg p-3 text-xs space-y-1.5 border border-border/50">
+          <p><span className="font-bold text-muted-foreground">Document:</span> {request.doc_title}</p>
+          <p><span className="font-bold text-muted-foreground">Current Rev:</span> {request.current_version}</p>
+          <p><span className="font-bold text-muted-foreground">Requested by:</span> {request.requested_by}</p>
+          <p><span className="font-bold text-muted-foreground">Change:</span> {request.change_description}</p>
+          <p><span className="font-bold text-muted-foreground">Reason:</span> {request.reason}</p>
+          {request.affected_departments?.length > 0 && (
+            <p><span className="font-bold text-muted-foreground">Affected Depts:</span> {(request.affected_departments as string[]).join(", ")}</p>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setAction("approve")}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
+              action === "approve" ? "bg-green-600 text-white border-green-600" : "bg-white text-muted-foreground border-border hover:border-green-400"
+            }`}
+            data-testid="toggle-approve"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" /> Approve
+          </button>
+          <button
+            onClick={() => setAction("reject")}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
+              action === "reject" ? "bg-red-500 text-white border-red-500" : "bg-white text-muted-foreground border-border hover:border-red-400"
+            }`}
+            data-testid="toggle-reject"
+          >
+            <Ban className="w-3.5 h-3.5" /> Reject
+          </button>
+        </div>
+
+        {action === "approve" && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-[11px] text-green-800 dark:bg-green-950/20 dark:border-green-800/40 dark:text-green-300 space-y-1">
+            <p className="font-bold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Approving will:</p>
+            <ul className="list-disc list-inside space-y-0.5 text-green-700 dark:text-green-400">
+              <li>Bump version from Rev. {request.current_version} → Rev. {bumpVersion(request.current_version)}</li>
+              <li>Archive current version to revision history</li>
+              <li>Set document status to Approved</li>
+              {request.affected_departments?.length > 0 && <li>Send training notice to: {(request.affected_departments as string[]).join(", ")}</li>}
+            </ul>
+          </div>
+        )}
+        {action === "reject" && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-[11px] text-red-800 dark:bg-red-950/20 dark:border-red-800/40 dark:text-red-300">
+            <p className="font-bold">Rejecting will return the document to Approved status.</p>
+            <p className="mt-0.5 text-red-700 dark:text-red-400">Please provide feedback so the requestor can revise and resubmit.</p>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Reviewer Name <span className="text-destructive">*</span></Label>
+            <Input
+              value={reviewedBy}
+              onChange={e => setReviewedBy(e.target.value)}
+              placeholder="QMS Manager / Management Representative"
+              className="text-sm"
+              data-testid="input-reviewed-by"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">{action === "approve" ? "Approval Notes (optional)" : "Rejection Reason *"}</Label>
+            <Textarea
+              value={reviewerComments}
+              onChange={e => setReviewerComments(e.target.value)}
+              placeholder={action === "approve" ? "Any notes for the record..." : "Explain why the change is being rejected..."}
+              rows={2}
+              className="text-sm resize-none"
+              data-testid="textarea-reviewer-comments"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={isApprovePending || isRejectPending}>Cancel</Button>
+          {action === "approve" ? (
+            <Button
+              onClick={() => onApprove({ reviewedBy, reviewerComments })}
+              disabled={isApprovePending || !reviewedBy}
+              className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+              data-testid="button-confirm-approve"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              {isApprovePending ? "Approving..." : "Approve & Bump Version"}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => onReject({ reviewedBy, reviewerComments })}
+              disabled={isRejectPending || !reviewedBy || !reviewerComments}
+              className="bg-red-500 hover:bg-red-600 text-white gap-1.5"
+              data-testid="button-confirm-reject"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              {isRejectPending ? "Rejecting..." : "Reject Change Request"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function bumpVersion(version: string): string {
+  const [major, minor] = (version || "1.0").split(".").map(Number);
+  const newMinor = (minor ?? 0) + 1;
+  return newMinor >= 10 ? `${(major ?? 1) + 1}.0` : `${major ?? 1}.${newMinor}`;
+}
+
+// ─── Change Requests Panel ────────────────────────────────────────────────────
+function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject }: any) {
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+
+  const filtered = changeRequests.filter((r: any) => statusFilter === "all" || r.status === statusFilter);
+  const pendingCount = changeRequests.filter((r: any) => r.status === "pending").length;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending": return <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white text-[10px]">Pending Review</Badge>;
+      case "approved": return <Badge className="bg-green-500 hover:bg-green-600 text-white text-[10px]">Approved</Badge>;
+      case "rejected": return <Badge className="bg-red-500 hover:bg-red-600 text-white text-[10px]">Rejected</Badge>;
+      default: return <Badge className="text-[10px]">{status}</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-black text-primary flex items-center gap-2">
+            <GitMerge className="w-5 h-5 text-orange-600" />
+            Document Change Control
+          </h2>
+          <p className="text-xs text-muted-foreground">ISO 7.5.3 — All change requests with full approval audit trail</p>
+        </div>
+        {pendingCount > 0 && (
+          <Badge className="bg-red-500 hover:bg-red-600 text-white gap-1 text-xs">
+            <Bell className="w-3 h-3" /> {pendingCount} Pending
+          </Badge>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        {(["all", "pending", "approved", "rejected"] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors capitalize ${
+              statusFilter === s ? "bg-primary text-white border-primary" : "bg-white text-muted-foreground border-border hover:border-primary"
+            }`}
+            data-testid={`filter-${s}`}
+          >
+            {s === "all" ? `All (${changeRequests.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${changeRequests.filter((r: any) => r.status === s).length})`}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="p-4 bg-muted/50 rounded-full mb-4">
+            <GitMerge className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-semibold text-primary">No change requests yet</p>
+          <p className="text-xs text-muted-foreground mt-1">When a document is Approved, click <strong>Request Change</strong> on the document card to initiate a controlled change process.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((req: any) => (
+            <Card key={req.id} className={`border-l-4 ${req.status === "pending" ? "border-l-yellow-400" : req.status === "approved" ? "border-l-green-500" : "border-l-red-400"}`}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      {getStatusBadge(req.status)}
+                      <span className="text-xs font-bold text-primary truncate">{req.doc_title}</span>
+                      <Badge variant="outline" className="text-[10px]">DCR-{String(req.id).padStart(4, "0")}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Submitted by <span className="font-semibold text-foreground">{req.requested_by}</span> · {req.created_at ? format(new Date(req.created_at), "MMM d, yyyy") : "—"}
+                    </p>
+                    <p className="text-xs font-medium text-foreground mb-1">
+                      <span className="text-muted-foreground">Change: </span>{req.change_description}
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      <span className="font-medium">Reason: </span>{req.reason}
+                    </p>
+                    {req.affected_departments?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {(req.affected_departments as string[]).map((d: string) => (
+                          <span key={d} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/40">{d}</span>
+                        ))}
+                      </div>
+                    )}
+                    {req.status !== "pending" && req.reviewer_comments && (
+                      <div className="text-[11px] bg-muted/40 rounded p-2 border border-border/40">
+                        <span className="font-bold text-muted-foreground">Reviewer ({req.reviewed_by}): </span>
+                        {req.reviewer_comments}
+                      </div>
+                    )}
+                    {req.status === "approved" && req.training_triggered && (
+                      <div className="flex items-center gap-1 mt-1.5 text-[10px] text-green-700 dark:text-green-400 font-semibold">
+                        <Bell className="w-3 h-3" /> Training notice sent to affected departments
+                      </div>
+                    )}
+                  </div>
+                  {req.status === "pending" && (
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => onApprove(req)}
+                        className="h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white gap-1"
+                        data-testid={`button-approve-${req.id}`}
+                      >
+                        <ShieldCheck className="w-3 h-3" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onReject(req)}
+                        className="h-7 text-[10px] border-red-300 text-red-600 hover:bg-red-50 gap-1"
+                        data-testid={`button-reject-${req.id}`}
+                      >
+                        <Ban className="w-3 h-3" /> Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

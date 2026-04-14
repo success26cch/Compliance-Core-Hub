@@ -631,6 +631,13 @@ export const isoDocuments = pgTable("iso_documents", {
   approvalDate: timestamp("approval_date"),
   reviewDate: timestamp("review_date"),
   tags: text("tags").array(),
+  previousVersions: jsonb("previous_versions").$type<Array<{
+    version: string;
+    content: string;
+    approvedBy?: string;
+    archivedAt: string;
+    changeReason?: string;
+  }>>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -646,6 +653,34 @@ export const insertIsoDocumentSchema = createInsertSchema(isoDocuments, {
 
 export type IsoDocument = typeof isoDocuments.$inferSelect;
 export type InsertIsoDocument = z.infer<typeof insertIsoDocumentSchema>;
+
+// ─── Document Change Control (ISO 7.5.3) ─────────────────────────────────────
+export const docChangeRequests = pgTable("doc_change_requests", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  userId: text("user_id").notNull(),
+  requestedBy: text("requested_by").notNull(),
+  changeDescription: text("change_description").notNull(),
+  reason: text("reason").notNull(),
+  affectedDepartments: text("affected_departments").array(),
+  proposedEffectiveDate: timestamp("proposed_effective_date"),
+  status: text("status").notNull().default("pending"), // 'pending' | 'approved' | 'rejected'
+  reviewerComments: text("reviewer_comments"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  trainingTriggered: boolean("training_triggered").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDocChangeRequestSchema = createInsertSchema(docChangeRequests, {
+  proposedEffectiveDate: z.union([z.string(), z.date()]).optional().transform((v) =>
+    v == null ? undefined : v instanceof Date ? v : new Date(v)
+  ),
+}).omit({ id: true, createdAt: true });
+
+export type DocChangeRequest = typeof docChangeRequests.$inferSelect;
+export type InsertDocChangeRequest = z.infer<typeof insertDocChangeRequestSchema>;
 
 // DOT Notification Log - tracks all notifications sent
 export const dotNotifications = pgTable("dot_notifications", {
