@@ -801,6 +801,7 @@ const DEPT_OPTIONS = [
 function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
   const [form, setForm] = useState({
     requestedBy: "",
+    designatedReviewer: "",
     changeDescription: "",
     reason: "",
     affectedDepartments: [] as string[],
@@ -853,6 +854,21 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
               data-testid="input-requested-by"
               required
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-primary" /> Designated Reviewer / Approver
+              <span className="text-muted-foreground font-normal">(who must approve this change)</span>
+            </Label>
+            <Input
+              value={form.designatedReviewer}
+              onChange={e => setForm(f => ({ ...f, designatedReviewer: e.target.value }))}
+              placeholder="e.g. Quality Manager, Management Representative, Plant Manager"
+              className="text-sm"
+              data-testid="input-designated-reviewer"
+            />
+            <p className="text-[10px] text-muted-foreground">This person will review the change request and click Approve or Reject in the Change Control tab.</p>
           </div>
 
           <div className="space-y-1.5">
@@ -936,7 +952,7 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
 // ─── Review Dialog (Approve / Reject) ─────────────────────────────────────────
 function ReviewDialog({ request, onClose, onApprove, onReject, isApprovePending, isRejectPending, defaultAction }: any) {
   const [action, setAction] = useState<"approve" | "reject">(defaultAction === "reject" ? "reject" : "approve");
-  const [reviewedBy, setReviewedBy] = useState("");
+  const [reviewedBy, setReviewedBy] = useState(request?.designated_reviewer ?? "");
   const [reviewerComments, setReviewerComments] = useState("");
 
   return (
@@ -1189,64 +1205,110 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject, o
           <div className="space-y-3">
             {filtered.map((req: any) => (
               <Card key={req.id} className={`border-l-4 ${req.status === "pending" ? "border-l-yellow-400" : req.status === "approved" ? "border-l-green-500" : "border-l-red-400"}`}>
-                <CardContent className="p-4">
+                <CardContent className="p-4 space-y-3">
+
+                  {/* Header row */}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        {getStatusBadge(req.status)}
-                        <span className="text-xs font-bold text-primary truncate">{req.doc_title}</span>
-                        <Badge variant="outline" className="text-[10px]">DCR-{String(req.id).padStart(4, "0")}</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Submitted by <span className="font-semibold text-foreground">{req.requested_by}</span> · {req.created_at ? format(new Date(req.created_at), "MMM d, yyyy") : "—"}
-                      </p>
-                      <p className="text-xs font-medium text-foreground mb-1">
-                        <span className="text-muted-foreground">Change: </span>{req.change_description}
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        <span className="font-medium">Reason: </span>{req.reason}
-                      </p>
-                      {req.affected_departments?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {(req.affected_departments as string[]).map((d: string) => (
-                            <span key={d} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/40">{d}</span>
-                          ))}
-                        </div>
-                      )}
-                      {req.status !== "pending" && req.reviewer_comments && (
-                        <div className="text-[11px] bg-muted/40 rounded p-2 border border-border/40">
-                          <span className="font-bold text-muted-foreground">Reviewer ({req.reviewed_by}): </span>
-                          {req.reviewer_comments}
-                        </div>
-                      )}
-                      {req.status === "approved" && req.training_triggered && (
-                        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-green-700 dark:text-green-400 font-semibold">
-                          <Bell className="w-3 h-3" /> Training notice sent to affected departments
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {getStatusBadge(req.status)}
+                      <span className="text-xs font-bold text-primary">{req.doc_title}</span>
+                      <Badge variant="outline" className="text-[10px]">DCR-{String(req.id).padStart(4, "0")}</Badge>
+                      <span className="text-[10px] text-muted-foreground">Rev. {req.current_version}</span>
                     </div>
                     {req.status === "pending" && (
-                      <div className="flex flex-col gap-1.5 shrink-0">
-                        <Button
-                          size="sm"
-                          onClick={() => onApprove(req)}
+                      <div className="flex gap-1.5 shrink-0">
+                        <Button size="sm" onClick={() => onApprove(req)}
                           className="h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white gap-1"
-                          data-testid={`button-approve-${req.id}`}
-                        >
+                          data-testid={`button-approve-${req.id}`}>
                           <ShieldCheck className="w-3 h-3" /> Approve
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onReject(req)}
+                        <Button size="sm" variant="outline" onClick={() => onReject(req)}
                           className="h-7 text-[10px] border-red-300 text-red-600 hover:bg-red-50 gap-1"
-                          data-testid={`button-reject-${req.id}`}
-                        >
+                          data-testid={`button-reject-${req.id}`}>
                           <Ban className="w-3 h-3" /> Reject
                         </Button>
                       </div>
                     )}
                   </div>
+
+                  {/* Approval workflow steps — shown on pending only */}
+                  {req.status === "pending" && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800/40 rounded-lg p-3">
+                      <p className="text-[10px] font-bold text-yellow-900 dark:text-yellow-200 mb-2 uppercase tracking-wide">Approval Workflow</p>
+                      <div className="flex items-center gap-1 text-[10px]">
+                        {/* Step 1 */}
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[9px] font-black">✓</div>
+                          <span className="text-green-700 dark:text-green-400 font-semibold text-center leading-tight">Submitted</span>
+                        </div>
+                        <div className="flex-1 h-px bg-yellow-300 dark:bg-yellow-700 mx-1" />
+                        {/* Step 2 — current */}
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="w-6 h-6 rounded-full bg-yellow-400 text-white flex items-center justify-center animate-pulse">
+                            <Clock className="w-3 h-3" />
+                          </div>
+                          <span className="text-yellow-700 dark:text-yellow-400 font-black text-center leading-tight">
+                            {req.designated_reviewer ? `Awaiting: ${req.designated_reviewer}` : "Awaiting Approval"}
+                          </span>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700 mx-1" />
+                        {/* Step 3 */}
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[9px] text-muted-foreground font-black">3</div>
+                          <span className="text-muted-foreground text-center leading-tight">Version Bumped + Training</span>
+                        </div>
+                      </div>
+                      {req.designated_reviewer ? (
+                        <div className="mt-2.5 flex items-center gap-1.5 bg-white dark:bg-card border border-yellow-300 dark:border-yellow-700/50 rounded-lg px-2.5 py-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-muted-foreground font-medium">Required Approver</p>
+                            <p className="text-xs font-black text-primary truncate">{req.designated_reviewer}</p>
+                          </div>
+                          <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700 rounded px-1.5 py-0.5 font-bold whitespace-nowrap">Action Required</span>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-[10px] text-yellow-700 dark:text-yellow-400">
+                          <span className="font-bold">Anyone with access</span> can approve or reject this request using the buttons above.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Change details */}
+                  <div className="space-y-1 text-xs">
+                    <p className="text-muted-foreground">
+                      Submitted by <span className="font-semibold text-foreground">{req.requested_by}</span> · {req.created_at ? format(new Date(req.created_at), "MMM d, yyyy") : "—"}
+                    </p>
+                    <p><span className="text-muted-foreground">Change: </span><span className="font-medium">{req.change_description}</span></p>
+                    <p className="text-muted-foreground"><span className="font-medium text-foreground">Reason: </span>{req.reason}</p>
+                  </div>
+
+                  {req.affected_departments?.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      <span className="text-[10px] text-muted-foreground font-medium mr-0.5">Training required for:</span>
+                      {(req.affected_departments as string[]).map((d: string) => (
+                        <span key={d} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/40">{d}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {req.status !== "pending" && req.reviewed_by && (
+                    <div className={`text-[11px] rounded-lg p-2.5 border ${req.status === "approved" ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800/40" : "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800/40"}`}>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        {req.status === "approved" ? <ShieldCheck className="w-3 h-3 text-green-600" /> : <Ban className="w-3 h-3 text-red-500" />}
+                        <span className="font-bold">{req.status === "approved" ? "Approved" : "Rejected"} by {req.reviewed_by}</span>
+                        {req.reviewed_at && <span className="text-muted-foreground ml-1">· {format(new Date(req.reviewed_at), "MMM d, yyyy")}</span>}
+                      </div>
+                      {req.reviewer_comments && <p className="text-muted-foreground mt-0.5">{req.reviewer_comments}</p>}
+                    </div>
+                  )}
+
+                  {req.status === "approved" && req.training_triggered && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-green-700 dark:text-green-400 font-semibold">
+                      <Bell className="w-3 h-3" /> Training notice sent to affected departments
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

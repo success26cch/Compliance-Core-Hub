@@ -6865,7 +6865,7 @@ Output only the document content. No preamble. No closing remarks.`;
       const [doc] = await db.select().from(isoDocuments).where(and(eq(isoDocuments.id, docId), eq(isoDocuments.userId, userId)));
       if (!doc) return res.status(404).json({ message: "Document not found" });
 
-      const { requestedBy, changeDescription, reason, affectedDepartments, proposedEffectiveDate } = req.body;
+      const { requestedBy, designatedReviewer, changeDescription, reason, affectedDepartments, proposedEffectiveDate } = req.body;
       if (!requestedBy || !changeDescription || !reason) {
         return res.status(400).json({ message: "requestedBy, changeDescription, and reason are required" });
       }
@@ -6876,6 +6876,7 @@ Output only the document content. No preamble. No closing remarks.`;
         isoProjectId: doc.isoProjectId,
         userId,
         requestedBy,
+        designatedReviewer: designatedReviewer ?? null,
         changeDescription,
         reason,
         affectedDepartments: affectedDepartments ?? [],
