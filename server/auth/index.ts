@@ -4,8 +4,9 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { db } from "../db";
-import { users, auditLogs } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, auditLogs, passwordResetTokens } from "@shared/schema";
+import { eq, and, gt } from "drizzle-orm";
+import { sendEmail, brandedHtml } from "../emailService";
 
 async function writeAuditLog(
   req: any,
@@ -232,6 +233,58 @@ export function registerAuthRoutes(app: Express): void {
       res.clearCookie("connect.sid");
       res.redirect("/login");
     });
+  });
+
+  // Forgot Password — send reset email
+  app.post("/api/auth/forgot-password", async (req: any, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ message: "Email is required" });
+      const normalizedEmail = email.trim().toLowerCase();
+      const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail));
+      // Always return success to prevent email enumeration
+      if (!user || !user.passwordHash) {
+        return res.json({ message: "If that email exists, a reset link has been sent." });
+      }
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await db.insert(passwordResetTokens).values({ userId: user.id, token, expiresAt });
+      const host = req.headers.host || "corecompliancehub.com";
+      const protocol = req.headers["x-forwarded-proto"] || "https";
+      const resetUrl = `${protocol}://${host}/reset-password?token=${token}`;
+      const html = brandedHtml("Reset Your Password", `
+        <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px;">Password Reset Request</h2>
+        <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Hi ${user.firstName || "there"},</p>
+        <p style="margin:0 0 20px;color:#64748b;font-size:14px;">We received a request to reset your password for your Core Compliance Hub account. Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+        <a href="${resetUrl}" style="display:inline-block;background:#ea6c19;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px;margin-bottom:20px;">Reset My Password →</a>
+        <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;">If you did not request a password reset, you can safely ignore this email. Your password will not be changed.</p>
+        <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">Or copy this link: <a href="${resetUrl}" style="color:#ea6c19;">${resetUrl}</a></p>
+      `);
+      await sendEmail(normalizedEmail, "Reset Your Core Compliance Hub Password", html);
+      res.json({ message: "If that email exists, a reset link has been sent." });
+    } catch (err: any) {
+      console.error("[Auth] Forgot password error:", err);
+      res.status(500).json({ message: "Failed to process request" });
+    }
+  });
+
+  // Reset Password — validate token and set new password
+  app.post("/api/auth/reset-password", async (req: any, res) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) return res.status(400).json({ message: "Token and password are required" });
+      if (password.length < 8) return res.status(400).json({ message: "Password must be at least 8 characters" });
+      const [record] = await db.select().from(passwordResetTokens)
+        .where(and(eq(passwordResetTokens.token, token), eq(passwordResetTokens.used, false), gt(passwordResetTokens.expiresAt, new Date())));
+      if (!record) return res.status(400).json({ message: "This reset link is invalid or has expired. Please request a new one." });
+      const passwordHash = await hashPassword(password);
+      await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, record.userId));
+      await db.update(passwordResetTokens).set({ used: true }).where(eq(passwordResetTokens.id, record.id));
+      res.json({ message: "Password updated successfully. You can now sign in." });
+    } catch (err: any) {
+      console.error("[Auth] Reset password error:", err);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
   });
 
   // TEMPORARY — demo account bootstrap (token-gated, remove after demo)

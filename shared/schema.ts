@@ -1844,6 +1844,15 @@ export const envOpacityLogs = pgTable("env_opacity_logs", {
 export type EnvOpacityLog = typeof envOpacityLogs.$inferSelect;
 
 // ─── Audit Logs (Security / HIPAA) ───────────────────────────────────────────
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),                   // null for unauthenticated attempts

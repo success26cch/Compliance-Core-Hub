@@ -23,10 +23,13 @@ const inputClass =
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
   const queryClient = useQueryClient();
 
   // Login state
@@ -95,11 +98,27 @@ export default function Login() {
     });
   }
 
-  function switchMode(m: "login" | "register") {
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    setForgotLoading(true);
+    setErrorMsg("");
+    try {
+      await apiPost("/api/auth/forgot-password", { email: forgotEmail.trim() });
+      setForgotSent(true);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setForgotLoading(false);
+    }
+  }
+
+  function switchMode(m: "login" | "register" | "forgot") {
     setMode(m);
     setErrorMsg("");
     setLoginErrors({});
     setRegErrors({});
+    setForgotSent(false);
   }
 
   return (
@@ -160,7 +179,17 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-slate-300">Password</label>
+                <button
+                  type="button"
+                  className="text-xs text-orange-400 hover:text-orange-300 transition-colors"
+                  onClick={() => switchMode("forgot")}
+                  data-testid="link-forgot-password"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -192,6 +221,53 @@ export default function Login() {
               {isPending ? "Signing in…" : "Sign In"}
             </Button>
           </form>
+        )}
+
+        {/* ── Forgot Password form ── */}
+        {mode === "forgot" && (
+          <div>
+            {forgotSent ? (
+              <div className="text-center space-y-4 py-2">
+                <div className="w-12 h-12 rounded-full bg-green-900/40 border border-green-700 flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <p className="text-white font-medium">Check your email</p>
+                <p className="text-slate-400 text-sm">If an account exists for <strong className="text-slate-300">{forgotEmail}</strong>, a password reset link has been sent. Check your inbox and spam folder.</p>
+                <button className="text-sm text-orange-400 hover:text-orange-300 transition-colors" onClick={() => switchMode("login")}>Back to Sign In</button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <p className="text-slate-400 text-sm mb-4">Enter your email address and we'll send you a link to reset your password.</p>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Work Email</label>
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    autoFocus
+                    className={inputClass}
+                    data-testid="input-forgot-email"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={forgotLoading || !forgotEmail.trim()}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+                  data-testid="button-send-reset"
+                >
+                  {forgotLoading ? "Sending…" : "Send Reset Link"}
+                </Button>
+                <button
+                  type="button"
+                  className="w-full text-sm text-slate-400 hover:text-orange-400 transition-colors"
+                  onClick={() => switchMode("login")}
+                >
+                  Back to Sign In
+                </button>
+              </form>
+            )}
+          </div>
         )}
 
         {/* ── Create Account form ── */}
