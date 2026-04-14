@@ -1550,6 +1550,88 @@ export const insertIsoCommunicationSchema = createInsertSchema(isoCommunications
 export type IsoCommunication = typeof isoCommunications.$inferSelect;
 export type InsertIsoCommunication = z.infer<typeof insertIsoCommunicationSchema>;
 
+// ─── APQP / Advanced Product Quality Planning ─────────────────────────────────
+
+export const apqpProjects = pgTable("apqp_projects", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  projectName: text("project_name").notNull(),
+  partNumber: text("part_number"),
+  partName: text("part_name"),
+  partDescription: text("part_description"),
+  customer: text("customer"),
+  customerContact: text("customer_contact"),
+  customerPartNumber: text("customer_part_number"),
+  productFamily: text("product_family"),
+  programLaunchDate: timestamp("program_launch_date"),
+  sopDate: timestamp("sop_date"),
+  currentPhase: integer("current_phase").notNull().default(1),
+  status: text("status").notNull().default("active"), // 'active' | 'on_hold' | 'complete' | 'cancelled'
+  teamMembers: jsonb("team_members").$type<Array<{
+    name: string;
+    role: string;
+    email?: string;
+  }>>().default([]),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertApqpProjectSchema = createInsertSchema(apqpProjects, {
+  programLaunchDate: z.union([z.string(), z.date(), z.null()]).optional().transform(v => !v ? null : v instanceof Date ? v : new Date(v)),
+  sopDate: z.union([z.string(), z.date(), z.null()]).optional().transform(v => !v ? null : v instanceof Date ? v : new Date(v)),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type ApqpProject = typeof apqpProjects.$inferSelect;
+export type InsertApqpProject = z.infer<typeof insertApqpProjectSchema>;
+
+// APQP Deliverables — AIAG phase checklist items per project
+export const apqpDeliverables = pgTable("apqp_deliverables", {
+  id: serial("id").primaryKey(),
+  apqpProjectId: integer("apqp_project_id").notNull(),
+  userId: text("user_id").notNull(),
+  phase: integer("phase").notNull(), // 1–5
+  deliverableName: text("deliverable_name").notNull(),
+  category: text("category"),
+  status: text("status").notNull().default("not_started"), // 'not_started' | 'in_progress' | 'complete' | 'na'
+  owner: text("owner"),
+  dueDate: timestamp("due_date"),
+  completedDate: timestamp("completed_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertApqpDeliverableSchema = createInsertSchema(apqpDeliverables, {
+  dueDate: z.union([z.string(), z.date(), z.null()]).optional().transform(v => !v ? null : v instanceof Date ? v : new Date(v)),
+  completedDate: z.union([z.string(), z.date(), z.null()]).optional().transform(v => !v ? null : v instanceof Date ? v : new Date(v)),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type ApqpDeliverable = typeof apqpDeliverables.$inferSelect;
+export type InsertApqpDeliverable = z.infer<typeof insertApqpDeliverableSchema>;
+
+// APQP Gate Reviews — formal phase gate approval records
+export const apqpGateReviews = pgTable("apqp_gate_reviews", {
+  id: serial("id").primaryKey(),
+  apqpProjectId: integer("apqp_project_id").notNull(),
+  userId: text("user_id").notNull(),
+  gate: integer("gate").notNull(), // 1–5 (gate at end of each phase)
+  gateTitle: text("gate_title"),
+  reviewDate: timestamp("review_date"),
+  attendees: text("attendees"),
+  status: text("status").notNull().default("pending"), // 'pending' | 'approved' | 'conditional' | 'rejected'
+  conditions: text("conditions"),
+  approvedBy: text("approved_by"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertApqpGateReviewSchema = createInsertSchema(apqpGateReviews, {
+  reviewDate: z.union([z.string(), z.date(), z.null()]).optional().transform(v => !v ? null : v instanceof Date ? v : new Date(v)),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+export type ApqpGateReview = typeof apqpGateReviews.$inferSelect;
+export type InsertApqpGateReview = z.infer<typeof insertApqpGateReviewSchema>;
+
 // ─── Environmental Compliance Hub ─────────────────────────────────────────────
 
 export const envFacilityProfiles = pgTable("env_facility_profiles", {

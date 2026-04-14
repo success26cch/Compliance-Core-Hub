@@ -36,6 +36,7 @@ import MeasurementModule from "./MeasurementModule";
 import ManagementReviewModule from "./ManagementReviewModule";
 import CommunicationModule from "./CommunicationModule";
 import RolesRaciModule from "./RolesRaciModule";
+import APQPModule from "./APQPModule";
 import GlobalIsaWidget from "./GlobalIsaWidget";
 
 const ISA_STANDARDS = [
@@ -269,7 +270,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement' | 'apqp';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -278,6 +279,7 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   process_map:       [null, undefined, 'librarian', 'trainer', 'auditor'],
   system_profile:    [null, undefined, 'librarian', 'trainer', 'auditor'],
   roles_raci:        [null, undefined, 'librarian', 'trainer', 'auditor'],
+  apqp:              [null, undefined, 'librarian', 'trainer', 'auditor'],
   communication:     [null, undefined, 'trainer', 'auditor'],
   training:          [null, undefined, 'trainer', 'auditor'],
   risk:              [null, undefined, 'auditor'],
@@ -545,7 +547,7 @@ export default function ISOManager() {
               </div>
             )}
             <div className="space-y-0.5">
-              {(["context_org","system_profile","process_map","nc","documentation","roles_raci"] as SectionKey[]).map((section) => {
+              {(["context_org","system_profile","process_map","nc","documentation","roles_raci","apqp"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
                   context_org:    { icon: Compass,       label: "Context of the Org" },
                   system_profile: { icon: Building2,     label: "My System Profile" },
@@ -553,6 +555,7 @@ export default function ISOManager() {
                   nc:             { icon: Shield,        label: "NC & CAPA" },
                   documentation:  { icon: FileText,      label: "Documentation" },
                   roles_raci:     { icon: Users,         label: "Roles & RACI" },
+                  apqp:           { icon: Layers,        label: "APQP / Programs" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -701,6 +704,10 @@ export default function ISOManager() {
             ) : activeSection === 'roles_raci' ? (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <RolesRaciModule project={project ?? null} onStartWizard={handleStartWizard} />
+              </div>
+            ) : activeSection === 'apqp' ? (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <APQPModule isoProjectId={project?.id} />
               </div>
             ) : activeSection === 'nc' ? (
               <div className="flex-1 overflow-y-auto min-h-0">

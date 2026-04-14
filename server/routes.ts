@@ -1656,6 +1656,207 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
     }
   });
 
+  // ─── APQP / PROJECT PLANNING ROUTES ─────────────────────────────────────────
+  const APQP_DEFAULT_DELIVERABLES: Array<{ phase: number; deliverableName: string; category: string }> = [
+    // Phase 1 — Plan & Define Program
+    { phase: 1, deliverableName: "Voice of the Customer (VOC / QFD)", category: "Customer Input" },
+    { phase: 1, deliverableName: "Business Plan & Marketing Strategy Review", category: "Customer Input" },
+    { phase: 1, deliverableName: "Product/Process Benchmark Data", category: "Customer Input" },
+    { phase: 1, deliverableName: "Product/Process Assumptions", category: "Customer Input" },
+    { phase: 1, deliverableName: "Product Reliability Studies", category: "Design Input" },
+    { phase: 1, deliverableName: "Design Goals", category: "Design Input" },
+    { phase: 1, deliverableName: "Reliability & Quality Goals", category: "Design Input" },
+    { phase: 1, deliverableName: "Preliminary Bill of Material (PBOM)", category: "Design Input" },
+    { phase: 1, deliverableName: "Preliminary Process Flow Chart", category: "Design Input" },
+    { phase: 1, deliverableName: "Preliminary Listing of Special Product & Process Characteristics", category: "Design Input" },
+    { phase: 1, deliverableName: "Product Assurance Plan", category: "Plan" },
+    { phase: 1, deliverableName: "Management Support — Phase 1 Sign-Off", category: "Management" },
+    // Phase 2 — Product Design & Development
+    { phase: 2, deliverableName: "Design Failure Mode & Effects Analysis (DFMEA)", category: "FMEA" },
+    { phase: 2, deliverableName: "Manufacturability & Assembly Review", category: "Design" },
+    { phase: 2, deliverableName: "Design Verification Plan & Report (DVP&R)", category: "Design" },
+    { phase: 2, deliverableName: "Design Reviews", category: "Design" },
+    { phase: 2, deliverableName: "Prototype Build — Control Plan", category: "Control Plan" },
+    { phase: 2, deliverableName: "Engineering Drawings & Math Data", category: "Design" },
+    { phase: 2, deliverableName: "Engineering Specifications", category: "Design" },
+    { phase: 2, deliverableName: "Material Specifications", category: "Design" },
+    { phase: 2, deliverableName: "Drawing & Specification Changes Log", category: "Design" },
+    { phase: 2, deliverableName: "New Equipment / Tooling / Facilities Requirements", category: "Resources" },
+    { phase: 2, deliverableName: "Special Product & Process Characteristics", category: "Design" },
+    { phase: 2, deliverableName: "Gages / Testing Equipment Requirements", category: "Measurement" },
+    { phase: 2, deliverableName: "Team Feasibility Commitment", category: "Management" },
+    // Phase 3 — Process Design & Development
+    { phase: 3, deliverableName: "Packaging Standards", category: "Process" },
+    { phase: 3, deliverableName: "Quality System Review", category: "Process" },
+    { phase: 3, deliverableName: "Process Flow Chart (PFC)", category: "Process" },
+    { phase: 3, deliverableName: "Floor Plan Layout", category: "Process" },
+    { phase: 3, deliverableName: "Characteristics Matrix", category: "Process" },
+    { phase: 3, deliverableName: "Process FMEA (PFMEA)", category: "FMEA" },
+    { phase: 3, deliverableName: "Pre-Launch Control Plan", category: "Control Plan" },
+    { phase: 3, deliverableName: "Process Instructions / Work Instructions", category: "Process" },
+    { phase: 3, deliverableName: "Measurement System Analysis Plan (MSA)", category: "Measurement" },
+    { phase: 3, deliverableName: "Preliminary Process Capability Study Plan", category: "Measurement" },
+    { phase: 3, deliverableName: "Packaging Specifications", category: "Process" },
+    { phase: 3, deliverableName: "Management Support — Phase 3 Sign-Off", category: "Management" },
+    // Phase 4 — Product & Process Validation
+    { phase: 4, deliverableName: "Production Trial Run (PTR)", category: "Validation" },
+    { phase: 4, deliverableName: "Measurement System Evaluation (MSA Study)", category: "Measurement" },
+    { phase: 4, deliverableName: "Preliminary Process Capability Study (Cpk / Ppk)", category: "Measurement" },
+    { phase: 4, deliverableName: "Production Part Approval Process (PPAP)", category: "PPAP" },
+    { phase: 4, deliverableName: "Production Validation Testing (PVT)", category: "Validation" },
+    { phase: 4, deliverableName: "Packaging Evaluation", category: "Validation" },
+    { phase: 4, deliverableName: "Production Control Plan", category: "Control Plan" },
+    { phase: 4, deliverableName: "Quality Planning Sign-Off", category: "Management" },
+    // Phase 5 — Feedback, Assessment & Corrective Action
+    { phase: 5, deliverableName: "Reduced Variation Analysis", category: "Feedback" },
+    { phase: 5, deliverableName: "Customer Satisfaction Review", category: "Feedback" },
+    { phase: 5, deliverableName: "Delivery & Service Performance", category: "Feedback" },
+    { phase: 5, deliverableName: "Warranty / Field Data Review", category: "Feedback" },
+    { phase: 5, deliverableName: "Lessons Learned Documentation", category: "Feedback" },
+  ];
+
+  const APQP_GATE_TITLES = [
+    "Gate 1 — Plan & Define Approval",
+    "Gate 2 — Design Freeze / D&D Approval",
+    "Gate 3 — Process Freeze / P&D Approval",
+    "Gate 4 — PPAP / Launch Readiness",
+    "Gate 5 — Lessons Learned Sign-Off",
+  ];
+
+  // List all APQP projects
+  app.get("/api/apqp-projects", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { db } = await import("./db");
+      const { apqpProjects } = await import("@shared/schema");
+      const { eq, desc } = await import("drizzle-orm");
+      const rows = await db.select().from(apqpProjects).where(eq(apqpProjects.userId, userId)).orderBy(desc(apqpProjects.createdAt));
+      res.json(rows);
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // Create APQP project + auto-seed deliverables
+  app.post("/api/apqp-projects", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { db } = await import("./db");
+      const { apqpProjects, apqpDeliverables, apqpGateReviews } = await import("@shared/schema");
+      const body = { ...req.body, userId };
+      const [project] = await db.insert(apqpProjects).values(body).returning();
+      // Seed AIAG standard deliverables
+      if (APQP_DEFAULT_DELIVERABLES.length) {
+        await db.insert(apqpDeliverables).values(
+          APQP_DEFAULT_DELIVERABLES.map(d => ({ ...d, apqpProjectId: project.id, userId }))
+        );
+      }
+      // Seed 5 empty gate reviews
+      await db.insert(apqpGateReviews).values(
+        APQP_GATE_TITLES.map((title, i) => ({ apqpProjectId: project.id, userId, gate: i + 1, gateTitle: title, status: "pending" }))
+      );
+      res.status(201).json(project);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Get single APQP project
+  app.get("/api/apqp-projects/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { apqpProjects } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      const [row] = await db.select().from(apqpProjects).where(and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId)));
+      if (!row) return res.status(404).json({ message: "Not found" });
+      res.json(row);
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // Update APQP project
+  app.patch("/api/apqp-projects/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { apqpProjects } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      const [row] = await db.update(apqpProjects).set({ ...req.body, updatedAt: new Date() }).where(and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId))).returning();
+      if (!row) return res.status(404).json({ message: "Not found" });
+      res.json(row);
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // Delete APQP project
+  app.delete("/api/apqp-projects/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { apqpProjects, apqpDeliverables, apqpGateReviews } = await import("@shared/schema");
+      const { eq, and } = await import("drizzle-orm");
+      await db.delete(apqpDeliverables).where(eq(apqpDeliverables.apqpProjectId, id));
+      await db.delete(apqpGateReviews).where(eq(apqpGateReviews.apqpProjectId, id));
+      await db.delete(apqpProjects).where(and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId)));
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // Get deliverables for a project
+  app.get("/api/apqp-projects/:id/deliverables", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const id = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { apqpDeliverables } = await import("@shared/schema");
+      const { eq, asc } = await import("drizzle-orm");
+      const rows = await db.select().from(apqpDeliverables).where(eq(apqpDeliverables.apqpProjectId, id)).orderBy(asc(apqpDeliverables.id));
+      res.json(rows);
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // Update a single deliverable
+  app.patch("/api/apqp-deliverables/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const id = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { apqpDeliverables } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const [row] = await db.update(apqpDeliverables).set({ ...req.body, updatedAt: new Date() }).where(eq(apqpDeliverables.id, id)).returning();
+      res.json(row);
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // Get gate reviews for a project
+  app.get("/api/apqp-projects/:id/gate-reviews", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const id = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { apqpGateReviews } = await import("@shared/schema");
+      const { eq, asc } = await import("drizzle-orm");
+      const rows = await db.select().from(apqpGateReviews).where(eq(apqpGateReviews.apqpProjectId, id)).orderBy(asc(apqpGateReviews.gate));
+      res.json(rows);
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
+  // Update a gate review
+  app.patch("/api/apqp-gate-reviews/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const id = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { apqpGateReviews } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const [row] = await db.update(apqpGateReviews).set({ ...req.body, updatedAt: new Date() }).where(eq(apqpGateReviews.id, id)).returning();
+      res.json(row);
+    } catch (e) { res.status(500).json({ message: "Failed" }); }
+  });
+
   // ─── EMERGENCY RESPONSE GUIDANCE (T008) ─────────────────────────────────────
   app.post("/api/emergency-guidance", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });

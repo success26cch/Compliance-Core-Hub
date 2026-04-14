@@ -24,6 +24,7 @@ const SECTION_CONTEXT: Record<string, { label: string; clause: string; desc: str
   nc:                { label: "NC & CAPA", clause: "§10.2", desc: "Nonconformance log, corrective action assignments, effectiveness verification, and SMS notifications via Twilio" },
   documentation:     { label: "Documentation", clause: "§7.5", desc: "Controlled document library with version history, approval status, and ISO clause tagging" },
   roles_raci:        { label: "Roles & RACI", clause: "§5.3", desc: "Department-grouped RACI matrix mapping ISO clauses to roles, org-size templates (Small/Medium/Large), and AI job description generator" },
+  apqp:              { label: "APQP / Program Management", clause: "§8.3.2", desc: "AIAG Advanced Product Quality Planning — 5-phase program management with gate reviews, AIAG standard deliverable checklists per phase, and PPAP tracking. Per IATF 16949 §8.3.2 customer-specific APQP requirements." },
   communication:     { label: "Communication Log", clause: "§7.4", desc: "Internal and external communication records filtered by direction and medium" },
   training:          { label: "Training & Awareness", clause: "§7.2–7.3", desc: "Awareness notices pushed to process owners with urgency levels, expiry dates, and acknowledgment tracking" },
   risk:              { label: "Risk Assessment", clause: "§6.1", desc: "Risk & Opportunity register with Likelihood × Severity scoring (1–25 heatmap), controls, residual risk, and status workflow" },
