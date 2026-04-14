@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle, Check, BarChart3, Ambulance, Bell, Globe, Play, Truck } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Bot, FileText, ArrowRight, Activity, GraduationCap, Stethoscope, Syringe, Shield, ClipboardList, ChevronDown, ChevronUp, ChevronLeft, Users, Award, TrendingDown, MessageSquare, HelpCircle, Phone, Building2, Zap, Gift, QrCode, Shirt, Trophy, Star, Package, Sparkles, Menu, X, Send, Loader2, ShoppingCart, Mic, MicOff, Volume2, VolumeX, Copy, FileDown, Square, RotateCcw, AlertTriangle, Check, BarChart3, Ambulance, Bell, Globe, Play, Truck, Leaf } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import jsPDF from "jspdf";
@@ -643,6 +643,7 @@ export default function Landing() {
             <Link href="/meet-corey" className="px-3 py-2 text-sm font-bold bg-blue-500 text-white rounded-md hover:bg-blue-400 transition-colors shrink-0 animate-pulse shadow-lg shadow-blue-500/50" data-testid="nav-meet-corey">Meet Corey</Link>
             <Link href="/employer-dashboard" className="px-3 py-2 text-sm font-bold bg-[#8B0000] text-white rounded-md hover:bg-[#a00000] transition-colors shrink-0 animate-pulse shadow-lg shadow-red-900/60" data-testid="nav-employer-dashboard">Employer Dashboard</Link>
             <Link href="/dot-compliance-hub" className="px-3 py-2 text-sm font-bold bg-green-600 text-white rounded-md hover:bg-green-500 transition-colors shrink-0 animate-pulse shadow-lg shadow-green-600/50" data-testid="nav-dot-hub-featured">DOT Fleet Hub</Link>
+            <Link href="/env-compliance-hub" className="px-3 py-2 text-sm font-bold bg-emerald-600 text-white rounded-md hover:bg-emerald-500 transition-colors shrink-0 animate-pulse shadow-lg shadow-emerald-600/50" data-testid="nav-env-hub-featured">Env Compliance Hub</Link>
             <Link href="/meet-isa" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
             <Link href="/meet-iso-manager" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
             <Link href="/watch-demo" className="px-3 py-2 text-sm font-bold text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0 flex items-center gap-1" data-testid="nav-watch-demo"><Play className="w-3 h-3" />Watch Demo</Link>
@@ -1265,6 +1266,134 @@ export default function Landing() {
             ].map(cap => (
               <span key={cap} className="flex items-center gap-2 bg-white/5 border border-white/10 text-white/70 text-sm font-medium px-4 py-2 rounded-full">
                 <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                {cap}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Environmental Compliance Hub */}
+      <section data-testid="section-env-hub" className="relative overflow-hidden border-t-4 border-emerald-500 py-16">
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,8%)] via-[hsl(160,30%,8%)] to-[hsl(222,47%,11%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-48 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+
+        <div className="relative max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-5">
+              <Leaf className="w-3 h-3" />
+              EPA / Environmental Compliance Management
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
+              Your EPA Compliance <span className="text-emerald-400">Command Center</span>
+            </h2>
+            <p className="text-base text-white/60 max-w-2xl mx-auto leading-relaxed mb-7">
+              Everything the EPA requires — in one audit-ready platform. Manage Universal Waste countdowns, RCRA hazardous waste manifests, SPCC oil spill prevention, stormwater SWPPP monitoring, and air quality permits. Never miss a deadline or a 45-day manifest return.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link href="/env-compliance-hub">
+                <Button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 gap-2" data-testid="button-env-hub-landing-cta">
+                  Explore Env Compliance Hub <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link href="/get-started">
+                <Button variant="outline" className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 font-bold px-6" data-testid="button-env-see-pricing">
+                  See Pricing
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Dashboard mockup */}
+          <div className="rounded-2xl overflow-hidden border border-white/10 max-w-5xl mx-auto" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)" }}>
+            <div className="bg-slate-800 px-4 py-3 flex items-center gap-3">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-emerald-400" />
+              </div>
+              <div className="flex-1 bg-slate-700 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
+                app.corecompliancehub.com/env-hub
+              </div>
+            </div>
+            <div className="bg-[#071a12] flex" style={{ minHeight: 400 }}>
+              {/* Sidebar */}
+              <div className="w-44 bg-[#04110b] flex-shrink-0 py-4 px-3 flex flex-col gap-1 border-r border-white/5">
+                <div className="text-white/30 text-xs font-bold uppercase tracking-widest px-2 mb-2">ENV HUB</div>
+                {[
+                  { label: "Overview", active: false },
+                  { label: "Facility Profile", active: false },
+                  { label: "Universal Waste", active: true },
+                  { label: "Haz Waste / RCRA", active: false },
+                  { label: "SPCC / Oil Spill", active: false },
+                  { label: "Stormwater", active: false },
+                  { label: "Air Quality", active: false },
+                  { label: "Ask Corey — EPA", active: false },
+                ].map(({ label, active }) => (
+                  <div key={label} className={`px-2 py-1.5 rounded-md text-xs font-medium ${active ? "bg-emerald-700 text-white" : "text-white/40 hover:text-white/60"}`}>
+                    {label}
+                  </div>
+                ))}
+              </div>
+              {/* Main content */}
+              <div className="flex-1 p-5 overflow-hidden">
+                {/* Stat cards */}
+                <div className="grid grid-cols-4 gap-3 mb-4">
+                  {[
+                    { label: "Universal Waste", value: "4", sub: "active containers", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+                    { label: "Manifest Overdue", value: "1", sub: "49 days — action req.", color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
+                    { label: "Generator Status", value: "SQG", sub: "Current month", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
+                    { label: "SPCC Tanks", value: "5", sub: "34,500 gal on site", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+                  ].map(({ label, value, sub, color, bg }) => (
+                    <div key={label} className={`rounded-lg border p-3 ${bg}`}>
+                      <p className="text-xs text-white/40 mb-1">{label}</p>
+                      <p className={`text-2xl font-black ${color}`}>{value}</p>
+                      <p className="text-xs text-white/30 mt-0.5">{sub}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* Universal Waste countdown table */}
+                <div className="bg-white/[0.03] rounded-lg border border-white/10 p-3">
+                  <p className="text-xs font-bold text-white/50 mb-2 flex items-center gap-1.5">
+                    <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Universal Waste — 1-Year Accumulation Countdown
+                  </p>
+                  <div className="space-y-1.5">
+                    {[
+                      { name: "Fluorescent Lamps (T8)", days: 245, status: "ok" },
+                      { name: "Lead-Acid Batteries", days: 192, status: "ok" },
+                      { name: "Aerosol Cans", days: 135, status: "warn" },
+                      { name: "Mercury Thermometers", days: 266, status: "ok" },
+                    ].map(({ name, days, status }) => (
+                      <div key={name} className="flex items-center gap-2 text-xs py-1 border-b border-white/5 last:border-0">
+                        <span className="flex-1 font-medium text-white/80">{name}</span>
+                        <span className="text-white/40">{days} days left</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${status === "ok" ? "bg-emerald-500/20 text-emerald-400" : "bg-yellow-500/20 text-yellow-400"}`}>
+                          {status === "ok" ? "On Track" : "Watch"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature pills */}
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            {[
+              "Universal Waste 1-Year Countdown Clocks",
+              "RCRA Generator Status Calculator (VSQG/SQG/LQG)",
+              "45-Day Manifest Return Flag",
+              "SAP Weekly Inspection Log",
+              "SPCC Tank & Secondary Containment",
+              "Stormwater Visual Monitoring Log",
+              "Air Permit Renewal Alerts",
+              "Method 9 Opacity Log",
+            ].map(cap => (
+              <span key={cap} className="flex items-center gap-2 bg-white/5 border border-white/10 text-white/70 text-sm font-medium px-4 py-2 rounded-full">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 {cap}
               </span>
             ))}
