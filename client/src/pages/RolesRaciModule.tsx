@@ -16,7 +16,7 @@ import {
   ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   RotateCcw, Save, FileText, Grid3x3, ClipboardList,
   AlertTriangle, CheckCircle2, Send, Loader2,
-  Building2, Info, ChevronsUpDown, X,
+  Building2, Info, ChevronsUpDown, X, Printer,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -891,6 +891,340 @@ function RaciMatrixTab({ project, matrix, onChange, showIsa, onToggleIsa }: {
   );
 }
 
+// ─── Print helpers ────────────────────────────────────────────────────────────
+
+function formatContentForPrint(content: string): string {
+  const lines = content.split("\n");
+  let html = "";
+  let inList = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += "<div style='height:6px'></div>";
+      continue;
+    }
+
+    // Numbered section headers: "1. POSITION SUMMARY" or "KEY RESPONSIBILITIES"
+    const numberedHeader = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (numberedHeader) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += `<div class="section-title"><span class="section-num">${numberedHeader[1]}</span>${numberedHeader[2]}</div>`;
+      continue;
+    }
+
+    // ALL-CAPS headings (e.g. "AUTHORITY LEVELS")
+    if (/^[A-Z][A-Z &\/\-]+$/.test(trimmed) && trimmed.length > 3) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += `<div class="section-title">${trimmed}</div>`;
+      continue;
+    }
+
+    // Bullet/list items
+    if (/^[-•*]\s/.test(trimmed) || /^\d+\)\s/.test(trimmed)) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += `<li>${trimmed.replace(/^[-•*\d\)]+\s+/, "")}</li>`;
+      continue;
+    }
+
+    if (inList) { html += "</ul>"; inList = false; }
+    html += `<p>${trimmed}</p>`;
+  }
+
+  if (inList) html += "</ul>";
+  return html;
+}
+
+function printJd(jd: JobDescription, project: IsoProject | null) {
+  const orgName = project?.orgName ?? "Organization";
+  const standard = project?.standard ?? "ISO 9001";
+  const dateStr = new Date(jd.createdAt).toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+  const clauseHtml = jd.clauses.map(c => `<span class="clause-badge">§${c}</span>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>${jd.title} — Job Description</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      color: #1a1a1a;
+      background: #fff;
+      line-height: 1.65;
+    }
+    .page {
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 0.65in 0.9in;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 14px;
+      border-bottom: 3px solid #1e3a5f;
+      margin-bottom: 22px;
+    }
+    .org-name { font-size: 14pt; font-weight: 700; color: #1e3a5f; }
+    .org-sub  { font-size: 8.5pt; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+    .std-badge {
+      background: #1e3a5f; color: #fff;
+      font-size: 8pt; font-family: monospace; font-weight: 700;
+      padding: 5px 12px; border-radius: 14px; letter-spacing: 0.05em;
+    }
+
+    /* ── Title block ── */
+    .job-title {
+      font-size: 22pt; font-weight: 800; color: #1e3a5f;
+      letter-spacing: -0.02em; line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 20px;
+      font-size: 9pt; color: #444; margin-bottom: 10px;
+    }
+    .meta-item .label { font-weight: 700; color: #1e3a5f; margin-right: 4px; }
+    .clause-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .clause-badge {
+      border: 1.5px solid #1e3a5f; color: #1e3a5f;
+      font-size: 7.5pt; font-family: monospace; font-weight: 700;
+      padding: 2px 9px; border-radius: 10px;
+    }
+
+    /* ── Divider ── */
+    .divider { border-top: 1px solid #d0dae8; margin: 18px 0; }
+
+    /* ── Content ── */
+    .content { color: #222; }
+    .section-title {
+      font-size: 9pt; font-weight: 800; color: #1e3a5f;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin-top: 18px; margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1.5px solid #e0e8f0;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #1e3a5f; color: #fff;
+      font-size: 8pt; font-weight: 800; flex-shrink: 0;
+    }
+    p { margin-bottom: 5px; }
+    ul { margin-left: 18px; margin-bottom: 6px; }
+    li { margin-bottom: 3px; }
+    li::marker { color: #ea6c19; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 36px; padding-top: 10px;
+      border-top: 1px solid #e0e0e0;
+      display: flex; justify-content: space-between;
+      font-size: 7.5pt; color: #999;
+    }
+    .footer strong { color: #ea6c19; }
+
+    /* ── Print ── */
+    @media print {
+      body { font-size: 10pt; }
+      .page { padding: 0.5in 0.75in; }
+      @page { margin: 0.4in; size: letter portrait; }
+      .section-title { break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div>
+      <div class="org-name">${orgName}</div>
+      <div class="org-sub">Human Resources · Job Description</div>
+    </div>
+    <div class="std-badge">${standard} · §5.3</div>
+  </div>
+
+  <div class="job-title">${jd.title}</div>
+  <div class="meta-row">
+    ${jd.department ? `<div class="meta-item"><span class="label">Department:</span>${jd.department}</div>` : ""}
+    ${jd.reportsTo  ? `<div class="meta-item"><span class="label">Reports To:</span>${jd.reportsTo}</div>`  : ""}
+    <div class="meta-item"><span class="label">Date:</span>${dateStr}</div>
+  </div>
+  ${clauseHtml ? `<div class="clause-badges">${clauseHtml}</div>` : ""}
+
+  <div class="divider"></div>
+
+  <div class="content">
+    ${formatContentForPrint(jd.content)}
+  </div>
+
+  <div class="footer">
+    <span>Generated by <strong>ACSI ISO Manager</strong> — Roles &amp; Responsibilities Module</span>
+    <span>${orgName} · Internal Use</span>
+  </div>
+
+</div>
+<script>window.onload = function() { window.print(); };</script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=900,height=700");
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+  }
+}
+
+// ─── Edit JD Dialog ───────────────────────────────────────────────────────────
+
+function EditJdDialog({ open, onClose, jd, project, onSave }: {
+  open: boolean;
+  onClose: () => void;
+  jd: JobDescription | null;
+  project: IsoProject | null;
+  onSave: (updated: JobDescription) => void;
+}) {
+  const [title, setTitle]       = useState("");
+  const [dept, setDept]         = useState("");
+  const [reportsTo, setReportsTo] = useState("");
+  const [content, setContent]   = useState("");
+  const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
+  const standard = project?.standard ?? "ISO 9001";
+
+  useEffect(() => {
+    if (jd) {
+      setTitle(jd.title);
+      setDept(jd.department);
+      setReportsTo(jd.reportsTo);
+      setContent(jd.content);
+    }
+  }, [jd]);
+
+  const handleRegenerate = async () => {
+    if (!title.trim()) return;
+    setGenerating(true);
+    try {
+      const processes = (project?.processes as any[]) ?? [];
+      const procCtx = processes.length
+        ? `\n\nOrganization's QMS processes:\n${processes.map((p: any) => `- ${p.name} (Owner: ${p.owner})`).join("\n")}`
+        : "";
+
+      const systemPrompt = `You are Isa, Lead ISO Auditor for ACSI ISO Manager.
+Organization: ${project?.orgName ?? "the organization"}
+Standard: ${standard}${procCtx}
+
+Generate a complete, professional job description for ${standard}. Include:
+1. POSITION SUMMARY
+2. KEY RESPONSIBILITIES (8+ items with ISO clause references)
+3. AUTHORITY LEVELS
+4. REQUIRED QUALIFICATIONS
+5. PREFERRED QUALIFICATIONS
+6. ISO CLAUSE REFERENCES
+7. PERFORMANCE INDICATORS (2-3 KPIs)`;
+
+      const resp = await fetch("/api/iso/module-isa-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: `Generate a job description for:\nTitle: ${title}\nDepartment: ${dept || "not specified"}\nReports To: ${reportsTo || "not specified"}` }],
+          systemPrompt,
+        }),
+      });
+      const data = await resp.json();
+      setContent(data.content ?? "Failed to generate.");
+    } catch {
+      toast({ title: "Regeneration failed", variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (!jd || !content.trim()) return;
+    const clauses = [...new Set(
+      [...(content.matchAll(/\b(\d+\.\d+(?:\.\d+)?)\b/g))].map(m => m[1])
+    )].filter(c => RACI_CLAUSES.some(rc => rc.id === c)).slice(0, 8);
+    onSave({ ...jd, title: title.trim(), department: dept.trim(), reportsTo: reportsTo.trim(), content: content.trim(), clauses });
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="w-4 h-4 text-primary" /> Edit Job Description
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Job Title *</Label>
+              <Input value={title} onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. Quality Engineer" data-testid="input-edit-jd-title" />
+            </div>
+            <div>
+              <Label>Department</Label>
+              <Input value={dept} onChange={e => setDept(e.target.value)}
+                placeholder="e.g. Quality" data-testid="input-edit-jd-dept" />
+            </div>
+          </div>
+          <div>
+            <Label>Reports To</Label>
+            <Input value={reportsTo} onChange={e => setReportsTo(e.target.value)}
+              placeholder="e.g. Quality Manager" data-testid="input-edit-jd-reports-to" />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label>Job Description Content</Label>
+            <Button variant="outline" size="sm" onClick={handleRegenerate}
+              disabled={generating || !title.trim()} data-testid="button-regenerate-jd"
+              className="text-xs text-violet-700 border-violet-300 hover:bg-violet-50 gap-1.5">
+              <Bot className="w-3.5 h-3.5" />
+              {generating ? "Isa is rewriting…" : "Regenerate with Isa"}
+            </Button>
+          </div>
+          <Textarea
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            rows={18}
+            className="text-xs font-mono leading-relaxed"
+            placeholder="Job description content…"
+            data-testid="input-edit-jd-content"
+          />
+
+          <div className="flex gap-2 justify-between items-center pt-1">
+            <Button variant="outline" size="sm"
+              onClick={() => jd && printJd({ ...jd, title, department: dept, reportsTo, content }, project)}
+              disabled={!content.trim()} data-testid="button-print-jd-preview"
+              className="text-xs gap-1.5 text-muted-foreground">
+              <Printer className="w-3.5 h-3.5" /> Print Preview
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+              <Button size="sm" onClick={handleSave} disabled={!content.trim()}
+                data-testid="button-save-edit-jd"
+                className="bg-primary text-white hover:bg-primary/90">
+                <Save className="w-3.5 h-3.5 mr-1.5" /> Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Job Descriptions Tab ─────────────────────────────────────────────────────
 
 function JobDescriptionsTab({ project, jds, onChange }: {
@@ -900,9 +1234,11 @@ function JobDescriptionsTab({ project, jds, onChange }: {
 }) {
   const [showNew, setShowNew] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [editingJd, setEditingJd] = useState<JobDescription | null>(null);
 
   const deleteJd = (id: string) => onChange(jds.filter(j => j.id !== id));
   const copyJd = (jd: JobDescription) => { navigator.clipboard.writeText(jd.content); };
+  const updateJd = (updated: JobDescription) => onChange(jds.map(j => j.id === updated.id ? updated : j));
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -933,14 +1269,14 @@ function JobDescriptionsTab({ project, jds, onChange }: {
       ) : (
         <div className="space-y-3">
           {jds.map(jd => (
-            <Card key={jd.id} className="border border-border/60">
+            <Card key={jd.id} className="border border-border/60 hover:border-primary/30 transition-colors">
               <CardHeader className="pb-2 pt-4 px-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <CardTitle className="text-sm font-bold text-foreground">{jd.title}</CardTitle>
                     <div className="text-xs text-muted-foreground mt-0.5 flex gap-3 flex-wrap">
                       {jd.department && <span>📂 {jd.department}</span>}
-                      {jd.reportsTo && <span>↑ {jd.reportsTo}</span>}
+                      {jd.reportsTo  && <span>↑ {jd.reportsTo}</span>}
                       <span className="text-muted-foreground/50">{new Date(jd.createdAt).toLocaleDateString()}</span>
                     </div>
                     {jd.clauses.length > 0 && (
@@ -952,14 +1288,31 @@ function JobDescriptionsTab({ project, jds, onChange }: {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => copyJd(jd)} title="Copy" data-testid={`button-copy-jd-${jd.id}`}
+                    {/* Edit */}
+                    <button onClick={() => setEditingJd(jd)} title="Edit job description"
+                      data-testid={`button-edit-jd-${jd.id}`}
+                      className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-primary">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    {/* Print */}
+                    <button onClick={() => printJd(jd, project)} title="Print / Export"
+                      data-testid={`button-print-jd-${jd.id}`}
+                      className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-accent">
+                      <Printer className="w-3.5 h-3.5" />
+                    </button>
+                    {/* Copy */}
+                    <button onClick={() => copyJd(jd)} title="Copy to clipboard"
+                      data-testid={`button-copy-jd-${jd.id}`}
                       className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-accent">
                       <Copy className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => deleteJd(jd.id)} title="Delete" data-testid={`button-delete-jd-${jd.id}`}
+                    {/* Delete */}
+                    <button onClick={() => deleteJd(jd.id)} title="Delete"
+                      data-testid={`button-delete-jd-${jd.id}`}
                       className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-red-500">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
+                    {/* Expand */}
                     <button onClick={() => setExpanded(expanded === jd.id ? null : jd.id)}
                       data-testid={`button-expand-jd-${jd.id}`}
                       className="p-1.5 rounded hover:bg-muted text-muted-foreground">
@@ -970,9 +1323,19 @@ function JobDescriptionsTab({ project, jds, onChange }: {
               </CardHeader>
               {expanded === jd.id && (
                 <CardContent className="px-4 pb-4">
-                  <pre className="whitespace-pre-wrap text-xs font-sans leading-relaxed bg-muted/30 rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-xs font-sans leading-relaxed bg-muted/30 rounded-lg p-4 max-h-96 overflow-y-auto border border-border/40">
                     {jd.content}
                   </pre>
+                  <div className="flex justify-end gap-2 mt-3">
+                    <Button variant="outline" size="sm" onClick={() => setEditingJd(jd)}
+                      className="text-xs gap-1.5" data-testid={`button-edit-jd-expanded-${jd.id}`}>
+                      <Pencil className="w-3 h-3" /> Edit
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => printJd(jd, project)}
+                      className="text-xs gap-1.5" data-testid={`button-print-jd-expanded-${jd.id}`}>
+                      <Printer className="w-3 h-3" /> Print
+                    </Button>
+                  </div>
                 </CardContent>
               )}
             </Card>
@@ -982,6 +1345,14 @@ function JobDescriptionsTab({ project, jds, onChange }: {
 
       <NewJdDialog open={showNew} onClose={() => setShowNew(false)} project={project}
         onSave={jd => { onChange([...jds, jd]); setShowNew(false); }} />
+
+      <EditJdDialog
+        open={!!editingJd}
+        onClose={() => setEditingJd(null)}
+        jd={editingJd}
+        project={project}
+        onSave={updated => { updateJd(updated); setEditingJd(null); }}
+      />
     </div>
   );
 }
