@@ -1582,6 +1582,80 @@ Be concise and direct. Use regulatory citations.`;
     }
   });
 
+  // ─── CAPA ROOT CAUSE ANALYSIS — STRUCTURED COREY GENERATION ─────────────────
+  app.post("/api/incidents/:id/capa-rca", async (req, res) => {
+    if (!(await requirePlatformAccess(req, res))) return;
+    const userId = (req.user as any).claims.sub;
+    const id = parseInt(req.params.id);
+    try {
+      const incident = await storage.getIncident(id, userId);
+      if (!incident) return res.status(404).json({ message: "Incident not found" });
+
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const anthropic = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+
+      const prompt = `You are Corey, a Senior Occupational Health, Safety & Compliance Expert with 30 years of experience conducting incident root cause analyses. You are generating a structured CAPA (Corrective Action Plan) for a workplace incident.
+
+INCIDENT DETAILS:
+- Type: ${incident.incidentType}
+- Employee: ${incident.employeeName || "N/A"} — Job Title: ${incident.jobTitle || "N/A"}, Department: ${incident.department || "N/A"}
+- Date: ${new Date(incident.incidentDate).toLocaleDateString()}
+- Location: ${incident.location || "N/A"}
+- Description: ${incident.description}
+- Body Part Injured: ${incident.bodyPart || "N/A"} (${incident.bodySide || ""})
+- Nature of Injury: ${incident.natureOfInjury || "N/A"}
+- Source / Object / Substance: ${incident.objectOrSubstance || "N/A"}
+- Days Away from Work: ${incident.daysAway || 0}
+- Days Restricted: ${incident.daysRestricted || 0}
+- Root Cause Category: ${incident.rootCauseCategory || "Not yet assessed"}
+- PPE Status at Time of Incident: ${incident.ppeStatus || "Not documented"}
+- Task Being Performed: ${incident.taskBeingPerformed || "N/A"}
+- Contributing Factors: ${incident.contributingFactor || "N/A"}
+
+Generate a complete, professional CAPA root cause analysis. Return ONLY valid JSON — no markdown, no code fences, no extra text. Use this exact schema:
+
+{
+  "problemStatement": "A clear, factual one-paragraph problem statement written in past tense describing exactly what happened, who was injured, how, and what the outcome was.",
+  "fiveWhys": [
+    "Why 1: [Observable problem / immediate cause]",
+    "Why 2: [First underlying cause]",
+    "Why 3: [Systemic or procedural cause]",
+    "Why 4: [Management system or cultural factor]",
+    "Why 5: [Root cause — the deepest systemic failure]"
+  ],
+  "rootCause": "One concise sentence naming the true root cause derived from the 5 Whys analysis.",
+  "immediateActions": "A bulleted list of 3–5 immediate containment actions that should have been or were taken within 24–72 hours of the incident (medical treatment, area isolation, equipment removal, immediate training, etc.).",
+  "correctiveActions": "A bulleted list of 4–6 specific, measurable corrective actions with regulatory references where applicable (29 CFR citations) that will fix the identified root cause. Include engineering controls, administrative controls, and PPE hierarchy per NIOSH.",
+  "preventiveActions": "A bulleted list of 3–5 preventive actions that address the underlying systemic failure and will prevent recurrence across the broader organization — not just this location or department.",
+  "oshaReference": "The specific 29 CFR standard(s) most applicable to this incident type and the corrective actions required.",
+  "recordabilityNote": "One sentence stating whether this incident appears OSHA recordable under 29 CFR 1904 and why."
+}`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const raw = (response.content[0] as any).text ?? "";
+      // Strip any accidental markdown fences
+      const clean = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      let parsed: any;
+      try {
+        parsed = JSON.parse(clean);
+      } catch {
+        return res.status(500).json({ message: "AI returned invalid JSON — please retry", raw });
+      }
+      res.json(parsed);
+    } catch (error: any) {
+      console.error("CAPA RCA error:", error);
+      res.status(500).json({ message: "Failed to generate CAPA analysis" });
+    }
+  });
+
   // ─── EMERGENCY RESPONSE GUIDANCE (T008) ─────────────────────────────────────
   app.post("/api/emergency-guidance", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });

@@ -1473,6 +1473,17 @@ function OSHA300Report({ incidents }: { incidents: Incident[] }) {
   );
 }
 
+interface CoreyRCA {
+  problemStatement: string;
+  fiveWhys: string[];
+  rootCause: string;
+  immediateActions: string;
+  correctiveActions: string;
+  preventiveActions: string;
+  oshaReference: string;
+  recordabilityNote: string;
+}
+
 function CAPAFormDialog({ 
   open, 
   onOpenChange, 
@@ -1489,10 +1500,17 @@ function CAPAFormDialog({
   isPending?: boolean;
 }) {
   const [formData, setFormData] = useState<CAPAFormData>(defaultCAPAFormData);
-  const [, setLocation] = useLocation();
+  const [rcaData, setRcaData] = useState<CoreyRCA | null>(null);
+  const [isLoadingRca, setIsLoadingRca] = useState(false);
+  const [rcaError, setRcaError] = useState<string | null>(null);
+  const [rcaExpanded, setRcaExpanded] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
+      setRcaData(null);
+      setRcaError(null);
+      setRcaExpanded(true);
       if (incidentId) {
         const incident = incidents.find(i => i.id === incidentId);
         setFormData({ 
@@ -1510,22 +1528,52 @@ function CAPAFormDialog({
     e.preventDefault();
     onSave(formData);
     setFormData(defaultCAPAFormData);
+    setRcaData(null);
   };
 
-  const handleAskCorey = () => {
-    const incident = incidents.find(i => i.id === formData.incidentId);
-    const context = `I am working on a Corrective Action Plan (CAPA).
-Incident Details: ${incident ? incident.description : 'N/A'}
-Injury: ${incident?.natureOfInjury || 'N/A'} on ${incident?.bodyPart || 'N/A'}
-Current CAPA Progress:
-Title: ${formData.title}
-Problem Statement: ${formData.problemStatement}
-Current Root Cause Analysis: ${formData.rootCause}
+  const handleGenerateRCA = async () => {
+    const targetId = formData.incidentId;
+    if (!targetId) {
+      toast({ title: "Select an incident first", description: "Link this CAPA to an incident before running the AI analysis.", variant: "destructive" });
+      return;
+    }
+    setIsLoadingRca(true);
+    setRcaError(null);
+    setRcaData(null);
+    try {
+      const res = await apiRequest("POST", `/api/incidents/${targetId}/capa-rca`, {});
+      const data = await res.json();
+      if (data.message) throw new Error(data.message);
+      setRcaData(data as CoreyRCA);
+      setRcaExpanded(true);
+      // Auto-fill title if still default
+      const incident = incidents.find(i => i.id === targetId);
+      if (!formData.title || formData.title.startsWith("CAPA for")) {
+        setFormData(f => ({ ...f, title: `CAPA — ${incident?.incidentType || "Incident"} — ${incident?.employeeName || ""}`.trim() }));
+      }
+    } catch (err: any) {
+      setRcaError(err.message || "Failed to generate analysis");
+    } finally {
+      setIsLoadingRca(false);
+    }
+  };
 
-Please provide suggestions for a more thorough root cause analysis and potential corrective/preventive actions.`;
-    
-    sessionStorage.setItem("corey-seed-prompt", context);
-    setLocation("/corey");
+  const applySection = (field: keyof CAPAFormData, value: string) => {
+    setFormData(f => ({ ...f, [field]: value }));
+    toast({ title: "Applied to form", description: `${field} field updated from Corey's analysis.` });
+  };
+
+  const applyAll = () => {
+    if (!rcaData) return;
+    setFormData(f => ({
+      ...f,
+      problemStatement: rcaData.problemStatement,
+      rootCause: `${rcaData.fiveWhys.join("\n")}\n\nROOT CAUSE: ${rcaData.rootCause}`,
+      immediateActions: rcaData.immediateActions,
+      correctiveActions: rcaData.correctiveActions,
+      preventiveActions: rcaData.preventiveActions,
+    }));
+    toast({ title: "All sections applied", description: "Corey's full analysis has been applied to the CAPA form." });
   };
 
   const similarIncidentsCount = formData.incidentId ? incidents.filter(i => {
@@ -1585,6 +1633,142 @@ Please provide suggestions for a more thorough root cause analysis and potential
             </div>
           </div>
 
+          {/* ── Corey AI Root Cause Analysis Panel ── */}
+          <div className="rounded-xl border border-accent/30 bg-accent/5 overflow-hidden">
+            {/* Panel Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-accent/10 border-b border-accent/20">
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-accent" />
+                <span className="font-semibold text-sm text-accent">Corey — AI Root Cause Analysis</span>
+                {rcaData && (
+                  <Badge className="bg-emerald-100 text-emerald-700 text-xs">Analysis Ready</Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {rcaData && (
+                  <button type="button" onClick={() => setRcaExpanded(e => !e)}
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                    {rcaExpanded ? "Collapse" : "Expand"} <ChevronRight className={`w-3 h-3 transition-transform ${rcaExpanded ? "rotate-90" : ""}`} />
+                  </button>
+                )}
+                <Button type="button" size="sm"
+                  className="h-8 gap-2 text-xs bg-accent text-white hover:bg-accent/90"
+                  onClick={handleGenerateRCA}
+                  disabled={isLoadingRca || !formData.incidentId}
+                  data-testid="button-generate-rca"
+                >
+                  {isLoadingRca
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analyzing…</>
+                    : <><Sparkles className="w-3.5 h-3.5" />{rcaData ? "Regenerate" : "Generate RCA with Corey"}</>}
+                </Button>
+              </div>
+            </div>
+
+            {/* Prompt to select incident first */}
+            {!formData.incidentId && !rcaData && (
+              <div className="px-4 py-3 text-xs text-muted-foreground">
+                Link this CAPA to an incident above, then click <strong>Generate RCA with Corey</strong> to get a full 5 Whys root cause analysis, immediate actions, corrective actions, and preventive actions — ready to apply directly to this form.
+              </div>
+            )}
+
+            {/* Loading state */}
+            {isLoadingRca && (
+              <div className="px-4 py-6 flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                <p className="text-sm text-muted-foreground text-center">Corey is analyzing the incident details and building a full root cause analysis…</p>
+              </div>
+            )}
+
+            {/* Error */}
+            {rcaError && (
+              <div className="px-4 py-3 text-xs text-red-600 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {rcaError}
+              </div>
+            )}
+
+            {/* Ready prompt (no analysis yet, incident selected) */}
+            {formData.incidentId && !rcaData && !isLoadingRca && !rcaError && (
+              <div className="px-4 py-3 text-xs text-muted-foreground">
+                Incident linked. Click <strong>Generate RCA with Corey</strong> to run the full AI root cause analysis for this incident.
+              </div>
+            )}
+
+            {/* Analysis Results */}
+            {rcaData && rcaExpanded && (
+              <div className="divide-y divide-accent/10">
+                {/* OSHA & Recordability banner */}
+                <div className="px-4 py-3 bg-blue-50 flex flex-wrap gap-4 text-xs">
+                  <div className="flex-1 min-w-[200px]">
+                    <p className="font-semibold text-blue-800 mb-0.5">📋 OSHA Reference</p>
+                    <p className="text-blue-700">{rcaData.oshaReference}</p>
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <p className="font-semibold text-blue-800 mb-0.5">⚖️ Recordability</p>
+                    <p className="text-blue-700">{rcaData.recordabilityNote}</p>
+                  </div>
+                </div>
+
+                {/* Apply All button */}
+                <div className="px-4 py-2 bg-emerald-50 flex items-center justify-between">
+                  <p className="text-xs text-emerald-700 font-medium">All sections ready — apply Corey's analysis to the form below</p>
+                  <Button type="button" size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={applyAll}>
+                    <CheckCircle className="w-3.5 h-3.5" />Apply All to Form
+                  </Button>
+                </div>
+
+                {/* Problem Statement */}
+                <div className="px-4 py-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Problem Statement</p>
+                    <Button type="button" size="sm" variant="outline" className="h-6 text-xs gap-1 border-accent/40 text-accent"
+                      onClick={() => applySection("problemStatement", rcaData.problemStatement)}>Apply ↓</Button>
+                  </div>
+                  <p className="text-sm leading-relaxed">{rcaData.problemStatement}</p>
+                </div>
+
+                {/* 5 Whys */}
+                <div className="px-4 py-3 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">5 Whys Root Cause Analysis</p>
+                  <div className="space-y-1.5">
+                    {rcaData.fiveWhys.map((why, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-black flex items-center justify-center mt-0.5">{i + 1}</span>
+                        <p className="text-sm leading-snug">{why}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Root Cause */}
+                <div className="px-4 py-3 space-y-1 bg-orange-50">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-orange-800 uppercase tracking-wide">Root Cause</p>
+                    <Button type="button" size="sm" variant="outline" className="h-6 text-xs gap-1 border-accent/40 text-accent"
+                      onClick={() => applySection("rootCause", `5 WHYS ANALYSIS:\n${rcaData.fiveWhys.join("\n")}\n\nROOT CAUSE: ${rcaData.rootCause}`)}>Apply ↓</Button>
+                  </div>
+                  <p className="text-sm font-medium text-orange-900">{rcaData.rootCause}</p>
+                </div>
+
+                {/* Immediate / Corrective / Preventive */}
+                {([
+                  ["Immediate Actions (within 24–72 hrs)", "immediateActions", rcaData.immediateActions, "blue"],
+                  ["Corrective Actions (long-term fix)", "correctiveActions", rcaData.correctiveActions, "purple"],
+                  ["Preventive Actions (prevent recurrence)", "preventiveActions", rcaData.preventiveActions, "emerald"],
+                ] as const).map(([label, field, value, color]) => (
+                  <div key={field} className="px-4 py-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+                      <Button type="button" size="sm" variant="outline" className="h-6 text-xs gap-1 border-accent/40 text-accent"
+                        onClick={() => applySection(field as keyof CAPAFormData, value)}>Apply ↓</Button>
+                    </div>
+                    <div className="text-sm leading-relaxed whitespace-pre-line">{value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Problem Identification */}
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Problem Identification</h3>
@@ -1614,17 +1798,6 @@ Please provide suggestions for a more thorough root cause analysis and potential
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label htmlFor="rootCause">Root Cause Analysis</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 gap-2 text-xs border-accent text-accent hover:bg-accent/10"
-                  onClick={handleAskCorey}
-                  data-testid="button-ask-corey-suggestions"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Ask Corey for Suggestions
-                </Button>
               </div>
               <Textarea 
                 id="rootCause"
