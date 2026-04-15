@@ -30,6 +30,9 @@ import {
   ChevronUp,
   Bell,
   Mail,
+  Eye,
+  EyeOff,
+  Building2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,72 +67,115 @@ interface DocumentationModuleProps {
 
 // ─── Print helper ─────────────────────────────────────────────────────────────
 
+function stripInlineMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/_(.+?)_/g, "$1");
+}
+
 function formatDocContentForPrint(content: string): string {
   const lines = content.split("\n");
   let html = "";
   let inList = false;
+  let inTable = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     if (!trimmed) {
       if (inList) { html += "</ul>"; inList = false; }
+      if (inTable) { html += "</table>"; inTable = false; }
       html += "<div style='height:8px'></div>";
       continue;
     }
 
-    // Numbered main sections like "4 Context" or "5.1 Leadership and Commitment"
-    const sectionMatch = trimmed.match(/^(\d+(?:\.\d+)*)\s+(.+)$/);
-    if (sectionMatch && trimmed.length < 120) {
+    // ── Markdown heading stripping: ### ## # → section headings ──────────────
+    const mdHeading = trimmed.match(/^(#{1,3})\s+(.+)$/);
+    if (mdHeading) {
       if (inList) { html += "</ul>"; inList = false; }
-      const level = sectionMatch[1].split(".").length;
+      if (inTable) { html += "</table>"; inTable = false; }
+      const level = mdHeading[1].length;
+      const text = stripInlineMarkdown(mdHeading[2]);
       if (level === 1) {
-        html += `<div class="section-h1"><span class="sec-num">${sectionMatch[1]}</span>${sectionMatch[2]}</div>`;
+        html += `<div class="section-h1">${text}</div>`;
       } else if (level === 2) {
-        html += `<div class="section-h2">${sectionMatch[1]}  ${sectionMatch[2]}</div>`;
+        html += `<div class="section-h2">${text}</div>`;
       } else {
-        html += `<div class="section-h3">${sectionMatch[1]}  ${sectionMatch[2]}</div>`;
+        html += `<div class="section-h3">${text}</div>`;
       }
       continue;
     }
 
-    // ALL-CAPS standalone headings
+    // ── Markdown horizontal rule ───────────────────────────────────────────────
+    if (/^[-*_]{3,}$/.test(trimmed)) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += `<div class="divider"></div>`;
+      continue;
+    }
+
+    // ── Numbered main sections like "4 Context" or "5.1 Leadership" ──────────
+    const sectionMatch = trimmed.match(/^(\d+(?:\.\d+)*)[.)]\s+(.+)$/);
+    if (sectionMatch && trimmed.length < 120) {
+      if (inList) { html += "</ul>"; inList = false; }
+      if (inTable) { html += "</table>"; inTable = false; }
+      const level = sectionMatch[1].split(".").length;
+      const text = stripInlineMarkdown(sectionMatch[2]);
+      if (level === 1) {
+        html += `<div class="section-h1"><span class="sec-num">${sectionMatch[1]}</span>${text}</div>`;
+      } else if (level === 2) {
+        html += `<div class="section-h2">${sectionMatch[1]}  ${text}</div>`;
+      } else {
+        html += `<div class="section-h3">${sectionMatch[1]}  ${text}</div>`;
+      }
+      continue;
+    }
+
+    // ── ALL-CAPS standalone headings ──────────────────────────────────────────
     if (/^[A-Z][A-Z\s&\/\-:]+$/.test(trimmed) && trimmed.length > 4 && trimmed.length < 80) {
       if (inList) { html += "</ul>"; inList = false; }
+      if (inTable) { html += "</table>"; inTable = false; }
       html += `<div class="section-h2">${trimmed}</div>`;
       continue;
     }
 
-    // Table rows (simple pipe-delimited)
+    // ── Table rows (pipe-delimited) ───────────────────────────────────────────
     if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
       if (inList) { html += "</ul>"; inList = false; }
+      const isSeparator = /^\|[\s\-:|]+\|/.test(trimmed);
+      if (isSeparator) continue;
       const cells = trimmed.split("|").filter(c => c.trim());
-      const isHeader = trimmed.includes("---");
-      if (!isHeader) {
-        html += `<tr>${cells.map(c => `<td>${c.trim()}</td>`).join("")}</tr>`;
+      if (!inTable) {
+        html += `<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:9pt;">`;
+        inTable = true;
       }
+      html += `<tr>${cells.map(c => `<td style="padding:5px 8px;border:1px solid #d0dae8;">${stripInlineMarkdown(c.trim())}</td>`).join("")}</tr>`;
       continue;
     }
+    if (inTable) { html += "</table>"; inTable = false; }
 
-    // Bullet/list items
+    // ── Bullet/list items ─────────────────────────────────────────────────────
     if (/^[-•*▪]\s/.test(trimmed) || /^[a-h]\)\s/.test(trimmed)) {
       if (!inList) { html += "<ul>"; inList = true; }
-      html += `<li>${trimmed.replace(/^[-•*▪a-h\)]+\s+/, "")}</li>`;
+      html += `<li>${stripInlineMarkdown(trimmed.replace(/^[-•*▪a-h\)]+\s+/, ""))}</li>`;
       continue;
     }
 
-    // NOTE / IMPORTANT callouts
+    // ── NOTE / IMPORTANT callouts ─────────────────────────────────────────────
     if (/^NOTE\s*\d*[\s:–—]/.test(trimmed) || /^IMPORTANT[\s:–—]/.test(trimmed)) {
       if (inList) { html += "</ul>"; inList = false; }
-      html += `<div class="note">${trimmed}</div>`;
+      html += `<div class="note">${stripInlineMarkdown(trimmed)}</div>`;
       continue;
     }
 
     if (inList) { html += "</ul>"; inList = false; }
-    html += `<p>${trimmed}</p>`;
+    html += `<p>${stripInlineMarkdown(trimmed)}</p>`;
   }
 
   if (inList) html += "</ul>";
+  if (inTable) html += "</table>";
   return html;
 }
 
@@ -1388,6 +1434,8 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject, o
 
 function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isPending, onAskIsa }: any) {
   const { toast } = useToast();
+  const logoUrl = (project as any)?.logoUrl as string | undefined;
+  const [showLogoHeader, setShowLogoHeader] = useState(true);
   const [formData, setFormData] = useState<Partial<InsertIsoDocument>>({
     docType: 'procedure',
     title: '',
@@ -1520,13 +1568,72 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-center justify-between">
             <DialogTitle>{doc ? 'Edit Document' : 'Create New Document'}</DialogTitle>
-            {!doc && formData.title && (
-              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded px-2 py-0.5 font-medium">
-                ✓ Draft auto-saved
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {!doc && formData.title && (
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded px-2 py-0.5 font-medium">
+                  ✓ Draft auto-saved
+                </span>
+              )}
+              {doc && (
+                <button
+                  type="button"
+                  onClick={() => setShowLogoHeader(v => !v)}
+                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-2 py-1 transition-colors"
+                  title="Toggle document header"
+                  data-testid="btn-toggle-doc-header"
+                >
+                  {showLogoHeader ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  {showLogoHeader ? "Hide Header" : "Show Header"}
+                </button>
+              )}
+            </div>
           </div>
         </DialogHeader>
+
+        {/* Document header — logo + metadata */}
+        {doc && showLogoHeader && (
+          <div className="mx-6 mt-4 rounded-lg border border-border/60 bg-slate-50 dark:bg-slate-900/50 p-4 flex items-start gap-4">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Organization logo"
+                className="h-12 w-auto max-w-[140px] object-contain shrink-0"
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Building2 className="w-8 h-8 opacity-30" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-foreground leading-tight">{project?.orgName ?? "Organization"}</p>
+              {project?.standard && (
+                <p className="text-[11px] text-muted-foreground">{project.standard}:2015 Quality Management System</p>
+              )}
+              <div className="flex flex-wrap gap-3 mt-1.5">
+                {formData.title && (
+                  <span className="text-[11px] font-semibold text-foreground">{formData.title}</span>
+                )}
+                {formData.isoClause && (
+                  <span className="text-[11px] text-muted-foreground">Clause {formData.isoClause}</span>
+                )}
+                {formData.version && (
+                  <span className="text-[11px] bg-primary/10 text-primary rounded px-1.5 py-0.5 font-mono">Rev {formData.version}</span>
+                )}
+                {formData.status && (
+                  <span className={`text-[11px] rounded px-1.5 py-0.5 font-medium capitalize ${
+                    formData.status === 'approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                    formData.status === 'in_review' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                    'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                  }`}>{formData.status.replace('_', ' ')}</span>
+                )}
+              </div>
+              {formData.approvedBy && (
+                <p className="text-[10px] text-muted-foreground mt-1">Approved by: <span className="font-medium text-foreground">{formData.approvedBy}</span></p>
+              )}
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

@@ -6619,6 +6619,15 @@ Write a complete, professional document that:
 6. References relevant forms as FM-[clause]-[seq] and procedures as QP-[clause]-[seq]
 7. Is practical, usable, and audit-ready
 
+CRITICAL FORMATTING RULES — FOLLOW EXACTLY:
+- Do NOT use any Markdown syntax: no ###, no ##, no #, no **, no *, no ---, no backticks
+- Section headings must use ALL-CAPS numbered format: "1. PURPOSE", "2. SCOPE", "3. RESPONSIBILITIES"
+- Sub-sections use indented numbering: "3.1 Quality Manager", "3.2 Department Supervisor"
+- Use plain indented bullet points with a dash: "- Item" (not * or •)
+- Tables: use plain text with columns separated by | characters
+- Bold text: write the word in ALL CAPS or follow it with a colon instead of using **bold**
+- The document must be ready to copy-paste into a Word or PDF template without any cleanup
+
 Output only the document content. No preamble. No closing remarks.`;
 
       res.setHeader("Content-Type", "text/event-stream");
@@ -6633,7 +6642,7 @@ Output only the document content. No preamble. No closing remarks.`;
         model: "claude-sonnet-4-5",
         max_tokens: 4096,
         system: systemPrompt,
-        messages: [{ role: "user", content: `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}"` }],
+        messages: [{ role: "user", content: `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.` }],
       });
 
       for await (const event of stream) {
@@ -6892,6 +6901,15 @@ Write a complete, professional document that:
 5. For work instructions: step-by-step format, safety notes, required tools/equipment, acceptance criteria
 6. References relevant forms as FM-[clause]-[seq] and procedures as QP-[clause]-[seq]
 7. Is practical, usable, and audit-ready
+
+CRITICAL FORMATTING RULES — FOLLOW EXACTLY:
+- Do NOT use any Markdown syntax: no ###, no ##, no #, no **, no *, no ---, no backticks
+- Section headings must use ALL-CAPS numbered format: "1. PURPOSE", "2. SCOPE", "3. RESPONSIBILITIES"
+- Sub-sections use indented numbering: "3.1 Quality Manager", "3.2 Department Supervisor"
+- Use plain indented bullet points with a dash: "- Item" (not * or •)
+- Tables: use plain text with columns separated by | characters
+- Bold text: write the word in ALL CAPS or follow it with a colon instead of using **bold**
+- The document must be ready to copy-paste into a Word or PDF template without any cleanup
 
 Output only the document content. No preamble. No closing remarks.`;
 
