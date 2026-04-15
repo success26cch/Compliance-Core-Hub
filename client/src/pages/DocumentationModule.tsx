@@ -32,7 +32,6 @@ import {
   Mail,
   Eye,
   EyeOff,
-  Building2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,6 +73,20 @@ function stripInlineMarkdown(text: string): string {
     .replace(/`(.+?)`/g, "$1")
     .replace(/__(.+?)__/g, "$1")
     .replace(/_(.+?)_/g, "$1");
+}
+
+function normalizeContentForEdit(content: string): string {
+  return content
+    .split("\n")
+    .map(line => {
+      const trimmed = line.trim();
+      // Convert ### Heading → plain heading text
+      const mdH = trimmed.match(/^(#{1,3})\s+(.+)$/);
+      if (mdH) return mdH[2].trim();
+      // Strip inline bold/italic markers
+      return stripInlineMarkdown(line);
+    })
+    .join("\n");
 }
 
 function formatDocContentForPrint(content: string): string {
@@ -1498,16 +1511,6 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   };
 
   // Sync with doc if editing
-  useEffect(() => {
-    if (doc) {
-      setFormData({
-        ...doc,
-        reviewDate: doc.reviewDate ? new Date(doc.reviewDate) : null,
-        tags: doc.tags || [],
-      });
-    }
-  }, [doc]);
-
   const DRAFT_KEY = `iso-doc-draft-${project?.id ?? 'new'}`;
 
   // Load form from doc (edit) or restore draft from localStorage (new)
@@ -1515,6 +1518,7 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     if (doc) {
       setFormData({
         ...doc,
+        content: normalizeContentForEdit(doc.content || ""),
         reviewDate: doc.reviewDate ? new Date(doc.reviewDate) : null,
         tags: doc.tags || [],
       });
@@ -1600,8 +1604,8 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
                 className="h-12 w-auto max-w-[140px] object-contain shrink-0"
               />
             ) : (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Building2 className="w-8 h-8 opacity-30" />
+              <div className="flex items-center justify-center h-12 px-3 rounded border border-border/60 bg-white dark:bg-slate-800 shrink-0 min-w-[80px] max-w-[140px]">
+                <span className="text-xs font-bold text-foreground text-center leading-tight break-words">{project?.orgName ?? "Organization"}</span>
               </div>
             )}
             <div className="flex-1 min-w-0">

@@ -6703,10 +6703,10 @@ Write 2–3 paragraphs introducing the organization, the purpose of the QMS, and
 ═══════════════════════════════════════════════════════════════════
 1  REVISION CONTROL SHEET
 ═══════════════════════════════════════════════════════════════════
-Output a markdown table with columns: DATE | REV. | DESCRIPTION OF REVISION | WRITTEN BY | APPROVED BY
+Output a plain text pipe-delimited table (NO markdown, NO triple-dash separators) with columns: DATE | REV. | DESCRIPTION OF REVISION | WRITTEN BY | APPROVED BY
 Include two rows:
 - Today's date, Rev. 0, "Initial Release", "QMS Specialist", "President/CEO"
-- Leave space for future revisions.
+- A blank row for future revisions.
 Below the table write: "Doc No: QM-001    Page 1 of [approx pages]    Rev. 0"
 
 ═══════════════════════════════════════════════════════════════════
@@ -6875,7 +6875,16 @@ OUTPUT RULES:
 - Write in professional, auditable language appropriate for an ISO 9001:2015 Quality Manual
 - Minimum 3,500 words of actual content
 - Output the full document — no truncation, no "…continued…" placeholders
-- Do NOT include any preamble, explanation, or remarks before or after the document`;
+- Do NOT include any preamble, explanation, or remarks before or after the document
+
+CRITICAL FORMATTING RULES — FOLLOW EXACTLY:
+- Do NOT use any Markdown syntax: no ###, no ##, no #, no **, no *, no ---, no backticks
+- Use the numbered section headers shown above (e.g., "1  REVISION CONTROL SHEET") exactly
+- Sub-sections use decimal notation: "4.1  Understanding the Organization..."
+- Plain pipe-delimited tables only — NO markdown table separator rows (no |---|---|)
+- Bullet points use a plain dash "- Item" — not *, not •
+- Bold text: write in ALL CAPS or append a colon — never **bold**
+- The output must be copy-paste ready for a Word/PDF template with zero cleanup`;
 
       const procedurePrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Draft a professional ISO management system ${doc.docType.replace(/_/g, " ")} document.
 
