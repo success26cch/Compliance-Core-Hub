@@ -396,7 +396,8 @@ export default function ISOManager() {
 
   const handleAskIsa = (prompt: string) => {
     if (activeConversationId) {
-      // Resume existing session — just reopen the drawer (no new conversation, no repeated prompt)
+      // Resume existing session — send the new prompt into the existing conversation
+      setIsaInitialPrompt(prompt);
       setIsaDrawerOpen(true);
       return;
     }
@@ -3048,24 +3049,20 @@ function ISOChatInterface({
   const { messages, sendMessage, isStreaming, limitReached } = useIsaChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const initialSentRef = useRef(false);
+  const lastSentPromptRef = useRef<string | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStreaming]);
 
-  // Auto-send the initial prompt only on brand-new conversations (no messages yet)
+  // Auto-send whenever initialPrompt changes to a new value (covers both new and existing conversations)
   useEffect(() => {
-    if (initialPrompt && !initialSentRef.current && !isStreaming && messages.length === 0) {
-      initialSentRef.current = true;
+    if (initialPrompt && initialPrompt !== lastSentPromptRef.current && !isStreaming) {
+      lastSentPromptRef.current = initialPrompt;
       sendMessage(initialPrompt);
       setTimeout(() => onMessageSent?.(), 500);
     }
-    // If messages already exist, mark as sent so we never repeat the context
-    if (messages.length > 0) {
-      initialSentRef.current = true;
-    }
-  }, [initialPrompt, messages.length]);
+  }, [initialPrompt]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

@@ -6580,6 +6580,76 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── AI Document Drafting: generate content for a NEW doc (no saved ID yet) ──
+  app.post("/api/iso-documents/generate-draft", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { docType, title, isoClause } = req.body as { docType?: string; title?: string; isoClause?: string };
+      if (!title) return res.status(400).json({ message: "title is required" });
+
+      const project = await storage.getIsoProject(userId);
+      interface ProcessJsonEntry { name: string; owner?: string; inputs?: string; outputs?: string; }
+      const processContext = project?.processes
+        ? (project.processes as ProcessJsonEntry[]).map((p) => `  - ${p.name} | Owner: ${p.owner ?? ""} | Inputs: ${p.inputs ?? ""} | Outputs: ${p.outputs ?? ""}`).join("\n")
+        : "No processes defined.";
+
+      const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI embedded directly inside the ISO Manager Documentation module. The user is actively creating a document right now — your job is to draft the full content for them so they can paste it in or edit it. Do NOT refer them to any module, tool, or service. Do NOT say "go to the Documentation module" — they are already there. Draft the actual document content now.
+
+ORGANIZATION:
+- Name: ${project?.orgName ?? "Not specified"}
+- Standard: ${project?.standard ?? "ISO 9001"}:2015
+- Products/Services: ${project?.productsServices ?? "Not specified"}
+- Employees: ${project?.totalEmployees ?? "?"}
+
+PROCESSES:
+${processContext}
+
+DOCUMENT TO DRAFT:
+- Title: ${title}
+- Type: ${(docType ?? "procedure").replace(/_/g, " ")}
+- ISO Clause: ${isoClause ?? "Not specified"}
+
+Write a complete, professional document that:
+1. Conforms to ${project?.standard ?? "ISO 9001"}:2015 requirements for clause ${isoClause ?? "this clause"}
+2. Uses the organization's actual context — never leave placeholder text
+3. Includes all mandatory elements required by the standard for this document type
+4. For procedures: include Purpose, Scope, Responsibilities, Definitions, Procedure Steps (numbered), Related Documents, Records Required
+5. For work instructions: step-by-step format, safety notes, required tools/equipment, acceptance criteria
+6. References relevant forms as FM-[clause]-[seq] and procedures as QP-[clause]-[seq]
+7. Is practical, usable, and audit-ready
+
+Output only the document content. No preamble. No closing remarks.`;
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const anthropicClient = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+      const stream = anthropicClient.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: "user", content: `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}"` }],
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+        }
+      }
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (e: any) {
+      console.error("Generate draft error:", e);
+      res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
+      res.end();
+    }
+  });
+
   // ─── AI Document Drafting: Isa streams a document draft ───────────────────────
   app.post("/api/iso-documents/:id/generate", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });

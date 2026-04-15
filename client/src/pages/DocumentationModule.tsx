@@ -1403,14 +1403,23 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   const [isDraftingDialog, setIsDraftingDialog] = useState(false);
 
   const handleDialogDraft = async () => {
-    if (!doc?.id) return;
     setIsDraftingDialog(true);
     setFormData(prev => ({ ...prev, content: "" }));
     try {
-      const res = await fetch(`/api/iso-documents/${doc.id}/generate`, {
+      // Use the new doc's fields if no saved doc, otherwise use existing doc endpoint
+      const url = doc?.id
+        ? `/api/iso-documents/${doc.id}/generate`
+        : `/api/iso-documents/generate-draft`;
+      const body = doc?.id ? undefined : JSON.stringify({
+        docType: formData.docType,
+        title: formData.title,
+        isoClause: formData.isoClause,
+      });
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        ...(body ? { body } : {}),
       });
       if (!res.ok) throw new Error("Draft request failed");
       const reader = res.body?.getReader();
@@ -1500,9 +1509,9 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   };
 
   const handleAskGuidance = () => {
-    const prompt = `I'm creating a ${DOC_TYPES.find(t => t.value === formData.docType)?.label} titled '${formData.title}' ${formData.isoClause ? `for ${formData.isoClause}` : ''}. Can you coach me on the required structure, key elements to include, and how to write this to satisfy ISO requirements?`;
+    const docLabel = DOC_TYPES.find(t => t.value === formData.docType)?.label ?? formData.docType;
+    const prompt = `[CONTEXT: I am inside the ISO Manager Documentation module actively creating a document. Help me write this document directly — do NOT redirect me to any module or service.]\n\nI'm creating a ${docLabel} titled "${formData.title || "(untitled)"}"${formData.isoClause ? ` for ISO clause ${formData.isoClause}` : ''}. Walk me through the required structure, the key elements I must include, and give me example wording I can use for each section so I can write an audit-ready document.`;
     onAskIsa(prompt);
-    // Keep dialog open so the user can continue working on their document
   };
 
   return (
@@ -1604,20 +1613,19 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
             <div className="flex items-center justify-between gap-2">
               <Label>Content</Label>
               <div className="flex items-center gap-1.5">
-                {doc && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-violet-600 text-xs h-7 gap-1 hover:bg-violet-50"
-                    onClick={handleDialogDraft}
-                    disabled={isDraftingDialog}
-                    data-testid="button-draft-isa-dialog"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    {isDraftingDialog ? "Drafting…" : "Draft with Isa"}
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-violet-600 text-xs h-7 gap-1 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                  onClick={handleDialogDraft}
+                  disabled={isDraftingDialog || !formData.title}
+                  title={!formData.title ? "Enter a title first" : "Let Isa draft the full document content"}
+                  data-testid="button-draft-isa-dialog"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {isDraftingDialog ? "Drafting…" : "Draft with Isa"}
+                </Button>
                 <Button 
                   type="button" 
                   variant="ghost" 
@@ -1710,7 +1718,7 @@ function EmptyState({ onNewDoc, onAskIsa }: any) {
         <Button 
           variant="outline" 
           className="flex flex-col h-auto py-4 gap-2 hover-elevate border-accent/10"
-          onClick={() => onAskIsa("What documents should I create first for my ISO 9001:2015 Quality Management System?")}
+          onClick={() => onAskIsa("[CONTEXT: I am inside the ISO Manager Documentation module. Give me actionable guidance — list the specific documents I should create, the ISO clauses they cover, and a suggested order of creation.]\n\nWhat documents should I create first for my ISO 9001:2015 Quality Management System, and in what order should I build them?")}
         >
           <MessageSquare className="w-5 h-5 text-accent" />
           <span className="text-xs font-bold">Ask Isa What to Create</span>
