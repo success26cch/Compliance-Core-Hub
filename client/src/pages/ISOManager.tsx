@@ -314,6 +314,8 @@ export default function ISOManager() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionKey>('context_org');
+  const [isaDrawerOpen, setIsaDrawerOpen] = useState(false);
+  const [isaInitialPrompt, setIsaInitialPrompt] = useState<string | null>(null);
 
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
@@ -393,13 +395,20 @@ export default function ISOManager() {
   };
 
   const handleAskIsa = (prompt: string) => {
-    createConversation("Isa: " + prompt.slice(0, 30), {
+    createConversation("Isa: " + prompt.slice(0, 40), {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
-        setActiveSection('context_org');
-        setSidebarOpen(true);
+        setIsaInitialPrompt(prompt);
+        setIsaDrawerOpen(true);
+        // Stay in current module — Isa opens as a side panel overlay
       }
     });
+  };
+
+  const handleCloseIsaDrawer = () => {
+    setIsaDrawerOpen(false);
+    setActiveConversationId(null);
+    setIsaInitialPrompt(null);
   };
 
   const isWizardActive = showWizard || (project && project.status === "in_progress" && !activeConversationId);
@@ -812,9 +821,46 @@ export default function ISOManager() {
             </>
             )}
             {/* Global Isa widget — always accessible from any module */}
-            {!showWizard && !activeConversationId && (
+            {!showWizard && !activeConversationId && !isaDrawerOpen && (
               <GlobalIsaWidget project={project ?? null} activeSection={activeSection} />
             )}
+
+            {/* Isa Drawer — slides in from right over current module */}
+            <AnimatePresence>
+              {isaDrawerOpen && activeConversationId && (
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                  className="absolute inset-y-0 right-0 w-[420px] max-w-[90%] bg-card border-l border-border shadow-2xl z-30 flex flex-col"
+                >
+                  <div className="h-11 flex items-center px-4 border-b border-border shrink-0 bg-card gap-2">
+                    <img src={acsiLogo} alt="Isa" className="w-5 h-5 object-contain shrink-0" />
+                    <span className="text-sm font-bold text-primary">Ask Isa</span>
+                    <span className="text-xs text-muted-foreground hidden sm:block">· ISO Auditor AI</span>
+                    <div className="ml-auto flex items-center gap-2">
+                      {isPro ? (
+                        <Badge className="bg-accent/10 text-accent border-accent/30 text-xs gap-1">
+                          <Star className="w-3 h-3" /> Pro
+                        </Badge>
+                      ) : null}
+                      <button
+                        onClick={handleCloseIsaDrawer}
+                        className="text-muted-foreground hover:text-foreground p-1.5 rounded hover:bg-muted transition-colors"
+                        data-testid="button-close-isa-drawer"
+                        title="Close Isa panel"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <ISOChatInterface conversationId={activeConversationId} onMessageSent={() => refetchUsage()} isPro={isPro} initialPrompt={isaInitialPrompt ?? undefined} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
     </div>
@@ -2973,19 +3019,30 @@ function IsaEmptyState({
 
 /* ─── CHAT INTERFACE ──────────────────────────────────── */
 function ISOChatInterface({
-  conversationId, onMessageSent, isPro,
+  conversationId, onMessageSent, isPro, initialPrompt,
 }: {
   conversationId: number;
   onMessageSent?: () => void;
   isPro: boolean;
+  initialPrompt?: string;
 }) {
   const { messages, sendMessage, isStreaming, limitReached } = useIsaChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const initialSentRef = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStreaming]);
+
+  // Auto-send the initial prompt when the drawer opens (only once)
+  useEffect(() => {
+    if (initialPrompt && !initialSentRef.current && !isStreaming) {
+      initialSentRef.current = true;
+      sendMessage(initialPrompt);
+      setTimeout(() => onMessageSent?.(), 500);
+    }
+  }, [initialPrompt]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
