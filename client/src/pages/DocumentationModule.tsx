@@ -1451,7 +1451,9 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     }
   }, [doc]);
 
-  // Use useEffect to update form when doc changes
+  const DRAFT_KEY = `iso-doc-draft-${project?.id ?? 'new'}`;
+
+  // Load form from doc (edit) or restore draft from localStorage (new)
   useEffect(() => {
     if (doc) {
       setFormData({
@@ -1459,7 +1461,15 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
         reviewDate: doc.reviewDate ? new Date(doc.reviewDate) : null,
         tags: doc.tags || [],
       });
-    } else {
+    } else if (isOpen) {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setFormData({ ...parsed, isoProjectId: project?.id || null });
+          return;
+        }
+      } catch {}
       setFormData({
         docType: 'procedure',
         title: '',
@@ -1475,9 +1485,17 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     }
   }, [doc, isOpen, project?.id]);
 
+  // Auto-save draft to localStorage whenever form changes (new docs only)
+  useEffect(() => {
+    if (!doc && formData.title) {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(formData)); } catch {}
+    }
+  }, [formData, doc]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title) return;
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
     onSubmit(formData as InsertIsoDocument);
   };
 
@@ -1491,7 +1509,14 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle>{doc ? 'Edit Document' : 'Create New Document'}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{doc ? 'Edit Document' : 'Create New Document'}</DialogTitle>
+            {!doc && formData.title && (
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded px-2 py-0.5 font-medium">
+                ✓ Draft auto-saved
+              </span>
+            )}
+          </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">

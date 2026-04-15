@@ -395,6 +395,11 @@ export default function ISOManager() {
   };
 
   const handleAskIsa = (prompt: string) => {
+    if (activeConversationId) {
+      // Resume existing session — just reopen the drawer (no new conversation, no repeated prompt)
+      setIsaDrawerOpen(true);
+      return;
+    }
     createConversation("Isa: " + prompt.slice(0, 40), {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
@@ -406,6 +411,12 @@ export default function ISOManager() {
   };
 
   const handleCloseIsaDrawer = () => {
+    setIsaDrawerOpen(false);
+    // Keep activeConversationId alive — session resumes on next "Ask Isa" click
+    setIsaInitialPrompt(null);
+  };
+
+  const handleNewIsaSession = () => {
     setIsaDrawerOpen(false);
     setActiveConversationId(null);
     setIsaInitialPrompt(null);
@@ -846,10 +857,18 @@ export default function ISOManager() {
                         </Badge>
                       ) : null}
                       <button
+                        onClick={handleNewIsaSession}
+                        className="text-xs text-muted-foreground hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors border border-transparent hover:border-accent/20"
+                        data-testid="button-new-isa-session"
+                        title="Start a new Isa session"
+                      >
+                        + New Session
+                      </button>
+                      <button
                         onClick={handleCloseIsaDrawer}
                         className="text-muted-foreground hover:text-foreground p-1.5 rounded hover:bg-muted transition-colors"
                         data-testid="button-close-isa-drawer"
-                        title="Close Isa panel"
+                        title="Close panel (session stays active)"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -3035,14 +3054,18 @@ function ISOChatInterface({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStreaming]);
 
-  // Auto-send the initial prompt when the drawer opens (only once)
+  // Auto-send the initial prompt only on brand-new conversations (no messages yet)
   useEffect(() => {
-    if (initialPrompt && !initialSentRef.current && !isStreaming) {
+    if (initialPrompt && !initialSentRef.current && !isStreaming && messages.length === 0) {
       initialSentRef.current = true;
       sendMessage(initialPrompt);
       setTimeout(() => onMessageSent?.(), 500);
     }
-  }, [initialPrompt]);
+    // If messages already exist, mark as sent so we never repeat the context
+    if (messages.length > 0) {
+      initialSentRef.current = true;
+    }
+  }, [initialPrompt, messages.length]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
