@@ -129,8 +129,9 @@ function formatDocContentForPrint(content: string): string {
       continue;
     }
 
-    // ── Numbered main sections like "4 Context" or "5.1 Leadership" ──────────
-    const sectionMatch = trimmed.match(/^(\d+(?:\.\d+)*)[.)]\s+(.+)$/);
+    // Numbered sections: "4 Context", "5.1 Leadership", "1. PURPOSE", "1  REVISION SHEET"
+    // Optional punctuation after number so both "4 Context" and "4. Context" are caught.
+    const sectionMatch = trimmed.match(/^(\d+(?:\.\d+)*)[.)]?\s+(.+)$/);
     if (sectionMatch && trimmed.length < 120) {
       if (inList) { html += "</ul>"; inList = false; }
       if (inTable) { html += "</table>"; inTable = false; }
@@ -865,7 +866,7 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
     designatedReviewerEmail: "",
     changeDescription: "",
     reason: "",
-    proposedContent: (doc?.content ?? "") as string,
+    proposedContent: normalizeContentForEdit(doc?.content ?? ""),
     affectedDepartments: [] as string[],
     proposedEffectiveDate: "",
   });
@@ -1448,7 +1449,8 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject, o
 function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isPending, onAskIsa }: any) {
   const { toast } = useToast();
   const logoUrl = (project as any)?.logoUrl as string | undefined;
-  const [showLogoHeader, setShowLogoHeader] = useState(true);
+  // Default: show logo only when a logo URL actually exists
+  const [showLogo, setShowLogo] = useState(() => !!logoUrl);
   const [formData, setFormData] = useState<Partial<InsertIsoDocument>>({
     docType: 'procedure',
     title: '',
@@ -1578,36 +1580,39 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
                   ✓ Draft auto-saved
                 </span>
               )}
-              {doc && (
+              {doc && logoUrl && (
                 <button
                   type="button"
-                  onClick={() => setShowLogoHeader(v => !v)}
+                  onClick={() => setShowLogo(v => !v)}
                   className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground border border-border/60 rounded px-2 py-1 transition-colors"
-                  title="Toggle document header"
-                  data-testid="btn-toggle-doc-header"
+                  title="Toggle logo visibility"
+                  data-testid="btn-toggle-doc-logo"
                 >
-                  {showLogoHeader ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  {showLogoHeader ? "Hide Header" : "Show Header"}
+                  {showLogo ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  {showLogo ? "Hide Logo" : "Show Logo"}
                 </button>
               )}
             </div>
           </div>
         </DialogHeader>
 
-        {/* Document header — logo + metadata */}
-        {doc && showLogoHeader && (
+        {/* Document header — always visible when editing; logo element toggled separately */}
+        {doc && (
           <div className="mx-6 mt-4 rounded-lg border border-border/60 bg-slate-50 dark:bg-slate-900/50 p-4 flex items-start gap-4">
-            {logoUrl ? (
+            {/* Logo slot — shown/hidden via toggle; no-logo fallback shows org name */}
+            {showLogo && logoUrl && (
               <img
                 src={logoUrl}
                 alt="Organization logo"
                 className="h-12 w-auto max-w-[140px] object-contain shrink-0"
               />
-            ) : (
+            )}
+            {!logoUrl && (
               <div className="flex items-center justify-center h-12 px-3 rounded border border-border/60 bg-white dark:bg-slate-800 shrink-0 min-w-[80px] max-w-[140px]">
                 <span className="text-xs font-bold text-foreground text-center leading-tight break-words">{project?.orgName ?? "Organization"}</span>
               </div>
             )}
+            {/* Metadata — always visible */}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-foreground leading-tight">{project?.orgName ?? "Organization"}</p>
               {project?.standard && (
