@@ -125,6 +125,7 @@ function formatDocContentForPrint(content: string): string {
     // ── Markdown horizontal rule ───────────────────────────────────────────────
     if (/^[-*_]{3,}$/.test(trimmed)) {
       if (inList) { html += "</ul>"; inList = false; }
+      if (inTable) { html += "</table>"; inTable = false; }
       html += `<div class="divider"></div>`;
       continue;
     }
@@ -1511,6 +1512,11 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
       setIsDraftingDialog(false);
     }
   };
+
+  // Reset logo visibility each time a different doc is opened (or dialog re-opens)
+  useEffect(() => {
+    setShowLogo(!!logoUrl);
+  }, [doc?.id, isOpen, logoUrl]);
 
   // Sync with doc if editing
   const DRAFT_KEY = `iso-doc-draft-${project?.id ?? 'new'}`;
