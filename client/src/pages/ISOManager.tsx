@@ -3054,7 +3054,7 @@ function ISOChatInterface({
 
   return (
     <div className="flex flex-col h-full bg-muted/20">
-      <ScrollArea className="flex-1 px-4 py-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-5">
           <AnimatePresence initial={false}>
             {messages.map((msg, idx) => (
@@ -3141,7 +3141,7 @@ function ISOChatInterface({
 
           <div ref={bottomRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       <div className="shrink-0 bg-white dark:bg-card border-t border-border/60 px-4 py-4 shadow-sm">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3">

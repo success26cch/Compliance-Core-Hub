@@ -1484,7 +1484,7 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   const handleAskGuidance = () => {
     const prompt = `I'm creating a ${DOC_TYPES.find(t => t.value === formData.docType)?.label} titled '${formData.title}' ${formData.isoClause ? `for ${formData.isoClause}` : ''}. Can you coach me on the required structure, key elements to include, and how to write this to satisfy ISO requirements?`;
     onAskIsa(prompt);
-    onClose();
+    // Keep dialog open so the user can continue working on their document
   };
 
   return (
