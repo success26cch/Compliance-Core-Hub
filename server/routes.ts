@@ -5941,6 +5941,124 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     }
   });
 
+  // ─── ISO Compliance Check (Isa) ───────────────────────────────────────────────
+  app.post("/api/iso-documents/:id/compliance-check", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const docId = parseInt(req.params.id);
+      if (isNaN(docId)) return res.status(400).json({ message: "Invalid ID" });
+
+      const docs = await storage.getIsoDocuments(userId, isSuperadmin);
+      const doc = docs.find(d => d.id === docId);
+      if (!doc) return res.status(404).json({ message: "Document not found" });
+      if (!doc.content?.trim()) return res.status(400).json({ message: "Document has no content to evaluate." });
+      if (!doc.isoClause?.trim()) return res.status(400).json({ message: "Document has no ISO clause assigned." });
+
+      const project = await storage.getIsoProject(userId, isSuperadmin);
+      const standard = project?.standard ?? "ISO 9001:2015";
+
+      const systemPrompt = `You are Isa, an expert ISO Management Systems auditor. Your task is to evaluate whether a document's content adequately addresses the requirements of a specific ISO clause. You must return a valid JSON object ONLY — no markdown, no prose outside the JSON.
+
+The JSON must match this exact schema:
+{
+  "verdict": "Compliant" | "Partially Compliant" | "Non-Compliant",
+  "summary": "1–2 sentence overall assessment",
+  "requirements": [
+    {
+      "requirement": "Brief requirement label (e.g. 'Scope boundaries defined' or '8.5.1.a — Control of production conditions')",
+      "status": "Met" | "Partially Met" | "Not Met",
+      "finding": "What is covered or missing in the document for this specific sub-requirement"
+    }
+  ],
+  "recommendations": [
+    "Specific, actionable recommendation for each gap found"
+  ]
+}
+
+CLAUSE SUB-REQUIREMENT REFERENCE (use this to break each clause into its actual sub-requirements):
+ISO 9001:2015 common clauses and their sub-requirements:
+- 4.1: organizational context factors (internal/external issues); 4.2: interested parties identification + needs; 4.3: scope boundaries + exclusion justification; 4.4.1: process identification + owners + inputs/outputs + resources + monitoring + risks/opportunities + changes; 4.4.2: documented information maintenance
+- 5.1.1: leadership commitment evidence; 5.1.2: customer focus evidence; 5.2.1: quality policy establishment criteria; 5.2.2: policy communication/availability; 5.3: roles/responsibilities/authorities assignment
+- 6.1: risk identification + opportunity analysis; 6.2.1: SMART quality objectives; 6.2.2: objectives planning (who/what/resources/when/evaluate); 6.3: change planning
+- 7.1.1–7.1.6: resources (people, infra, environment, measurement, org knowledge, competence); 7.2: competence requirements; 7.3: awareness content; 7.4: internal/external communications; 7.5.1: documented information required + specified; 7.5.2: creation/update controls; 7.5.3: distribution/access/retrieval/storage controls
+- 8.1: operational planning + controls; 8.2.1: customer communication; 8.2.2: requirements review; 8.2.3: changes review; 8.2.4: requirements determination; 8.3: design/development stages + controls (if applicable); 8.4.1: external provider criteria + evaluation; 8.4.2: provider controls; 8.4.3: information to providers; 8.5.1: controlled conditions (a–h); 8.5.2: traceability; 8.5.3: customer/external property; 8.5.4: preservation; 8.5.5: post-delivery; 8.5.6: changes; 8.6: release criteria; 8.7: nonconforming output handling
+- 9.1.1: monitoring/measurement planning; 9.1.2: customer satisfaction methods; 9.1.3: analysis methods; 9.2: internal audit program; 9.3.1–9.3.3: management review inputs/outputs
+- 10.1: improvement determination; 10.2.1–10.2.2: nonconformity + corrective action process; 10.3: continual improvement
+ISO 14001:2015: similar structure mapping EMS (4.1–10.3) — use your training data for sub-requirement mapping.
+ISO 45001:2018: similar OH&S structure — use your training data.
+IATF 16949:2016: builds on ISO 9001 with APQP, PPAP, MSA, SPC, FMEA, control plan requirements.
+
+Rules:
+- Always decompose the clause into its actual sub-requirements, not just the top-level title.
+- For each sub-requirement, produce a separate "requirements" entry.
+- Be precise — cite what is present vs. what is absent in the document.
+- recommendations must be concrete (e.g., "Add clause 8.5.1(d): document the monitoring and measurement requirements for each production step" not just "Improve the content").
+- Produce at least 3 requirement entries even for simple clauses.
+- Return ONLY the JSON object. No explanation, no markdown code fences.`;
+
+      const userMessage = `Standard: ${standard}
+ISO Clause Reference: ${doc.isoClause}
+Document Type: ${doc.docType?.replace(/_/g, " ") ?? "Document"}
+Document Title: ${doc.title}
+
+--- DOCUMENT CONTENT START ---
+${doc.content}
+--- DOCUMENT CONTENT END ---
+
+Evaluate whether this document satisfies the requirements of ${doc.isoClause} under ${standard}. Return a JSON compliance verdict.`;
+
+      const anthropicClient = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+
+      const response = await anthropicClient.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      });
+
+      const rawText = response.content[0].type === "text" ? response.content[0].text.trim() : "";
+      let cleanText = rawText;
+      if (cleanText.startsWith("```")) {
+        cleanText = cleanText.replace(/^```[a-z]*\n?/i, "").replace(/\n?```\s*$/, "").trim();
+      }
+
+      let raw: any;
+      try {
+        raw = JSON.parse(cleanText);
+      } catch {
+        return res.status(500).json({ message: "Isa returned an unexpected response. Please try again." });
+      }
+
+      const VALID_VERDICTS = ["Compliant", "Partially Compliant", "Non-Compliant"];
+      if (!VALID_VERDICTS.includes(raw?.verdict) || !Array.isArray(raw?.requirements)) {
+        return res.status(500).json({ message: "Incomplete compliance result returned. Please try again." });
+      }
+
+      const result = {
+        verdict: raw.verdict as "Compliant" | "Partially Compliant" | "Non-Compliant",
+        summary: typeof raw.summary === "string" ? raw.summary : "",
+        requirements: (raw.requirements as any[]).map((r: any) => ({
+          requirement: typeof r.requirement === "string" ? r.requirement : "",
+          status: ["Met", "Partially Met", "Not Met"].includes(r.status) ? r.status : "Not Met",
+          finding: typeof r.finding === "string" ? r.finding : "",
+        })),
+        recommendations: Array.isArray(raw.recommendations)
+          ? (raw.recommendations as any[]).filter((r): r is string => typeof r === "string")
+          : [],
+      };
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("[compliance-check] Error:", error.message);
+      res.status(500).json({ message: error.message ?? "Compliance check failed." });
+    }
+  });
+
   // ─── ISO Audits ───────────────────────────────────────────────────────────────
   app.get("/api/iso-audits", async (req: Request, res: Response) => {
     try {

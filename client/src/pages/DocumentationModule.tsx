@@ -78,6 +78,19 @@ interface DocumentationModuleProps {
   onAskIsa: (prompt: string) => void;
 }
 
+type ComplianceRequirement = {
+  requirement: string;
+  status: "Met" | "Partially Met" | "Not Met";
+  finding: string;
+};
+
+type ComplianceResult = {
+  verdict: "Compliant" | "Partially Compliant" | "Non-Compliant";
+  summary: string;
+  requirements: ComplianceRequirement[];
+  recommendations: string[];
+};
+
 // ─── Print helper ─────────────────────────────────────────────────────────────
 
 function stripInlineMarkdown(text: string): string {
@@ -479,6 +492,8 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const formReviewFileRef = useRef<HTMLInputElement>(null);
   const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
+  const [complianceResults, setComplianceResults] = useState<Map<number, ComplianceResult>>(new Map());
+  const [runningComplianceChecks, setRunningComplianceChecks] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -700,6 +715,28 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
       toast({ title: "Restored", description: `Document reverted to previous content (Rev. ${undoSnapshot.version}).` });
     } catch {
       toast({ title: "Restore failed", variant: "destructive" });
+    }
+  };
+
+  const handleRunComplianceCheck = async (doc: IsoDocument) => {
+    setRunningComplianceChecks(prev => new Set(prev).add(doc.id));
+    try {
+      const res = await apiRequest("POST", `/api/iso-documents/${doc.id}/compliance-check`, {});
+      const result: ComplianceResult = await res.json();
+      setComplianceResults(prev => {
+        const next = new Map(prev);
+        next.set(doc.id, result);
+        return next;
+      });
+    } catch (e: any) {
+      const msg = e.message?.includes(":") ? e.message.split(":").slice(1).join(":").trim() : (e.message ?? "Could not run compliance check.");
+      toast({ title: "Compliance Check Failed", description: msg, variant: "destructive" });
+    } finally {
+      setRunningComplianceChecks(prev => {
+        const next = new Set(prev);
+        next.delete(doc.id);
+        return next;
+      });
     }
   };
 
@@ -954,6 +991,9 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               onRequestChange={() => setChangeReqDoc(doc)}
               getIcon={getDocIcon}
               getStatusBadge={getStatusBadge}
+              onRunComplianceCheck={handleRunComplianceCheck}
+              complianceResult={complianceResults.get(doc.id) ?? null}
+              isRunningComplianceCheck={runningComplianceChecks.has(doc.id)}
             />
           ))}
         </div>
@@ -1298,6 +1338,9 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           onClose={() => setChangeReqDoc(null)}
           onSubmit={(data: any) => submitChangeMutation.mutate({ docId: changeReqDoc.id, data })}
           isPending={submitChangeMutation.isPending}
+          complianceResult={complianceResults.get(changeReqDoc.id) ?? null}
+          onRunComplianceCheck={() => handleRunComplianceCheck(changeReqDoc)}
+          isRunningComplianceCheck={runningComplianceChecks.has(changeReqDoc.id)}
         />
       )}
 
@@ -1316,9 +1359,75 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   );
 }
 
-function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint, onRequestChange, getIcon, getStatusBadge }: any) {
+function ComplianceResultPanel({ result, docId }: { result: ComplianceResult; docId: number }) {
+  const [expanded, setExpanded] = useState(true);
+
+  const verdictConfig = {
+    "Compliant": { color: "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800/40", badge: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/40 dark:text-green-200", icon: BadgeCheck, iconColor: "text-green-600" },
+    "Partially Compliant": { color: "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/40", badge: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/40 dark:text-amber-200", icon: AlertTriangle, iconColor: "text-amber-600" },
+    "Non-Compliant": { color: "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800/40", badge: "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/40 dark:text-red-200", icon: XCircle, iconColor: "text-red-600" },
+  };
+
+  const cfg = verdictConfig[result.verdict];
+  const VerdictIcon = cfg.icon;
+
+  const statusColor = (s: string) => {
+    if (s === "Met") return "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800";
+    if (s === "Partially Met") return "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800";
+    return "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800";
+  };
+
+  return (
+    <div className={`mt-3 rounded-lg border overflow-hidden ${cfg.color}`} data-testid={`container-compliance-result-${docId}`}>
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); setExpanded(x => !x); }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left"
+        data-testid={`button-toggle-compliance-${docId}`}
+      >
+        <VerdictIcon className={`w-4 h-4 shrink-0 ${cfg.iconColor}`} />
+        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${cfg.badge}`}>{result.verdict}</span>
+        <span className="text-[10px] text-muted-foreground flex-1 truncate">{result.summary}</span>
+        {expanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 space-y-2" onClick={e => e.stopPropagation()}>
+          {Array.isArray(result.requirements) && result.requirements.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Requirement Breakdown</p>
+              {result.requirements.map((req, i) => (
+                <div key={i} className="flex gap-2 items-start text-[10px]">
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded border font-semibold mt-0.5 ${statusColor(req.status ?? "Not Met")}`}>{req.status ?? "Not Met"}</span>
+                  <div>
+                    <p className="font-semibold text-foreground">{req.requirement}</p>
+                    <p className="text-muted-foreground">{req.finding}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {Array.isArray(result.recommendations) && result.recommendations.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Recommendations</p>
+              {result.recommendations.map((rec, i) => (
+                <div key={i} className="flex gap-1.5 text-[10px]">
+                  <span className="text-amber-600 shrink-0 mt-0.5">•</span>
+                  <p className="text-foreground">{typeof rec === "string" ? rec : String(rec)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint, onRequestChange, getIcon, getStatusBadge, onRunComplianceCheck, complianceResult, isRunningComplianceCheck }: any) {
   const [showHistory, setShowHistory] = useState(false);
   const prevVersions: any[] = Array.isArray(doc.previousVersions) ? doc.previousVersions : [];
+
+  const canRunCheck = !!(doc.content?.trim()) && !!(doc.isoClause?.trim());
 
   return (
     <Card className="hover-elevate cursor-pointer group" onClick={onEdit} data-testid={`card-document-${doc.id}`}>
@@ -1382,11 +1491,31 @@ function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-2">
+        {complianceResult && (
+          <ComplianceResultPanel result={complianceResult} docId={doc.id} />
+        )}
+
+        <div className="flex items-center justify-between gap-2 mt-3">
           <p className="text-[10px] text-muted-foreground">
             Updated {format(new Date(doc.updatedAt || doc.createdAt), 'MMM d, yyyy')}
           </p>
           <div className="flex gap-1.5 flex-wrap justify-end" onClick={e => e.stopPropagation()}>
+            {canRunCheck && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[10px] gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-bold dark:bg-blue-950/30 dark:border-blue-800/40 dark:text-blue-300"
+                onClick={(e) => { e.stopPropagation(); onRunComplianceCheck(doc); }}
+                disabled={isRunningComplianceCheck}
+                data-testid={`button-compliance-check-${doc.id}`}
+              >
+                {isRunningComplianceCheck
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <ShieldCheck className="w-3 h-3" />
+                }
+                {isRunningComplianceCheck ? "Checking…" : "Run Compliance Check"}
+              </Button>
+            )}
             {doc.status === "approved" && (
               <Button
                 size="sm"
@@ -1432,7 +1561,7 @@ const DEPT_OPTIONS = [
   "Management", "Maintenance", "Health & Safety", "Finance", "IT", "All Departments",
 ];
 
-function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
+function ChangeRequestDialog({ doc, onClose, onSubmit, isPending, complianceResult, onRunComplianceCheck, isRunningComplianceCheck }: any) {
   const [form, setForm] = useState({
     requestedBy: "",
     designatedReviewer: "",
@@ -1477,6 +1606,62 @@ function ChangeRequestDialog({ doc, onClose, onSubmit, isPending }: any) {
             <p className="text-orange-600 dark:text-orange-500 mt-0.5">Edit the document content below, fill in the request fields, then click Submit. The document moves to <strong>In Review</strong> and the reviewer receives a link to the full revised document.</p>
           </div>
         </div>
+
+        {/* Compliance check reminder banner */}
+        {doc.isoClause?.trim() && doc.content?.trim() && (() => {
+          if (!complianceResult) {
+            return (
+              <div className="text-[11px] bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 dark:bg-blue-950/20 dark:border-blue-800/40" data-testid="banner-no-compliance-check">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-blue-800 dark:text-blue-200">Compliance check not yet run</p>
+                  <p className="text-blue-700 dark:text-blue-400 mt-0.5">Consider running a compliance check before submitting. Isa will evaluate whether this document meets the requirements of <strong>{doc.isoClause}</strong>. You can still proceed without it.</p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isRunningComplianceCheck}
+                  onClick={onRunComplianceCheck}
+                  className="shrink-0 h-7 text-[10px] gap-1 bg-blue-100 hover:bg-blue-200 border-blue-300 text-blue-800 font-bold"
+                  data-testid="button-run-check-from-dcr"
+                >
+                  {isRunningComplianceCheck ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                  {isRunningComplianceCheck ? "Checking…" : "Run Check"}
+                </Button>
+              </div>
+            );
+          }
+          if (complianceResult.verdict !== "Compliant") {
+            const isNonCompliant = complianceResult.verdict === "Non-Compliant";
+            return (
+              <div className={`text-[11px] rounded-lg p-3 flex items-start gap-2 border ${isNonCompliant ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800/40" : "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/40"}`} data-testid="banner-compliance-warning">
+                {isNonCompliant ? <XCircle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" /> : <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />}
+                <div className="flex-1 min-w-0">
+                  <p className={`font-bold ${isNonCompliant ? "text-red-800 dark:text-red-200" : "text-amber-800 dark:text-amber-200"}`}>
+                    Compliance check: <span className="font-black">{complianceResult.verdict}</span>
+                  </p>
+                  <p className={`mt-0.5 ${isNonCompliant ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400"}`}>
+                    {complianceResult.summary} Consider addressing gaps and re-running the check before submitting. You can still proceed — results do not block this workflow.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isRunningComplianceCheck}
+                  onClick={onRunComplianceCheck}
+                  className={`shrink-0 h-7 text-[10px] gap-1 font-bold ${isNonCompliant ? "bg-red-100 hover:bg-red-200 border-red-300 text-red-800" : "bg-amber-100 hover:bg-amber-200 border-amber-300 text-amber-800"}`}
+                  data-testid="button-rerun-check-from-dcr"
+                >
+                  {isRunningComplianceCheck ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                  {isRunningComplianceCheck ? "Checking…" : "Re-run Check"}
+                </Button>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
