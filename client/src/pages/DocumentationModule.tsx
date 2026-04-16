@@ -399,6 +399,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [draftContext, setDraftContext] = useState("");
   const [isExtractingCard, setIsExtractingCard] = useState(false);
   const cardFileRef = useRef<HTMLInputElement>(null);
+  const [undoSnapshot, setUndoSnapshot] = useState<{ docId: number; content: string; version: string } | null>(null);
   const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
   const { toast } = useToast();
@@ -575,14 +576,37 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
 
   const saveDraftToDocument = async () => {
     if (!draftDoc) return;
+    // Capture current content BEFORE overwriting so user can undo
+    const currentDoc = (queryClient.getQueryData<IsoDocument[]>(["/api/iso-documents"]) ?? [])
+      .find(d => d.id === draftDoc.id);
+    const originalContent = currentDoc?.content ?? "";
+    const originalVersion = currentDoc?.version ?? draftDoc.version ?? "1.0";
     try {
-      const res = await apiRequest("PATCH", `/api/iso-documents/${draftDoc.id}`, { content: draftContent });
+      await apiRequest("PATCH", `/api/iso-documents/${draftDoc.id}`, { content: draftContent });
       queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
       setDraftDoc(null);
       setDraftContent("");
-      toast({ title: "Draft saved", description: "Document content updated with Isa's draft." });
+      setDraftContext("");
+      setDraftReady(false);
+      // Store undo snapshot so user can revert
+      if (originalContent.trim()) {
+        setUndoSnapshot({ docId: draftDoc.id, content: originalContent, version: originalVersion });
+      }
+      toast({ title: "Draft saved", description: originalContent.trim() ? "Previous content saved — click Undo if needed." : "Document content updated with Isa's draft." });
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
+    }
+  };
+
+  const handleUndoSave = async () => {
+    if (!undoSnapshot) return;
+    try {
+      await apiRequest("PATCH", `/api/iso-documents/${undoSnapshot.docId}`, { content: undoSnapshot.content });
+      queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
+      setUndoSnapshot(null);
+      toast({ title: "Restored", description: `Document reverted to previous content (Rev. ${undoSnapshot.version}).` });
+    } catch {
+      toast({ title: "Restore failed", variant: "destructive" });
     }
   };
 
@@ -633,6 +657,33 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           <Plus className="w-4 h-4" /> New Document
         </Button>
       </div>
+
+      {/* Undo banner — shown after "Save to Document" when previous content existed */}
+      {undoSnapshot && (
+        <div className="mb-4 flex items-center gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/50 rounded-xl px-4 py-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Draft saved — previous content preserved</p>
+            <p className="text-[11px] text-amber-700 dark:text-amber-400">Your original Rev. {undoSnapshot.version} content is held in memory. Click Undo to restore it.</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={handleUndoSave}
+              className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white gap-1"
+              data-testid="button-undo-save"
+            >
+              ↩ Undo
+            </Button>
+            <button
+              onClick={() => setUndoSnapshot(null)}
+              className="text-amber-600 hover:text-amber-800 dark:hover:text-amber-200 transition-colors"
+              data-testid="button-dismiss-undo"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="bg-white border p-1 h-auto flex-wrap justify-start gap-1">
@@ -1562,6 +1613,7 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   const [contextExpanded, setContextExpanded] = useState(false);
   const [isExtractingDialogFile, setIsExtractingDialogFile] = useState(false);
   const dialogFileRef = useRef<HTMLInputElement>(null);
+  const [prevDialogContent, setPrevDialogContent] = useState<string | null>(null);
 
   const handleDialogFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1585,6 +1637,11 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   };
 
   const handleDialogDraft = async () => {
+    // Snapshot existing content so user can restore if they don't like the draft
+    const existingContent = formData.content?.trim();
+    if (existingContent) {
+      setPrevDialogContent(existingContent);
+    }
     setIsDraftingDialog(true);
     setFormData(prev => ({ ...prev, content: "" }));
     try {
@@ -1647,9 +1704,11 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
       });
       setAdditionalContext("");
       setContextExpanded(false);
+      setPrevDialogContent(null);
     } else if (isOpen) {
       setAdditionalContext("");
       setContextExpanded(false);
+      setPrevDialogContent(null);
       try {
         const saved = localStorage.getItem(DRAFT_KEY);
         if (saved) {
@@ -1966,6 +2025,35 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
             />
             {isDraftingDialog && (
               <p className="text-[10px] text-violet-600 animate-pulse font-semibold">Isa is writing your document…</p>
+            )}
+            {/* Restore previous content — shown whenever Isa has overwritten something */}
+            {prevDialogContent && !isDraftingDialog && (
+              <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+                  Previous content preserved — not happy with Isa's draft?
+                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, content: prevDialogContent }));
+                      setPrevDialogContent(null);
+                    }}
+                    className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:text-amber-900 border border-amber-300 dark:border-amber-600 rounded px-2 py-0.5 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                    data-testid="button-restore-prev-content"
+                  >
+                    ↩ Restore
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrevDialogContent(null)}
+                    className="text-amber-500 hover:text-amber-700 transition-colors"
+                    data-testid="button-dismiss-prev-content"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
