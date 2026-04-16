@@ -7791,6 +7791,184 @@ Output only the document content. No preamble. No closing remarks.`;
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── Change Control Log (ISO 7.5 Compliance) ──────────────────────────────
+  app.get("/api/change-control-log", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { db } = await import("./db");
+      const { isoDocuments } = await import("@shared/schema");
+      const { eq, and, sql } = await import("drizzle-orm");
+
+      // Optional isoProjectId scoping from query param
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : null;
+
+      // 1) Fetch all approved formal DCRs for this user (+ optional project scope)
+      const dcrSql = isoProjectId && !isNaN(isoProjectId)
+        ? sql`
+          SELECT
+            dcr.id AS id,
+            dcr.reviewed_at AS date,
+            d.title AS doc_title,
+            d.id AS doc_id,
+            dcr.reason AS change_reason,
+            dcr.requested_by AS changed_by,
+            dcr.reviewed_by AS approved_by
+          FROM doc_change_requests dcr
+          JOIN iso_documents d ON d.id = dcr.document_id
+          WHERE dcr.user_id = ${userId}
+            AND dcr.status = 'approved'
+            AND dcr.iso_project_id = ${isoProjectId}
+          ORDER BY dcr.reviewed_at DESC
+        `
+        : sql`
+          SELECT
+            dcr.id AS id,
+            dcr.reviewed_at AS date,
+            d.title AS doc_title,
+            d.id AS doc_id,
+            dcr.reason AS change_reason,
+            dcr.requested_by AS changed_by,
+            dcr.reviewed_by AS approved_by
+          FROM doc_change_requests dcr
+          JOIN iso_documents d ON d.id = dcr.document_id
+          WHERE dcr.user_id = ${userId}
+            AND dcr.status = 'approved'
+          ORDER BY dcr.reviewed_at DESC
+        `;
+
+      const dcrRows = await db.execute(dcrSql);
+
+      // 2) Fetch all relevant documents with previousVersions
+      const docsQuery = isoProjectId && !isNaN(isoProjectId)
+        ? db.select({
+            id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
+            previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
+          }).from(isoDocuments).where(and(eq(isoDocuments.userId, userId), eq(isoDocuments.isoProjectId, isoProjectId)))
+        : db.select({
+            id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
+            previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
+          }).from(isoDocuments).where(eq(isoDocuments.userId, userId));
+
+      const docs = await docsQuery;
+
+      // Build lookup: docId -> previousVersions sorted by archivedAt ascending
+      const docPvMap = new Map<number, any[]>();
+      const docCurrentVersion = new Map<number, string>();
+      for (const doc of docs) {
+        const pvs = (Array.isArray(doc.previousVersions) ? doc.previousVersions : [])
+          .slice()
+          .sort((a: any, b: any) => {
+            if (!a.archivedAt && !b.archivedAt) return 0;
+            if (!a.archivedAt) return -1;
+            if (!b.archivedAt) return 1;
+            return new Date(a.archivedAt).getTime() - new Date(b.archivedAt).getTime();
+          });
+        docPvMap.set(doc.id, pvs);
+        docCurrentVersion.set(doc.id, doc.version);
+      }
+
+      // 3) For each approved DCR, derive rev_from and rev_to deterministically
+      //    from the previousVersions sequence.
+      //
+      //    previousVersions stores OLD versions (before bump) sorted chronologically.
+      //    If previousVersions = [{v:"1.0",archivedAt:t1},{v:"1.1",archivedAt:t2}]
+      //    and currentVersion = "1.2", then:
+      //      DCR closest to t1: rev_from=1.0, rev_to=1.1
+      //      DCR closest to t2: rev_from=1.1, rev_to=1.2
+      //
+      //    We match each DCR to the previousVersions entry with the closest archivedAt.
+      //    rev_to = next entry's version, or currentDocVersion if it's the last entry.
+
+      const dcrClaimedKeys = new Set<string>(); // tracks (docId:pvIndex) already used
+      const dcrEntries = (dcrRows.rows as any[]).map(r => {
+        const reviewedAtMs = r.date ? new Date(r.date as string).getTime() : null;
+        const docId = r.doc_id as number;
+        const prevVersions = docPvMap.get(docId) ?? [];
+        const currentVer = docCurrentVersion.get(docId) ?? null;
+
+        let revFrom: string | null = null;
+        let revTo: string | null = currentVer;
+        let matchedIdx: number | null = null;
+
+        if (reviewedAtMs !== null && prevVersions.length > 0) {
+          let closestDiff = Infinity;
+          for (let i = 0; i < prevVersions.length; i++) {
+            const pv = prevVersions[i];
+            const key = `${docId}:${i}`;
+            if (dcrClaimedKeys.has(key)) continue; // already assigned to another DCR
+            if (pv.archivedAt) {
+              const diff = Math.abs(new Date(pv.archivedAt).getTime() - reviewedAtMs);
+              if (diff < closestDiff) {
+                closestDiff = diff;
+                matchedIdx = i;
+              }
+            }
+          }
+          if (matchedIdx !== null) {
+            const matched = prevVersions[matchedIdx];
+            revFrom = matched.version ?? null;
+            // rev_to = next entry's version, or the current doc version if this is the last
+            const nextEntry = prevVersions[matchedIdx + 1];
+            revTo = nextEntry?.version ?? currentVer;
+            dcrClaimedKeys.add(`${docId}:${matchedIdx}`);
+          }
+        }
+
+        return {
+          id: r.id,
+          date: r.date ? new Date(r.date as string).toISOString() : null,
+          doc_title: r.doc_title,
+          doc_id: docId,
+          change_reason: r.change_reason ?? null,
+          changed_by: r.changed_by ?? null,
+          approved_by: r.approved_by ?? null,
+          dcr_status: 'approved',
+          rev_from: revFrom,
+          rev_to: revTo,
+          change_type: 'formal_dcr',
+        };
+      });
+
+      // 4) Build AI-assisted entries from previousVersions entries NOT claimed by a formal DCR.
+      const aiEntries: any[] = [];
+      for (const doc of docs) {
+        const prevVersions = docPvMap.get(doc.id) ?? [];
+        for (let i = 0; i < prevVersions.length; i++) {
+          const key = `${doc.id}:${i}`;
+          if (dcrClaimedKeys.has(key)) continue; // this entry was a formal DCR archive, skip
+          const pv = prevVersions[i];
+          const nextPv = prevVersions[i + 1];
+          aiEntries.push({
+            id: `ai-${doc.id}-${i}`,
+            date: pv.archivedAt ?? null,
+            doc_title: doc.title,
+            doc_id: doc.id,
+            change_reason: pv.changeReason ?? null,
+            changed_by: null,
+            approved_by: pv.approvedBy ?? null,
+            dcr_status: 'approved',
+            rev_from: pv.version ?? null,
+            rev_to: nextPv?.version ?? docCurrentVersion.get(doc.id) ?? null,
+            change_type: 'ai_assisted',
+          });
+        }
+      }
+
+      // 5) Merge and sort chronologically (newest first)
+      const merged = [...dcrEntries, ...aiEntries].sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+
+      res.json(merged);
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
   // ─── Environmental Compliance Hub API ──────────────────────────────────────
 
   // Facility Profile

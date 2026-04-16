@@ -36,6 +36,11 @@ import {
   Loader2,
   Paperclip,
   ChevronRight,
+  List,
+  ScrollText,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -442,6 +447,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doc-change-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/change-control-log"] });
       setReviewingRequest(null);
       toast({
         title: `✓ Approved — now Rev. ${data.newVersion}`,
@@ -461,6 +467,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doc-change-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/change-control-log"] });
       setReviewingRequest(null);
       toast({ title: "Change Request Rejected", description: "Document returned to Approved status." });
     },
@@ -704,6 +711,12 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="master_list" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-master-list">
+            <List className="w-3.5 h-3.5" /> Master List
+          </TabsTrigger>
+          <TabsTrigger value="change_log" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-change-log">
+            <ScrollText className="w-3.5 h-3.5" /> Change Log
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -717,6 +730,10 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
         />
       ) : activeTab === "coverage_map" ? (
         <ClauseCoverageMap documents={documents || []} onAskIsa={onAskIsa} />
+      ) : activeTab === "master_list" ? (
+        <MasterDocumentList documents={documents ?? []} project={project ?? null} isLoading={isLoading} />
+      ) : activeTab === "change_log" ? (
+        <ChangeControlLog documents={documents ?? []} isoProjectId={(project as any)?.id ?? null} />
       ) : isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">Loading documents...</p>
@@ -2280,6 +2297,474 @@ function ClauseCoverageMap({ documents, onAskIsa }: { documents: IsoDocument[]; 
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ─── Master Document List ─────────────────────────────────────────────────────
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  quality_manual: "Quality Manual",
+  process_map: "Process Map",
+  procedure: "Procedure",
+  work_instruction: "Work Instruction",
+  template: "Format Template",
+  other: "Other",
+};
+
+type SortKey = "title" | "docType" | "isoClause" | "version" | "status" | "approvedBy" | "approvalDate" | "reviewDate";
+type SortDir = "asc" | "desc";
+
+function MasterDocumentList({ documents, project, isLoading }: { documents: IsoDocument[]; project: any; isLoading: boolean }) {
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterClause, setFilterClause] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("title");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const allClauses = Array.from(new Set(documents.map(d => d.isoClause).filter(Boolean))).sort() as string[];
+
+  const filtered = documents.filter(doc => {
+    const matchSearch = !search ||
+      doc.title.toLowerCase().includes(search.toLowerCase()) ||
+      String(doc.id).includes(search.trim()) ||
+      (doc.isoClause ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchType = filterType === "all" || doc.docType === filterType;
+    const matchStatus = filterStatus === "all" || doc.status === filterStatus;
+    const matchClause = filterClause === "all" || doc.isoClause === filterClause;
+    return matchSearch && matchType && matchStatus && matchClause;
+  }).sort((a, b) => {
+    let av: string = "";
+    let bv: string = "";
+    if (sortKey === "title") { av = a.title; bv = b.title; }
+    else if (sortKey === "docType") { av = a.docType; bv = b.docType; }
+    else if (sortKey === "isoClause") { av = a.isoClause ?? ""; bv = b.isoClause ?? ""; }
+    else if (sortKey === "version") { av = a.version; bv = b.version; }
+    else if (sortKey === "status") { av = a.status; bv = b.status; }
+    else if (sortKey === "approvedBy") { av = a.approvedBy ?? ""; bv = b.approvedBy ?? ""; }
+    else if (sortKey === "approvalDate") { av = a.approvalDate ? new Date(a.approvalDate).toISOString() : ""; bv = b.approvalDate ? new Date(b.approvalDate).toISOString() : ""; }
+    else if (sortKey === "reviewDate") { av = a.reviewDate ? new Date(a.reviewDate).toISOString() : ""; bv = b.reviewDate ? new Date(b.reviewDate).toISOString() : ""; }
+    const cmp = av.localeCompare(bv);
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  const SortIcon = ({ k }: { k: SortKey }) => {
+    if (sortKey !== k) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  };
+
+  const printMasterList = () => {
+    const orgName = project?.orgName ?? "Organization";
+    const standard = project?.standard ?? "ISO 9001";
+    const logoUrl = project?.logoUrl as string | undefined;
+    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" alt="${orgName} logo" style="max-height:50px;max-width:140px;object-fit:contain;" />`
+      : `<div style="font-size:15pt;font-weight:800;color:#1e3a5f;">${orgName}</div>`;
+
+    const rows = filtered.map(doc => `
+      <tr>
+        <td>${doc.id}</td>
+        <td>${doc.title}</td>
+        <td>${DOC_TYPE_LABELS[doc.docType] ?? doc.docType}</td>
+        <td>${doc.isoClause ?? "—"}</td>
+        <td>Rev. ${doc.version}</td>
+        <td>${doc.status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td>
+        <td>${doc.approvalDate ? new Date(doc.approvalDate).toLocaleDateString("en-US") : "—"}</td>
+        <td>${doc.approvedBy ?? "—"}</td>
+        <td>${doc.reviewDate ? new Date(doc.reviewDate).toLocaleDateString("en-US") : "—"}</td>
+      </tr>`).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><title>Master Document List — ${orgName}</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:9pt;color:#1a1a1a;background:#fff}
+  .page{max-width:11in;margin:0 auto;padding:0.5in 0.7in}
+  .header{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:10px;border-bottom:3px solid #1e3a5f;margin-bottom:16px}
+  .header-right{text-align:right;font-size:8pt;color:#555}
+  .title{font-size:14pt;font-weight:800;color:#1e3a5f;margin-bottom:4px}
+  .subtitle{font-size:8pt;color:#666;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:8pt}
+  th{background:#1e3a5f;color:#fff;padding:6px 8px;text-align:left;font-size:7.5pt;font-weight:700;white-space:nowrap}
+  td{padding:5px 8px;border-bottom:1px solid #e0e8f0;vertical-align:top}
+  tr:nth-child(even) td{background:#f7f9fc}
+  .footer{margin-top:20px;padding-top:8px;border-top:1px solid #e0e0e0;display:flex;justify-content:space-between;font-size:7pt;color:#999}
+  @media print{body{font-size:8pt}.page{padding:0.3in 0.5in}@page{margin:0.3in;size:letter landscape}}
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div>${logoHtml}</div>
+    <div class="header-right">
+      <div style="font-weight:700;color:#1e3a5f">Master Document List</div>
+      <div>${standard} · ISO 7.5 Documented Information</div>
+      <div>${dateStr}</div>
+    </div>
+  </div>
+  <div class="title">Master Document List</div>
+  <div class="subtitle">${orgName} · ${filtered.length} document${filtered.length !== 1 ? "s" : ""} · Generated ${dateStr}</div>
+  <table>
+    <thead><tr>
+      <th>Doc ID</th><th>Title</th><th>Type</th><th>ISO Clause</th>
+      <th>Revision</th><th>Status</th><th>Approval Date</th>
+      <th>Approved By</th><th>Next Review</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">
+    <span>Generated by ACSI ISO Manager · ${standard}</span>
+    <span>${orgName} · Master Document List · ${dateStr}</span>
+  </div>
+</div>
+<script>window.onload=function(){window.print()}</script>
+</body></html>`;
+
+    const win = window.open("", "_blank", "width=1100,height=750");
+    if (win) { win.document.write(html); win.document.close(); }
+  };
+
+  const thCls = "px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide cursor-pointer hover:text-primary select-none whitespace-nowrap";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-black text-primary flex items-center gap-2"><List className="w-4 h-4" /> Master Document List</h2>
+          <p className="text-xs text-muted-foreground">ISO 7.5 — All controlled documents with current revision status</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs"
+          onClick={printMasterList}
+          data-testid="button-print-master-list"
+        >
+          <Printer className="w-3.5 h-3.5" /> Print / Export
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <div className="relative flex-1 min-w-[160px]">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            className="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Search by title, doc ID, or clause…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            data-testid="input-master-search"
+          />
+        </div>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[150px] h-8 text-xs" data-testid="select-master-type">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            {Object.entries(DOC_TYPE_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>{l}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[130px] h-8 text-xs" data-testid="select-master-status">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="in_review">In Review</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="obsolete">Obsolete</SelectItem>
+          </SelectContent>
+        </Select>
+        {allClauses.length > 0 && (
+          <Select value={filterClause} onValueChange={setFilterClause}>
+            <SelectTrigger className="w-[130px] h-8 text-xs" data-testid="select-master-clause">
+              <SelectValue placeholder="All Clauses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Clauses</SelectItem>
+              {allClauses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">Loading documents…</div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-sm">
+          <List className="w-8 h-8 mb-2 opacity-30" />
+          No documents match the current filters.
+        </div>
+      ) : (
+        <div className="border rounded-xl overflow-hidden bg-white dark:bg-card">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 border-b">
+                <tr>
+                  <th className={thCls + " w-16"}>
+                    <span className="flex items-center gap-1">Doc ID</span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("title")}>
+                    <span className="flex items-center gap-1">Title <SortIcon k="title" /></span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("docType")}>
+                    <span className="flex items-center gap-1">Type <SortIcon k="docType" /></span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("isoClause")}>
+                    <span className="flex items-center gap-1">ISO Clause <SortIcon k="isoClause" /></span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("version")}>
+                    <span className="flex items-center gap-1">Revision <SortIcon k="version" /></span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("status")}>
+                    <span className="flex items-center gap-1">Status <SortIcon k="status" /></span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("approvalDate")}>
+                    <span className="flex items-center gap-1">Approval Date <SortIcon k="approvalDate" /></span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("approvedBy")}>
+                    <span className="flex items-center gap-1">Approved By <SortIcon k="approvedBy" /></span>
+                  </th>
+                  <th className={thCls} onClick={() => handleSort("reviewDate")}>
+                    <span className="flex items-center gap-1">Next Review <SortIcon k="reviewDate" /></span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {filtered.map(doc => (
+                  <tr key={doc.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-master-${doc.id}`}>
+                    <td className="px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                      {doc.id}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="font-semibold text-xs text-primary leading-tight">{doc.title}</div>
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {DOC_TYPE_LABELS[doc.docType] ?? doc.docType}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {doc.isoClause ? (
+                        <span className="font-mono text-xs bg-primary/5 text-primary px-1.5 py-0.5 rounded">{doc.isoClause}</span>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs font-mono whitespace-nowrap">Rev. {doc.version}</td>
+                    <td className="px-3 py-2.5">
+                      {doc.status === "approved" && <Badge className="bg-green-100 text-green-800 border border-green-200 text-[10px]">Approved</Badge>}
+                      {doc.status === "draft" && <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200 text-[10px]">Draft</Badge>}
+                      {doc.status === "in_review" && <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-200 text-[10px]">In Review</Badge>}
+                      {doc.status === "obsolete" && <Badge variant="secondary" className="text-[10px]">Obsolete</Badge>}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {doc.approvalDate ? format(new Date(doc.approvalDate), "MMM d, yyyy") : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                      {doc.approvedBy ?? "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {doc.reviewDate ? format(new Date(doc.reviewDate), "MMM d, yyyy") : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2.5 border-t bg-muted/20 flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground">{filtered.length} of {documents.length} document{documents.length !== 1 ? "s" : ""}</p>
+            <p className="text-[11px] text-muted-foreground">ISO 7.5 Master Document List</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Change Control Log ───────────────────────────────────────────────────────
+
+interface ChangeLogEntry {
+  id: string | number;
+  date: string | null;
+  doc_title: string;
+  doc_id: number;
+  change_reason: string | null;
+  changed_by: string | null;
+  approved_by: string | null;
+  dcr_status: string;
+  rev_from: string | null;
+  rev_to: string | null;
+  change_type: "formal_dcr" | "ai_assisted";
+}
+
+function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[]; isoProjectId: number | null }) {
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterDoc, setFilterDoc] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const queryUrl = isoProjectId
+    ? `/api/change-control-log?isoProjectId=${isoProjectId}`
+    : "/api/change-control-log";
+
+  const { data: logEntries, isLoading } = useQuery<ChangeLogEntry[]>({
+    queryKey: ["/api/change-control-log", isoProjectId],
+    queryFn: () => fetch(queryUrl, { credentials: "include" }).then(r => r.json()),
+  });
+
+  const filtered = (logEntries ?? []).filter(entry => {
+    const matchSearch = !search ||
+      entry.doc_title.toLowerCase().includes(search.toLowerCase()) ||
+      (entry.change_reason ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (entry.changed_by ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (entry.approved_by ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchType = filterType === "all" || entry.change_type === filterType;
+    const matchDoc = filterDoc === "all" || String(entry.doc_id) === filterDoc;
+    const entryDate = entry.date ? new Date(entry.date) : null;
+    const matchFrom = !dateFrom || (entryDate && entryDate >= new Date(dateFrom));
+    const matchTo = !dateTo || (entryDate && entryDate <= new Date(dateTo + "T23:59:59"));
+    return matchSearch && matchType && matchDoc && matchFrom && matchTo;
+  });
+
+  const sortedDocs = [...documents].sort((a, b) => a.title.localeCompare(b.title));
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-black text-primary flex items-center gap-2"><ScrollText className="w-4 h-4" /> Change Control Log</h2>
+          <p className="text-xs text-muted-foreground">ISO 7.5.3 — Chronological record of all document changes</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <div className="relative flex-1 min-w-[160px]">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            className="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Search reason, changed by…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            data-testid="input-changelog-search"
+          />
+        </div>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[160px] h-8 text-xs" data-testid="select-changelog-type">
+            <SelectValue placeholder="All Change Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Change Types</SelectItem>
+            <SelectItem value="formal_dcr">Formal DCR</SelectItem>
+            <SelectItem value="ai_assisted">AI-Assisted</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterDoc} onValueChange={setFilterDoc}>
+          <SelectTrigger className="w-[180px] h-8 text-xs" data-testid="select-changelog-doc">
+            <SelectValue placeholder="All Documents" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Documents</SelectItem>
+            {sortedDocs.map(d => (
+              <SelectItem key={d.id} value={String(d.id)}>{d.title}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="date"
+            className="h-8 px-2 text-xs border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            data-testid="input-changelog-date-from"
+          />
+          <span className="text-xs text-muted-foreground">to</span>
+          <input
+            type="date"
+            className="h-8 px-2 text-xs border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            data-testid="input-changelog-date-to"
+          />
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">Loading change log…</div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-sm">
+          <ScrollText className="w-8 h-8 mb-2 opacity-30" />
+          <p>No change log entries match the current filters.</p>
+          <p className="text-xs mt-1">Changes appear here after document revisions are approved.</p>
+        </div>
+      ) : (
+        <div className="border rounded-xl overflow-hidden bg-white dark:bg-card">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 border-b">
+                <tr>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Date</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">Document</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Rev Change</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">Change Reason</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Changed By</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Approved By</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Type</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {filtered.map((entry, i) => (
+                  <tr key={String(entry.id)} className="hover:bg-muted/20 transition-colors" data-testid={`row-changelog-${i}`}>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {entry.date ? format(new Date(entry.date), "MMM d, yyyy") : "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-xs font-semibold text-primary">{entry.doc_title}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-xs font-mono whitespace-nowrap">
+                      {entry.rev_from && entry.rev_to ? (
+                        <span className="flex items-center gap-1">
+                          <span className="text-muted-foreground">{entry.rev_from}</span>
+                          <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                          <span className="font-bold text-primary">{entry.rev_to}</span>
+                        </span>
+                      ) : entry.rev_to ? (
+                        <span className="font-bold text-primary">Rev. {entry.rev_to}</span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-foreground max-w-[240px]">
+                      <p className="truncate" title={entry.change_reason ?? ""}>{entry.change_reason ?? "—"}</p>
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {entry.changed_by ?? "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {entry.approved_by ?? "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {entry.change_type === "formal_dcr" ? (
+                        <Badge className="bg-orange-100 text-orange-800 border border-orange-200 text-[10px] whitespace-nowrap">Formal DCR</Badge>
+                      ) : (
+                        <Badge className="bg-violet-100 text-violet-800 border border-violet-200 text-[10px] whitespace-nowrap">AI-Assisted</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2.5 border-t bg-muted/20 flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground">{filtered.length} entr{filtered.length !== 1 ? "ies" : "y"}</p>
+            <p className="text-[11px] text-muted-foreground">ISO 7.5.3 Change Control Log</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
