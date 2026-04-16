@@ -652,7 +652,7 @@ export default function ISOManager() {
 
           {/* Sidebar Footer */}
           {sidebarOpen && usageData && !isPro && (
-            <div className="px-3 py-3 border-t border-border/50">
+            <div className="px-3 pt-3 border-t border-border/50">
               <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
                 <span>Preview questions</span>
                 <span>{usageData.questionCount} / {usageData.freeLimit}</span>
@@ -669,6 +669,19 @@ export default function ISOManager() {
               </Link>
             </div>
           )}
+          {/* Back to Dashboard */}
+          <div className={`px-2 py-3 border-t border-border/50 ${!sidebarOpen ? "flex justify-center" : ""}`}>
+            <Link href="/employer">
+              <button
+                data-testid="button-back-to-dashboard"
+                title="Back to Dashboard"
+                className={`text-xs text-muted-foreground hover:text-primary flex items-center gap-1.5 font-medium transition-colors rounded-lg px-2 py-1.5 hover:bg-muted w-full ${!sidebarOpen ? "justify-center" : ""}`}
+              >
+                <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+                {sidebarOpen && <span>Back to Dashboard</span>}
+              </button>
+            </Link>
+          </div>
         </div>
 
         {/* ── MAIN PANEL ── */}
@@ -691,6 +704,16 @@ export default function ISOManager() {
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Activity className="w-3 h-3 text-accent" /><span>Online</span>
               </div>
+              <Link href="/employer">
+                <button
+                  data-testid="button-topbar-dashboard"
+                  title="Back to Dashboard"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary font-medium px-2 py-1 rounded-md hover:bg-muted transition-colors border border-border/50"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </button>
+              </Link>
               {isPro ? (
                 <Badge className="bg-accent/10 text-accent border-accent/30 text-xs gap-1">
                   <Star className="w-3 h-3" /> Isa Pro
