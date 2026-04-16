@@ -131,6 +131,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   await setupAuth(app);
   registerAuthRoutes(app);
 
+  // ── ONE-TIME: Ebeni prod account init (remove after first successful call) ──
+  app.post("/api/admin/init-ebeni", async (req: Request, res: Response) => {
+    const expectedToken = process.env.EBENI_INIT_TOKEN;
+    if (!expectedToken) return res.status(503).json({ message: "Not configured" });
+    const providedToken = (req.headers["x-init-token"] as string) || req.body?.token;
+    if (providedToken !== expectedToken) return res.status(403).json({ message: "Forbidden" });
+    try {
+      const { scrypt, randomBytes } = await import("crypto");
+      const { promisify } = await import("util");
+      const scryptAsync = promisify(scrypt);
+      const tempPassword = "CCItemp2026!";
+      const salt = randomBytes(16).toString("hex");
+      const derived = (await scryptAsync(tempPassword, salt, 64)) as Buffer;
+      const passwordHash = `${salt}:${derived.toString("hex")}`;
+      const { db } = await import("./db");
+      const { sql } = await import("drizzle-orm");
+      await db.execute(sql`
+        INSERT INTO users (email, first_name, last_name, password_hash, is_superadmin, iso_only, created_at, updated_at)
+        VALUES ('evillarreal@acsi-quality.com', 'Ebeni', 'Villarreal', ${passwordHash}, true, true, NOW(), NOW())
+        ON CONFLICT (email) DO UPDATE SET
+          password_hash = EXCLUDED.password_hash,
+          is_superadmin = true,
+          iso_only = true,
+          updated_at = NOW()
+      `);
+      res.json({ ok: true, message: "Ebeni account ready. Temp password: CCItemp2026!" });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+
   // ── Paddle Webhook ─────────────────────────────────────────────────────────
   // Must be registered before any body-parsing middleware consumes the raw body.
   // We use req.rawBody (captured by express.json's verify callback in index.ts).
