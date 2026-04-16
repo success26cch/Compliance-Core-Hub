@@ -6644,7 +6644,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       const userId = (req.user as any).claims.sub;
       const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
-      const { docType, title, isoClause } = req.body as { docType?: string; title?: string; isoClause?: string };
+      const { docType, title, isoClause, additionalContext } = req.body as { docType?: string; title?: string; isoClause?: string; additionalContext?: string };
       if (!title) return res.status(400).json({ message: "title is required" });
 
       const project = await storage.getIsoProject(userId, isSuperadmin);
@@ -6689,6 +6689,10 @@ CRITICAL FORMATTING RULES — FOLLOW EXACTLY:
 
 Output only the document content. No preamble. No closing remarks.`;
 
+      const userMessage = additionalContext?.trim()
+        ? `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.\n\nUSER-PROVIDED CONTEXT AND REQUIREMENTS (incorporate these specifically into the document):\n${additionalContext.trim()}`
+        : `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.`;
+
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
@@ -6701,7 +6705,7 @@ Output only the document content. No preamble. No closing remarks.`;
         model: "claude-sonnet-4-5",
         max_tokens: 4096,
         system: systemPrompt,
-        messages: [{ role: "user", content: `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.` }],
+        messages: [{ role: "user", content: userMessage }],
       });
 
       for await (const event of stream) {
@@ -6727,6 +6731,7 @@ Output only the document content. No preamble. No closing remarks.`;
       if (isNaN(docId)) return res.status(400).json({ message: "Invalid ID" });
 
       const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const { additionalContext } = (req.body ?? {}) as { additionalContext?: string };
       const docs = await storage.getIsoDocuments(userId, isSuperadmin);
       const doc = docs.find(d => d.id === docId);
       if (!doc) return res.status(404).json({ message: "Document not found" });
@@ -6992,13 +6997,17 @@ Output only the document content. No preamble. No closing remarks.`;
         apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
         baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
       });
+      const ctxSuffix = additionalContext?.trim()
+        ? `\n\nUSER-PROVIDED CONTEXT AND REQUIREMENTS (incorporate these specifically into the document — treat these as authoritative input from the organization):\n${additionalContext.trim()}`
+        : "";
+
       const stream = anthropicClient.messages.stream({
         model: "claude-sonnet-4-5",
         max_tokens: isQualityManual ? 8192 : 4096,
         system: systemPrompt,
         messages: [{ role: "user", content: isQualityManual
-          ? `Draft the complete Quality Manual for ${project?.orgName ?? "the organization"} per ISO ${project?.standard ?? "9001"}:2015. Follow the exact structure specified. Use the organization's real name throughout.`
-          : `Draft the complete ${doc.docType.replace(/_/g, " ")} document: "${doc.title}"`
+          ? `Draft the complete Quality Manual for ${project?.orgName ?? "the organization"} per ISO ${project?.standard ?? "9001"}:2015. Follow the exact structure specified. Use the organization's real name throughout.${ctxSuffix}`
+          : `Draft the complete ${doc.docType.replace(/_/g, " ")} document: "${doc.title}"${ctxSuffix}`
         }],
       });
 

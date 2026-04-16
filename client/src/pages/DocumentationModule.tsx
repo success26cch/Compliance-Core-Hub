@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Plus, 
@@ -32,6 +32,10 @@ import {
   Mail,
   Eye,
   EyeOff,
+  Upload,
+  Loader2,
+  Paperclip,
+  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -391,6 +395,10 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [draftDoc, setDraftDoc] = useState<IsoDocument | null>(null);
   const [draftContent, setDraftContent] = useState("");
   const [isDrafting, setIsDrafting] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftContext, setDraftContext] = useState("");
+  const [isExtractingCard, setIsExtractingCard] = useState(false);
+  const cardFileRef = useRef<HTMLInputElement>(null);
   const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
   const { toast } = useToast();
@@ -497,15 +505,25 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     activeTab === "all" || doc.docType === activeTab
   );
 
-  const handleDraftWithIsa = async (doc: IsoDocument) => {
+  const handleDraftWithIsa = (doc: IsoDocument) => {
     setDraftDoc(doc);
+    setDraftContent("");
+    setDraftContext("");
+    setDraftReady(false);
+    setIsDrafting(false);
+  };
+
+  const startCardGeneration = async (ctx: string) => {
+    if (!draftDoc) return;
+    setDraftReady(true);
     setDraftContent("");
     setIsDrafting(true);
     try {
-      const res = await fetch(`/api/iso-documents/${doc.id}/generate`, {
+      const res = await fetch(`/api/iso-documents/${draftDoc.id}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ additionalContext: ctx }),
       });
       if (!res.ok) throw new Error("Draft request failed");
       const reader = res.body?.getReader();
@@ -532,6 +550,26 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
       toast({ title: "Draft failed", description: "Could not generate draft. Please try again.", variant: "destructive" });
     } finally {
       setIsDrafting(false);
+    }
+  };
+
+  const handleCardFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsExtractingCard(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload-document", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error("Extraction failed");
+      const { text } = await res.json();
+      setDraftContext(prev => prev ? prev + "\n\n" + text : text);
+      toast({ title: "File loaded", description: `${file.name} — text extracted and added to context.` });
+    } catch {
+      toast({ title: "Upload failed", description: "Could not extract text from file.", variant: "destructive" });
+    } finally {
+      setIsExtractingCard(false);
+      if (cardFileRef.current) cardFileRef.current.value = "";
     }
   };
 
@@ -660,7 +698,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-violet-50 dark:bg-violet-950/30 shrink-0">
             <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-violet-900 dark:text-violet-200">Isa Draft</p>
+              <p className="text-xs font-bold text-violet-900 dark:text-violet-200">Draft with Isa</p>
               <p className="text-[10px] text-violet-700 dark:text-violet-400 truncate">{draftDoc.title}</p>
             </div>
             {isDrafting && (
@@ -684,19 +722,75 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            {!draftContent && isDrafting && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
-                Isa is writing your document…
+          {/* Context-capture phase */}
+          {!draftReady && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl p-4">
+                <p className="text-xs font-bold text-violet-900 dark:text-violet-200 mb-1 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Give Isa Context (Optional)
+                </p>
+                <p className="text-[11px] text-violet-700 dark:text-violet-400">
+                  Paste customer specs, existing procedures, regulatory requirements, or any notes. Isa will incorporate them into the draft.
+                </p>
               </div>
-            )}
-            {draftContent && (
-              <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">
-                {draftContent}
-              </pre>
-            )}
-          </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground">Additional Context</label>
+                  <div className="flex items-center gap-1.5">
+                    {isExtractingCard && <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-600" />}
+                    <button
+                      type="button"
+                      onClick={() => cardFileRef.current?.click()}
+                      disabled={isExtractingCard}
+                      className="flex items-center gap-1 text-[11px] text-violet-700 dark:text-violet-400 hover:text-violet-900 font-semibold border border-violet-200 dark:border-violet-700 rounded px-2 py-1 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
+                      data-testid="button-card-upload-file"
+                    >
+                      <Paperclip className="w-3 h-3" />
+                      {isExtractingCard ? "Extracting…" : "Upload File"}
+                    </button>
+                    <input ref={cardFileRef} type="file" accept=".pdf,.txt,.md,.docx" className="hidden" onChange={handleCardFileSelect} />
+                  </div>
+                </div>
+                <Textarea
+                  value={draftContext}
+                  onChange={e => setDraftContext(e.target.value)}
+                  placeholder="Paste: customer-specific requirements, existing procedure text, regulatory notes, scope limits, process details, names of key personnel…"
+                  className="min-h-[180px] text-xs resize-none"
+                  data-testid="textarea-card-draft-context"
+                />
+                <p className="text-[10px] text-muted-foreground">Accepts: PDF, DOCX, TXT, or Markdown files up to 10 MB</p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => startCardGeneration(draftContext)}
+                  className="flex-1 bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
+                  data-testid="button-card-generate"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {draftContext.trim() ? "Generate with My Context" : "Generate Now"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Generation phase */}
+          {draftReady && (
+            <div className="flex-1 overflow-y-auto p-4">
+              {!draftContent && isDrafting && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
+                  Isa is writing your document…
+                </div>
+              )}
+              {draftContent && (
+                <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">
+                  {draftContent}
+                </pre>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1450,7 +1544,6 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject, o
 function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isPending, onAskIsa }: any) {
   const { toast } = useToast();
   const logoUrl = (project as any)?.logoUrl as string | undefined;
-  // Default: show logo only when a logo URL actually exists
   const [showLogo, setShowLogo] = useState(() => !!logoUrl);
   const [formData, setFormData] = useState<Partial<InsertIsoDocument>>({
     docType: 'procedure',
@@ -1465,25 +1558,47 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     isoProjectId: project?.id || null,
   });
   const [isDraftingDialog, setIsDraftingDialog] = useState(false);
+  const [additionalContext, setAdditionalContext] = useState("");
+  const [contextExpanded, setContextExpanded] = useState(false);
+  const [isExtractingDialogFile, setIsExtractingDialogFile] = useState(false);
+  const dialogFileRef = useRef<HTMLInputElement>(null);
+
+  const handleDialogFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsExtractingDialogFile(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+      const res = await fetch("/api/upload-document", { method: "POST", body: formDataUpload, credentials: "include" });
+      if (!res.ok) throw new Error("Extraction failed");
+      const { text } = await res.json();
+      setAdditionalContext(prev => prev ? prev + "\n\n" + text : text);
+      setContextExpanded(true);
+      toast({ title: "File loaded", description: `${file.name} — extracted and added to Isa context.` });
+    } catch {
+      toast({ title: "Upload failed", description: "Could not extract text from file.", variant: "destructive" });
+    } finally {
+      setIsExtractingDialogFile(false);
+      if (dialogFileRef.current) dialogFileRef.current.value = "";
+    }
+  };
 
   const handleDialogDraft = async () => {
     setIsDraftingDialog(true);
     setFormData(prev => ({ ...prev, content: "" }));
     try {
-      // Use the new doc's fields if no saved doc, otherwise use existing doc endpoint
       const url = doc?.id
         ? `/api/iso-documents/${doc.id}/generate`
         : `/api/iso-documents/generate-draft`;
-      const body = doc?.id ? undefined : JSON.stringify({
-        docType: formData.docType,
-        title: formData.title,
-        isoClause: formData.isoClause,
-      });
+      const bodyObj = doc?.id
+        ? { additionalContext: additionalContext.trim() || undefined }
+        : { docType: formData.docType, title: formData.title, isoClause: formData.isoClause, additionalContext: additionalContext.trim() || undefined };
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        ...(body ? { body } : {}),
+        body: JSON.stringify(bodyObj),
       });
       if (!res.ok) throw new Error("Draft request failed");
       const reader = res.body?.getReader();
@@ -1530,7 +1645,11 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
         reviewDate: doc.reviewDate ? new Date(doc.reviewDate) : null,
         tags: doc.tags || [],
       });
+      setAdditionalContext("");
+      setContextExpanded(false);
     } else if (isOpen) {
+      setAdditionalContext("");
+      setContextExpanded(false);
       try {
         const saved = localStorage.getItem(DRAFT_KEY);
         if (saved) {
@@ -1731,6 +1850,85 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
             </div>
           </div>
 
+          {/* ── Context for Isa ───────────────────────────────────────────── */}
+          <div className="border border-violet-200 dark:border-violet-800/50 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setContextExpanded(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-violet-50 dark:bg-violet-950/30 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors"
+              data-testid="button-toggle-context"
+            >
+              <span className="flex items-center gap-2 text-xs font-bold text-violet-800 dark:text-violet-300">
+                <Sparkles className="w-3.5 h-3.5" />
+                Context for Isa
+                {additionalContext.trim() && (
+                  <span className="bg-violet-600 text-white text-[9px] font-black rounded-full px-1.5 py-0.5 leading-none">✓ Added</span>
+                )}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-violet-600 dark:text-violet-400">
+                  {contextExpanded ? "Hide" : "Paste text · Upload file · Improve draft quality"}
+                </span>
+                {contextExpanded ? <ChevronUp className="w-3.5 h-3.5 text-violet-600" /> : <ChevronDown className="w-3.5 h-3.5 text-violet-600" />}
+              </div>
+            </button>
+
+            {contextExpanded && (
+              <div className="p-4 space-y-3 bg-white dark:bg-card border-t border-violet-100 dark:border-violet-800/40">
+                <p className="text-[11px] text-muted-foreground">
+                  Paste or upload any reference material — customer specs, existing procedures, regulatory text, process notes. Isa will incorporate it into the generated draft.
+                </p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-foreground">Reference Material</label>
+                    <div className="flex items-center gap-1.5">
+                      {isExtractingDialogFile && <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-600" />}
+                      <button
+                        type="button"
+                        onClick={() => dialogFileRef.current?.click()}
+                        disabled={isExtractingDialogFile}
+                        className="flex items-center gap-1 text-[11px] text-violet-700 dark:text-violet-400 hover:text-violet-900 font-semibold border border-violet-200 dark:border-violet-700 rounded px-2 py-1 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
+                        data-testid="button-dialog-upload-file"
+                      >
+                        <Upload className="w-3 h-3" />
+                        {isExtractingDialogFile ? "Extracting…" : "Upload File"}
+                      </button>
+                      <input
+                        ref={dialogFileRef}
+                        type="file"
+                        accept=".pdf,.txt,.md,.docx"
+                        className="hidden"
+                        onChange={handleDialogFileSelect}
+                      />
+                    </div>
+                  </div>
+                  <Textarea
+                    value={additionalContext}
+                    onChange={e => setAdditionalContext(e.target.value)}
+                    placeholder="Paste: customer-specific requirements, scope limits, process steps, responsible roles, regulatory references, control points, existing text to refine…"
+                    className="min-h-[100px] text-xs resize-none"
+                    data-testid="textarea-dialog-context"
+                  />
+                  <p className="text-[10px] text-muted-foreground">Accepts: PDF, DOCX, TXT, or Markdown · max 10 MB</p>
+                </div>
+                {additionalContext.trim() && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-violet-700 dark:text-violet-400 font-medium">
+                      ✓ {additionalContext.trim().length.toLocaleString()} characters of context ready for Isa
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setAdditionalContext("")}
+                      className="text-[10px] text-destructive hover:text-destructive/80 font-medium"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <Label>Content</Label>
@@ -1742,11 +1940,11 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
                   className="text-violet-600 text-xs h-7 gap-1 hover:bg-violet-50 dark:hover:bg-violet-950/30"
                   onClick={handleDialogDraft}
                   disabled={isDraftingDialog || !formData.title}
-                  title={!formData.title ? "Enter a title first" : "Let Isa draft the full document content"}
+                  title={!formData.title ? "Enter a title first" : additionalContext.trim() ? "Draft with your context" : "Let Isa draft the full document content"}
                   data-testid="button-draft-isa-dialog"
                 >
                   <Sparkles className="w-3 h-3" />
-                  {isDraftingDialog ? "Drafting…" : "Draft with Isa"}
+                  {isDraftingDialog ? "Drafting…" : additionalContext.trim() ? "Draft with My Context" : "Draft with Isa"}
                 </Button>
                 <Button 
                   type="button" 
