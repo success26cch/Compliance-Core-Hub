@@ -7861,6 +7861,7 @@ Output only the document content. No preamble. No closing remarks.`;
   app.get("/api/change-control-log", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
       const { db } = await import("./db");
       const { isoDocuments } = await import("@shared/schema");
@@ -7869,52 +7870,61 @@ Output only the document content. No preamble. No closing remarks.`;
       // Optional isoProjectId scoping from query param
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : null;
 
-      // 1) Fetch all approved formal DCRs for this user (+ optional project scope)
+      // 1) Fetch all approved formal DCRs (superadmin sees all; others see own)
       const dcrSql = isoProjectId && !isNaN(isoProjectId)
-        ? sql`
-          SELECT
-            dcr.id AS id,
-            dcr.reviewed_at AS date,
-            d.title AS doc_title,
-            d.id AS doc_id,
-            dcr.reason AS change_reason,
-            dcr.requested_by AS changed_by,
-            dcr.reviewed_by AS approved_by
-          FROM doc_change_requests dcr
-          JOIN iso_documents d ON d.id = dcr.document_id
-          WHERE dcr.user_id = ${userId}
-            AND dcr.status = 'approved'
-            AND dcr.iso_project_id = ${isoProjectId}
-          ORDER BY dcr.reviewed_at DESC
-        `
-        : sql`
-          SELECT
-            dcr.id AS id,
-            dcr.reviewed_at AS date,
-            d.title AS doc_title,
-            d.id AS doc_id,
-            dcr.reason AS change_reason,
-            dcr.requested_by AS changed_by,
-            dcr.reviewed_by AS approved_by
-          FROM doc_change_requests dcr
-          JOIN iso_documents d ON d.id = dcr.document_id
-          WHERE dcr.user_id = ${userId}
-            AND dcr.status = 'approved'
-          ORDER BY dcr.reviewed_at DESC
-        `;
+        ? isSuperadmin
+          ? sql`
+            SELECT dcr.id AS id, dcr.reviewed_at AS date, d.title AS doc_title, d.id AS doc_id,
+              dcr.reason AS change_reason, dcr.requested_by AS changed_by, dcr.reviewed_by AS approved_by
+            FROM doc_change_requests dcr
+            JOIN iso_documents d ON d.id = dcr.document_id
+            WHERE dcr.status = 'approved' AND dcr.iso_project_id = ${isoProjectId}
+            ORDER BY dcr.reviewed_at DESC
+          `
+          : sql`
+            SELECT dcr.id AS id, dcr.reviewed_at AS date, d.title AS doc_title, d.id AS doc_id,
+              dcr.reason AS change_reason, dcr.requested_by AS changed_by, dcr.reviewed_by AS approved_by
+            FROM doc_change_requests dcr
+            JOIN iso_documents d ON d.id = dcr.document_id
+            WHERE dcr.user_id = ${userId} AND dcr.status = 'approved' AND dcr.iso_project_id = ${isoProjectId}
+            ORDER BY dcr.reviewed_at DESC
+          `
+        : isSuperadmin
+          ? sql`
+            SELECT dcr.id AS id, dcr.reviewed_at AS date, d.title AS doc_title, d.id AS doc_id,
+              dcr.reason AS change_reason, dcr.requested_by AS changed_by, dcr.reviewed_by AS approved_by
+            FROM doc_change_requests dcr
+            JOIN iso_documents d ON d.id = dcr.document_id
+            WHERE dcr.status = 'approved'
+            ORDER BY dcr.reviewed_at DESC
+          `
+          : sql`
+            SELECT dcr.id AS id, dcr.reviewed_at AS date, d.title AS doc_title, d.id AS doc_id,
+              dcr.reason AS change_reason, dcr.requested_by AS changed_by, dcr.reviewed_by AS approved_by
+            FROM doc_change_requests dcr
+            JOIN iso_documents d ON d.id = dcr.document_id
+            WHERE dcr.user_id = ${userId} AND dcr.status = 'approved'
+            ORDER BY dcr.reviewed_at DESC
+          `;
 
       const dcrRows = await db.execute(dcrSql);
 
-      // 2) Fetch all relevant documents with previousVersions
+      // 2) Fetch all relevant documents with previousVersions (superadmin: all, else: own)
       const docsQuery = isoProjectId && !isNaN(isoProjectId)
-        ? db.select({
-            id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
-            previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
-          }).from(isoDocuments).where(and(eq(isoDocuments.userId, userId), eq(isoDocuments.isoProjectId, isoProjectId)))
-        : db.select({
-            id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
-            previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
-          }).from(isoDocuments).where(eq(isoDocuments.userId, userId));
+        ? isSuperadmin
+          ? db.select({ id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
+              previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
+            }).from(isoDocuments).where(eq(isoDocuments.isoProjectId, isoProjectId))
+          : db.select({ id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
+              previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
+            }).from(isoDocuments).where(and(eq(isoDocuments.userId, userId), eq(isoDocuments.isoProjectId, isoProjectId)))
+        : isSuperadmin
+          ? db.select({ id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
+              previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
+            }).from(isoDocuments)
+          : db.select({ id: isoDocuments.id, title: isoDocuments.title, version: isoDocuments.version,
+              previousVersions: isoDocuments.previousVersions, approvedBy: isoDocuments.approvedBy,
+            }).from(isoDocuments).where(eq(isoDocuments.userId, userId));
 
       const docs = await docsQuery;
 
