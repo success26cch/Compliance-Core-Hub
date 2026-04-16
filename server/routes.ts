@@ -462,10 +462,7 @@ Rules:
     res.json(leads);
   });
 
-  app.delete("/api/leads/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+  app.delete("/api/leads/:id", requireSuperadmin, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid lead ID" });
