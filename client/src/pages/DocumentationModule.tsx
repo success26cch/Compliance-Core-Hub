@@ -986,9 +986,9 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           onRequestChange={(doc: IsoDocument) => setChangeReqDoc(doc)}
         />
       ) : activeTab === "coverage_map" ? (
-        <ClauseCoverageMap documents={documents || []} onAskIsa={onAskIsa} />
+        <ClauseCoverageMap documents={documents || []} onAskIsa={onAskIsa} complianceResults={complianceResults} />
       ) : activeTab === "master_list" ? (
-        <MasterDocumentList documents={documents ?? []} project={project ?? null} isLoading={isLoading} />
+        <MasterDocumentList documents={documents ?? []} project={project ?? null} isLoading={isLoading} complianceResults={complianceResults} />
       ) : activeTab === "change_log" ? (
         <ChangeControlLog documents={documents ?? []} isoProjectId={(project as any)?.id ?? null} />
       ) : isLoading ? (
@@ -2910,7 +2910,7 @@ const ISO_9001_CLAUSES = [
   { clause: "10.3", title: "Continual improvement" },
 ];
 
-function ClauseCoverageMap({ documents, onAskIsa }: { documents: IsoDocument[]; onAskIsa: (prompt: string) => void }) {
+function ClauseCoverageMap({ documents, onAskIsa, complianceResults }: { documents: IsoDocument[]; onAskIsa: (prompt: string) => void; complianceResults: Map<number, ComplianceResult> }) {
   const covered = ISO_9001_CLAUSES.filter(({ clause }) =>
     documents.some(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status !== "obsolete")
   );
@@ -2933,6 +2933,15 @@ function ClauseCoverageMap({ documents, onAskIsa }: { documents: IsoDocument[]; 
 
   const getDocsForClause = (clause: string) =>
     documents.filter(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status !== "obsolete");
+
+  const getComplianceForClause = (clause: string): ComplianceResult["verdict"] | null => {
+    const clauseDocs = getDocsForClause(clause);
+    const verdicts = clauseDocs.map(d => complianceResults.get(d.id)?.verdict).filter(Boolean) as ComplianceResult["verdict"][];
+    if (verdicts.length === 0) return null;
+    if (verdicts.includes("Non-Compliant")) return "Non-Compliant";
+    if (verdicts.includes("Partially Compliant")) return "Partially Compliant";
+    return "Compliant";
+  };
 
   return (
     <div className="space-y-6">
@@ -2989,6 +2998,7 @@ function ClauseCoverageMap({ documents, onAskIsa }: { documents: IsoDocument[]; 
               <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-16">Clause</th>
               <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Requirement</th>
               <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-28">Status</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-36">Compliance</th>
               <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Documents</th>
             </tr>
           </thead>
@@ -2996,6 +3006,7 @@ function ClauseCoverageMap({ documents, onAskIsa }: { documents: IsoDocument[]; 
             {ISO_9001_CLAUSES.map(({ clause, title }) => {
               const status = getStatusForClause(clause);
               const clauseDocs = getDocsForClause(clause);
+              const complianceVerdict = getComplianceForClause(clause);
               return (
                 <tr key={clause} className="hover:bg-muted/10" data-testid={`row-coverage-${clause}`}>
                   <td className="px-4 py-3 font-mono text-xs font-bold text-primary">{clause}</td>
@@ -3005,6 +3016,12 @@ function ClauseCoverageMap({ documents, onAskIsa }: { documents: IsoDocument[]; 
                     {status === "review" && <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-200 text-xs">In Review</Badge>}
                     {status === "draft" && <Badge className="bg-gray-100 text-gray-700 border border-gray-200 text-xs">Draft</Badge>}
                     {status === "none" && <Badge className="bg-red-50 text-red-600 border border-red-200 text-xs">Not Addressed</Badge>}
+                  </td>
+                  <td className="px-4 py-3" data-testid={`compliance-clause-${clause}`}>
+                    {complianceVerdict === "Compliant" && <Badge className="bg-green-100 text-green-800 border border-green-200 text-xs">Compliant</Badge>}
+                    {complianceVerdict === "Partially Compliant" && <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-xs">Partially Compliant</Badge>}
+                    {complianceVerdict === "Non-Compliant" && <Badge className="bg-red-100 text-red-800 border border-red-200 text-xs">Non-Compliant</Badge>}
+                    {complianceVerdict === null && <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     {clauseDocs.length === 0 ? (
@@ -3042,11 +3059,12 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 type SortKey = "title" | "docType" | "isoClause" | "version" | "status" | "approvedBy" | "approvalDate" | "reviewDate";
 type SortDir = "asc" | "desc";
 
-function MasterDocumentList({ documents, project, isLoading }: { documents: IsoDocument[]; project: any; isLoading: boolean }) {
+function MasterDocumentList({ documents, project, isLoading, complianceResults }: { documents: IsoDocument[]; project: any; isLoading: boolean; complianceResults: Map<number, ComplianceResult> }) {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterClause, setFilterClause] = useState("all");
+  const [filterCompliance, setFilterCompliance] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -3060,7 +3078,15 @@ function MasterDocumentList({ documents, project, isLoading }: { documents: IsoD
     const matchType = filterType === "all" || doc.docType === filterType;
     const matchStatus = filterStatus === "all" || doc.status === filterStatus;
     const matchClause = filterClause === "all" || doc.isoClause === filterClause;
-    return matchSearch && matchType && matchStatus && matchClause;
+    const verdict = complianceResults.get(doc.id)?.verdict ?? null;
+    const matchCompliance =
+      filterCompliance === "all" ||
+      (filterCompliance === "issues" && (verdict === "Non-Compliant" || verdict === "Partially Compliant" || verdict === null)) ||
+      (filterCompliance === "not_checked" && verdict === null) ||
+      (filterCompliance === "compliant" && verdict === "Compliant") ||
+      (filterCompliance === "partial" && verdict === "Partially Compliant") ||
+      (filterCompliance === "non_compliant" && verdict === "Non-Compliant");
+    return matchSearch && matchType && matchStatus && matchClause && matchCompliance;
   }).sort((a, b) => {
     let av: string = "";
     let bv: string = "";
@@ -3222,6 +3248,19 @@ function MasterDocumentList({ documents, project, isLoading }: { documents: IsoD
             </SelectContent>
           </Select>
         )}
+        <Select value={filterCompliance} onValueChange={setFilterCompliance}>
+          <SelectTrigger className="w-[155px] h-8 text-xs" data-testid="select-master-compliance">
+            <SelectValue placeholder="All Compliance" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Compliance</SelectItem>
+            <SelectItem value="issues">Issues Only</SelectItem>
+            <SelectItem value="not_checked">Not Checked</SelectItem>
+            <SelectItem value="compliant">Compliant</SelectItem>
+            <SelectItem value="partial">Partially Compliant</SelectItem>
+            <SelectItem value="non_compliant">Non-Compliant</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -3254,6 +3293,9 @@ function MasterDocumentList({ documents, project, isLoading }: { documents: IsoD
                   </th>
                   <th className={thCls} onClick={() => handleSort("status")}>
                     <span className="flex items-center gap-1">Status <SortIcon k="status" /></span>
+                  </th>
+                  <th className={thCls}>
+                    <span className="flex items-center gap-1">Compliance</span>
                   </th>
                   <th className={thCls} onClick={() => handleSort("approvalDate")}>
                     <span className="flex items-center gap-1">Approval Date <SortIcon k="approvalDate" /></span>
@@ -3289,6 +3331,15 @@ function MasterDocumentList({ documents, project, isLoading }: { documents: IsoD
                       {doc.status === "draft" && <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200 text-[10px]">Draft</Badge>}
                       {doc.status === "in_review" && <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-200 text-[10px]">In Review</Badge>}
                       {doc.status === "obsolete" && <Badge variant="secondary" className="text-[10px]">Obsolete</Badge>}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap" data-testid={`compliance-doc-${doc.id}`}>
+                      {(() => {
+                        const verdict = complianceResults.get(doc.id)?.verdict ?? null;
+                        if (verdict === "Compliant") return <Badge className="bg-green-100 text-green-800 border border-green-200 text-[10px]">Compliant</Badge>;
+                        if (verdict === "Partially Compliant") return <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px]">Partially Compliant</Badge>;
+                        if (verdict === "Non-Compliant") return <Badge className="bg-red-100 text-red-800 border border-red-200 text-[10px]">Non-Compliant</Badge>;
+                        return <span className="text-[10px] text-muted-foreground">—</span>;
+                      })()}
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                       {doc.approvalDate ? format(new Date(doc.approvalDate), "MMM d, yyyy") : "—"}
