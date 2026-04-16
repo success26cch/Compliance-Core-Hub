@@ -5887,6 +5887,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
               version = ${newVersion},
               status = 'draft',
               previous_versions = ${JSON.stringify(archive)}::jsonb,
+              compliance_result = NULL,
+              compliance_checked_at = NULL,
               updated_at = NOW()
             WHERE id = ${id}
           `);
@@ -5918,7 +5920,12 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       }
 
       // ── Standard update path ───────────────────────────────────────────────────
-      const doc = await storage.updateIsoDocument(id, userId, req.body, isSuperadmin);
+      const updateData = { ...req.body };
+      if (updateData.content !== undefined) {
+        updateData.complianceResult = null;
+        updateData.complianceCheckedAt = null;
+      }
+      const doc = await storage.updateIsoDocument(id, userId, updateData, isSuperadmin);
       if (!doc) return res.status(404).json({ message: "Document not found" });
       res.json(doc);
     } catch (error: any) {
@@ -6052,7 +6059,13 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
           : [],
       };
 
-      res.json(result);
+      const checkedAt = new Date();
+      await storage.updateIsoDocument(docId, userId, {
+        complianceResult: result,
+        complianceCheckedAt: checkedAt,
+      }, isSuperadmin);
+
+      res.json({ ...result, checkedAt: checkedAt.toISOString() });
     } catch (error: any) {
       console.error("[compliance-check] Error:", error.message);
       res.status(500).json({ message: error.message ?? "Compliance check failed." });
@@ -7909,7 +7922,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
           approval_date = NOW(),
           previous_versions = ${updateFields.previousVersions}::jsonb,
           updated_at = NOW()
-          ${newContent ? sql`, content = ${newContent}` : sql``}
+          ${newContent ? sql`, content = ${newContent}, compliance_result = NULL, compliance_checked_at = NULL` : sql``}
         WHERE id = ${dcr.documentId} AND user_id = ${userId}
       `);
 

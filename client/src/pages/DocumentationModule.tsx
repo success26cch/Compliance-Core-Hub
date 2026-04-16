@@ -89,6 +89,7 @@ type ComplianceResult = {
   summary: string;
   requirements: ComplianceRequirement[];
   recommendations: string[];
+  checkedAt?: string;
 };
 
 // ─── Print helper ─────────────────────────────────────────────────────────────
@@ -492,7 +493,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const formReviewFileRef = useRef<HTMLInputElement>(null);
   const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
-  const [complianceResults, setComplianceResults] = useState<Map<number, ComplianceResult>>(new Map());
+  const [complianceResults, setComplianceResults] = useState<globalThis.Map<number, ComplianceResult>>(new globalThis.Map());
   const [runningComplianceChecks, setRunningComplianceChecks] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -500,6 +501,24 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const { data: documents, isLoading } = useQuery<IsoDocument[]>({
     queryKey: ["/api/iso-documents"],
   });
+
+  useEffect(() => {
+    if (!documents) return;
+    setComplianceResults(prev => {
+      const next: globalThis.Map<number, ComplianceResult> = new globalThis.Map(prev);
+      for (const doc of documents) {
+        if (doc.complianceResult) {
+          next.set(doc.id, {
+            ...(doc.complianceResult as ComplianceResult),
+            checkedAt: doc.complianceCheckedAt ? new Date(doc.complianceCheckedAt.toString()).toISOString() : undefined,
+          });
+        } else {
+          next.delete(doc.id);
+        }
+      }
+      return next;
+    });
+  }, [documents]);
 
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
@@ -724,10 +743,11 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
       const res = await apiRequest("POST", `/api/iso-documents/${doc.id}/compliance-check`, {});
       const result: ComplianceResult = await res.json();
       setComplianceResults(prev => {
-        const next = new Map(prev);
+        const next: globalThis.Map<number, ComplianceResult> = new globalThis.Map(prev);
         next.set(doc.id, result);
         return next;
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
     } catch (e: any) {
       const msg = e.message?.includes(":") ? e.message.split(":").slice(1).join(":").trim() : (e.message ?? "Could not run compliance check.");
       toast({ title: "Compliance Check Failed", description: msg, variant: "destructive" });
@@ -1377,6 +1397,10 @@ function ComplianceResultPanel({ result, docId }: { result: ComplianceResult; do
     return "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800";
   };
 
+  const checkedAtLabel = result.checkedAt
+    ? format(new Date(result.checkedAt), "MMM d, yyyy 'at' h:mm a")
+    : null;
+
   return (
     <div className={`mt-3 rounded-lg border overflow-hidden ${cfg.color}`} data-testid={`container-compliance-result-${docId}`}>
       <button
@@ -1388,6 +1412,11 @@ function ComplianceResultPanel({ result, docId }: { result: ComplianceResult; do
         <VerdictIcon className={`w-4 h-4 shrink-0 ${cfg.iconColor}`} />
         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${cfg.badge}`}>{result.verdict}</span>
         <span className="text-[10px] text-muted-foreground flex-1 truncate">{result.summary}</span>
+        {checkedAtLabel && (
+          <span className="text-[9px] text-muted-foreground shrink-0 hidden sm:inline" data-testid={`text-compliance-checked-at-${docId}`}>
+            {checkedAtLabel}
+          </span>
+        )}
         {expanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
       </button>
       {expanded && (

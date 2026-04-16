@@ -638,6 +638,13 @@ export const isoDocuments = pgTable("iso_documents", {
     archivedAt: string;
     changeReason?: string;
   }>>().default([]),
+  complianceResult: jsonb("compliance_result").$type<{
+    verdict: "Compliant" | "Partially Compliant" | "Non-Compliant";
+    summary: string;
+    requirements: Array<{ requirement: string; status: string; finding: string }>;
+    recommendations: string[];
+  } | null>(),
+  complianceCheckedAt: timestamp("compliance_checked_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
