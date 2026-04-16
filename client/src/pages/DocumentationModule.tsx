@@ -1728,9 +1728,9 @@ function ChangeRequestsPanel({ changeRequests, documents, onApprove, onReject, o
                             <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700 rounded px-1.5 py-0.5 font-bold whitespace-nowrap">Action Required</span>
                           </div>
                           {req.designated_reviewer_email && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-green-700 dark:text-green-400 font-semibold pl-0.5">
+                            <div className="flex items-center gap-1.5 text-[10px] text-violet-700 dark:text-violet-400 font-semibold pl-0.5">
                               <Mail className="w-3 h-3" />
-                              Notification sent to <span className="font-black">{req.designated_reviewer_email}</span>
+                              Assigned reviewer: <span className="font-black">{req.designated_reviewer_email}</span>
                             </div>
                           )}
                         </div>
