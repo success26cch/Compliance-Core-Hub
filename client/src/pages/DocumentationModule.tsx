@@ -741,7 +741,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   return (
     <div className="flex h-full bg-muted/30 overflow-hidden">
       {/* Main content area */}
-      <div className={`flex flex-col p-6 overflow-y-auto transition-all duration-200 ${draftDoc ? "w-1/2" : "flex-1"}`}>
+      <div className={`flex flex-col p-6 overflow-y-auto transition-all duration-200 ${draftDoc ? "w-[38%]" : "flex-1"}`}>
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-2">
@@ -856,7 +856,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
 
       {/* Draft with Isa panel */}
       {draftDoc && (
-        <div className="w-1/2 border-l border-border/60 flex flex-col bg-white dark:bg-card overflow-hidden">
+        <div className="w-[62%] border-l border-border/60 flex flex-col bg-white dark:bg-card overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-violet-50 dark:bg-violet-950/30 shrink-0">
             <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             <div className="flex-1 min-w-0">
@@ -968,7 +968,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                 <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5">
                   Inline Changes (Rev. {draftDoc.version ?? "1.0"} → proposed)
                 </p>
-                <div className="bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[240px] overflow-y-auto" data-testid="container-line-diff">
+                <div className="bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[42vh] overflow-y-auto" data-testid="container-line-diff">
                   <LineDiffView oldText={draftDoc.content ?? ""} newText={draftContent} />
                 </div>
               </div>
@@ -984,7 +984,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                   View Full Proposed Content
                 </button>
                 {prevShowExpanded && (
-                  <div className="mt-1.5 bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[180px] overflow-y-auto">
+                  <div className="mt-1.5 bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[45vh] overflow-y-auto">
                     <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">{draftContent}</pre>
                   </div>
                 )}
