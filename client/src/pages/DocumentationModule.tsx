@@ -393,6 +393,60 @@ const STATUS_OPTIONS = [
   { value: 'obsolete', label: 'Obsolete' },
 ];
 
+// ─── Inline line-level diff ─────────────────────────────────────────────────
+type DiffLine = { type: 'same' | 'removed' | 'added'; text: string };
+
+function computeLineDiff(oldText: string, newText: string): DiffLine[] {
+  const old = oldText.split('\n');
+  const nw = newText.split('\n');
+  const m = old.length, n = nw.length;
+  const MAX = 400; // guard against pathologically large docs
+  if (m > MAX || n > MAX) {
+    return [
+      ...old.slice(0, MAX).map(t => ({ type: 'removed' as const, text: t })),
+      ...nw.slice(0, MAX).map(t => ({ type: 'added' as const, text: t })),
+    ];
+  }
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = old[i - 1] === nw[j - 1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
+  const result: DiffLine[] = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && old[i-1] === nw[j-1]) { result.unshift({ type: 'same', text: old[i-1] }); i--; j--; }
+    else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) { result.unshift({ type: 'added', text: nw[j-1] }); j--; }
+    else { result.unshift({ type: 'removed', text: old[i-1] }); i--; }
+  }
+  return result;
+}
+
+function LineDiffView({ oldText, newText }: { oldText: string; newText: string }) {
+  const lines = computeLineDiff(oldText, newText);
+  const hasChanges = lines.some(l => l.type !== 'same');
+  if (!hasChanges) return <p className="text-xs text-muted-foreground italic">No differences detected.</p>;
+  return (
+    <div className="font-mono text-[11px] leading-relaxed overflow-x-auto">
+      {lines.map((line, idx) => {
+        if (line.type === 'same') return null;
+        return (
+          <div
+            key={idx}
+            className={
+              line.type === 'added'
+                ? 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-200 border-l-2 border-green-500 pl-2 py-0.5 whitespace-pre-wrap'
+                : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 line-through border-l-2 border-red-400 pl-2 py-0.5 whitespace-pre-wrap'
+            }
+          >
+            <span className="mr-1 select-none opacity-60">{line.type === 'added' ? '+' : '−'}</span>
+            {line.text || ' '}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -529,6 +583,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     setDraftReady(true);
     setDraftContent("");
     setIsDrafting(true);
+    setIsaAcceptReason(`AI-assisted revision by Isa${ctx.trim() ? ` — ${ctx.trim()}` : ""}`);
     try {
       const res = await fetch(`/api/iso-documents/${draftDoc.id}/generate`, {
         method: "POST",
@@ -907,15 +962,17 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                 <p className="text-[11px] text-violet-700 dark:text-violet-400 mt-0.5">Accepting will bump the revision number and open a Change Request for formal approval. Discard returns you to the context step.</p>
               </div>
 
-              {/* Proposed content */}
+              {/* Inline diff view — only changed lines shown */}
               <div>
-                <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5">Isa's Proposed Content</p>
-                <div className="bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[200px] overflow-y-auto">
-                  <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">{draftContent}</pre>
+                <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5">
+                  Inline Changes (Rev. {draftDoc.version ?? "1.0"} → proposed)
+                </p>
+                <div className="bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[240px] overflow-y-auto" data-testid="container-line-diff">
+                  <LineDiffView oldText={draftDoc.content ?? ""} newText={draftContent} />
                 </div>
               </div>
 
-              {/* Previous content — collapsible */}
+              {/* Full proposed content — collapsible */}
               <div>
                 <button
                   onClick={() => setPrevShowExpanded(e => !e)}
@@ -923,11 +980,11 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                   data-testid="button-toggle-prev-content"
                 >
                   <ChevronRight className={`w-3.5 h-3.5 transition-transform ${prevShowExpanded ? "rotate-90" : ""}`} />
-                  Previous Content (Rev. {draftDoc.version ?? "1.0"})
+                  View Full Proposed Content
                 </button>
                 {prevShowExpanded && (
-                  <div className="mt-1.5 bg-muted/40 border border-border rounded-lg p-3 max-h-[160px] overflow-y-auto">
-                    <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed">{draftDoc.content}</pre>
+                  <div className="mt-1.5 bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[180px] overflow-y-auto">
+                    <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">{draftContent}</pre>
                   </div>
                 )}
               </div>
@@ -1780,6 +1837,9 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     const existingContent = formData.content?.trim();
     if (existingContent) {
       setPrevDialogContent(existingContent);
+      setIsaDialogAcceptReason(
+        `AI-assisted revision by Isa${additionalContext.trim() ? ` — ${additionalContext.trim()}` : ""}`
+      );
     }
     setIsDraftingDialog(true);
     setFormData(prev => ({ ...prev, content: "" }));
@@ -2209,7 +2269,17 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="space-y-1">
+                {/* Inline diff inside dialog */}
+                <div>
+                  <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5">
+                    Inline Changes
+                  </p>
+                  <div className="border border-violet-200 dark:border-violet-700/50 rounded-lg p-2.5 max-h-[180px] overflow-y-auto bg-white dark:bg-card" data-testid="container-dialog-line-diff">
+                    <LineDiffView oldText={prevDialogContent ?? ""} newText={formData.content ?? ""} />
+                  </div>
+                </div>
+
+              <div className="space-y-1">
                   <label className="text-[10px] font-semibold text-foreground">Reason for Change</label>
                   <Textarea
                     value={isaDialogAcceptReason}
