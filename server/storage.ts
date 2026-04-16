@@ -60,18 +60,18 @@ export interface IStorage {
   updateInquiryStatus(id: number, status: string): Promise<ContactInquiry | undefined>;
 
   // Employees
-  getEmployees(userId: string): Promise<Employee[]>;
-  getEmployeeById(id: number, userId: string): Promise<Employee | undefined>;
+  getEmployees(userId: string, isSuperadmin?: boolean): Promise<Employee[]>;
+  getEmployeeById(id: number, userId: string, isSuperadmin?: boolean): Promise<Employee | undefined>;
   createEmployee(employee: InsertEmployee): Promise<Employee>;
-  updateEmployee(id: number, userId: string, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
-  deleteEmployee(id: number, userId: string): Promise<boolean>;
+  updateEmployee(id: number, userId: string, employee: Partial<InsertEmployee>, isSuperadmin?: boolean): Promise<Employee | undefined>;
+  deleteEmployee(id: number, userId: string, isSuperadmin?: boolean): Promise<boolean>;
 
   // Incidents
-  getIncidents(userId: string): Promise<Incident[]>;
+  getIncidents(userId: string, isSuperadmin?: boolean): Promise<Incident[]>;
   getIncident(id: number, userId: string): Promise<Incident | undefined>;
-  getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Incident[]>;
+  getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date, isSuperadmin?: boolean): Promise<Incident[]>;
   createIncident(incident: InsertIncident): Promise<Incident>;
-  updateIncident(id: number, userId: string, incident: Partial<InsertIncident>): Promise<Incident | undefined>;
+  updateIncident(id: number, userId: string, incident: Partial<InsertIncident>, isSuperadmin?: boolean): Promise<Incident | undefined>;
 
   // Corrective Actions
   getCorrectiveActions(userId: string): Promise<CorrectiveAction[]>;
@@ -228,20 +228,22 @@ export interface IStorage {
   addRecordabilityUsage(ipAddress: string): Promise<void>;
 
   // ISO Projects (Wizard)
-  getIsoProject(userId: string): Promise<IsoProject | undefined>;
+  getIsoProject(userId: string, isSuperadmin?: boolean, isoProjectId?: number): Promise<IsoProject | undefined>;
+  getIsoProjects(userId: string, isSuperadmin?: boolean): Promise<IsoProject[]>;
+  getIsoProjectById(id: number): Promise<IsoProject | undefined>;
   createIsoProject(data: InsertIsoProject): Promise<IsoProject>;
   updateIsoProject(userId: string, data: Partial<InsertIsoProject>): Promise<IsoProject>;
   deleteIsoProject(userId: string): Promise<void>;
 
   // Nonconformances
-  getNonconformances(userId: string): Promise<Nonconformance[]>;
+  getNonconformances(userId: string, isSuperadmin?: boolean): Promise<Nonconformance[]>;
   createNonconformance(data: InsertNonconformance): Promise<Nonconformance>;
-  updateNonconformance(id: number, userId: string, data: Partial<InsertNonconformance>): Promise<Nonconformance | undefined>;
-  deleteNonconformance(id: number, userId: string): Promise<boolean>;
+  updateNonconformance(id: number, userId: string, data: Partial<InsertNonconformance>, isSuperadmin?: boolean): Promise<Nonconformance | undefined>;
+  deleteNonconformance(id: number, userId: string, isSuperadmin?: boolean): Promise<boolean>;
 
   // ISO Documents
-  getIsoDocuments(userId: string): Promise<IsoDocument[]>;
-  getIsoDocumentsByProject(userId: string, isoProjectId: number): Promise<IsoDocument[]>;
+  getIsoDocuments(userId: string, isSuperadmin?: boolean): Promise<IsoDocument[]>;
+  getIsoDocumentsByProject(userId: string, isoProjectId: number, isSuperadmin?: boolean): Promise<IsoDocument[]>;
   createIsoDocument(data: InsertIsoDocument): Promise<IsoDocument>;
   updateIsoDocument(id: number, userId: string, data: Partial<InsertIsoDocument>): Promise<IsoDocument | undefined>;
   deleteIsoDocument(id: number, userId: string): Promise<void>;
@@ -280,66 +282,66 @@ export interface IStorage {
   deleteDotDvirLog(id: number, userId: string): Promise<void>;
 
   // ISO Audits
-  getIsoAudits(userId: string): Promise<IsoAudit[]>;
-  getIsoAudit(id: number, userId: string): Promise<IsoAudit | undefined>;
+  getIsoAudits(userId: string, isSuperadmin?: boolean): Promise<IsoAudit[]>;
+  getIsoAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<IsoAudit | undefined>;
   createIsoAudit(data: InsertIsoAudit): Promise<IsoAudit>;
-  updateIsoAudit(id: number, userId: string, data: Partial<InsertIsoAudit>): Promise<IsoAudit | undefined>;
-  deleteIsoAudit(id: number, userId: string): Promise<void>;
+  updateIsoAudit(id: number, userId: string, data: Partial<InsertIsoAudit>, isSuperadmin?: boolean): Promise<IsoAudit | undefined>;
+  deleteIsoAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Audit Findings
-  getIsoAuditFindings(auditId: number, userId: string): Promise<IsoAuditFinding[]>;
+  getIsoAuditFindings(auditId: number, userId: string, isSuperadmin?: boolean): Promise<IsoAuditFinding[]>;
   createIsoAuditFinding(data: InsertIsoAuditFinding): Promise<IsoAuditFinding>;
-  updateIsoAuditFinding(id: number, userId: string, data: Partial<InsertIsoAuditFinding>): Promise<IsoAuditFinding | undefined>;
-  deleteIsoAuditFinding(id: number, userId: string): Promise<void>;
+  updateIsoAuditFinding(id: number, userId: string, data: Partial<InsertIsoAuditFinding>, isSuperadmin?: boolean): Promise<IsoAuditFinding | undefined>;
+  deleteIsoAuditFinding(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Awareness Notices
-  getIsoAwarenessNotices(userId: string): Promise<IsoAwarenessNotice[]>;
+  getIsoAwarenessNotices(userId: string, isSuperadmin?: boolean): Promise<IsoAwarenessNotice[]>;
   createIsoAwarenessNotice(data: InsertIsoAwarenessNotice): Promise<IsoAwarenessNotice>;
-  updateIsoAwarenessNotice(id: number, userId: string, data: Partial<InsertIsoAwarenessNotice>): Promise<IsoAwarenessNotice | undefined>;
-  deleteIsoAwarenessNotice(id: number, userId: string): Promise<void>;
+  updateIsoAwarenessNotice(id: number, userId: string, data: Partial<InsertIsoAwarenessNotice>, isSuperadmin?: boolean): Promise<IsoAwarenessNotice | undefined>;
+  deleteIsoAwarenessNotice(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Awareness Acknowledgments
   getIsoAwarenessAcknowledgments(noticeId: number): Promise<IsoAwarenessAcknowledgment[]>;
   createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment>;
 
   // ISO Objectives (KPI tracking — shared by Process Maps, Measurement, Management Review)
-  getIsoObjectives(userId: string, isoProjectId?: number): Promise<IsoObjective[]>;
+  getIsoObjectives(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoObjective[]>;
   getIsoObjectivesByProcess(userId: string, processName: string): Promise<IsoObjective[]>;
   createIsoObjective(data: InsertIsoObjective): Promise<IsoObjective>;
-  updateIsoObjective(id: number, userId: string, data: Partial<InsertIsoObjective>): Promise<IsoObjective | undefined>;
-  deleteIsoObjective(id: number, userId: string): Promise<void>;
+  updateIsoObjective(id: number, userId: string, data: Partial<InsertIsoObjective>, isSuperadmin?: boolean): Promise<IsoObjective | undefined>;
+  deleteIsoObjective(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
   upsertIsoObjectiveForProcess(userId: string, isoProjectId: number | undefined, processName: string, name: string, target: string, unit: string, responsible?: string): Promise<IsoObjective>;
 
   // ISO KPI Actuals (measurement log)
-  getIsoKpiActuals(userId: string, objectiveId?: number, isoProjectId?: number): Promise<IsoKpiActual[]>;
+  getIsoKpiActuals(userId: string, objectiveId?: number, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoKpiActual[]>;
   createIsoKpiActual(data: InsertIsoKpiActual): Promise<IsoKpiActual>;
   deleteIsoKpiActual(id: number, userId: string): Promise<void>;
 
   // ISO Risks
-  getIsoRisks(userId: string, isoProjectId?: number): Promise<IsoRisk[]>;
+  getIsoRisks(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoRisk[]>;
   createIsoRisk(data: InsertIsoRisk): Promise<IsoRisk>;
-  updateIsoRisk(id: number, userId: string, data: Partial<IsoRisk>): Promise<IsoRisk | undefined>;
-  deleteIsoRisk(id: number, userId: string): Promise<void>;
+  updateIsoRisk(id: number, userId: string, data: Partial<IsoRisk>, isSuperadmin?: boolean): Promise<IsoRisk | undefined>;
+  deleteIsoRisk(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Management Reviews
-  getIsoManagementReviews(userId: string, isoProjectId?: number): Promise<IsoManagementReview[]>;
-  getIsoManagementReview(id: number, userId: string): Promise<IsoManagementReview | undefined>;
+  getIsoManagementReviews(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoManagementReview[]>;
+  getIsoManagementReview(id: number, userId: string, isSuperadmin?: boolean): Promise<IsoManagementReview | undefined>;
   createIsoManagementReview(data: InsertIsoManagementReview): Promise<IsoManagementReview>;
-  updateIsoManagementReview(id: number, userId: string, data: Partial<InsertIsoManagementReview>): Promise<IsoManagementReview | undefined>;
-  deleteIsoManagementReview(id: number, userId: string): Promise<void>;
+  updateIsoManagementReview(id: number, userId: string, data: Partial<InsertIsoManagementReview>, isSuperadmin?: boolean): Promise<IsoManagementReview | undefined>;
+  deleteIsoManagementReview(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Review Action Items
-  getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]>;
-  getAllIsoReviewActionItems(userId: string, isoProjectId?: number): Promise<IsoReviewActionItem[]>;
+  getIsoReviewActionItems(reviewId: number, userId: string, isSuperadmin?: boolean): Promise<IsoReviewActionItem[]>;
+  getAllIsoReviewActionItems(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoReviewActionItem[]>;
   createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem>;
-  updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>): Promise<IsoReviewActionItem | undefined>;
-  deleteIsoReviewActionItem(id: number, userId: string): Promise<void>;
+  updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>, isSuperadmin?: boolean): Promise<IsoReviewActionItem | undefined>;
+  deleteIsoReviewActionItem(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Communications
-  getIsoCommunications(userId: string, isoProjectId?: number): Promise<IsoCommunication[]>;
+  getIsoCommunications(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoCommunication[]>;
   createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication>;
-  updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>): Promise<IsoCommunication | undefined>;
-  deleteIsoCommunication(id: number, userId: string): Promise<void>;
+  updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>, isSuperadmin?: boolean): Promise<IsoCommunication | undefined>;
+  deleteIsoCommunication(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -517,13 +519,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Employees
-  async getEmployees(userId: string): Promise<Employee[]> {
-    return db.select().from(employees).where(eq(employees.userId, userId)).orderBy(employees.lastName);
+  async getEmployees(userId: string, isSuperadmin = false): Promise<Employee[]> {
+    return db.select().from(employees).where(isSuperadmin ? undefined : eq(employees.userId, userId)).orderBy(employees.lastName);
   }
 
-  async getEmployeeById(id: number, userId: string): Promise<Employee | undefined> {
+  async getEmployeeById(id: number, userId: string, isSuperadmin = false): Promise<Employee | undefined> {
     const [employee] = await db.select().from(employees)
-      .where(and(eq(employees.id, id), eq(employees.userId, userId)));
+      .where(isSuperadmin ? eq(employees.id, id) : and(eq(employees.id, id), eq(employees.userId, userId)));
     return employee;
   }
 
@@ -532,38 +534,37 @@ export class DatabaseStorage implements IStorage {
     return newEmployee;
   }
 
-  async updateEmployee(id: number, userId: string, employee: Partial<InsertEmployee>): Promise<Employee | undefined> {
+  async updateEmployee(id: number, userId: string, employee: Partial<InsertEmployee>, isSuperadmin = false): Promise<Employee | undefined> {
     const [updated] = await db
       .update(employees)
       .set({ ...employee, updatedAt: new Date() })
-      .where(and(eq(employees.id, id), eq(employees.userId, userId)))
+      .where(isSuperadmin ? eq(employees.id, id) : and(eq(employees.id, id), eq(employees.userId, userId)))
       .returning();
     return updated;
   }
 
-  async deleteEmployee(id: number, userId: string): Promise<boolean> {
-    const result = await db.delete(employees)
-      .where(and(eq(employees.id, id), eq(employees.userId, userId)));
+  async deleteEmployee(id: number, userId: string, isSuperadmin = false): Promise<boolean> {
+    await db.delete(employees)
+      .where(isSuperadmin ? eq(employees.id, id) : and(eq(employees.id, id), eq(employees.userId, userId)));
     return true;
   }
 
   // Incidents
-  async getIncidents(userId: string): Promise<Incident[]> {
-    return db.select().from(incidents).where(eq(incidents.userId, userId)).orderBy(desc(incidents.incidentDate));
+  async getIncidents(userId: string, isSuperadmin = false): Promise<Incident[]> {
+    return db.select().from(incidents).where(isSuperadmin ? undefined : eq(incidents.userId, userId)).orderBy(desc(incidents.incidentDate));
   }
 
-  async getIncident(id: number, userId: string): Promise<Incident | undefined> {
-    const [incident] = await db.select().from(incidents).where(and(eq(incidents.id, id), eq(incidents.userId, userId)));
+  async getIncident(id: number, userId: string, isSuperadmin = false): Promise<Incident | undefined> {
+    const [incident] = await db.select().from(incidents).where(isSuperadmin ? eq(incidents.id, id) : and(eq(incidents.id, id), eq(incidents.userId, userId)));
     return incident;
   }
 
-  async getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Incident[]> {
+  async getIncidentsByDateRange(userId: string, startDate: Date, endDate: Date, isSuperadmin = false): Promise<Incident[]> {
     return db.select().from(incidents)
-      .where(and(
-        eq(incidents.userId, userId),
-        gte(incidents.incidentDate, startDate),
-        lte(incidents.incidentDate, endDate)
-      ))
+      .where(isSuperadmin
+        ? and(gte(incidents.incidentDate, startDate), lte(incidents.incidentDate, endDate))
+        : and(eq(incidents.userId, userId), gte(incidents.incidentDate, startDate), lte(incidents.incidentDate, endDate))
+      )
       .orderBy(incidents.incidentDate);
   }
 
@@ -572,11 +573,11 @@ export class DatabaseStorage implements IStorage {
     return newIncident;
   }
 
-  async updateIncident(id: number, userId: string, incident: Partial<InsertIncident>): Promise<Incident | undefined> {
+  async updateIncident(id: number, userId: string, incident: Partial<InsertIncident>, isSuperadmin = false): Promise<Incident | undefined> {
     const [updated] = await db
       .update(incidents)
       .set(incident)
-      .where(and(eq(incidents.id, id), eq(incidents.userId, userId)))
+      .where(isSuperadmin ? eq(incidents.id, id) : and(eq(incidents.id, id), eq(incidents.userId, userId)))
       .returning();
     return updated;
   }
@@ -1385,8 +1386,21 @@ export class DatabaseStorage implements IStorage {
     await db.insert(recordabilityUsage).values({ ipAddress });
   }
 
-  async getIsoProject(userId: string): Promise<IsoProject | undefined> {
+  async getIsoProject(userId: string, isSuperadmin = false, isoProjectId?: number): Promise<IsoProject | undefined> {
+    if (isSuperadmin && isoProjectId != null) {
+      const [project] = await db.select().from(isoProjects).where(eq(isoProjects.id, isoProjectId));
+      return project;
+    }
     const [project] = await db.select().from(isoProjects).where(eq(isoProjects.userId, userId));
+    return project;
+  }
+
+  async getIsoProjects(userId: string, isSuperadmin = false): Promise<IsoProject[]> {
+    return db.select().from(isoProjects).where(isSuperadmin ? undefined : eq(isoProjects.userId, userId)).orderBy(isoProjects.name);
+  }
+
+  async getIsoProjectById(id: number): Promise<IsoProject | undefined> {
+    const [project] = await db.select().from(isoProjects).where(eq(isoProjects.id, id));
     return project;
   }
 
@@ -1395,17 +1409,24 @@ export class DatabaseStorage implements IStorage {
     return project;
   }
 
-  async updateIsoProject(userId: string, data: Partial<InsertIsoProject>): Promise<IsoProject> {
+  async updateIsoProject(userId: string, data: Partial<InsertIsoProject>, isSuperadmin = false): Promise<IsoProject> {
+    const whereClause = isSuperadmin && data.id != null
+      ? eq(isoProjects.id, data.id as number)
+      : eq(isoProjects.userId, userId);
     const [project] = await db
       .update(isoProjects)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(isoProjects.userId, userId))
+      .where(whereClause)
       .returning();
     return project;
   }
 
-  async deleteIsoProject(userId: string): Promise<void> {
-    await db.delete(isoProjects).where(eq(isoProjects.userId, userId));
+  async deleteIsoProject(userId: string, isSuperadmin = false, id?: number): Promise<void> {
+    if (isSuperadmin && id != null) {
+      await db.delete(isoProjects).where(eq(isoProjects.id, id));
+    } else {
+      await db.delete(isoProjects).where(eq(isoProjects.userId, userId));
+    }
   }
 
   async getCoreyProfile(userId: string): Promise<CoreyProfile | undefined> {
@@ -1454,8 +1475,8 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getNonconformances(userId: string): Promise<Nonconformance[]> {
-    return db.select().from(nonconformances).where(eq(nonconformances.userId, userId)).orderBy(desc(nonconformances.createdAt));
+  async getNonconformances(userId: string, isSuperadmin = false): Promise<Nonconformance[]> {
+    return db.select().from(nonconformances).where(isSuperadmin ? undefined : eq(nonconformances.userId, userId)).orderBy(desc(nonconformances.createdAt));
   }
 
   async createNonconformance(data: InsertNonconformance): Promise<Nonconformance> {
@@ -1463,27 +1484,27 @@ export class DatabaseStorage implements IStorage {
     return newNC;
   }
 
-  async updateNonconformance(id: number, userId: string, data: Partial<InsertNonconformance>): Promise<Nonconformance | undefined> {
+  async updateNonconformance(id: number, userId: string, data: Partial<InsertNonconformance>, isSuperadmin = false): Promise<Nonconformance | undefined> {
     const [updated] = await db
       .update(nonconformances)
       .set(data)
-      .where(and(eq(nonconformances.id, id), eq(nonconformances.userId, userId)))
+      .where(isSuperadmin ? eq(nonconformances.id, id) : and(eq(nonconformances.id, id), eq(nonconformances.userId, userId)))
       .returning();
     return updated;
   }
 
-  async deleteNonconformance(id: number, userId: string): Promise<boolean> {
-    await db.delete(nonconformances).where(and(eq(nonconformances.id, id), eq(nonconformances.userId, userId)));
+  async deleteNonconformance(id: number, userId: string, isSuperadmin = false): Promise<boolean> {
+    await db.delete(nonconformances).where(isSuperadmin ? eq(nonconformances.id, id) : and(eq(nonconformances.id, id), eq(nonconformances.userId, userId)));
     return true;
   }
 
   // ISO Documents
-  async getIsoDocuments(userId: string): Promise<IsoDocument[]> {
-    return db.select().from(isoDocuments).where(eq(isoDocuments.userId, userId)).orderBy(desc(isoDocuments.updatedAt));
+  async getIsoDocuments(userId: string, isSuperadmin = false): Promise<IsoDocument[]> {
+    return db.select().from(isoDocuments).where(isSuperadmin ? undefined : eq(isoDocuments.userId, userId)).orderBy(desc(isoDocuments.updatedAt));
   }
 
-  async getIsoDocumentsByProject(userId: string, isoProjectId: number): Promise<IsoDocument[]> {
-    return db.select().from(isoDocuments).where(and(eq(isoDocuments.userId, userId), eq(isoDocuments.isoProjectId, isoProjectId))).orderBy(desc(isoDocuments.updatedAt));
+  async getIsoDocumentsByProject(userId: string, isoProjectId: number, isSuperadmin = false): Promise<IsoDocument[]> {
+    return db.select().from(isoDocuments).where(isSuperadmin ? eq(isoDocuments.isoProjectId, isoProjectId) : and(eq(isoDocuments.userId, userId), eq(isoDocuments.isoProjectId, isoProjectId))).orderBy(desc(isoDocuments.updatedAt));
   }
 
   async createIsoDocument(data: InsertIsoDocument): Promise<IsoDocument> {
@@ -1491,17 +1512,17 @@ export class DatabaseStorage implements IStorage {
     return doc;
   }
 
-  async updateIsoDocument(id: number, userId: string, data: Partial<InsertIsoDocument>): Promise<IsoDocument | undefined> {
+  async updateIsoDocument(id: number, userId: string, data: Partial<InsertIsoDocument>, isSuperadmin = false): Promise<IsoDocument | undefined> {
     const [updated] = await db
       .update(isoDocuments)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId)))
+      .where(isSuperadmin ? eq(isoDocuments.id, id) : and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId)))
       .returning();
     return updated;
   }
 
-  async deleteIsoDocument(id: number, userId: string): Promise<void> {
-    await db.delete(isoDocuments).where(and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId)));
+  async deleteIsoDocument(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoDocuments).where(isSuperadmin ? eq(isoDocuments.id, id) : and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId)));
   }
 
   // ─── DOT COMPLIANCE HUB ───────────────────────────────────────────────────
@@ -1658,12 +1679,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO Audits ──────────────────────────────────────────────────────────────
-  async getIsoAudits(userId: string): Promise<IsoAudit[]> {
-    return db.select().from(isoAudits).where(eq(isoAudits.userId, userId)).orderBy(desc(isoAudits.createdAt));
+  async getIsoAudits(userId: string, isSuperadmin = false): Promise<IsoAudit[]> {
+    return db.select().from(isoAudits).where(isSuperadmin ? undefined : eq(isoAudits.userId, userId)).orderBy(desc(isoAudits.createdAt));
   }
 
-  async getIsoAudit(id: number, userId: string): Promise<IsoAudit | undefined> {
-    const [rec] = await db.select().from(isoAudits).where(and(eq(isoAudits.id, id), eq(isoAudits.userId, userId)));
+  async getIsoAudit(id: number, userId: string, isSuperadmin = false): Promise<IsoAudit | undefined> {
+    const [rec] = await db.select().from(isoAudits).where(isSuperadmin ? eq(isoAudits.id, id) : and(eq(isoAudits.id, id), eq(isoAudits.userId, userId)));
     return rec;
   }
 
@@ -1672,18 +1693,18 @@ export class DatabaseStorage implements IStorage {
     return rec;
   }
 
-  async updateIsoAudit(id: number, userId: string, data: Partial<InsertIsoAudit>): Promise<IsoAudit | undefined> {
-    const [rec] = await db.update(isoAudits).set({ ...data, updatedAt: new Date() }).where(and(eq(isoAudits.id, id), eq(isoAudits.userId, userId))).returning();
+  async updateIsoAudit(id: number, userId: string, data: Partial<InsertIsoAudit>, isSuperadmin = false): Promise<IsoAudit | undefined> {
+    const [rec] = await db.update(isoAudits).set({ ...data, updatedAt: new Date() }).where(isSuperadmin ? eq(isoAudits.id, id) : and(eq(isoAudits.id, id), eq(isoAudits.userId, userId))).returning();
     return rec;
   }
 
-  async deleteIsoAudit(id: number, userId: string): Promise<void> {
-    await db.delete(isoAudits).where(and(eq(isoAudits.id, id), eq(isoAudits.userId, userId)));
+  async deleteIsoAudit(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoAudits).where(isSuperadmin ? eq(isoAudits.id, id) : and(eq(isoAudits.id, id), eq(isoAudits.userId, userId)));
   }
 
   // ─── ISO Audit Findings ───────────────────────────────────────────────────────
-  async getIsoAuditFindings(auditId: number, userId: string): Promise<IsoAuditFinding[]> {
-    return db.select().from(isoAuditFindings).where(and(eq(isoAuditFindings.auditId, auditId), eq(isoAuditFindings.userId, userId))).orderBy(isoAuditFindings.clause);
+  async getIsoAuditFindings(auditId: number, userId: string, isSuperadmin = false): Promise<IsoAuditFinding[]> {
+    return db.select().from(isoAuditFindings).where(isSuperadmin ? eq(isoAuditFindings.auditId, auditId) : and(eq(isoAuditFindings.auditId, auditId), eq(isoAuditFindings.userId, userId))).orderBy(isoAuditFindings.clause);
   }
 
   async createIsoAuditFinding(data: InsertIsoAuditFinding): Promise<IsoAuditFinding> {
@@ -1691,18 +1712,18 @@ export class DatabaseStorage implements IStorage {
     return rec;
   }
 
-  async updateIsoAuditFinding(id: number, userId: string, data: Partial<InsertIsoAuditFinding>): Promise<IsoAuditFinding | undefined> {
-    const [rec] = await db.update(isoAuditFindings).set({ ...data, updatedAt: new Date() }).where(and(eq(isoAuditFindings.id, id), eq(isoAuditFindings.userId, userId))).returning();
+  async updateIsoAuditFinding(id: number, userId: string, data: Partial<InsertIsoAuditFinding>, isSuperadmin = false): Promise<IsoAuditFinding | undefined> {
+    const [rec] = await db.update(isoAuditFindings).set({ ...data, updatedAt: new Date() }).where(isSuperadmin ? eq(isoAuditFindings.id, id) : and(eq(isoAuditFindings.id, id), eq(isoAuditFindings.userId, userId))).returning();
     return rec;
   }
 
-  async deleteIsoAuditFinding(id: number, userId: string): Promise<void> {
-    await db.delete(isoAuditFindings).where(and(eq(isoAuditFindings.id, id), eq(isoAuditFindings.userId, userId)));
+  async deleteIsoAuditFinding(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoAuditFindings).where(isSuperadmin ? eq(isoAuditFindings.id, id) : and(eq(isoAuditFindings.id, id), eq(isoAuditFindings.userId, userId)));
   }
 
   // ─── ISO Awareness Notices ────────────────────────────────────────────────────
-  async getIsoAwarenessNotices(userId: string): Promise<IsoAwarenessNotice[]> {
-    return db.select().from(isoAwarenessNotices).where(eq(isoAwarenessNotices.userId, userId)).orderBy(desc(isoAwarenessNotices.createdAt));
+  async getIsoAwarenessNotices(userId: string, isSuperadmin = false): Promise<IsoAwarenessNotice[]> {
+    return db.select().from(isoAwarenessNotices).where(isSuperadmin ? undefined : eq(isoAwarenessNotices.userId, userId)).orderBy(desc(isoAwarenessNotices.createdAt));
   }
 
   async createIsoAwarenessNotice(data: InsertIsoAwarenessNotice): Promise<IsoAwarenessNotice> {
@@ -1710,13 +1731,13 @@ export class DatabaseStorage implements IStorage {
     return rec;
   }
 
-  async updateIsoAwarenessNotice(id: number, userId: string, data: Partial<InsertIsoAwarenessNotice>): Promise<IsoAwarenessNotice | undefined> {
-    const [rec] = await db.update(isoAwarenessNotices).set(data).where(and(eq(isoAwarenessNotices.id, id), eq(isoAwarenessNotices.userId, userId))).returning();
+  async updateIsoAwarenessNotice(id: number, userId: string, data: Partial<InsertIsoAwarenessNotice>, isSuperadmin = false): Promise<IsoAwarenessNotice | undefined> {
+    const [rec] = await db.update(isoAwarenessNotices).set(data).where(isSuperadmin ? eq(isoAwarenessNotices.id, id) : and(eq(isoAwarenessNotices.id, id), eq(isoAwarenessNotices.userId, userId))).returning();
     return rec;
   }
 
-  async deleteIsoAwarenessNotice(id: number, userId: string): Promise<void> {
-    await db.delete(isoAwarenessNotices).where(and(eq(isoAwarenessNotices.id, id), eq(isoAwarenessNotices.userId, userId)));
+  async deleteIsoAwarenessNotice(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoAwarenessNotices).where(isSuperadmin ? eq(isoAwarenessNotices.id, id) : and(eq(isoAwarenessNotices.id, id), eq(isoAwarenessNotices.userId, userId)));
   }
 
   // ─── ISO Awareness Acknowledgments ───────────────────────────────────────────
@@ -1730,15 +1751,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO Objectives ───────────────────────────────────────────────────────────
-  async getIsoObjectives(userId: string, isoProjectId?: number): Promise<IsoObjective[]> {
-    const cond = isoProjectId != null
-      ? and(eq(isoObjectives.userId, userId), eq(isoObjectives.isoProjectId, isoProjectId))
-      : eq(isoObjectives.userId, userId);
+  async getIsoObjectives(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoObjective[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(isoObjectives.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(isoObjectives.userId, userId), eq(isoObjectives.isoProjectId, isoProjectId))
+        : eq(isoObjectives.userId, userId);
+    }
     return db.select().from(isoObjectives).where(cond).orderBy(isoObjectives.processName, isoObjectives.name);
   }
 
-  async getIsoObjectivesByProcess(userId: string, processName: string): Promise<IsoObjective[]> {
-    return db.select().from(isoObjectives).where(and(eq(isoObjectives.userId, userId), eq(isoObjectives.processName, processName)));
+  async getIsoObjectivesByProcess(userId: string, processName: string, isSuperadmin = false): Promise<IsoObjective[]> {
+    return db.select().from(isoObjectives).where(isSuperadmin ? eq(isoObjectives.processName, processName) : and(eq(isoObjectives.userId, userId), eq(isoObjectives.processName, processName)));
   }
 
   async createIsoObjective(data: InsertIsoObjective): Promise<IsoObjective> {
@@ -1746,13 +1772,13 @@ export class DatabaseStorage implements IStorage {
     return rec;
   }
 
-  async updateIsoObjective(id: number, userId: string, data: Partial<InsertIsoObjective>): Promise<IsoObjective | undefined> {
-    const [rec] = await db.update(isoObjectives).set({ ...data, updatedAt: new Date() }).where(and(eq(isoObjectives.id, id), eq(isoObjectives.userId, userId))).returning();
+  async updateIsoObjective(id: number, userId: string, data: Partial<InsertIsoObjective>, isSuperadmin = false): Promise<IsoObjective | undefined> {
+    const [rec] = await db.update(isoObjectives).set({ ...data, updatedAt: new Date() }).where(isSuperadmin ? eq(isoObjectives.id, id) : and(eq(isoObjectives.id, id), eq(isoObjectives.userId, userId))).returning();
     return rec;
   }
 
-  async deleteIsoObjective(id: number, userId: string): Promise<void> {
-    await db.delete(isoObjectives).where(and(eq(isoObjectives.id, id), eq(isoObjectives.userId, userId)));
+  async deleteIsoObjective(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoObjectives).where(isSuperadmin ? eq(isoObjectives.id, id) : and(eq(isoObjectives.id, id), eq(isoObjectives.userId, userId)));
   }
 
   async upsertIsoObjectiveForProcess(userId: string, isoProjectId: number | undefined, processName: string, name: string, target: string, unit: string, responsible?: string): Promise<IsoObjective> {
@@ -1769,21 +1795,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ─── ISO KPI Actuals ──────────────────────────────────────────────────────────
-  async getIsoKpiActuals(userId: string, objectiveId?: number, isoProjectId?: number): Promise<IsoKpiActual[]> {
+  async getIsoKpiActuals(userId: string, objectiveId?: number, isoProjectId?: number, isSuperadmin = false): Promise<IsoKpiActual[]> {
     if (objectiveId) {
-      return db.select().from(isoKpiActuals).where(and(eq(isoKpiActuals.userId, userId), eq(isoKpiActuals.objectiveId, objectiveId))).orderBy(desc(isoKpiActuals.loggedAt));
+      return db.select().from(isoKpiActuals).where(isSuperadmin ? eq(isoKpiActuals.objectiveId, objectiveId) : and(eq(isoKpiActuals.userId, userId), eq(isoKpiActuals.objectiveId, objectiveId))).orderBy(desc(isoKpiActuals.loggedAt));
     }
     if (isoProjectId != null) {
       const projectObjIds = await db.select({ id: isoObjectives.id })
         .from(isoObjectives)
-        .where(and(eq(isoObjectives.userId, userId), eq(isoObjectives.isoProjectId, isoProjectId)));
+        .where(isSuperadmin ? eq(isoObjectives.isoProjectId, isoProjectId) : and(eq(isoObjectives.userId, userId), eq(isoObjectives.isoProjectId, isoProjectId)));
       const ids = projectObjIds.map(o => o.id);
       if (ids.length === 0) return [];
       return db.select().from(isoKpiActuals)
-        .where(and(eq(isoKpiActuals.userId, userId), inArray(isoKpiActuals.objectiveId, ids)))
+        .where(isSuperadmin ? inArray(isoKpiActuals.objectiveId, ids) : and(eq(isoKpiActuals.userId, userId), inArray(isoKpiActuals.objectiveId, ids)))
         .orderBy(desc(isoKpiActuals.loggedAt));
     }
-    return db.select().from(isoKpiActuals).where(eq(isoKpiActuals.userId, userId)).orderBy(desc(isoKpiActuals.loggedAt));
+    return db.select().from(isoKpiActuals).where(isSuperadmin ? undefined : eq(isoKpiActuals.userId, userId)).orderBy(desc(isoKpiActuals.loggedAt));
   }
 
   async createIsoKpiActual(data: InsertIsoKpiActual): Promise<IsoKpiActual> {
@@ -1791,97 +1817,112 @@ export class DatabaseStorage implements IStorage {
     return rec;
   }
 
-  async deleteIsoKpiActual(id: number, userId: string): Promise<void> {
-    await db.delete(isoKpiActuals).where(and(eq(isoKpiActuals.id, id), eq(isoKpiActuals.userId, userId)));
+  async deleteIsoKpiActual(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoKpiActuals).where(isSuperadmin ? eq(isoKpiActuals.id, id) : and(eq(isoKpiActuals.id, id), eq(isoKpiActuals.userId, userId)));
   }
 
   // ─── ISO Risks ────────────────────────────────────────────────────────────────
-  async getIsoRisks(userId: string, isoProjectId?: number): Promise<IsoRisk[]> {
-    const cond = isoProjectId != null
-      ? and(eq(isoRisks.userId, userId), eq(isoRisks.isoProjectId, isoProjectId))
-      : eq(isoRisks.userId, userId);
+  async getIsoRisks(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoRisk[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(isoRisks.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(isoRisks.userId, userId), eq(isoRisks.isoProjectId, isoProjectId))
+        : eq(isoRisks.userId, userId);
+    }
     return db.select().from(isoRisks).where(cond).orderBy(desc(isoRisks.riskScore));
   }
   async createIsoRisk(data: InsertIsoRisk): Promise<IsoRisk> {
     const [r] = await db.insert(isoRisks).values(data).returning();
     return r;
   }
-  async updateIsoRisk(id: number, userId: string, data: Partial<IsoRisk>): Promise<IsoRisk | undefined> {
-    const [r] = await db.update(isoRisks).set({ ...data, updatedAt: new Date() }).where(and(eq(isoRisks.id, id), eq(isoRisks.userId, userId))).returning();
+  async updateIsoRisk(id: number, userId: string, data: Partial<IsoRisk>, isSuperadmin = false): Promise<IsoRisk | undefined> {
+    const [r] = await db.update(isoRisks).set({ ...data, updatedAt: new Date() }).where(isSuperadmin ? eq(isoRisks.id, id) : and(eq(isoRisks.id, id), eq(isoRisks.userId, userId))).returning();
     return r;
   }
-  async deleteIsoRisk(id: number, userId: string): Promise<void> {
-    await db.delete(isoRisks).where(and(eq(isoRisks.id, id), eq(isoRisks.userId, userId)));
+  async deleteIsoRisk(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoRisks).where(isSuperadmin ? eq(isoRisks.id, id) : and(eq(isoRisks.id, id), eq(isoRisks.userId, userId)));
   }
 
   // ─── ISO Management Reviews ───────────────────────────────────────────────────
-  async getIsoManagementReviews(userId: string, isoProjectId?: number): Promise<IsoManagementReview[]> {
-    const cond = isoProjectId != null
-      ? and(eq(isoManagementReviews.userId, userId), eq(isoManagementReviews.isoProjectId, isoProjectId))
-      : eq(isoManagementReviews.userId, userId);
+  async getIsoManagementReviews(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoManagementReview[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(isoManagementReviews.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(isoManagementReviews.userId, userId), eq(isoManagementReviews.isoProjectId, isoProjectId))
+        : eq(isoManagementReviews.userId, userId);
+    }
     return db.select().from(isoManagementReviews).where(cond).orderBy(desc(isoManagementReviews.meetingDate));
   }
-  async getIsoManagementReview(id: number, userId: string): Promise<IsoManagementReview | undefined> {
-    const [r] = await db.select().from(isoManagementReviews).where(and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId)));
+  async getIsoManagementReview(id: number, userId: string, isSuperadmin = false): Promise<IsoManagementReview | undefined> {
+    const [r] = await db.select().from(isoManagementReviews).where(isSuperadmin ? eq(isoManagementReviews.id, id) : and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId)));
     return r;
   }
   async createIsoManagementReview(data: InsertIsoManagementReview): Promise<IsoManagementReview> {
     const [r] = await db.insert(isoManagementReviews).values(data).returning();
     return r;
   }
-  async updateIsoManagementReview(id: number, userId: string, data: Partial<InsertIsoManagementReview>): Promise<IsoManagementReview | undefined> {
-    const [r] = await db.update(isoManagementReviews).set({ ...data, updatedAt: new Date() }).where(and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId))).returning();
+  async updateIsoManagementReview(id: number, userId: string, data: Partial<InsertIsoManagementReview>, isSuperadmin = false): Promise<IsoManagementReview | undefined> {
+    const [r] = await db.update(isoManagementReviews).set({ ...data, updatedAt: new Date() }).where(isSuperadmin ? eq(isoManagementReviews.id, id) : and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId))).returning();
     return r;
   }
-  async deleteIsoManagementReview(id: number, userId: string): Promise<void> {
-    await db.delete(isoManagementReviews).where(and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId)));
+  async deleteIsoManagementReview(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoManagementReviews).where(isSuperadmin ? eq(isoManagementReviews.id, id) : and(eq(isoManagementReviews.id, id), eq(isoManagementReviews.userId, userId)));
   }
 
   // ─── ISO Review Action Items ──────────────────────────────────────────────────
-  async getIsoReviewActionItems(reviewId: number, userId: string): Promise<IsoReviewActionItem[]> {
-    return db.select().from(isoReviewActionItems).where(and(eq(isoReviewActionItems.reviewId, reviewId), eq(isoReviewActionItems.userId, userId))).orderBy(isoReviewActionItems.createdAt);
+  async getIsoReviewActionItems(reviewId: number, userId: string, isSuperadmin = false): Promise<IsoReviewActionItem[]> {
+    return db.select().from(isoReviewActionItems).where(isSuperadmin ? eq(isoReviewActionItems.reviewId, reviewId) : and(eq(isoReviewActionItems.reviewId, reviewId), eq(isoReviewActionItems.userId, userId))).orderBy(isoReviewActionItems.createdAt);
   }
-  async getAllIsoReviewActionItems(userId: string, isoProjectId?: number): Promise<IsoReviewActionItem[]> {
+  async getAllIsoReviewActionItems(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoReviewActionItem[]> {
     if (isoProjectId != null) {
       const projectReviews = await db.select({ id: isoManagementReviews.id })
         .from(isoManagementReviews)
-        .where(and(eq(isoManagementReviews.userId, userId), eq(isoManagementReviews.isoProjectId, isoProjectId)));
+        .where(isSuperadmin ? eq(isoManagementReviews.isoProjectId, isoProjectId) : and(eq(isoManagementReviews.userId, userId), eq(isoManagementReviews.isoProjectId, isoProjectId)));
       const ids = projectReviews.map(r => r.id);
       if (ids.length === 0) return [];
       return db.select().from(isoReviewActionItems)
-        .where(and(eq(isoReviewActionItems.userId, userId), inArray(isoReviewActionItems.reviewId, ids)));
+        .where(isSuperadmin ? inArray(isoReviewActionItems.reviewId, ids) : and(eq(isoReviewActionItems.userId, userId), inArray(isoReviewActionItems.reviewId, ids)));
     }
-    return db.select().from(isoReviewActionItems).where(eq(isoReviewActionItems.userId, userId));
+    return db.select().from(isoReviewActionItems).where(isSuperadmin ? undefined : eq(isoReviewActionItems.userId, userId));
   }
   async createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem> {
     const [r] = await db.insert(isoReviewActionItems).values(data).returning();
     return r;
   }
-  async updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>): Promise<IsoReviewActionItem | undefined> {
-    const [r] = await db.update(isoReviewActionItems).set(data).where(and(eq(isoReviewActionItems.id, id), eq(isoReviewActionItems.userId, userId))).returning();
+  async updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>, isSuperadmin = false): Promise<IsoReviewActionItem | undefined> {
+    const [r] = await db.update(isoReviewActionItems).set(data).where(isSuperadmin ? eq(isoReviewActionItems.id, id) : and(eq(isoReviewActionItems.id, id), eq(isoReviewActionItems.userId, userId))).returning();
     return r;
   }
-  async deleteIsoReviewActionItem(id: number, userId: string): Promise<void> {
-    await db.delete(isoReviewActionItems).where(and(eq(isoReviewActionItems.id, id), eq(isoReviewActionItems.userId, userId)));
+  async deleteIsoReviewActionItem(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoReviewActionItems).where(isSuperadmin ? eq(isoReviewActionItems.id, id) : and(eq(isoReviewActionItems.id, id), eq(isoReviewActionItems.userId, userId)));
   }
 
   // ─── ISO Communications ───────────────────────────────────────────────────────
-  async getIsoCommunications(userId: string, isoProjectId?: number): Promise<IsoCommunication[]> {
-    const cond = isoProjectId != null
-      ? and(eq(isoCommunications.userId, userId), eq(isoCommunications.isoProjectId, isoProjectId))
-      : eq(isoCommunications.userId, userId);
+  async getIsoCommunications(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoCommunication[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(isoCommunications.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(isoCommunications.userId, userId), eq(isoCommunications.isoProjectId, isoProjectId))
+        : eq(isoCommunications.userId, userId);
+    }
     return db.select().from(isoCommunications).where(cond).orderBy(desc(isoCommunications.date));
   }
   async createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication> {
     const [r] = await db.insert(isoCommunications).values(data).returning();
     return r;
   }
-  async updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>): Promise<IsoCommunication | undefined> {
-    const [r] = await db.update(isoCommunications).set({ ...data, updatedAt: new Date() }).where(and(eq(isoCommunications.id, id), eq(isoCommunications.userId, userId))).returning();
+  async updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>, isSuperadmin = false): Promise<IsoCommunication | undefined> {
+    const [r] = await db.update(isoCommunications).set({ ...data, updatedAt: new Date() }).where(isSuperadmin ? eq(isoCommunications.id, id) : and(eq(isoCommunications.id, id), eq(isoCommunications.userId, userId))).returning();
     return r;
   }
-  async deleteIsoCommunication(id: number, userId: string): Promise<void> {
-    await db.delete(isoCommunications).where(and(eq(isoCommunications.id, id), eq(isoCommunications.userId, userId)));
+  async deleteIsoCommunication(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoCommunications).where(isSuperadmin ? eq(isoCommunications.id, id) : and(eq(isoCommunications.id, id), eq(isoCommunications.userId, userId)));
   }
 }
 

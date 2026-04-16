@@ -1394,11 +1394,12 @@ Rules:
       return res.status(401).json({ message: "Unauthorized" });
     }
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
 
     try {
       const [employeeList, incidentList, actionList, auditList] = await Promise.all([
-        storage.getEmployees(userId),
-        storage.getIncidents(userId),
+        storage.getEmployees(userId, isSuperadmin),
+        storage.getIncidents(userId, isSuperadmin),
         storage.getPendingActionItems(userId),
         storage.getAuditReadiness(userId),
       ]);
@@ -1451,10 +1452,11 @@ Rules:
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const [actionItems, incidents, employees] = await Promise.all([
         storage.getPendingActionItems(userId),
-        storage.getIncidents(userId),
-        storage.getEmployees(userId),
+        storage.getIncidents(userId, isSuperadmin),
+        storage.getEmployees(userId, isSuperadmin),
       ]);
 
       const now = new Date();
@@ -1727,11 +1729,14 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
   app.get("/api/apqp-projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
       const { db } = await import("./db");
       const { apqpProjects } = await import("@shared/schema");
       const { eq, desc } = await import("drizzle-orm");
-      const rows = await db.select().from(apqpProjects).where(eq(apqpProjects.userId, userId)).orderBy(desc(apqpProjects.createdAt));
+      const rows = isSuperadmin
+        ? await db.select().from(apqpProjects).orderBy(desc(apqpProjects.createdAt))
+        : await db.select().from(apqpProjects).where(eq(apqpProjects.userId, userId)).orderBy(desc(apqpProjects.createdAt));
       res.json(rows);
     } catch (e) { res.status(500).json({ message: "Failed" }); }
   });
@@ -1763,12 +1768,14 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
   app.get("/api/apqp-projects/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     const id = parseInt(req.params.id);
     try {
       const { db } = await import("./db");
       const { apqpProjects } = await import("@shared/schema");
       const { eq, and } = await import("drizzle-orm");
-      const [row] = await db.select().from(apqpProjects).where(and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId)));
+      const where = isSuperadmin ? eq(apqpProjects.id, id) : and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId));
+      const [row] = await db.select().from(apqpProjects).where(where);
       if (!row) return res.status(404).json({ message: "Not found" });
       res.json(row);
     } catch (e) { res.status(500).json({ message: "Failed" }); }
@@ -1778,12 +1785,14 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
   app.patch("/api/apqp-projects/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     const id = parseInt(req.params.id);
     try {
       const { db } = await import("./db");
       const { apqpProjects } = await import("@shared/schema");
       const { eq, and } = await import("drizzle-orm");
-      const [row] = await db.update(apqpProjects).set({ ...req.body, updatedAt: new Date() }).where(and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId))).returning();
+      const where = isSuperadmin ? eq(apqpProjects.id, id) : and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId));
+      const [row] = await db.update(apqpProjects).set({ ...req.body, updatedAt: new Date() }).where(where).returning();
       if (!row) return res.status(404).json({ message: "Not found" });
       res.json(row);
     } catch (e) { res.status(500).json({ message: "Failed" }); }
@@ -1793,6 +1802,7 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
   app.delete("/api/apqp-projects/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     const id = parseInt(req.params.id);
     try {
       const { db } = await import("./db");
@@ -1800,7 +1810,8 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
       const { eq, and } = await import("drizzle-orm");
       await db.delete(apqpDeliverables).where(eq(apqpDeliverables.apqpProjectId, id));
       await db.delete(apqpGateReviews).where(eq(apqpGateReviews.apqpProjectId, id));
-      await db.delete(apqpProjects).where(and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId)));
+      const where = isSuperadmin ? eq(apqpProjects.id, id) : and(eq(apqpProjects.id, id), eq(apqpProjects.userId, userId));
+      await db.delete(apqpProjects).where(where);
       res.json({ ok: true });
     } catch (e) { res.status(500).json({ message: "Failed" }); }
   });
@@ -1990,7 +2001,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   app.get("/api/employees", async (req, res) => {
     if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
-    const employeeList = await storage.getEmployees(userId);
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const employeeList = await storage.getEmployees(userId, isSuperadmin);
     res.json(employeeList);
   });
 
@@ -1998,9 +2010,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   app.get("/api/employees/:id", async (req, res) => {
     if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid employee ID" });
-    const employee = await storage.getEmployeeById(id, userId);
+    const employee = await storage.getEmployeeById(id, userId, isSuperadmin);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
     res.json(employee);
   });
@@ -2034,8 +2047,9 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     const id = parseInt(req.params.id);
     
     try {
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const validated = insertEmployeeSchema.omit({ userId: true }).partial().parse(req.body);
-      const updated = await storage.updateEmployee(id, userId, validated);
+      const updated = await storage.updateEmployee(id, userId, validated, isSuperadmin);
       if (!updated) {
         return res.status(404).json({ message: "Employee not found or access denied" });
       }
@@ -2057,11 +2071,12 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     const id = parseInt(req.params.id);
     
     try {
-      const existing = await storage.getEmployeeById(id, userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const existing = await storage.getEmployeeById(id, userId, isSuperadmin);
       if (!existing) {
         return res.status(404).json({ message: "Employee not found or access denied" });
       }
-      await storage.deleteEmployee(id, userId);
+      await storage.deleteEmployee(id, userId, isSuperadmin);
       logAudit(req, "delete_employee", "employees", id, null, 200);
       res.json({ success: true });
     } catch (error: any) {
@@ -2168,7 +2183,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   app.get("/api/incidents", async (req, res) => {
     if (!(await requirePlatformAccess(req, res))) return;
     const userId = (req.user as any).claims.sub;
-    const incidentList = await storage.getIncidents(userId);
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const incidentList = await storage.getIncidents(userId, isSuperadmin);
     res.json(incidentList);
   });
 
@@ -2181,7 +2197,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 6);
     
-    const incidentList = await storage.getIncidentsByDateRange(userId, startDate, endDate);
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const incidentList = await storage.getIncidentsByDateRange(userId, startDate, endDate, isSuperadmin);
     
     // Group by month
     const monthlyData: Record<string, { total: number; recordable: number }> = {};
@@ -2336,7 +2353,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         if (req.body[key] !== undefined) updates[key] = req.body[key];
       }
       if (updates.incidentDate) updates.incidentDate = new Date(updates.incidentDate);
-      const updated = await storage.updateIncident(id, userId, updates);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const updated = await storage.updateIncident(id, userId, updates, isSuperadmin);
       if (!updated) return res.status(404).json({ message: "Incident not found" });
       res.json(updated);
     } catch (error) {
@@ -4338,7 +4356,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       const assignments = await storage.getTrainingAssignmentsByEmployer(userId);
 
-      const employeeList = await storage.getEmployees(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const employeeList = await storage.getEmployees(userId, isSuperadmin);
       const courseList = await storage.getCourses();
 
       const employeeMap = new Map(employeeList.map(e => [e.id, e]));
@@ -5548,11 +5567,25 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   });
 
   // ─── ISO PROJECTS (Setup Wizard) ─────────────────────────────────────────
+  app.get("/api/iso-projects/all", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const projects = await storage.getIsoProjects(userId, isSuperadmin);
+      res.json(projects);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/iso-projects", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      const project = await storage.getIsoProject(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const project = await storage.getIsoProject(userId, isSuperadmin, isoProjectId);
       if (!project) return res.status(404).json({ message: "No project found" });
       res.json(project);
     } catch (error: any) {
@@ -5564,7 +5597,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      const existing = await storage.getIsoProject(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const existing = await storage.getIsoProject(userId, isSuperadmin);
       if (existing) return res.status(409).json({ message: "Project already exists", project: existing });
       const parsed = insertIsoProjectSchema.partial().parse({ ...req.body, userId });
       const project = await storage.createIsoProject({ userId, standard: parsed.standard || "ISO 9001" });
@@ -5578,7 +5612,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      const project = await storage.updateIsoProject(userId, req.body);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const project = await storage.updateIsoProject(userId, req.body, isSuperadmin);
       res.json(project);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5589,7 +5624,9 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      await storage.deleteIsoProject(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = req.query.id ? parseInt(req.query.id as string) : undefined;
+      await storage.deleteIsoProject(userId, isSuperadmin, id);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5694,7 +5731,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      const ncs = await storage.getNonconformances(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const ncs = await storage.getNonconformances(userId, isSuperadmin);
       res.json(ncs);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5717,10 +5755,11 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-      const nc = await storage.updateNonconformance(id, userId, req.body);
+      const nc = await storage.updateNonconformance(id, userId, req.body, isSuperadmin);
       if (!nc) return res.status(404).json({ message: "Nonconformance not found" });
       res.json(nc);
     } catch (error: any) {
@@ -5732,10 +5771,11 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-      await storage.deleteNonconformance(id, userId);
+      await storage.deleteNonconformance(id, userId, isSuperadmin);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5747,13 +5787,14 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
       
       let docs;
       if (isoProjectId && !isNaN(isoProjectId)) {
-        docs = await storage.getIsoDocumentsByProject(userId, isoProjectId);
+        docs = await storage.getIsoDocumentsByProject(userId, isoProjectId, isSuperadmin);
       } else {
-        docs = await storage.getIsoDocuments(userId);
+        docs = await storage.getIsoDocuments(userId, isSuperadmin);
       }
       res.json(docs);
     } catch (error: any) {
@@ -5780,7 +5821,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-      const doc = await storage.updateIsoDocument(id, userId, req.body);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const doc = await storage.updateIsoDocument(id, userId, req.body, isSuperadmin);
       if (!doc) return res.status(404).json({ message: "Document not found" });
       res.json(doc);
     } catch (error: any) {
@@ -5792,10 +5834,11 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-      await storage.deleteIsoDocument(id, userId);
+      await storage.deleteIsoDocument(id, userId, isSuperadmin);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5807,7 +5850,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      const audits = await storage.getIsoAudits(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const audits = await storage.getIsoAudits(userId, isSuperadmin);
       res.json(audits);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5834,7 +5878,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const audit = await storage.updateIsoAudit(id, userId, req.body);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const audit = await storage.updateIsoAudit(id, userId, req.body, isSuperadmin);
       if (!audit) return res.status(404).json({ message: "Not found" });
       res.json(audit);
     } catch (error: any) {
@@ -5846,9 +5891,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      await storage.deleteIsoAudit(id, userId);
+      await storage.deleteIsoAudit(id, userId, isSuperadmin);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5860,9 +5906,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const auditId = parseInt(req.params.auditId);
       if (isNaN(auditId)) return res.status(400).json({ message: "Invalid ID" });
-      const findings = await storage.getIsoAuditFindings(auditId, userId);
+      const findings = await storage.getIsoAuditFindings(auditId, userId, isSuperadmin);
       res.json(findings);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5891,7 +5938,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const finding = await storage.updateIsoAuditFinding(id, userId, req.body);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const finding = await storage.updateIsoAuditFinding(id, userId, req.body, isSuperadmin);
       if (!finding) return res.status(404).json({ message: "Not found" });
       res.json(finding);
     } catch (error: any) {
@@ -5905,7 +5953,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      await storage.deleteIsoAuditFinding(id, userId);
+      const isSuperadmin2 = (req.user as any).claims.isSuperadmin === true;
+      await storage.deleteIsoAuditFinding(id, userId, isSuperadmin2);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5917,7 +5966,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      const notices = await storage.getIsoAwarenessNotices(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const notices = await storage.getIsoAwarenessNotices(userId, isSuperadmin);
       res.json(notices);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5944,7 +5994,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const notice = await storage.updateIsoAwarenessNotice(id, userId, req.body);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const notice = await storage.updateIsoAwarenessNotice(id, userId, req.body, isSuperadmin);
       if (!notice) return res.status(404).json({ message: "Not found" });
       res.json(notice);
     } catch (error: any) {
@@ -5956,9 +6007,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      await storage.deleteIsoAwarenessNotice(id, userId);
+      await storage.deleteIsoAwarenessNotice(id, userId, isSuperadmin);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -6476,11 +6528,12 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const processName = req.query.processName as string | undefined;
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
       const objectives = processName
-        ? await storage.getIsoObjectivesByProcess(userId, processName)
-        : await storage.getIsoObjectives(userId, isoProjectId);
+        ? await storage.getIsoObjectivesByProcess(userId, processName, isSuperadmin)
+        : await storage.getIsoObjectives(userId, isoProjectId, isSuperadmin);
       res.json(objectives);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6514,7 +6567,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const obj = await storage.updateIsoObjective(id, userId, req.body);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const obj = await storage.updateIsoObjective(id, userId, req.body, isSuperadmin);
       if (!obj) return res.status(404).json({ message: "Not found" });
       res.json(obj);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -6524,9 +6578,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      await storage.deleteIsoObjective(id, userId);
+      await storage.deleteIsoObjective(id, userId, isSuperadmin);
       res.status(204).send();
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6536,9 +6591,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const objectiveId = req.query.objectiveId ? parseInt(req.query.objectiveId as string) : undefined;
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
-      const actuals = await storage.getIsoKpiActuals(userId, objectiveId, isoProjectId);
+      const actuals = await storage.getIsoKpiActuals(userId, objectiveId, isoProjectId, isSuperadmin);
       res.json(actuals);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6552,7 +6608,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
       const actual = await storage.createIsoKpiActual(parsed.data);
       // Auto-derive objective status from this latest actual vs target (live KPI computation)
-      const objectives = await storage.getIsoObjectives(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const objectives = await storage.getIsoObjectives(userId, undefined, isSuperadmin);
       const objective = objectives.find(o => o.id === parsed.data.objectiveId);
       if (objective && objective.target) {
         const targetNum = parseFloat(objective.target);
@@ -6573,9 +6630,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      await storage.deleteIsoKpiActual(id, userId);
+      await storage.deleteIsoKpiActual(id, userId, isSuperadmin);
       res.status(204).send();
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -6585,10 +6643,11 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     try {
       const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
       const { docType, title, isoClause } = req.body as { docType?: string; title?: string; isoClause?: string };
       if (!title) return res.status(400).json({ message: "title is required" });
 
-      const project = await storage.getIsoProject(userId);
+      const project = await storage.getIsoProject(userId, isSuperadmin);
       interface ProcessJsonEntry { name: string; owner?: string; inputs?: string; outputs?: string; }
       const processContext = project?.processes
         ? (project.processes as ProcessJsonEntry[]).map((p) => `  - ${p.name} | Owner: ${p.owner ?? ""} | Inputs: ${p.inputs ?? ""} | Outputs: ${p.outputs ?? ""}`).join("\n")
@@ -6667,11 +6726,12 @@ Output only the document content. No preamble. No closing remarks.`;
       const docId = parseInt(req.params.id);
       if (isNaN(docId)) return res.status(400).json({ message: "Invalid ID" });
 
-      const docs = await storage.getIsoDocuments(userId);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const docs = await storage.getIsoDocuments(userId, isSuperadmin);
       const doc = docs.find(d => d.id === docId);
       if (!doc) return res.status(404).json({ message: "Document not found" });
 
-      const project = await storage.getIsoProject(userId);
+      const project = await storage.getIsoProject(userId, isSuperadmin);
       interface ProcessJsonEntry { name: string; owner?: string; inputs?: string; outputs?: string; kpi?: string; clauses?: string[]; executors?: string; resources?: string; keyActivities?: string; startingPoint?: string; endPoint?: string; risksAndOpportunities?: string; documentedInfo?: string; csrReq?: string; site?: string; row?: string; }
       const processContext = project?.processes
         ? (project.processes as ProcessJsonEntry[]).map((p) => `  - ${p.name} | Owner: ${p.owner ?? ""} | Inputs: ${p.inputs ?? ""} | Outputs: ${p.outputs ?? ""}`).join("\n")
@@ -6994,9 +7054,10 @@ Output only the document content. No preamble. No closing remarks.`;
   app.get("/api/iso-risks", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
-      const risks = await storage.getIsoRisks(userId, isoProjectId);
+      const risks = await storage.getIsoRisks(userId, isoProjectId, isSuperadmin);
       res.json(risks);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7020,7 +7081,8 @@ Output only the document content. No preamble. No closing remarks.`;
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const existing = (await storage.getIsoRisks(userId)).find(r => r.id === parseInt(req.params.id));
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const existing = (await storage.getIsoRisks(userId, undefined, isSuperadmin)).find(r => r.id === parseInt(req.params.id));
       if (!existing) return res.status(404).json({ message: "Not found" });
       const { insertIsoRiskSchema } = await import("@shared/schema");
       // Strip ownership/linkage fields — they must not be client-mutable in PATCH
@@ -7038,7 +7100,7 @@ Output only the document content. No preamble. No closing remarks.`;
       const updatePayload: Partial<IsoRisk> = { ...parsed.data, riskScore: l * s, residualScore: (rl && rs) ? rl * rs : null };
       if (!('residualLikelihood' in req.body)) delete updatePayload.residualLikelihood;
       if (!('residualSeverity' in req.body)) delete updatePayload.residualSeverity;
-      const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, updatePayload);
+      const risk = await storage.updateIsoRisk(parseInt(req.params.id), userId, updatePayload, isSuperadmin);
       if (!risk) return res.status(404).json({ message: "Not found" });
       res.json(risk);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -7047,8 +7109,9 @@ Output only the document content. No preamble. No closing remarks.`;
   app.delete("/api/iso-risks/:id", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
-      await storage.deleteIsoRisk(parseInt(req.params.id), userId);
+      await storage.deleteIsoRisk(parseInt(req.params.id), userId, isSuperadmin);
       res.json({ success: true });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7057,9 +7120,10 @@ Output only the document content. No preamble. No closing remarks.`;
   app.get("/api/iso-management-reviews", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
-      const reviews = await storage.getIsoManagementReviews(userId, isoProjectId);
+      const reviews = await storage.getIsoManagementReviews(userId, isoProjectId, isSuperadmin);
       res.json(reviews);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7085,7 +7149,8 @@ Output only the document content. No preamble. No closing remarks.`;
       const patchSchema = insertIsoManagementReviewSchema.omit({ userId: true, isoProjectId: true }).partial();
       const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
-      const review = await storage.updateIsoManagementReview(parseInt(req.params.id), userId, parsed.data);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const review = await storage.updateIsoManagementReview(parseInt(req.params.id), userId, parsed.data, isSuperadmin);
       if (!review) return res.status(404).json({ message: "Not found" });
       res.json(review);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -7094,8 +7159,9 @@ Output only the document content. No preamble. No closing remarks.`;
   app.delete("/api/iso-management-reviews/:id", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
-      await storage.deleteIsoManagementReview(parseInt(req.params.id), userId);
+      await storage.deleteIsoManagementReview(parseInt(req.params.id), userId, isSuperadmin);
       res.json({ success: true });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7104,9 +7170,10 @@ Output only the document content. No preamble. No closing remarks.`;
   app.get("/api/iso-review-action-items", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
-      const items = await storage.getAllIsoReviewActionItems(userId, isoProjectId);
+      const items = await storage.getAllIsoReviewActionItems(userId, isoProjectId, isSuperadmin);
       res.json(items);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7114,8 +7181,9 @@ Output only the document content. No preamble. No closing remarks.`;
   app.get("/api/iso-management-reviews/:reviewId/actions", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
-      const items = await storage.getIsoReviewActionItems(parseInt(req.params.reviewId), userId);
+      const items = await storage.getIsoReviewActionItems(parseInt(req.params.reviewId), userId, isSuperadmin);
       res.json(items);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7141,7 +7209,8 @@ Output only the document content. No preamble. No closing remarks.`;
       const patchSchema = insertIsoReviewActionItemSchema.omit({ userId: true, reviewId: true }).partial();
       const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
-      const item = await storage.updateIsoReviewActionItem(parseInt(req.params.id), userId, parsed.data);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const item = await storage.updateIsoReviewActionItem(parseInt(req.params.id), userId, parsed.data, isSuperadmin);
       if (!item) return res.status(404).json({ message: "Not found" });
       res.json(item);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -7150,8 +7219,9 @@ Output only the document content. No preamble. No closing remarks.`;
   app.delete("/api/iso-review-action-items/:id", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
-      await storage.deleteIsoReviewActionItem(parseInt(req.params.id), userId);
+      await storage.deleteIsoReviewActionItem(parseInt(req.params.id), userId, isSuperadmin);
       res.json({ success: true });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7160,9 +7230,10 @@ Output only the document content. No preamble. No closing remarks.`;
   app.get("/api/iso-communications", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
       const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
-      const comms = await storage.getIsoCommunications(userId, isoProjectId);
+      const comms = await storage.getIsoCommunications(userId, isoProjectId, isSuperadmin);
       res.json(comms);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
@@ -7188,7 +7259,8 @@ Output only the document content. No preamble. No closing remarks.`;
       const patchSchema = insertIsoCommunicationSchema.omit({ userId: true, isoProjectId: true }).partial();
       const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
-      const comm = await storage.updateIsoCommunication(parseInt(req.params.id), userId, parsed.data);
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const comm = await storage.updateIsoCommunication(parseInt(req.params.id), userId, parsed.data, isSuperadmin);
       if (!comm) return res.status(404).json({ message: "Not found" });
       res.json(comm);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
@@ -7197,8 +7269,9 @@ Output only the document content. No preamble. No closing remarks.`;
   app.delete("/api/iso-communications/:id", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
     try {
-      await storage.deleteIsoCommunication(parseInt(req.params.id), userId);
+      await storage.deleteIsoCommunication(parseInt(req.params.id), userId, isSuperadmin);
       res.json({ success: true });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });

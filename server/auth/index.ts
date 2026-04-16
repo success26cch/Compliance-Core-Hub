@@ -83,9 +83,10 @@ export function authMiddleware(): RequestHandler {
     const userId: string | undefined = req.session?.userId;
     const userEmail: string | undefined = req.session?.userEmail;
 
+    const isSuperadmin: boolean = req.session?.isSuperadmin === true;
     req.isAuthenticated = () => !!userId;
     req.user = userId
-      ? { claims: { sub: userId, email: userEmail ?? "" } }
+      ? { claims: { sub: userId, email: userEmail ?? "", isSuperadmin } }
       : undefined;
 
     next();
@@ -197,6 +198,7 @@ export function registerAuthRoutes(app: Express): void {
 
       req.session.userId = user.id;
       req.session.userEmail = user.email ?? "";
+      req.session.isSuperadmin = user.isSuperadmin === true;
       writeAuditLog(req, "login", "auth", user.id, null, 200);
       res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName });
     } catch (err: any) {
