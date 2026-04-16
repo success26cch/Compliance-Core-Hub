@@ -81,6 +81,11 @@ export default function TryCorey() {
     }
     setError("");
     setStage("chat");
+    fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), source: "ask_corey" }),
+    }).catch(() => {});
   };
 
   const handleSend = async () => {

@@ -11,6 +11,7 @@ export const leads = pgTable("leads", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull(),
+  source: text("source"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

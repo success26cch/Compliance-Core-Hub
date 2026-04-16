@@ -128,6 +128,27 @@ function CloudRain(props: React.SVGProps<SVGSVGElement>) {
 
 export default function EnvComplianceHub() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadName.trim() || !leadEmail.trim() || !leadEmail.includes("@")) return;
+    setLeadSubmitting(true);
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: leadName.trim(), email: leadEmail.trim(), source: "env_hub" }),
+      });
+      setLeadSubmitted(true);
+    } catch {
+    } finally {
+      setLeadSubmitting(false);
+    }
+  };
 
   const faqs = [
     {
@@ -325,6 +346,46 @@ export default function EnvComplianceHub() {
               </Button>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ── LEAD CAPTURE ──────────────────────────────────────────────────── */}
+      <section className="py-14 px-6 border-t border-white/10 bg-[#0f1a0e]">
+        <div className="max-w-xl mx-auto text-center space-y-5">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
+            <Leaf className="w-6 h-6 text-emerald-400" />
+          </div>
+          <h3 className="text-2xl font-black text-white">Stay ahead of EPA changes</h3>
+          <p className="text-white/50 text-sm">Get environmental compliance tips and be first to know about new modules — no spam, unsubscribe anytime.</p>
+          {leadSubmitted ? (
+            <div className="flex items-center justify-center gap-2 py-4 text-emerald-400 font-semibold">
+              <CheckCircle2 className="w-5 h-5" /> You're on the list — thanks!
+            </div>
+          ) : (
+            <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Your name"
+                value={leadName}
+                onChange={e => setLeadName(e.target.value)}
+                required
+                data-testid="input-env-lead-name"
+                className="flex-1 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              />
+              <input
+                type="email"
+                placeholder="Work email"
+                value={leadEmail}
+                onChange={e => setLeadEmail(e.target.value)}
+                required
+                data-testid="input-env-lead-email"
+                className="flex-1 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              />
+              <Button type="submit" disabled={leadSubmitting} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 shrink-0" data-testid="button-env-lead-submit">
+                {leadSubmitting ? "..." : "Subscribe"}
+              </Button>
+            </form>
+          )}
         </div>
       </section>
 

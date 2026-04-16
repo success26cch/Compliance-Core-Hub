@@ -94,7 +94,7 @@ export default function Resources() {
 
   const createLead = useMutation({
     mutationFn: async (data: LeadFormData) => {
-      return apiRequest("POST", "/api/leads", data);
+      return apiRequest("POST", "/api/leads", { ...data, source: "cheat_sheet" });
     },
     onSuccess: () => {
       if (selectedResource) {

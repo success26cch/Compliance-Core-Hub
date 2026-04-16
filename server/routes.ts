@@ -3139,11 +3139,12 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const allLeads = await storage.getLeads();
       
       // Generate CSV
-      const headers = ['ID', 'Name', 'Email', 'Created At'];
+      const headers = ['ID', 'Name', 'Email', 'Source', 'Created At'];
       const rows = allLeads.map(lead => [
         lead.id,
         `"${(lead.name || '').replace(/"/g, '""')}"`,
         `"${(lead.email || '').replace(/"/g, '""')}"`,
+        `"${(lead.source || '').replace(/"/g, '""')}"`,
         lead.createdAt ? new Date(lead.createdAt).toISOString() : ''
       ].join(','));
       

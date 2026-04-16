@@ -196,6 +196,27 @@ const FAQS = [
 
 export default function DotComplianceHub() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadName.trim() || !leadEmail.trim() || !leadEmail.includes("@")) return;
+    setLeadSubmitting(true);
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: leadName.trim(), email: leadEmail.trim(), source: "dot_hub" }),
+      });
+      setLeadSubmitted(true);
+    } catch {
+    } finally {
+      setLeadSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -471,6 +492,46 @@ export default function DotComplianceHub() {
           <p className="mt-6 text-white/40 text-xs">
             FMCSA 49 CFR Parts 40, 382, 383, 391 compliance · Setup fee covers initial data migration and training
           </p>
+        </div>
+      </section>
+
+      {/* ── LEAD CAPTURE ──────────────────────────────────────────────────── */}
+      <section className="py-14 px-6 border-t border-border/50 bg-muted/30">
+        <div className="max-w-xl mx-auto text-center space-y-5">
+          <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
+            <Truck className="w-6 h-6 text-accent" />
+          </div>
+          <h3 className="text-2xl font-black text-primary">Get fleet compliance updates</h3>
+          <p className="text-muted-foreground text-sm">Sign up to receive FMCSA/DOT compliance tips and be first to know when DOT Fleet HUB opens for your fleet size.</p>
+          {leadSubmitted ? (
+            <div className="flex items-center justify-center gap-2 py-4 text-emerald-600 font-semibold">
+              <CheckCircle2 className="w-5 h-5" /> You're on the list — we'll be in touch!
+            </div>
+          ) : (
+            <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Your name"
+                value={leadName}
+                onChange={e => setLeadName(e.target.value)}
+                required
+                data-testid="input-dot-lead-name"
+                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
+              />
+              <input
+                type="email"
+                placeholder="Work email"
+                value={leadEmail}
+                onChange={e => setLeadEmail(e.target.value)}
+                required
+                data-testid="input-dot-lead-email"
+                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
+              />
+              <Button type="submit" disabled={leadSubmitting} className="bg-accent hover:bg-accent/90 text-white font-bold px-6 shrink-0" data-testid="button-dot-lead-submit">
+                {leadSubmitting ? "..." : "Keep Me Posted"}
+              </Button>
+            </form>
+          )}
         </div>
       </section>
 

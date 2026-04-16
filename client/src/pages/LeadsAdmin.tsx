@@ -9,6 +9,21 @@ import { Users, Download, Search, Mail, Calendar, FileText } from "lucide-react"
 import { useState } from "react";
 import type { Lead } from "@shared/schema";
 
+const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
+  cheat_sheet: { label: "Cheat Sheet", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  ask_corey: { label: "Ask Corey", color: "bg-accent/10 text-accent" },
+  employer_dashboard: { label: "Employer Dashboard", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" },
+  dot_hub: { label: "DOT Fleet Hub", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" },
+  env_hub: { label: "Env Hub", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+};
+
+function SourceBadge({ source }: { source: string | null | undefined }) {
+  if (!source) return <span className="text-muted-foreground text-xs">—</span>;
+  const cfg = SOURCE_LABELS[source];
+  if (!cfg) return <Badge variant="secondary" className="text-xs font-mono">{source}</Badge>;
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span>;
+}
+
 export default function LeadsAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -16,24 +31,26 @@ export default function LeadsAdmin() {
     queryKey: ['/api/leads'],
   });
 
-  const filteredLeads = leads?.filter(lead => 
+  const filteredLeads = leads?.filter(lead =>
     lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.email.toLowerCase().includes(searchTerm.toLowerCase())
+    lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (lead.source || "").toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const handleExportCSV = () => {
     if (!leads || leads.length === 0) return;
-    
-    const headers = ['Name', 'Email', 'Captured Date'];
+
+    const headers = ['Name', 'Email', 'Source', 'Captured Date'];
     const csvRows = [
       headers.join(','),
       ...leads.map(lead => [
         `"${lead.name}"`,
         `"${lead.email}"`,
+        `"${lead.source ? (SOURCE_LABELS[lead.source]?.label ?? lead.source) : ''}"`,
         `"${lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A'}"`,
       ].join(','))
     ];
-    
+
     const csvContent = csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -54,11 +71,11 @@ export default function LeadsAdmin() {
             <Users className="w-8 h-8 text-primary" />
             <div>
               <h2 className="text-2xl font-bold font-display text-primary">Leads Management</h2>
-              <p className="text-muted-foreground">View and export captured leads from cheat sheet downloads</p>
+              <p className="text-muted-foreground">Contacts captured across all CCHUB products and landing pages</p>
             </div>
           </div>
-          <Button 
-            onClick={handleExportCSV} 
+          <Button
+            onClick={handleExportCSV}
             disabled={!leads || leads.length === 0}
             className="gap-2"
             data-testid="button-export-leads-csv"
@@ -82,7 +99,7 @@ export default function LeadsAdmin() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -103,7 +120,7 @@ export default function LeadsAdmin() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -133,7 +150,7 @@ export default function LeadsAdmin() {
               <div>
                 <CardTitle>All Leads</CardTitle>
                 <CardDescription>
-                  Contacts who downloaded compliance cheat sheets
+                  Search by name, email, or source (e.g. "Cheat Sheet", "Ask Corey", "DOT")
                 </CardDescription>
               </div>
               <div className="relative w-full md:w-64">
@@ -162,6 +179,7 @@ export default function LeadsAdmin() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Source</TableHead>
                       <TableHead>Captured</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -172,7 +190,10 @@ export default function LeadsAdmin() {
                         <TableCell className="font-medium">{lead.name}</TableCell>
                         <TableCell>{lead.email}</TableCell>
                         <TableCell>
-                          {lead.createdAt 
+                          <SourceBadge source={lead.source} />
+                        </TableCell>
+                        <TableCell>
+                          {lead.createdAt
                             ? new Date(lead.createdAt).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'short',
@@ -182,7 +203,7 @@ export default function LeadsAdmin() {
                           }
                         </TableCell>
                         <TableCell>
-                          <a 
+                          <a
                             href={`mailto:${lead.email}`}
                             className="inline-flex items-center gap-1 text-primary hover:underline"
                             data-testid={`button-email-lead-${lead.id}`}

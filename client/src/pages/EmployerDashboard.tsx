@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useState } from "react";
 import {
   Shield, Users, AlertTriangle, CheckCircle2, Clock,
   FileWarning, Stethoscope, TestTube, ClipboardList,
@@ -100,6 +101,27 @@ function DemoCircularProgress({ value, size = 100, strokeWidth = 9, label }: { v
 export default function EmployerDashboard() {
   const gradeColor = "text-accent";
   const gradeBg = "bg-accent/10 border-accent/20";
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadName.trim() || !leadEmail.trim() || !leadEmail.includes("@")) return;
+    setLeadSubmitting(true);
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: leadName.trim(), email: leadEmail.trim(), source: "employer_dashboard" }),
+      });
+      setLeadSubmitted(true);
+    } catch {
+    } finally {
+      setLeadSubmitting(false);
+    }
+  };
 
   const statusItems = [
     { label: "OSHA 300", ok: DEMO.recordables6mo === 0, icon: <ClipboardList className="w-3 h-3" /> },
@@ -904,6 +926,46 @@ export default function EmployerDashboard() {
               </CardContent>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* ── LEAD CAPTURE ──────────────────────────────────────────────────── */}
+      <section className="bg-muted/30 border-y border-border/50 py-14 px-4 md:px-6">
+        <div className="max-w-xl mx-auto text-center space-y-5">
+          <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
+            <Mail className="w-6 h-6 text-accent" />
+          </div>
+          <h3 className="text-2xl font-black text-primary">Want a personalized demo?</h3>
+          <p className="text-muted-foreground text-sm">Leave your info and a compliance specialist will reach out — no sales pressure, just a real look at what CCHUB can do for your team.</p>
+          {leadSubmitted ? (
+            <div className="flex items-center justify-center gap-2 py-4 text-emerald-600 font-semibold">
+              <CheckCircle2 className="w-5 h-5" /> Got it! We'll be in touch soon.
+            </div>
+          ) : (
+            <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Your name"
+                value={leadName}
+                onChange={e => setLeadName(e.target.value)}
+                required
+                data-testid="input-employer-lead-name"
+                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
+              />
+              <input
+                type="email"
+                placeholder="Work email"
+                value={leadEmail}
+                onChange={e => setLeadEmail(e.target.value)}
+                required
+                data-testid="input-employer-lead-email"
+                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
+              />
+              <Button type="submit" disabled={leadSubmitting} className="bg-accent hover:bg-accent/90 text-white font-bold px-6 shrink-0" data-testid="button-employer-lead-submit">
+                {leadSubmitting ? "..." : "Request Demo"}
+              </Button>
+            </form>
+          )}
         </div>
       </section>
 
