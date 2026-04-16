@@ -501,3 +501,36 @@ export function buildContactConfirmationEmail(data: {
 
   return brandedHtml("We Received Your Inquiry — Core Compliance Hub", body);
 }
+
+const SOURCE_DISPLAY: Record<string, string> = {
+  cheat_sheet: "Recordability Cheat Sheet Download",
+  ask_corey: "Ask Corey (Free Trial)",
+  employer_dashboard: "Employer Dashboard Landing Page",
+  dot_hub: "DOT Fleet Hub Landing Page",
+  env_hub: "Environmental Compliance Hub Landing Page",
+};
+
+export function buildLeadNotificationEmail(data: {
+  name: string;
+  email: string;
+  source: string | null | undefined;
+}): string {
+  const sourceLabel = data.source ? (SOURCE_DISPLAY[data.source] ?? data.source) : "Unknown";
+  const capturedAt = new Date().toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "medium", timeStyle: "short" });
+
+  const body = `
+    <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px;">New Lead Captured 🎯</h2>
+    <p style="margin:0 0 20px;color:#64748b;font-size:14px;">Someone submitted their contact info on the CCHUB website.</p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:20px;">
+      <p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Name:</strong>&nbsp; ${data.name}</p>
+      <p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Email:</strong>&nbsp; <a href="mailto:${data.email}" style="color:#ea6c19;">${data.email}</a></p>
+      <p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Source:</strong>&nbsp; <span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:13px;font-weight:700;">${sourceLabel}</span></p>
+      <p style="margin:0;font-size:14px;color:#0f172a;"><strong>Captured:</strong>&nbsp; ${capturedAt} ET</p>
+    </div>
+
+    <a href="mailto:${data.email}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px;">Reply to ${data.name} →</a>
+  `;
+
+  return brandedHtml(`New Lead: ${data.name} via ${sourceLabel}`, body);
+}

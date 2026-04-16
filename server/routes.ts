@@ -53,6 +53,7 @@ import {
   buildCapaOverdueEmail,
   buildContactInquiryAdminEmail,
   buildContactConfirmationEmail,
+  buildLeadNotificationEmail,
   brandedHtml,
 } from "./emailService";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema, insertIsoDocumentSchema } from "@shared/schema";
@@ -442,6 +443,12 @@ Rules:
       const input = api.leads.create.input.parse(req.body);
       const lead = await storage.createLead(input);
       res.status(201).json(lead);
+      // Fire-and-forget admin notification email
+      sendEmail(
+        CCHUB_ADMIN_EMAILS,
+        `New Lead: ${lead.name}`,
+        buildLeadNotificationEmail({ name: lead.name, email: lead.email, source: lead.source }),
+      ).catch(() => {});
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({
