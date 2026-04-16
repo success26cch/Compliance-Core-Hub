@@ -6809,7 +6809,26 @@ CRITICAL FORMATTING — FOLLOW EXACTLY:
 - Section headings: "1.0 PURPOSE", "2.0 SCOPE", "3.0 DEFINITIONS" (ALL-CAPS with .0)
 - Sub-sections: decimal "5.1", "5.2", "5.1.1" — plain "- " for sub-bullets
 - Tables: pipe-delimited only, no markdown separator rows
-- Output ONLY the document. No intro. No closing remarks.`;
+- Output the document first, then the mandatory coverage note (see below). No intro before the document.
+
+MANDATORY COVERAGE NOTE — output this AFTER the document content:
+Write the exact delimiter on its own line: ===COVERAGE-NOTE===
+Then write a structured coverage note (the app renders this separately, NOT inside the procedure):
+
+CLAUSE COVERAGE — ${project?.standard ?? "ISO 9001"}:2015 Clause ${isoClause ?? "[X.X]"}: [Clause Title]
+
+WHAT THIS DOCUMENT COVERS:
+- Cl. [X.X.X] — [requirement name]
+(list every sub-clause requirement this procedure addresses)
+
+ADDITIONAL PROCEDURES RECOMMENDED FOR FULL CLAUSE COMPLIANCE:
+(For each group of requirements in this clause that is NOT in this document and typically warrants its own separate procedure, write one bullet)
+- [Suggested Procedure Title] (covers Cl. [sub-clauses]) — [one sentence on what it covers]
+
+If all requirements are fully covered in this document, write:
+"This document addresses all applicable ${project?.standard ?? "ISO 9001"}:2015 Clause ${isoClause ?? "[X.X]"} requirements for ${project?.orgName ?? "this organization"}."
+
+Always end with: "Would you like me to draft any of the additional procedures listed above? I can create each one fully tailored to ${project?.orgName ?? "your organization"}."`;
 
       const userMessage = additionalContext?.trim()
         ? `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.\n\nUSER-PROVIDED CONTEXT AND REQUIREMENTS (incorporate these specifically into the document):\n${additionalContext.trim()}`
@@ -7132,7 +7151,26 @@ CRITICAL FORMATTING — FOLLOW EXACTLY:
 - Section headings: "1.0 PURPOSE", "2.0 SCOPE", "3.0 DEFINITIONS" (ALL-CAPS, numbered with .0)
 - Sub-sections: decimal "5.1", "5.2", "5.1.1" — one indent level for sub-bullets using plain "- "
 - Tables: pipe-delimited only, no markdown separator rows (no |---|---|)
-- Output ONLY the document. No preamble. No closing remarks. No "Here is your procedure" intro.`;
+- Output the document first, then the mandatory coverage note below. No preamble before the document.
+
+MANDATORY COVERAGE NOTE — output this AFTER the complete document:
+Write this exact delimiter on its own line: ===COVERAGE-NOTE===
+Then write a structured coverage note (the UI displays this separately from the procedure text):
+
+CLAUSE COVERAGE — ${project?.standard ?? "ISO 9001"}:2015 Clause ${doc.isoClause ?? "[X.X]"}: [Clause Title]
+
+WHAT THIS DOCUMENT COVERS:
+- Cl. [X.X.X] — [requirement name]
+(list every sub-clause requirement this procedure addresses — be thorough and cite actual sub-clause numbers)
+
+ADDITIONAL PROCEDURES RECOMMENDED FOR FULL CLAUSE COMPLIANCE:
+(For each set of requirements in this clause that is NOT covered by this document and that typically warrants its own separate procedure, write one bullet. This is critical — clauses like 8.3, 8.4, 8.5, 10.2 often require multiple procedures.)
+- [Suggested Procedure Title] (covers Cl. [X.X.X, X.X.X]) — [one-sentence description of what it addresses]
+
+If this single procedure fully covers all requirements for the clause, write:
+"This document addresses all applicable ${project?.standard ?? "ISO 9001"}:2015 Clause ${doc.isoClause ?? "[X.X]"} requirements for ${project?.orgName ?? "this organization"}."
+
+Always end with: "Would you like me to draft any of the additional procedures listed above? I can create each one fully tailored to ${project?.orgName ?? "your organization"}."`;
 
       const systemPrompt = isQualityManual ? qualityManualPrompt : procedurePrompt;
 

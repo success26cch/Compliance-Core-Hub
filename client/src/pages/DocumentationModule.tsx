@@ -462,6 +462,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [isaAcceptReason, setIsaAcceptReason] = useState("AI-assisted revision by Isa");
   const [isAcceptingIsaDraft, setIsAcceptingIsaDraft] = useState(false);
   const [prevShowExpanded, setPrevShowExpanded] = useState(false);
+  const [isaNote, setIsaNote] = useState("");
   const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
   const { toast } = useToast();
@@ -578,10 +579,13 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     setIsDrafting(false);
   };
 
+  const COVERAGE_DELIM = "===COVERAGE-NOTE===";
+
   const startCardGeneration = async (ctx: string) => {
     if (!draftDoc) return;
     setDraftReady(true);
     setDraftContent("");
+    setIsaNote("");
     setIsDrafting(true);
     setIsaAcceptReason(`AI-assisted revision by Isa${ctx.trim() ? ` — ${ctx.trim()}` : ""}`);
     try {
@@ -596,6 +600,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
       const decoder = new TextDecoder();
       if (!reader) throw new Error("No response stream");
       let buf = "";
+      let fullContent = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -606,7 +611,16 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              if (data.content) setDraftContent(prev => prev + data.content);
+              if (data.content) {
+                fullContent += data.content;
+                const delimIdx = fullContent.indexOf(COVERAGE_DELIM);
+                if (delimIdx !== -1) {
+                  setDraftContent(fullContent.slice(0, delimIdx).trimEnd());
+                  setIsaNote(fullContent.slice(delimIdx + COVERAGE_DELIM.length).trimStart());
+                } else {
+                  setDraftContent(fullContent);
+                }
+              }
               if (data.done) setIsDrafting(false);
             } catch {}
           }
@@ -878,7 +892,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               </Button>
             )}
             <button
-              onClick={() => { setDraftDoc(null); setDraftContent(""); }}
+              onClick={() => { setDraftDoc(null); setDraftContent(""); setIsaNote(""); }}
               className="text-violet-500 hover:text-violet-800 dark:hover:text-violet-200 transition-colors"
               data-testid="button-close-draft"
             >
@@ -1017,7 +1031,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                   {isAcceptingIsaDraft ? "Accepting…" : "Accept as Official Draft"}
                 </Button>
                 <Button
-                  onClick={() => { setDraftReady(false); setDraftContent(""); setPrevShowExpanded(false); }}
+                  onClick={() => { setDraftReady(false); setDraftContent(""); setPrevShowExpanded(false); setIsaNote(""); }}
                   variant="outline"
                   className="text-xs h-8"
                   data-testid="button-discard-isa-draft"
@@ -1034,6 +1048,17 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">
                 {draftContent}
               </pre>
+            </div>
+          )}
+
+          {/* Isa's Clause Coverage Note — appears after generation completes */}
+          {isaNote && (
+            <div className="border-t border-teal-200 dark:border-teal-800/50 bg-teal-50 dark:bg-teal-950/30 p-4 shrink-0 max-h-[36vh] overflow-y-auto" data-testid="container-isa-coverage-note">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                <p className="text-[11px] font-bold text-teal-800 dark:text-teal-200 uppercase tracking-wide">Isa's Clause Coverage Note</p>
+              </div>
+              <pre className="text-[11px] text-teal-900 dark:text-teal-100 whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-isa-coverage-note">{isaNote}</pre>
             </div>
           )}
         </div>
@@ -1810,6 +1835,7 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   const [prevDialogContent, setPrevDialogContent] = useState<string | null>(null);
   const [isaDialogAcceptReason, setIsaDialogAcceptReason] = useState("AI-assisted revision by Isa");
   const [isAcceptingIsaDraftDialog, setIsAcceptingIsaDraftDialog] = useState(false);
+  const [dialogIsaNote, setDialogIsaNote] = useState("");
   const queryClientDialog = useQueryClient();
 
   const handleDialogFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1843,6 +1869,7 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
       );
     }
     setIsDraftingDialog(true);
+    setDialogIsaNote("");
     setFormData(prev => ({ ...prev, content: "" }));
     try {
       const url = doc?.id
@@ -1862,6 +1889,8 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
       const decoder = new TextDecoder();
       if (!reader) throw new Error("No stream");
       let buf = "";
+      let fullDialogContent = "";
+      const DELIM = "===COVERAGE-NOTE===";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -1872,7 +1901,16 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              if (data.content) setFormData(prev => ({ ...prev, content: (prev.content || "") + data.content }));
+              if (data.content) {
+                fullDialogContent += data.content;
+                const delimIdx = fullDialogContent.indexOf(DELIM);
+                if (delimIdx !== -1) {
+                  setFormData(prev => ({ ...prev, content: fullDialogContent.slice(0, delimIdx).trimEnd() }));
+                  setDialogIsaNote(fullDialogContent.slice(delimIdx + DELIM.length).trimStart());
+                } else {
+                  setFormData(prev => ({ ...prev, content: fullDialogContent }));
+                }
+              }
               if (data.done) setIsDraftingDialog(false);
             } catch {}
           }
@@ -1933,10 +1971,12 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
       setAdditionalContext("");
       setContextExpanded(false);
       setPrevDialogContent(null);
+      setDialogIsaNote("");
     } else if (isOpen) {
       setAdditionalContext("");
       setContextExpanded(false);
       setPrevDialogContent(null);
+      setDialogIsaNote("");
       try {
         const saved = localStorage.getItem(DRAFT_KEY);
         if (saved) {
@@ -2253,6 +2293,16 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
             />
             {isDraftingDialog && (
               <p className="text-[10px] text-violet-600 animate-pulse font-semibold">Isa is writing your document…</p>
+            )}
+            {/* Isa's Clause Coverage Note — shown in dialog after generation */}
+            {dialogIsaNote && !isDraftingDialog && (
+              <div className="rounded-xl border border-teal-200 dark:border-teal-800/50 bg-teal-50 dark:bg-teal-950/20 p-3" data-testid="container-dialog-coverage-note">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                  <p className="text-[11px] font-bold text-teal-800 dark:text-teal-200 uppercase tracking-wide">Isa's Clause Coverage Note</p>
+                </div>
+                <pre className="text-[11px] text-teal-900 dark:text-teal-100 whitespace-pre-wrap font-sans leading-relaxed max-h-[28vh] overflow-y-auto" data-testid="text-dialog-coverage-note">{dialogIsaNote}</pre>
+              </div>
             )}
             {/* After Isa drafts on an existing doc: offer Accept as Official Draft or Restore */}
             {prevDialogContent && !isDraftingDialog && doc?.id && (
