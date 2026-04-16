@@ -35,7 +35,18 @@ export const api = {
         200: z.array(z.custom<typeof leads.$inferSelect>()),
         401: errorSchemas.unauthorized,
       },
-    }
+    },
+    delete: { // Superadmin only
+      method: 'DELETE' as const,
+      path: '/api/leads/:id',
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+        403: z.object({ message: z.string() }),
+        404: errorSchemas.notFound,
+      },
+    },
   },
   subscriptions: {
     status: {

@@ -463,8 +463,12 @@ Rules:
   });
 
   app.delete("/api/leads/:id", requireSuperadmin, async (req, res) => {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
+    const rawId = req.params.id;
+    if (!/^\d+$/.test(rawId)) {
+      return res.status(400).json({ message: "Invalid lead ID" });
+    }
+    const id = parseInt(rawId, 10);
+    if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ message: "Invalid lead ID" });
     }
     const deleted = await storage.deleteLead(id);
