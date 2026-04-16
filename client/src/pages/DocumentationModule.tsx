@@ -41,6 +41,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ClipboardCheck,
+  FileSearch,
+  BadgeCheck,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -463,6 +468,15 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [isAcceptingIsaDraft, setIsAcceptingIsaDraft] = useState(false);
   const [prevShowExpanded, setPrevShowExpanded] = useState(false);
   const [isaNote, setIsaNote] = useState("");
+  const [formReviewOpen, setFormReviewOpen] = useState(false);
+  const [formReviewText, setFormReviewText] = useState("");
+  const [formReviewClause, setFormReviewClause] = useState("");
+  const [formReviewDocType, setFormReviewDocType] = useState("procedure");
+  const [formReviewResult, setFormReviewResult] = useState("");
+  const [isReviewingForm, setIsReviewingForm] = useState(false);
+  const [formReviewFileName, setFormReviewFileName] = useState("");
+  const [isExtractingFormFile, setIsExtractingFormFile] = useState(false);
+  const formReviewFileRef = useRef<HTMLInputElement>(null);
   const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
   const { toast } = useToast();
@@ -741,6 +755,74 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     }
   };
 
+  const handleFormFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsExtractingFormFile(true);
+    setFormReviewFileName(file.name);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload-document", { method: "POST", body: fd, credentials: "include" });
+      if (!res.ok) throw new Error("Extraction failed");
+      const { text } = await res.json();
+      setFormReviewText(text);
+      toast({ title: "Form loaded", description: `${file.name} — text extracted successfully.` });
+    } catch {
+      toast({ title: "Upload failed", description: "Could not extract text from file.", variant: "destructive" });
+      setFormReviewFileName("");
+    } finally {
+      setIsExtractingFormFile(false);
+      if (formReviewFileRef.current) formReviewFileRef.current.value = "";
+    }
+  };
+
+  const runFormReview = async () => {
+    if (!formReviewText.trim()) return;
+    setFormReviewResult("");
+    setIsReviewingForm(true);
+    try {
+      const res = await fetch("/api/iso-forms/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ formContent: formReviewText, clause: formReviewClause, docType: formReviewDocType }),
+      });
+      if (!res.ok) throw new Error("Review failed");
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("No stream");
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() || "";
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) setFormReviewResult(prev => prev + data.content);
+              if (data.done) setIsReviewingForm(false);
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      toast({ title: "Review failed", description: "Could not complete form review.", variant: "destructive" });
+    } finally {
+      setIsReviewingForm(false);
+    }
+  };
+
+  const getFormVerdict = (result: string): { label: string; color: string; icon: any } | null => {
+    if (result.includes("VERDICT: USE AS-IS")) return { label: "Use As-Is ✓", color: "bg-green-100 text-green-800 border-green-200", icon: BadgeCheck };
+    if (result.includes("VERDICT: MINOR MODIFICATIONS NEEDED")) return { label: "Minor Modifications Needed", color: "bg-amber-100 text-amber-800 border-amber-200", icon: AlertTriangle };
+    if (result.includes("VERDICT: SIGNIFICANT MODIFICATIONS NEEDED")) return { label: "Significant Modifications Needed", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle };
+    return null;
+  };
+
   const handleNewDoc = (type?: string) => {
     setSelectedDoc(null);
     setIsDialogOpen(true);
@@ -755,7 +837,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   return (
     <div className="flex h-full bg-muted/30 overflow-hidden">
       {/* Main content area */}
-      <div className={`flex flex-col p-6 overflow-y-auto transition-all duration-200 ${draftDoc ? "w-[38%]" : "flex-1"}`}>
+      <div className={`flex flex-col p-6 overflow-y-auto transition-all duration-200 ${(draftDoc || formReviewOpen) ? "w-[38%]" : "flex-1"}`}>
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-2">
@@ -764,13 +846,23 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           </div>
           <p className="text-sm text-muted-foreground">Manage your ISO Quality Management System documentation</p>
         </div>
-        <Button 
-          onClick={() => handleNewDoc()}
-          className="bg-accent hover:bg-accent/90 text-white gap-2"
-          data-testid="button-new-document"
-        >
-          <Plus className="w-4 h-4" /> New Document
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => { setFormReviewOpen(true); setDraftDoc(null); setFormReviewResult(""); setFormReviewText(""); setFormReviewFileName(""); setFormReviewClause(""); }}
+            className="gap-2 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/30"
+            data-testid="button-review-form"
+          >
+            <ClipboardCheck className="w-4 h-4" /> Review My Form
+          </Button>
+          <Button 
+            onClick={() => handleNewDoc()}
+            className="bg-accent hover:bg-accent/90 text-white gap-2"
+            data-testid="button-new-document"
+          >
+            <Plus className="w-4 h-4" /> New Document
+          </Button>
+        </div>
       </div>
 
       {/* Undo banner — shown after "Save to Document" when previous content existed */}
@@ -1059,6 +1151,122 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                 <p className="text-[11px] font-bold text-teal-800 dark:text-teal-200 uppercase tracking-wide">Isa's Clause Coverage Note</p>
               </div>
               <pre className="text-[11px] text-teal-900 dark:text-teal-100 whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-isa-coverage-note">{isaNote}</pre>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Form Adequacy Review panel */}
+      {formReviewOpen && !draftDoc && (
+        <div className="w-[62%] border-l border-border/60 flex flex-col bg-white dark:bg-card overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-teal-50 dark:bg-teal-950/30 shrink-0">
+            <ClipboardCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-teal-900 dark:text-teal-200">Form Adequacy Review</p>
+              <p className="text-[10px] text-teal-700 dark:text-teal-400">Isa will assess whether your existing form meets the standard requirements</p>
+            </div>
+            <button onClick={() => { setFormReviewOpen(false); setFormReviewResult(""); setFormReviewText(""); setFormReviewFileName(""); }} className="text-muted-foreground hover:text-primary transition-colors" data-testid="button-close-form-review">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Input area */}
+          <div className="p-4 space-y-3 shrink-0 border-b border-border/40">
+            {/* File upload */}
+            <div>
+              <Label className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold mb-1.5 block">Your Existing Form</Label>
+              <input ref={formReviewFileRef} type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={handleFormFileSelect} />
+              {formReviewFileName ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800/50 text-xs text-teal-800 dark:text-teal-200">
+                  <Paperclip className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate flex-1">{formReviewFileName}</span>
+                  <button onClick={() => { setFormReviewFileName(""); setFormReviewText(""); }} className="hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => formReviewFileRef.current?.click()} disabled={isExtractingFormFile} className="w-full gap-2 text-xs h-8" data-testid="button-upload-form-file">
+                  {isExtractingFormFile ? <><Loader2 className="w-3 h-3 animate-spin" /> Extracting…</> : <><Upload className="w-3 h-3" /> Upload Form (PDF, DOCX, TXT)</>}
+                </Button>
+              )}
+              {!formReviewFileName && (
+                <Textarea
+                  placeholder="Or paste your form content / field list here..."
+                  value={formReviewText}
+                  onChange={e => setFormReviewText(e.target.value)}
+                  className="mt-2 min-h-[80px] text-xs"
+                  data-testid="textarea-form-content"
+                />
+              )}
+            </div>
+
+            {/* Clause / requirement */}
+            <div>
+              <Label className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold mb-1.5 block">Clause / Requirement (optional)</Label>
+              <Input
+                placeholder="e.g. ISO 9001 Cl. 8.4.1, IATF 16949 Cl. 8.5.2..."
+                value={formReviewClause}
+                onChange={e => setFormReviewClause(e.target.value)}
+                className="h-8 text-xs"
+                data-testid="input-form-clause"
+              />
+            </div>
+
+            {/* Form type */}
+            <div>
+              <Label className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold mb-1.5 block">Form Type</Label>
+              <Select value={formReviewDocType} onValueChange={setFormReviewDocType}>
+                <SelectTrigger className="h-8 text-xs" data-testid="select-form-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="procedure">Procedure / Work Instruction</SelectItem>
+                  <SelectItem value="record">Record / Log Form</SelectItem>
+                  <SelectItem value="checklist">Checklist / Audit Form</SelectItem>
+                  <SelectItem value="report">Report / Corrective Action Form</SelectItem>
+                  <SelectItem value="matrix">Matrix / Register</SelectItem>
+                  <SelectItem value="plan">Plan / Schedule</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={runFormReview}
+              disabled={!formReviewText.trim() || isReviewingForm}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white gap-2 h-8 text-xs"
+              data-testid="button-run-form-review"
+            >
+              {isReviewingForm ? <><Loader2 className="w-3 h-3 animate-spin" /> Isa is reviewing…</> : <><FileSearch className="w-3 h-3" /> Analyze Form</>}
+            </Button>
+          </div>
+
+          {/* Results */}
+          {(formReviewResult || isReviewingForm) && (
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Verdict badge — shown when Isa finishes */}
+              {!isReviewingForm && (() => {
+                const v = getFormVerdict(formReviewResult);
+                return v ? (
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold mb-3 ${v.color}`} data-testid="container-form-verdict">
+                    <v.icon className="w-4 h-4 shrink-0" />
+                    <span>VERDICT: {v.label}</span>
+                  </div>
+                ) : null;
+              })()}
+              <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-form-review-result">{formReviewResult}</pre>
+              {isReviewingForm && !formReviewResult && (
+                <div className="flex items-center gap-2 text-teal-600 text-xs animate-pulse">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Isa is reviewing your form…
+                </div>
+              )}
+            </div>
+          )}
+
+          {!formReviewResult && !isReviewingForm && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
+              <ClipboardCheck className="w-10 h-10 mb-3 opacity-20" />
+              <p className="text-sm font-medium">Upload or paste your form content</p>
+              <p className="text-xs mt-1 max-w-[260px]">Isa will assess whether it meets the standard requirements — and tell you exactly what to add or change.</p>
             </div>
           )}
         </div>

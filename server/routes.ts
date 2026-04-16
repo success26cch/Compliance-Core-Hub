@@ -6798,6 +6798,19 @@ TARGET: 4 to 6 pages at standard print margins. A 20-page procedure is a failure
 - 8.0 REVISION HISTORY: Rev 0, Initial Release.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INSTRUCTION 4 — EXISTING FORMS (when form content is in user context)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If the user has included an existing form, checklist, log, or record template in their context:
+- Identify the form by its EXACT name or form number as shown in the form header or title field
+- In section 7.0 RECORDS: reference this form by its exact name/number — never use "[Form Name]" placeholders
+- In the relevant procedure steps: describe precisely where and how this form is initiated, completed, and retained
+- In the COVERAGE NOTE below, add a "FORM ASSESSMENT" subsection directly after the clause coverage bullets:
+  FORM ASSESSMENT:
+  Form: [exact name/number from the uploaded form]
+  Verdict: USE AS-IS | MINOR MODIFICATIONS NEEDED | SIGNIFICANT MODIFICATIONS NEEDED
+  (If verdict is not USE AS-IS, list 2–4 specific fields to add or change as short bullets)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DOCUMENT HEADER (write at the very top):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Title: ${title}
@@ -6831,7 +6844,7 @@ If all requirements are fully covered in this document, write:
 Always end with: "Would you like me to draft any of the additional procedures listed above? I can create each one fully tailored to ${project?.orgName ?? "your organization"}."`;
 
       const userMessage = additionalContext?.trim()
-        ? `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.\n\nUSER-PROVIDED CONTEXT AND REQUIREMENTS (incorporate these specifically into the document):\n${additionalContext.trim()}`
+        ? `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.\n\nUSER-PROVIDED CONTEXT AND REQUIREMENTS (incorporate these specifically into the document — if existing forms are included, reference them by their exact name/number):\n${additionalContext.trim()}`
         : `Draft the complete ${(docType ?? "procedure").replace(/_/g, " ")} document: "${title}". Use ALL-CAPS numbered section headings (1. PURPOSE, 2. SCOPE, etc.) — absolutely no Markdown symbols.`;
 
       res.setHeader("Content-Type", "text/event-stream");
@@ -7140,6 +7153,19 @@ TARGET: 4 to 6 pages when printed at standard margins. Real-world procedures are
 - 8.0 REVISION HISTORY: One row table — Rev 0, Initial Release.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INSTRUCTION 4 — EXISTING FORMS (when form content is in user context)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If the user has included an existing form, checklist, log, or record template in their context:
+- Identify the form by its EXACT name or form number as shown in the form header or title field
+- In section 7.0 RECORDS: reference this form by its exact name/number — never use "[Form Name]" placeholders
+- In the relevant procedure steps: describe precisely where and how this form is initiated, completed, and retained
+- In the COVERAGE NOTE below, add a "FORM ASSESSMENT" subsection directly after the clause coverage bullets:
+  FORM ASSESSMENT:
+  Form: [exact name/number from the uploaded form]
+  Verdict: USE AS-IS | MINOR MODIFICATIONS NEEDED | SIGNIFICANT MODIFICATIONS NEEDED
+  (If verdict is not USE AS-IS, list 2–4 specific fields to add or change as short bullets)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DOCUMENT HEADER (write at the very top):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Title: ${doc.title}
@@ -7183,7 +7209,7 @@ Always end with: "Would you like me to draft any of the additional procedures li
         baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
       });
       const ctxSuffix = additionalContext?.trim()
-        ? `\n\nUSER-PROVIDED CONTEXT AND REQUIREMENTS (incorporate these specifically into the document — treat these as authoritative input from the organization):\n${additionalContext.trim()}`
+        ? `\n\nUSER-PROVIDED CONTEXT AND REQUIREMENTS (incorporate these specifically into the document — treat these as authoritative input from the organization; if existing forms are included, reference them by their exact name/number in section 7.0 RECORDS and in the relevant procedure steps):\n${additionalContext.trim()}`
         : "";
 
       const stream = anthropicClient.messages.stream({
@@ -7213,6 +7239,96 @@ Always end with: "Would you like me to draft any of the additional procedures li
       console.error("AI Document drafting error:", e);
       if (res.headersSent) {
         res.write(`data: ${JSON.stringify({ error: "Draft generation failed" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: e.message });
+      }
+    }
+  });
+
+  // ─── Form Adequacy Review ──────────────────────────────────────────────────────
+  app.post("/api/iso-forms/review", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { formContent, clause, docType } = req.body as { formContent?: string; clause?: string; docType?: string };
+      if (!formContent?.trim()) return res.status(400).json({ message: "formContent is required" });
+
+      // Get user's ISO project for org context
+      const projects = await storage.getIsoProjects(userId, false);
+      const project = projects?.[0];
+
+      const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. The user has uploaded an existing form they currently use in their organization. Your job is to assess whether this form meets the requirements of the specified ISO clause/standard and whether it can be used as-is or needs modification.
+
+ORGANIZATION:
+- Name: ${project?.orgName ?? "Not specified"}
+- Standard: ${project?.standard ?? "ISO 9001"}:2015
+- Industry / Products: ${project?.productsServices ?? "Not specified"}
+- Form Type Being Reviewed: ${(docType ?? "procedure").replace(/_/g, " ")}
+
+ASSESSMENT STRUCTURE — follow this exact format, no Markdown:
+
+FORM IDENTIFICATION
+Form Name/Number: [extract exact name/number from the form, or "Not labeled"]
+Stated Purpose: [one sentence on what the form appears to be for]
+Form Type: [record / checklist / report / log / matrix / plan]
+
+REQUIREMENTS COVERED
+(List each ISO clause sub-requirement this form already satisfies. Cite exact sub-clause numbers.)
+- Cl. [X.X.X] — [requirement name]: [one sentence on how the form satisfies it]
+
+GAPS IDENTIFIED
+(List each requirement that is missing or inadequate. Be specific about what field or section is absent.)
+- Cl. [X.X.X] — [requirement name]: Missing — [what specifically needs to be added]
+
+RECOMMENDED ADDITIONS
+(Specific fields or sections to add to the form — be precise)
+- Add field: "[Field Name]" — [why it is required and where it goes in the form]
+
+RECOMMENDED MODIFICATIONS
+(Existing fields that need to be changed or expanded)
+- Modify: "[Existing Field]" — [what to change and why]
+
+VERDICT: [USE AS-IS | MINOR MODIFICATIONS NEEDED | SIGNIFICANT MODIFICATIONS NEEDED]
+(Write VERDICT on its own line using exactly one of those three phrases)
+
+VERDICT RATIONALE:
+[Two to three sentences explaining the verdict. If USE AS-IS, confirm it fully satisfies all applicable requirements. If not, summarize the most critical gaps.]
+
+Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all bullets. Cite exact clause numbers throughout.`;
+
+      const userMessage = clause?.trim()
+        ? `Review this form for compliance with ${clause}:\n\n${formContent.trim()}`
+        : `Review this form for compliance with ${project?.standard ?? "ISO 9001"}:2015:\n\n${formContent.trim()}`;
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const anthropicClient = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+
+      const stream = anthropicClient.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
+      }
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (e: any) {
+      console.error("Form review error:", e);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Form review failed" })}\n\n`);
         res.end();
       } else {
         res.status(500).json({ message: e.message });
