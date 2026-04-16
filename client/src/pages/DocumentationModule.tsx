@@ -3122,7 +3122,10 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
       ? `<img src="${logoUrl}" alt="${orgName} logo" style="max-height:50px;max-width:140px;object-fit:contain;" />`
       : `<div style="font-size:15pt;font-weight:800;color:#1e3a5f;">${orgName}</div>`;
 
-    const rows = filtered.map(doc => `
+    const rows = filtered.map(doc => {
+      const verdict = complianceResults.get(doc.id)?.verdict ?? null;
+      const verdictLabel = verdict ?? "Not Checked";
+      return `
       <tr>
         <td>${doc.id}</td>
         <td>${doc.title}</td>
@@ -3133,7 +3136,9 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
         <td>${doc.approvalDate ? new Date(doc.approvalDate).toLocaleDateString("en-US") : "—"}</td>
         <td>${doc.approvedBy ?? "—"}</td>
         <td>${doc.reviewDate ? new Date(doc.reviewDate).toLocaleDateString("en-US") : "—"}</td>
-      </tr>`).join("");
+        <td>${verdictLabel}</td>
+      </tr>`;
+    }).join("");
 
     const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><title>Master Document List — ${orgName}</title>
@@ -3167,7 +3172,7 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
     <thead><tr>
       <th>Doc ID</th><th>Title</th><th>Type</th><th>ISO Clause</th>
       <th>Revision</th><th>Status</th><th>Approval Date</th>
-      <th>Approved By</th><th>Next Review</th>
+      <th>Approved By</th><th>Next Review</th><th>Compliance</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
