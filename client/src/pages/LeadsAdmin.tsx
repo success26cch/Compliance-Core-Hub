@@ -4,9 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
-import { Users, Download, Search, Mail, Calendar, FileText } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Users, Download, Search, Mail, Calendar, FileText, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Lead } from "@shared/schema";
 
 const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
@@ -26,9 +38,25 @@ function SourceBadge({ source }: { source: string | null | undefined }) {
 
 export default function LeadsAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: leads, isLoading } = useQuery<Lead[]>({
     queryKey: ['/api/leads'],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/leads/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/leads'] });
+      toast({ title: "Lead deleted", description: "The lead has been permanently removed." });
+      setDeleteTarget(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete the lead. Please try again.", variant: "destructive" });
+      setDeleteTarget(null);
+    },
   });
 
   const filteredLeads = leads?.filter(lead =>
@@ -203,14 +231,24 @@ export default function LeadsAdmin() {
                           }
                         </TableCell>
                         <TableCell>
-                          <a
-                            href={`mailto:${lead.email}`}
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                            data-testid={`button-email-lead-${lead.id}`}
-                          >
-                            <Mail className="w-4 h-4" />
-                            Email
-                          </a>
+                          <div className="flex items-center gap-3">
+                            <a
+                              href={`mailto:${lead.email}`}
+                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                              data-testid={`button-email-lead-${lead.id}`}
+                            >
+                              <Mail className="w-4 h-4" />
+                              Email
+                            </a>
+                            <button
+                              onClick={() => setDeleteTarget(lead)}
+                              className="inline-flex items-center gap-1 text-destructive hover:opacity-80 transition-opacity text-sm"
+                              data-testid={`button-delete-lead-${lead.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -221,6 +259,29 @@ export default function LeadsAdmin() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{deleteTarget?.name}</strong> ({deleteTarget?.email}) will be permanently removed.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-lead">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              data-testid="button-confirm-delete-lead"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ProtectedLayout>
   );
 }

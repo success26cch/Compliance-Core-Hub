@@ -462,6 +462,21 @@ Rules:
     res.json(leads);
   });
 
+  app.delete("/api/leads/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid lead ID" });
+    }
+    const deleted = await storage.deleteLead(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+    res.json({ success: true });
+  });
+
   // Subscriptions
   app.get(api.subscriptions.status.path, async (req, res) => {
     if (!req.isAuthenticated()) {

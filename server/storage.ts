@@ -35,6 +35,7 @@ export interface IStorage {
   // Leads
   createLead(lead: InsertLead): Promise<Lead>;
   getLeads(): Promise<Lead[]>;
+  deleteLead(id: number): Promise<boolean>;
 
   // Subscriptions
   getSubscription(userId: string): Promise<Subscription | undefined>;
@@ -352,6 +353,11 @@ export class DatabaseStorage implements IStorage {
 
   async getLeads(): Promise<Lead[]> {
     return db.select().from(leads);
+  }
+
+  async deleteLead(id: number): Promise<boolean> {
+    const result = await db.delete(leads).where(eq(leads.id, id)).returning();
+    return result.length > 0;
   }
 
   async getSubscription(userId: string): Promise<Subscription | undefined> {
