@@ -1387,12 +1387,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getIsoProject(userId: string, isSuperadmin = false, isoProjectId?: number): Promise<IsoProject | undefined> {
+    // Superadmin with a specific project ID — fetch it directly
     if (isSuperadmin && isoProjectId != null) {
       const [project] = await db.select().from(isoProjects).where(eq(isoProjects.id, isoProjectId));
       return project;
     }
-    const [project] = await db.select().from(isoProjects).where(eq(isoProjects.userId, userId));
-    return project;
+    // Try to find the user's own project first
+    const [ownProject] = await db.select().from(isoProjects).where(eq(isoProjects.userId, userId));
+    if (ownProject) return ownProject;
+    // Superadmins with no own project fall back to CCI Chemical demo company (user 54320068)
+    if (isSuperadmin) {
+      const [cciProject] = await db.select().from(isoProjects).where(eq(isoProjects.userId, "54320068"));
+      if (cciProject) return cciProject;
+      // Ultimate fallback: any project ordered by ID descending (most recent real data)
+      const [fallback] = await db.select().from(isoProjects).orderBy(desc(isoProjects.id));
+      return fallback;
+    }
+    return undefined;
   }
 
   async getIsoProjects(userId: string, isSuperadmin = false): Promise<IsoProject[]> {

@@ -5597,8 +5597,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
       const userId = (req.user as any).claims.sub;
-      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
-      const existing = await storage.getIsoProject(userId, isSuperadmin);
+      // Check only the user's OWN project (not superadmin fallback) to allow superadmins to create their own project
+      const existing = await storage.getIsoProject(userId, false);
       if (existing) return res.status(409).json({ message: "Project already exists", project: existing });
       const parsed = insertIsoProjectSchema.partial().parse({ ...req.body, userId });
       const project = await storage.createIsoProject({ userId, standard: parsed.standard || "ISO 9001" });
