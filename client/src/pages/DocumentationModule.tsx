@@ -2264,8 +2264,13 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
                   </div>
                   <button
                     type="button"
-                    onClick={() => { setPrevDialogContent(null); setIsaDialogAcceptReason("AI-assisted revision by Isa"); }}
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, content: prevDialogContent! }));
+                      setPrevDialogContent(null);
+                      setIsaDialogAcceptReason("AI-assisted revision by Isa");
+                    }}
                     className="text-violet-400 hover:text-violet-700 transition-colors shrink-0 mt-0.5"
+                    title="Discard Isa's revision and restore previous content"
                     data-testid="button-dismiss-prev-content"
                   >
                     <X className="w-3.5 h-3.5" />
