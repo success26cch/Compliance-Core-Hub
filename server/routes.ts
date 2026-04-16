@@ -5846,8 +5846,8 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         archive.push({ version: currentDoc.version ?? "1.0", content: currentDoc.content ?? "", approvedBy: currentDoc.approvedBy ?? undefined, archivedAt: new Date().toISOString(), changeReason: reason });
 
         const [major, minor] = (currentDoc.version ?? "1.0").split(".").map(Number);
-        const newMinor = (minor ?? 0) + 1;
-        const newVersion = newMinor >= 10 ? `${(major ?? 1) + 1}.0` : `${major ?? 1}.${newMinor}`;
+        // Minor-only increment for Isa revisions — major rollover is out of scope here
+        const newVersion = `${major ?? 1}.${(minor ?? 0) + 1}`;
 
         const result = await db.transaction(async (tx) => {
           await tx.execute(sql`
@@ -5868,7 +5868,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
             requestedBy: author,
             designatedReviewer: currentDoc.designatedReviewer ?? null,
             designatedReviewerEmail: currentDoc.designatedReviewerEmail ?? null,
-            changeDescription: `AI-assisted revision — ${reason}`,
+            changeDescription: `AI-assisted revision — ${reason} (Rev. ${currentDoc.version ?? "1.0"} → ${newVersion})`,
             reason,
             previousContent: currentDoc.content ?? null,
             proposedContent,
