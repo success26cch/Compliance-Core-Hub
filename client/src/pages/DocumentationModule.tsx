@@ -18,7 +18,7 @@ import {
   Clock,
   AlertCircle,
   FileMinus,
-  Map,
+  Map as MapIcon,
   X,
   Printer,
   GitMerge,
@@ -938,7 +938,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
             </TabsTrigger>
           ))}
           <TabsTrigger value="coverage_map" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-coverage-map">
-            <Map className="w-3.5 h-3.5" /> Coverage Map
+            <MapIcon className="w-3.5 h-3.5" /> Coverage Map
           </TabsTrigger>
           <TabsTrigger value="change_requests" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white gap-1.5 relative" data-testid="tab-change-requests">
             <GitMerge className="w-3.5 h-3.5" /> Change Control
