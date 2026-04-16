@@ -47,3 +47,7 @@ integrations = ["javascript_log_in_with_replit:2.0.0", "javascript_anthropic_ai_
 
 [userenv.shared]
 ADMIN_USERS = "raulv9471@gmail.com,evillarreal@acsi-quality.com"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
