@@ -7287,6 +7287,90 @@ Output only the document content. No preamble. No closing remarks.`;
 
   // ─── Document Change Control (ISO 7.5.3) ──────────────────────────────────────
 
+  // Accept an Isa AI draft → bumps version, archives old content, auto-creates a DCR
+  app.post("/api/iso-documents/:id/accept-isa-draft", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { db } = await import("./db");
+      const { isoDocuments, docChangeRequests } = await import("@shared/schema");
+      const { eq, and, sql } = await import("drizzle-orm");
+      const { randomUUID } = await import("crypto");
+
+      const docId = parseInt(req.params.id);
+      if (isNaN(docId)) return res.status(400).json({ message: "Invalid document ID" });
+
+      const { proposedContent, changeReason, requestedBy } = req.body;
+      if (!proposedContent) return res.status(400).json({ message: "proposedContent is required" });
+
+      // Fetch the current document (superadmin can touch any)
+      const whereClause = isSuperadmin
+        ? eq(isoDocuments.id, docId)
+        : and(eq(isoDocuments.id, docId), eq(isoDocuments.userId, userId));
+      const [doc] = await db.select().from(isoDocuments).where(whereClause);
+      if (!doc) return res.status(404).json({ message: "Document not found" });
+
+      const reason = (changeReason ?? "AI-assisted revision by Isa").trim() || "AI-assisted revision by Isa";
+      const author = (requestedBy ?? "Isa AI").trim() || "Isa AI";
+
+      // Archive current content into previousVersions
+      const archive: any[] = Array.isArray(doc.previousVersions) ? [...doc.previousVersions] : [];
+      archive.push({
+        version: doc.version ?? "1.0",
+        content: doc.content ?? "",
+        approvedBy: doc.approvedBy ?? undefined,
+        archivedAt: new Date().toISOString(),
+        changeReason: reason,
+      });
+
+      // Bump minor version: 1.0 → 1.1, 1.9 → 2.0
+      const [major, minor] = (doc.version ?? "1.0").split(".").map(Number);
+      const newMinor = (minor ?? 0) + 1;
+      const newVersion = newMinor >= 10 ? `${(major ?? 1) + 1}.0` : `${major ?? 1}.${newMinor}`;
+
+      // Update the document: new content, new version, status = draft
+      await db.execute(sql`
+        UPDATE iso_documents SET
+          content = ${proposedContent},
+          version = ${newVersion},
+          status = 'draft',
+          previous_versions = ${JSON.stringify(archive)}::jsonb,
+          updated_at = NOW()
+        WHERE id = ${docId}
+      `);
+
+      // Auto-create a DCR so the change enters the formal approval workflow
+      const reviewToken = randomUUID();
+      const reviewTokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const [dcr] = await db.insert(docChangeRequests).values({
+        documentId: docId,
+        isoProjectId: doc.isoProjectId ?? null,
+        userId,
+        requestedBy: author,
+        designatedReviewer: null,
+        designatedReviewerEmail: null,
+        changeDescription: `AI-assisted revision — ${reason}`,
+        reason,
+        previousContent: doc.content ?? null,
+        proposedContent,
+        reviewToken,
+        reviewTokenExpiresAt,
+        affectedDepartments: [],
+        proposedEffectiveDate: null,
+        status: "pending",
+        trainingTriggered: false,
+      }).returning();
+
+      // Re-fetch updated document to return to client
+      const [updatedDoc] = await db.select().from(isoDocuments).where(eq(isoDocuments.id, docId));
+      res.json({ document: updatedDoc, dcrId: dcr.id, newVersion });
+    } catch (e: any) {
+      console.error("accept-isa-draft error:", e);
+      res.status(500).json({ message: e.message });
+    }
+  });
+
   // List all change requests for the user's ISO project
   app.get("/api/doc-change-requests", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });

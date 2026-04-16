@@ -405,6 +405,9 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [isExtractingCard, setIsExtractingCard] = useState(false);
   const cardFileRef = useRef<HTMLInputElement>(null);
   const [undoSnapshot, setUndoSnapshot] = useState<{ docId: number; content: string; version: string } | null>(null);
+  const [isaAcceptReason, setIsaAcceptReason] = useState("AI-assisted revision by Isa");
+  const [isAcceptingIsaDraft, setIsAcceptingIsaDraft] = useState(false);
+  const [prevShowExpanded, setPrevShowExpanded] = useState(false);
   const [changeReqDoc, setChangeReqDoc] = useState<IsoDocument | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
   const { toast } = useToast();
@@ -617,6 +620,41 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     }
   };
 
+  const acceptIsaDraft = async () => {
+    if (!draftDoc || !draftContent) return;
+    setIsAcceptingIsaDraft(true);
+    const oldContent = draftDoc.content ?? "";
+    const oldVersion = draftDoc.version ?? "1.0";
+    try {
+      const res = await apiRequest("POST", `/api/iso-documents/${draftDoc.id}/accept-isa-draft`, {
+        proposedContent: draftContent,
+        changeReason: isaAcceptReason.trim() || "AI-assisted revision by Isa",
+        requestedBy: "Document Author",
+      });
+      const data = await res.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/iso-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doc-change-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/change-control-log"] });
+      if (oldContent.trim()) {
+        setUndoSnapshot({ docId: draftDoc.id, content: oldContent, version: oldVersion });
+      }
+      setDraftDoc(null);
+      setDraftContent("");
+      setDraftContext("");
+      setDraftReady(false);
+      setIsaAcceptReason("AI-assisted revision by Isa");
+      setPrevShowExpanded(false);
+      toast({
+        title: `✓ Accepted as Rev. ${data.newVersion}`,
+        description: `Change Request #${data.dcrId} created and awaiting approval.`,
+      });
+    } catch {
+      toast({ title: "Accept failed", description: "Could not save the draft.", variant: "destructive" });
+    } finally {
+      setIsAcceptingIsaDraft(false);
+    }
+  };
+
   const getDocIcon = (type: string) => {
     const docType = DOC_TYPES.find(t => t.value === type);
     const Icon = docType?.icon || FileText;
@@ -772,7 +810,8 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
             {isDrafting && (
               <span className="text-[10px] text-violet-600 dark:text-violet-400 animate-pulse font-semibold">Writing…</span>
             )}
-            {!isDrafting && draftContent && (
+            {/* "Save to Document" only for brand-new docs with no prior content */}
+            {!isDrafting && draftContent && !draftDoc.content?.trim() && (
               <Button
                 size="sm"
                 onClick={saveDraftToDocument}
@@ -843,10 +882,10 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
             </div>
           )}
 
-          {/* Generation phase */}
-          {draftReady && (
+          {/* Generation phase — streaming */}
+          {draftReady && isDrafting && (
             <div className="flex-1 overflow-y-auto p-4">
-              {!draftContent && isDrafting && (
+              {!draftContent && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
                   Isa is writing your document…
@@ -857,6 +896,86 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                   {draftContent}
                 </pre>
               )}
+            </div>
+          )}
+
+          {/* Accept phase — shown after generation finishes for existing docs that already have content */}
+          {draftReady && !isDrafting && draftContent && draftDoc.content?.trim() && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl p-3">
+                <p className="text-xs font-bold text-violet-900 dark:text-violet-200">Review Isa's Proposed Revision</p>
+                <p className="text-[11px] text-violet-700 dark:text-violet-400 mt-0.5">Accepting will bump the revision number and open a Change Request for formal approval. Discard returns you to the context step.</p>
+              </div>
+
+              {/* Proposed content */}
+              <div>
+                <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5">Isa's Proposed Content</p>
+                <div className="bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[200px] overflow-y-auto">
+                  <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">{draftContent}</pre>
+                </div>
+              </div>
+
+              {/* Previous content — collapsible */}
+              <div>
+                <button
+                  onClick={() => setPrevShowExpanded(e => !e)}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors"
+                  data-testid="button-toggle-prev-content"
+                >
+                  <ChevronRight className={`w-3.5 h-3.5 transition-transform ${prevShowExpanded ? "rotate-90" : ""}`} />
+                  Previous Content (Rev. {draftDoc.version ?? "1.0"})
+                </button>
+                {prevShowExpanded && (
+                  <div className="mt-1.5 bg-muted/40 border border-border rounded-lg p-3 max-h-[160px] overflow-y-auto">
+                    <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed">{draftDoc.content}</pre>
+                  </div>
+                )}
+              </div>
+
+              {/* Reason for change */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-foreground">Reason for Change</label>
+                <Textarea
+                  value={isaAcceptReason}
+                  onChange={e => setIsaAcceptReason(e.target.value)}
+                  className="text-xs min-h-[56px] resize-none"
+                  placeholder="Describe what changed and why…"
+                  data-testid="textarea-isa-accept-reason"
+                />
+              </div>
+
+              {/* Accept / Discard */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={acceptIsaDraft}
+                  disabled={isAcceptingIsaDraft}
+                  className="flex-1 bg-violet-600 hover:bg-violet-700 text-white text-xs h-8 gap-1.5"
+                  data-testid="button-accept-isa-draft"
+                >
+                  {isAcceptingIsaDraft
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <CheckCircle2 className="w-3.5 h-3.5" />
+                  }
+                  {isAcceptingIsaDraft ? "Accepting…" : "Accept as Official Draft"}
+                </Button>
+                <Button
+                  onClick={() => { setDraftReady(false); setDraftContent(""); setPrevShowExpanded(false); }}
+                  variant="outline"
+                  className="text-xs h-8"
+                  data-testid="button-discard-isa-draft"
+                >
+                  Discard
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* For new docs (no prior content) — show plain draft content after generation */}
+          {draftReady && !isDrafting && draftContent && !draftDoc.content?.trim() && (
+            <div className="flex-1 overflow-y-auto p-4">
+              <pre className="text-xs text-primary whitespace-pre-wrap font-sans leading-relaxed" data-testid="text-draft-content">
+                {draftContent}
+              </pre>
             </div>
           )}
         </div>
@@ -1631,6 +1750,9 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
   const [isExtractingDialogFile, setIsExtractingDialogFile] = useState(false);
   const dialogFileRef = useRef<HTMLInputElement>(null);
   const [prevDialogContent, setPrevDialogContent] = useState<string | null>(null);
+  const [isaDialogAcceptReason, setIsaDialogAcceptReason] = useState("AI-assisted revision by Isa");
+  const [isAcceptingIsaDraftDialog, setIsAcceptingIsaDraftDialog] = useState(false);
+  const queryClientDialog = useQueryClient();
 
   const handleDialogFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1699,6 +1821,33 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
       toast({ title: "Draft failed", description: "Could not generate draft.", variant: "destructive" });
     } finally {
       setIsDraftingDialog(false);
+    }
+  };
+
+  const acceptIsaDraftFromDialog = async () => {
+    if (!doc?.id || !formData.content?.trim()) return;
+    setIsAcceptingIsaDraftDialog(true);
+    try {
+      const res = await apiRequest("POST", `/api/iso-documents/${doc.id}/accept-isa-draft`, {
+        proposedContent: formData.content,
+        changeReason: isaDialogAcceptReason.trim() || "AI-assisted revision by Isa",
+        requestedBy: "Document Author",
+      });
+      const data = await res.json();
+      queryClientDialog.invalidateQueries({ queryKey: ["/api/iso-documents"] });
+      queryClientDialog.invalidateQueries({ queryKey: ["/api/doc-change-requests"] });
+      queryClientDialog.invalidateQueries({ queryKey: ["/api/change-control-log"] });
+      setPrevDialogContent(null);
+      setIsaDialogAcceptReason("AI-assisted revision by Isa");
+      onClose();
+      toast({
+        title: `✓ Accepted as Rev. ${data.newVersion}`,
+        description: `Change Request #${data.dcrId} created and awaiting approval.`,
+      });
+    } catch {
+      toast({ title: "Accept failed", description: "Could not save the draft.", variant: "destructive" });
+    } finally {
+      setIsAcceptingIsaDraftDialog(false);
     }
   };
 
@@ -2043,31 +2192,54 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
             {isDraftingDialog && (
               <p className="text-[10px] text-violet-600 animate-pulse font-semibold">Isa is writing your document…</p>
             )}
-            {/* Restore previous content — shown whenever Isa has overwritten something */}
-            {prevDialogContent && !isDraftingDialog && (
-              <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/50 rounded-lg px-3 py-2">
-                <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
-                  Previous content preserved — not happy with Isa's draft?
-                </p>
-                <div className="flex items-center gap-2 shrink-0">
+            {/* After Isa drafts on an existing doc: offer Accept as Official Draft or Restore */}
+            {prevDialogContent && !isDraftingDialog && doc?.id && (
+              <div className="rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-950/20 p-3 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] font-bold text-violet-900 dark:text-violet-200">Isa has revised this document</p>
+                    <p className="text-[10px] text-violet-700 dark:text-violet-400">Accept to bump the revision and create a formal Change Request, or restore your previous content.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setPrevDialogContent(null); setIsaDialogAcceptReason("AI-assisted revision by Isa"); }}
+                    className="text-violet-400 hover:text-violet-700 transition-colors shrink-0 mt-0.5"
+                    data-testid="button-dismiss-prev-content"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-foreground">Reason for Change</label>
+                  <Textarea
+                    value={isaDialogAcceptReason}
+                    onChange={e => setIsaDialogAcceptReason(e.target.value)}
+                    className="text-xs min-h-[48px] resize-none"
+                    placeholder="Describe what changed and why…"
+                    data-testid="textarea-dialog-accept-reason"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={acceptIsaDraftFromDialog}
+                    disabled={isAcceptingIsaDraftDialog}
+                    className="flex-1 h-7 text-xs bg-violet-600 hover:bg-violet-700 text-white gap-1"
+                    data-testid="button-accept-isa-draft-dialog"
+                  >
+                    {isAcceptingIsaDraftDialog ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                    {isAcceptingIsaDraftDialog ? "Accepting…" : "Accept as Official Draft"}
+                  </Button>
                   <button
                     type="button"
                     onClick={() => {
                       setFormData(prev => ({ ...prev, content: prevDialogContent }));
                       setPrevDialogContent(null);
                     }}
-                    className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:text-amber-900 border border-amber-300 dark:border-amber-600 rounded px-2 py-0.5 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                    className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-900 border border-amber-300 dark:border-amber-600 rounded px-2.5 py-1 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors"
                     data-testid="button-restore-prev-content"
                   >
-                    ↩ Restore
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPrevDialogContent(null)}
-                    className="text-amber-500 hover:text-amber-700 transition-colors"
-                    data-testid="button-dismiss-prev-content"
-                  >
-                    <X className="w-3.5 h-3.5" />
+                    ↩ Restore Previous
                   </button>
                 </div>
               </div>
