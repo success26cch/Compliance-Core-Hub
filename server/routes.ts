@@ -5820,8 +5820,73 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-
       const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+
+      // ── isaRevision path: version bump + DCR in a single transaction ──────────
+      if (req.body.isaRevision === true) {
+        const { proposedContent, changeReason, requestedBy } = req.body;
+        if (!proposedContent) return res.status(400).json({ message: "proposedContent is required for isaRevision" });
+
+        const { db } = await import("./db");
+        const { isoDocuments, docChangeRequests } = await import("@shared/schema");
+        const { eq, and, sql } = await import("drizzle-orm");
+        const { randomUUID } = await import("crypto");
+
+        const whereClause = isSuperadmin
+          ? eq(isoDocuments.id, id)
+          : and(eq(isoDocuments.id, id), eq(isoDocuments.userId, userId));
+        const [currentDoc] = await db.select().from(isoDocuments).where(whereClause);
+        if (!currentDoc) return res.status(404).json({ message: "Document not found" });
+
+        const reason = ((changeReason as string | undefined) ?? "AI-assisted revision by Isa").trim() || "AI-assisted revision by Isa";
+        const author = ((requestedBy as string | undefined) ?? "Isa AI").trim() || "Isa AI";
+
+        type VersionEntry = { version: string; content: string; approvedBy?: string; archivedAt: string; changeReason: string };
+        const archive: VersionEntry[] = Array.isArray(currentDoc.previousVersions) ? [...(currentDoc.previousVersions as VersionEntry[])] : [];
+        archive.push({ version: currentDoc.version ?? "1.0", content: currentDoc.content ?? "", approvedBy: currentDoc.approvedBy ?? undefined, archivedAt: new Date().toISOString(), changeReason: reason });
+
+        const [major, minor] = (currentDoc.version ?? "1.0").split(".").map(Number);
+        const newMinor = (minor ?? 0) + 1;
+        const newVersion = newMinor >= 10 ? `${(major ?? 1) + 1}.0` : `${major ?? 1}.${newMinor}`;
+
+        const result = await db.transaction(async (tx) => {
+          await tx.execute(sql`
+            UPDATE iso_documents SET
+              content = ${proposedContent},
+              version = ${newVersion},
+              status = 'draft',
+              previous_versions = ${JSON.stringify(archive)}::jsonb,
+              updated_at = NOW()
+            WHERE id = ${id}
+          `);
+          const reviewToken = randomUUID();
+          const reviewTokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          const [dcr] = await tx.insert(docChangeRequests).values({
+            documentId: id,
+            isoProjectId: currentDoc.isoProjectId ?? null,
+            userId,
+            requestedBy: author,
+            designatedReviewer: currentDoc.designatedReviewer ?? null,
+            designatedReviewerEmail: currentDoc.designatedReviewerEmail ?? null,
+            changeDescription: `AI-assisted revision — ${reason}`,
+            reason,
+            previousContent: currentDoc.content ?? null,
+            proposedContent,
+            reviewToken,
+            reviewTokenExpiresAt,
+            affectedDepartments: [],
+            proposedEffectiveDate: null,
+            status: "pending",
+            trainingTriggered: false,
+          }).returning();
+          const [updatedDoc] = await tx.select().from(isoDocuments).where(eq(isoDocuments.id, id));
+          return { document: updatedDoc, dcrId: dcr.id, newVersion };
+        });
+
+        return res.json(result);
+      }
+
+      // ── Standard update path ───────────────────────────────────────────────────
       const doc = await storage.updateIsoDocument(id, userId, req.body, isSuperadmin);
       if (!doc) return res.status(404).json({ message: "Document not found" });
       res.json(doc);
@@ -7315,7 +7380,8 @@ Output only the document content. No preamble. No closing remarks.`;
       const author = (requestedBy ?? "Isa AI").trim() || "Isa AI";
 
       // Archive current content into previousVersions
-      const archive: any[] = Array.isArray(doc.previousVersions) ? [...doc.previousVersions] : [];
+      type VersionEntry = { version: string; content: string; approvedBy?: string; archivedAt: string; changeReason: string };
+      const archive: VersionEntry[] = Array.isArray(doc.previousVersions) ? [...(doc.previousVersions as VersionEntry[])] : [];
       archive.push({
         version: doc.version ?? "1.0",
         content: doc.content ?? "",

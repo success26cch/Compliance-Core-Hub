@@ -681,7 +681,8 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     const oldContent = draftDoc.content ?? "";
     const oldVersion = draftDoc.version ?? "1.0";
     try {
-      const res = await apiRequest("POST", `/api/iso-documents/${draftDoc.id}/accept-isa-draft`, {
+      const res = await apiRequest("PATCH", `/api/iso-documents/${draftDoc.id}`, {
+        isaRevision: true,
         proposedContent: draftContent,
         changeReason: isaAcceptReason.trim() || "AI-assisted revision by Isa",
         requestedBy: "Document Author",
@@ -1888,7 +1889,8 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
     if (!doc?.id || !formData.content?.trim()) return;
     setIsAcceptingIsaDraftDialog(true);
     try {
-      const res = await apiRequest("POST", `/api/iso-documents/${doc.id}/accept-isa-draft`, {
+      const res = await apiRequest("PATCH", `/api/iso-documents/${doc.id}`, {
+        isaRevision: true,
         proposedContent: formData.content,
         changeReason: isaDialogAcceptReason.trim() || "AI-assisted revision by Isa",
         requestedBy: "Document Author",
@@ -2336,9 +2338,15 @@ function DocumentDialog({ isOpen, onClose, onSubmit, onDelete, doc, project, isP
             </Button>
           )}
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="bg-accent hover:bg-accent/90 text-white" disabled={isPending} onClick={handleSubmit}>
-            {isPending ? "Saving..." : (doc ? "Update Document" : "Create Document")}
-          </Button>
+          {prevDialogContent && doc ? (
+            <Button type="button" disabled className="bg-muted text-muted-foreground cursor-not-allowed" title="Accept or discard Isa's revision before saving">
+              Accept or Discard Isa's Revision First
+            </Button>
+          ) : (
+            <Button type="submit" className="bg-accent hover:bg-accent/90 text-white" disabled={isPending} onClick={handleSubmit}>
+              {isPending ? "Saving..." : (doc ? "Update Document" : "Create Document")}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
