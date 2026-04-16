@@ -252,7 +252,7 @@ export default function IsaApp() {
   }, [conversations]);
 
   const handleNewChat = async () => {
-    const conv = await createConversation.mutateAsync("New Conversation");
+    const conv = await createConversation.mutateAsync({ title: "New Conversation", source: "standalone" });
     setActiveConvId(conv.id);
     setSidebarOpen(false);
   };

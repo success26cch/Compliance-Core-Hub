@@ -1,11 +1,11 @@
 import { db } from "../../db";
 import { conversations, messages, pinnedGuidance } from "@shared/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, or, isNull, sql } from "drizzle-orm";
 
 export interface IChatStorage {
   getConversation(id: number, userId: string): Promise<typeof conversations.$inferSelect | undefined>;
-  getAllConversations(userId: string): Promise<(typeof conversations.$inferSelect)[]>;
-  createConversation(title: string, userId: string): Promise<typeof conversations.$inferSelect>;
+  getAllConversations(userId: string, source?: string): Promise<(typeof conversations.$inferSelect)[]>;
+  createConversation(title: string, userId: string, source?: string): Promise<typeof conversations.$inferSelect>;
   updateConversationTitle(id: number, title: string, userId: string): Promise<void>;
   updateConversationTopic(id: number, topic: string): Promise<void>;
   deleteConversation(id: number, userId: string): Promise<void>;
@@ -26,14 +26,27 @@ export const chatStorage: IChatStorage = {
     return conversation;
   },
 
-  async getAllConversations(userId: string) {
+  async getAllConversations(userId: string, source?: string) {
+    const userCondition = eq(conversations.userId, userId);
+    if (source === "module") {
+      return db.select().from(conversations)
+        .where(and(userCondition, eq(conversations.source as any, "module")))
+        .orderBy(desc(conversations.createdAt));
+    }
+    if (source === "standalone") {
+      // Include conversations tagged "standalone" AND old conversations with null source
+      return db.select().from(conversations)
+        .where(and(userCondition, or(eq(conversations.source as any, "standalone"), isNull(conversations.source as any))))
+        .orderBy(desc(conversations.createdAt));
+    }
+    // No filter — return all
     return db.select().from(conversations)
-      .where(eq(conversations.userId, userId))
+      .where(userCondition)
       .orderBy(desc(conversations.createdAt));
   },
 
-  async createConversation(title: string, userId: string) {
-    const [conversation] = await db.insert(conversations).values({ title, userId }).returning();
+  async createConversation(title: string, userId: string, source?: string) {
+    const [conversation] = await db.insert(conversations).values({ title, userId, source: source ?? "standalone" } as any).returning();
     return conversation;
   },
 

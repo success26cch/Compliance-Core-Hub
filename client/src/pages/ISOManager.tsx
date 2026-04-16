@@ -384,7 +384,7 @@ export default function ISOManager() {
 
   const handleNewChat = (initialPrompt?: string) => {
     const title = initialPrompt ? initialPrompt.slice(0, 50) + "…" : "New ISO Consultation";
-    createConversation(title, {
+    createConversation({ title, source: "module" }, {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
         setActiveSection('context_org');
@@ -401,7 +401,7 @@ export default function ISOManager() {
       setIsaDrawerOpen(true);
       return;
     }
-    createConversation("Isa: " + prompt.slice(0, 40), {
+    createConversation({ title: "Isa: " + prompt.slice(0, 40), source: "module" }, {
       onSuccess: (data: any) => {
         setActiveConversationId(data.id);
         setIsaInitialPrompt(prompt);

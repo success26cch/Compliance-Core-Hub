@@ -8,6 +8,7 @@ export const conversations = pgTable("conversations", {
   userId: text("user_id").notNull().default(""),
   title: text("title").notNull(),
   topic: text("topic"),
+  source: text("source").default("standalone"),  // "standalone" | "module"
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

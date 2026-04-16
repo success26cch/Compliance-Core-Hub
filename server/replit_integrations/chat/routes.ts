@@ -532,8 +532,11 @@ export function registerChatRoutes(app: Express): void {
         return res.status(401).json({ error: "Authentication required." });
       }
       const userId = (req.user as any).claims.sub;
-      const conversations = await chatStorage.getAllConversations(userId + ":isa");
-      res.json(conversations);
+      // source query param lets callers filter: "standalone" (default for /isa page), "module" (ISOManager)
+      // When no filter is passed from standalone Isa, show only standalone conversations
+      const source = (req.query.source as string) ?? "standalone";
+      const convs = await chatStorage.getAllConversations(userId + ":isa", source);
+      res.json(convs);
     } catch (error) {
       console.error("Error fetching Isa conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
@@ -546,8 +549,8 @@ export function registerChatRoutes(app: Express): void {
         return res.status(401).json({ error: "Authentication required." });
       }
       const userId = (req.user as any).claims.sub;
-      const { title } = req.body;
-      const conversation = await chatStorage.createConversation(title || "New ISO Chat", userId + ":isa");
+      const { title, source } = req.body;
+      const conversation = await chatStorage.createConversation(title || "New ISO Chat", userId + ":isa", source ?? "standalone");
       res.status(201).json(conversation);
     } catch (error) {
       console.error("Error creating Isa conversation:", error);

@@ -29,11 +29,11 @@ export function useIsaConversation(id: number | null) {
 export function useCreateIsaConversation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async ({ title, source }: { title: string; source?: string }) => {
       const res = await fetch('/api/isa-conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title, source: source ?? "standalone" }),
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to create conversation');
