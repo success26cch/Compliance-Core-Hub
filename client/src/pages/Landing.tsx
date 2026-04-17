@@ -400,6 +400,18 @@ export default function Landing() {
   };
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [navMenuOpen, setNavMenuOpen] = useState(false);
+  const navMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!navMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (navMenuRef.current && !navMenuRef.current.contains(e.target as Node)) {
+        setNavMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [navMenuOpen]);
   const [videoMuted, setVideoMuted] = useState(true);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
@@ -647,17 +659,74 @@ export default function Landing() {
             <Link href="/meet-isa" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
             <Link href="/meet-iso-manager" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
             <Link href="/watch-demo" className="px-3 py-2 text-sm font-bold text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0 flex items-center gap-1" data-testid="nav-watch-demo"><Play className="w-3 h-3" />Watch Demo</Link>
-            <a href="#features" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-features">Features</a>
-            <a href="#pricing" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-pricing">Pricing</a>
-            <Link href="/resources" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-resources">Free Resources</Link>
-            <a href="#courses" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-training">Training</a>
-            <Link href="/mentorship" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-mentorship">Mentorship</Link>
-            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-brandnswag">BrandNSwag</a>
             <Link href="/bma" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Bilingual Med Assist</Link>
             <a href="#faq" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
           </div>
-          
+
           <div className="flex items-center gap-2 shrink-0">
+            {/* ── More menu ── */}
+            <div className="relative" ref={navMenuRef}>
+              <button
+                onClick={() => setNavMenuOpen(v => !v)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                data-testid="button-nav-more"
+                aria-label="More navigation options"
+              >
+                <Menu className="w-4 h-4" />
+                <span className="text-xs">More</span>
+              </button>
+
+              {navMenuOpen && (
+                <div
+                  className="absolute right-0 top-full mt-1 w-52 bg-[hsl(222,47%,11%)] border border-white/10 rounded-xl shadow-2xl py-1 z-[10000]"
+                  data-testid="nav-more-dropdown"
+                >
+                  {[
+                    { href: "#features", label: "Features", internal: false },
+                    { href: "#pricing", label: "Pricing", internal: false },
+                    { href: "/resources", label: "Free Resources", internal: true },
+                    { href: "#courses", label: "Training", internal: false },
+                    { href: "/mentorship", label: "Mentorship", internal: true },
+                    { href: "https://www.brandnswag.com/", label: "BrandNSwag", external: true },
+                  ].map(item => (
+                    item.external ? (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setNavMenuOpen(false)}
+                        className="flex items-center px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                        data-testid={`nav-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {item.label}
+                      </a>
+                    ) : item.internal ? (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setNavMenuOpen(false)}
+                        className="flex items-center px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                        data-testid={`nav-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setNavMenuOpen(false)}
+                        className="flex items-center px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                        data-testid={`nav-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {item.label}
+                      </a>
+                    )
+                  ))}
+                </div>
+              )}
+            </div>
+
             <CartTrigger />
             {isAuthenticated ? (
               <Link href="/dashboard">
