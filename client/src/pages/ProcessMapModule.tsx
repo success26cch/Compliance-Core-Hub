@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import precisionPartsLogoUrl from "@assets/precision-parts-logo.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Edit2, Save, X,
+  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronDown, ChevronUp, Edit2, Save, X,
   Plus, Trash2, Target, AlertTriangle, FileText, Users, Zap,
   BookOpen, Activity, MapPin, CheckCircle2, ExternalLink, Printer, Palette
 } from "lucide-react";
@@ -779,71 +779,113 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
         </div>
 
         <div className="flex-1 p-4 space-y-3">
-      {/* ── Unified 3-band layout for ALL standards (IATF: MOP→COP→SOP, ISO: management→core→support) */}
-      <div className="space-y-3">
-        {rows.map(row => {
+      {/* ── Unified 3-band layout — ISO 4.4 compliant: sequence + interaction ── */}
+      {/* Rows order: [0] Management/MOP → [1] Core/COP → [2] Support/SOP        */}
+      {/* Inter-band arrows show BOTH directions of interaction per cl. 4.4.1(b)  */}
+      <div className="space-y-0">
+        {rows.map((row, rowIdx) => {
           const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard!) === row.key);
           const isValueChain = row.key === "core" || row.key === "COP";
+          const isMgt = row.key === "management" || row.key === "MOP";
           const sorted = isValueChain
             ? [...rowProcs].sort((a, b) => (a.sequence ?? 99) - (b.sequence ?? 99))
             : rowProcs;
+
+          // Labels for inter-band interaction rows (shown AFTER this band, before next)
+          const interactionAfter: { down: string; up: string } | null =
+            isMgt ? {
+              down: isIATF
+                ? "▼  Strategic direction · APQP authorization · Quality objectives · Approved resources · Audit directives"
+                : "▼  Strategic direction · Quality objectives · Resources · Audit results · Corrective actions",
+              up: isIATF
+                ? "▲  Process KPIs · Customer satisfaction data · Internal audit results · CAPA status · Risk register updates"
+                : "▲  Performance data · KPIs · NC trends · Improvement opportunities · Management review inputs",
+            }
+            : isValueChain ? {
+              down: isIATF
+                ? "▼  Production schedule · Calibration requirements · Inspection specs · Training needs · Work order releases"
+                : "▼  Production requirements · Inspection needs · Training requests · Maintenance schedule",
+              up: isIATF
+                ? "▲  Competent personnel · Calibrated gauges · Maintained equipment · Approved suppliers · Controlled work instructions"
+                : "▲  Competent people · Maintained equipment · Calibrated instruments · Controlled documents · Purchased materials",
+            }
+            : null; // No row after SOP/support
+
           return (
-            <div key={row.key} className="border-2 rounded-xl overflow-hidden" style={bandStyle(row.key)}>
-              <div className="px-4 py-2.5 flex items-center gap-2">
-                <span
-                  className="text-xs font-bold px-2.5 py-0.5 rounded-md"
-                  style={badgeStyle(row.key)}
-                >{row.key}</span>
-                <span className="text-base font-bold text-primary">{row.label}</span>
-                {isValueChain && (
-                  <span className="text-xs text-muted-foreground font-medium">— sequence &amp; interaction flow (ISO 4.4)</span>
-                )}
-                <span className="text-sm text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
-              </div>
-              <div className="p-3 pt-0">
-                {rowProcs.length === 0 ? (
-                  <div className="border-2 border-dashed border-border/30 rounded-lg p-4 text-center">
-                    <p className="text-xs text-muted-foreground/50">No processes assigned to this row</p>
-                  </div>
-                ) : isValueChain ? (
-                  /* ── Value chain (Core / COP): horizontal flow with numbered arrows ── */
-                  <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
-                    {sorted.map((p, i) => (
-                      <div key={p.name} className="flex items-center gap-0 flex-shrink-0">
-                        <div className="relative flex flex-col items-center" style={{ minWidth: 150 }}>
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <span
-                              className="w-6 h-6 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
-                              style={{ backgroundColor: sch.core.seqBg }}
-                            >
-                              {p.sequence ?? i + 1}
-                            </span>
-                            {p.conditionalLabel && (
-                              <span className="text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded px-1.5 py-0.5 leading-none">
-                                {p.conditionalLabel}
+            <React.Fragment key={row.key}>
+              {/* ── Band ── */}
+              <div className="border-2 rounded-xl overflow-hidden" style={bandStyle(row.key)}>
+                <div className="px-4 py-2.5 flex items-center gap-2">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-md" style={badgeStyle(row.key)}>
+                    {row.key}
+                  </span>
+                  <span className="text-base font-bold text-primary">{row.label}</span>
+                  {isValueChain && (
+                    <span className="text-xs text-muted-foreground font-medium">— sequence &amp; interaction flow · ISO 4.4</span>
+                  )}
+                  <span className="text-sm text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
+                </div>
+                <div className="p-3 pt-0">
+                  {rowProcs.length === 0 ? (
+                    <div className="border-2 border-dashed border-border/30 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground/50">No processes assigned to this row</p>
+                    </div>
+                  ) : isValueChain ? (
+                    /* ── Core / COP: horizontal numbered flow with arrows ── */
+                    <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
+                      {sorted.map((p, i) => (
+                        <div key={p.name} className="flex items-center gap-0 flex-shrink-0">
+                          <div className="relative flex flex-col items-center" style={{ minWidth: 150 }}>
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <span
+                                className="w-6 h-6 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: sch.core.seqBg }}
+                              >
+                                {p.sequence ?? i + 1}
                               </span>
-                            )}
+                              {p.conditionalLabel && (
+                                <span className="text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded px-1.5 py-0.5 leading-none">
+                                  {p.conditionalLabel}
+                                </span>
+                              )}
+                            </div>
+                            <ProcessBox process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
                           </div>
-                          <ProcessBox process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                          {i < sorted.length - 1 && (
+                            <div className="flex flex-col items-center px-2 flex-shrink-0 self-center mt-7">
+                              <ArrowRight className="w-6 h-6" style={{ color: sch.core.arrowHex }} />
+                            </div>
+                          )}
                         </div>
-                        {i < sorted.length - 1 && (
-                          <div className="flex flex-col items-center px-2 flex-shrink-0 self-center mt-7">
-                            <ArrowRight className="w-6 h-6" style={{ color: sch.core.arrowHex }} />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* ── Management / Support: responsive grid ─────────── */
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                    {sorted.map(p => (
-                      <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    /* ── Management / Support: responsive grid ── */
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                      {sorted.map(p => (
+                        <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+
+              {/* ── Inter-band interaction row (ISO 4.4.1b — sequence & interaction) ── */}
+              {interactionAfter && rowIdx < rows.length - 1 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-900/40 border-x-2 border-slate-200/60 dark:border-slate-700/40">
+                  <div className="flex-1 text-[10px] font-semibold text-blue-700 dark:text-blue-300 leading-tight">
+                    {interactionAfter.down}
+                  </div>
+                  <div className="flex flex-col items-center gap-0.5 shrink-0 px-2">
+                    <ArrowDown className="w-3.5 h-3.5 text-blue-500" />
+                    <ArrowUp className="w-3.5 h-3.5 text-emerald-500" />
+                  </div>
+                  <div className="flex-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 leading-tight text-right">
+                    {interactionAfter.up}
+                  </div>
+                </div>
+              )}
+            </React.Fragment>
           );
         })}
       </div>
