@@ -652,7 +652,7 @@ export default function Landing() {
         <div className="flex items-center justify-between h-12 px-4 gap-2">
           <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide flex-1">
             {/* ── Tier 1: two primary CTA pills ── */}
-            <Link href="/about" className="px-3 py-1.5 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0" data-testid="nav-about">About</Link>
+            <Link href="/about" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-about">About</Link>
             <Link href="/meet-corey" className="px-3 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-md hover:bg-blue-400 transition-colors shrink-0 shadow-md shadow-blue-500/40" data-testid="nav-meet-corey">Meet Corey</Link>
             {/* ── Tier 2: accent-text highlight for Isa ── */}
             <Link href="/meet-isa" className="px-3 py-1.5 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
