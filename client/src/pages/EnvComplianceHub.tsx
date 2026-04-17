@@ -318,7 +318,7 @@ export default function EnvComplianceHub() {
               RCRA hazardous waste, SPCC spill plans, SWPPP stormwater, Universal Waste, CAA air permits — 3 free questions, no credit card required.
             </p>
           </div>
-          <TryCoreyChatWidget compact />
+          <TryCoreyChatWidget compact buttonClassName="bg-emerald-600 hover:bg-emerald-500" />
         </div>
       </section>
 

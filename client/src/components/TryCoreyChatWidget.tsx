@@ -25,9 +25,10 @@ function stripMarkdown(text: string): string {
 
 interface TryCoreyChatWidgetProps {
   compact?: boolean;
+  buttonClassName?: string;
 }
 
-export default function TryCoreyChatWidget({ compact = false }: TryCoreyChatWidgetProps) {
+export default function TryCoreyChatWidget({ compact = false, buttonClassName = "bg-accent hover:bg-accent/90" }: TryCoreyChatWidgetProps) {
   const [stage, setStage] = useState<"intro" | "chat" | "limit">("intro");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -242,7 +243,7 @@ export default function TryCoreyChatWidget({ compact = false }: TryCoreyChatWidg
                     />
                   </div>
                   {error && <p className="text-red-400 text-sm" data-testid="text-trial-error">{error}</p>}
-                  <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-5 text-base" data-testid="button-start-trial">
+                  <Button type="submit" className={`w-full ${buttonClassName} text-white font-bold py-5 text-base`} data-testid="button-start-trial">
                     Start Asking Corey
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
