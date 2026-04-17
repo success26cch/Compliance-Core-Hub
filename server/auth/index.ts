@@ -4,8 +4,8 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { db } from "../db";
-import { users, auditLogs, passwordResetTokens } from "@shared/schema";
-import { eq, and, gt } from "drizzle-orm";
+import { users, auditLogs, passwordResetTokens, subscriptions } from "@shared/schema";
+import { eq, and, gt, or } from "drizzle-orm";
 import { sendEmail, brandedHtml } from "../emailService";
 
 async function writeAuditLog(
@@ -111,7 +111,8 @@ export async function setupAuth(app: Express) {
 }
 
 export function registerAuthRoutes(app: Express): void {
-  // Register
+  // Register — LOCKED: only allowed if caller is a superadmin OR the email
+  // already has an active paid subscription (Paddle post-payment flow).
   app.post("/api/auth/register", async (req: any, res) => {
     try {
       const { email, password, firstName, lastName } = req.body;
@@ -124,11 +125,36 @@ export function registerAuthRoutes(app: Express): void {
       }
 
       const normalizedEmail = email.trim().toLowerCase();
+
+      // ── Access gate: superadmin session OR active paid subscription ─────────
+      const callerIsSuperadmin = req.session?.isSuperadmin === true;
+      if (!callerIsSuperadmin) {
+        // Check whether this email already has an active subscription (post-payment flow)
+        const [activeSub] = await db
+          .select()
+          .from(subscriptions)
+          .where(
+            and(
+              or(
+                eq(subscriptions.customerEmail, normalizedEmail),
+              ),
+              eq(subscriptions.status, "active")
+            )
+          );
+        if (!activeSub) {
+          writeAuditLog(req, "register_blocked_no_subscription", "auth", null, `email:${normalizedEmail}`, 403);
+          return res.status(403).json({
+            message: "Account creation requires an active subscription. Please purchase a plan at corecompliancehub.com/get-started",
+          });
+        }
+      }
+      // ── End access gate ────────────────────────────────────────────────────
+
       const [existing] = await db.select().from(users).where(eq(users.email, normalizedEmail));
 
       if (existing) {
         if (!existing.passwordHash) {
-          // Pre-existing account from Replit Auth — allow setting a password for the first time
+          // Pre-existing account — allow setting a password for the first time
           const passwordHash = await hashPassword(password);
           const [updated] = await db
             .update(users)
@@ -142,8 +168,9 @@ export function registerAuthRoutes(app: Express): void {
             .returning();
           req.session.userId = updated.id;
           req.session.userEmail = updated.email ?? "";
+          req.session.isSuperadmin = updated.isSuperadmin === true;
           writeAuditLog(req, "register_password_set", "auth", updated.id, null, 200);
-          return res.json({ id: updated.id, email: updated.email, firstName: updated.firstName, lastName: updated.lastName });
+          return res.json({ id: updated.id, email: updated.email, firstName: updated.firstName, lastName: updated.lastName, isSuperadmin: updated.isSuperadmin });
         }
         writeAuditLog(req, "register_duplicate", "auth", null, `email:${normalizedEmail}`, 409);
         return res.status(409).json({ message: "An account with this email already exists. Please sign in instead." });
@@ -162,8 +189,9 @@ export function registerAuthRoutes(app: Express): void {
 
       req.session.userId = user.id;
       req.session.userEmail = user.email ?? "";
+      req.session.isSuperadmin = user.isSuperadmin === true;
       writeAuditLog(req, "register", "auth", user.id, null, 200);
-      res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName });
+      res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, isSuperadmin: user.isSuperadmin });
     } catch (err: any) {
       console.error("[Auth] Register error:", err);
       res.status(500).json({ message: "Registration failed" });
