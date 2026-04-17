@@ -3067,6 +3067,7 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
   const [filterCompliance, setFilterCompliance] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [viewDoc, setViewDoc] = useState<IsoDocument | null>(null);
 
   const allClauses = Array.from(new Set(documents.map(d => d.isoClause).filter(Boolean))).sort() as string[];
 
@@ -3315,12 +3316,15 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
               </thead>
               <tbody className="divide-y">
                 {filtered.map(doc => (
-                  <tr key={doc.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-master-${doc.id}`}>
+                  <tr key={doc.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setViewDoc(doc)} data-testid={`row-master-${doc.id}`}>
                     <td className="px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">
                       {doc.id}
                     </td>
                     <td className="px-3 py-2.5">
-                      <div className="font-semibold text-xs text-primary leading-tight">{doc.title}</div>
+                      <div className="font-semibold text-xs text-primary leading-tight flex items-center gap-1.5">
+                        {doc.title}
+                        <Eye className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                      </div>
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                       {DOC_TYPE_LABELS[doc.docType] ?? doc.docType}
@@ -3365,6 +3369,70 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
             <p className="text-[11px] text-muted-foreground">ISO 7.5 Master Document List</p>
           </div>
         </div>
+      )}
+
+      {/* ── Document Viewer Modal ─────────────────────────────────────────── */}
+      {viewDoc && (
+        <Dialog open onOpenChange={() => setViewDoc(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b bg-muted/30">
+              <div className="flex-1 min-w-0 pr-4">
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <FileText className="w-4 h-4 text-accent shrink-0" />
+                  <h2 className="text-base font-black text-primary leading-tight">{viewDoc.title}</h2>
+                </div>
+                <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                  <span className="font-mono bg-primary/5 text-primary px-1.5 py-0.5 rounded">Doc #{viewDoc.id}</span>
+                  <span>{DOC_TYPE_LABELS[viewDoc.docType] ?? viewDoc.docType}</span>
+                  {viewDoc.isoClause && <span className="font-mono bg-primary/5 text-primary px-1.5 py-0.5 rounded">Clause {viewDoc.isoClause}</span>}
+                  <span className="font-mono">Rev. {viewDoc.version}</span>
+                  {viewDoc.status === "approved" && <Badge className="bg-green-100 text-green-800 border border-green-200 text-[10px] h-4">Approved</Badge>}
+                  {viewDoc.status === "draft" && <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] h-4">Draft</Badge>}
+                  {viewDoc.status === "in_review" && <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-200 text-[10px] h-4">In Review</Badge>}
+                  {viewDoc.status === "obsolete" && <Badge variant="secondary" className="text-[10px] h-4">Obsolete</Badge>}
+                </div>
+                {(viewDoc.approvedBy || viewDoc.approvalDate || viewDoc.reviewDate) && (
+                  <div className="flex flex-wrap gap-3 mt-2 text-[11px] text-muted-foreground">
+                    {viewDoc.approvedBy && <span>Approved by: <strong className="text-foreground">{viewDoc.approvedBy}</strong></span>}
+                    {viewDoc.approvalDate && <span>Approval date: <strong className="text-foreground">{format(new Date(viewDoc.approvalDate), "MMM d, yyyy")}</strong></span>}
+                    {viewDoc.reviewDate && <span>Next review: <strong className="text-foreground">{format(new Date(viewDoc.reviewDate), "MMM d, yyyy")}</strong></span>}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs h-8"
+                  data-testid="button-print-doc-viewer"
+                  onClick={() => printIsoDocument(viewDoc, project)}
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print
+                </Button>
+                <button
+                  onClick={() => setViewDoc(null)}
+                  className="text-muted-foreground hover:text-primary transition-colors p-1"
+                  data-testid="button-close-doc-viewer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            {/* Content */}
+            <ScrollArea className="flex-1 px-6 py-5">
+              {viewDoc.content?.trim() ? (
+                <pre className="text-xs leading-relaxed whitespace-pre-wrap font-sans text-foreground">{viewDoc.content}</pre>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <FileText className="w-10 h-10 mb-3 opacity-20" />
+                  <p className="text-sm font-medium">No content yet</p>
+                  <p className="text-xs mt-1">Use the Documents tab to draft content with Isa's help.</p>
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
