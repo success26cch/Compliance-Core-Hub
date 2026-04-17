@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { CartTrigger } from "@/components/CartDrawer";
+import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 import logoUrl from "@assets/7_1772719327857.png";
 import dotVideoSrc from "@assets/DOT_regualtions_can_be_confusing_1775780745689.mp4";
 
@@ -391,6 +392,37 @@ export default function DotComplianceHub() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Ask DOT Corey */}
+      <section className="py-20 bg-[hsl(222,47%,9%)]" data-testid="section-dot-ask-corey">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={fadeUp}
+            className="text-center mb-10"
+          >
+            <span className="inline-block bg-green-500/10 text-green-400 text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-widest">
+              Live Demo
+            </span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3">
+              Corey Knows DOT — <span className="text-green-400">Ask Him Anything</span>
+            </h2>
+            <p className="text-white/50 max-w-xl mx-auto">
+              49 CFR Part 40, Clearinghouse queries, HOS rules, driver qualification files, pre-employment screening — 3 free questions, no credit card required.
+            </p>
+          </motion.div>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            variants={fadeUp}
+          >
+            <TryCoreyChatWidget compact />
+          </motion.div>
         </div>
       </section>
 
