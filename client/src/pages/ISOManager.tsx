@@ -502,6 +502,60 @@ export default function ISOManager() {
     );
   }
 
+  // ── BETA GATE ─────────────────────────────────────────────────────────────
+  // ISO Manager is in private beta. Only superadmins can access the full
+  // module while it is being built. All other subscribers (Isa, ISO Manager
+  // plans, etc.) see the waitlist page.
+  // TO LAUNCH: delete this entire block (from "// ── BETA GATE" to "// ── END BETA GATE").
+  if (!isSuperadmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-blue-950 flex items-center justify-center p-6">
+        <div className="max-w-lg w-full text-center space-y-6">
+          <div className="w-20 h-20 bg-accent/10 border-2 border-accent/20 rounded-2xl flex items-center justify-center mx-auto">
+            <svg className="w-10 h-10 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+          </div>
+          <div>
+            <div className="inline-block bg-accent text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest mb-3">
+              Private Beta
+            </div>
+            <h1 className="text-2xl font-black text-primary mb-2">ISO Manager is Coming Soon</h1>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              We're putting the finishing touches on the most comprehensive ISO QMS platform built for manufacturers. 
+              Your subscription is confirmed — we'll notify you the moment access opens.
+            </p>
+          </div>
+          <div className="bg-white dark:bg-card border border-border/60 rounded-2xl p-5 text-left space-y-3">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">What's included when you get access</p>
+            {[
+              "Process Interaction Map (ISO 4.4 compliant)",
+              "NC & CAPA with AI-suggested root causes",
+              "Documentation library with version control",
+              "Clause Coverage Map & Gap Analysis",
+              "Risk Register, Internal Audit & Management Review",
+              "Isa — your AI Lead ISO Auditor, always available",
+            ].map(item => (
+              <div key={item} className="flex items-start gap-2">
+                <div className="w-4 h-4 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                </div>
+                <span className="text-sm text-primary">{item}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Questions? Contact us at{" "}
+            <a href="mailto:team@corecompliancehub.com" className="text-accent font-semibold hover:underline">
+              team@corecompliancehub.com
+            </a>
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // ── END BETA GATE ──────────────────────────────────────────────────────────
+
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
 
