@@ -655,7 +655,7 @@ export default function Landing() {
             <Link href="/about" className="px-3 py-1.5 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0" data-testid="nav-about">About</Link>
             <Link href="/meet-corey" className="px-3 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-md hover:bg-blue-400 transition-colors shrink-0 shadow-md shadow-blue-500/40" data-testid="nav-meet-corey">Meet Corey</Link>
             {/* ── Tier 2: accent-text highlight for Isa ── */}
-            <Link href="/meet-isa" className="px-3 py-1.5 text-sm font-semibold text-accent border border-accent/40 rounded-md hover:bg-accent/10 transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
+            <Link href="/meet-isa" className="px-3 py-1.5 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
             {/* ── Tier 3: quiet secondary links ── */}
             <Link href="/employer-dashboard" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-employer-dashboard">Employer Dashboard</Link>
             <Link href="/dot-compliance-hub" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-dot-hub-featured">DOT Fleet Hub</Link>
