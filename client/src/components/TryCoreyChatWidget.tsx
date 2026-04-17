@@ -23,9 +23,43 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
+interface ThemeClasses {
+  text: string;
+  textMuted: string;
+  bg: string;
+  bgHover: string;
+  bgLight: string;
+  border: string;
+  borderSolid: string;
+  ring: string;
+}
+
+const THEMES: Record<string, ThemeClasses> = {
+  default: {
+    text: "text-accent",
+    textMuted: "text-accent/30",
+    bg: "bg-accent",
+    bgHover: "hover:bg-accent/90",
+    bgLight: "bg-accent/10",
+    border: "border-accent/20",
+    borderSolid: "border-accent",
+    ring: "ring-accent/20",
+  },
+  emerald: {
+    text: "text-emerald-400",
+    textMuted: "text-emerald-400/30",
+    bg: "bg-emerald-600",
+    bgHover: "hover:bg-emerald-500",
+    bgLight: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    borderSolid: "border-emerald-500",
+    ring: "ring-emerald-500/20",
+  },
+};
+
 interface TryCoreyChatWidgetProps {
   compact?: boolean;
-  buttonClassName?: string;
+  theme?: "default" | "emerald";
   agentName?: string;
   agentSubtitle?: string;
   agentImage?: string;
@@ -38,7 +72,7 @@ interface TryCoreyChatWidgetProps {
 
 export default function TryCoreyChatWidget({
   compact = false,
-  buttonClassName = "bg-accent hover:bg-accent/90",
+  theme = "default",
   agentName = "Corey",
   agentSubtitle = "AI Compliance Expert · OSHA 29 CFR · DOT 49 CFR · EPA 40 CFR",
   agentImage = coreyImg,
@@ -48,6 +82,7 @@ export default function TryCoreyChatWidget({
   upgradeLink = "/get-started",
   upgradeDetails = "Unlimited questions · Audit prep · Checklists · DOT guidance · Custom reports",
 }: TryCoreyChatWidgetProps) {
+  const t = THEMES[theme];
   const [stage, setStage] = useState<"intro" | "chat" | "limit">("intro");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -209,7 +244,7 @@ export default function TryCoreyChatWidget({
         {speakingMsgIdx !== null && (
           <button
             onClick={() => { window.speechSynthesis.cancel(); setSpeakingMsgIdx(null); speechSynthRef.current = null; }}
-            className="ml-auto flex items-center gap-1 text-xs text-accent animate-pulse"
+            className={`ml-auto flex items-center gap-1 text-xs ${t.text} animate-pulse`}
             data-testid="button-stop-all-speaking"
           >
             <VolumeX className="w-3 h-3" /> Stop audio
@@ -260,7 +295,7 @@ export default function TryCoreyChatWidget({
                     />
                   </div>
                   {error && <p className="text-red-400 text-sm" data-testid="text-trial-error">{error}</p>}
-                  <Button type="submit" className={`w-full ${buttonClassName} text-white font-bold py-5 text-base`} data-testid="button-start-trial">
+                  <Button type="submit" className={`w-full ${t.bg} ${t.bgHover} text-white font-bold py-5 text-base`} data-testid="button-start-trial">
                     Start Asking {agentName}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -283,15 +318,15 @@ export default function TryCoreyChatWidget({
                 className="flex-1 overflow-y-auto p-4 space-y-4"
                 data-testid="section-trial-chat"
               >
-                <div className="bg-accent/10 border border-accent/20 rounded-lg p-2.5 text-center">
-                  <p className="text-accent text-sm font-medium">
+                <div className={`${t.bgLight} border ${t.border} rounded-lg p-2.5 text-center`}>
+                  <p className={`${t.text} text-sm font-medium`}>
                     {remaining} free {remaining === 1 ? "question" : "questions"} remaining
                   </p>
                 </div>
 
                 {messages.length === 0 && (
                   <div className="text-center py-6">
-                    <Bot className="w-10 h-10 text-accent/30 mx-auto mb-2" />
+                    <Bot className={`w-10 h-10 ${t.textMuted} mx-auto mb-2`} />
                     <p className="text-white/40 text-sm">{chatPlaceholder}</p>
                     {speechSupported && <p className="text-white/30 text-xs mt-1">Tap the mic to ask by voice.</p>}
                   </div>
@@ -303,7 +338,7 @@ export default function TryCoreyChatWidget({
                       <div
                         className={`rounded-lg p-3 ${
                           msg.role === "user"
-                            ? "bg-accent text-white"
+                            ? `${t.bg} text-white`
                             : "bg-white/5 text-white/90 border border-white/10"
                         }`}
                         data-testid={`message-${msg.role}-${i}`}
@@ -314,7 +349,7 @@ export default function TryCoreyChatWidget({
                         <div className="mt-1 ml-1">
                           <button
                             onClick={() => handleSpeak(msg.content, i)}
-                            className={`flex items-center gap-1 text-xs ${speakingMsgIdx === i ? 'text-accent' : 'text-white/40 hover:text-white'}`}
+                            className={`flex items-center gap-1 text-xs ${speakingMsgIdx === i ? t.text : 'text-white/40 hover:text-white'}`}
                             data-testid={`button-speak-msg-${i}`}
                           >
                             {speakingMsgIdx === i
@@ -338,7 +373,7 @@ export default function TryCoreyChatWidget({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
                       }}
-                      className={`pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 resize-none max-h-[100px] overflow-y-auto ${isListening ? "border-accent ring-2 ring-accent/20" : ""}`}
+                      className={`pr-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 resize-none max-h-[100px] overflow-y-auto ${isListening ? `${t.borderSolid} ring-2 ${t.ring}` : ""}`}
                       rows={2}
                       disabled={isStreaming}
                       data-testid="input-trial-message"
@@ -350,7 +385,7 @@ export default function TryCoreyChatWidget({
                         variant="ghost"
                         onClick={toggleListening}
                         disabled={isStreaming}
-                        className={`absolute right-1 bottom-2 ${isListening ? "text-accent" : "text-white/40 hover:text-white/70"}`}
+                        className={`absolute right-1 bottom-2 ${isListening ? t.text : "text-white/40 hover:text-white/70"}`}
                         data-testid="button-trial-voice"
                       >
                         {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -360,14 +395,14 @@ export default function TryCoreyChatWidget({
                   <Button
                     onClick={handleSend}
                     disabled={isStreaming || !message.trim()}
-                    className="bg-accent hover:bg-accent/90 text-white mb-0.5"
+                    className={`${t.bg} ${t.bgHover} text-white mb-0.5`}
                     data-testid="button-trial-send"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
                 {isListening && (
-                  <p className="text-xs text-accent text-center mt-1 animate-pulse">
+                  <p className={`text-xs ${t.text} text-center mt-1 animate-pulse`}>
                     Listening... click the mic to stop.
                   </p>
                 )}
@@ -384,8 +419,8 @@ export default function TryCoreyChatWidget({
               className="flex-1 flex items-center justify-center p-6 overflow-y-auto"
             >
               <div className="text-center max-w-sm" data-testid="section-trial-limit">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Lock className="w-8 h-8 text-accent" />
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${t.bgLight} flex items-center justify-center`}>
+                  <Lock className={`w-8 h-8 ${t.text}`} />
                 </div>
                 <h4 className="text-xl font-bold text-white mb-2">You've Used Your Free Questions</h4>
                 <p className="text-white/60 text-sm mb-1">
@@ -393,7 +428,7 @@ export default function TryCoreyChatWidget({
                 </p>
                 <p className="text-white/40 text-xs mb-5">{upgradeDetails}</p>
                 <Link href={upgradeLink}>
-                  <Button className={`${buttonClassName} text-white font-bold px-6 py-5 text-base w-full`} data-testid="button-trial-upgrade">
+                  <Button className={`${t.bg} ${t.bgHover} text-white font-bold px-6 py-5 text-base w-full`} data-testid="button-trial-upgrade">
                     {upgradeText}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

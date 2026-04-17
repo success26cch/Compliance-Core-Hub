@@ -6,9 +6,9 @@ import {
   Droplets, Wind, Flame, Recycle, Factory, BarChart3,
   ClipboardList, Bell, FileText, ChevronDown, Zap, Lock
 } from "lucide-react";
+import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 import { useState } from "react";
 import logoUrl from "@assets/7_1772719327857.png";
-import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 
 const PAIN_POINTS = [
   {
@@ -318,7 +318,7 @@ export default function EnvComplianceHub() {
               RCRA hazardous waste, SPCC spill plans, SWPPP stormwater, Universal Waste, CAA air permits — 3 free questions, no credit card required.
             </p>
           </div>
-          <TryCoreyChatWidget compact buttonClassName="bg-emerald-600 hover:bg-emerald-500" />
+          <TryCoreyChatWidget compact theme="emerald" />
         </div>
       </section>
 
