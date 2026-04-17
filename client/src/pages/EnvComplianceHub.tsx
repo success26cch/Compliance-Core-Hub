@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import logoUrl from "@assets/7_1772719327857.png";
+import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 
 const PAIN_POINTS = [
   {
@@ -300,6 +301,24 @@ export default function EnvComplianceHub() {
               ))}
             </ul>
           </div>
+        </div>
+      </section>
+
+      {/* Ask Corey — Env */}
+      <section className="py-20 bg-[hsl(222,47%,9%)]" data-testid="section-env-ask-corey">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <span className="inline-block bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-widest">
+              Live Demo
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              Corey Knows EPA Regs — <span className="text-emerald-400">Ask Him Anything</span>
+            </h2>
+            <p className="text-white/50 max-w-xl mx-auto">
+              RCRA hazardous waste, SPCC spill plans, SWPPP stormwater, Universal Waste, CAA air permits — 3 free questions, no credit card required.
+            </p>
+          </div>
+          <TryCoreyChatWidget compact />
         </div>
       </section>
 
