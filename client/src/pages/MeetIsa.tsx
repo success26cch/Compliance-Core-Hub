@@ -609,6 +609,64 @@ export default function MeetIsa() {
             </div>
           </motion.div>
 
+          {/* ── Try Isa Widget ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp}>
+              <div className="relative rounded-3xl overflow-hidden border border-white/10 p-8 md:p-12"
+                style={{ background: "linear-gradient(135deg, hsl(24,95%,18%) 0%, hsl(260,60%,18%) 50%, hsl(200,80%,12%) 100%)" }}>
+                {/* decorative blobs */}
+                <div className="pointer-events-none absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30"
+                  style={{ background: "radial-gradient(circle, hsl(24,95%,53%) 0%, transparent 70%)" }} />
+                <div className="pointer-events-none absolute -bottom-16 -right-16 w-56 h-56 rounded-full opacity-20"
+                  style={{ background: "radial-gradient(circle, hsl(260,80%,65%) 0%, transparent 70%)" }} />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 opacity-10"
+                  style={{ background: "radial-gradient(ellipse, hsl(200,100%,70%) 0%, transparent 70%)" }} />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-start gap-8 md:gap-12">
+                  {/* Left copy */}
+                  <div className="md:w-72 shrink-0">
+                    <span className="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-4 border"
+                      style={{ background: "hsla(24,95%,53%,0.15)", borderColor: "hsla(24,95%,53%,0.4)", color: "hsl(24,95%,70%)" }}>
+                      Try Free · No Card Required
+                    </span>
+                    <h2 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
+                      Isa knows ISO.{" "}
+                      <span style={{ color: "hsl(24,95%,63%)" }}>Ask her anything</span>{" "}
+                      about any standard.
+                    </h2>
+                    <p className="text-white/60 text-sm leading-relaxed mb-5">
+                      3 free questions from your AI Lead ISO Auditor — ISO 9001, 14001, 45001, IATF 16949, and more. No pitch, just answers.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {["ISO 9001","ISO 14001","ISO 45001","IATF 16949","AS9100","ISO 13485"].map(s => (
+                        <span key={s} className="text-[10px] font-bold px-2.5 py-1 rounded-lg border"
+                          style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)" }}>
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right widget */}
+                  <div className="flex-1 min-w-0">
+                    <TryCoreyChatWidget
+                      compact
+                      agentName="Isa"
+                      agentSubtitle="Lead ISO Auditor · ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949"
+                      agentImage={isaBotImg}
+                      apiEndpoint="/api/landing-isa-bot"
+                      chatPlaceholder="Ask Isa an ISO or audit question..."
+                      upgradeText="Get Isa AI — $99/mo"
+                      upgradeLink="/get-started"
+                      upgradeDetails="Unlimited audits · IATF 16949 · Clause coverage · NC management · Gap analysis"
+                      buttonClassName="bg-[hsl(24,95%,53%)] hover:bg-[hsl(24,95%,42%)]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+
           {/* ── Pricing Section ── */}
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
             <motion.div variants={fadeUp}>
@@ -760,35 +818,6 @@ export default function MeetIsa() {
                     See ISO Manager Plans <ChevronRight className="w-4 h-4" />
                   </button>
                 </Link>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* ── Try Isa Widget ── */}
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
-            <motion.div variants={fadeUp}>
-              <div className="flex items-center gap-3 mb-8">
-                <div className="flex-1 h-px bg-white/15" />
-                <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest whitespace-nowrap">Try Isa Free</span>
-                <div className="flex-1 h-px bg-white/15" />
-              </div>
-              <div className="max-w-2xl mx-auto mb-6 text-center">
-                <h2 className="text-2xl md:text-3xl font-black text-white mb-2">Ask Isa Your ISO Question</h2>
-                <p className="text-white/60 text-sm">Get 3 free answers from Isa, your AI Lead ISO Auditor. No credit card required.</p>
-              </div>
-              <div className="max-w-2xl mx-auto">
-                <TryCoreyChatWidget
-                  compact
-                  agentName="Isa"
-                  agentSubtitle="Lead ISO Auditor · ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949"
-                  agentImage={isaBotImg}
-                  apiEndpoint="/api/landing-isa-bot"
-                  chatPlaceholder="Ask Isa an ISO or audit question..."
-                  upgradeText="Get Isa AI — $99/mo"
-                  upgradeLink="/get-started"
-                  upgradeDetails="Unlimited audits · IATF 16949 · Clause coverage · NC management · Gap analysis"
-                  buttonClassName="bg-[hsl(24,95%,53%)] hover:bg-[hsl(24,95%,42%)]"
-                />
               </div>
             </motion.div>
           </motion.div>
