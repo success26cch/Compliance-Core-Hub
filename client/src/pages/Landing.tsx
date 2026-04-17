@@ -657,13 +657,13 @@ export default function Landing() {
             {/* ── Tier 2: accent-text highlight for Isa ── */}
             <Link href="/meet-isa" className="px-3 py-1.5 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
             {/* ── Tier 3: quiet secondary links ── */}
-            <Link href="/employer-dashboard" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-employer-dashboard">Employer Dashboard</Link>
-            <Link href="/dot-compliance-hub" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-dot-hub-featured">DOT Fleet Hub</Link>
-            <Link href="/env-compliance-hub" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-env-hub-featured">Env Compliance Hub</Link>
-            <Link href="/meet-iso-manager" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
-            <Link href="/watch-demo" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0 flex items-center gap-1" data-testid="nav-watch-demo"><Play className="w-3 h-3" />Watch Demo</Link>
-            <Link href="/bma" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Bilingual Med Assist</Link>
-            <a href="#faq" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
+            <Link href="/employer-dashboard" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-employer-dashboard">Employer Dashboard</Link>
+            <Link href="/dot-compliance-hub" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-dot-hub-featured">DOT Fleet Hub</Link>
+            <Link href="/env-compliance-hub" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-env-hub-featured">Env Compliance Hub</Link>
+            <Link href="/meet-iso-manager" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
+            <Link href="/watch-demo" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0 flex items-center gap-1" data-testid="nav-watch-demo"><Play className="w-3 h-3" />Watch Demo</Link>
+            <Link href="/bma" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Bilingual Med Assist</Link>
+            <a href="#faq" className="px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -671,7 +671,7 @@ export default function Landing() {
             <div className="relative" ref={navMenuRef}>
               <button
                 onClick={() => setNavMenuOpen(v => !v)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-md transition-colors"
                 data-testid="button-nav-more"
                 aria-label="More navigation options"
               >
