@@ -122,15 +122,115 @@ function normalizeRow(row: string | undefined, name: string, standard: string): 
   return row;
 }
 
+/**
+ * guessRow — classifies a process into the correct band based on its name.
+ *
+ * IATF 16949 uses MOP / COP / SOP:
+ *   COP (Customer-Oriented): the value chain that creates & delivers product —
+ *       customer interface, order entry, APQP/PPAP, design, production,
+ *       in-process testing, packaging, shipping, delivery, returns.
+ *   MOP (Management-Oriented): strategic direction & system governance —
+ *       strategic planning, management review, internal audit, quality
+ *       objectives, KPIs, CAPA, continual improvement, risk management.
+ *   SOP (Support-Oriented): processes that enable/sustain the COPs —
+ *       HR, training, maintenance, calibration, document control, IT,
+ *       facilities, EHS, purchasing, procurement, supplier management.
+ *
+ * ISO 9001 / AS9100 / ISO 14001 / ISO 45001 use management / core / support
+ * (same three-band concept, different labels).
+ */
 function guessRow(name: string, standard: string): string {
   const n = name.toLowerCase();
+
   if (standard.includes("IATF")) {
-    if (n.includes("customer") || n.includes("sales") || n.includes("order") || n.includes("production") || n.includes("manufactur") || n.includes("ship") || n.includes("deliver") || n.includes("design")) return "COP";
-    if (n.includes("management review") || n.includes("corrective") || n.includes("internal audit") || n.includes("strategy") || n.includes("objective")) return "MOP";
-    return "SOP";
+    // ── MOP — check FIRST to catch "management & planning", "management review"
+    if (
+      n.includes("management review") || n.includes("strategic plan") ||
+      n.includes("business plan") || n.includes("internal audit") ||
+      n.includes("corrective action") || n.includes("capa") ||
+      n.includes("quality objective") || n.includes("kpi") ||
+      n.includes("customer satisfaction") || n.includes("continual improvement") ||
+      n.includes("improvement program") || n.includes("lessons learned") ||
+      n.includes("risk management") || n.includes("risk and opportunit") ||
+      n.includes("management & planning") || n.includes("management and planning") ||
+      (n.includes("planning") && !n.includes("production plan") && !n.includes("apqp"))
+    ) return "MOP";
+
+    // ── SOP — enable & sustain (check BEFORE generic COP fallthrough)
+    if (
+      n.includes("human resource") || n.includes(" hr ") || n === "hr" ||
+      n.includes("training") || n.includes("competency") || n.includes("workforce") ||
+      n.includes("maintenance") || n.includes("preventive maint") ||
+      n.includes("calibration") || n.includes("measurement system") || n.includes(" msa") ||
+      n.includes("document control") || n.includes("record management") ||
+      n.includes("information technology") || n.includes(" erp") || n.includes("it management") ||
+      n.includes("facilities") || n.includes("infrastructure") ||
+      n.includes("environmental") || n.includes("health and safety") || n.includes("ehs") ||
+      n.includes("supplier management") || n.includes("supplier development") ||
+      n.includes("supplier quality") || n.includes("purchasing") || n.includes("procurement") ||
+      n.includes("supply chain")
+    ) return "SOP";
+
+    // ── COP — customer-facing value chain & product realization
+    if (
+      n.includes("customer") || n.includes("sales") || n.includes("commercial") ||
+      n.includes("order") || n.includes("rfq") || n.includes("quotation") ||
+      n.includes("apqp") || n.includes("ppap") || n.includes("new program") ||
+      n.includes("program launch") || n.includes("product launch") || n.includes("program management") ||
+      n.includes("design") || n.includes("development") || n.includes("engineering") ||
+      n.includes("production") || n.includes("manufactur") || n.includes("blending") ||
+      n.includes("mixing") || n.includes("processing") || n.includes("assembly") ||
+      n.includes("fabrication") || n.includes("machining") || n.includes("filling") ||
+      n.includes("packaging") || n.includes("labeling") ||
+      n.includes("testing") || n.includes("inspection") || n.includes("quality assurance") ||
+      n.includes("quality control") || n.includes("analytical") || n.includes("laboratory") ||
+      n.includes("warehouse") || n.includes("shipping") || n.includes("delivery") ||
+      n.includes("logistics") || n.includes("dispatch") || n.includes("transport") ||
+      n.includes("returns") || n.includes("warranty") || n.includes("complaint")
+    ) return "COP";
+
+    return "SOP"; // safe default for anything unrecognised
   }
-  if (n.includes("management review") || n.includes("strategy") || n.includes("leadership") || n.includes("context") || n.includes("planning") || n.includes("risk") || n.includes("objective") || n.includes("internal audit") || n.includes("corrective") || n.includes("measurement") || n.includes("monitor")) return "management";
-  if (n.includes("customer") || n.includes("sales") || n.includes("production") || n.includes("manufactur") || n.includes("design") || n.includes("ship") || n.includes("deliver") || n.includes("order") || n.includes("inspection") || n.includes("testing")) return "core";
+
+  // ── ISO 9001 / AS9100 / other ISO standards ─────────────────────────────────
+  // Management band
+  if (
+    n.includes("management review") || n.includes("strategic plan") ||
+    n.includes("business plan") || n.includes("leadership") ||
+    n.includes("context of") || n.includes("internal audit") ||
+    n.includes("corrective action") || n.includes("capa") ||
+    n.includes("quality objective") || n.includes("risk") ||
+    n.includes("continual improvement") || n.includes("customer satisfaction") ||
+    n.includes("performance monitor") || n.includes("kpi") ||
+    (n.includes("planning") && !n.includes("production plan") && !n.includes("apqp"))
+  ) return "management";
+
+  // Support band
+  if (
+    n.includes("human resource") || n.includes("training") || n.includes("competency") ||
+    n.includes("maintenance") || n.includes("calibration") || n.includes("measurement system") ||
+    n.includes("document control") || n.includes("record") ||
+    n.includes("information technology") || n.includes("facilities") ||
+    n.includes("infrastructure") || n.includes("environmental") ||
+    n.includes("health and safety") || n.includes("ehs") ||
+    n.includes("supplier management") || n.includes("purchasing") ||
+    n.includes("procurement") || n.includes("supply chain")
+  ) return "support";
+
+  // Core band — value-adding product/service realization
+  if (
+    n.includes("customer") || n.includes("sales") || n.includes("order") ||
+    n.includes("apqp") || n.includes("ppap") || n.includes("new program") ||
+    n.includes("design") || n.includes("development") ||
+    n.includes("production") || n.includes("manufactur") || n.includes("assembly") ||
+    n.includes("fabrication") || n.includes("machining") || n.includes("blending") ||
+    n.includes("mixing") || n.includes("processing") || n.includes("filling") ||
+    n.includes("packaging") || n.includes("inspection") || n.includes("testing") ||
+    n.includes("quality assurance") || n.includes("quality control") || n.includes("analytical") ||
+    n.includes("shipping") || n.includes("delivery") || n.includes("warehouse") ||
+    n.includes("logistics") || n.includes("service delivery")
+  ) return "core";
+
   return "support";
 }
 
