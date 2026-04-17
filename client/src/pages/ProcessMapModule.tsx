@@ -136,15 +136,36 @@ function guessRow(name: string, standard: string): string {
 
 // ─── Process Box Component ─────────────────────────────────────────────────────
 function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onClick: () => void; standard: string }) {
-  const rows = standard.includes("IATF") ? IATF_ROWS : ISO_ROWS;
-  const rowKey = normalizeRow(process.row, process.name, standard);
-  const rowDef = rows.find(r => r.key === rowKey);
+  const isRemote = process.site === "REMOTE_SITE";
+  const isCorporate = process.site === "CORPORATE";
+
+  const borderCls = isRemote
+    ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+    : isCorporate
+    ? "border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+    : "border-border/40 bg-white dark:bg-card";
+
   return (
     <button
       onClick={onClick}
       data-testid={`process-box-${process.name.replace(/\s+/g, "-").toLowerCase()}`}
-      className="group relative bg-white dark:bg-card border-2 border-border/40 hover:border-accent/60 rounded-xl p-3 text-left transition-all hover:shadow-md min-h-[90px] w-full"
+      className={`group relative border-2 rounded-xl p-3 text-left transition-all hover:shadow-md min-h-[90px] w-full hover:border-accent/60 ${borderCls}`}
     >
+      {/* Site badge */}
+      {isRemote && (
+        <div className="flex items-center gap-1 mb-1.5">
+          <span className="text-[10px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded leading-none flex items-center gap-0.5">
+            ★ Remote
+          </span>
+        </div>
+      )}
+      {isCorporate && (
+        <div className="flex items-center gap-1 mb-1.5">
+          <span className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none">
+            ◆ Corporate
+          </span>
+        </div>
+      )}
       <div className="font-bold text-primary text-sm leading-tight mb-1 group-hover:text-accent transition-colors line-clamp-2">{process.name}</div>
       {process.owner && (
         <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
@@ -625,6 +646,15 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
           </p>
         </div>
       )}
+
+      {/* ─── Legend ─── */}
+      <div className="mx-4 mt-3 flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg bg-muted/30 border border-border/40 text-[11px]">
+        <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Legend:</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-border/40 bg-white dark:bg-card inline-block" /> Plant Process</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-amber-400 bg-amber-50 inline-block" /> <span className="font-bold text-amber-700">★ Remote Site</span></span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-blue-400 bg-blue-50 inline-block" /> <span className="font-bold text-blue-700">◆ Corporate</span></span>
+        <span className="ml-auto text-muted-foreground">Click any process to view Turtle Diagram</span>
+      </div>
 
       {/* ─── Map Body: Customer Requirements → Processes → Customer Satisfaction ─── */}
       <div className="flex items-stretch min-h-[400px]">
