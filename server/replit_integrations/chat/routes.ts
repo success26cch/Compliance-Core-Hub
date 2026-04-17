@@ -312,6 +312,80 @@ export function registerChatRoutes(app: Express): void {
     }
   });
 
+  // Landing trial bot for Isa (ISO auditor) — same 3-question limit, Isa's persona
+  app.post("/api/landing-isa-bot", async (req: Request, res: Response) => {
+    try {
+      const { content, history, name, email } = req.body;
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        return res.status(400).json({ error: "Question is required" });
+      }
+      if (!name || typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({ error: "Name is required to chat with Isa" });
+      }
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).json({ error: "Valid email is required to chat with Isa" });
+      }
+
+      let trialLead = await storage.getTrialLeadByEmail(email);
+      if (!trialLead) {
+        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() });
+      }
+
+      if (trialLead.questionCount >= LANDING_BOT_LIMIT) {
+        return res.status(403).json({
+          error: "You've reached the free question limit. Sign up to keep the conversation going!",
+          limitReached: true,
+          count: trialLead.questionCount,
+          limit: LANDING_BOT_LIMIT,
+        });
+      }
+
+      const updatedLead = await storage.incrementTrialQuestionCount(email);
+      const newCount = updatedLead?.questionCount ?? (trialLead.questionCount + 1);
+
+      const conversationMessages = (history && Array.isArray(history) ? history : []).concat([{ role: "user", content: content.trim() }]).map((m: any) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const remaining = Math.max(0, LANDING_BOT_LIMIT - newCount);
+      res.write(`data: ${JSON.stringify({ remaining })}\n\n`);
+
+      const stream = anthropic.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: ISA_SYSTEM_PROMPT,
+        messages: conversationMessages,
+      });
+
+      let assistantText = "";
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) {
+            assistantText += text;
+            res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          }
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true, remaining })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Error in landing Isa bot:", error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed to process question" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: "Failed to process question" });
+      }
+    }
+  });
+
   // Send message and get AI response (streaming)
   app.post("/api/conversations/:id/messages", async (req: Request, res: Response) => {
     try {

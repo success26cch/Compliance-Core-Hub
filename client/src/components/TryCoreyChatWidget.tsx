@@ -26,9 +26,28 @@ function stripMarkdown(text: string): string {
 interface TryCoreyChatWidgetProps {
   compact?: boolean;
   buttonClassName?: string;
+  agentName?: string;
+  agentSubtitle?: string;
+  agentImage?: string;
+  apiEndpoint?: string;
+  chatPlaceholder?: string;
+  upgradeText?: string;
+  upgradeLink?: string;
+  upgradeDetails?: string;
 }
 
-export default function TryCoreyChatWidget({ compact = false, buttonClassName = "bg-accent hover:bg-accent/90" }: TryCoreyChatWidgetProps) {
+export default function TryCoreyChatWidget({
+  compact = false,
+  buttonClassName = "bg-accent hover:bg-accent/90",
+  agentName = "Corey",
+  agentSubtitle = "AI Compliance Expert · OSHA 29 CFR · DOT 49 CFR · EPA 40 CFR",
+  agentImage = coreyImg,
+  apiEndpoint = "/api/landing-bot",
+  chatPlaceholder = "Ask a compliance question...",
+  upgradeText = "Get Corey AI — $199/mo",
+  upgradeLink = "/get-started",
+  upgradeDetails = "Unlimited questions · Audit prep · Checklists · DOT guidance · Custom reports",
+}: TryCoreyChatWidgetProps) {
   const [stage, setStage] = useState<"intro" | "chat" | "limit">("intro");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -86,7 +105,7 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
     fetch("/api/leads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), source: "ask_corey" }),
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), source: `ask_${agentName.toLowerCase()}` }),
     }).catch(() => {});
   };
 
@@ -100,7 +119,7 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
     setIsStreaming(true);
 
     try {
-      const res = await fetch("/api/landing-bot", {
+      const res = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: userMsg, name, email, history: messages }),
@@ -182,10 +201,10 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
     <div className={`flex flex-col bg-[hsl(222,47%,11%)] ${compact ? "rounded-2xl border border-white/10 overflow-hidden shadow-2xl" : "min-h-screen"}`} data-testid="widget-try-corey">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-white/10 shrink-0">
-        <img src={coreyImg} alt="Corey" className="w-10 h-10 rounded-full" />
+        <img src={agentImage} alt={agentName} className="w-10 h-10 rounded-full object-cover" />
         <div>
-          <h3 className="text-white font-bold text-base">Ask Corey — Free Trial</h3>
-          <p className="text-white/50 text-xs">AI Compliance Expert · OSHA 29 CFR · DOT 49 CFR · EPA 40 CFR</p>
+          <h3 className="text-white font-bold text-base">Ask {agentName} — Free Trial</h3>
+          <p className="text-white/50 text-xs">{agentSubtitle}</p>
         </div>
         {speakingMsgIdx !== null && (
           <button
@@ -212,12 +231,10 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
             >
               <div className="w-full max-w-sm" data-testid="section-try-corey-intro">
                 <div className="text-center mb-6">
-                  <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-accent/10 flex items-center justify-center">
-                    <Bot className="w-8 h-8 text-accent" />
-                  </div>
-                  <h4 className="text-xl font-bold text-white mb-1">Try Corey Free</h4>
+                  <img src={agentImage} alt={agentName} className="w-16 h-16 mx-auto mb-3 rounded-full object-cover border-2 border-accent/20" />
+                  <h4 className="text-xl font-bold text-white mb-1">Try {agentName} Free</h4>
                   <p className="text-white/50 text-sm">
-                    {MAX_TRIAL_QUESTIONS} free compliance questions — no credit card required.
+                    {MAX_TRIAL_QUESTIONS} free questions — no credit card required.
                   </p>
                 </div>
                 <form onSubmit={handleStart} className="space-y-3">
@@ -244,7 +261,7 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
                   </div>
                   {error && <p className="text-red-400 text-sm" data-testid="text-trial-error">{error}</p>}
                   <Button type="submit" className={`w-full ${buttonClassName} text-white font-bold py-5 text-base`} data-testid="button-start-trial">
-                    Start Asking Corey
+                    Start Asking {agentName}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </form>
@@ -275,7 +292,7 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
                 {messages.length === 0 && (
                   <div className="text-center py-6">
                     <Bot className="w-10 h-10 text-accent/30 mx-auto mb-2" />
-                    <p className="text-white/40 text-sm">Ask Corey anything about OSHA, DOT, EPA, or workplace safety.</p>
+                    <p className="text-white/40 text-sm">{chatPlaceholder}</p>
                     {speechSupported && <p className="text-white/30 text-xs mt-1">Tap the mic to ask by voice.</p>}
                   </div>
                 )}
@@ -315,7 +332,7 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
                 <div className="flex gap-2 items-end">
                   <div className="relative flex-1">
                     <Textarea
-                      placeholder={isListening ? "Listening... click mic to stop" : "Ask Corey a compliance question..."}
+                      placeholder={isListening ? "Listening... click mic to stop" : chatPlaceholder}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyDown={(e) => {
@@ -372,14 +389,12 @@ export default function TryCoreyChatWidget({ compact = false, buttonClassName = 
                 </div>
                 <h4 className="text-xl font-bold text-white mb-2">You've Used Your Free Questions</h4>
                 <p className="text-white/60 text-sm mb-1">
-                  Corey answered {MAX_TRIAL_QUESTIONS} questions for you. Upgrade for unlimited 24/7 guidance.
+                  {agentName} answered {MAX_TRIAL_QUESTIONS} questions for you. Upgrade for unlimited guidance.
                 </p>
-                <p className="text-white/40 text-xs mb-5">
-                  Unlimited questions · Audit prep · Checklists · DOT guidance · Custom reports
-                </p>
-                <Link href="/get-started">
-                  <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-6 py-5 text-base w-full" data-testid="button-trial-upgrade">
-                    Get Corey AI — $199/mo
+                <p className="text-white/40 text-xs mb-5">{upgradeDetails}</p>
+                <Link href={upgradeLink}>
+                  <Button className={`${buttonClassName} text-white font-bold px-6 py-5 text-base w-full`} data-testid="button-trial-upgrade">
+                    {upgradeText}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>

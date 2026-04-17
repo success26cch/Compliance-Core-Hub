@@ -11,6 +11,8 @@ import {
   ClipboardList, ArrowRightLeft, CheckSquare, MessageCircle,
 } from "lucide-react";
 import acsiLogo from "@assets/42_1772589582132.png";
+import isaBotImg from "@assets/isa_bot_1776458921960.png";
+import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 
 const ORANGE = "hsl(24,95%,53%)";
 const ORANGE_DARK = "hsl(24,95%,42%)";
@@ -758,6 +760,35 @@ export default function MeetIsa() {
                     See ISO Manager Plans <ChevronRight className="w-4 h-4" />
                   </button>
                 </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* ── Try Isa Widget ── */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger}>
+            <motion.div variants={fadeUp}>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="flex-1 h-px bg-white/15" />
+                <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest whitespace-nowrap">Try Isa Free</span>
+                <div className="flex-1 h-px bg-white/15" />
+              </div>
+              <div className="max-w-2xl mx-auto mb-6 text-center">
+                <h2 className="text-2xl md:text-3xl font-black text-white mb-2">Ask Isa Your ISO Question</h2>
+                <p className="text-white/60 text-sm">Get 3 free answers from Isa, your AI Lead ISO Auditor. No credit card required.</p>
+              </div>
+              <div className="max-w-2xl mx-auto">
+                <TryCoreyChatWidget
+                  compact
+                  agentName="Isa"
+                  agentSubtitle="Lead ISO Auditor · ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949"
+                  agentImage={isaBotImg}
+                  apiEndpoint="/api/landing-isa-bot"
+                  chatPlaceholder="Ask Isa an ISO or audit question..."
+                  upgradeText="Get Isa AI — $99/mo"
+                  upgradeLink="/get-started"
+                  upgradeDetails="Unlimited audits · IATF 16949 · Clause coverage · NC management · Gap analysis"
+                  buttonClassName="bg-[hsl(24,95%,53%)] hover:bg-[hsl(24,95%,42%)]"
+                />
               </div>
             </motion.div>
           </motion.div>
