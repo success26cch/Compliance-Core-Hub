@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import coreyImg from "@assets/9_1771983400638.png";
 import logoUrl from "@assets/7_1772719327857.png";
 import { CartTrigger } from "@/components/CartDrawer";
+import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -642,6 +643,37 @@ export default function MeetCorey() {
                 </button>
               </motion.div>
             ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Try Corey Free ── */}
+      <section className="py-20 bg-[hsl(222,47%,9%)]" data-testid="section-try-corey">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={fadeUp}
+            className="text-center mb-10"
+          >
+            <span className="inline-block bg-accent/10 text-accent text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-widest">
+              Live Demo
+            </span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-3">
+              Try Corey Right Now — <span className="text-accent">Free</span>
+            </h2>
+            <p className="text-white/50 max-w-xl mx-auto">
+              Ask him anything. OSHA citations, recordability decisions, DOT Part 40, ISO 45001 — 3 questions on us, no credit card required.
+            </p>
+          </motion.div>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            variants={fadeUp}
+          >
+            <TryCoreyChatWidget compact />
           </motion.div>
         </div>
       </section>
