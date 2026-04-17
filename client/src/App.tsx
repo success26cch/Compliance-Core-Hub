@@ -8,6 +8,9 @@ import { CartProvider } from "@/hooks/use-cart";
 import { CartDrawer } from "@/components/CartDrawer";
 import { AdminViewProvider } from "@/hooks/use-admin-view";
 import { ThemeProvider } from "next-themes";
+import { useAuth } from "@/hooks/use-auth";
+import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
+import { Loader2, ShieldCheck } from "lucide-react";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import BotPage from "@/pages/Bot";
@@ -101,73 +104,145 @@ function PageTracker() {
   return null;
 }
 
+// ── Subscription wall shown to authenticated-but-unpaid users ─────────────
+function SubscriptionWall() {
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4 text-center">
+      <div className="w-16 h-16 bg-orange-500/10 border-2 border-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <ShieldCheck className="w-8 h-8 text-orange-500" />
+      </div>
+      <h1 className="text-2xl font-black text-white mb-2">Subscription Required</h1>
+      <p className="text-slate-400 text-sm max-w-sm leading-relaxed mb-6">
+        Your account doesn't have an active subscription. Choose a plan to unlock Core Compliance Hub.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <a
+          href="/get-started"
+          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+        >
+          View Plans &amp; Get Started →
+        </a>
+        <a
+          href="/login"
+          className="border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 font-medium px-6 py-3 rounded-lg transition-colors text-sm"
+        >
+          Sign in with a different account
+        </a>
+      </div>
+      <p className="mt-6 text-xs text-slate-600">
+        Already purchased?{" "}
+        <a href="mailto:team@corecompliancehub.com" className="text-orange-400 hover:underline">
+          Contact us
+        </a>{" "}
+        to activate your account.
+      </p>
+    </div>
+  );
+}
+
+// ── Protected route: requires auth + active subscription (or superadmin) ──
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, isLoading: authLoading } = useAuth();
+  const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!authLoading && !subLoading && !user) {
+      navigate("/login");
+    }
+  }, [authLoading, subLoading, user, navigate]);
+
+  if (authLoading || subLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const hasAccess = !!user.isSuperadmin || !!subStatus?.isPro || !!subStatus?.isAdmin;
+  if (!hasAccess) {
+    return <SubscriptionWall />;
+  }
+
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
+      {/* ── Public routes — no auth required ── */}
       <Route path="/login" component={Login} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/" component={Landing} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/employer-dashboard" component={EmployerDashboard} />
-      <Route path="/bot" component={BotPage} />
-      <Route path="/iso-manager" component={ISOManager} />
-      <Route path="/decision-tree" component={DecisionTree} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/brandnswag" component={BrandNSwag} />
-      <Route path="/mentorship" component={Mentorship} />
-      <Route path="/resources" component={Resources} />
+      <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
-      <Route path="/admin/inquiries" component={AdminInquiries} />
-      <Route path="/employees" component={Employees} />
-      <Route path="/incidents" component={Incidents} />
-      <Route path="/superadmin" component={SuperAdmin} />
-      <Route path="/leads" component={LeadsAdmin} />
-      <Route path="/dot-notifications" component={DOTNotifications} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/security" component={Security} />
+      <Route path="/refund-policy" component={RefundPolicy} />
+      <Route path="/get-started" component={GetStarted} />
+      <Route path="/meet-corey" component={MeetCorey} />
+      <Route path="/meet-isa" component={MeetIsa} />
+      <Route path="/meet-iso-manager" component={ISOManagerMarketing} />
+      <Route path="/try-corey" component={TryCorey} />
+      <Route path="/compliance-glossary" component={ComplianceGlossary} />
+      <Route path="/platform-brief" component={PlatformBrief} />
+      <Route path="/demo-tour" component={DemoTour} />
+      <Route path="/watch-demo" component={WatchDemo} />
+      <Route path="/dot-compliance-hub" component={DotComplianceHub} />
+      <Route path="/env-compliance-hub" component={EnvComplianceHub} />
+      <Route path="/marketing-qr" component={MarketingQR} />
+      <Route path="/qr-code" component={QRCodePage} />
       <Route path="/employee-passport" component={EmployeePassport} />
       <Route path="/clinic-assistant" component={ClinicAssistant} />
       <Route path="/bma" component={BMA} />
       <Route path="/bma-subscription" component={BMASubscription} />
       <Route path="/clinic-agreement" component={ClinicAgreement} />
-      <Route path="/demo" component={Demo} />
-      <Route path="/watch-demo" component={WatchDemo} />
       <Route path="/sms-consent" component={SMSConsent} />
-      <Route path="/training" component={Training} />
-      <Route path="/training/:id" component={CourseViewer} />
-      <Route path="/employer-training" component={EmployerTraining} />
-      <Route path="/employee-training" component={EmployeeTraining} />
-      <Route path="/drug-alcohol-policy" component={DrugAlcoholPolicy} />
-      <Route path="/clinic-letter" component={ClinicLetter} />
-      <Route path="/corey" component={CoreyStandalone} />
-      <Route path="/corey-profile" component={CoreyProfile} />
-      <Route path="/welcome-corey" component={WelcomeCorey} />
-      <Route path="/isa" component={IsaStandalone} />
-      <Route path="/isa-profile" component={IsaProfile} />
-      <Route path="/welcome-isa" component={WelcomeIsa} />
-      <Route path="/try-corey" component={TryCorey} />
-      <Route path="/qr-code" component={QRCodePage} />
-      <Route path="/team-seats" component={TeamSeats} />
-      <Route path="/about" component={About} />
-      <Route path="/company-profile" component={CompanyProfile} />
-      <Route path="/get-started" component={GetStarted} />
-      <Route path="/compliance-checklists" component={ComplianceChecklists} />
-      <Route path="/audit-prep" component={AuditPrep} />
-      <Route path="/compliance-glossary" component={ComplianceGlossary} />
-      <Route path="/meet-corey" component={MeetCorey} />
-      <Route path="/meet-isa" component={MeetIsa} />
-      <Route path="/meet-iso-manager" component={ISOManagerMarketing} />
-      <Route path="/demo-tour" component={DemoTour} />
-      <Route path="/platform-brief" component={PlatformBrief} />
-      <Route path="/cesar" component={Cesar} />
-      <Route path="/refund-policy" component={RefundPolicy} />
-      <Route path="/terms-of-service" component={TermsOfService} />
-      <Route path="/privacy-policy" component={PrivacyPolicy} />
-      <Route path="/security" component={Security} />
-      <Route path="/dot-compliance-hub" component={DotComplianceHub} />
-      <Route path="/dot-hub" component={DotHub} />
-      <Route path="/marketing-qr" component={MarketingQR} />
+      <Route path="/demo" component={Demo} />
       <Route path="/iso/review/:token" component={DCRReviewPage} />
-      <Route path="/env-compliance-hub" component={EnvComplianceHub} />
-      <Route path="/env-hub" component={EnvHub} />
+      <Route path="/corey-profile" component={CoreyProfile} />
+      <Route path="/isa-profile" component={IsaProfile} />
+      <Route path="/welcome-corey" component={WelcomeCorey} />
+      <Route path="/welcome-isa" component={WelcomeIsa} />
+
+      {/* ── Protected routes — require auth + active subscription or superadmin ── */}
+      <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
+      <Route path="/employer-dashboard">{() => <ProtectedRoute component={EmployerDashboard} />}</Route>
+      <Route path="/bot">{() => <ProtectedRoute component={BotPage} />}</Route>
+      <Route path="/iso-manager">{() => <ProtectedRoute component={ISOManager} />}</Route>
+      <Route path="/decision-tree">{() => <ProtectedRoute component={DecisionTree} />}</Route>
+      <Route path="/settings">{() => <ProtectedRoute component={Settings} />}</Route>
+      <Route path="/brandnswag">{() => <ProtectedRoute component={BrandNSwag} />}</Route>
+      <Route path="/mentorship">{() => <ProtectedRoute component={Mentorship} />}</Route>
+      <Route path="/resources">{() => <ProtectedRoute component={Resources} />}</Route>
+      <Route path="/employees">{() => <ProtectedRoute component={Employees} />}</Route>
+      <Route path="/incidents">{() => <ProtectedRoute component={Incidents} />}</Route>
+      <Route path="/training">{() => <ProtectedRoute component={Training} />}</Route>
+      <Route path="/training/:id">{() => <ProtectedRoute component={CourseViewer} />}</Route>
+      <Route path="/employer-training">{() => <ProtectedRoute component={EmployerTraining} />}</Route>
+      <Route path="/employee-training">{() => <ProtectedRoute component={EmployeeTraining} />}</Route>
+      <Route path="/drug-alcohol-policy">{() => <ProtectedRoute component={DrugAlcoholPolicy} />}</Route>
+      <Route path="/clinic-letter">{() => <ProtectedRoute component={ClinicLetter} />}</Route>
+      <Route path="/corey">{() => <ProtectedRoute component={CoreyStandalone} />}</Route>
+      <Route path="/isa">{() => <ProtectedRoute component={IsaStandalone} />}</Route>
+      <Route path="/team-seats">{() => <ProtectedRoute component={TeamSeats} />}</Route>
+      <Route path="/company-profile">{() => <ProtectedRoute component={CompanyProfile} />}</Route>
+      <Route path="/compliance-checklists">{() => <ProtectedRoute component={ComplianceChecklists} />}</Route>
+      <Route path="/audit-prep">{() => <ProtectedRoute component={AuditPrep} />}</Route>
+      <Route path="/cesar">{() => <ProtectedRoute component={Cesar} />}</Route>
+      <Route path="/dot-hub">{() => <ProtectedRoute component={DotHub} />}</Route>
+      <Route path="/env-hub">{() => <ProtectedRoute component={EnvHub} />}</Route>
+      <Route path="/superadmin">{() => <ProtectedRoute component={SuperAdmin} />}</Route>
+      <Route path="/leads">{() => <ProtectedRoute component={LeadsAdmin} />}</Route>
+      <Route path="/admin/inquiries">{() => <ProtectedRoute component={AdminInquiries} />}</Route>
+      <Route path="/dot-notifications">{() => <ProtectedRoute component={DOTNotifications} />}</Route>
+
       <Route component={NotFound} />
     </Switch>
   );

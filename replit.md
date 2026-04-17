@@ -29,6 +29,7 @@ The CCHUB platform is built with a modern web stack: React, Vite, TailwindCSS, a
 -   **Data Management Routes:** API routes for various modules like dashboard, employee, incident, account, team, digital passport, clinic assistant, and letter generation.
 -   **Branded Divisions:** Integrates BrandNSwag and ACSI Mentorship Program.
 -   **Security Hardening:** Implemented Helmet.js for security headers, `express-rate-limit` for API rate limiting, and an `audit_logs` PostgreSQL table for immutable logging of critical actions. A public-facing security trust page is also provided.
+-   **Access Control (critical):** Self-registration is disabled — "Create Account" removed from login page; only "Sign In" and "Forgot Password" are exposed. All app routes are wrapped in `ProtectedRoute` (App.tsx) which blocks unauthenticated users (→ `/login`) and authenticated-but-unpaid users (→ `SubscriptionWall`). The `ProtectedRoute` gate checks `user.isSuperadmin || subStatus.isPro || subStatus.isAdmin`. The backend `/api/auth/register` endpoint remains open for post-payment account creation (Paddle flow) and admin-created accounts only.
 
 ## External Dependencies
 -   **AI Integration:** Anthropic Claude (via Replit AI)
