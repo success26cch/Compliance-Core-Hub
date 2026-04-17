@@ -37,3 +37,33 @@ The CCHUB platform is built with a modern web stack: React, Vite, TailwindCSS, a
 -   **Communication:** Twilio (SMS), MailerSend (email)
 -   **Speech Services:** Web Speech API
 -   **Security:** Helmet.js, express-rate-limit
+
+## Non-Regression Rules (MANDATORY — read before every task)
+
+These rules exist because regressions are expensive and destroy user confidence. Violating them is never acceptable.
+
+1.  **Read before you touch.** Before editing any file that has been previously worked on, read the current state of that file. Never assume you remember what it contains. Use read or grep to confirm the exact current code.
+
+2.  **Audit what you're changing, not just what you intend to fix.** Before submitting an edit, ask: "Does this change break anything that was already working?" Check adjacent logic, helper functions, and any conditional branches that depend on the same data.
+
+3.  **Completed features are frozen unless explicitly reopened.** If a feature was confirmed working by the user, it must remain working after every subsequent task. If a new task requires touching the same file, patch the minimum possible surface area.
+
+4.  **Never remove or replace a working block without reading it first.** If you are replacing a code block, copy the working logic and preserve any parts not directly related to the bug or feature being addressed.
+
+5.  **The Process Interaction Map layout is locked.** The map always uses the 3-band layout (Management/MOP at top → Core/COP in middle with horizontal numbered arrows → Support/SOP at bottom) for ALL standards including IATF 16949. Remote/Corporate site distinctions are shown via color-coding on the process box and legend ONLY — never as separate columns or rows. Do not reintroduce the IATF site-column grid.
+
+6.  **IATF 16949 process classification rules are fixed:**
+    -   **COP** (Customer-Oriented): the entire product value chain — sales, order entry, APQP/PPAP, design, production/blending/manufacturing, in-process testing, analytical, packaging/filling, shipping/delivery. APQP is ALWAYS COP (clause 8.3, customer-driven).
+    -   **SOP** (Support-Oriented): HR/training, maintenance, calibration, document control, IT, facilities, EHS, purchasing, procurement, supplier management.
+    -   **MOP** (Management-Oriented): strategic planning, management review, internal audit, quality objectives, KPIs, CAPA, corrective action, risk management, continual improvement.
+
+7.  **Key hardcoded values — never change without explicit instruction:**
+    -   `ADMIN_EMAILS = ["team@corecompliancehub.com"]` — only this address
+    -   Raul's user ID `c2df200b-5806-4310-ba66-e127f2095625` — superadmin rights must never be modified
+    -   `Helmet frameguard: false` — must remain disabled
+    -   `Layout.tsx` — do not touch
+    -   `staleTime: Infinity` — cache policy in queryClient; users must Ctrl+Shift+R to see DB changes
+    -   AI model: `claude-sonnet-4-5`; env var: `AI_INTEGRATIONS_ANTHROPIC_API_KEY`
+    -   Brand accent color: `#ea6c19` (orange), referenced as `text-accent` / `bg-accent`
+
+8.  **Before marking any task complete, verify that previously working features still work.** If the task touched shared files (routes.ts, storage.ts, schema.ts, ISOManager.tsx, ProcessMapModule.tsx, Layout.tsx), re-read those files and confirm no unintended changes were made.

@@ -45,16 +45,23 @@ export interface ProcessEntry {
 
 // ─── Row definitions per standard (order: Core → Support → Management) ──
 const ISO_ROWS = [
+  { key: "management", label: "Management Processes", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
   { key: "core", label: "Core Processes", color: "bg-accent/5 border-accent/20 dark:bg-accent/10", badge: "bg-accent/10 text-accent" },
   { key: "support", label: "Support Processes", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
-  { key: "management", label: "Management Processes", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
 ];
 
 const IATF_ROWS = [
+  { key: "MOP", label: "Management-Oriented Processes (MOP)", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
   { key: "COP", label: "Customer-Oriented Processes (COP)", color: "bg-accent/5 border-accent/20", badge: "bg-accent/10 text-accent" },
-  { key: "SOP", label: "Support-Oriented Processes (SOP)", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
-  { key: "MOP", label: "Management-Oriented Processes (MOP)", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  { key: "SOP", label: "Support-Oriented Processes (SOP)", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
 ];
+
+// Maps IATF row keys → color-scheme band keys (same palette, same semantics)
+const IATF_TO_COLOR_KEY: Record<string, string> = {
+  MOP: "management",
+  COP: "core",
+  SOP: "support",
+};
 
 const IATF_SITES = [
   { key: "PLANT", label: "Plant", headerClass: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300" },
@@ -293,11 +300,16 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
   const std = project.standard ?? "";
   const sch = MAP_COLOR_SCHEMES[schemeKey] ?? MAP_COLOR_SCHEMES["navy-orange"];
 
-  // Categorise and sort
-  const mgtProcs  = processes.filter(p => normalizeRow(p.row, p.name, std) === "management");
-  const coreProcs = [...processes.filter(p => normalizeRow(p.row, p.name, std) === "core")]
+  // Categorise and sort — handles both ISO keys (management/core/support)
+  // AND IATF keys (MOP/COP/SOP) so the print function works for all standards.
+  const isIATFStd = std.includes("IATF");
+  const mgtKey  = isIATFStd ? "MOP"  : "management";
+  const coreKey = isIATFStd ? "COP"  : "core";
+  const supKey  = isIATFStd ? "SOP"  : "support";
+  const mgtProcs  = processes.filter(p => normalizeRow(p.row, p.name, std) === mgtKey);
+  const coreProcs = [...processes.filter(p => normalizeRow(p.row, p.name, std) === coreKey)]
                       .sort((a, b) => (a.sequence ?? 99) - (b.sequence ?? 99));
-  const supProcs  = processes.filter(p => normalizeRow(p.row, p.name, std) === "support");
+  const supProcs  = processes.filter(p => normalizeRow(p.row, p.name, std) === supKey);
 
   // Which core-sequence numbers each support process interacts with
   const SUPPORT_LINKS: Record<string, number[]> = {
@@ -653,13 +665,14 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
     return () => document.removeEventListener("mousedown", handler);
   }, [showPicker]);
 
-  // Band styling helpers (row.key: "core" | "support" | "management")
+  // Band styling helpers — resolve IATF keys (COP/SOP/MOP) → color-scheme keys
+  const colorKey = (rowKey: string) => IATF_TO_COLOR_KEY[rowKey] ?? rowKey;
   const bandStyle = (rowKey: string): React.CSSProperties => {
-    const c = sch[rowKey as keyof typeof sch] as BandColors;
+    const c = sch[colorKey(rowKey) as keyof typeof sch] as BandColors;
     return { backgroundColor: c?.bg ?? "#f9fafb", borderColor: c?.border ?? "#e5e7eb" };
   };
   const badgeStyle = (rowKey: string): React.CSSProperties => {
-    const c = sch[rowKey as keyof typeof sch] as BandColors;
+    const c = sch[colorKey(rowKey) as keyof typeof sch] as BandColors;
     return { backgroundColor: c?.badgeBg ?? "#374151", color: c?.badgeText ?? "#fff" };
   };
 
@@ -766,119 +779,74 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
         </div>
 
         <div className="flex-1 p-4 space-y-3">
-      {isIATF ? (
-        <div className="space-y-1">
-          {/* Dedicated IATF site header row — shown once at top */}
-          <div className="grid grid-cols-[120px_1fr_1fr_1fr] border-2 border-border/40 rounded-xl overflow-hidden bg-muted/20">
-            <div className="border-r border-border/30 px-3 py-2 flex items-center">
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Process Type</span>
-            </div>
-            {IATF_SITES.map(site => (
-              <div key={site.key} className={`border-r last:border-r-0 border-border/30 px-3 py-2 text-center ${site.headerClass}`}>
-                <p className="text-[10px] font-black uppercase tracking-wider">{site.label}</p>
+      {/* ── Unified 3-band layout for ALL standards (IATF: MOP→COP→SOP, ISO: management→core→support) */}
+      <div className="space-y-3">
+        {rows.map(row => {
+          const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard!) === row.key);
+          const isValueChain = row.key === "core" || row.key === "COP";
+          const sorted = isValueChain
+            ? [...rowProcs].sort((a, b) => (a.sequence ?? 99) - (b.sequence ?? 99))
+            : rowProcs;
+          return (
+            <div key={row.key} className="border-2 rounded-xl overflow-hidden" style={bandStyle(row.key)}>
+              <div className="px-4 py-2.5 flex items-center gap-2">
+                <span
+                  className="text-xs font-bold px-2.5 py-0.5 rounded-md"
+                  style={badgeStyle(row.key)}
+                >{row.key}</span>
+                <span className="text-base font-bold text-primary">{row.label}</span>
+                {isValueChain && (
+                  <span className="text-xs text-muted-foreground font-medium">— sequence &amp; interaction flow (ISO 4.4)</span>
+                )}
+                <span className="text-sm text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
               </div>
-            ))}
-          </div>
-          {rows.map(row => {
-            const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard!) === row.key);
-            return (
-              <div key={row.key} className={`border-2 rounded-xl overflow-hidden ${row.color}`}>
-                <div className="grid grid-cols-[120px_1fr_1fr_1fr]">
-                  {/* Row label */}
-                  <div className="border-r border-border/30 px-3 py-3 flex flex-col items-start justify-center gap-1">
-                    <Badge className={`text-[10px] font-bold px-2 py-0.5 ${row.badge}`}>{row.key}</Badge>
-                    <span className="text-[10px] font-bold text-primary leading-tight">{row.label}</span>
-                    <span className="text-[9px] text-muted-foreground">{rowProcs.length} proc{rowProcs.length !== 1 ? "s" : ""}</span>
+              <div className="p-3 pt-0">
+                {rowProcs.length === 0 ? (
+                  <div className="border-2 border-dashed border-border/30 rounded-lg p-4 text-center">
+                    <p className="text-xs text-muted-foreground/50">No processes assigned to this row</p>
                   </div>
-                  {/* Site columns — no repeated header, just process boxes */}
-                  {IATF_SITES.map(site => {
-                    const siteProcs = rowProcs.filter(p => (p.site || "PLANT") === site.key);
-                    return (
-                      <div key={site.key} className="border-r last:border-r-0 border-border/30 p-2 space-y-1.5">
-                        {siteProcs.map(p => (
-                          <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
-                        ))}
-                        {siteProcs.length === 0 && (
-                          <div className="border-2 border-dashed border-border/30 rounded-lg p-3 text-center min-h-[60px] flex items-center justify-center">
-                            <p className="text-[10px] text-muted-foreground/40">—</p>
+                ) : isValueChain ? (
+                  /* ── Value chain (Core / COP): horizontal flow with numbered arrows ── */
+                  <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
+                    {sorted.map((p, i) => (
+                      <div key={p.name} className="flex items-center gap-0 flex-shrink-0">
+                        <div className="relative flex flex-col items-center" style={{ minWidth: 150 }}>
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <span
+                              className="w-6 h-6 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: sch.core.seqBg }}
+                            >
+                              {p.sequence ?? i + 1}
+                            </span>
+                            {p.conditionalLabel && (
+                              <span className="text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded px-1.5 py-0.5 leading-none">
+                                {p.conditionalLabel}
+                              </span>
+                            )}
+                          </div>
+                          <ProcessBox process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                        </div>
+                        {i < sorted.length - 1 && (
+                          <div className="flex flex-col items-center px-2 flex-shrink-0 self-center mt-7">
+                            <ArrowRight className="w-6 h-6" style={{ color: sch.core.arrowHex }} />
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* ── Management / Support: responsive grid ─────────── */
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                    {sorted.map(p => (
+                      <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                    ))}
+                  </div>
+                )}
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {rows.map(row => {
-            const rowProcs = processes.filter(p => normalizeRow(p.row, p.name, project.standard!) === row.key);
-            const isCore = row.key === "core";
-            const sortedCore = isCore
-              ? [...rowProcs].sort((a, b) => (a.sequence ?? 99) - (b.sequence ?? 99))
-              : rowProcs;
-            return (
-              <div key={row.key} className="border-2 rounded-xl overflow-hidden" style={bandStyle(row.key)}>
-                <div className="px-4 py-2.5 flex items-center gap-2">
-                  <span
-                    className="text-xs font-bold px-2.5 py-0.5 rounded-md"
-                    style={badgeStyle(row.key)}
-                  >{row.key}</span>
-                  <span className="text-base font-bold text-primary">{row.label}</span>
-                  {isCore && <span className="text-xs text-muted-foreground font-medium">— sequence &amp; interaction flow</span>}
-                  <span className="text-sm text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
-                </div>
-                <div className="p-3 pt-0">
-                  {rowProcs.length === 0 ? (
-                    <div className="border-2 border-dashed border-border/30 rounded-lg p-4 text-center">
-                      <p className="text-xs text-muted-foreground/50">No processes assigned to this row</p>
-                    </div>
-                  ) : isCore ? (
-                    /* ── Core: horizontal flow with arrows ─────────────── */
-                    <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
-                      {sortedCore.map((p, i) => (
-                        <div key={p.name} className="flex items-center gap-0 flex-shrink-0">
-                          <div className="relative flex flex-col items-center" style={{ minWidth: 150 }}>
-                            {/* Sequence badge + optional conditional label */}
-                            <div className="flex items-center gap-1.5 mb-2">
-                              <span
-                                className="w-6 h-6 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: sch.core.seqBg }}
-                              >
-                                {p.sequence ?? i + 1}
-                              </span>
-                              {p.conditionalLabel && (
-                                <span className="text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 rounded px-1.5 py-0.5 leading-none">
-                                  {p.conditionalLabel}
-                                </span>
-                              )}
-                            </div>
-                            <ProcessBox process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
-                          </div>
-                          {i < sortedCore.length - 1 && (
-                            <div className="flex flex-col items-center px-2 flex-shrink-0 self-center mt-7">
-                              <ArrowRight className="w-6 h-6" style={{ color: sch.core.arrowHex }} />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    /* ── Support / Management: grid ────────────────────── */
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                      {rowProcs.map(p => (
-                        <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
         </div>
 
         {/* Right: Customer Satisfaction */}
