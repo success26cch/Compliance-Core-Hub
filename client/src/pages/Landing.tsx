@@ -651,16 +651,19 @@ export default function Landing() {
       <nav className="bg-[hsl(222,47%,11%)] sticky top-0 z-[9999]">
         <div className="flex items-center justify-between h-12 px-4 gap-2">
           <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide flex-1">
-            <Link href="/about" className="px-3 py-2 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0 animate-pulse" data-testid="nav-about">About</Link>
-            <Link href="/meet-corey" className="px-3 py-2 text-sm font-bold bg-blue-500 text-white rounded-md hover:bg-blue-400 transition-colors shrink-0 animate-pulse shadow-lg shadow-blue-500/50" data-testid="nav-meet-corey">Meet Corey</Link>
-            <Link href="/employer-dashboard" className="px-3 py-2 text-sm font-bold bg-[#8B0000] text-white rounded-md hover:bg-[#a00000] transition-colors shrink-0 animate-pulse shadow-lg shadow-red-900/60" data-testid="nav-employer-dashboard">Employer Dashboard</Link>
-            <Link href="/dot-compliance-hub" className="px-3 py-2 text-sm font-bold bg-green-600 text-white rounded-md hover:bg-green-500 transition-colors shrink-0 animate-pulse shadow-lg shadow-green-600/50" data-testid="nav-dot-hub-featured">DOT Fleet Hub</Link>
-            <Link href="/env-compliance-hub" className="px-3 py-2 text-sm font-bold bg-emerald-600 text-white rounded-md hover:bg-emerald-500 transition-colors shrink-0 animate-pulse shadow-lg shadow-emerald-600/50" data-testid="nav-env-hub-featured">Env Compliance Hub</Link>
-            <Link href="/meet-isa" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
-            <Link href="/meet-iso-manager" className="px-3 py-2 text-sm font-bold text-accent hover:text-white hover:bg-accent/20 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
-            <Link href="/watch-demo" className="px-3 py-2 text-sm font-bold text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0 flex items-center gap-1" data-testid="nav-watch-demo"><Play className="w-3 h-3" />Watch Demo</Link>
-            <Link href="/bma" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Bilingual Med Assist</Link>
-            <a href="#faq" className="px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
+            {/* ── Tier 1: two primary CTA pills ── */}
+            <Link href="/about" className="px-3 py-1.5 text-sm font-bold bg-accent text-white rounded-md hover:bg-accent/80 transition-colors shrink-0" data-testid="nav-about">About</Link>
+            <Link href="/meet-corey" className="px-3 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-md hover:bg-blue-400 transition-colors shrink-0 shadow-md shadow-blue-500/40" data-testid="nav-meet-corey">Meet Corey</Link>
+            {/* ── Tier 2: accent-text highlight for Isa ── */}
+            <Link href="/meet-isa" className="px-3 py-1.5 text-sm font-semibold text-accent border border-accent/40 rounded-md hover:bg-accent/10 transition-colors shrink-0" data-testid="nav-meet-isa">Meet Isa</Link>
+            {/* ── Tier 3: quiet secondary links ── */}
+            <Link href="/employer-dashboard" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-employer-dashboard">Employer Dashboard</Link>
+            <Link href="/dot-compliance-hub" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-dot-hub-featured">DOT Fleet Hub</Link>
+            <Link href="/env-compliance-hub" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-env-hub-featured">Env Compliance Hub</Link>
+            <Link href="/meet-iso-manager" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-iso-manager">ISO Manager</Link>
+            <Link href="/watch-demo" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0 flex items-center gap-1" data-testid="nav-watch-demo"><Play className="w-3 h-3" />Watch Demo</Link>
+            <Link href="/bma" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-bilingual">Bilingual Med Assist</Link>
+            <a href="#faq" className="px-3 py-1.5 text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 rounded-md transition-colors shrink-0" data-testid="nav-faq">FAQ</a>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
