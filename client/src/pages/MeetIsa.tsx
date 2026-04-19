@@ -635,10 +635,10 @@ export default function MeetIsa() {
                       about any standard.
                     </h2>
                     <p className="text-white/60 text-sm leading-relaxed mb-5">
-                      3 free questions from your AI Lead ISO Auditor — ISO 9001, 14001, 45001, IATF 16949, and more. No pitch, just answers.
+                      Isa doesn't just know the standards — she thinks like a 3rd party auditor. What most consultants charge hundreds per hour for, she answers in seconds. Three questions, free, no strings.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {["ISO 9001","ISO 14001","ISO 45001","IATF 16949","AS9100","ISO 13485"].map(s => (
+                      {["ISO 9001","ISO 14001","ISO 45001","IATF 16949","AS9100","ISO 13485","ISO 27001"].map(s => (
                         <span key={s} className="text-[10px] font-bold px-2.5 py-1 rounded-lg border"
                           style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)" }}>
                           {s}
@@ -652,7 +652,7 @@ export default function MeetIsa() {
                     <TryCoreyChatWidget
                       compact
                       agentName="Isa"
-                      agentSubtitle="Lead ISO Auditor · ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949"
+                      agentSubtitle="Lead ISO Auditor · ISO 9001 · 14001 · 45001 · IATF 16949 · AS9100 · ISO 13485 · 27001"
                       agentImage={isaBotImg}
                       apiEndpoint="/api/landing-isa-bot"
                       chatPlaceholder="Ask Isa an ISO or audit question..."
