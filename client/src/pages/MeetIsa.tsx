@@ -465,7 +465,7 @@ export default function MeetIsa() {
             {/* Core standards */}
             <motion.div variants={fadeUp} className="mb-3">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-white" style={{ background: ORANGE }}>Core — Included in Isa ($99/mo)</span>
+                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-white" style={{ background: ORANGE }}>Core — Included in Isa ($129/mo)</span>
               </div>
             </motion.div>
             <div className="grid md:grid-cols-3 gap-3 mb-6">
@@ -487,7 +487,7 @@ export default function MeetIsa() {
             {/* Pro standards */}
             <motion.div variants={fadeUp} className="mb-3">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white text-gray-900 border border-white/30">Pro — Included in Isa Pro ($199/mo)</span>
+                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white text-gray-900 border border-white/30">Pro — Included in Isa Pro ($249/mo)</span>
               </div>
             </motion.div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -545,7 +545,7 @@ export default function MeetIsa() {
                     </div>
                     <div>
                       <p className="font-black text-white text-base">Isa — AI Guidance</p>
-                      <p className="text-xs text-white/45">Conversational ISO expert · $99–$199/mo</p>
+                      <p className="text-xs text-white/45">Conversational ISO expert · $129–$249/mo</p>
                     </div>
                   </div>
                   <p className="text-sm text-white/65 leading-relaxed mb-4">
@@ -657,7 +657,7 @@ export default function MeetIsa() {
                       agentImage={isaBotImg}
                       apiEndpoint="/api/landing-isa-bot"
                       chatPlaceholder="Ask Isa an ISO or audit question..."
-                      upgradeText="Get Isa AI — $99/mo"
+                      upgradeText="Get Isa AI — $129/mo"
                       upgradeLink="/get-started"
                       upgradeDetails="Unlimited audits · IATF 16949 · Clause coverage · NC management · Gap analysis"
                       buttonClassName="bg-[hsl(24,95%,53%)] hover:bg-[hsl(24,95%,42%)]"
@@ -691,7 +691,7 @@ export default function MeetIsa() {
                     </div>
                     <div className="mb-6 pb-6 border-b border-white/10">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black" style={{ color: ORANGE }}>$99</span>
+                        <span className="text-4xl font-black" style={{ color: ORANGE }}>$129</span>
                         <span className="text-white/40 font-medium">/mo</span>
                       </div>
                       <p className="text-xs text-white/30 mt-1">per month · cancel anytime</p>
@@ -721,7 +721,7 @@ export default function MeetIsa() {
                     </ul>
                     <Link href="/settings">
                       <Button className="w-full font-bold text-white hover:opacity-90 transition-opacity" style={{ background: ORANGE }} data-testid="button-get-isa">
-                        Get Isa — $99/mo
+                        Get Isa — $129/mo
                       </Button>
                     </Link>
                   </div>
@@ -742,7 +742,7 @@ export default function MeetIsa() {
                     </div>
                     <div className="mb-6 pb-6 border-b border-white/10">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black" style={{ color: ORANGE }}>$199</span>
+                        <span className="text-4xl font-black" style={{ color: ORANGE }}>$249</span>
                         <span className="text-white/40 font-medium">/mo</span>
                       </div>
                       <p className="text-xs text-white/30 mt-1">per month · cancel anytime</p>
@@ -776,7 +776,7 @@ export default function MeetIsa() {
                     </ul>
                     <Link href="/settings">
                       <Button className="w-full font-bold text-white hover:opacity-90 transition-opacity" style={{ background: ORANGE }} data-testid="button-get-isa-pro">
-                        Get Isa Pro — $199/mo
+                        Get Isa Pro — $249/mo
                       </Button>
                     </Link>
                   </div>
@@ -861,7 +861,7 @@ export default function MeetIsa() {
                 <Star className="w-8 h-8" style={{ color: ORANGE }} />
               </div>
               <div className="inline-block px-4 py-1.5 rounded-full text-sm font-bold text-white mb-4" style={{ background: ORANGE }}>
-                $99/mo · cancel anytime
+                $129/mo · cancel anytime
               </div>
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
@@ -874,7 +874,7 @@ export default function MeetIsa() {
               <Link href="/settings">
                 <Button size="lg" className="font-bold text-white px-10 py-6 text-lg gap-2 hover:opacity-90 transition-opacity" style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, ${ORANGE_DARK} 100%)` }} data-testid="button-cta-get-isa">
                   <Sparkles className="w-5 h-5" />
-                  Get Isa — $99/mo
+                  Get Isa — $129/mo
                 </Button>
               </Link>
               <Link href="/iso-manager">
