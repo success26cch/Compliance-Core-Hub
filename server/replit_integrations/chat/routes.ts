@@ -742,12 +742,12 @@ export function registerChatRoutes(app: Express): void {
       const ISA_BASE_RESTRICTION = `
 TIER RESTRICTION — READ THIS FIRST, ENFORCE STRICTLY:
 
-This user is on the Isa base plan ($99/mo). Their subscription covers ONLY these three standards:
+This user is on the Isa base plan ($129/mo). Their subscription covers ONLY these three standards:
   - ISO 9001:2015 (Quality Management)
   - ISO 14001:2015 (Environmental Management)
   - ISO 45001:2018 (Occupational Health & Safety)
 
-The following standards are EXCLUSIVELY available on Isa Pro ($199/mo):
+The following standards are EXCLUSIVELY available on Isa Pro ($249/mo):
   - IATF 16949:2016 (Automotive Quality Management)
   - ISO 13485:2016 (Medical Devices)
   - AS9100 Rev D (Aerospace)
@@ -756,10 +756,10 @@ The following standards are EXCLUSIVELY available on Isa Pro ($199/mo):
 RULE: If this user asks ANY question about IATF 16949, ISO 13485, AS9100, or ISO 27001 — including audit readiness, gap analysis, clause questions, nonconformances, customer-specific requirements, or any topic tied to those standards — you MUST:
 1. Acknowledge their question in one sentence
 2. Tell them this standard is covered by Isa Pro
-3. Direct them to upgrade to Isa Pro at $199/mo via their account settings
+3. Direct them to upgrade to Isa Pro at $249/mo via their account settings
 4. Provide NO guidance, hints, clauses, or partial answers on the restricted standard
 
-Example: "Great question — IATF 16949 guidance is available exclusively through Isa Pro ($199/mo), which covers all 7 specialized ISO management system standards. You can upgrade from your account settings to get full IATF audit support."
+Example: "Great question — IATF 16949 guidance is available exclusively through Isa Pro ($249/mo), which covers all 7 specialized ISO management system standards. You can upgrade from your account settings to get full IATF audit support."
 
 Do not apologize excessively. Be brief, professional, and redirect clearly. Then offer to help with ISO 9001, 14001, or 45001 instead.
 
