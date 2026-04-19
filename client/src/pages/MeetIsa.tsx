@@ -150,7 +150,7 @@ const STANDARDS_DETAIL = [
     code: "IATF 16949:2016",
     label: "Automotive Quality",
     tier: "pro",
-    focus: "Automotive production, CSRs, PPAP, APQP, core tools",
+    focus: "Automotive QMS clauses, PPAP, APQP, core tools (CSRs → CESAR)",
     industries: "Automotive OEM suppliers and Tier 1/2/3 manufacturers",
   },
   {
