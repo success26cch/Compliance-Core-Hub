@@ -626,7 +626,7 @@ export default function MeetCorey() {
             viewport={{ once: true, margin: "-60px" }}
             variants={fadeUp}
           >
-            <TryCoreyChatWidget compact />
+            <TryCoreyChatWidget compact source="ask_corey_meetcorey" />
           </motion.div>
         </div>
       </section>

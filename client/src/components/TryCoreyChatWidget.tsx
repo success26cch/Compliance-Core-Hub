@@ -68,6 +68,7 @@ interface TryCoreyChatWidgetProps {
   upgradeText?: string;
   upgradeLink?: string;
   upgradeDetails?: string;
+  source?: string;
 }
 
 export default function TryCoreyChatWidget({
@@ -81,6 +82,7 @@ export default function TryCoreyChatWidget({
   upgradeText = "Get Corey AI — $199/mo",
   upgradeLink = "/get-started",
   upgradeDetails = "Unlimited questions · Audit prep · Checklists · DOT guidance · Custom reports",
+  source,
 }: TryCoreyChatWidgetProps) {
   const t = THEMES[theme];
   const [stage, setStage] = useState<"intro" | "chat" | "limit">("intro");
@@ -140,7 +142,7 @@ export default function TryCoreyChatWidget({
     fetch("/api/leads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), source: `ask_${agentName.toLowerCase()}` }),
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), source: source ?? `ask_${agentName.toLowerCase()}` }),
     }).catch(() => {});
   };
 
