@@ -630,9 +630,10 @@ export default function MeetIsa() {
                       Try Free · No Card Required
                     </span>
                     <h2 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
-                      Isa knows ISO.{" "}
-                      <span style={{ color: "hsl(24,95%,63%)" }}>Ask her anything</span>{" "}
-                      about any standard.
+                      Isa is{" "}
+                      <span style={{ color: "hsl(24,95%,63%)" }}>the ISO Expert.</span>
+                      <br />
+                      <span className="text-2xl md:text-3xl font-bold text-white/80">Ask her anything — across her 7 covered standards.</span>
                     </h2>
                     <p className="text-white/60 text-sm leading-relaxed mb-5">
                       Isa doesn't just know the standards — she thinks like a 3rd party auditor. What most consultants charge hundreds per hour for, she answers in seconds. Three questions, free, no strings.
