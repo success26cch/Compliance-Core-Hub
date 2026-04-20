@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -11,12 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Truck, Users, Download, Bell, AlertTriangle, CheckCircle2,
-  Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X, Printer, Loader2
+  Plus, Pencil, Trash2, FileText, Clock, Car, RefreshCcw, X, Printer, Loader2,
+  Check, ArrowRight, Lock, ChevronRight
 } from "lucide-react";
 import { ProtectedLayout } from "@/components/Layout";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
-import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
+import { PRODUCT_CONFIGS } from "@/components/ProductGate";
+import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 
 // ─── Types (matching schema) ─────────────────────────────────────────────────
 
@@ -1323,16 +1326,72 @@ export default function DotHub() {
   }
 
   if (!hasDotAccess) {
+    const cfg = PRODUCT_CONFIGS.dot;
     return (
       <ProtectedLayout>
-        <ProductGate
-          hasAccess={false}
-          isLoading={false}
-          product={PRODUCT_CONFIGS.dot}
-          fullPage={false}
-        >
-          {null}
-        </ProductGate>
+        <div className="min-h-screen bg-[hsl(222,47%,8%)] text-white overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-4 py-14 space-y-12">
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-500/30 mb-2">
+                <Truck className="w-7 h-7 text-blue-400" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black">{cfg.name}</h1>
+              <p className="text-blue-400 font-semibold text-lg">{cfg.tagline}</p>
+              <p className="text-white/60 max-w-xl mx-auto leading-relaxed">{cfg.description}</p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              {cfg.features.map((f, i) => (
+                <div key={i} className="flex items-start gap-2.5 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                  <Check className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <span className="text-sm text-white/80 leading-snug">{f}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <div className="text-center">
+                <span className="inline-block bg-blue-500/10 text-blue-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                  Live Demo
+                </span>
+                <h2 className="text-2xl font-bold text-white mt-3 mb-1">
+                  Ask Corey — <span className="text-blue-400">Free Trial</span>
+                </h2>
+                <p className="text-white/50 text-sm max-w-md mx-auto">
+                  49 CFR Part 40, Clearinghouse queries, HOS rules, driver qualification files, pre-employment screening — 3 free questions, no credit card required.
+                </p>
+              </div>
+              <TryCoreyChatWidget compact theme="blue" source="ask_corey_dot_hub" />
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="font-black text-white text-lg">{cfg.name}</p>
+                  <p className="text-white/50 text-sm">{cfg.price}</p>
+                  {cfg.priceNote && <p className="text-white/40 text-xs">{cfg.priceNote}</p>}
+                </div>
+                <Lock className="w-5 h-5 text-white/30" />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/settings" className="flex-1">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-11 gap-2" data-testid="button-dot-hub-subscribe">
+                    Subscribe — View Plans <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Link href="/dot-compliance-hub" className="flex-1">
+                  <Button variant="outline" className="w-full h-11 border-white/20 text-white hover:bg-white/10 font-semibold gap-2" data-testid="button-dot-hub-learn-more">
+                    Learn More <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-xs text-center text-white/30">
+                Already subscribed?{" "}
+                <Link href="/settings" className="underline hover:text-white/60">Check your account settings</Link>
+              </p>
+            </div>
+          </div>
+        </div>
       </ProtectedLayout>
     );
   }

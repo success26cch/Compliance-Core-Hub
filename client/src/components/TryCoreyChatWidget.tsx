@@ -55,11 +55,21 @@ const THEMES: Record<string, ThemeClasses> = {
     borderSolid: "border-emerald-500",
     ring: "ring-emerald-500/20",
   },
+  blue: {
+    text: "text-blue-400",
+    textMuted: "text-blue-400/30",
+    bg: "bg-blue-600",
+    bgHover: "hover:bg-blue-500",
+    bgLight: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    borderSolid: "border-blue-500",
+    ring: "ring-blue-500/20",
+  },
 };
 
 interface TryCoreyChatWidgetProps {
   compact?: boolean;
-  theme?: "default" | "emerald";
+  theme?: "default" | "emerald" | "blue";
   agentName?: string;
   agentSubtitle?: string;
   agentImage?: string;
