@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, Users, TrendingUp, AlertTriangle, Download, Mail, Building2, UserCheck, Clock, CheckCircle2, XCircle, Bot, MessageSquare, Eye, BarChart3, Activity } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, LabelList } from "recharts";
 import { apiRequest } from "@/lib/queryClient";
 import { Redirect } from "wouter";
 
@@ -50,6 +50,7 @@ type Lead = {
   id: number;
   name: string;
   email: string;
+  source: string | null;
   createdAt: string | null;
 };
 
@@ -81,6 +82,12 @@ type CompanyUsage = {
   plan: string | null;
   plan_status: string | null;
 };
+
+const SOURCE_COLORS = [
+  "#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd",
+  "#06b6d4", "#0891b2", "#0e7490", "#f59e0b",
+  "#10b981", "#ef4444",
+];
 
 const planLabels: Record<string, string> = {
   'free': 'Free',
@@ -468,58 +475,158 @@ export default function SuperAdmin() {
 
         {/* Leads Tab */}
         <TabsContent value="leads">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Lead Captures</CardTitle>
-                  <CardDescription>Users who downloaded the Recordability Cheat Sheet</CardDescription>
+          <div className="space-y-6">
+            {/* Source Breakdown Chart */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                      Lead Source Breakdown
+                    </CardTitle>
+                    <CardDescription>Leads grouped by originating page or source</CardDescription>
+                  </div>
+                  {leads && leads.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      {leads.length} total lead{leads.length !== 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
-                <Button onClick={handleExportLeads} data-testid="button-export-leads">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {leadsLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </CardHeader>
+              <CardContent>
+                {leadsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : leads && leads.length > 0 ? (() => {
+                  const sourceCounts = leads.reduce<Record<string, number>>((acc, lead) => {
+                    const src = lead.source || 'unknown';
+                    acc[src] = (acc[src] || 0) + 1;
+                    return acc;
+                  }, {});
+                  const total = leads.length;
+                  const chartData = Object.entries(sourceCounts)
+                    .map(([source, count]) => ({
+                      source,
+                      count,
+                      pct: Math.round((count / total) * 100),
+                    }))
+                    .sort((a, b) => b.count - a.count);
+
+                  return (
+                    <div className="space-y-4">
+                      <ResponsiveContainer width="100%" height={Math.max(180, chartData.length * 48)}>
+                        <BarChart
+                          data={chartData}
+                          layout="vertical"
+                          margin={{ top: 4, right: 80, left: 8, bottom: 4 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                          <XAxis type="number" allowDecimals={false} />
+                          <YAxis
+                            type="category"
+                            dataKey="source"
+                            width={160}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip
+                            formatter={(value: number) => [`${value} leads`, 'Count']}
+                          />
+                          <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                            {chartData.map((_entry, index) => (
+                              <Cell key={index} fill={SOURCE_COLORS[index % SOURCE_COLORS.length]} />
+                            ))}
+                            <LabelList
+                              dataKey="pct"
+                              position="right"
+                              formatter={(v: number) => `${v}%`}
+                              style={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {chartData.map((item, index) => (
+                          <div
+                            key={item.source}
+                            className="flex items-center gap-2 rounded-lg border p-3"
+                            data-testid={`source-breakdown-${item.source}`}
+                          >
+                            <span
+                              className="w-3 h-3 rounded-full shrink-0"
+                              style={{ background: SOURCE_COLORS[index % SOURCE_COLORS.length] }}
+                            />
+                            <div className="min-w-0">
+                              <div className="text-xs font-medium truncate">{item.source}</div>
+                              <div className="text-xs text-muted-foreground">{item.count} ({item.pct}%)</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div className="text-center text-muted-foreground py-8">No leads captured yet</div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Leads Table */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Lead Captures</CardTitle>
+                    <CardDescription>All captured leads with source information</CardDescription>
+                  </div>
+                  <Button onClick={handleExportLeads} data-testid="button-export-leads">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </Button>
                 </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Captured</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {leads?.map((lead) => (
-                      <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
-                        <TableCell className="font-medium">{lead.name}</TableCell>
-                        <TableCell>{lead.email}</TableCell>
-                        <TableCell>{formatDate(lead.createdAt)}</TableCell>
-                      </TableRow>
-                    ))}
-                    {(!leads || leads.length === 0) && (
+              </CardHeader>
+              <CardContent>
+                {leadsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                          No leads captured yet
-                        </TableCell>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Captured</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-              {leads && leads.length > 0 && (
-                <div className="mt-4 text-sm text-muted-foreground">
-                  Total leads: {leads.length}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {leads?.map((lead) => (
+                        <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
+                          <TableCell className="font-medium">{lead.name}</TableCell>
+                          <TableCell>{lead.email}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="font-mono text-xs">
+                              {lead.source || 'unknown'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(lead.createdAt)}</TableCell>
+                        </TableRow>
+                      ))}
+                      {(!leads || leads.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            No leads captured yet
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Ask Corey Trials Tab */}
