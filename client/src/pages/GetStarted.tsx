@@ -385,7 +385,7 @@ export default function GetStarted() {
                     <div className="flex flex-col items-center gap-1">
                       <Badge className="bg-accent text-white">Most Popular</Badge>
                       <span>Corey AI</span>
-                      <span className="text-lg font-bold text-primary">$149<span className="text-xs font-normal text-muted-foreground">/mo per user</span></span>
+                      <span className="text-lg font-bold text-primary">$199<span className="text-xs font-normal text-muted-foreground">/mo per user</span></span>
                     </div>
                   </th>
                   <th className="text-center p-4 bg-muted/50 dark:bg-muted/20 rounded-tr-md font-semibold text-foreground" data-testid="th-employer">

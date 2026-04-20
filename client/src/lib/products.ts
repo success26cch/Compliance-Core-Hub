@@ -12,7 +12,7 @@ export const PRODUCTS: Record<string, ProductDefinition> = {
   "cch-unlimited-safety": {
     id: "cch-unlimited-safety",
     name: "Unlimited Safety",
-    unitAmount: 14900,
+    unitAmount: 19900,
     currency: "usd",
     interval: "month",
     category: "CCHUB Corey",
