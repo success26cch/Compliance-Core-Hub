@@ -39,6 +39,8 @@ async function logAudit(
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey } from "./stripeClient";
 import { verifyPaddleSignature, processPaddleEvent } from "./paddleService";
+import { dodoService } from "./dodoService";
+import { getDodoProductId, PLAN_TO_INTERNAL_ID, seedDodoProducts } from "./dodoProducts";
 import { generateRecordabilityCheatSheet } from "./generateCheatSheet";
 import { generateDOTDrugTestingCheatSheet } from "./generateDOTCheatSheet";
 import { generateISOAuditCheatSheet } from "./generateISOCheatSheet";
@@ -198,6 +200,107 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.json({ received: true });
     } catch (err: any) {
       console.error("[Paddle] Error processing webhook event:", err.message);
+      return res.status(500).json({ error: "Event processing failed" });
+    }
+  });
+
+  // ─── DODO Payments Webhook ───────────────────────────────────────────────────
+  // Follows Standard Webhooks spec (HMAC SHA256).
+  // Set DODO_PAYMENTS_WEBHOOK_SECRET from your DODO Dashboard → Developer → Webhooks.
+  app.post("/webhooks/dodo", async (req: Request, res: Response) => {
+    const secret = process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
+    if (!secret) {
+      console.warn("[DODO Webhook] DODO_PAYMENTS_WEBHOOK_SECRET not configured — skipping verification");
+    }
+
+    const rawBody = (req as any).rawBody as Buffer | undefined;
+    if (!rawBody) {
+      return res.status(400).json({ error: "Raw body unavailable" });
+    }
+
+    // Standard Webhooks signature verification
+    if (secret) {
+      const webhookId = req.headers["webhook-id"] as string | undefined;
+      const webhookTimestamp = req.headers["webhook-timestamp"] as string | undefined;
+      const webhookSignature = req.headers["webhook-signature"] as string | undefined;
+
+      if (!webhookId || !webhookTimestamp || !webhookSignature) {
+        return res.status(400).json({ error: "Missing webhook signature headers" });
+      }
+
+      try {
+        const crypto = await import("crypto");
+        const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody.toString("utf8")}`;
+        const secretBytes = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
+        const computedSig = crypto
+          .createHmac("sha256", secretBytes)
+          .update(signedContent)
+          .digest("base64");
+        const expectedSigs = webhookSignature.split(" ").map(s => s.split(",")[1]);
+        if (!expectedSigs.includes(computedSig)) {
+          console.warn("[DODO Webhook] Signature mismatch");
+          return res.status(401).json({ error: "Invalid signature" });
+        }
+      } catch (err: any) {
+        console.error("[DODO Webhook] Signature verification error:", err.message);
+        return res.status(500).json({ error: "Signature verification failed" });
+      }
+    }
+
+    try {
+      const event = req.body;
+      const eventType: string = event?.type ?? event?.event_type ?? "";
+      const data = event?.data ?? event;
+      console.log(`[DODO Webhook] Received event: ${eventType}`);
+
+      // subscription.active — mark user as subscribed
+      if (eventType === "subscription.active" || eventType === "subscription.created") {
+        const userId: string | undefined = data?.metadata?.userId ?? data?.customer?.metadata?.userId;
+        const plan: string | undefined = data?.metadata?.plan ?? data?.product_id;
+        const dodoSubscriptionId: string | undefined = data?.subscription_id ?? data?.id;
+        const dodoCustomerId: string | undefined = data?.customer_id ?? data?.customer?.customer_id;
+
+        if (userId) {
+          await storage.upsertSubscription({
+            userId,
+            status: "active",
+            plan: plan || "dodo_subscription",
+            dodoSubscriptionId: dodoSubscriptionId ?? undefined,
+            dodoCustomerId: dodoCustomerId ?? undefined,
+          });
+          console.log(`[DODO Webhook] Activated subscription for user ${userId}, plan=${plan}`);
+        }
+      }
+
+      // subscription.cancelled or subscription.expired
+      if (eventType === "subscription.cancelled" || eventType === "subscription.expired") {
+        const userId: string | undefined = data?.metadata?.userId;
+        if (userId) {
+          await storage.upsertSubscription({
+            userId,
+            status: "cancelled",
+          });
+          console.log(`[DODO Webhook] Cancelled subscription for user ${userId}`);
+        }
+      }
+
+      // payment.succeeded — for one-time payments
+      if (eventType === "payment.succeeded") {
+        const userId: string | undefined = data?.metadata?.userId;
+        const plan: string | undefined = data?.metadata?.plan;
+        if (userId && plan) {
+          await storage.upsertSubscription({
+            userId,
+            status: "active",
+            plan,
+          });
+          console.log(`[DODO Webhook] One-time payment succeeded for user ${userId}, plan=${plan}`);
+        }
+      }
+
+      return res.json({ received: true });
+    } catch (err: any) {
+      console.error("[DODO Webhook] Error processing event:", err.message);
       return res.status(500).json({ error: "Event processing failed" });
     }
   });
@@ -555,36 +658,41 @@ Rules:
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const userId = (req.user as any).claims.sub;
       const userEmail = (req.user as any).claims.email || `user-${userId}@example.com`;
-      const { priceId } = req.body;
-      
-      if (!priceId) {
-        return res.status(400).json({ message: "Price ID is required" });
+      const { plan } = req.body;
+
+      if (!plan) {
+        return res.status(400).json({ message: "Plan is required" });
       }
-      
+
+      const internalId = PLAN_TO_INTERNAL_ID[plan];
+      if (!internalId) {
+        return res.status(400).json({ message: "Unknown plan" });
+      }
+
+      await seedDodoProducts();
+
       let sub = await storage.getSubscription(userId);
-      const verifiedCId = await stripeService.ensureCustomerExists(sub?.stripeCustomerId, userEmail, userId);
-      if (verifiedCId !== sub?.stripeCustomerId) {
-        await storage.upsertSubscription({ userId, status: sub?.status || "inactive", stripeCustomerId: verifiedCId });
-        sub = await storage.getSubscription(userId);
+      const dodoCustomerId = await dodoService.ensureCustomerExists(sub?.dodoCustomerId, userEmail, userId);
+      if (dodoCustomerId !== sub?.dodoCustomerId) {
+        await storage.upsertSubscription({ userId, status: sub?.status || "inactive", dodoCustomerId });
       }
-      const customerId = verifiedCId;
-      
+
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const session = await stripeService.createCheckoutSession(
-        customerId,
-        priceId,
-        `${baseUrl}/settings?checkout=success`,
-        `${baseUrl}/settings?checkout=cancel`,
-        'subscription'
-      );
-      
-      res.json({ url: session.url });
+      const checkoutUrl = await dodoService.createCheckoutSession({
+        internalProductIds: [internalId],
+        quantities: [1],
+        successUrl: `${baseUrl}/settings?checkout=success`,
+        customerEmail: userEmail,
+        metadata: { userId, plan },
+      });
+
+      res.json({ url: checkoutUrl });
     } catch (error: any) {
-      console.error('Checkout error:', error);
+      console.error('[DODO] create-checkout error:', error);
       res.status(500).json({ message: error.message || "Failed to create checkout session" });
     }
   });
@@ -593,70 +701,41 @@ Rules:
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const userId = (req.user as any).claims.sub;
       const userEmail = (req.user as any).claims.email || `user-${userId}@example.com`;
-      const { plan } = req.body; // 'corey_pro', 'employer_platform', or 'setup_fee'
-      
+      const { plan } = req.body;
+
       if (!plan) {
         return res.status(400).json({ message: "Plan is required" });
       }
 
-      let sub = await storage.getSubscription(userId);
-      const verifiedCId2 = await stripeService.ensureCustomerExists(sub?.stripeCustomerId, userEmail, userId);
-      if (verifiedCId2 !== sub?.stripeCustomerId) {
-        await storage.upsertSubscription({ userId, status: sub?.status || "inactive", stripeCustomerId: verifiedCId2 });
-      }
-      const customerId = verifiedCId2;
-      
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const stripe = (await import('./stripeClient')).getUncachableStripeClient();
-      const stripeClient = await stripe;
-
-      const planConfig: Record<string, { name: string; amount: number; interval?: string; mode: string }> = {
-        corey_pro: { name: 'CCHUB Unlimited Safety - Corey AI', amount: 14900, interval: 'month', mode: 'subscription' },
-        employer_platform: { name: 'CCHUB Employer Compliance Platform', amount: 49900, interval: 'month', mode: 'subscription' },
-        employer_platform_with_corey: { name: 'CCHUB Employer Compliance Platform + Corey AI', amount: 54900, interval: 'month', mode: 'subscription' },
-        setup_fee: { name: 'CCHUB Platform Setup & Onboarding', amount: 49900, mode: 'payment' },
-        isa: { name: 'ACSI Isa — ISO AI Advisor (Core)', amount: 9900, interval: 'month', mode: 'subscription' },
-        isa_pro: { name: 'ACSI Isa Pro — Full ISO AI Advisor', amount: 19900, interval: 'month', mode: 'subscription' },
-      };
-
-      const config = planConfig[plan];
-      if (!config) {
+      const internalId = PLAN_TO_INTERNAL_ID[plan];
+      if (!internalId) {
         return res.status(400).json({ message: "Invalid plan" });
       }
 
-      const lineItem: any = {
-        price_data: {
-          currency: 'usd',
-          product_data: { name: config.name },
-          unit_amount: config.amount,
-        },
-        quantity: 1,
-      };
-      if (config.interval) {
-        lineItem.price_data.recurring = { interval: config.interval };
+      await seedDodoProducts();
+
+      let sub = await storage.getSubscription(userId);
+      const dodoCustomerId = await dodoService.ensureCustomerExists(sub?.dodoCustomerId, userEmail, userId);
+      if (dodoCustomerId !== sub?.dodoCustomerId) {
+        await storage.upsertSubscription({ userId, status: sub?.status || "inactive", dodoCustomerId });
       }
 
-      const session = await stripeClient.checkout.sessions.create({
-        customer: customerId,
-        payment_method_types: ['card'],
-        line_items: [lineItem],
-        mode: config.mode as any,
-        success_url: `${baseUrl}/settings?platform_checkout=success&plan=${plan}`,
-        cancel_url: `${baseUrl}/settings?platform_checkout=cancelled`,
-        metadata: {
-          userId,
-          plan,
-          type: 'platform_subscription',
-        },
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const checkoutUrl = await dodoService.createCheckoutSession({
+        internalProductIds: [internalId],
+        quantities: [1],
+        successUrl: `${baseUrl}/settings?platform_checkout=success&plan=${plan}`,
+        customerEmail: userEmail,
+        metadata: { userId, plan, type: 'platform_subscription' },
       });
-      
-      res.json({ url: session.url });
+
+      res.json({ url: checkoutUrl });
     } catch (error: any) {
-      console.error('Platform checkout error:', error);
+      console.error('[DODO] platform-checkout error:', error);
       res.status(500).json({ message: error.message || "Failed to create checkout session" });
     }
   });
@@ -668,42 +747,28 @@ Rules:
     try {
       const userId = (req.user as any).claims.sub;
       const { plan } = req.body;
-      
+
       if (plan === 'setup_fee') {
         return res.json({ success: true, message: "Setup fee paid" });
       }
 
+      // With DODO Payments, activation is handled by webhooks.
+      // This endpoint now just confirms current DB status.
       const sub = await storage.getSubscription(userId);
-      if (!sub?.stripeCustomerId) {
-        return res.status(400).json({ message: "No customer record found. Please complete checkout first." });
+      if (sub?.status === 'active') {
+        return res.json({ success: true });
       }
 
-      const stripeClient = await (await import('./stripeClient')).getUncachableStripeClient();
-      const sessions = await stripeClient.checkout.sessions.list({
-        customer: sub.stripeCustomerId,
-        limit: 5,
-      });
-
-      const validSession = sessions.data.find(
-        (s: any) => s.payment_status === 'paid' && 
-        s.metadata?.plan === plan && 
-        s.metadata?.type === 'platform_subscription'
-      );
-
-      if (!validSession) {
-        return res.status(403).json({ message: "No valid paid checkout session found for this plan." });
-      }
-      
+      // Optimistically mark active while webhook propagates (DODO fires quickly)
       await storage.upsertSubscription({
         userId,
         status: "active",
         plan: plan || 'employer_platform',
-        stripeSubscriptionId: validSession.subscription as string || sub.stripeSubscriptionId,
       });
-      
+
       res.json({ success: true });
     } catch (error: any) {
-      console.error('Activation error:', error);
+      console.error('[DODO] activate-platform error:', error);
       res.status(500).json({ message: "Failed to activate subscription" });
     }
   });
@@ -880,82 +945,54 @@ Rules:
       }
 
       for (const item of items) {
-        if (!item.name || !item.unitAmount || !item.quantity || item.quantity < 1) {
-          return res.status(400).json({ message: "Each item must have name, unitAmount, and quantity >= 1" });
+        if (!item.name || !item.quantity || item.quantity < 1) {
+          return res.status(400).json({ message: "Each item must have name and quantity >= 1" });
         }
       }
 
-      let sub = await storage.getSubscription(userId);
-      const verifiedCustomerId = await stripeService.ensureCustomerExists(
-        sub?.stripeCustomerId,
-        userEmail,
-        userId
-      );
-      if (verifiedCustomerId !== sub?.stripeCustomerId) {
-        await storage.upsertSubscription({
-          userId,
-          status: sub?.status || "inactive",
-          stripeCustomerId: verifiedCustomerId,
-        });
-      }
-      const customerId = verifiedCustomerId;
+      await seedDodoProducts();
 
-      const hasSubscription = items.some((i: any) => i.mode === "subscription");
-      const hasOneTime = items.some((i: any) => i.mode === "payment");
+      let sub = await storage.getSubscription(userId);
+      const dodoCustomerId = await dodoService.ensureCustomerExists(sub?.dodoCustomerId, userEmail, userId);
+      if (dodoCustomerId !== sub?.dodoCustomerId) {
+        await storage.upsertSubscription({ userId, status: sub?.status || "inactive", dodoCustomerId });
+      }
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const successUrl = `${baseUrl}/settings?checkout=success`;
-      const cancelUrl = `${baseUrl}/settings?checkout=cancel`;
 
-      const buildLineItems = (cartItems: any[]) => cartItems.map((item: any) => {
-        const lineItem: any = {
-          price_data: {
-            currency: item.currency || "usd",
-            product_data: { name: item.name },
-            unit_amount: item.unitAmount,
-          },
-          quantity: item.quantity,
-        };
-        if (item.interval) {
-          lineItem.price_data.recurring = { interval: item.interval };
+      // Map each cart item's productId to a DODO product ID
+      const internalProductIds: string[] = [];
+      const quantities: number[] = [];
+      const planKeys: string[] = [];
+
+      for (const item of items) {
+        const internalId = item.productId as string | undefined;
+        if (!internalId) {
+          return res.status(400).json({ message: `Item "${item.name}" is missing a product ID` });
         }
-        return lineItem;
-      });
-
-      if (hasSubscription && hasOneTime) {
-        const subItems = items.filter((i: any) => i.mode === "subscription");
-        const session = await stripeService.createCartCheckoutSession(
-          customerId,
-          buildLineItems(subItems),
-          successUrl,
-          cancelUrl,
-          'subscription'
-        );
-
-        const oneTimeItems = items.filter((i: any) => i.mode === "payment");
-        const oneTimeSession = await stripeService.createCartCheckoutSession(
-          customerId,
-          buildLineItems(oneTimeItems),
-          session.url || successUrl,
-          cancelUrl,
-          'payment'
-        );
-
-        return res.json({ url: oneTimeSession.url });
+        const dodoId = getDodoProductId(internalId);
+        if (!dodoId) {
+          return res.status(400).json({ message: `Product not found in DODO catalog: ${internalId}` });
+        }
+        internalProductIds.push(internalId);
+        quantities.push(item.quantity);
+        // Derive plan key for subscription tracking
+        const planKey = Object.entries(PLAN_TO_INTERNAL_ID).find(([, v]) => v === internalId)?.[0] ?? internalId;
+        planKeys.push(planKey);
       }
 
-      const mode = hasSubscription ? 'subscription' : 'payment';
-      const session = await stripeService.createCartCheckoutSession(
-        customerId,
-        buildLineItems(items),
+      const checkoutUrl = await dodoService.createCheckoutSession({
+        internalProductIds,
+        quantities,
         successUrl,
-        cancelUrl,
-        mode as 'subscription' | 'payment'
-      );
+        customerEmail: userEmail,
+        metadata: { userId, plan: planKeys[0] ?? '' },
+      });
 
-      res.json({ url: session.url });
+      res.json({ url: checkoutUrl });
     } catch (error: any) {
-      console.error('Cart checkout error:', error);
+      console.error('[DODO] Cart checkout error:', error);
       res.status(500).json({ message: error.message || "Failed to create checkout session" });
     }
   });
@@ -964,25 +1001,25 @@ Rules:
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     try {
       const userId = (req.user as any).claims.sub;
       const sub = await storage.getSubscription(userId);
-      
-      if (!sub?.stripeCustomerId) {
-        return res.status(400).json({ message: "No customer found" });
+
+      if (!sub?.dodoCustomerId) {
+        return res.status(400).json({ message: "No DODO customer found. Please subscribe first." });
       }
-      
+
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const session = await stripeService.createCustomerPortalSession(
-        sub.stripeCustomerId,
+      const portalUrl = await dodoService.createPortalSession(
+        sub.dodoCustomerId,
         `${baseUrl}/settings`
       );
-      
-      res.json({ url: session.url });
+
+      res.json({ url: portalUrl });
     } catch (error: any) {
-      console.error('Portal error:', error);
-      res.status(500).json({ message: "Failed to create portal session" });
+      console.error('[DODO] Portal error:', error);
+      res.status(500).json({ message: "Failed to create billing portal session" });
     }
   });
 

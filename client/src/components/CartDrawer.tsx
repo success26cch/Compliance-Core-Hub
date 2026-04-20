@@ -29,6 +29,7 @@ export function CartDrawer() {
     setCheckingOut(true);
     try {
       const cartItems = items.map(item => ({
+        productId: item.id,
         name: item.name,
         unitAmount: item.unitAmount,
         currency: item.currency,

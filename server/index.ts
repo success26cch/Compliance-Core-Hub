@@ -108,6 +108,14 @@ app.use((req, res, next) => {
     console.error("Failed to auto-seed BrandNSwag courses:", error);
   }
 
+  // Seed DODO Payments product catalog on startup
+  try {
+    const { seedDodoProducts } = await import("./dodoProducts");
+    await seedDodoProducts();
+  } catch (error) {
+    console.error("Failed to seed DODO products:", error);
+  }
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

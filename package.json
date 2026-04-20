@@ -54,6 +54,7 @@
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
     "docx": "^9.5.3",
+    "dodopayments": "^2.28.2",
     "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.1",
     "edge-tts": "^1.0.1",
