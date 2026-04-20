@@ -7444,6 +7444,88 @@ Always end with: "Would you like me to draft any of the additional procedures li
 
       // ── REVISION MODE: user wants Isa to revise existing doc content ──────────
       if (revisionMode && doc.content?.trim()) {
+        const revInstruction = additionalContext?.trim() ?? "Improve the document for clarity and completeness.";
+
+        if (isQualityManual) {
+          // Quality manual revision: two sequential 8000-token calls (same as generation)
+          // Part A: revise Cover + Introduction + Sections 1-6
+          const qmRevSystemA = `${qualityManualPartAPrompt}
+
+REVISION MODE: The user has provided an existing Quality Management System Manual and a revision instruction. Your task:
+1. Read the CURRENT DOCUMENT and the REVISION INSTRUCTION carefully.
+2. Apply the revision instruction to the Cover Page, Introduction, and Sections 1 through 6 only.
+3. Return the COMPLETE revised Part A — Cover Page, Introduction, Sections 1 through 6 — with the revision applied.
+4. Preserve all content in Part A that is NOT affected by the revision instruction.
+5. Do not add any preamble, explanation, or remarks before or after the document.
+6. End cleanly after Section 6.3 — do not write Section 7 or beyond.`;
+
+          const qmRevUserA = `CURRENT DOCUMENT CONTENT:
+${doc.content.trim()}
+
+REVISION INSTRUCTION:
+${revInstruction}
+
+Return the complete revised Cover Page, Introduction, and Sections 1-6 now.`;
+
+          const revStreamA = anthropicClient.messages.stream({
+            model: "claude-sonnet-4-5",
+            max_tokens: 8000,
+            system: qmRevSystemA,
+            messages: [{ role: "user", content: qmRevUserA }],
+          });
+
+          let partARevContent = "";
+          for await (const event of revStreamA) {
+            if (event.type === "content_block_delta" && event.delta.type === "text_delta" && event.delta.text) {
+              partARevContent += event.delta.text;
+              res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+            }
+          }
+
+          res.write(`data: ${JSON.stringify({ content: "\n\n" })}\n\n`);
+
+          // Part B: revise Sections 7-10 + Appendix, using Part A output for consistency
+          const qmRevSystemB = `${qualityManualPartBPrompt}
+
+REVISION MODE: The user has provided an existing Quality Management System Manual and a revision instruction. Your task:
+1. Read the CURRENT DOCUMENT, the already-revised PART A, and the REVISION INSTRUCTION carefully.
+2. Apply the revision instruction to Sections 7 through 10 and Appendix A only.
+3. Return the COMPLETE revised Part B — Sections 7 through 10 and Appendix A — with the revision applied.
+4. Preserve all content in Part B that is NOT affected by the revision instruction.
+5. Ensure terminology and references are consistent with the already-revised Part A.
+6. Do not add any preamble, explanation, or remarks before or after the document.
+7. Start directly with Section 7 — do NOT repeat the cover page, introduction, or sections 1-6.`;
+
+          const qmRevUserB = `CURRENT DOCUMENT CONTENT:
+${doc.content.trim()}
+
+ALREADY-REVISED PART A (Sections 1-6) — use for consistency:
+${partARevContent}
+
+REVISION INSTRUCTION:
+${revInstruction}
+
+Return the complete revised Sections 7-10 and Appendix A now.`;
+
+          const revStreamB = anthropicClient.messages.stream({
+            model: "claude-sonnet-4-5",
+            max_tokens: 8000,
+            system: qmRevSystemB,
+            messages: [{ role: "user", content: qmRevUserB }],
+          });
+
+          for await (const event of revStreamB) {
+            if (event.type === "content_block_delta" && event.delta.type === "text_delta" && event.delta.text) {
+              res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
+            }
+          }
+
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+          return;
+        }
+
+        // Non-QM revision: single call
         const revisionSystemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. The user has asked you to revise an existing ${doc.docType.replace(/_/g, " ")} document.
 
 Your job:
@@ -7453,19 +7535,19 @@ Your job:
 4. Preserve all content that is NOT affected by the revision instruction.
 5. Do not add any preamble, explanation, or remarks before or after the document.
 6. Maintain the same formatting style as the original document.
-${!isQualityManual ? `7. For non-QM documents: preserve the coverage note delimiter (===COVERAGE-NOTE===) at the end if it was in the original.` : ""}`;
+7. Preserve the coverage note delimiter (===COVERAGE-NOTE===) at the end if it was in the original.`;
 
         const revisionUserMsg = `CURRENT DOCUMENT CONTENT:
 ${doc.content.trim()}
 
 REVISION INSTRUCTION:
-${additionalContext?.trim() ?? "Improve the document for clarity and completeness."}
+${revInstruction}
 
 Return the complete revised document now.`;
 
         const revStream = anthropicClient.messages.stream({
           model: "claude-sonnet-4-5",
-          max_tokens: isQualityManual ? 8192 : 4096,
+          max_tokens: 4096,
           system: revisionSystemPrompt,
           messages: [{ role: "user", content: revisionUserMsg }],
         });
