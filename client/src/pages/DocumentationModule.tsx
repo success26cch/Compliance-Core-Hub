@@ -478,6 +478,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [isExtractingCard, setIsExtractingCard] = useState(false);
   const cardFileRef = useRef<HTMLInputElement>(null);
   const [undoSnapshot, setUndoSnapshot] = useState<{ docId: number; content: string; version: string } | null>(null);
+  const [draftIsRevision, setDraftIsRevision] = useState(false);
   const [isaAcceptReason, setIsaAcceptReason] = useState("AI-assisted revision by Isa");
   const [isAcceptingIsaDraft, setIsAcceptingIsaDraft] = useState(false);
   const [prevShowExpanded, setPrevShowExpanded] = useState(false);
@@ -625,6 +626,18 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     setDraftContext("");
     setDraftReady(false);
     setIsDrafting(false);
+    setDraftIsRevision(false);
+    setIsaNote("");
+  };
+
+  const handleReviseWithIsa = (doc: IsoDocument) => {
+    setDraftDoc(doc);
+    setDraftContent("");
+    setDraftContext("");
+    setDraftReady(false);
+    setIsDrafting(false);
+    setDraftIsRevision(true);
+    setIsaNote("");
   };
 
   const COVERAGE_DELIM = "===COVERAGE-NOTE===";
@@ -641,7 +654,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ additionalContext: ctx }),
+        body: JSON.stringify({ additionalContext: ctx, revisionMode: draftIsRevision }),
       });
       if (!res.ok) throw new Error("Draft request failed");
       const reader = res.body?.getReader();
@@ -1007,6 +1020,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               onDelete={() => deleteMutation.mutate(doc.id)}
               onAskIsa={onAskIsa}
               onDraftWithIsa={handleDraftWithIsa}
+              onReviseWithIsa={handleReviseWithIsa}
               onPrint={() => printIsoDocument(doc, project ?? null)}
               onRequestChange={() => setChangeReqDoc(doc)}
               getIcon={getDocIcon}
@@ -1026,7 +1040,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-violet-50 dark:bg-violet-950/30 shrink-0">
             <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-violet-900 dark:text-violet-200">Draft with Isa</p>
+              <p className="text-xs font-bold text-violet-900 dark:text-violet-200">{draftIsRevision ? "Revise with Isa" : "Draft with Isa"}</p>
               <p className="text-[10px] text-violet-700 dark:text-violet-400 truncate">{draftDoc.title}</p>
             </div>
             {isDrafting && (
@@ -1056,49 +1070,63 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl p-4">
                 <p className="text-xs font-bold text-violet-900 dark:text-violet-200 mb-1 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Give Isa Context (Optional)
+                  <Sparkles className="w-3.5 h-3.5" /> {draftIsRevision ? "Revision Instruction" : "Give Isa Context (Optional)"}
                 </p>
                 <p className="text-[11px] text-violet-700 dark:text-violet-400">
-                  Paste customer specs, existing procedures, regulatory requirements, or any notes. Isa will incorporate them into the draft.
+                  {draftIsRevision
+                    ? "Describe exactly what you want Isa to change. The rest of the document will be preserved. Isa will return the complete revised document."
+                    : "Paste customer specs, existing procedures, regulatory requirements, or any notes. Isa will incorporate them into the draft."
+                  }
                 </p>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-foreground">Additional Context</label>
-                  <div className="flex items-center gap-1.5">
-                    {isExtractingCard && <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-600" />}
-                    <button
-                      type="button"
-                      onClick={() => cardFileRef.current?.click()}
-                      disabled={isExtractingCard}
-                      className="flex items-center gap-1 text-[11px] text-violet-700 dark:text-violet-400 hover:text-violet-900 font-semibold border border-violet-200 dark:border-violet-700 rounded px-2 py-1 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
-                      data-testid="button-card-upload-file"
-                    >
-                      <Paperclip className="w-3 h-3" />
-                      {isExtractingCard ? "Extracting…" : "Upload File"}
-                    </button>
-                    <input ref={cardFileRef} type="file" accept=".pdf,.txt,.md,.docx" className="hidden" onChange={handleCardFileSelect} />
-                  </div>
+                  <label className="text-xs font-semibold text-foreground">{draftIsRevision ? "What should Isa change?" : "Additional Context"}</label>
+                  {!draftIsRevision && (
+                    <div className="flex items-center gap-1.5">
+                      {isExtractingCard && <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-600" />}
+                      <button
+                        type="button"
+                        onClick={() => cardFileRef.current?.click()}
+                        disabled={isExtractingCard}
+                        className="flex items-center gap-1 text-[11px] text-violet-700 dark:text-violet-400 hover:text-violet-900 font-semibold border border-violet-200 dark:border-violet-700 rounded px-2 py-1 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
+                        data-testid="button-card-upload-file"
+                      >
+                        <Paperclip className="w-3 h-3" />
+                        {isExtractingCard ? "Extracting…" : "Upload File"}
+                      </button>
+                      <input ref={cardFileRef} type="file" accept=".pdf,.txt,.md,.docx" className="hidden" onChange={handleCardFileSelect} />
+                    </div>
+                  )}
                 </div>
                 <Textarea
                   value={draftContext}
                   onChange={e => setDraftContext(e.target.value)}
-                  placeholder="Paste: customer-specific requirements, existing procedure text, regulatory notes, scope limits, process details, names of key personnel…"
+                  placeholder={draftIsRevision
+                    ? "Example: \"Remove the specific objectives from section 6.2 — only reference FM-6.2-1\" or \"Expand section 8.5 to include more detail on chemical batch controls\""
+                    : "Paste: customer-specific requirements, existing procedure text, regulatory notes, scope limits, process details, names of key personnel…"
+                  }
                   className="min-h-[180px] text-xs resize-none"
                   data-testid="textarea-card-draft-context"
                 />
-                <p className="text-[10px] text-muted-foreground">Accepts: PDF, DOCX, TXT, or Markdown files up to 10 MB</p>
+                {!draftIsRevision && (
+                  <p className="text-[10px] text-muted-foreground">Accepts: PDF, DOCX, TXT, or Markdown files up to 10 MB</p>
+                )}
               </div>
 
               <div className="flex gap-2">
                 <Button
                   onClick={() => startCardGeneration(draftContext)}
-                  className="flex-1 bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
+                  disabled={draftIsRevision && !draftContext.trim()}
+                  className="flex-1 bg-violet-600 hover:bg-violet-700 text-white gap-1.5 disabled:opacity-50"
                   data-testid="button-card-generate"
                 >
                   <Sparkles className="w-4 h-4" />
-                  {draftContext.trim() ? "Generate with My Context" : "Generate Now"}
+                  {draftIsRevision
+                    ? "Revise Document"
+                    : draftContext.trim() ? "Generate with My Context" : "Generate Now"
+                  }
                 </Button>
               </div>
             </div>
@@ -1452,7 +1480,7 @@ function ComplianceResultPanel({ result, docId }: { result: ComplianceResult; do
   );
 }
 
-function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint, onRequestChange, getIcon, getStatusBadge, onRunComplianceCheck, complianceResult, isRunningComplianceCheck }: any) {
+function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onReviseWithIsa, onPrint, onRequestChange, getIcon, getStatusBadge, onRunComplianceCheck, complianceResult, isRunningComplianceCheck }: any) {
   const [showHistory, setShowHistory] = useState(false);
   const prevVersions: any[] = Array.isArray(doc.previousVersions) ? doc.previousVersions : [];
 
@@ -1565,6 +1593,17 @@ function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onPrint
             >
               <Sparkles className="w-3 h-3" /> Draft with Isa
             </Button>
+            {doc.content?.trim() && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[10px] gap-1 bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 font-bold dark:bg-indigo-950/30 dark:border-indigo-800/40 dark:text-indigo-300"
+                onClick={(e) => { e.stopPropagation(); onReviseWithIsa(doc); }}
+                data-testid={`button-revise-isa-${doc.id}`}
+              >
+                <Sparkles className="w-3 h-3" /> Revise with Isa
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
