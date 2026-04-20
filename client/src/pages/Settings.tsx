@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Shield, Building2, User, X, Loader2, Users, Mail, Crown, UserPlus, UserMinus, Calendar, CreditCard } from "lucide-react";
+import { Check, Shield, Building2, User, X, Loader2, Users, Mail, Crown, UserPlus, UserMinus, Calendar, CreditCard, Lock } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -351,6 +351,98 @@ function TeamManagement() {
   );
 }
 
+function ChangePasswordCard() {
+  const { toast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const changePwMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/auth/change-password', { currentPassword, newPassword }),
+    onSuccess: () => {
+      toast({ title: "Password updated", description: "Your password has been changed successfully." });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to update password", variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Passwords don't match", description: "New password and confirmation must match.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ title: "Too short", description: "New password must be at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    changePwMutation.mutate();
+  };
+
+  return (
+    <Card data-testid="card-change-password">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Lock className="w-5 h-5" />
+          Change Password
+        </CardTitle>
+        <CardDescription>Update your login password</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
+          <div className="space-y-1">
+            <Label htmlFor="current-password">Current Password</Label>
+            <Input
+              id="current-password"
+              type="password"
+              value={currentPassword}
+              onChange={e => setCurrentPassword(e.target.value)}
+              placeholder="Enter current password"
+              data-testid="input-current-password"
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="new-password">New Password</Label>
+            <Input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="At least 8 characters"
+              data-testid="input-new-password"
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="confirm-password">Confirm New Password</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Repeat new password"
+              data-testid="input-confirm-password"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={changePwMutation.isPending || !currentPassword || !newPassword || !confirmPassword}
+            data-testid="button-change-password"
+          >
+            {changePwMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating…</> : "Update Password"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Settings() {
   const { user } = useAuth();
   const { data: subStatus, isLoading } = useSubscriptionStatus();
@@ -506,6 +598,8 @@ export default function Settings() {
             )}
           </CardContent>
         </Card>
+
+        <ChangePasswordCard />
 
         <div>
           <h3 className="text-lg font-bold mb-4 text-primary">Choose Your Plan</h3>

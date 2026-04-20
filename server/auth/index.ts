@@ -249,6 +249,40 @@ export function registerAuthRoutes(app: Express): void {
     }
   });
 
+  // Change Password (authenticated users)
+  app.post("/api/auth/change-password", isAuthenticated, async (req: any, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current and new passwords are required" });
+      }
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "New password must be at least 8 characters" });
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.id, req.session.userId));
+      if (!user || !user.passwordHash) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const valid = await verifyPassword(currentPassword, user.passwordHash);
+      if (!valid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      const newHash = await hashPassword(newPassword);
+      await db.update(users)
+        .set({ passwordHash: newHash, updatedAt: new Date() })
+        .where(eq(users.id, req.session.userId));
+
+      writeAuditLog(req, "password_changed", "auth", user.id, null, 200);
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (err: any) {
+      console.error("[Auth] Change password error:", err);
+      res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+
   // Logout
   app.post("/api/auth/logout", (req: any, res) => {
     req.session.destroy(() => {
