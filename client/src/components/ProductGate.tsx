@@ -4,6 +4,8 @@ import { Lock, Check, ArrowRight, Mail, CheckCircle2, Loader2, Crown } from "luc
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
+import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
+import isaBotImg from "@assets/isa_bot_1776458921960.png";
 
 export interface ProductConfig {
   key: string;
@@ -25,6 +27,61 @@ interface ProductGateProps {
   children: React.ReactNode;
   fullPage?: boolean;
 }
+
+type WidgetTheme = "default" | "emerald" | "blue";
+
+interface WidgetConfig {
+  theme: WidgetTheme;
+  source: string;
+  agentName?: string;
+  agentSubtitle?: string;
+  agentImage?: string;
+  apiEndpoint?: string;
+  chatPlaceholder?: string;
+  upgradeText?: string;
+  upgradeLink?: string;
+  upgradeDetails?: string;
+}
+
+const WIDGET_CONFIGS: Record<string, WidgetConfig> = {
+  iso_manager: {
+    theme: "default",
+    source: "ask_corey_iso_manager",
+    chatPlaceholder: "Ask a compliance or ISO question...",
+  },
+  isa: {
+    theme: "default",
+    source: "ask_corey_isa",
+    agentName: "Isa",
+    agentSubtitle: "Lead ISO Auditor · ISO 9001 · 14001 · 45001 · IATF 16949 · AS9100 · ISO 13485 · 27001",
+    agentImage: isaBotImg,
+    apiEndpoint: "/api/landing-isa-bot",
+    chatPlaceholder: "Ask Isa an ISO or audit question...",
+    upgradeText: "Get Isa AI — $129/mo",
+    upgradeLink: "/get-started",
+    upgradeDetails: "Unlimited audits · IATF 16949 · Clause coverage · NC management · Gap analysis",
+  },
+  dot: {
+    theme: "blue",
+    source: "ask_corey_dot_hub",
+    chatPlaceholder: "Ask a DOT or FMCSA compliance question...",
+  },
+  env_hub: {
+    theme: "emerald",
+    source: "ask_corey_env_hub",
+    chatPlaceholder: "Ask an EPA or environmental compliance question...",
+  },
+  employer_platform: {
+    theme: "default",
+    source: "ask_corey_employer_platform",
+    chatPlaceholder: "Ask a workplace compliance question...",
+  },
+};
+
+const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
+  theme: "default",
+  source: "ask_corey_product_gate",
+};
 
 export function ProductGate({ hasAccess, isLoading, product, children, fullPage = true }: ProductGateProps) {
   const [requesting, setRequesting] = useState(false);
@@ -70,6 +127,8 @@ export function ProductGate({ hasAccess, isLoading, product, children, fullPage 
   if (hasAccess) {
     return <>{children}</>;
   }
+
+  const widgetCfg = WIDGET_CONFIGS[product.key] ?? DEFAULT_WIDGET_CONFIG;
 
   const gateContent = (
     <div className="w-full max-w-xl mx-auto py-10 px-4">
@@ -143,7 +202,7 @@ export function ProductGate({ hasAccess, isLoading, product, children, fullPage 
         </div>
       </div>
 
-      <p className="text-xs text-center text-muted-foreground">
+      <p className="text-xs text-center text-muted-foreground mb-8">
         Already subscribed?{" "}
         <Link href="/settings" className="underline hover:text-primary">
           Check your account settings
@@ -153,6 +212,25 @@ export function ProductGate({ hasAccess, isLoading, product, children, fullPage 
           team@corecompliancehub.com
         </a>
       </p>
+
+      <div className="mb-4 text-center">
+        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Try a free question before you subscribe
+        </span>
+      </div>
+      <TryCoreyChatWidget
+        compact
+        theme={widgetCfg.theme}
+        source={widgetCfg.source}
+        agentName={widgetCfg.agentName}
+        agentSubtitle={widgetCfg.agentSubtitle}
+        agentImage={widgetCfg.agentImage}
+        apiEndpoint={widgetCfg.apiEndpoint}
+        chatPlaceholder={widgetCfg.chatPlaceholder}
+        upgradeText={widgetCfg.upgradeText}
+        upgradeLink={widgetCfg.upgradeLink}
+        upgradeDetails={widgetCfg.upgradeDetails}
+      />
     </div>
   );
 
