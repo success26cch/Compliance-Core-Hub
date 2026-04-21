@@ -63,10 +63,10 @@ function daysUntilExpiry(expiry?: string | null): number | null {
 function certBadge(supplier: Supplier) {
   const days = daysUntilExpiry(supplier.isoCertExpiry);
   if (!supplier.isoCertType) return null;
-  if (days === null) return <Badge className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">{supplier.isoCertType}</Badge>;
-  if (days < 0) return <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200">{supplier.isoCertType} · Expired</Badge>;
-  if (days <= 60) return <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">{supplier.isoCertType} · {days}d left</Badge>;
-  return <Badge className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">{supplier.isoCertType} ✓</Badge>;
+  if (days === null) return <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">{supplier.isoCertType}</Badge>;
+  if (days < 0) return <Badge className="text-sm bg-red-100 text-red-700 border-red-200">{supplier.isoCertType} · Expired</Badge>;
+  if (days <= 60) return <Badge className="text-sm bg-amber-100 text-amber-700 border-amber-200">{supplier.isoCertType} · {days}d left</Badge>;
+  return <Badge className="text-sm bg-emerald-50 text-emerald-700 border-emerald-200">{supplier.isoCertType} ✓</Badge>;
 }
 
 const CRITICALITY_COLORS: Record<string, string> = {
@@ -159,32 +159,32 @@ function SupplierForm({ initial, onSave, onCancel }: {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <Label className="text-xs font-semibold">Supplier Name *</Label>
-          <Input className="mt-1 h-8 text-sm" value={form.name || ""} onChange={e => set("name")(e.target.value)} placeholder="e.g. Acme Supply Co." data-testid="input-supplier-name" />
+          <Label className="text-sm font-semibold">Supplier Name *</Label>
+          <Input className="mt-1 h-8 text-base" value={form.name || ""} onChange={e => set("name")(e.target.value)} placeholder="e.g. Acme Supply Co." data-testid="input-supplier-name" />
         </div>
         <div>
-          <Label className="text-xs font-semibold">Contact Name</Label>
-          <Input className="mt-1 h-8 text-sm" value={form.contactName || ""} onChange={e => set("contactName")(e.target.value)} placeholder="John Smith" />
+          <Label className="text-sm font-semibold">Contact Name</Label>
+          <Input className="mt-1 h-8 text-base" value={form.contactName || ""} onChange={e => set("contactName")(e.target.value)} placeholder="John Smith" />
         </div>
         <div>
-          <Label className="text-xs font-semibold">Email</Label>
-          <Input className="mt-1 h-8 text-sm" value={form.email || ""} onChange={e => set("email")(e.target.value)} placeholder="contact@acme.com" />
+          <Label className="text-sm font-semibold">Email</Label>
+          <Input className="mt-1 h-8 text-base" value={form.email || ""} onChange={e => set("email")(e.target.value)} placeholder="contact@acme.com" />
         </div>
         <div>
-          <Label className="text-xs font-semibold">Phone</Label>
-          <Input className="mt-1 h-8 text-sm" value={form.phone || ""} onChange={e => set("phone")(e.target.value)} placeholder="(555) 000-0000" />
+          <Label className="text-sm font-semibold">Phone</Label>
+          <Input className="mt-1 h-8 text-base" value={form.phone || ""} onChange={e => set("phone")(e.target.value)} placeholder="(555) 000-0000" />
         </div>
         <div>
-          <Label className="text-xs font-semibold">Category</Label>
+          <Label className="text-sm font-semibold">Category</Label>
           <Select value={form.category || ""} onValueChange={set("category")}>
-            <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+            <SelectTrigger className="mt-1 h-8 text-base"><SelectValue placeholder="Select…" /></SelectTrigger>
             <SelectContent>{SUPPLIER_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div>
-          <Label className="text-xs font-semibold">Criticality</Label>
+          <Label className="text-sm font-semibold">Criticality</Label>
           <Select value={form.criticalityLevel || "minor"} onValueChange={set("criticalityLevel")}>
-            <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 h-8 text-base"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="critical">Critical — Directly affects product safety/quality</SelectItem>
               <SelectItem value="major">Major — Significant quality impact</SelectItem>
@@ -193,9 +193,9 @@ function SupplierForm({ initial, onSave, onCancel }: {
           </Select>
         </div>
         <div>
-          <Label className="text-xs font-semibold">Status</Label>
+          <Label className="text-sm font-semibold">Status</Label>
           <Select value={form.status || "active"} onValueChange={set("status")}>
-            <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-1 h-8 text-base"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="probationary">Probationary</SelectItem>
@@ -207,9 +207,9 @@ function SupplierForm({ initial, onSave, onCancel }: {
       </div>
 
       <div>
-        <Label className="text-xs font-semibold">Scorecard Frequency</Label>
+        <Label className="text-sm font-semibold">Scorecard Frequency</Label>
         <Select value={form.scorecardFrequency || "quarterly"} onValueChange={set("scorecardFrequency")}>
-          <SelectTrigger className="mt-1 h-8 text-sm" data-testid="select-scorecard-frequency"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="mt-1 h-8 text-base" data-testid="select-scorecard-frequency"><SelectValue /></SelectTrigger>
           <SelectContent>
             {SCORECARD_FREQUENCY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
           </SelectContent>
@@ -217,34 +217,34 @@ function SupplierForm({ initial, onSave, onCancel }: {
       </div>
 
       <div className="border-t border-border/50 pt-3">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">ISO Certification</p>
+        <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-2">ISO Certification</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs font-semibold">Cert Type</Label>
-            <Input className="mt-1 h-8 text-sm" value={form.isoCertType || ""} onChange={e => set("isoCertType")(e.target.value)} placeholder="e.g. ISO 9001:2015, IATF 16949" />
+            <Label className="text-sm font-semibold">Cert Type</Label>
+            <Input className="mt-1 h-8 text-base" value={form.isoCertType || ""} onChange={e => set("isoCertType")(e.target.value)} placeholder="e.g. ISO 9001:2015, IATF 16949" />
           </div>
           <div>
-            <Label className="text-xs font-semibold">Expiry Date</Label>
-            <Input type="date" className="mt-1 h-8 text-sm" value={form.isoCertExpiry || ""} onChange={e => set("isoCertExpiry")(e.target.value)} data-testid="input-cert-expiry" />
+            <Label className="text-sm font-semibold">Expiry Date</Label>
+            <Input type="date" className="mt-1 h-8 text-base" value={form.isoCertExpiry || ""} onChange={e => set("isoCertExpiry")(e.target.value)} data-testid="input-cert-expiry" />
           </div>
           <div className="col-span-2">
-            <Label className="text-xs font-semibold">Certificate URL (hyperlink to cert document)</Label>
-            <Input className="mt-1 h-8 text-sm" value={form.isoCertUrl || ""} onChange={e => set("isoCertUrl")(e.target.value)} placeholder="https://…" data-testid="input-cert-url" />
+            <Label className="text-sm font-semibold">Certificate URL (hyperlink to cert document)</Label>
+            <Input className="mt-1 h-8 text-base" value={form.isoCertUrl || ""} onChange={e => set("isoCertUrl")(e.target.value)} placeholder="https://…" data-testid="input-cert-url" />
           </div>
           <div>
-            <Label className="text-xs font-semibold">Remind Me (days before expiry)</Label>
-            <Input type="number" className="mt-1 h-8 text-sm" value={form.reminderDaysBefore ?? 30} onChange={e => setForm(f => ({ ...f, reminderDaysBefore: parseInt(e.target.value) || 30 }))} min={1} max={365} />
+            <Label className="text-sm font-semibold">Remind Me (days before expiry)</Label>
+            <Input type="number" className="mt-1 h-8 text-base" value={form.reminderDaysBefore ?? 30} onChange={e => setForm(f => ({ ...f, reminderDaysBefore: parseInt(e.target.value) || 30 }))} min={1} max={365} />
           </div>
         </div>
       </div>
 
       <div>
-        <Label className="text-xs font-semibold">Address / Location</Label>
-        <Input className="mt-1 h-8 text-sm" value={form.address || ""} onChange={e => set("address")(e.target.value)} placeholder="City, State, Country" />
+        <Label className="text-sm font-semibold">Address / Location</Label>
+        <Input className="mt-1 h-8 text-base" value={form.address || ""} onChange={e => set("address")(e.target.value)} placeholder="City, State, Country" />
       </div>
       <div>
-        <Label className="text-xs font-semibold">Notes</Label>
-        <Textarea className="mt-1 text-sm resize-none" rows={2} value={form.notes || ""} onChange={e => set("notes")(e.target.value)} placeholder="Any relevant notes…" />
+        <Label className="text-sm font-semibold">Notes</Label>
+        <Textarea className="mt-1 text-base resize-none" rows={2} value={form.notes || ""} onChange={e => set("notes")(e.target.value)} placeholder="Any relevant notes…" />
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
@@ -277,8 +277,8 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
             <div className="flex items-start gap-2">
               <FileText className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Contact</p>
-                <p className="text-xs text-primary font-medium">{s.contactName}</p>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Contact</p>
+                <p className="text-sm text-primary font-medium">{s.contactName}</p>
               </div>
             </div>
           )}
@@ -286,8 +286,8 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
             <div className="flex items-start gap-2">
               <Mail className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Email</p>
-                <a href={`mailto:${s.email}`} className="text-xs text-blue-600 hover:underline">{s.email}</a>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Email</p>
+                <a href={`mailto:${s.email}`} className="text-sm text-blue-600 hover:underline">{s.email}</a>
               </div>
             </div>
           )}
@@ -295,8 +295,8 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
             <div className="flex items-start gap-2">
               <Phone className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Phone</p>
-                <p className="text-xs text-primary">{s.phone}</p>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Phone</p>
+                <p className="text-sm text-primary">{s.phone}</p>
               </div>
             </div>
           )}
@@ -304,8 +304,8 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
             <div className="flex items-start gap-2">
               <MapPin className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
-                <p className="text-xs text-primary">{s.address}</p>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
+                <p className="text-sm text-primary">{s.address}</p>
               </div>
             </div>
           )}
@@ -317,10 +317,10 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
             <div className="flex items-start gap-2">
               <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Certification</p>
-                <p className="text-xs text-primary font-medium">{s.isoCertType}</p>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Certification</p>
+                <p className="text-sm text-primary font-medium">{s.isoCertType}</p>
                 {s.isoCertExpiry && (
-                  <p className={`text-[10px] mt-0.5 font-semibold ${certExpired ? "text-red-600" : certAlert ? "text-amber-600" : "text-emerald-600"}`}>
+                  <p className={`text-sm mt-0.5 font-semibold ${certExpired ? "text-red-600" : certAlert ? "text-amber-600" : "text-emerald-600"}`}>
                     {certExpired
                       ? `EXPIRED — ${new Date(s.isoCertExpiry).toLocaleDateString()}`
                       : certAlert
@@ -330,7 +330,7 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
                 )}
                 {s.isoCertUrl && (
                   <a href={s.isoCertUrl} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-0.5"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mt-0.5"
                     data-testid={`link-cert-detail-${s.id}`}>
                     <ExternalLink className="w-3 h-3" /> View Certificate
                   </a>
@@ -342,8 +342,8 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
             <div className="flex items-start gap-2">
               <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Reminder</p>
-                <p className="text-xs text-muted-foreground">{s.reminderDaysBefore} days before expiry</p>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Reminder</p>
+                <p className="text-sm text-muted-foreground">{s.reminderDaysBefore} days before expiry</p>
               </div>
             </div>
           )}
@@ -351,8 +351,8 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
             <div className="flex items-start gap-2">
               <FileText className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{s.notes}</p>
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{s.notes}</p>
               </div>
             </div>
           )}
@@ -361,13 +361,13 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
 
       {/* Actions */}
       <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/40">
-        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={onEdit} data-testid={`button-edit-supplier-${s.id}`}>
+        <Button size="sm" variant="outline" className="h-7 text-sm gap-1.5" onClick={onEdit} data-testid={`button-edit-supplier-${s.id}`}>
           <Pencil className="w-3 h-3" /> Edit
         </Button>
-        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={onDelete} data-testid={`button-delete-supplier-${s.id}`}>
+        <Button size="sm" variant="outline" className="h-7 text-sm gap-1.5 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={onDelete} data-testid={`button-delete-supplier-${s.id}`}>
           <Trash2 className="w-3 h-3" /> Remove
         </Button>
-        <button onClick={onClose} className="ml-auto text-[11px] text-muted-foreground hover:text-foreground underline">Close</button>
+        <button onClick={onClose} className="ml-auto text-sm text-muted-foreground hover:text-foreground underline">Close</button>
       </div>
     </div>
   );
@@ -407,7 +407,7 @@ function SortHeader({ label, field, sortBy, sortDir, onSort }: {
   const active = sortBy === field;
   return (
     <button
-      className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest transition-colors ${active ? "text-accent" : "text-muted-foreground hover:text-foreground"}`}
+      className={`flex items-center gap-1 text-sm font-bold uppercase tracking-widest transition-colors ${active ? "text-accent" : "text-muted-foreground hover:text-foreground"}`}
       onClick={() => onSort(field)}
       data-testid={`sort-${field}`}
     >
@@ -488,13 +488,13 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
       {(expiringCount > 0 || expiredCount > 0) && (
         <div className="flex flex-wrap gap-2">
           {expiredCount > 0 && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 text-xs text-red-700">
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 text-sm text-red-700">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span><strong>{expiredCount}</strong> cert{expiredCount > 1 ? "s" : ""} expired — action required</span>
             </div>
           )}
           {expiringCount > 0 && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-xs text-amber-700">
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-sm text-amber-700">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span><strong>{expiringCount}</strong> cert{expiringCount > 1 ? "s" : ""} expiring within reminder window</span>
             </div>
@@ -505,14 +505,14 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
         <Input
-          className="h-8 text-sm w-56"
+          className="h-8 text-base w-56"
           placeholder="Search by name, category…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           data-testid="input-search-suppliers"
         />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-8 text-xs w-36" data-testid="select-filter-status">
+          <SelectTrigger className="h-8 text-sm w-36" data-testid="select-filter-status">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -524,8 +524,8 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
           </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{filtered.length} of {suppliers.length}</span>
-          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-8 text-xs" onClick={() => { setShowForm(true); setExpandedId(null); }} data-testid="button-add-supplier">
+          <span className="text-sm text-muted-foreground">{filtered.length} of {suppliers.length}</span>
+          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-8 text-sm" onClick={() => { setShowForm(true); setExpandedId(null); }} data-testid="button-add-supplier">
             <Plus className="w-3.5 h-3.5" /> Add Supplier
           </Button>
         </div>
@@ -535,7 +535,7 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
       {(showForm || editing) && (
         <div className="border border-accent/30 rounded-xl p-4 bg-accent/5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-primary">{editing ? `Edit — ${editing.name}` : "New Supplier"}</h3>
+            <h3 className="text-base font-bold text-primary">{editing ? `Edit — ${editing.name}` : "New Supplier"}</h3>
             <button onClick={() => { setShowForm(false); setEditing(null); }}>
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -550,12 +550,12 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
 
       {/* List table */}
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground text-sm">Loading…</div>
+        <div className="text-center py-12 text-muted-foreground text-base">Loading…</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Truck className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm font-medium">{search || filterStatus !== "all" ? "No suppliers match your filters" : "No suppliers yet"}</p>
-          {!search && filterStatus === "all" && <p className="text-xs mt-1">Click "Add Supplier" to build your Approved Supplier List</p>}
+          <p className="text-base font-medium">{search || filterStatus !== "all" ? "No suppliers match your filters" : "No suppliers yet"}</p>
+          {!search && filterStatus === "all" && <p className="text-sm mt-1">Click "Add Supplier" to build your Approved Supplier List</p>}
         </div>
       ) : (
         <div className="border border-border/60 rounded-xl overflow-hidden bg-white dark:bg-card">
@@ -586,27 +586,27 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
                   data-testid={`button-expand-supplier-${s.id}`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm font-semibold text-primary truncate">{s.name}</span>
+                    <span className="text-base font-semibold text-primary truncate">{s.name}</span>
                     {(certExpired || certAlert) && (
                       <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${certExpired ? "text-red-500" : "text-amber-500"}`} />
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground flex items-center truncate">{s.category || "—"}</span>
+                  <span className="text-sm text-muted-foreground flex items-center truncate">{s.category || "—"}</span>
                   <div className="flex items-center">
-                    <Badge className={`text-[10px] border ${CRITICALITY_COLORS[s.criticalityLevel || "minor"]}`}>
+                    <Badge className={`text-sm border ${CRITICALITY_COLORS[s.criticalityLevel || "minor"]}`}>
                       {s.criticalityLevel || "minor"}
                     </Badge>
                   </div>
                   <div className="flex items-center">
-                    <Badge className={`text-[10px] border ${STATUS_COLORS[s.status]}`}>{s.status}</Badge>
+                    <Badge className={`text-sm border ${STATUS_COLORS[s.status]}`}>{s.status}</Badge>
                   </div>
                   <div className="flex items-center">
                     {s.isoCertType ? (
-                      <span className={`text-[10px] font-medium ${certExpired ? "text-red-600" : certAlert ? "text-amber-600" : "text-emerald-600"}`}>
+                      <span className={`text-sm font-medium ${certExpired ? "text-red-600" : certAlert ? "text-amber-600" : "text-emerald-600"}`}>
                         {certExpired ? "⚠ EXPIRED" : certAlert ? `⚠ ${days}d left` : "✓ " + s.isoCertType.split(":")[0]}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground/50">—</span>
+                      <span className="text-sm text-muted-foreground/50">—</span>
                     )}
                   </div>
                   <div className="flex items-center justify-center">
@@ -734,7 +734,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
   return (
     <div className="space-y-4">
       {/* Contextual info banner */}
-      <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300">
+      <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
         <Info className="w-4 h-4 shrink-0 mt-0.5" />
         <div>
           <p className="font-bold mb-0.5">Pre-qualification criteria — for evaluating NEW supplier candidates</p>
@@ -750,28 +750,28 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-3">
           <div>
-            <p className="text-xs font-bold text-primary">
+            <p className="text-sm font-bold text-primary">
               Total Weight: <span className={totalWeight === 100 ? "text-emerald-600" : "text-amber-600"}>{totalWeight}%</span>
             </p>
-            <p className="text-[11px] text-muted-foreground">Must total 100% for accurate scoring</p>
+            <p className="text-sm text-muted-foreground">Must total 100% for accurate scoring</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {criteria.length === 0 && (
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => {
+            <Button variant="outline" size="sm" className="h-8 text-sm gap-1" onClick={() => {
               DEFAULT_CRITERIA.forEach((c, i) => createMut.mutate({ ...c, order: i }));
             }} data-testid="button-load-defaults">
               <Star className="w-3 h-3" /> Load Defaults
             </Button>
           )}
           {criteria.length > 0 && (
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-accent/40 text-accent hover:bg-accent/5"
+            <Button variant="outline" size="sm" className="h-8 text-sm gap-1.5 border-accent/40 text-accent hover:bg-accent/5"
               onClick={() => { setShowCandidate(c => !c); setCandidateScores({}); }}
               data-testid="button-score-candidate">
               <UserCheck className="w-3.5 h-3.5" /> {showCandidate ? "Close" : "Score a Candidate"}
             </Button>
           )}
-          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-8 text-xs" onClick={() => setShowForm(true)} data-testid="button-add-criteria">
+          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-8 text-sm" onClick={() => setShowForm(true)} data-testid="button-add-criteria">
             <Plus className="w-3.5 h-3.5" /> Add Criteria
           </Button>
         </div>
@@ -782,8 +782,8 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
         <div className="border-2 border-accent/30 rounded-xl bg-accent/5 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-accent/20">
             <div>
-              <p className="text-sm font-bold text-primary">Pre-Qualification Candidate Evaluation</p>
-              <p className="text-[11px] text-muted-foreground">Score this candidate against each criterion (1 = Poor, 10 = Excellent)</p>
+              <p className="text-base font-bold text-primary">Pre-Qualification Candidate Evaluation</p>
+              <p className="text-sm text-muted-foreground">Score this candidate against each criterion (1 = Poor, 10 = Excellent)</p>
             </div>
             <button onClick={() => setShowCandidate(false)} data-testid="button-close-candidate">
               <X className="w-4 h-4 text-muted-foreground" />
@@ -793,8 +793,8 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
           <div className="p-4 space-y-4">
             {/* Candidate name */}
             <div className="max-w-sm">
-              <Label className="text-xs font-semibold">Candidate Supplier Name *</Label>
-              <Input className="mt-1 h-8 text-sm" placeholder="e.g. Acme Chemical Corp." value={candidateName}
+              <Label className="text-sm font-semibold">Candidate Supplier Name *</Label>
+              <Input className="mt-1 h-8 text-base" placeholder="e.g. Acme Chemical Corp." value={candidateName}
                 onChange={e => setCandidateName(e.target.value)} data-testid="input-candidate-name" />
             </div>
 
@@ -812,23 +812,23 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-primary">{c.name}</span>
-                          <Badge className="text-[9px] bg-primary/10 text-primary border-primary/20 border">{c.weight}% weight</Badge>
+                          <span className="text-sm font-bold text-primary">{c.name}</span>
+                          <Badge className="text-xs bg-primary/10 text-primary border-primary/20 border">{c.weight}% weight</Badge>
                         </div>
                         {/* Scoring anchors */}
                         {anchors ? (
                           <div className="mt-1.5 space-y-1">
-                            <div className="flex items-center gap-2 text-[10px]">
+                            <div className="flex items-center gap-2 text-sm">
                               <span className="w-14 shrink-0 font-semibold text-emerald-600">Score 10:</span>
                               <span className="text-muted-foreground">{anchors.high}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-[10px]">
+                            <div className="flex items-center gap-2 text-sm">
                               <span className="w-14 shrink-0 font-semibold text-red-500">Score 1:</span>
                               <span className="text-muted-foreground">{anchors.low}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-4 mt-1.5 text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground">
                             <span className="text-emerald-600 font-semibold">10 = Fully meets requirement</span>
                             <span className="text-muted-foreground/50">·</span>
                             <span className="text-red-500 font-semibold">1 = Does not meet requirement</span>
@@ -846,7 +846,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                             className="flex-1 accent-orange-500"
                             data-testid={`slider-candidate-${c.id}`}
                           />
-                          <span className={`w-6 text-center text-sm font-black ${score === 0 ? "text-muted-foreground/40" : criteriaScoreColor(score)}`}>
+                          <span className={`w-6 text-center text-base font-black ${score === 0 ? "text-muted-foreground/40" : criteriaScoreColor(score)}`}>
                             {score === 0 ? "–" : score}
                           </span>
                         </div>
@@ -858,7 +858,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                             />
                           </div>
                         )}
-                        {score > 0 && <p className="text-[9px] text-muted-foreground">+{contribution} pts</p>}
+                        {score > 0 && <p className="text-xs text-muted-foreground">+{contribution} pts</p>}
                       </div>
                     </div>
                   </div>
@@ -872,23 +872,23 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                 <p className={`text-4xl font-black ${candidateOverall >= 75 ? "text-emerald-600" : candidateOverall >= 55 ? "text-amber-600" : candidateOverall > 0 ? "text-red-600" : "text-muted-foreground/30"}`}>
                   {candidateOverall > 0 ? candidateOverall : "—"}
                 </p>
-                <p className="text-[10px] text-muted-foreground">/ 100</p>
+                <p className="text-sm text-muted-foreground">/ 100</p>
               </div>
               <div className="h-10 w-px bg-border" />
               <div>
                 {candidateOverall > 0 && (
                   <>
-                    <Badge className={`text-xs border px-2.5 py-1 ${CANDIDATE_RECO[candidateReco].style}`}>
+                    <Badge className={`text-sm border px-2.5 py-1 ${CANDIDATE_RECO[candidateReco].style}`}>
                       {CANDIDATE_RECO[candidateReco].label}
                     </Badge>
-                    <p className="text-[10px] text-muted-foreground mt-1">{CANDIDATE_RECO[candidateReco].note}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{CANDIDATE_RECO[candidateReco].note}</p>
                   </>
                 )}
-                {candidateOverall === 0 && <p className="text-xs text-muted-foreground">Score each criterion above to see the result</p>}
+                {candidateOverall === 0 && <p className="text-sm text-muted-foreground">Score each criterion above to see the result</p>}
               </div>
               <div className="ml-auto">
                 {candidateName && candidateOverall > 0 && (
-                  <p className="text-xs text-muted-foreground">Candidate: <span className="font-semibold text-primary">{candidateName}</span></p>
+                  <p className="text-sm text-muted-foreground">Candidate: <span className="font-semibold text-primary">{candidateName}</span></p>
                 )}
               </div>
             </div>
@@ -899,26 +899,26 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
       {/* Add form */}
       {showForm && (
         <div className="border border-border/60 rounded-xl p-4 bg-muted/10 space-y-3">
-          <h3 className="text-sm font-bold text-primary">New Selection Criteria</h3>
+          <h3 className="text-base font-bold text-primary">New Selection Criteria</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <Label className="text-xs font-semibold">Criteria Name *</Label>
-              <Input className="mt-1 h-8 text-sm" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. ISO Certification" />
+              <Label className="text-sm font-semibold">Criteria Name *</Label>
+              <Input className="mt-1 h-8 text-base" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. ISO Certification" />
             </div>
             <div>
-              <Label className="text-xs font-semibold">Category</Label>
+              <Label className="text-sm font-semibold">Category</Label>
               <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1 h-8 text-base"><SelectValue /></SelectTrigger>
                 <SelectContent>{CRITERIA_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold">Weight (%)</Label>
-              <Input type="number" className="mt-1 h-8 text-sm" value={form.weight} onChange={e => setForm(f => ({ ...f, weight: parseInt(e.target.value) || 0 }))} min={1} max={100} />
+              <Label className="text-sm font-semibold">Weight (%)</Label>
+              <Input type="number" className="mt-1 h-8 text-base" value={form.weight} onChange={e => setForm(f => ({ ...f, weight: parseInt(e.target.value) || 0 }))} min={1} max={100} />
             </div>
             <div className="col-span-2">
-              <Label className="text-xs font-semibold">Description</Label>
-              <Textarea className="mt-1 text-sm resize-none" rows={3} value={form.description}
+              <Label className="text-sm font-semibold">Description</Label>
+              <Textarea className="mt-1 text-base resize-none" rows={3} value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder={`What does this criterion measure?\n\nTip: include scoring anchors like "Score 10 = fully certified; Score 1 = no documentation"`} />
             </div>
@@ -931,18 +931,18 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
       )}
 
       {isLoading ? (
-        <div className="text-center py-8 text-sm text-muted-foreground">Loading…</div>
+        <div className="text-center py-8 text-base text-muted-foreground">Loading…</div>
       ) : criteria.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm font-medium">No selection criteria defined</p>
-          <p className="text-xs mt-1">Add criteria or click "Load Defaults" to use recommended criteria</p>
+          <p className="text-base font-medium">No selection criteria defined</p>
+          <p className="text-sm mt-1">Add criteria or click "Load Defaults" to use recommended criteria</p>
         </div>
       ) : (
         <div className="space-y-3">
           {CRITERIA_CATEGORIES.filter(cat => byCategory[cat]?.length > 0).map(cat => (
             <div key={cat}>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1.5 ml-1">{cat}</p>
+              <p className="text-sm font-black uppercase tracking-widest text-muted-foreground/70 mb-1.5 ml-1">{cat}</p>
               <div className="space-y-2">
                 {byCategory[cat].map(c => {
                   const anchors = parseScoreAnchors(c.description);
@@ -952,18 +952,18 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                       {editId === c.id ? (
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2">
-                            <Input className="h-7 text-xs" defaultValue={c.name} id={`edit-name-${c.id}`} />
-                            <Input type="number" className="h-7 text-xs" defaultValue={c.weight} id={`edit-weight-${c.id}`} min={1} max={100} />
+                            <Input className="h-7 text-sm" defaultValue={c.name} id={`edit-name-${c.id}`} />
+                            <Input type="number" className="h-7 text-sm" defaultValue={c.weight} id={`edit-weight-${c.id}`} min={1} max={100} />
                           </div>
-                          <Textarea className="text-xs resize-none" rows={3} defaultValue={c.description || ""} id={`edit-desc-${c.id}`} />
+                          <Textarea className="text-sm resize-none" rows={3} defaultValue={c.description || ""} id={`edit-desc-${c.id}`} />
                           <div className="flex gap-2">
-                            <Button size="sm" className="h-7 text-xs bg-accent hover:bg-accent/90 text-white" onClick={() => {
+                            <Button size="sm" className="h-7 text-sm bg-accent hover:bg-accent/90 text-white" onClick={() => {
                               const name = (document.getElementById(`edit-name-${c.id}`) as HTMLInputElement)?.value;
                               const weight = parseInt((document.getElementById(`edit-weight-${c.id}`) as HTMLInputElement)?.value);
                               const description = (document.getElementById(`edit-desc-${c.id}`) as HTMLTextAreaElement)?.value;
                               updateMut.mutate({ id: c.id, d: { name, weight, description } });
                             }}>Save</Button>
-                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditId(null)}>Cancel</Button>
+                            <Button variant="outline" size="sm" className="h-7 text-sm" onClick={() => setEditId(null)}>Cancel</Button>
                           </div>
                         </div>
                       ) : (
@@ -971,8 +971,8 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                           <div className="flex-1 min-w-0">
                             {/* Header row */}
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="text-sm font-bold text-primary">{c.name}</span>
-                              <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20 border">{c.weight}%</Badge>
+                              <span className="text-base font-bold text-primary">{c.name}</span>
+                              <Badge className="text-sm bg-primary/10 text-primary border-primary/20 border">{c.weight}%</Badge>
                             </div>
 
                             {/* Weight bar */}
@@ -980,15 +980,15 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                               <div className="h-1.5 bg-muted rounded-full overflow-hidden w-32">
                                 <div className="h-full bg-accent rounded-full" style={{ width: `${Math.min(c.weight, 100)}%` }} />
                               </div>
-                              <span className="text-[10px] text-muted-foreground">{c.weight}% of total score</span>
+                              <span className="text-sm text-muted-foreground">{c.weight}% of total score</span>
                             </div>
 
                             {/* Body description (anchors stripped out) */}
-                            {body && <p className="text-[11px] text-muted-foreground mb-2 leading-relaxed">{body}</p>}
+                            {body && <p className="text-sm text-muted-foreground mb-2 leading-relaxed">{body}</p>}
 
                             {/* Scoring anchors — shown prominently */}
                             {anchors && (
-                              <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-border/50 text-[10px] mt-1">
+                              <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-border/50 text-sm mt-1">
                                 <div className="flex-1 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-2 border-r border-border/50">
                                   <p className="font-bold text-emerald-700 dark:text-emerald-400 mb-0.5">Score 10 — Excellent</p>
                                   <p className="text-emerald-600/80 dark:text-emerald-500/80 leading-snug">{anchors.high}</p>
@@ -1001,7 +1001,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                             )}
 
                             {/* Scale indicator */}
-                            <div className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground/50">
+                            <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground/50">
                               <span>1</span>
                               <div className="flex-1 h-px bg-gradient-to-r from-red-300 via-amber-300 to-emerald-300 rounded-full opacity-60" />
                               <span>10</span>
@@ -1287,7 +1287,7 @@ function MetricInput({ metric, value, onChange }: {
   if (metric.type === "select" && metric.options) {
     return (
       <Select value={String(value ?? "")} onValueChange={onChange}>
-        <SelectTrigger className="h-7 text-xs w-64" data-testid={`select-metric-${metric.id}`}>
+        <SelectTrigger className="h-7 text-sm w-64" data-testid={`select-metric-${metric.id}`}>
           <SelectValue placeholder="Select…" />
         </SelectTrigger>
         <SelectContent>
@@ -1305,7 +1305,7 @@ function MetricInput({ metric, value, onChange }: {
           className="w-24 accent-orange-500"
           data-testid={`slider-metric-${metric.id}`}
         />
-        <span className={`w-5 text-center text-xs font-bold ${scoreColor(n)}`}>{n}</span>
+        <span className={`w-5 text-center text-sm font-bold ${scoreColor(n)}`}>{n}</span>
       </div>
     );
   }
@@ -1316,10 +1316,10 @@ function MetricInput({ metric, value, onChange }: {
         value={value ?? ""}
         onChange={e => onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
         placeholder={metric.placeholder}
-        className="h-7 text-xs w-28"
+        className="h-7 text-sm w-28"
         data-testid={`input-metric-${metric.id}`}
       />
-      {metric.unit && <span className="text-[10px] text-muted-foreground">{metric.unit}</span>}
+      {metric.unit && <span className="text-sm text-muted-foreground">{metric.unit}</span>}
     </div>
   );
 }
@@ -1541,7 +1541,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
   return (
     <div className="space-y-4">
       {/* IATF context banner */}
-      <div className="flex items-start gap-2.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/40 rounded-xl px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
+      <div className="flex items-start gap-2.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/40 rounded-xl px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
         <div>
           <p className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">IATF 16949 Performance Scorecard — for active, ongoing suppliers</p>
@@ -1554,7 +1554,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
       {/* Supplier picker + frequency */}
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex-1 min-w-[200px] max-w-sm">
-          <Label className="text-xs font-semibold text-muted-foreground">Supplier</Label>
+          <Label className="text-sm font-semibold text-muted-foreground">Supplier</Label>
           <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => { setSelectedSupplierId(parseInt(v)); setShowNewEval(false); setExpandedEvalId(null); setSendingId(null); }}>
             <SelectTrigger className="mt-1 h-9" data-testid="select-supplier-evaluate">
               <SelectValue placeholder="Choose a supplier to evaluate…" />
@@ -1567,7 +1567,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
 
         {selectedSupplier && (
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground">Scorecard Frequency</Label>
+            <Label className="text-sm font-semibold text-muted-foreground">Scorecard Frequency</Label>
             <Select value={selectedSupplier.scorecardFrequency || "quarterly"}
               onValueChange={v => updateFreqMut.mutate({ id: selectedSupplier.id, freq: v })}>
               <SelectTrigger className="mt-1 h-9 w-40" data-testid="select-eval-frequency">
@@ -1581,7 +1581,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
         )}
 
         {selectedSupplierId && !showNewEval && (
-          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-9 text-xs" onClick={() => setShowNewEval(true)} data-testid="button-new-evaluation">
+          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-9 text-sm" onClick={() => setShowNewEval(true)} data-testid="button-new-evaluation">
             <Plus className="w-3.5 h-3.5" /> New Scorecard
           </Button>
         )}
@@ -1594,7 +1594,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
         const badge = scorecardDueLabel(dueDate);
         if (!badge) return null;
         return (
-          <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border w-fit ${badge.cls}`}>
+          <div className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border w-fit ${badge.cls}`}>
             <Calendar className="w-3.5 h-3.5" />
             <span className="font-semibold">Next scorecard:</span>
             <span>{badge.label}</span>
@@ -1606,7 +1606,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
       {!selectedSupplierId ? (
         <div className="text-center py-12 text-muted-foreground">
           <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm font-medium">Select a supplier to view or add evaluations</p>
+          <p className="text-base font-medium">Select a supplier to view or add evaluations</p>
         </div>
       ) : (
         <>
@@ -1616,8 +1616,8 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
               {/* Form header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-accent/20">
                 <div>
-                  <p className="text-sm font-bold text-primary">IATF 16949 Supplier Scorecard</p>
-                  <p className="text-[11px] text-muted-foreground">{selectedSupplier?.name}</p>
+                  <p className="text-base font-bold text-primary">IATF 16949 Supplier Scorecard</p>
+                  <p className="text-sm text-muted-foreground">{selectedSupplier?.name}</p>
                 </div>
                 <button onClick={() => setShowNewEval(false)} data-testid="button-close-scorecard">
                   <X className="w-4 h-4 text-muted-foreground" />
@@ -1628,16 +1628,16 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                 {/* Meta fields */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <Label className="text-xs font-semibold">Evaluation Date *</Label>
-                    <Input type="date" className="mt-1 h-8 text-sm" value={evalMeta.evaluationDate} onChange={e => setEvalMeta(m => ({ ...m, evaluationDate: e.target.value }))} data-testid="input-eval-date" />
+                    <Label className="text-sm font-semibold">Evaluation Date *</Label>
+                    <Input type="date" className="mt-1 h-8 text-base" value={evalMeta.evaluationDate} onChange={e => setEvalMeta(m => ({ ...m, evaluationDate: e.target.value }))} data-testid="input-eval-date" />
                   </div>
                   <div>
-                    <Label className="text-xs font-semibold">Evaluator</Label>
-                    <Input className="mt-1 h-8 text-sm" value={evalMeta.evaluatorName} onChange={e => setEvalMeta(m => ({ ...m, evaluatorName: e.target.value }))} placeholder="Name / role" data-testid="input-eval-evaluator" />
+                    <Label className="text-sm font-semibold">Evaluator</Label>
+                    <Input className="mt-1 h-8 text-base" value={evalMeta.evaluatorName} onChange={e => setEvalMeta(m => ({ ...m, evaluatorName: e.target.value }))} placeholder="Name / role" data-testid="input-eval-evaluator" />
                   </div>
                   <div>
-                    <Label className="text-xs font-semibold">Evaluation Period</Label>
-                    <Input className="mt-1 h-8 text-sm" value={evalMeta.period} onChange={e => setEvalMeta(m => ({ ...m, period: e.target.value }))} placeholder="e.g. Q2 2025 or FY 2025" data-testid="input-eval-period" />
+                    <Label className="text-sm font-semibold">Evaluation Period</Label>
+                    <Input className="mt-1 h-8 text-base" value={evalMeta.period} onChange={e => setEvalMeta(m => ({ ...m, period: e.target.value }))} placeholder="e.g. Q2 2025 or FY 2025" data-testid="input-eval-period" />
                   </div>
                 </div>
 
@@ -1650,12 +1650,12 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                       {/* Category header */}
                       <div className={`flex items-center justify-between px-4 py-2.5 border-b ${cc.border}`}>
                         <div>
-                          <p className={`text-xs font-bold ${cc.header}`}>{cat.label}</p>
-                          <p className="text-[10px] text-muted-foreground">{cat.iatfClause} · {cat.weight}% of total score</p>
+                          <p className={`text-sm font-bold ${cc.header}`}>{cat.label}</p>
+                          <p className="text-sm text-muted-foreground">{cat.iatfClause} · {cat.weight}% of total score</p>
                         </div>
                         <div className="text-right">
                           <p className={`text-base font-black ${scoreColor(catScore / 10)}`}>{catScore}</p>
-                          <p className="text-[9px] text-muted-foreground">cat. score</p>
+                          <p className="text-xs text-muted-foreground">cat. score</p>
                         </div>
                       </div>
 
@@ -1669,23 +1669,23 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-semibold text-primary">{m.label}</span>
+                                    <span className="text-sm font-semibold text-primary">{m.label}</span>
                                     {m.iatfHighlight && (
-                                      <Badge className="text-[9px] bg-orange-100 text-orange-700 border-orange-200 border px-1 py-0">IATF §8.4.1</Badge>
+                                      <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200 border px-1 py-0">IATF §8.4.1</Badge>
                                     )}
                                   </div>
-                                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{m.description}</p>
-                                  {m.iatfNote && <p className="text-[9px] text-muted-foreground/60 mt-0.5 italic">{m.iatfNote}</p>}
+                                  <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{m.description}</p>
+                                  {m.iatfNote && <p className="text-xs text-muted-foreground/60 mt-0.5 italic">{m.iatfNote}</p>}
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0 mt-0.5">
                                   <MetricInput metric={m} value={v} onChange={nv => setMetricValue(cat.id, m.id, nv)} />
                                   {score !== null ? (
                                     <div className="flex items-center gap-1.5 w-14">
                                       <ScoreBar score={score} />
-                                      <span className={`text-xs font-bold w-4 text-right ${scoreColor(score)}`}>{score}</span>
+                                      <span className={`text-sm font-bold w-4 text-right ${scoreColor(score)}`}>{score}</span>
                                     </div>
                                   ) : (
-                                    <div className="w-14 text-center text-[10px] text-muted-foreground/40">—</div>
+                                    <div className="w-14 text-center text-sm text-muted-foreground/40">—</div>
                                   )}
                                 </div>
                               </div>
@@ -1703,7 +1703,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                     {/* Overall score dial */}
                     <div className="text-center min-w-[72px]">
                       <p className={`text-4xl font-black ${scoreColor(overallScore / 10)}`}>{overallScore}</p>
-                      <p className="text-[10px] text-muted-foreground">/ 100 overall</p>
+                      <p className="text-sm text-muted-foreground">/ 100 overall</p>
                     </div>
                     <div className="h-12 w-px bg-border" />
                     {/* Category subtotals */}
@@ -1714,8 +1714,8 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                         return (
                           <div key={cat.id} className="text-center">
                             <p className={`text-base font-bold ${scoreColor(cs / 10)}`}>{cs}</p>
-                            <p className={`text-[9px] font-semibold ${cc.header}`}>{cat.label.split(" ")[0]}</p>
-                            <p className="text-[9px] text-muted-foreground">{cat.weight}%</p>
+                            <p className={`text-xs font-semibold ${cc.header}`}>{cat.label.split(" ")[0]}</p>
+                            <p className="text-xs text-muted-foreground">{cat.weight}%</p>
                           </div>
                         );
                       })}
@@ -1723,10 +1723,10 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                     <div className="h-12 w-px bg-border" />
                     {/* Recommendation */}
                     <div>
-                      <Badge className={`text-xs border px-2.5 py-1 ${RECO_STYLE[recommendation]}`}>
+                      <Badge className={`text-sm border px-2.5 py-1 ${RECO_STYLE[recommendation]}`}>
                         {RECO_LABEL[recommendation]}
                       </Badge>
-                      <p className="text-[10px] text-muted-foreground mt-1.5">
+                      <p className="text-sm text-muted-foreground mt-1.5">
                         {recommendation === "preferred" ? "≥90 — Preferred supplier" :
                           recommendation === "approved" ? "75–89 — Approved" :
                           recommendation === "conditional" ? "60–74 — Written improvement plan required within 30 days" :
@@ -1737,12 +1737,12 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                   {/* Notes + Save */}
                   <div className="flex items-end gap-3 mt-4 pt-4 border-t border-border/40">
                     <div className="flex-1">
-                      <Label className="text-xs font-semibold">Evaluator Notes</Label>
-                      <Textarea className="mt-1 text-xs resize-none h-14" placeholder="Summary observations, action items, escalations…"
+                      <Label className="text-sm font-semibold">Evaluator Notes</Label>
+                      <Textarea className="mt-1 text-sm resize-none h-14" placeholder="Summary observations, action items, escalations…"
                         value={evalMeta.notes} onChange={e => setEvalMeta(m => ({ ...m, notes: e.target.value }))} data-testid="textarea-eval-notes" />
                     </div>
                     <Button
-                      className="bg-accent hover:bg-accent/90 text-white h-14 px-6 text-sm font-semibold"
+                      className="bg-accent hover:bg-accent/90 text-white h-14 px-6 text-base font-semibold"
                       onClick={() => createMut.mutate({
                         supplierId: selectedSupplierId, isoProjectId,
                         evaluationDate: evalMeta.evaluationDate,
@@ -1768,12 +1768,12 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
           {evaluations.length === 0 && !showNewEval ? (
             <div className="text-center py-10 text-muted-foreground">
               <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-20" />
-              <p className="text-sm font-medium">No evaluations on record for {selectedSupplier?.name}</p>
-              <p className="text-xs mt-1">Click "New Scorecard" to run the first IATF performance evaluation</p>
+              <p className="text-base font-medium">No evaluations on record for {selectedSupplier?.name}</p>
+              <p className="text-sm mt-1">Click "New Scorecard" to run the first IATF performance evaluation</p>
             </div>
           ) : evaluations.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Evaluation History</p>
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Evaluation History</p>
               {evaluations.map(ev => {
                 const reco = ev.recommendation || "conditional";
                 const isExpanded = expandedEvalId === ev.id;
@@ -1787,17 +1787,17 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-primary">{ev.period || ev.evaluationDate}</span>
-                          {ev.period && <span className="text-[11px] text-muted-foreground">{ev.evaluationDate}</span>}
-                          {ev.evaluatorName && <span className="text-[11px] text-muted-foreground">· {ev.evaluatorName}</span>}
-                          <Badge className={`text-[10px] border ${RECO_STYLE[reco]}`}>{RECO_LABEL[reco]}</Badge>
+                          <span className="text-base font-bold text-primary">{ev.period || ev.evaluationDate}</span>
+                          {ev.period && <span className="text-sm text-muted-foreground">{ev.evaluationDate}</span>}
+                          {ev.evaluatorName && <span className="text-sm text-muted-foreground">· {ev.evaluatorName}</span>}
+                          <Badge className={`text-sm border ${RECO_STYLE[reco]}`}>{RECO_LABEL[reco]}</Badge>
                         </div>
-                        {ev.notes && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{ev.notes}</p>}
+                        {ev.notes && <p className="text-sm text-muted-foreground mt-0.5 truncate">{ev.notes}</p>}
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
                           <p className={`text-2xl font-black ${scoreColor((ev.overallScore ?? 0) / 10)}`}>{ev.overallScore ?? "—"}</p>
-                          <p className="text-[9px] text-muted-foreground">/ 100</p>
+                          <p className="text-xs text-muted-foreground">/ 100</p>
                         </div>
                         {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                       </div>
@@ -1815,9 +1815,9 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                             return (
                               <div key={cat.id} className={`border ${cc.border} rounded-lg overflow-hidden`}>
                                 <div className={`flex items-center justify-between px-3 py-2 ${cc.bg}`}>
-                                  <p className={`text-[11px] font-bold ${cc.header}`}>{cat.label}</p>
+                                  <p className={`text-sm font-bold ${cc.header}`}>{cat.label}</p>
                                   {catAvgScore !== null && (
-                                    <span className={`text-xs font-black ${scoreColor(catAvgScore / 10)}`}>{catAvgScore}</span>
+                                    <span className={`text-sm font-black ${scoreColor(catAvgScore / 10)}`}>{catAvgScore}</span>
                                   )}
                                 </div>
                                 <div className="divide-y divide-border/30">
@@ -1825,7 +1825,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                                     const entry = catData[m.id];
                                     if (!entry) return null;
                                     return (
-                                      <div key={m.id} className="flex items-center justify-between px-3 py-1.5 bg-white/70 dark:bg-white/5 text-xs">
+                                      <div key={m.id} className="flex items-center justify-between px-3 py-1.5 bg-white/70 dark:bg-white/5 text-sm">
                                         <span className="text-muted-foreground">{m.label}</span>
                                         <div className="flex items-center gap-2">
                                           <span className="text-primary font-medium">
@@ -1844,31 +1844,31 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                             );
                           })}
                         </div>
-                        {ev.notes && <p className="text-[11px] text-muted-foreground italic border-t border-border/40 pt-3">{ev.notes}</p>}
+                        {ev.notes && <p className="text-sm text-muted-foreground italic border-t border-border/40 pt-3">{ev.notes}</p>}
 
                         {/* Send email inline form */}
                         {sendingId === ev.id && (
                           <div className="border border-accent/30 rounded-lg p-3 bg-accent/5 mt-2 space-y-2" data-testid={`send-email-panel-${ev.id}`}>
-                            <p className="text-xs font-semibold text-primary">Send scorecard to supplier</p>
+                            <p className="text-sm font-semibold text-primary">Send scorecard to supplier</p>
                             <div className="flex gap-2">
                               <Input
-                                className="h-7 text-xs flex-1"
+                                className="h-7 text-sm flex-1"
                                 placeholder={`Supplier email${selectedSupplier?.email ? ` (${selectedSupplier.email})` : ""}`}
                                 value={sendToEmail}
                                 onChange={e => setSendToEmail(e.target.value)}
                                 data-testid={`input-send-email-${ev.id}`}
                               />
                               <Button
-                                size="sm" className="h-7 text-xs bg-accent hover:bg-accent/90 text-white gap-1"
+                                size="sm" className="h-7 text-sm bg-accent hover:bg-accent/90 text-white gap-1"
                                 onClick={() => sendMut.mutate({ id: ev.id, toEmail: sendToEmail || undefined })}
                                 disabled={sendMut.isPending}
                                 data-testid={`button-confirm-send-${ev.id}`}
                               >
                                 <Send className="w-3 h-3" /> {sendMut.isPending ? "Sending…" : "Send"}
                               </Button>
-                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setSendingId(null); setSendToEmail(""); }}>Cancel</Button>
+                              <Button variant="outline" size="sm" className="h-7 text-sm" onClick={() => { setSendingId(null); setSendToEmail(""); }}>Cancel</Button>
                             </div>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               {selectedSupplier?.email
                                 ? `Leave blank to use the email on file (${selectedSupplier.email}), or type a different address.`
                                 : "No email on file for this supplier — enter one above, or add it in the ASL tab."}
@@ -1878,19 +1878,19 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
 
                         <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2">
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
+                            <Button variant="outline" size="sm" className="h-7 text-sm gap-1.5"
                               onClick={() => printScorecard(ev, selectedSupplier?.name ?? "Supplier")}
                               data-testid={`button-print-eval-${ev.id}`}>
                               <Printer className="w-3 h-3" /> Print / PDF
                             </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 border-accent/30 text-accent hover:bg-accent/5"
+                            <Button variant="outline" size="sm" className="h-7 text-sm gap-1.5 border-accent/30 text-accent hover:bg-accent/5"
                               onClick={() => { setSendingId(sendingId === ev.id ? null : ev.id); setSendToEmail(""); }}
                               data-testid={`button-send-eval-${ev.id}`}>
                               <Send className="w-3 h-3" /> Send to Supplier
                             </Button>
                           </div>
                           <button onClick={() => { if (confirm("Delete this evaluation?")) deleteMut.mutate(ev.id); }}
-                            className="flex items-center gap-1.5 text-[11px] text-red-500 hover:text-red-700" data-testid={`button-delete-eval-${ev.id}`}>
+                            className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700" data-testid={`button-delete-eval-${ev.id}`}>
                             <Trash2 className="w-3 h-3" /> Delete
                           </button>
                         </div>
@@ -1972,14 +1972,14 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-lg px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-lg px-3 py-2 text-sm text-blue-700 dark:text-blue-300">
         <Info className="w-3.5 h-3.5 shrink-0" />
         <span>IATF 16949 requires a risk-based supplier audit program. Use this tool to determine audit frequency per supplier based on objective risk criteria (§8.4.2).</span>
       </div>
 
       {/* Supplier selector */}
       <div>
-        <Label className="text-xs font-semibold text-muted-foreground">Select Supplier</Label>
+        <Label className="text-sm font-semibold text-muted-foreground">Select Supplier</Label>
         <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => {
           const id = parseInt(v);
           setSelectedSupplierId(id);
@@ -2009,7 +2009,7 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
           <div className="grid grid-cols-2 gap-4">
             {/* Risk factor checklist */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Risk Factors</p>
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">Risk Factors</p>
               {RISK_FACTORS.map(rf => (
                 <label key={rf.key} className={`flex items-start gap-2.5 cursor-pointer p-2.5 rounded-lg border transition-all ${factors[rf.key] ? "bg-red-50 border-red-200 dark:bg-red-950/20" : "border-border/50 hover:border-border bg-white dark:bg-card"}`} data-testid={`checkbox-risk-${rf.key}`}>
                   <input
@@ -2019,10 +2019,10 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
                     className="mt-0.5 accent-red-500"
                   />
                   <div>
-                    <p className="text-xs font-semibold text-primary">{rf.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{rf.desc}</p>
+                    <p className="text-sm font-semibold text-primary">{rf.label}</p>
+                    <p className="text-sm text-muted-foreground">{rf.desc}</p>
                   </div>
-                  <Badge className={`ml-auto text-[9px] shrink-0 ${factors[rf.key] ? "bg-red-100 text-red-700 border-red-200" : "bg-muted text-muted-foreground border-border/50"}`}>+{rf.weight}</Badge>
+                  <Badge className={`ml-auto text-xs shrink-0 ${factors[rf.key] ? "bg-red-100 text-red-700 border-red-200" : "bg-muted text-muted-foreground border-border/50"}`}>+{rf.weight}</Badge>
                 </label>
               ))}
             </div>
@@ -2032,38 +2032,38 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
               {/* Risk score card */}
               <div className={`rounded-xl p-4 border text-center ${RISK_COLORS[riskLevel]} border-current/20`}>
                 <p className="text-4xl font-black">{riskScore}</p>
-                <p className="text-sm font-bold uppercase tracking-wide mt-1">{riskLevel} Risk</p>
-                <p className="text-xs mt-2 font-semibold">Recommended Audit Frequency</p>
+                <p className="text-base font-bold uppercase tracking-wide mt-1">{riskLevel} Risk</p>
+                <p className="text-sm mt-2 font-semibold">Recommended Audit Frequency</p>
                 <p className="text-lg font-black mt-0.5">{frequency}</p>
               </div>
 
               {/* Risk breakdown bar */}
               <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 space-y-1.5">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Risk Breakdown</p>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">Risk Breakdown</p>
                 {RISK_FACTORS.filter(rf => factors[rf.key]).map(rf => (
                   <div key={rf.key} className="flex items-center gap-2">
-                    <span className="text-[10px] text-muted-foreground truncate flex-1">{rf.label}</span>
-                    <Badge className="text-[9px] bg-red-100 text-red-700 border-red-200">+{rf.weight}</Badge>
+                    <span className="text-sm text-muted-foreground truncate flex-1">{rf.label}</span>
+                    <Badge className="text-xs bg-red-100 text-red-700 border-red-200">+{rf.weight}</Badge>
                   </div>
                 ))}
-                {Object.values(factors).every(v => !v) && <p className="text-[11px] text-muted-foreground">No risk factors selected</p>}
+                {Object.values(factors).every(v => !v) && <p className="text-sm text-muted-foreground">No risk factors selected</p>}
               </div>
 
               {/* Schedule fields */}
               <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 space-y-3">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Audit Schedule</p>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">Audit Schedule</p>
                 <div>
-                  <Label className="text-xs font-semibold">Last Audit Date</Label>
-                  <Input type="date" className="mt-1 h-8 text-sm" value={scheduleForm.lastAuditDate} onChange={e => setScheduleForm(f => ({ ...f, lastAuditDate: e.target.value }))} />
+                  <Label className="text-sm font-semibold">Last Audit Date</Label>
+                  <Input type="date" className="mt-1 h-8 text-base" value={scheduleForm.lastAuditDate} onChange={e => setScheduleForm(f => ({ ...f, lastAuditDate: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">Next Audit Date</Label>
-                  <Input type="date" className="mt-1 h-8 text-sm" value={scheduleForm.nextAuditDate} onChange={e => setScheduleForm(f => ({ ...f, nextAuditDate: e.target.value }))} />
+                  <Label className="text-sm font-semibold">Next Audit Date</Label>
+                  <Input type="date" className="mt-1 h-8 text-base" value={scheduleForm.nextAuditDate} onChange={e => setScheduleForm(f => ({ ...f, nextAuditDate: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">Audit Status</Label>
+                  <Label className="text-sm font-semibold">Audit Status</Label>
                   <Select value={scheduleForm.auditStatus} onValueChange={v => setScheduleForm(f => ({ ...f, auditStatus: v }))}>
-                    <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1 h-8 text-base"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="not_scheduled">Not Scheduled</SelectItem>
                       <SelectItem value="scheduled">Scheduled</SelectItem>
@@ -2073,10 +2073,10 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">Notes</Label>
-                  <Textarea className="mt-1 text-sm resize-none" rows={2} value={scheduleForm.notes} onChange={e => setScheduleForm(f => ({ ...f, notes: e.target.value }))} />
+                  <Label className="text-sm font-semibold">Notes</Label>
+                  <Textarea className="mt-1 text-base resize-none" rows={2} value={scheduleForm.notes} onChange={e => setScheduleForm(f => ({ ...f, notes: e.target.value }))} />
                 </div>
-                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white gap-1.5 text-xs" onClick={handleSave} disabled={upsertMut.isPending} data-testid="button-save-audit-schedule">
+                <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white gap-1.5 text-sm" onClick={handleSave} disabled={upsertMut.isPending} data-testid="button-save-audit-schedule">
                   <Calendar className="w-3.5 h-3.5" /> Save Audit Assessment
                 </Button>
               </div>
@@ -2088,9 +2088,9 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
       {/* Audit schedule summary table */}
       {audits.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">All Supplier Audit Records</p>
+          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">All Supplier Audit Records</p>
           <div className="border border-border/60 rounded-xl overflow-hidden">
-            <table className="w-full text-xs">
+            <table className="w-full text-sm">
               <thead className="bg-muted/40 border-b border-border/50">
                 <tr>
                   <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Supplier</th>
@@ -2108,12 +2108,12 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
                     <tr key={a.id} className="border-b border-border/30 last:border-0 hover:bg-muted/20" data-testid={`audit-row-${a.id}`}>
                       <td className="px-3 py-2 font-semibold text-primary">{sup?.name ?? "—"}</td>
                       <td className="px-3 py-2">
-                        <Badge className={`text-[10px] ${RISK_COLORS[a.riskLevel || "medium"]}`}>{a.riskLevel || "—"} ({a.riskScore})</Badge>
+                        <Badge className={`text-sm ${RISK_COLORS[a.riskLevel || "medium"]}`}>{a.riskLevel || "—"} ({a.riskScore})</Badge>
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">{a.recommendedFrequency || "—"}</td>
                       <td className="px-3 py-2 text-muted-foreground">{a.nextAuditDate || "—"}</td>
                       <td className="px-3 py-2">
-                        <Badge className={`text-[10px] ${a.auditStatus === "overdue" ? "bg-red-100 text-red-700 border-red-200" : a.auditStatus === "scheduled" ? "bg-blue-100 text-blue-700 border-blue-200" : a.auditStatus === "completed" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-muted text-muted-foreground"}`}>
+                        <Badge className={`text-sm ${a.auditStatus === "overdue" ? "bg-red-100 text-red-700 border-red-200" : a.auditStatus === "scheduled" ? "bg-blue-100 text-blue-700 border-blue-200" : a.auditStatus === "completed" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-muted text-muted-foreground"}`}>
                           {a.auditStatus?.replace("_", " ") || "—"}
                         </Badge>
                       </td>
@@ -2168,7 +2168,7 @@ export default function SupplierModule({ project }: SupplierModuleProps) {
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all ${active ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-semibold border-b-2 transition-all ${active ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                 data-testid={`tab-supplier-${t.key}`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -2193,12 +2193,12 @@ export default function SupplierModule({ project }: SupplierModuleProps) {
                 {tab === "evals" && "Supplier Evaluations"}
                 {tab === "audits" && "Supplier Audit Schedule"}
               </h2>
-              {tab === "audits" && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">IATF 16949 §8.4.2</Badge>}
-              {tab === "asl" && <Badge className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.1</Badge>}
-              {tab === "criteria" && <Badge className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.1</Badge>}
-              {tab === "evals" && <Badge className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.2</Badge>}
+              {tab === "audits" && <Badge className="text-sm bg-amber-100 text-amber-700 border-amber-200">IATF 16949 §8.4.2</Badge>}
+              {tab === "asl" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.1</Badge>}
+              {tab === "criteria" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.1</Badge>}
+              {tab === "evals" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.2</Badge>}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {tab === "asl" && "Maintain your Approved Supplier List with ISO certification tracking and expiry reminders."}
               {tab === "criteria" && "Define weighted criteria for supplier selection and qualification decisions."}
               {tab === "evals" && "Score suppliers against your criteria and generate formal evaluation scorecards."}
