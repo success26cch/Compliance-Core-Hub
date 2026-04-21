@@ -6883,17 +6883,23 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
         inputs, outputs, resources, keyActivities, startingPoint, endPoint,
         risksAndOpportunities, documentedInfo, executors, csrReq,
         orgName, standard, productsServices, totalEmployees, hasDesign,
-        existingDocs = []
+        existingDocs = [], existingKpis = []
       } = req.body as Record<string, any>;
 
       if (!processName) return res.status(400).json({ message: "processName is required" });
 
       const isIATF = String(standard ?? "").toUpperCase().includes("IATF");
       const hasDocs = Array.isArray(existingDocs) && existingDocs.length > 0;
+      const hasKpis = Array.isArray(existingKpis) && existingKpis.length > 0;
 
       // Build a readable list of existing documents for the prompt
       const docsContext = hasDocs
         ? existingDocs.map((d: any) => `- ${d.title}${d.docNumber ? ` (${d.docNumber})` : ""}${d.isoClause ? ` — Clause ${d.isoClause}` : ""}${d.docType ? ` [${d.docType.replace(/_/g, " ")}]` : ""}`).join("\n")
+        : "(none yet)";
+
+      // Build a readable list of existing KPIs so Isa suggests only NEW complementary ones
+      const kpisContext = hasKpis
+        ? existingKpis.map((k: any) => `- ${k.name}${k.target ? ` — Target: ${k.target}${k.unit ? " " + k.unit : ""}` : ""}`).join("\n")
         : "(none yet)";
 
       const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI, specializing in process analysis for ${standard ?? "ISO 9001"} Quality Management Systems. You help organizations complete Turtle Diagrams — a structured tool for documenting process inputs, outputs, resources, activities, controls, and performance measures.
@@ -6925,6 +6931,17 @@ RULES:
    }
 7. For IATF 16949, include automotive-specific elements where relevant.
 8. Keep each field concise — this is a diagram, not a procedure. Bullet-style entries separated by newlines.
+9. KPI / QUALITY OBJECTIVES RULE — CRITICAL:
+   ${hasKpis
+     ? `The process already has these KPIs tracked in Measurement & Monitoring and Management Review:\n${kpisContext}\n   - Do NOT suggest these again — they are already linked.
+   - Suggest 2-4 COMPLEMENTARY KPIs that are NOT in the existing list and would give a more complete performance picture for this process.
+   - Suggested KPIs will also be saved to Measurement & Monitoring and will appear in Management Review.`
+     : `No KPIs exist yet for this process.
+   - Suggest 3-5 specific, measurable KPIs appropriate for this process type (${row === "COP" ? "customer-oriented / core process" : row === "SOP" ? "support process" : row === "MOP" ? "management process" : "this process"}).
+   - Each KPI must have a realistic numeric target and unit (%, count, days, score, ppm, etc.).
+   - These KPIs will be linked to Measurement & Monitoring and will appear in Management Review for tracking.`
+   }
+   - Every suggested KPI must be directly measurable and relevant to the process described — no vague metrics.
 
 RESPONSE FORMAT — return ONLY a valid JSON object with exactly these keys:
 {
@@ -6939,7 +6956,7 @@ RESPONSE FORMAT — return ONLY a valid JSON object with exactly these keys:
   "documentedInfo": "existing documents (plain bullets) then suggested ones (→ Suggest creating: prefix)",
   "csrReq": "${isIATF ? "relevant customer-specific requirements or leave empty string" : ""}",
   "suggestedKpis": [
-    { "name": "KPI name", "target": "numeric target", "unit": "unit" }
+    { "name": "KPI name", "target": "numeric target or qualitative target", "unit": "unit of measure (%, ppm, days, score, count, etc.)" }
   ]
 }
 Return ONLY the JSON object — no preamble, no explanation, no markdown code block.`;
@@ -6954,6 +6971,9 @@ ${isIATF && site ? `Site: ${site}` : ""}
 
 EXISTING DOCUMENTS IN LIBRARY (${hasDocs ? existingDocs.length + " documents" : "none yet"}):
 ${docsContext}
+
+EXISTING KPIs ALREADY TRACKED IN M&M AND MANAGEMENT REVIEW (${hasKpis ? existingKpis.length + " KPIs" : "none yet — suggest a full set"}):
+${kpisContext}
 
 CURRENT FIELD VALUES (preserve any non-empty values the user has already entered — improve or expand them, do not discard):
 - Inputs: ${inputs || "(empty)"}

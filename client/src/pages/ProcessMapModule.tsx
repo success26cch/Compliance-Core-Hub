@@ -1241,20 +1241,24 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
     setIsFillingWithIsa(true);
     setIsaKpiSuggestions([]);
     try {
-      // Fetch existing documents from the library first so Isa only references real ones
+      // Fetch existing documents and existing KPIs in parallel
       let existingDocs: Array<{ title: string; docType: string; docNumber?: string; isoClause?: string }> = [];
       try {
         const docsRes = await fetch(`/api/iso-documents?isoProjectId=${project.id}`, { credentials: "include" });
         if (docsRes.ok) {
           const allDocs = await docsRes.json();
           existingDocs = (allDocs as any[]).map((d: any) => ({
-            title: d.title,
-            docType: d.docType,
-            docNumber: d.docNumber,
-            isoClause: d.isoClause,
+            title: d.title, docType: d.docType, docNumber: d.docNumber, isoClause: d.isoClause,
           }));
         }
-      } catch { /* non-fatal — proceed without doc list */ }
+      } catch { /* non-fatal */ }
+
+      // Pass existing KPIs so Isa doesn't duplicate them and can suggest complementary ones
+      const existingKpis = objectives.map(o => ({
+        name: o.name,
+        target: o.target ?? "",
+        unit: o.unit ?? "",
+      }));
 
       const res = await fetch("/api/iso-processes/generate-turtle", {
         method: "POST",
@@ -1282,6 +1286,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
           totalEmployees: project.totalEmployees,
           hasDesign: project.hasDesignResponsibility,
           existingDocs,
+          existingKpis,
         }),
       });
       if (!res.ok) throw new Error("Generation failed");
@@ -1378,46 +1383,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
 
       <div className="p-4 space-y-3">
 
-        {/* Isa KPI Suggestions banner */}
-        {isaKpiSuggestions.length > 0 && (
-          <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl p-3">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
-              <span className="text-xs font-bold text-violet-900 dark:text-violet-200">Isa's KPI suggestions — click any to add</span>
-              <button onClick={() => setIsaKpiSuggestions([])} className="ml-auto text-muted-foreground hover:text-foreground transition-colors"><X className="w-3.5 h-3.5" /></button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {isaKpiSuggestions.map((kpi, i) => (
-                <button
-                  key={i}
-                  onClick={async () => {
-                    await fetch("/api/iso-objectives/upsert", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      credentials: "include",
-                      body: JSON.stringify({
-                        processName: process.name,
-                        name: kpi.name,
-                        target: kpi.target,
-                        unit: kpi.unit,
-                        responsible: local.owner,
-                        isoProjectId: project.id,
-                      }),
-                    });
-                    qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] });
-                    setIsaKpiSuggestions(prev => prev.filter((_, j) => j !== i));
-                    toast({ title: `KPI added: ${kpi.name}` });
-                  }}
-                  className="flex items-center gap-1.5 text-[11px] bg-white dark:bg-card border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 rounded-lg px-2.5 py-1.5 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors font-semibold"
-                  data-testid={`button-add-isa-kpi-${i}`}
-                >
-                  <Plus className="w-3 h-3" />
-                  {kpi.name} {kpi.target && `(${kpi.target}${kpi.unit ? " " + kpi.unit : ""})`}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* (KPI suggestions are now shown inside the Objectives panel below) */}
 
         {/* Top Row: Resources | Objectives */}
         <div className="grid grid-cols-2 gap-3">
@@ -1428,13 +1394,16 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
           />
           {/* Objectives panel */}
           <div className="bg-amber-50 border-2 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/40 rounded-xl p-3">
-            <div className="flex items-center gap-1.5 mb-2">
+            <div className="flex items-center gap-1.5 mb-1">
               <Target className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               <span className="text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-300">Quality Objectives / KPIs</span>
-              <button onClick={() => setAddingKpi(true)} className="ml-auto text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 transition-colors">
+              <button onClick={() => setAddingKpi(true)} className="ml-auto text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 transition-colors" data-testid="button-add-kpi">
                 <Plus className="w-3.5 h-3.5" />
               </button>
             </div>
+            <p className="text-[9px] text-amber-700/60 dark:text-amber-400/50 mb-2 leading-tight">
+              Linked to Measurement &amp; Monitoring and Management Review
+            </p>
             <div className="space-y-1.5">
               {objectives.map(obj => (
                 <ObjectiveRow
@@ -1444,15 +1413,72 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
                   onChange={(field, val) => updateObjMut.mutate({ id: obj.id, field, val })}
                 />
               ))}
-              {objectives.length === 0 && !addingKpi && (
-                <p className="text-[10px] text-muted-foreground text-center py-2">No KPIs yet — click + to add</p>
+              {/* Isa KPI suggestions — shown inline in this panel */}
+              {isaKpiSuggestions.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1 pt-0.5">
+                    <Sparkles className="w-3 h-3 text-violet-500" />
+                    <span className="text-[9px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wide">Isa suggests</span>
+                    <button onClick={() => setIsaKpiSuggestions([])} className="ml-auto text-muted-foreground hover:text-foreground" data-testid="button-dismiss-isa-kpis">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  {isaKpiSuggestions.map((kpi, i) => (
+                    <div
+                      key={i}
+                      className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700/50 rounded-lg p-2 flex items-center gap-2"
+                      data-testid={`kpi-suggestion-${i}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-semibold text-violet-900 dark:text-violet-200 truncate">{kpi.name}</div>
+                        {kpi.target && (
+                          <div className="text-[10px] text-violet-600 dark:text-violet-400">Target: {kpi.target}{kpi.unit ? ` ${kpi.unit}` : ""}</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={async () => {
+                          await fetch("/api/iso-objectives/upsert", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({
+                              processName: process.name,
+                              name: kpi.name,
+                              target: kpi.target,
+                              unit: kpi.unit,
+                              responsible: local.owner,
+                              isoProjectId: project.id,
+                            }),
+                          });
+                          qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] });
+                          setIsaKpiSuggestions(prev => prev.filter((_, j) => j !== i));
+                          toast({ title: `KPI added: "${kpi.name}"`, description: "Now tracked in M&M and Management Review." });
+                        }}
+                        className="shrink-0 text-[10px] font-bold bg-violet-600 hover:bg-violet-700 text-white px-2 py-1 rounded transition-colors"
+                        data-testid={`button-accept-kpi-${i}`}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => setIsaKpiSuggestions(prev => prev.filter((_, j) => j !== i))}
+                        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                        data-testid={`button-skip-kpi-${i}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {objectives.length === 0 && isaKpiSuggestions.length === 0 && !addingKpi && (
+                <p className="text-[10px] text-muted-foreground text-center py-2">No KPIs yet — click + to add or use Ask Isa to Suggest</p>
               )}
               {addingKpi && (
                 <div className="bg-white dark:bg-card rounded-lg p-2 border border-amber-200 dark:border-amber-800/40 space-y-1.5">
-                  <Input value={newKpiName} onChange={e => setNewKpiName(e.target.value)} placeholder="KPI name (e.g. On-Time Delivery)" className="h-6 text-xs" />
+                  <Input value={newKpiName} onChange={e => setNewKpiName(e.target.value)} placeholder="KPI name (e.g. On-Time Delivery)" className="h-6 text-xs" data-testid="input-new-kpi-name" />
                   <div className="flex gap-1.5">
-                    <Input value={newKpiTarget} onChange={e => setNewKpiTarget(e.target.value)} placeholder="Target (e.g. 95)" className="h-6 text-xs flex-1" />
-                    <Input value={newKpiUnit} onChange={e => setNewKpiUnit(e.target.value)} placeholder="Unit (e.g. %)" className="h-6 text-xs w-20" />
+                    <Input value={newKpiTarget} onChange={e => setNewKpiTarget(e.target.value)} placeholder="Target (e.g. 95)" className="h-6 text-xs flex-1" data-testid="input-new-kpi-target" />
+                    <Input value={newKpiUnit} onChange={e => setNewKpiUnit(e.target.value)} placeholder="Unit (e.g. %)" className="h-6 text-xs w-20" data-testid="input-new-kpi-unit" />
                   </div>
                   <div className="flex gap-1">
                     <Button size="sm" onClick={() => addObjMut.mutate()} disabled={!newKpiName || addObjMut.isPending} className="h-6 text-[10px] bg-amber-600 hover:bg-amber-700 text-white flex-1">
