@@ -534,3 +534,119 @@ export function buildLeadNotificationEmail(data: {
 
   return brandedHtml(`New Lead: ${data.name} via ${sourceLabel}`, body);
 }
+
+// ── Supplier Scorecard Email ───────────────────────────────────────────────────
+
+export function buildSupplierScorecardEmail(data: {
+  supplierName: string;
+  companyName: string;
+  period: string;
+  evaluationDate: string;
+  evaluatorName: string;
+  overallScore: number;
+  recommendation: string;
+  notes?: string;
+  categoryBreakdown: Array<{
+    label: string;
+    weight: number;
+    score: number;
+    color: string;
+    metrics: Array<{ label: string; value: string; score: number }>;
+  }>;
+}): string {
+  const recoColors: Record<string, string> = {
+    preferred:    "#059669",
+    approved:     "#16a34a",
+    conditional:  "#d97706",
+    disqualified: "#dc2626",
+  };
+  const recoLabels: Record<string, string> = {
+    preferred:    "★ Preferred Supplier",
+    approved:     "✓ Approved",
+    conditional:  "⚠ Conditional — Improvement Plan Required",
+    disqualified: "✗ Disqualify — Immediate Action Required",
+  };
+  const recoColor = recoColors[data.recommendation] ?? "#64748b";
+  const recoLabel = recoLabels[data.recommendation] ?? data.recommendation;
+  const scoreColor = data.overallScore >= 90 ? "#059669"
+    : data.overallScore >= 75 ? "#16a34a"
+    : data.overallScore >= 60 ? "#d97706"
+    : "#dc2626";
+
+  const catColorMap: Record<string, string> = {
+    blue: "#2563eb", violet: "#7c3aed", red: "#dc2626", amber: "#d97706", emerald: "#059669",
+  };
+
+  const categoryHtml = data.categoryBreakdown.map(cat => {
+    const catColor = catColorMap[cat.color] ?? "#64748b";
+    const metricsHtml = cat.metrics.map(m => `
+      <tr>
+        <td style="padding:5px 12px;font-size:11px;color:#475569;border-bottom:1px solid #f1f5f9;">${m.label}</td>
+        <td style="padding:5px 12px;font-size:11px;color:#0f172a;font-weight:500;border-bottom:1px solid #f1f5f9;">${m.value}</td>
+        <td style="padding:5px 12px;font-size:11px;font-weight:700;color:${m.score >= 8 ? "#059669" : m.score >= 6 ? "#d97706" : m.score >= 4 ? "#ea580c" : "#dc2626"};text-align:right;border-bottom:1px solid #f1f5f9;">${m.score}/10</td>
+      </tr>`).join("");
+    return `
+    <div style="margin-bottom:16px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+      <div style="background:${catColor};padding:8px 14px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#fff;font-size:12px;font-weight:700;">${cat.label}</span>
+        <span style="color:#fff;font-size:11px;opacity:0.85;">${cat.weight}% weight — Score: ${cat.score}/100</span>
+      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr>
+          <th style="padding:5px 12px;font-size:10px;color:#94a3b8;text-align:left;background:#f8fafc;text-transform:uppercase;letter-spacing:0.05em;">Metric</th>
+          <th style="padding:5px 12px;font-size:10px;color:#94a3b8;text-align:left;background:#f8fafc;text-transform:uppercase;letter-spacing:0.05em;">Value</th>
+          <th style="padding:5px 12px;font-size:10px;color:#94a3b8;text-align:right;background:#f8fafc;text-transform:uppercase;letter-spacing:0.05em;">Score</th>
+        </tr>
+        ${metricsHtml}
+      </table>
+    </div>`;
+  }).join("");
+
+  const body = `
+    <h2 style="margin:0 0 4px;color:#0f172a;font-size:20px;">IATF 16949 Supplier Performance Scorecard</h2>
+    <p style="margin:0 0 4px;color:#64748b;font-size:13px;">Issued by <strong>${data.companyName}</strong></p>
+    <p style="margin:0 0 20px;">
+      <span style="background:${recoColor};color:#fff;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">${recoLabel}</span>
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:20px;">
+      <tr><td style="padding:16px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:5px 0;color:#475569;font-size:13px;width:160px;"><strong>Supplier:</strong></td>
+            <td style="padding:5px 0;color:#0f172a;font-size:13px;font-weight:600;">${data.supplierName}</td>
+            <td style="padding:5px 0;color:#475569;font-size:24px;font-weight:900;color:${scoreColor};text-align:right;" rowspan="4">${data.overallScore}<span style="font-size:13px;font-weight:400;color:#94a3b8;">/100</span></td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0;color:#475569;font-size:13px;"><strong>Evaluation Period:</strong></td>
+            <td style="padding:5px 0;color:#0f172a;font-size:13px;">${data.period || "—"}</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0;color:#475569;font-size:13px;"><strong>Evaluation Date:</strong></td>
+            <td style="padding:5px 0;color:#0f172a;font-size:13px;">${data.evaluationDate}</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0;color:#475569;font-size:13px;"><strong>Evaluator:</strong></td>
+            <td style="padding:5px 0;color:#0f172a;font-size:13px;">${data.evaluatorName || "—"}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+
+    <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;">Category Breakdown</p>
+    ${categoryHtml}
+
+    ${data.notes ? `
+    <div style="background:#fffbeb;border-left:4px solid #d97706;padding:12px 16px;border-radius:4px;margin-top:4px;margin-bottom:20px;">
+      <p style="margin:0 0 4px;font-size:12px;color:#92400e;font-weight:700;">Evaluator Notes</p>
+      <p style="margin:0;font-size:13px;color:#78350f;">${data.notes}</p>
+    </div>` : ""}
+
+    <p style="margin:20px 0 4px;font-size:12px;color:#64748b;">
+      This scorecard was generated by <strong>Core Compliance Hub</strong> per IATF 16949 §8.4.1 / §8.4.2.4 supplier monitoring requirements.
+      Scoring: <strong>≥90 Preferred · 75–89 Approved · 60–74 Conditional · &lt;60 Disqualify</strong>.
+    </p>
+  `;
+
+  return brandedHtml(`Supplier Scorecard — ${data.supplierName} (${data.period || data.evaluationDate})`, body);
+}

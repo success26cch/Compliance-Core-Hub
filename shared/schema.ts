@@ -1881,6 +1881,7 @@ export const suppliers = pgTable("suppliers", {
   isoCertType: text("iso_cert_type"),
   isoCertExpiry: text("iso_cert_expiry"),
   reminderDaysBefore: integer("reminder_days_before").default(30),
+  scorecardFrequency: text("scorecard_frequency").default("quarterly"), // monthly | quarterly | semi-annual | annual
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

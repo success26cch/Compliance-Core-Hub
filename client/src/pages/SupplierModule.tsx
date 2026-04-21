@@ -16,6 +16,7 @@ import {
   ShieldCheck, ClipboardList, BarChart3, Calendar, AlertCircle, Info,
   FileCheck, ChevronRight, ChevronDown, Star, Award, X, Phone, Mail,
   MapPin, FileText, Clock, ArrowUp, ArrowDown, ChevronsUpDown, UserCheck,
+  Printer, Send,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -119,10 +120,34 @@ const SUPPLIER_CATEGORIES = [
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
+const SCORECARD_FREQUENCY_OPTIONS = [
+  { value: "monthly",     label: "Monthly",      months: 1 },
+  { value: "quarterly",   label: "Quarterly",    months: 3 },
+  { value: "semi-annual", label: "Semi-Annual",  months: 6 },
+  { value: "annual",      label: "Annual",       months: 12 },
+];
+
+function nextScorecardDue(lastDate: string | null | undefined, frequency: string | null | undefined): Date | null {
+  if (!lastDate) return null;
+  const opt = SCORECARD_FREQUENCY_OPTIONS.find(o => o.value === frequency) ?? SCORECARD_FREQUENCY_OPTIONS[1];
+  const d = new Date(lastDate);
+  d.setMonth(d.getMonth() + opt.months);
+  return d;
+}
+
+function scorecardDueLabel(dueDate: Date | null): { label: string; cls: string } | null {
+  if (!dueDate) return null;
+  const days = Math.ceil((dueDate.getTime() - Date.now()) / 86400000);
+  if (days < 0) return { label: `Overdue by ${Math.abs(days)}d`, cls: "bg-red-100 text-red-700 border-red-200" };
+  if (days <= 14) return { label: `Due in ${days}d`, cls: "bg-amber-100 text-amber-700 border-amber-200" };
+  return { label: `Due ${dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`, cls: "bg-muted/60 text-muted-foreground border-border/50" };
+}
+
 const EMPTY_SUP: Partial<Supplier> = {
   name: "", contactName: "", email: "", phone: "", address: "",
   category: "", criticalityLevel: "minor", status: "active",
-  isoCertUrl: "", isoCertType: "", isoCertExpiry: "", reminderDaysBefore: 30, notes: "",
+  isoCertUrl: "", isoCertType: "", isoCertExpiry: "", reminderDaysBefore: 30,
+  scorecardFrequency: "quarterly", notes: "",
 };
 
 function SupplierForm({ initial, onSave, onCancel }: {
@@ -179,6 +204,16 @@ function SupplierForm({ initial, onSave, onCancel }: {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div>
+        <Label className="text-xs font-semibold">Scorecard Frequency</Label>
+        <Select value={form.scorecardFrequency || "quarterly"} onValueChange={set("scorecardFrequency")}>
+          <SelectTrigger className="mt-1 h-8 text-sm" data-testid="select-scorecard-frequency"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {SCORECARD_FREQUENCY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="border-t border-border/50 pt-3">
@@ -1289,6 +1324,132 @@ function MetricInput({ metric, value, onChange }: {
   );
 }
 
+// ─── Print Scorecard ──────────────────────────────────────────────────────────
+
+function printScorecard(ev: SupplierEvaluation, supplierName: string, companyName = "CCI Chemical, Inc.") {
+  const scores: any = ev.scores ?? {};
+  const RECO_COLORS: Record<string, string> = {
+    preferred: "#059669", approved: "#16a34a", conditional: "#d97706", disqualified: "#dc2626",
+  };
+  const RECO_LABELS: Record<string, string> = {
+    preferred: "★ Preferred Supplier", approved: "✓ Approved",
+    conditional: "⚠ Conditional — Improvement Plan Required",
+    disqualified: "✗ Disqualify — Immediate Action Required",
+  };
+  const recoColor = RECO_COLORS[ev.recommendation ?? "conditional"] ?? "#64748b";
+  const recoLabel = RECO_LABELS[ev.recommendation ?? "conditional"] ?? (ev.recommendation ?? "");
+  const overall = ev.overallScore ?? 0;
+  const scoreColor = overall >= 90 ? "#059669" : overall >= 75 ? "#16a34a" : overall >= 60 ? "#d97706" : "#dc2626";
+  const CAT_COLORS: Record<string, string> = {
+    blue: "#2563eb", violet: "#7c3aed", red: "#dc2626", amber: "#d97706", emerald: "#059669",
+  };
+
+  const catRows = IATF_SCORECARD.map(cat => {
+    const catData = scores[cat.id] ?? {};
+    const metricRows = cat.metrics.map(m => {
+      const entry = catData[m.id];
+      if (!entry) return "";
+      const sc = entry.score as number;
+      const scColor = sc >= 8 ? "#059669" : sc >= 6 ? "#d97706" : sc >= 4 ? "#ea580c" : "#dc2626";
+      const val = m.type === "select" && m.options
+        ? m.options.find(o => o.value === entry.value)?.label.split("—")[0].trim() ?? entry.value
+        : `${entry.value}${m.unit ? " " + m.unit : ""}`;
+      return `<tr>
+        <td style="padding:5px 12px;font-size:11px;color:#475569;border-bottom:1px solid #f1f5f9;">${m.label}</td>
+        <td style="padding:5px 12px;font-size:11px;color:#0f172a;border-bottom:1px solid #f1f5f9;">${val}</td>
+        <td style="padding:5px 12px;font-size:11px;font-weight:700;color:${scColor};text-align:right;border-bottom:1px solid #f1f5f9;">${sc}/10</td>
+      </tr>`;
+    }).filter(Boolean).join("");
+    if (!metricRows) return "";
+    const metricScores = cat.metrics.filter(m => catData[m.id]).map(m => catData[m.id].score as number);
+    const catScore = metricScores.length
+      ? Math.round((metricScores.reduce((a: number, b: number) => a + b, 0) / metricScores.length / 10) * 100) : 0;
+    return `
+    <div style="margin-bottom:14px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;page-break-inside:avoid;">
+      <div style="background:${CAT_COLORS[cat.color] ?? "#64748b"};padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#fff;font-size:11px;font-weight:700;">${cat.label}</span>
+        <span style="color:rgba(255,255,255,0.85);font-size:10px;">${cat.weight}% weight · Category Score: ${catScore}/100</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;">
+        <tr><th style="padding:4px 12px;font-size:9px;color:#94a3b8;text-align:left;background:#f8fafc;">Metric</th>
+            <th style="padding:4px 12px;font-size:9px;color:#94a3b8;text-align:left;background:#f8fafc;">Value</th>
+            <th style="padding:4px 12px;font-size:9px;color:#94a3b8;text-align:right;background:#f8fafc;">Score</th></tr>
+        ${metricRows}
+      </table>
+    </div>`;
+  }).filter(Boolean).join("");
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Supplier Scorecard — ${supplierName}</title>
+<style>
+  body{margin:0;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;}
+  @media print{body{padding:12px;}@page{size:A4;margin:12mm 12mm 14mm;}.no-print{display:none!important;}}
+  h1{font-size:18px;margin:0 0 2px;color:#0f172a;}
+</style></head>
+<body>
+<div style="border-bottom:3px solid #ea6c19;padding-bottom:12px;margin-bottom:16px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div>
+      <div style="background:#0f172a;display:inline-block;padding:4px 10px;border-radius:4px;margin-bottom:8px;">
+        <span style="color:#ea6c19;font-weight:700;font-size:12px;letter-spacing:1px;">CCHUB</span>
+        <span style="color:#fff;font-size:11px;margin-left:8px;">${companyName}</span>
+      </div>
+      <h1>IATF 16949 Supplier Performance Scorecard</h1>
+      <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Per IATF 16949 §8.4.1 / §8.4.2.4 — Supplier Monitoring &amp; Performance Evaluation</p>
+    </div>
+    <button class="no-print" onclick="window.print()" style="background:#ea6c19;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">🖨 Print / Save PDF</button>
+  </div>
+</div>
+
+<table style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
+<tr>
+  <td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#475569;width:100px;"><strong>Supplier</strong></td>
+  <td style="padding:10px 14px;font-size:13px;font-weight:600;">${supplierName}</td>
+  <td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#475569;width:120px;"><strong>Period</strong></td>
+  <td style="padding:10px 14px;font-size:13px;">${ev.period || "—"}</td>
+  <td style="padding:10px 14px;text-align:center;background:#f8fafc;" rowspan="2">
+    <p style="font-size:36px;font-weight:900;margin:0;color:${scoreColor};">${overall}</p>
+    <p style="font-size:10px;margin:0;color:#94a3b8;">/100 Overall</p>
+  </td>
+</tr>
+<tr>
+  <td style="padding:8px 14px;background:#f8fafc;font-size:12px;color:#475569;"><strong>Evaluated By</strong></td>
+  <td style="padding:8px 14px;font-size:12px;">${ev.evaluatorName || "—"}</td>
+  <td style="padding:8px 14px;background:#f8fafc;font-size:12px;color:#475569;"><strong>Date</strong></td>
+  <td style="padding:8px 14px;font-size:12px;">${ev.evaluationDate}</td>
+</tr>
+<tr>
+  <td colspan="4" style="padding:10px 14px;">
+    <span style="background:${recoColor};color:#fff;padding:3px 12px;border-radius:4px;font-size:11px;font-weight:700;">${recoLabel}</span>
+    <span style="font-size:10px;color:#64748b;margin-left:8px;">
+      ${overall >= 90 ? "Score ≥ 90 — Preferred Supplier status maintained"
+        : overall >= 75 ? "Score 75–89 — Approved. Continue monitoring."
+        : overall >= 60 ? "Score 60–74 — Written Improvement Plan required within 30 days"
+        : "Score < 60 — Initiate supplier disqualification process"}
+    </span>
+  </td>
+  <td></td>
+</tr>
+</table>
+
+<p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 8px;">Category Performance Breakdown</p>
+${catRows}
+
+${ev.notes ? `<div style="background:#fffbeb;border-left:4px solid #d97706;padding:10px 14px;border-radius:4px;margin-top:4px;">
+  <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#92400e;">Evaluator Notes</p>
+  <p style="margin:0;font-size:12px;color:#78350f;">${ev.notes}</p>
+</div>` : ""}
+
+<p style="margin-top:20px;font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;">
+  Generated by Core Compliance Hub &nbsp;|&nbsp; IATF 16949 §8.4.1 / §8.4.2.4 Supplier Monitoring
+  &nbsp;|&nbsp; ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+</p>
+</body></html>`;
+
+  const win = window.open("", "_blank", "width=900,height=750,scrollbars=yes");
+  if (win) { win.document.write(html); win.document.close(); }
+}
+
 // ─── Tab 3: Supplier Evaluations ─────────────────────────────────────────────
 
 function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
@@ -1298,8 +1459,9 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
   const [showNewEval, setShowNewEval] = useState(false);
   const [expandedEvalId, setExpandedEvalId] = useState<number | null>(null);
   const [evalMeta, setEvalMeta] = useState({ evaluationDate: new Date().toISOString().split("T")[0], evaluatorName: "", period: "", notes: "" });
-  // allValues: categoryId → metricId → raw entered value
   const [allValues, setAllValues] = useState<Record<string, Record<string, number | string>>>({});
+  const [sendingId, setSendingId] = useState<number | null>(null);
+  const [sendToEmail, setSendToEmail] = useState<string>("");
 
   const setMetricValue = (catId: string, metricId: string, v: number | string) => {
     setAllValues(prev => ({ ...prev, [catId]: { ...prev[catId], [metricId]: v } }));
@@ -1338,6 +1500,25 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: evalsQk }); toast({ title: "Evaluation deleted" }); },
   });
 
+  const sendMut = useMutation({
+    mutationFn: ({ id, toEmail }: { id: number; toEmail?: string }) =>
+      apiRequest("POST", `/api/supplier-evaluations/${id}/send-email`, { toEmail }),
+    onSuccess: (data: any) => {
+      toast({ title: "Scorecard sent", description: `Sent to ${data.sentTo}` });
+      setSendingId(null);
+      setSendToEmail("");
+    },
+    onError: (e: any) => {
+      toast({ title: "Send failed", description: e.message || "Could not send email", variant: "destructive" });
+    },
+  });
+
+  const updateFreqMut = useMutation({
+    mutationFn: ({ id, freq }: { id: number; freq: string }) =>
+      apiRequest("PATCH", `/api/suppliers/${id}`, { scorecardFrequency: freq }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: suppliersQk }); },
+  });
+
   const overallScore = calcIatfOverall(allValues);
   const recommendation = iatfRecommendation(overallScore);
   const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
@@ -1370,11 +1551,11 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
         </div>
       </div>
 
-      {/* Supplier picker */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 max-w-sm">
+      {/* Supplier picker + frequency */}
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="flex-1 min-w-[200px] max-w-sm">
           <Label className="text-xs font-semibold text-muted-foreground">Supplier</Label>
-          <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => { setSelectedSupplierId(parseInt(v)); setShowNewEval(false); setExpandedEvalId(null); }}>
+          <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => { setSelectedSupplierId(parseInt(v)); setShowNewEval(false); setExpandedEvalId(null); setSendingId(null); }}>
             <SelectTrigger className="mt-1 h-9" data-testid="select-supplier-evaluate">
               <SelectValue placeholder="Choose a supplier to evaluate…" />
             </SelectTrigger>
@@ -1383,12 +1564,44 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
             </SelectContent>
           </Select>
         </div>
+
+        {selectedSupplier && (
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground">Scorecard Frequency</Label>
+            <Select value={selectedSupplier.scorecardFrequency || "quarterly"}
+              onValueChange={v => updateFreqMut.mutate({ id: selectedSupplier.id, freq: v })}>
+              <SelectTrigger className="mt-1 h-9 w-40" data-testid="select-eval-frequency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SCORECARD_FREQUENCY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {selectedSupplierId && !showNewEval && (
-          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-9 text-xs mt-5" onClick={() => setShowNewEval(true)} data-testid="button-new-evaluation">
+          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-9 text-xs" onClick={() => setShowNewEval(true)} data-testid="button-new-evaluation">
             <Plus className="w-3.5 h-3.5" /> New Scorecard
           </Button>
         )}
       </div>
+
+      {/* Next due date indicator */}
+      {selectedSupplier && evaluations.length > 0 && (() => {
+        const lastEval = evaluations[0];
+        const dueDate = nextScorecardDue(lastEval.evaluationDate, selectedSupplier.scorecardFrequency);
+        const badge = scorecardDueLabel(dueDate);
+        if (!badge) return null;
+        return (
+          <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border w-fit ${badge.cls}`}>
+            <Calendar className="w-3.5 h-3.5" />
+            <span className="font-semibold">Next scorecard:</span>
+            <span>{badge.label}</span>
+            <span className="opacity-60 ml-1">· Based on {selectedSupplier.scorecardFrequency ?? "quarterly"} frequency + last eval date</span>
+          </div>
+        );
+      })()}
 
       {!selectedSupplierId ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -1632,10 +1845,53 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                           })}
                         </div>
                         {ev.notes && <p className="text-[11px] text-muted-foreground italic border-t border-border/40 pt-3">{ev.notes}</p>}
-                        <div className="flex items-center justify-end pt-1">
+
+                        {/* Send email inline form */}
+                        {sendingId === ev.id && (
+                          <div className="border border-accent/30 rounded-lg p-3 bg-accent/5 mt-2 space-y-2" data-testid={`send-email-panel-${ev.id}`}>
+                            <p className="text-xs font-semibold text-primary">Send scorecard to supplier</p>
+                            <div className="flex gap-2">
+                              <Input
+                                className="h-7 text-xs flex-1"
+                                placeholder={`Supplier email${selectedSupplier?.email ? ` (${selectedSupplier.email})` : ""}`}
+                                value={sendToEmail}
+                                onChange={e => setSendToEmail(e.target.value)}
+                                data-testid={`input-send-email-${ev.id}`}
+                              />
+                              <Button
+                                size="sm" className="h-7 text-xs bg-accent hover:bg-accent/90 text-white gap-1"
+                                onClick={() => sendMut.mutate({ id: ev.id, toEmail: sendToEmail || undefined })}
+                                disabled={sendMut.isPending}
+                                data-testid={`button-confirm-send-${ev.id}`}
+                              >
+                                <Send className="w-3 h-3" /> {sendMut.isPending ? "Sending…" : "Send"}
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setSendingId(null); setSendToEmail(""); }}>Cancel</Button>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                              {selectedSupplier?.email
+                                ? `Leave blank to use the email on file (${selectedSupplier.email}), or type a different address.`
+                                : "No email on file for this supplier — enter one above, or add it in the ASL tab."}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2">
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
+                              onClick={() => printScorecard(ev, selectedSupplier?.name ?? "Supplier")}
+                              data-testid={`button-print-eval-${ev.id}`}>
+                              <Printer className="w-3 h-3" /> Print / PDF
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 border-accent/30 text-accent hover:bg-accent/5"
+                              onClick={() => { setSendingId(sendingId === ev.id ? null : ev.id); setSendToEmail(""); }}
+                              data-testid={`button-send-eval-${ev.id}`}>
+                              <Send className="w-3 h-3" /> Send to Supplier
+                            </Button>
+                          </div>
                           <button onClick={() => { if (confirm("Delete this evaluation?")) deleteMut.mutate(ev.id); }}
                             className="flex items-center gap-1.5 text-[11px] text-red-500 hover:text-red-700" data-testid={`button-delete-eval-${ev.id}`}>
-                            <Trash2 className="w-3 h-3" /> Delete Evaluation
+                            <Trash2 className="w-3 h-3" /> Delete
                           </button>
                         </div>
                       </div>

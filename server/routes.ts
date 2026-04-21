@@ -8036,6 +8036,103 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  app.post("/api/supplier-evaluations/:id/send-email", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const evalId = parseInt(req.params.id);
+      const { toEmail, companyName } = req.body;
+
+      // Load evaluation
+      const evals = await storage.getSupplierEvaluations(userId, undefined, undefined, isSuperadmin);
+      const ev = evals.find(e => e.id === evalId);
+      if (!ev) return res.status(404).json({ message: "Evaluation not found" });
+
+      // Load supplier
+      const supplier = await storage.getSupplier(ev.supplierId);
+      if (!supplier) return res.status(404).json({ message: "Supplier not found" });
+
+      const recipientEmail = toEmail || supplier.email;
+      if (!recipientEmail || !recipientEmail.includes("@")) {
+        return res.status(400).json({ message: "No valid email address on file for this supplier. Add an email in the ASL first." });
+      }
+
+      // Build category breakdown from scores JSONB
+      const IATF_CATS = [
+        { id: "incoming_quality",     label: "Incoming Quality",              weight: 30, color: "blue",
+          metrics: [
+            { id: "ppm",            label: "Incoming Defect PPM",        unit: "PPM" },
+            { id: "lot_reject_rate",label: "Shipment / Lot Reject Rate", unit: "%" },
+            { id: "lab_retest",     label: "Lab Retest Events",          unit: "events" },
+          ]},
+        { id: "delivery_performance", label: "Delivery Performance",          weight: 25, color: "violet",
+          metrics: [
+            { id: "otd_pct",        label: "On-Time Delivery %",        unit: "%" },
+            { id: "premium_freight",label: "Premium Freight Incidents",  unit: "incidents" },
+            { id: "fill_rate",      label: "Fill Rate %",               unit: "%" },
+          ]},
+        { id: "customer_impact",      label: "Customer Disruptions & Impact", weight: 20, color: "red",
+          metrics: [
+            { id: "line_stops",    label: "Customer Line Stops",         unit: "events" },
+            { id: "warranty_returns",label:"Warranty Returns",          unit: "events" },
+            { id: "dock_holds",    label: "Dock / Yard Holds",           unit: "holds" },
+          ]},
+        { id: "capa_responsiveness",  label: "CAPA & Responsiveness",        weight: 15, color: "amber",
+          metrics: [
+            { id: "response_time_days",label:"8D Response Time (avg)",  unit: "days" },
+            { id: "ca_effectiveness",  label:"CA Effectiveness",         unit: "/10" },
+            { id: "ppap_on_time",      label:"PPAP On-Time %",           unit: "%" },
+          ]},
+        { id: "quality_system",       label: "Quality System Status",        weight: 10, color: "emerald",
+          metrics: [
+            { id: "cert_status",   label: "Certification Status",        unit: "" },
+            { id: "special_status",label: "Special Status",              unit: "" },
+            { id: "audit_findings",label: "Major NC Count",              unit: "NCs" },
+          ]},
+      ];
+
+      const scores: any = ev.scores ?? {};
+      const categoryBreakdown = IATF_CATS.map(cat => {
+        const catData = scores[cat.id] ?? {};
+        const metricScores = cat.metrics
+          .filter(m => catData[m.id])
+          .map(m => catData[m.id].score as number);
+        const catScore = metricScores.length
+          ? Math.round((metricScores.reduce((a: number, b: number) => a + b, 0) / metricScores.length / 10) * 100)
+          : 0;
+        const metrics = cat.metrics
+          .filter(m => catData[m.id])
+          .map(m => ({
+            label: m.label,
+            value: `${catData[m.id].value}${m.unit ? " " + m.unit : ""}`,
+            score: catData[m.id].score as number,
+          }));
+        return { label: cat.label, weight: cat.weight, color: cat.color, score: catScore, metrics };
+      }).filter(c => c.metrics.length > 0);
+
+      const { buildSupplierScorecardEmail, sendEmail } = await import("./emailService");
+      const html = buildSupplierScorecardEmail({
+        supplierName: supplier.name,
+        companyName: companyName || "CCI Chemical, Inc.",
+        period: ev.period || "",
+        evaluationDate: ev.evaluationDate,
+        evaluatorName: ev.evaluatorName || "",
+        overallScore: ev.overallScore ?? 0,
+        recommendation: ev.recommendation || "conditional",
+        notes: ev.notes || undefined,
+        categoryBreakdown,
+      });
+
+      const sent = await sendEmail(recipientEmail, `IATF 16949 Supplier Scorecard — ${supplier.name} (${ev.period || ev.evaluationDate})`, html);
+      if (sent) {
+        res.json({ success: true, sentTo: recipientEmail });
+      } else {
+        res.status(500).json({ message: "Email could not be sent. Check that MAILERSEND_API_KEY is configured." });
+      }
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   app.get("/api/supplier-audits", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
