@@ -1532,9 +1532,9 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
   const set = (field: keyof ProcessEntry) => (val: string) => setLocal(prev => ({ ...prev, [field]: val }));
 
   return (
-    <div>
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-border/60 px-4 py-3 flex items-center gap-3 shadow-sm">
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header — pinned at top; content scrolls below */}
+      <div className="shrink-0 bg-white dark:bg-card border-b border-border/60 px-4 py-3 flex items-center gap-3 shadow-sm z-10">
         <button onClick={onBack} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded hover:bg-muted">
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -1578,7 +1578,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
         </div>
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
 
         {/* (KPI suggestions are now shown inside the Objectives panel below) */}
 
