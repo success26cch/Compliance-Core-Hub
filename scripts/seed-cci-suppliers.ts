@@ -226,45 +226,46 @@ const SUPPLIER_SEEDS = [
 
 // ─── Selection Criteria ──────────────────────────────────────────────────────
 
+// Pre-qualification criteria — assessable without historical performance data
 const CRITERIA_SEEDS = [
   {
-    name: "ISO / IATF Certification",
-    description: "Supplier holds a valid, accredited ISO 9001:2015 or IATF 16949:2016 certification from a recognized CB. Verified against IAF-accredited registry.",
+    name: "ISO / IATF Certification Held",
+    description: "Supplier holds a valid, accredited ISO 9001:2015 or IATF 16949:2016 certificate. Verified against IAF-accredited CB registry before initial approval. Score 10 = active cert in good standing; 1 = no certification held.",
     category: "quality",
     weight: 20,
     order: 0,
   },
   {
-    name: "Incoming Material Quality (PPM / Lot Rejection Rate)",
-    description: "Percentage of received lots passing CCI Chemical incoming inspection first-pass. Target: ≤ 500 PPM defective. Scored against trailing 12-month lot data.",
+    name: "Completed Supplier Quality Questionnaire (SQQ)",
+    description: "Supplier has returned a fully completed SQQ covering their QMS, process controls, equipment calibration, and non-conforming material handling procedures. Score 10 = all sections complete and satisfactory; 1 = no response.",
     category: "quality",
-    weight: 25,
+    weight: 20,
     order: 1,
   },
   {
-    name: "On-Time Delivery Performance",
-    description: "Percentage of purchase orders delivered on or before the requested delivery date. Target: ≥ 97%. Based on CCI ERP delivery data.",
-    category: "logistics",
+    name: "First Article / Sample Qualification Results",
+    description: "Submitted material samples or first article inspection (FAI) meet CCI Chemical's product specification (purity, viscosity, boiling point, etc.). Score 10 = all characteristics pass on first submission; 1 = critical failures.",
+    category: "technical",
     weight: 20,
     order: 2,
   },
   {
-    name: "FMVSS / REACH / SDS Regulatory Compliance",
-    description: "Supplier provides current SDS sheets, REACH declarations, and any applicable FMVSS 116 supporting data. Zero open regulatory non-compliances.",
-    category: "compliance",
+    name: "Financial Stability & Business Continuity",
+    description: "Supplier provides a D&B credit score, bank reference, or equivalent evidence of financial health, plus a documented business continuity or disaster recovery plan for supply chain risk mitigation.",
+    category: "financial",
     weight: 15,
     order: 3,
   },
   {
-    name: "Financial Stability & Business Continuity",
-    description: "Supplier demonstrates financial health via Dun & Bradstreet score or equivalent, and has a documented business continuity / disaster recovery plan.",
-    category: "financial",
-    weight: 10,
+    name: "Regulatory & Compliance Documentation",
+    description: "Supplier provides current SDS sheets, REACH / RoHS declarations, and any applicable FMVSS 116 supporting data before first shipment to CCI Chemical. Score 10 = all required documents received; 1 = none provided.",
+    category: "compliance",
+    weight: 15,
     order: 4,
   },
   {
-    name: "Technical Capability & Capacity",
-    description: "Supplier has laboratory capability, process controls, and capacity to meet CCI Chemical volume and purity specifications. Verified via supplier questionnaire or on-site audit.",
+    name: "Technical Capability & Capacity Assessment",
+    description: "Supplier demonstrates, via facility questionnaire or remote/on-site audit, that they have the laboratory equipment, process controls, and production capacity to meet CCI Chemical volume and purity requirements.",
     category: "technical",
     weight: 10,
     order: 5,

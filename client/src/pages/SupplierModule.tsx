@@ -17,7 +17,8 @@ import {
 import {
   Truck, Plus, Pencil, Trash2, ExternalLink, AlertTriangle, CheckCircle2,
   ShieldCheck, ClipboardList, BarChart3, Calendar, AlertCircle, Info,
-  FileCheck, ChevronRight, Star, Award, X,
+  FileCheck, ChevronRight, ChevronDown, Star, Award, X, Phone, Mail,
+  MapPin, FileText, Clock,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -240,12 +241,130 @@ function SupplierForm({ initial, onSave, onCancel }: {
 
 // ─── Tab 1: Approved Supplier List ──────────────────────────────────────────
 
+function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
+  s: Supplier;
+  onEdit: () => void;
+  onClose: () => void;
+  onDelete: () => void;
+  isSaving?: boolean;
+}) {
+  const days = daysUntilExpiry(s.isoCertExpiry);
+  const certExpired = days !== null && days < 0;
+  const certAlert = days !== null && days >= 0 && days <= (s.reminderDaysBefore ?? 60);
+
+  return (
+    <div className="border-t border-border/60 bg-muted/20 dark:bg-muted/10 px-4 py-4">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-3 max-w-3xl">
+        {/* Left column */}
+        <div className="space-y-2.5">
+          {s.contactName && (
+            <div className="flex items-start gap-2">
+              <FileText className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Contact</p>
+                <p className="text-xs text-primary font-medium">{s.contactName}</p>
+              </div>
+            </div>
+          )}
+          {s.email && (
+            <div className="flex items-start gap-2">
+              <Mail className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Email</p>
+                <a href={`mailto:${s.email}`} className="text-xs text-blue-600 hover:underline">{s.email}</a>
+              </div>
+            </div>
+          )}
+          {s.phone && (
+            <div className="flex items-start gap-2">
+              <Phone className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Phone</p>
+                <p className="text-xs text-primary">{s.phone}</p>
+              </div>
+            </div>
+          )}
+          {s.address && (
+            <div className="flex items-start gap-2">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
+                <p className="text-xs text-primary">{s.address}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right column — certification */}
+        <div className="space-y-2.5">
+          {s.isoCertType && (
+            <div className="flex items-start gap-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Certification</p>
+                <p className="text-xs text-primary font-medium">{s.isoCertType}</p>
+                {s.isoCertExpiry && (
+                  <p className={`text-[10px] mt-0.5 font-semibold ${certExpired ? "text-red-600" : certAlert ? "text-amber-600" : "text-emerald-600"}`}>
+                    {certExpired
+                      ? `EXPIRED — ${new Date(s.isoCertExpiry).toLocaleDateString()}`
+                      : certAlert
+                      ? `Expiring in ${days} days · ${new Date(s.isoCertExpiry).toLocaleDateString()}`
+                      : `Valid through ${new Date(s.isoCertExpiry).toLocaleDateString()}`}
+                  </p>
+                )}
+                {s.isoCertUrl && (
+                  <a href={s.isoCertUrl} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-0.5"
+                    data-testid={`link-cert-detail-${s.id}`}>
+                    <ExternalLink className="w-3 h-3" /> View Certificate
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+          {s.reminderDaysBefore && s.isoCertExpiry && (
+            <div className="flex items-start gap-2">
+              <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Reminder</p>
+                <p className="text-xs text-muted-foreground">{s.reminderDaysBefore} days before expiry</p>
+              </div>
+            </div>
+          )}
+          {s.notes && (
+            <div className="flex items-start gap-2">
+              <FileText className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{s.notes}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/40">
+        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={onEdit} data-testid={`button-edit-supplier-${s.id}`}>
+          <Pencil className="w-3 h-3" /> Edit
+        </Button>
+        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50" onClick={onDelete} data-testid={`button-delete-supplier-${s.id}`}>
+          <Trash2 className="w-3 h-3" /> Remove
+        </Button>
+        <button onClick={onClose} className="ml-auto text-[11px] text-muted-foreground hover:text-foreground underline">Close</button>
+      </div>
+    </div>
+  );
+}
+
 function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
 
   const qk = ["/api/suppliers", isoProjectId];
   const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
@@ -263,130 +382,178 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/suppliers/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); toast({ title: "Supplier removed" }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); setExpandedId(null); toast({ title: "Supplier removed" }); },
   });
 
-  const filtered = suppliers.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    (s.category || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = suppliers.filter(s => {
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
+      (s.category || "").toLowerCase().includes(search.toLowerCase()) ||
+      (s.contactName || "").toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === "all" || s.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
 
   const expiringCount = suppliers.filter(s => {
     const days = daysUntilExpiry(s.isoCertExpiry);
-    return days !== null && days <= (s.reminderDaysBefore ?? 30) && days > 0;
+    return days !== null && days <= (s.reminderDaysBefore ?? 60) && days > 0;
   }).length;
   const expiredCount = suppliers.filter(s => {
     const days = daysUntilExpiry(s.isoCertExpiry);
     return days !== null && days < 0;
   }).length;
 
+  const toggleRow = (id: number) => setExpandedId(prev => prev === id ? null : id);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Alert bar */}
       {(expiringCount > 0 || expiredCount > 0) && (
         <div className="flex flex-wrap gap-2">
           {expiredCount > 0 && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 text-xs text-red-700">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span><strong>{expiredCount}</strong> supplier cert{expiredCount > 1 ? "s" : ""} expired</span>
+              <span><strong>{expiredCount}</strong> cert{expiredCount > 1 ? "s" : ""} expired — action required</span>
             </div>
           )}
           {expiringCount > 0 && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-xs text-amber-700">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              <span><strong>{expiringCount}</strong> cert{expiringCount > 1 ? "s" : ""} expiring soon</span>
+              <span><strong>{expiringCount}</strong> cert{expiringCount > 1 ? "s" : ""} expiring within reminder window</span>
             </div>
           )}
         </div>
       )}
 
       {/* Toolbar */}
-      <div className="flex items-center gap-2">
-        <Input className="h-8 text-sm flex-1 max-w-xs" placeholder="Search suppliers…" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-search-suppliers" />
+      <div className="flex items-center gap-2 flex-wrap">
+        <Input
+          className="h-8 text-sm w-56"
+          placeholder="Search by name, category…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          data-testid="input-search-suppliers"
+        />
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="h-8 text-xs w-36" data-testid="select-filter-status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="probationary">Probationary</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="disqualified">Disqualified</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{suppliers.length} supplier{suppliers.length !== 1 ? "s" : ""}</span>
-          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-8 text-xs" onClick={() => setShowForm(true)} data-testid="button-add-supplier">
+          <span className="text-xs text-muted-foreground">{filtered.length} of {suppliers.length}</span>
+          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-8 text-xs" onClick={() => { setShowForm(true); setExpandedId(null); }} data-testid="button-add-supplier">
             <Plus className="w-3.5 h-3.5" /> Add Supplier
           </Button>
         </div>
       </div>
 
-      {/* Add form */}
-      {showForm && (
-        <div className="border border-border/60 rounded-xl p-4 bg-muted/10">
-          <h3 className="text-sm font-bold text-primary mb-3">New Supplier</h3>
+      {/* Add / Edit form */}
+      {(showForm || editing) && (
+        <div className="border border-accent/30 rounded-xl p-4 bg-accent/5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-primary">{editing ? `Edit — ${editing.name}` : "New Supplier"}</h3>
+            <button onClick={() => { setShowForm(false); setEditing(null); }}>
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
           <SupplierForm
-            initial={EMPTY_SUP}
-            onSave={d => createMut.mutate(d)}
-            onCancel={() => setShowForm(false)}
+            initial={editing ?? EMPTY_SUP}
+            onSave={d => editing ? updateMut.mutate({ id: editing.id, d }) : createMut.mutate(d)}
+            onCancel={() => { setShowForm(false); setEditing(null); }}
           />
         </div>
       )}
 
-      {/* Supplier cards */}
+      {/* List table */}
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground text-sm">Loading…</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Truck className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm font-medium">{search ? "No suppliers match your search" : "No suppliers yet"}</p>
-          {!search && <p className="text-xs mt-1">Click "Add Supplier" to build your Approved Supplier List</p>}
+          <p className="text-sm font-medium">{search || filterStatus !== "all" ? "No suppliers match your filters" : "No suppliers yet"}</p>
+          {!search && filterStatus === "all" && <p className="text-xs mt-1">Click "Add Supplier" to build your Approved Supplier List</p>}
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map(s => {
+        <div className="border border-border/60 rounded-xl overflow-hidden bg-white dark:bg-card">
+          {/* Table header */}
+          <div className="grid grid-cols-[2fr_1fr_90px_100px_130px_32px] gap-0 border-b border-border/60 bg-muted/40 px-4 py-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Supplier</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Criticality</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">ISO Cert</span>
+            <span />
+          </div>
+
+          {/* Rows */}
+          {filtered.map((s, idx) => {
             const days = daysUntilExpiry(s.isoCertExpiry);
-            const certAlert = days !== null && days <= (s.reminderDaysBefore ?? 30) && days > 0;
             const certExpired = days !== null && days < 0;
+            const certAlert = days !== null && days >= 0 && days <= (s.reminderDaysBefore ?? 60);
+            const isExpanded = expandedId === s.id;
+            const rowAlert = certExpired ? "bg-red-50/60 dark:bg-red-950/10" : certAlert ? "bg-amber-50/40 dark:bg-amber-950/10" : "";
+
             return (
-              <div
-                key={s.id}
-                className={`border rounded-xl p-3 bg-white dark:bg-card transition-all ${certExpired ? "border-red-200 bg-red-50/30 dark:bg-red-950/10" : certAlert ? "border-amber-200 bg-amber-50/30 dark:bg-amber-950/10" : "border-border/60 hover:border-border"}`}
-                data-testid={`card-supplier-${s.id}`}
-              >
-                {editing?.id === s.id ? (
-                  <SupplierForm
-                    initial={s}
-                    onSave={d => updateMut.mutate({ id: s.id, d })}
-                    onCancel={() => setEditing(null)}
+              <div key={s.id} className={`border-b border-border/40 last:border-0 ${rowAlert}`} data-testid={`row-supplier-${s.id}`}>
+                {/* Clickable row */}
+                <button
+                  className={`w-full grid grid-cols-[2fr_1fr_90px_100px_130px_32px] gap-0 px-4 py-2.5 text-left hover:bg-muted/30 transition-colors ${isExpanded ? "bg-muted/20" : ""}`}
+                  onClick={() => toggleRow(s.id)}
+                  data-testid={`button-expand-supplier-${s.id}`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-semibold text-primary truncate">{s.name}</span>
+                    {(certExpired || certAlert) && (
+                      <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${certExpired ? "text-red-500" : "text-amber-500"}`} />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground flex items-center truncate">{s.category || "—"}</span>
+                  <div className="flex items-center">
+                    <Badge className={`text-[10px] border ${CRITICALITY_COLORS[s.criticalityLevel || "minor"]}`}>
+                      {s.criticalityLevel || "minor"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center">
+                    <Badge className={`text-[10px] border ${STATUS_COLORS[s.status]}`}>{s.status}</Badge>
+                  </div>
+                  <div className="flex items-center">
+                    {s.isoCertType ? (
+                      <span className={`text-[10px] font-medium ${certExpired ? "text-red-600" : certAlert ? "text-amber-600" : "text-emerald-600"}`}>
+                        {certExpired ? "⚠ EXPIRED" : certAlert ? `⚠ ${days}d left` : "✓ " + s.isoCertType.split(":")[0]}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/50">—</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-center">
+                    {isExpanded
+                      ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                  </div>
+                </button>
+
+                {/* Expanded detail panel */}
+                {isExpanded && !editing && (
+                  <SupplierDetailPanel
+                    s={s}
+                    onEdit={() => setEditing(s)}
+                    onClose={() => setExpandedId(null)}
+                    onDelete={() => { if (confirm(`Remove ${s.name} from the ASL?`)) deleteMut.mutate(s.id); }}
                   />
-                ) : (
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-sm text-primary">{s.name}</span>
-                        <Badge className={`text-[10px] border ${CRITICALITY_COLORS[s.criticalityLevel || "minor"]}`}>{s.criticalityLevel || "minor"}</Badge>
-                        <Badge className={`text-[10px] border ${STATUS_COLORS[s.status]}`}>{s.status}</Badge>
-                        {certBadge(s)}
-                        {s.isoCertUrl && (
-                          <a href={s.isoCertUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-[10px] text-blue-600 hover:underline" data-testid={`link-cert-${s.id}`}>
-                            <ExternalLink className="w-3 h-3" /> View Cert
-                          </a>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-                        {s.category && <span>{s.category}</span>}
-                        {s.contactName && <span>· {s.contactName}</span>}
-                        {s.email && <span>· {s.email}</span>}
-                        {s.address && <span>· {s.address}</span>}
-                      </div>
-                      {(certExpired || certAlert) && (
-                        <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-semibold ${certExpired ? "text-red-600" : "text-amber-600"}`}>
-                          <AlertTriangle className="w-3 h-3" />
-                          {certExpired ? "Certificate EXPIRED" : `Certificate expiring in ${days} days`}
-                          {s.isoCertExpiry && ` · Expires ${new Date(s.isoCertExpiry).toLocaleDateString()}`}
-                        </div>
-                      )}
-                      {s.notes && <p className="mt-1 text-[11px] text-muted-foreground italic">{s.notes}</p>}
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => setEditing(s)} className="p-1.5 rounded hover:bg-muted transition-colors" data-testid={`button-edit-supplier-${s.id}`}>
-                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      <button onClick={() => { if (confirm(`Remove ${s.name}?`)) deleteMut.mutate(s.id); }} className="p-1.5 rounded hover:bg-red-50 transition-colors" data-testid={`button-delete-supplier-${s.id}`}>
-                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                      </button>
-                    </div>
+                )}
+                {isExpanded && editing?.id === s.id && (
+                  <div className="border-t border-border/60 bg-muted/20 px-4 py-4">
+                    <SupplierForm
+                      initial={editing}
+                      onSave={d => updateMut.mutate({ id: s.id, d })}
+                      onCancel={() => setEditing(null)}
+                    />
                   </div>
                 )}
               </div>
@@ -432,17 +599,55 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
     return acc;
   }, {} as Record<string, SupplierCriteria[]>);
 
+  // Pre-qualification criteria — all assessable without historical performance data
   const DEFAULT_CRITERIA = [
-    { name: "ISO Certification", description: "Supplier holds valid ISO 9001 or IATF 16949 certification", category: "quality", weight: 20 },
-    { name: "Product / Part Quality", description: "Incoming quality rate — defect PPM, first-pass yield", category: "quality", weight: 25 },
-    { name: "On-Time Delivery", description: "Percentage of orders delivered on or before requested date", category: "logistics", weight: 20 },
-    { name: "Financial Stability", description: "Supplier demonstrates financial health and business continuity", category: "financial", weight: 10 },
-    { name: "Regulatory Compliance", description: "Compliance with applicable environmental, safety, and regulatory requirements", category: "compliance", weight: 15 },
-    { name: "Technical Capability", description: "Supplier has the equipment, expertise, and capacity to meet requirements", category: "technical", weight: 10 },
+    {
+      name: "ISO / IATF Certification Held",
+      description: "Supplier holds a valid, accredited ISO 9001:2015 or IATF 16949:2016 certificate. Verify against IAF-accredited registry before approving. Score 10 = certificate in good standing; 1 = no certification.",
+      category: "quality", weight: 20,
+    },
+    {
+      name: "Completed Supplier Quality Questionnaire (SQQ)",
+      description: "Supplier has returned a fully completed SQQ covering their QMS, process controls, equipment calibration, and handling of non-conforming material. Score 10 = all sections complete; 1 = no response.",
+      category: "quality", weight: 20,
+    },
+    {
+      name: "First Article / Sample Qualification Results",
+      description: "Submitted samples or first article inspection (FAI) meet CCI Chemical's product specification. Score 10 = all characteristics pass; 1 = critical failures on first submission.",
+      category: "technical", weight: 20,
+    },
+    {
+      name: "Financial Stability & Business Continuity",
+      description: "Supplier provides a D&B credit score, bank reference, or equivalent evidence of financial health. Also scores presence of a documented business continuity or disaster recovery plan.",
+      category: "financial", weight: 15,
+    },
+    {
+      name: "Regulatory & Compliance Documentation",
+      description: "Supplier provides current SDS sheets, REACH / RoHS declarations, and any applicable FMVSS 116 supporting data prior to first shipment. Score 10 = all documents provided; 1 = none.",
+      category: "compliance", weight: 15,
+    },
+    {
+      name: "Technical Capability & Capacity Assessment",
+      description: "Supplier can demonstrate, via facility questionnaire or virtual audit, that they have the equipment, lab capability, and production capacity to meet CCI Chemical volume and purity requirements.",
+      category: "technical", weight: 10,
+    },
   ];
 
   return (
     <div className="space-y-4">
+      {/* Contextual info banner */}
+      <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300">
+        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+        <div>
+          <p className="font-bold mb-0.5">These are pre-qualification criteria — for selecting NEW suppliers</p>
+          <p className="leading-relaxed text-blue-600/90 dark:text-blue-400/80">
+            When you're qualifying a supplier for the first time, you don't have delivery history or incoming quality data yet.
+            These criteria focus on what you <em>can</em> verify upfront: certifications, documentation, sample results, and financial references.
+            Once a supplier is active and orders are flowing, use the <strong>Evaluations tab</strong> to score ongoing performance (quality PPM, on-time delivery, responsiveness, etc.).
+          </p>
+        </div>
+      </div>
+
       {/* Weight summary */}
       <div className="flex items-center justify-between bg-muted/30 border border-border/50 rounded-xl p-3">
         <div>
