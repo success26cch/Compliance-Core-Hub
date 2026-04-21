@@ -1089,6 +1089,16 @@ function TurtleField({ label, icon: Icon, value, placeholder, onChange, multilin
   label: string; icon: React.ComponentType<{ className?: string }>; value: string; placeholder: string;
   onChange: (v: string) => void; multiline?: boolean; color: string;
 }) {
+  const taRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow: recalculate height whenever value changes
+  React.useLayoutEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
   return (
     <div className={`rounded-xl border-2 p-3 ${color}`}>
       <div className="flex items-center gap-1.5 mb-2">
@@ -1096,11 +1106,13 @@ function TurtleField({ label, icon: Icon, value, placeholder, onChange, multilin
         <span className="text-xs font-bold uppercase tracking-wide">{label}</span>
       </div>
       {multiline ? (
-        <Textarea
+        <textarea
+          ref={taRef}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className="text-xs min-h-[60px] resize-none bg-white/60 dark:bg-black/20 border-border/40"
+          rows={3}
+          className="w-full text-xs resize-none overflow-hidden bg-white/60 dark:bg-black/20 border border-border/40 rounded-md px-3 py-2 leading-relaxed focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
         />
       ) : (
         <Input
