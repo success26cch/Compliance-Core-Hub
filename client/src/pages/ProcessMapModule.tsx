@@ -257,7 +257,7 @@ function guessRow(name: string, standard: string): string {
 }
 
 // ─── Process Box Component ─────────────────────────────────────────────────────
-function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onClick: () => void; standard: string }) {
+function ProcessBox({ process, onClick, onDelete, standard }: { process: ProcessEntry; onClick: () => void; onDelete: () => void; standard: string }) {
   const isIATF = standard.includes("IATF");
   const sites = normalizeSites(process.site);
   const isRemote = sites.includes("REMOTE_SITE");
@@ -308,7 +308,15 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
           {process.clauses.length > 2 && <span className="text-[11px] text-muted-foreground">+{process.clauses.length - 2}</span>}
         </div>
       )}
-      <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground/40 hover:text-red-500 transition-colors"
+          data-testid={`button-delete-process-${process.name.replace(/\s+/g, "-").toLowerCase()}`}
+          title="Delete this process"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
         <ExternalLink className="w-3 h-3 text-accent" />
       </div>
     </button>
@@ -799,6 +807,18 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
     }
   };
 
+  const handleDeleteProcess = async (processName: string) => {
+    if (!window.confirm(`Remove "${processName}" from this process map?\n\nThis action cannot be undone.`)) return;
+    try {
+      const updated = processes.filter(p => p.name !== processName);
+      await apiRequest("PATCH", "/api/iso-projects", { processes: updated });
+      qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      pmToast({ title: `"${processName}" removed`, description: "The process has been deleted from the map." });
+    } catch {
+      pmToast({ title: "Could not delete process", variant: "destructive" });
+    }
+  };
+
   const pickerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!showPicker) return;
@@ -1037,7 +1057,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                                 </span>
                               )}
                             </div>
-                            <ProcessBox process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                            <ProcessBox process={p} onClick={() => onSelectProcess(p)} onDelete={() => handleDeleteProcess(p.name)} standard={project.standard!} />
                           </div>
                           {i < sorted.length - 1 && (
                             <div className="flex flex-col items-center px-2 flex-shrink-0 self-center mt-7">
@@ -1051,7 +1071,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                     /* ── Management / Support: responsive grid ── */
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                       {sorted.map(p => (
-                        <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} standard={project.standard!} />
+                        <ProcessBox key={p.name} process={p} onClick={() => onSelectProcess(p)} onDelete={() => handleDeleteProcess(p.name)} standard={project.standard!} />
                       ))}
                     </div>
                   )}
@@ -1471,6 +1491,19 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
     }
   };
 
+  const handleDeleteSelf = async () => {
+    if (!window.confirm(`Remove "${process.name}" from this process map?\n\nThis action cannot be undone.`)) return;
+    try {
+      const all = (project.processes || []) as ProcessEntry[];
+      const updated = all.filter(p => p.name !== process.name);
+      await patchProjectMut.mutateAsync(updated);
+      toast({ title: `"${process.name}" deleted`, description: "The process has been removed from the map." });
+      onBack();
+    } catch {
+      toast({ title: "Could not delete process", variant: "destructive" });
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -1530,6 +1563,14 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
             data-testid="button-print-turtle"
           >
             <Printer className="w-3.5 h-3.5" /> Print
+          </button>
+          <button
+            onClick={handleDeleteSelf}
+            className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-50 dark:hover:bg-red-950/30 px-2.5 py-1 rounded-lg transition-colors h-7"
+            data-testid="button-delete-turtle"
+            title="Delete this process from the map"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete
           </button>
           <Button size="sm" onClick={handleSave} disabled={saving} className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-7 text-xs" data-testid="button-save-turtle">
             <Save className="w-3 h-3" /> {saving ? "Saving…" : "Save"}
