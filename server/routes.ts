@@ -6882,16 +6882,21 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
         processName, owner, clauses = [], row, site,
         inputs, outputs, resources, keyActivities, startingPoint, endPoint,
         risksAndOpportunities, documentedInfo, executors, csrReq,
-        orgName, standard, productsServices, totalEmployees, hasDesign
+        orgName, standard, productsServices, totalEmployees, hasDesign,
+        existingDocs = []
       } = req.body as Record<string, any>;
 
       if (!processName) return res.status(400).json({ message: "processName is required" });
 
       const isIATF = String(standard ?? "").toUpperCase().includes("IATF");
+      const hasDocs = Array.isArray(existingDocs) && existingDocs.length > 0;
+
+      // Build a readable list of existing documents for the prompt
+      const docsContext = hasDocs
+        ? existingDocs.map((d: any) => `- ${d.title}${d.docNumber ? ` (${d.docNumber})` : ""}${d.isoClause ? ` — Clause ${d.isoClause}` : ""}${d.docType ? ` [${d.docType.replace(/_/g, " ")}]` : ""}`).join("\n")
+        : "(none yet)";
 
       const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI, specializing in process analysis for ${standard ?? "ISO 9001"} Quality Management Systems. You help organizations complete Turtle Diagrams — a structured tool for documenting process inputs, outputs, resources, activities, controls, and performance measures.
-
-Your job is to generate realistic, specific, industry-appropriate content for every field of a Turtle Diagram for the process described. Write from the organization's perspective using their actual industry and products.
 
 ORGANIZATION:
 - Name: ${orgName ?? "the organization"}
@@ -6906,7 +6911,18 @@ RULES:
 3. Resources must name realistic equipment, systems, or competencies needed (not generic lists).
 4. Key Activities must describe the 4-6 core transformation steps in logical sequence.
 5. Risks & Opportunities must be real risks for this type of process in this industry.
-6. Documented Information must reference realistic procedure and form numbers (QP-X.X-1, FM-X.X-1).
+6. DOCUMENTED INFORMATION — STRICT RULE:
+   ${hasDocs
+     ? `The organization's document library is provided. For the "documentedInfo" field:
+   - ONLY reference documents that actually appear in the EXISTING DOCUMENTS LIST below.
+   - If a relevant document is missing from the library, list it on its own line starting with "→ Suggest creating: " followed by a realistic title.
+   - Do NOT invent document numbers or titles that are not in the library.
+   - Format: list existing ones first (plain bullets), then any suggestions on separate lines starting with "→ Suggest creating: ".`
+     : `The organization has no documents in its library yet (this may be early in their QMS build).
+   - Do NOT reference any documents as if they exist.
+   - Instead, for the "documentedInfo" field: list the documents that SHOULD be created for this process, each on its own line starting with "→ Suggest creating: " followed by a realistic title and brief reason.
+   - Keep suggestions to 3-5 most important documents for this process type.`
+   }
 7. For IATF 16949, include automotive-specific elements where relevant.
 8. Keep each field concise — this is a diagram, not a procedure. Bullet-style entries separated by newlines.
 
@@ -6920,8 +6936,8 @@ RESPONSE FORMAT — return ONLY a valid JSON object with exactly these keys:
   "executors": "roles who execute this process, comma-separated",
   "keyActivities": "numbered list of 4-6 core steps, one per line",
   "risksAndOpportunities": "bullet list of 3-5 key risks and 2-3 opportunities",
-  "documentedInfo": "bullet list of procedures, work instructions, and records",
-  "csrReq": "${isIATF ? "relevant customer-specific requirements or leave empty" : ""}",
+  "documentedInfo": "existing documents (plain bullets) then suggested ones (→ Suggest creating: prefix)",
+  "csrReq": "${isIATF ? "relevant customer-specific requirements or leave empty string" : ""}",
   "suggestedKpis": [
     { "name": "KPI name", "target": "numeric target", "unit": "unit" }
   ]
@@ -6935,6 +6951,9 @@ Process Row / Type: ${row ?? "not specified"} (${row === "COP" ? "Customer-Orien
 Process Owner: ${owner ?? "not specified"}
 ISO Clauses: ${clauses.join(", ") || "not specified"}
 ${isIATF && site ? `Site: ${site}` : ""}
+
+EXISTING DOCUMENTS IN LIBRARY (${hasDocs ? existingDocs.length + " documents" : "none yet"}):
+${docsContext}
 
 CURRENT FIELD VALUES (preserve any non-empty values the user has already entered — improve or expand them, do not discard):
 - Inputs: ${inputs || "(empty)"}

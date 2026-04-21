@@ -1059,6 +1059,21 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
     setIsFillingWithIsa(true);
     setIsaKpiSuggestions([]);
     try {
+      // Fetch existing documents from the library first so Isa only references real ones
+      let existingDocs: Array<{ title: string; docType: string; docNumber?: string; isoClause?: string }> = [];
+      try {
+        const docsRes = await fetch(`/api/iso-documents?isoProjectId=${project.id}`, { credentials: "include" });
+        if (docsRes.ok) {
+          const allDocs = await docsRes.json();
+          existingDocs = (allDocs as any[]).map((d: any) => ({
+            title: d.title,
+            docType: d.docType,
+            docNumber: d.docNumber,
+            isoClause: d.isoClause,
+          }));
+        }
+      } catch { /* non-fatal — proceed without doc list */ }
+
       const res = await fetch("/api/iso-processes/generate-turtle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1084,6 +1099,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
           productsServices: project.productsServices,
           totalEmployees: project.totalEmployees,
           hasDesign: project.hasDesignResponsibility,
+          existingDocs,
         }),
       });
       if (!res.ok) throw new Error("Generation failed");
