@@ -1104,7 +1104,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
       if (Array.isArray(data.suggestedKpis) && data.suggestedKpis.length > 0) {
         setIsaKpiSuggestions(data.suggestedKpis);
       }
-      toast({ title: "Isa filled the Turtle Diagram", description: "Review each field and adjust as needed, then Save." });
+      toast({ title: "Isa's suggestions are ready", description: "Review each field and adjust as needed, then Save." });
     } catch {
       toast({ title: "Isa couldn't complete the diagram", description: "Check your connection and try again.", variant: "destructive" });
     } finally {
@@ -1163,7 +1163,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
             data-testid="button-isa-fill-turtle"
           >
             {isFillingWithIsa ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-            {isFillingWithIsa ? "Isa is thinking…" : "Ask Isa to Fill"}
+            {isFillingWithIsa ? "Isa is thinking…" : "Ask Isa to Suggest"}
           </Button>
           <button
             onClick={() => printTurtleDiagram(local, project, objectives)}
@@ -1185,7 +1185,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
           <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl p-3">
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
-              <span className="text-xs font-bold text-violet-900 dark:text-violet-200">Isa suggests these KPIs — click + to add any</span>
+              <span className="text-xs font-bold text-violet-900 dark:text-violet-200">Isa's KPI suggestions — click any to add</span>
               <button onClick={() => setIsaKpiSuggestions([])} className="ml-auto text-muted-foreground hover:text-foreground transition-colors"><X className="w-3.5 h-3.5" /></button>
             </div>
             <div className="flex flex-wrap gap-2">
