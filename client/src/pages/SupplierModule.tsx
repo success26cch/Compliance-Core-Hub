@@ -1042,11 +1042,13 @@ interface ScorecardMetric {
   toScore: (v: number | string) => number;
   options?: SelectOption[];
   iatfHighlight?: boolean;
+  iatfOnly?: boolean;
   goodDirection?: "lower" | "higher";
 }
 interface ScorecardCategory {
   id: string; label: string; weight: number; iatfClause: string;
   color: string; metrics: ScorecardMetric[];
+  iatfOnly?: boolean;
 }
 
 const IATF_SCORECARD: ScorecardCategory[] = [
@@ -1092,7 +1094,7 @@ const IATF_SCORECARD: ScorecardCategory[] = [
         id: "premium_freight", label: "Premium Freight Incidents", unit: "incidents",
         description: "Number of times CCI paid premium/expedite freight costs because supplier missed schedule",
         iatfNote: "Clause 8.4.1 — incidents of premium freight (IATF-specific requirement)",
-        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true, iatfOnly: true,
         toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; },
       },
       {
@@ -1106,27 +1108,27 @@ const IATF_SCORECARD: ScorecardCategory[] = [
   {
     id: "customer_impact", label: "Customer Disruptions & Impact", weight: 20,
     iatfClause: "§8.4.1 — customer disruptions incl. field returns",
-    color: "red",
+    color: "red", iatfOnly: true,
     metrics: [
       {
         id: "line_stops", label: "Customer Line Stops / Plant Shutdowns", unit: "events",
         description: "Number of production line stops or plant shutdowns at CCI Chemical caused by supplier-responsible material failures",
         iatfNote: "Clause 8.4.1 — customer disruptions (IATF-specific requirement)",
-        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true, iatfOnly: true,
         toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 4 : 1; },
       },
       {
         id: "warranty_returns", label: "Warranty / Field Returns (Supplier-Responsible)", unit: "events",
         description: "Warranty or field return events traceable to this supplier's material or components during the evaluation period",
         iatfNote: "Clause 8.4.1 — field returns; Clause 8.4.1.2 — automotive warranty management",
-        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true, iatfOnly: true,
         toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; },
       },
       {
         id: "dock_holds", label: "Dock / Yard Holds", unit: "holds",
         description: "Number of times incoming material was quarantined or placed on hold at CCI receiving pending final disposition",
         iatfNote: "Material quarantine / yard hold events — supply chain containment indicator",
-        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true, iatfOnly: true,
         toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 4 : 1; },
       },
     ],
@@ -1152,7 +1154,7 @@ const IATF_SCORECARD: ScorecardCategory[] = [
       {
         id: "ppap_on_time", label: "PPAP / Documentation On-Time %", unit: "%",
         description: "Percentage of required PPAP submissions, certification renewals, or compliance documents received by CCI's due date",
-        type: "number", placeholder: "e.g. 100", goodDirection: "higher",
+        type: "number", placeholder: "e.g. 100", goodDirection: "higher", iatfOnly: true,
         toScore: (v) => { const n = Number(v); return n >= 100 ? 10 : n >= 95 ? 8 : n >= 90 ? 6 : n >= 80 ? 4 : 2; },
       },
     ],
@@ -1180,7 +1182,7 @@ const IATF_SCORECARD: ScorecardCategory[] = [
         id: "special_status", label: "Special Status / Controlled Shipping",
         description: "Any active customer-imposed or self-imposed special quality or shipping status",
         iatfNote: "Clause 8.4.1 — special status customer notifications (IATF-specific requirement)",
-        type: "select", iatfHighlight: true,
+        type: "select", iatfHighlight: true, iatfOnly: true,
         options: [
           { value: "none", label: "None — no special status active", score: 10 },
           { value: "new_supplier", label: "New Supplier Designation (enhanced surveillance)", score: 6 },
@@ -1200,6 +1202,17 @@ const IATF_SCORECARD: ScorecardCategory[] = [
     ],
   },
 ];
+
+// Return the scorecard appropriate for the project's standard.
+// IATF clients see all categories + metrics; ISO 9001 / other clients
+// see only metrics that are not flagged iatfOnly.
+function getActiveScorecard(isIATF: boolean): ScorecardCategory[] {
+  if (isIATF) return IATF_SCORECARD;
+  return IATF_SCORECARD
+    .filter(cat => !cat.iatfOnly)
+    .map(cat => ({ ...cat, metrics: cat.metrics.filter(m => !m.iatfOnly) }))
+    .filter(cat => cat.metrics.length > 0);
+}
 
 // Resolve score for a metric entry (handles select options)
 function resolveMetricScore(metric: ScorecardMetric, value: number | string): number {
@@ -1224,11 +1237,12 @@ function calcCategoryScore(
   return Math.round((avg / 10) * 100);
 }
 
-// Calculate weighted overall scorecard total (0–100)
-function calcIatfOverall(allValues: Record<string, Record<string, number | string>>): number {
-  const totalWeight = IATF_SCORECARD.reduce((s, c) => s + c.weight, 0);
+// Calculate weighted overall scorecard total (0–100).
+// Uses the active scorecard so weights normalize correctly when IATF categories are excluded.
+function calcIatfOverall(allValues: Record<string, Record<string, number | string>>, scorecard: ScorecardCategory[] = IATF_SCORECARD): number {
+  const totalWeight = scorecard.reduce((s, c) => s + c.weight, 0);
   let weighted = 0;
-  for (const cat of IATF_SCORECARD) {
+  for (const cat of scorecard) {
     const catScore = calcCategoryScore(cat, allValues[cat.id] ?? {});
     weighted += (catScore / 100) * (cat.weight / totalWeight) * 100;
   }
@@ -1326,7 +1340,10 @@ function MetricInput({ metric, value, onChange }: {
 
 // ─── Print Scorecard ──────────────────────────────────────────────────────────
 
-function printScorecard(ev: SupplierEvaluation, supplierName: string, companyName = "CCI Chemical, Inc.") {
+function printScorecard(ev: SupplierEvaluation, supplierName: string, companyName = "CCI Chemical, Inc.", activeScorecard: ScorecardCategory[] = IATF_SCORECARD) {
+  const isIATF = activeScorecard === IATF_SCORECARD || activeScorecard.some(c => c.iatfOnly === undefined && c.id === "customer_impact");
+  const standardLabel = isIATF ? "IATF 16949" : "ISO 9001:2015";
+  const clauseRef = isIATF ? "IATF 16949 §8.4.1 / §8.4.2.4 Supplier Monitoring" : "ISO 9001:2015 §8.4 — Control of Externally Provided Processes, Products & Services";
   const scores: any = ev.scores ?? {};
   const RECO_COLORS: Record<string, string> = {
     preferred: "#059669", approved: "#16a34a", conditional: "#d97706", disqualified: "#dc2626",
@@ -1344,7 +1361,7 @@ function printScorecard(ev: SupplierEvaluation, supplierName: string, companyNam
     blue: "#2563eb", violet: "#7c3aed", red: "#dc2626", amber: "#d97706", emerald: "#059669",
   };
 
-  const catRows = IATF_SCORECARD.map(cat => {
+  const catRows = activeScorecard.map(cat => {
     const catData = scores[cat.id] ?? {};
     const metricRows = cat.metrics.map(m => {
       const entry = catData[m.id];
@@ -1394,8 +1411,8 @@ function printScorecard(ev: SupplierEvaluation, supplierName: string, companyNam
         <span style="color:#ea6c19;font-weight:700;font-size:12px;letter-spacing:1px;">CCHUB</span>
         <span style="color:#fff;font-size:11px;margin-left:8px;">${companyName}</span>
       </div>
-      <h1>IATF 16949 Supplier Performance Scorecard</h1>
-      <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Per IATF 16949 §8.4.1 / §8.4.2.4 — Supplier Monitoring &amp; Performance Evaluation</p>
+      <h1>${standardLabel} Supplier Performance Scorecard</h1>
+      <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Per ${clauseRef.replace(/§/g, "§")}</p>
     </div>
     <button class="no-print" onclick="window.print()" style="background:#ea6c19;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">🖨 Print / Save PDF</button>
   </div>
@@ -1441,7 +1458,7 @@ ${ev.notes ? `<div style="background:#fffbeb;border-left:4px solid #d97706;paddi
 </div>` : ""}
 
 <p style="margin-top:20px;font-size:9px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;">
-  Generated by Core Compliance Hub &nbsp;|&nbsp; IATF 16949 §8.4.1 / §8.4.2.4 Supplier Monitoring
+  Generated by Core Compliance Hub &nbsp;|&nbsp; ${clauseRef}
   &nbsp;|&nbsp; ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
 </p>
 </body></html>`;
@@ -1452,7 +1469,9 @@ ${ev.notes ? `<div style="background:#fffbeb;border-left:4px solid #d97706;paddi
 
 // ─── Tab 3: Supplier Evaluations ─────────────────────────────────────────────
 
-function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
+function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: number; isIATF?: boolean }) {
+  const activeScorecard = getActiveScorecard(isIATF);
+  const standardLabel = isIATF ? "IATF 16949" : "ISO 9001:2015";
   const qc = useQueryClient();
   const { toast } = useToast();
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
@@ -1519,14 +1538,14 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: suppliersQk }); },
   });
 
-  const overallScore = calcIatfOverall(allValues);
+  const overallScore = calcIatfOverall(allValues, activeScorecard);
   const recommendation = iatfRecommendation(overallScore);
   const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
 
   // Build scores payload for DB — nested by category → metric
   const buildScoresPayload = () => {
     const out: Record<string, Record<string, { value: number | string; score: number }>> = {};
-    for (const cat of IATF_SCORECARD) {
+    for (const cat of activeScorecard) {
       out[cat.id] = {};
       for (const m of cat.metrics) {
         const v = allValues[cat.id]?.[m.id];
@@ -1540,13 +1559,16 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
 
   return (
     <div className="space-y-4">
-      {/* IATF context banner */}
+      {/* Standard context banner */}
       <div className="flex items-start gap-2.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/40 rounded-xl px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
         <div>
-          <p className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">IATF 16949 Performance Scorecard — for active, ongoing suppliers</p>
+          <p className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">{standardLabel} Supplier Performance Scorecard — for active, ongoing suppliers</p>
           <p className="leading-relaxed">
-            This scorecard fulfills IATF 16949 §8.4.1 (supplier monitoring) and §8.4.2.4 (supplier performance evaluation). It tracks the five required categories: delivered quality, delivery schedule performance (including <strong>premium freight</strong>), customer disruptions (including <strong>yard holds</strong> and <strong>field returns</strong>), corrective action responsiveness, and quality system status. Run this quarterly or annually for active suppliers.
+            {isIATF
+              ? <>This scorecard fulfills IATF 16949 §8.4.1 (supplier monitoring) and §8.4.2.4 (supplier performance evaluation). It tracks five required categories: delivered quality, delivery schedule performance (including <strong>premium freight</strong>), customer disruptions (including <strong>yard holds</strong> and <strong>field returns</strong>), corrective action responsiveness, and quality system status.</>
+              : <>This scorecard fulfills ISO 9001:2015 §8.4 (control of externally provided processes, products and services). It tracks three categories: incoming quality, delivery performance, corrective action responsiveness, and quality system status. IATF 16949-specific metrics (premium freight, PPAP, controlled shipping status, line stops, yard holds, warranty returns) are not included for ISO 9001 clients.</>
+            }{" "}Run this {selectedSupplier?.scorecardFrequency ?? "quarterly"} for active suppliers.
           </p>
         </div>
       </div>
@@ -1616,7 +1638,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
               {/* Form header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-accent/20">
                 <div>
-                  <p className="text-base font-bold text-primary">IATF 16949 Supplier Scorecard</p>
+                  <p className="text-base font-bold text-primary">{standardLabel} Supplier Scorecard</p>
                   <p className="text-sm text-muted-foreground">{selectedSupplier?.name}</p>
                 </div>
                 <button onClick={() => setShowNewEval(false)} data-testid="button-close-scorecard">
@@ -1642,7 +1664,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                 </div>
 
                 {/* Category sections */}
-                {IATF_SCORECARD.map(cat => {
+                {activeScorecard.map(cat => {
                   const cc = CATEGORY_COLORS[cat.color];
                   const catScore = calcCategoryScore(cat, allValues[cat.id] ?? {});
                   return (
@@ -1708,7 +1730,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                     <div className="h-12 w-px bg-border" />
                     {/* Category subtotals */}
                     <div className="flex gap-4 flex-wrap flex-1">
-                      {IATF_SCORECARD.map(cat => {
+                      {activeScorecard.map(cat => {
                         const cc = CATEGORY_COLORS[cat.color];
                         const cs = calcCategoryScore(cat, allValues[cat.id] ?? {});
                         return (
@@ -1769,7 +1791,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
             <div className="text-center py-10 text-muted-foreground">
               <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-20" />
               <p className="text-base font-medium">No evaluations on record for {selectedSupplier?.name}</p>
-              <p className="text-sm mt-1">Click "New Scorecard" to run the first IATF performance evaluation</p>
+              <p className="text-sm mt-1">Click "New Scorecard" to run the first {standardLabel} performance evaluation</p>
             </div>
           ) : evaluations.length > 0 && (
             <div className="space-y-2">
@@ -1807,7 +1829,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                     {isExpanded && ev.scores && (
                       <div className="border-t border-border/60 px-4 py-4 bg-muted/10 space-y-3">
                         <div className="grid grid-cols-1 gap-3">
-                          {IATF_SCORECARD.map(cat => {
+                          {activeScorecard.map(cat => {
                             const cc = CATEGORY_COLORS[cat.color];
                             const catData = ev.scores?.[cat.id] ?? {};
                             const catMetricScores = cat.metrics.map(m => catData[m.id]?.score).filter(Boolean) as number[];
@@ -1879,7 +1901,7 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
                         <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2">
                           <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" className="h-7 text-sm gap-1.5"
-                              onClick={() => printScorecard(ev, selectedSupplier?.name ?? "Supplier")}
+                              onClick={() => printScorecard(ev, selectedSupplier?.name ?? "Supplier", undefined, activeScorecard)}
                               data-testid={`button-print-eval-${ev.id}`}>
                               <Printer className="w-3 h-3" /> Print / PDF
                             </Button>
@@ -2208,7 +2230,7 @@ export default function SupplierModule({ project }: SupplierModuleProps) {
 
           {tab === "asl"      && <ApprovedSupplierList isoProjectId={isoProjectId} />}
           {tab === "criteria" && <SelectionCriteria isoProjectId={isoProjectId} />}
-          {tab === "evals"    && <SupplierEvaluations isoProjectId={isoProjectId} />}
+          {tab === "evals"    && <SupplierEvaluations isoProjectId={isoProjectId} isIATF={isIATF} />}
           {tab === "audits"   && isIATF && <SupplierAuditSchedule isoProjectId={isoProjectId} />}
         </div>
       </ScrollArea>
