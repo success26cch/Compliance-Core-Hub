@@ -28,30 +28,23 @@ The CCHUB platform is built with a modern web stack: React, Vite, TailwindCSS, a
 -   **Progressive Web App (PWA):** Standalone Corey application for installable, dark-themed, offline-capable experience.
 -   **Data Management Routes:** API routes for various modules like dashboard, employee, incident, account, team, digital passport, clinic assistant, and letter generation.
 -   **Branded Divisions:** Integrates BrandNSwag and ACSI Mentorship Program.
--   **Security Hardening:** Implemented Helmet.js for security headers, `express-rate-limit` for API rate limiting, and an `audit_logs` PostgreSQL table for immutable logging of critical actions. A public-facing security trust page is also provided.
--   **Access Control (critical):** Self-registration is disabled — "Create Account" removed from login page; only "Sign In" and "Forgot Password" are exposed. All app routes are wrapped in `ProtectedRoute` (App.tsx) which blocks unauthenticated users (→ `/login`) and authenticated-but-unpaid users (→ `SubscriptionWall`). The `ProtectedRoute` gate checks `user.isSuperadmin || subStatus.isPro || subStatus.isAdmin`. The backend `/api/auth/register` endpoint remains open for post-payment account creation (Paddle flow) and admin-created accounts only.
 
-## External Dependencies
--   **AI Integration:** Anthropic Claude (via Replit AI)
--   **Database:** PostgreSQL
--   **Payment Processing:** Paddle
--   **Communication:** Twilio (SMS), MailerSend (email)
--   **Speech Services:** Web Speech API
--   **Security:** Helmet.js, express-rate-limit
+## Important Implementation Notes
 
-## Non-Regression Rules (MANDATORY — read before every task)
+1.  **Professional Training/Certificates:**
+    -   Certificates must always use ACSI branding, never CCHUB branding.
+    -   ACSI logo: `attached_assets/CCHUB LOGO - NEW_1758574809924.png` or `AttachedAssets.CCHUB_LOGO__NEW_1758574809924_png`.
+    -   Certificate endpoint: `/api/training/certificates/:id` renders PDF directly from server.
+    -   Date format on certificates should be numeric MM/DD/YYYY.
+    -   `certificateHtml` in `server/routes.ts` must be used as a tagged template literal function.
 
-These rules exist because regressions are expensive and destroy user confidence. Violating them is never acceptable.
+2.  **DB schema is source of truth:** `shared/schema.ts` defines all tables; use Drizzle ORM.
 
-1.  **Read before you touch.** Before editing any file that has been previously worked on, read the current state of that file. Never assume you remember what it contains. Use read or grep to confirm the exact current code.
+3.  **Auth:** Uses session-based auth; `req.isAuthenticated()` and `req.user.claims.sub` pattern throughout routes.
 
-2.  **Audit what you're changing, not just what you intend to fix.** Before submitting an edit, ask: "Does this change break anything that was already working?" Check adjacent logic, helper functions, and any conditional branches that depend on the same data.
+4.  **AI integration:** Anthropic via `AI_INTEGRATIONS_ANTHROPIC_API_KEY` and `AI_INTEGRATIONS_ANTHROPIC_BASE_URL`; default model `claude-sonnet-4-5`.
 
-3.  **Completed features are frozen unless explicitly reopened.** If a feature was confirmed working by the user, it must remain working after every subsequent task. If a new task requires touching the same file, patch the minimum possible surface area.
-
-4.  **Never remove or replace a working block without reading it first.** If you are replacing a code block, copy the working logic and preserve any parts not directly related to the bug or feature being addressed.
-
-5.  **The Process Interaction Map layout is locked.** The map always uses the 3-band layout (Management/MOP at top → Core/COP in middle with horizontal numbered arrows → Support/SOP at bottom) for ALL standards including IATF 16949. Remote/Corporate site distinctions are shown via color-coding on the process box and legend ONLY — never as separate columns or rows. Do not reintroduce the IATF site-column grid.
+5.  **Styling:** Tailwind + shadcn/ui. Brand accent orange `#ea6c19`.
 
 6.  **IATF 16949 process classification rules are fixed:**
     -   **COP** (Customer-Oriented): the entire product value chain — sales, order entry, APQP/PPAP, design, production/blending/manufacturing, in-process testing, analytical, packaging/filling, shipping/delivery. APQP is ALWAYS COP (clause 8.3, customer-driven).
@@ -84,3 +77,10 @@ These rules exist because regressions are expensive and destroy user confidence.
     - Modules using this pattern: nc, process_map, communication, risk, management_review, measurement
 
     **Never switch a module from one pattern to the other** without updating both the ISOManager wrapper AND the module's outer div and any internal scroll containers simultaneously.
+
+10. **Demo company seed scripts:**
+    -   `scripts/seed-cci-quality-manual.ts` — pre-seeds the CCI Chemical IATF 16949 Quality Management System Manual (`iso_documents id=34`, `project_id=4`).
+        Run: `npx tsx scripts/seed-cci-quality-manual.ts`
+        The script is idempotent; it exits immediately if content already meets the ≥40,000-char (~10,000 token) target with no progress markers.
+        If re-seeding is needed, truncate the `iso_documents` row content first, then re-run.
+    -   QM prompt logic lives in `server/qm-prompts.ts` (exports `buildQmPartAPrompt`, `buildQmPartBPrompt`, `QmPromptParams`). Both the seed script and live generation in `routes.ts` use these shared builders to stay in sync.

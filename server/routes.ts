@@ -9,6 +9,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
 import { auditLogs } from "@shared/schema";
+import { buildQmPartAPrompt, buildQmPartBPrompt } from "./qm-prompts";
 
 // ─── Audit Logging Helper ─────────────────────────────────────────────────────
 async function logAudit(
@@ -7238,249 +7239,30 @@ Always end with: "Would you like me to draft any of the additional procedures li
       const orgName = project?.orgName ?? "the organization";
       const todayStr = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
 
-      const qmVoiceRules = `
-MANDATORY WRITING VOICE — FOLLOW ABSOLUTELY:
-1. ORGANIZATIONAL VOICE ONLY. Every sentence describes what ${orgName} does or how it operates. Write as senior management explaining their own quality system.
-2. NEVER begin any paragraph, clause, or sub-section with phrases like: "ISO requires...", "${standard} mandates...", "Per Clause X.X...", "The standard states...", "According to ISO...". These are forbidden.
-3. The manual should read as ${orgName}'s own documented system — not a commentary on the standard.
-4. Use "${orgName}" or "The organization" throughout. Never use placeholder text like "[Organization]" or "the company".
-5. Reference forms (FM-X.X-X) and procedures (QP-X.X-X) as the documented evidence — the manual states WHAT is done, the procedures explain HOW.
+const qualityManualPartAPrompt = buildQmPartAPrompt({
+        orgName,
+        orgAddr,
+        productsServices: project?.productsServices ?? "Not specified",
+        employees,
+        standard,
+        isIATF,
+        hasDesign,
+        processContext,
+        todayStr,
+      });
 
-LEVEL 1 DOCUMENT DISCIPLINE — NON-NEGOTIABLE:
-This is a Level 1 QMS document. It describes WHAT the organization does and WHO is responsible. It does NOT reproduce the content of procedures, forms, or registers.
-- When a procedure or form exists for a topic: write 2-4 sentences summarizing what is done, name the controlling document, and STOP. Do not list the items inside that form.
-- When NO secondary document exists for a topic: up to 5-6 sentences of explanation is acceptable, but still avoid exhaustive lists.
-- NEVER list the specific internal/external factors, interested parties, objectives, KPIs, audit questions, inputs/outputs, or corrective action steps inside the manual. Those details belong in the referenced forms and procedures.
-- A sub-clause entry that has a referenced form should read like: "${orgName} identifies and analyzes [topic]. These are documented in [FM-X.X-X] and reviewed at each management review cycle."
-- Quality objectives, interested parties, SWOT/PESTLE factors, risk items, and process details are ALL documented in their respective forms — do not reproduce them here.
+      const qualityManualPartBPrompt = buildQmPartBPrompt({
+        orgName,
+        orgAddr,
+        productsServices: project?.productsServices ?? "Not specified",
+        employees,
+        standard,
+        isIATF,
+        hasDesign,
+        processContext,
+        todayStr,
+      });
 
-CRITICAL FORMATTING — FOLLOW EXACTLY:
-- NO Markdown: no #, no ##, no **, no *, no ---, no backticks
-- Major sections: "4  CONTEXT OF THE ORGANIZATION" (number + two spaces + ALL-CAPS title)
-- Sub-sections: "4.1  Understanding the Organization and Its Context" (decimal + two spaces + title-case)
-- Plain pipe-delimited tables only — NO markdown separator rows
-- Bullet points use plain dash "- Item"
-- Output is copy-paste ready for Word/PDF — zero cleanup needed`;
-
-      const qualityManualPartAPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Draft PART A of a complete, publication-ready Quality Management System Manual.
-
-ORGANIZATION:
-- Name: ${orgName}
-- Address: ${orgAddr}
-- Products / Services: ${project?.productsServices ?? "Not specified"}
-- Employees: ${employees}
-- Standard: ${standard}${isIATF ? ":2016 (with ISO 9001:2015 foundation)" : ":2015"}
-- Design Responsibility: ${hasDesign ? "YES — Design and Development (Clause 8.3) is within scope" : "NO — Design and Development is EXCLUDED. Products manufactured per customer-provided specifications."}
-- QMS Processes:
-${processContext}
-${qmVoiceRules}
-
-PART A COVERS: Cover Page → Introduction → Sections 1 through 6
-
-Begin the document immediately with the cover page. No preamble.
-
-═══════════════════════════════════════════════════════════════
-COVER PAGE
-═══════════════════════════════════════════════════════════════
-Output a formal cover page with:
-- Organization Name: ${orgName}
-- Document Title: Quality Management System Manual
-- Document Number: QM-001
-- Standard: ${standard}${isIATF ? ":2016" : ":2015"}
-- Revision: 0
-- Effective Date: ${todayStr}
-- A 2-sentence scope statement using the organization's actual products/services and location
-- Approval signature block with three lines: President / CEO, QMS Management Representative, Lead Auditor — each with a signature line and date field
-
-═══════════════════════════════════════════════════════════════
-INTRODUCTION
-═══════════════════════════════════════════════════════════════
-Write 3 substantive paragraphs: (1) describe ${orgName}, its products/services, location, and market; (2) describe the purpose and benefits of the QMS for the organization and its customers; (3) state that the manual is structured around the ${standard}${isIATF ? ":2016" : ":2015"} standard and note that the Process Interaction Map is in Appendix A.
-
-═══════════════════════════════════════════════════════════════
-1  REVISION CONTROL SHEET
-═══════════════════════════════════════════════════════════════
-Pipe-delimited table with columns: DATE | REV. | DESCRIPTION OF REVISION | WRITTEN BY | APPROVED BY
-Row 1: ${todayStr} | 0 | Initial Release | QMS Specialist | President/CEO
-Row 2: (blank row)
-Below table: "Doc No: QM-001    Rev. 0    Effective: ${todayStr}"
-
-═══════════════════════════════════════════════════════════════
-2  TABLE OF CONTENTS
-═══════════════════════════════════════════════════════════════
-List every section in the manual: Introduction, 1 through 10, and Appendix A. Format: "Section Number  |  Title"
-
-═══════════════════════════════════════════════════════════════
-3  MANUAL ADMINISTRATION
-═══════════════════════════════════════════════════════════════
-Write 2 paragraphs describing: who owns and controls this manual, how it is distributed and updated, the review frequency, and how controlled copies are identified. Reference Procedure QP-7.5-1 (Documented Information Control).
-
-═══════════════════════════════════════════════════════════════
-4  CONTEXT OF THE ORGANIZATION
-═══════════════════════════════════════════════════════════════
-
-4.1  Understanding the Organization and Its Context
-Write 3 sentences: state that ${orgName} regularly evaluates the internal and external factors that affect its ability to achieve intended QMS results, that these factors are captured and maintained in the Context Analysis (FM-4.1-1), and that findings are reviewed at each management review cycle. Do NOT list or enumerate specific factors — those belong in FM-4.1-1.
-
-4.2  Understanding the Needs and Expectations of Interested Parties
-Write 3 sentences: state that ${orgName} identifies its relevant interested parties and determines their requirements as they relate to the QMS, that these are documented and kept current in the Interested Parties Matrix (FM-4.2-1), and that relevant requirements are incorporated into QMS planning. Do NOT list the specific interested parties — those are maintained in FM-4.2-1.
-
-4.3  Determining the Scope of the QMS
-Write a formal scope statement sentence using ${orgName}'s actual products/services and ${orgAddr || "its facility"}. ${hasDesign ? "" : `State clearly that Design and Development (Clause 8.3${isIATF ? "/IATF 8.3" : ""}) is excluded because products are manufactured exclusively to customer-provided specifications.`}
-Follow with 2-3 sentences explaining that the scope was determined by considering the factors from 4.1 and 4.2, the organization's products and services, and the boundaries and applicability of the QMS.${isIATF ? " Note that the scope also accounts for customer-specific requirements from automotive customers." : ""}
-
-4.4  QMS and Its Processes
-4.4.1 — Write 3-4 sentences: describe that ${orgName} operates a process-based QMS, that all core, support, and management processes are defined with owners and performance indicators, and that the interactions and sequence of these processes are illustrated in the Process Interaction Map (QPM-001) in Appendix A. State that risks and opportunities are integrated into process management. Do NOT list each process or its inputs/outputs here — those are captured in QPM-001 and Appendix A.
-4.4.2 — Write 2 sentences: state that ${orgName} determines and maintains documented information to support process operation and retains documented information to provide evidence that processes are carried out as planned, per Documented Information Control Procedure (QP-7.5-1).${isIATF ? " For IATF 16949, also note that Manufacturing Feasibility reviews and a Corporate Responsibility Statement are maintained as required by customer-specific requirements." : ""}
-
-═══════════════════════════════════════════════════════════════
-5  LEADERSHIP
-═══════════════════════════════════════════════════════════════
-
-5.1  Leadership and Commitment
-5.1.1 General — Write 3 sentences: describe how top management at ${orgName} actively leads and demonstrates accountability for the QMS — establishing the quality policy and objectives, championing the process approach and risk-based thinking, and ensuring that QMS requirements are integrated into business operations. Reference the Leadership Commitment Statement (FM-5.1-1).${isIATF ? " Add one sentence noting that top management also ensures customer-specific requirements are understood throughout the organization and maintains corporate accountability for product safety." : ""}
-5.1.2 Customer Focus — Write 2-3 sentences: state that top management ensures customer and applicable statutory/regulatory requirements are identified and consistently met, that customer satisfaction is monitored and acted on, and that risks and opportunities affecting product conformity are addressed. Reference Section 9.1.2 for the measurement approach.
-
-5.2  Quality Policy
-5.2.1 — Write a full, professional Quality Policy for ${orgName}. The policy must: reflect the organization's actual products/services; include commitment to satisfying applicable requirements; include commitment to continual improvement; be appropriate to the organization's context. Write it as a standalone policy statement that could be posted on a facility wall. (This is the actual policy — give it appropriate substance.)
-5.2.2 — Write 2-3 sentences: describe how the Quality Policy is communicated to all personnel (posted at the facility, included in orientation, available to interested parties), and that it is reviewed for continued suitability at each management review. Reference Awareness Communication (FM-7.3-1).
-
-5.3  Organizational Roles, Responsibilities and Authorities
-Write 3-4 sentences: describe that top management has defined and communicated roles, responsibilities, and authorities to ensure the QMS achieves its intended results; that a Management Representative is designated with responsibility for QMS coordination, reporting, and promotion of customer focus; and that role definitions are maintained in the Organization Chart (FM-5.3-1).${isIATF ? " Add one sentence noting the Product Safety Representative role required by IATF 16949." : ""} Do NOT enumerate the list of standard sub-requirements (a–e) — summarize the management commitment instead.
-
-═══════════════════════════════════════════════════════════════
-6  PLANNING
-═══════════════════════════════════════════════════════════════
-
-6.1  Actions to Address Risks and Opportunities
-6.1.1 — Write 3 sentences: state that ${orgName} identifies risks and opportunities by considering its organizational context (Section 4.1) and the requirements of relevant interested parties (Section 4.2), and that identified risks and opportunities are captured in the Risk Register (FM-6.1-1). Do NOT describe or list specific risks.
-6.1.2 — Write 3 sentences: state that planned actions to address risks and opportunities are integrated into QMS processes and reviewed for effectiveness through internal audits and management review, referencing the Risk Assessment Procedure (QP-6.1-1).${isIATF ? " Add one sentence: ${orgName} also maintains contingency plans and evaluates product safety and manufacturing process risks as required by IATF 16949." : ""}
-
-6.2  Quality Objectives and Planning to Achieve Them
-Write 3 sentences: state that ${orgName} establishes measurable quality objectives that are consistent with the Quality Policy and relevant to achieving QMS results; that objectives, measurement methods, responsible parties, and review frequencies are documented in the Quality Objectives Register (FM-6.2-1); and that the register is reviewed and updated at each management review cycle. Do NOT list any specific objectives — all objectives are in FM-6.2-1.
-
-6.3  Planning of Changes
-Write 2-3 sentences: describe that ${orgName} plans and manages changes to the QMS in a controlled manner, considering the purpose of the change, potential consequences, resource availability, and assignment of responsibilities, per Change Management Procedure (QP-6.3-1).
-
-END PART A HERE. Do not write Section 7 or beyond. End your output cleanly after Section 6.3.`;
-
-      const qualityManualPartBPrompt = `You are Isa, ACSI's Lead ISO Auditor AI. This is PART B of the Quality Management System Manual for ${orgName}.
-
-CONTINUE IMMEDIATELY FROM SECTION 7. Do NOT repeat the cover page, introduction, or sections 1-6. Start directly with the Section 7 heading.
-
-ORGANIZATION:
-- Name: ${orgName}
-- Standard: ${standard}${isIATF ? ":2016" : ":2015"}
-- Design Responsibility: ${hasDesign ? "YES — in scope" : "NO — excluded"}
-- Products / Services: ${project?.productsServices ?? "Not specified"}
-${qmVoiceRules}
-
-═══════════════════════════════════════════════════════════════
-7  SUPPORT
-═══════════════════════════════════════════════════════════════
-
-7.1  Resources
-7.1.1 General — Write 2 sentences: state that ${orgName} determines and provides the resources needed to establish, implement, maintain, and continually improve the QMS, accounting for internal capabilities and constraints.
-7.1.2 People — Write 2 sentences: state that ${orgName} provides the personnel needed for effective QMS operation and process control, and that staffing needs are evaluated as part of resource planning.
-7.1.3 Infrastructure — Write 2 sentences: state that ${orgName} determines, provides, and maintains the facilities, equipment, and supporting utilities needed to achieve product conformity, managed through the Preventive Maintenance Procedure (PM-7.1.3-1). Do NOT list specific equipment.
-7.1.4 Environment for Process Operation — Write 2 sentences: state that ${orgName} provides and maintains a work environment with appropriate physical, social, and psychological conditions needed for process conformity.
-7.1.5 Monitoring and Measurement Resources — Write 3 sentences: state that ${orgName} maintains a calibration program to ensure measurement instruments provide valid results, that calibration is performed on a defined cycle with traceability to national/international standards, and that records are maintained per Calibration Procedure (QP-7.1.5-1) and Calibration Log (FM-7.1.5-1).${isIATF ? " Add one sentence: Measurement System Analysis (MSA) is conducted per IATF 16949 clause 7.1.5.1 requirements." : ""} Do NOT list specific instruments.
-7.1.6 Organizational Knowledge — Write 2 sentences: state that ${orgName} identifies and maintains the organizational knowledge needed to operate its processes and achieve product conformity, and that this knowledge is preserved and made available through documented procedures and controlled records.
-
-7.2  Competence
-Write 3 sentences: state that ${orgName} defines the competency requirements for roles affecting QMS performance, assesses personnel against those requirements, and addresses any gaps through targeted training; and that competency records are maintained per Training and Competence Procedure (QP-7.2-1).${isIATF ? " Add one sentence noting that on-the-job training (OJT) records are maintained for all personnel affecting product quality per IATF 16949 clauses 7.2.1 and 7.2.3." : ""}
-
-7.3  Awareness
-Write 2-3 sentences: state that ${orgName} ensures all personnel understand the Quality Policy, the quality objectives relevant to their role, their contribution to QMS effectiveness, and the consequences of not conforming to requirements, managed through Awareness Communication (FM-7.3-1).
-
-7.4  Communication
-Write 2-3 sentences: state that ${orgName} determines the internal and external communications relevant to the QMS — including what is communicated, by whom, to whom, and through which channels — per Communication Plan (QP-7.4-1).
-
-7.5  Documented Information
-7.5.1 General — Write 2-3 sentences: state that ${orgName} establishes and maintains the documented information required by the QMS standard and by the organization itself to support process operation. Do NOT list every document — reference the document control system.
-7.5.2 Creating and Updating — Write 2 sentences: state that all documented information is identified (title, document number, date), formatted appropriately, and subject to review and approval before issue, per Documented Information Control Procedure (QP-7.5-1).
-7.5.3 Control of Documented Information — Write 3 sentences: state that ${orgName} controls documented information to ensure it is available where needed, protected against loss of confidentiality or integrity, and managed through defined retention and disposition schedules, per QP-7.5-1.${isIATF ? " Add one sentence: Record retention periods comply with statutory, regulatory, and customer-specified requirements per IATF 16949 clause 7.5.3.2." : ""}
-
-═══════════════════════════════════════════════════════════════
-8  OPERATION
-═══════════════════════════════════════════════════════════════
-
-8.1  Operational Planning and Control
-Write 3 sentences: state that ${orgName} plans, implements, controls, and reviews its operational processes against defined criteria, using documented work instructions, process controls, and monitoring activities; and that outsourced processes are controlled per the requirements of Section 8.4.${isIATF ? " Add one sentence: Manufacturing feasibility reviews for new products and changes are conducted using FM-8.1-1, and contingency plans are maintained per IATF 16949 clause 8.1.1." : ""}
-
-8.2  Requirements for Products and Services
-8.2.1 Customer Communication — Write 3 sentences: state that ${orgName} maintains clear and timely communication with customers on product information, order handling, feedback, complaints, and contingency situations.${isIATF ? " Add one sentence noting that communication on customer-specific requirements, PPAP submissions, and production part approvals is handled per the applicable customer portal or procedure." : ""}
-8.2.2 Determining Requirements — Write 2 sentences: state that customer requirements — including delivery, post-delivery, and applicable statutory/regulatory requirements — are identified and documented per Contract Review Procedure (QP-8.2-1) and Customer Requirements Form (FM-8.2-1).
-8.2.3 Review of Requirements — Write 2-3 sentences: state that ${orgName} reviews requirements before committing to supply to confirm they are understood, documented, and achievable, and that differences are resolved before acceptance. Records are maintained per FM-8.2-2.
-8.2.4 Changes to Requirements — Write 2 sentences: state that when requirements change, ${orgName} updates relevant documented information and communicates the changes to affected personnel.
-
-8.3  Design and Development
-${hasDesign
-  ? `8.3.1 General — Write 2 sentences: state that ${orgName} maintains a design and development process to ensure new and changed products meet requirements, governed by Design and Development Procedure (QP-8.3-1).
-8.3.2 Planning — Write 2-3 sentences: describe that design planning identifies stages, review points, verification/validation activities, and responsibilities. Do NOT enumerate every stage.
-8.3.3 Inputs — Write 2 sentences: state that design inputs include functional and performance requirements, regulatory requirements, and applicable standards, documented per QP-8.3-1.
-8.3.4 Controls — Write 2 sentences: state that design reviews, verification, and validation are conducted at planned stages to confirm outputs meet inputs.
-8.3.5 Outputs — Write 2 sentences: state that design outputs are documented in a form suitable for production and are verified against inputs before release.
-8.3.6 Changes — Write 2 sentences: state that design changes are identified, reviewed, authorized, and controlled to ensure product conformity is maintained.`
-  : `Design and Development is excluded from the scope of the QMS for ${orgName}. The organization manufactures products exclusively per customer-provided specifications and drawings. This exclusion is documented in the QMS Scope Statement (Section 4.3).`
-}
-
-8.4  Control of Externally Provided Processes, Products and Services
-8.4.1 General — Write 3 sentences: state that ${orgName} controls externally provided processes, products, and services through a supplier qualification and monitoring program; that qualified suppliers are maintained on the Approved Supplier List (FM-8.4-1); and that supplier performance is monitored and re-evaluated on a defined cycle, per Supplier Evaluation Procedure (QP-8.4-1).${isIATF ? " Add one sentence: ${orgName} cascades applicable QMS and customer-specific requirements to all supply chain tiers as required by IATF 16949." : ""} Do NOT list criteria or evaluation steps.
-8.4.2 Type and Extent of Control — Write 2 sentences: state that the type and extent of controls applied to externally provided products is based on risk and past supplier performance.
-8.4.3 Information for External Providers — Write 2 sentences: state that ${orgName} communicates purchasing information to suppliers that adequately describes requirements for products, processes, and applicable QMS requirements.
-
-8.5  Production and Service Provision
-8.5.1 Control of Production and Service Provision — Write 3 sentences: state that ${orgName} carries out production under controlled conditions, using documented work instructions, appropriate monitoring and measuring equipment, qualified personnel, and defined process controls.${isIATF ? " Add one sentence: The Control Plan (QP-8.5.1-CP) is the primary document defining process controls for each product family, per IATF 16949 clause 8.5.1.1." : ""} Do NOT list the controlled conditions — those are in the work instructions and control plans.
-8.5.2 Identification and Traceability — Write 2 sentences: state that ${orgName} identifies product throughout production and delivery using defined methods, and maintains traceability where required, per Identification and Traceability Procedure (QP-8.5.2-1).
-8.5.3 Property Belonging to Customers or External Providers — Write 2 sentences: state that customer and external provider property in ${orgName}'s care is identified, verified, protected, and safeguarded, with any loss or damage reported to the owner.
-8.5.4 Preservation — Write 2 sentences: state that ${orgName} preserves product conformity during internal processing and delivery through appropriate handling, packaging, storage, and protection measures.
-8.5.5 Post-Delivery Activities — Write 2 sentences: state that ${orgName} addresses applicable post-delivery activities including warranty obligations, regulatory disposal requirements, and customer feedback, per Post-Delivery Procedure (QP-8.5.5-1).
-8.5.6 Control of Changes — Write 2 sentences: state that planned and unplanned changes to production processes are reviewed and authorized before implementation to ensure continued product conformity, per Change Control Procedure (QP-6.3-1).
-
-8.6  Release of Products and Services
-Write 3 sentences: state that ${orgName} conducts defined inspection and testing activities at planned stages to verify product meets acceptance criteria before release; that only authorized personnel may release product; and that documented evidence of conformity is retained per Final Inspection Procedure (QP-8.6-1) and Final Inspection Record (FM-8.6-1).
-
-8.7  Control of Nonconforming Outputs
-Write 3 sentences: state that ${orgName} identifies and controls nonconforming products to prevent unintended delivery, through segregation, disposition, and communication to relevant parties; that disposition options include use-as-is (with concession), rework, scrap, or return to supplier; and that significant nonconformances trigger corrective action per QP-10.2-1. Reference Nonconformance Procedure (QP-8.7-1) and NCR Form (FM-8.7-1).
-
-═══════════════════════════════════════════════════════════════
-9  PERFORMANCE EVALUATION
-═══════════════════════════════════════════════════════════════
-
-9.1  Monitoring, Measurement, Analysis and Evaluation
-9.1.1 General — Write 3 sentences: state that ${orgName} determines what needs to be monitored and measured, the methods used, and when results are analyzed and evaluated to verify QMS performance. Reference KPI Dashboard (FM-9.1-1). Do NOT list every KPI or metric.
-9.1.2 Customer Satisfaction — Write 3 sentences: state that ${orgName} monitors customer satisfaction as a key indicator of QMS performance, using methods such as surveys, complaint rates, on-time delivery metrics, and customer scorecards; and that results drive improvement actions. Reference Customer Satisfaction Survey (FM-9.1.2-1).
-9.1.3 Analysis and Evaluation — Write 2 sentences: state that ${orgName} analyzes and evaluates monitoring and measurement results to assess QMS performance, product conformity, and the effectiveness of implemented actions, using statistical and trending methods as appropriate.
-
-9.2  Internal Audit
-Write 3-4 sentences: state that ${orgName} conducts internal audits at planned intervals to verify the QMS conforms to requirements and is effectively implemented; that audits are scheduled based on process importance and past performance; that auditors are independent of the area being audited; and that findings are reported to management and tracked through corrective action. Reference Internal Audit Procedure (QP-9.2-1), Audit Plan (FM-9.2-1), and Audit Report (FM-9.2-2).${isIATF ? " Add one sentence: IATF 16949 requires layered process audits (LPA) and product audits in addition to QMS system audits." : ""}
-
-9.3  Management Review
-9.3.1 General — Write 2 sentences: state that ${orgName}'s top management conducts formal management reviews at planned intervals to evaluate the QMS for continued suitability, adequacy, and effectiveness, and to identify improvement opportunities and resource needs.
-9.3.2 Management Review Inputs — Write 2-3 sentences: state that management reviews are conducted against a defined agenda covering QMS performance data, actions from previous reviews, changes in context, and improvement opportunities, documented in the Management Review Agenda (FM-9.3-1). Do NOT list each specific input topic — those are defined in FM-9.3-1.
-9.3.3 Management Review Outputs — Write 2-3 sentences: state that management review outputs include decisions on improvement opportunities, resource changes, and any required QMS modifications; that these decisions are documented in Management Review Minutes (FM-9.3-2); and that action items are tracked to closure.
-
-═══════════════════════════════════════════════════════════════
-10  IMPROVEMENT
-═══════════════════════════════════════════════════════════════
-
-10.1  General
-Write 2 sentences: state that ${orgName} continually improves the suitability, adequacy, and effectiveness of the QMS by acting on analysis results, audit findings, and management review outputs.
-
-10.2  Nonconformity and Corrective Action
-Write 3-4 sentences: state that ${orgName} responds to nonconformities by containing and correcting the immediate issue, conducting root cause analysis, implementing corrective actions, and verifying effectiveness; that lessons learned are communicated and the Risk Register is updated where relevant; and that the full process is governed by Corrective Action Procedure (QP-10.2-1), using CAR Form (FM-10.2-1).${isIATF ? " Add one sentence: ${orgName} uses AIAG-aligned problem-solving tools (8D, 5-Why, Ishikawa) and notifies customers as required by customer-specific requirements." : ""} Do NOT enumerate each corrective action step — those are in QP-10.2-1.
-
-10.3  Continual Improvement
-Write 2-3 sentences: state that ${orgName} proactively identifies and pursues opportunities for continual improvement through data analysis, audit results, management review outputs, and employee input; and that improvement activities are tracked in the Improvement Register (FM-10.3-1).
-
-═══════════════════════════════════════════════════════════════
-APPENDIX A — PROCESS INTERACTION DIAGRAM
-═══════════════════════════════════════════════════════════════
-Write 2 sentences: state that the QMS Process Interaction Map (QPM-001) is maintained as a separate controlled document illustrating the sequence and interaction of all management, core, and support processes. Then list each process name from the list below with a brief one-line description only (process name → key purpose, no inputs/outputs detail):
-${processContext}
-
-OUTPUT: End the document cleanly after Appendix A. Do not add any commentary, preamble, or remarks.`;
 
       const procedurePrompt = `You are Isa, ACSI's Lead ISO Auditor AI. Draft a concise, professional, audit-ready ISO management system ${doc.docType.replace(/_/g, " ")} for the organization described below. You are a Lead Auditor — you know every SHALL requirement of the applicable standard. Your job is to produce the best possible procedure in one pass so the user does not have to iterate.
 
