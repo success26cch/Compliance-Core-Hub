@@ -1532,7 +1532,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
   const set = (field: keyof ProcessEntry) => (val: string) => setLocal(prev => ({ ...prev, [field]: val }));
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div>
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-border/60 px-4 py-3 flex items-center gap-3 shadow-sm">
         <button onClick={onBack} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded hover:bg-muted">
