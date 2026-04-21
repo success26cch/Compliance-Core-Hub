@@ -829,7 +829,7 @@ export default function ISOManager() {
                 <NonconformanceManager onAskIsa={handleAskIsa} />
               </div>
             ) : activeSection === 'process_map' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                 <ProcessMapModule project={project ?? null} onStartWizard={handleStartWizard} />
               </div>
             ) : activeSection === 'communication' ? (

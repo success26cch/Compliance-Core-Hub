@@ -1532,7 +1532,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
   const set = (field: keyof ProcessEntry) => (val: string) => setLocal(prev => ({ ...prev, [field]: val }));
 
   return (
-    <div className="absolute inset-0 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Header — pinned at top; content scrolls below */}
       <div className="shrink-0 bg-white dark:bg-card border-b border-border/60 px-4 py-3 flex items-center gap-3 shadow-sm z-10">
         <button onClick={onBack} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded hover:bg-muted">
@@ -1578,7 +1578,7 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto [overflow-anchor:none] p-4 space-y-3">
 
         {/* (KPI suggestions are now shown inside the Objectives panel below) */}
 
@@ -1877,14 +1877,12 @@ export function ProcessMapModule({ project, onStartWizard }: ProcessMapModulePro
 
   if (selectedProcess) {
     return (
-      <div className="relative h-full overflow-hidden">
-        <TurtleDiagram
-          process={selectedProcess}
-          project={project}
-          onBack={() => setSelectedProcess(null)}
-          onSave={(updated) => setSelectedProcess(updated)}
-        />
-      </div>
+      <TurtleDiagram
+        process={selectedProcess}
+        project={project}
+        onBack={() => setSelectedProcess(null)}
+        onSave={(updated) => setSelectedProcess(updated)}
+      />
     );
   }
 
