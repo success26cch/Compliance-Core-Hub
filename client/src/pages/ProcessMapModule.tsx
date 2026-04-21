@@ -251,17 +251,20 @@ function guessRow(name: string, standard: string): string {
 
 // ─── Process Box Component ─────────────────────────────────────────────────────
 function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onClick: () => void; standard: string }) {
+  const isIATF = standard.includes("IATF");
   const sites = normalizeSites(process.site);
   const isRemote = sites.includes("REMOTE_SITE");
   const isCorporate = sites.includes("CORPORATE");
   const isPlantOnly = !isRemote && !isCorporate;
 
-  const borderCls = isRemote && isCorporate
-    ? "border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950/20"
-    : isRemote
-    ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/30"
-    : isCorporate
-    ? "border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+  const borderCls = isIATF
+    ? isRemote && isCorporate
+      ? "border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950/20"
+      : isRemote
+      ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+      : isCorporate
+      ? "border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+      : "border-emerald-300 dark:border-emerald-700 bg-white dark:bg-card"
     : "border-border/40 bg-white dark:bg-card";
 
   return (
@@ -270,14 +273,17 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
       data-testid={`process-box-${process.name.replace(/\s+/g, "-").toLowerCase()}`}
       className={`group relative border-2 rounded-xl p-3 text-left transition-all hover:shadow-md min-h-[90px] w-full hover:border-accent/60 ${borderCls}`}
     >
-      {/* Site badges — shown for any non-Plant-only process */}
-      {!isPlantOnly && (
+      {/* Site chips — always shown for IATF projects so every box matches the legend */}
+      {isIATF && (
         <div className="flex items-center gap-1 mb-1.5 flex-wrap">
+          {isPlantOnly && (
+            <span className="text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded leading-none">● Plant</span>
+          )}
           {isRemote && (
-            <span className="text-[10px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded leading-none">★ Remote</span>
+            <span className="text-[9px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded leading-none">★ Remote</span>
           )}
           {isCorporate && (
-            <span className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none">◆ Corporate</span>
+            <span className="text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none">◆ Corp</span>
           )}
         </div>
       )}
@@ -901,10 +907,31 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
       {/* ─── Legend ─── */}
       <div className="mx-4 mt-3 flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg bg-muted/30 border border-border/40 text-[11px]">
         <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Legend:</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-border/40 bg-white dark:bg-card inline-block" /> Plant Only</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-amber-400 bg-amber-50 inline-block" /> <span className="font-bold text-amber-700">★ Remote Site</span></span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-blue-400 bg-blue-50 inline-block" /> <span className="font-bold text-blue-700">◆ Corporate</span></span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-violet-400 bg-violet-50 inline-block" /> <span className="font-bold text-violet-700">Multi-site</span></span>
+        {isIATF ? (
+          <>
+            <span className="text-muted-foreground text-[10px] italic">Site assignment (shown on each process box):</span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded leading-none">● Plant</span>
+              <span className="text-muted-foreground">Plant only</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-[9px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded leading-none">★ Remote</span>
+              <span className="font-semibold text-amber-700 dark:text-amber-400">Remote Site</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none">◆ Corp</span>
+              <span className="font-semibold text-blue-700 dark:text-blue-400">Corporate</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded border-2 border-violet-400 bg-violet-50 dark:bg-violet-950/20 inline-block" />
+              <span className="font-semibold text-violet-700 dark:text-violet-400">Multi-site (Remote + Corp)</span>
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-border/40 bg-white dark:bg-card inline-block" /> Process box</span>
+          </>
+        )}
         <span className="ml-auto text-muted-foreground">Click any process to view Turtle Diagram</span>
       </div>
 
