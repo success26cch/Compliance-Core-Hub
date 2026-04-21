@@ -7897,6 +7897,190 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── Supplier Management ─────────────────────────────────────────────────────
+
+  app.get("/api/suppliers", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+    try {
+      const list = await storage.getSuppliers(userId, isoProjectId, isSuperadmin);
+      res.json(list);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/suppliers", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertSupplierSchema } = await import("@shared/schema");
+      const parsed = insertSupplierSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const supplier = await storage.createSupplier(parsed.data);
+      res.json(supplier);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/suppliers/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { insertSupplierSchema } = await import("@shared/schema");
+      const patchSchema = insertSupplierSchema.omit({ userId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const supplier = await storage.updateSupplier(parseInt(req.params.id), userId, parsed.data, isSuperadmin);
+      if (!supplier) return res.status(404).json({ message: "Not found" });
+      res.json(supplier);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/suppliers/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      await storage.deleteSupplier(parseInt(req.params.id), userId, isSuperadmin);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get("/api/supplier-criteria", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+    try {
+      const list = await storage.getSupplierCriteria(userId, isoProjectId, isSuperadmin);
+      res.json(list);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/supplier-criteria", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertSupplierCriteriaSchema } = await import("@shared/schema");
+      const parsed = insertSupplierCriteriaSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const criteria = await storage.createSupplierCriteria(parsed.data);
+      res.json(criteria);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/supplier-criteria/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { insertSupplierCriteriaSchema } = await import("@shared/schema");
+      const patchSchema = insertSupplierCriteriaSchema.omit({ userId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const criteria = await storage.updateSupplierCriteria(parseInt(req.params.id), parsed.data);
+      if (!criteria) return res.status(404).json({ message: "Not found" });
+      res.json(criteria);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/supplier-criteria/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteSupplierCriteria(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get("/api/supplier-evaluations", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+    const supplierId = req.query.supplierId ? parseInt(req.query.supplierId as string) : undefined;
+    try {
+      const list = await storage.getSupplierEvaluations(userId, isoProjectId, supplierId, isSuperadmin);
+      res.json(list);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/supplier-evaluations", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertSupplierEvaluationSchema } = await import("@shared/schema");
+      const parsed = insertSupplierEvaluationSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const ev = await storage.createSupplierEvaluation(parsed.data);
+      res.json(ev);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/supplier-evaluations/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { insertSupplierEvaluationSchema } = await import("@shared/schema");
+      const patchSchema = insertSupplierEvaluationSchema.omit({ userId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const ev = await storage.updateSupplierEvaluation(parseInt(req.params.id), parsed.data);
+      if (!ev) return res.status(404).json({ message: "Not found" });
+      res.json(ev);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/supplier-evaluations/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteSupplierEvaluation(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get("/api/supplier-audits", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+    const supplierId = req.query.supplierId ? parseInt(req.query.supplierId as string) : undefined;
+    try {
+      const list = await storage.getSupplierAudits(userId, isoProjectId, supplierId, isSuperadmin);
+      res.json(list);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/supplier-audits", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertSupplierAuditSchema } = await import("@shared/schema");
+      const parsed = insertSupplierAuditSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const audit = await storage.upsertSupplierAudit(parsed.data as any);
+      res.json(audit);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/supplier-audits/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { insertSupplierAuditSchema } = await import("@shared/schema");
+      const patchSchema = insertSupplierAuditSchema.omit({ userId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const audit = await storage.updateSupplierAudit(parseInt(req.params.id), parsed.data);
+      if (!audit) return res.status(404).json({ message: "Not found" });
+      res.json(audit);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/supplier-audits/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteSupplierAudit(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   // ─── Document Change Control (ISO 7.5.3) ──────────────────────────────────────
   // Isa AI acceptance is handled by PATCH /api/iso-documents/:id with isaRevision:true
 

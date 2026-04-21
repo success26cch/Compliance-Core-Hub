@@ -1863,6 +1863,87 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ─── Supplier Management ────────────────────────────────────────────────────
+
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  name: text("name").notNull(),
+  contactName: text("contact_name"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  category: text("category"),
+  criticalityLevel: text("criticality_level").default("minor"), // critical | major | minor
+  status: text("status").notNull().default("active"), // active | probationary | inactive | disqualified
+  isoCertUrl: text("iso_cert_url"),
+  isoCertType: text("iso_cert_type"),
+  isoCertExpiry: text("iso_cert_expiry"),
+  reminderDaysBefore: integer("reminder_days_before").default(30),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+export type Supplier = typeof suppliers.$inferSelect;
+
+export const supplierCriteria = pgTable("supplier_criteria", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category"), // quality | logistics | financial | technical | compliance
+  weight: integer("weight").default(10),
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertSupplierCriteriaSchema = createInsertSchema(supplierCriteria).omit({ id: true, createdAt: true });
+export type InsertSupplierCriteria = z.infer<typeof insertSupplierCriteriaSchema>;
+export type SupplierCriteria = typeof supplierCriteria.$inferSelect;
+
+export const supplierEvaluations = pgTable("supplier_evaluations", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  supplierId: integer("supplier_id").notNull(),
+  evaluationDate: text("evaluation_date").notNull(),
+  evaluatorName: text("evaluator_name"),
+  period: text("period"),
+  overallScore: integer("overall_score"),
+  recommendation: text("recommendation"), // approved | conditional | disqualified
+  notes: text("notes"),
+  scores: jsonb("scores"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertSupplierEvaluationSchema = createInsertSchema(supplierEvaluations).omit({ id: true, createdAt: true });
+export type InsertSupplierEvaluation = z.infer<typeof insertSupplierEvaluationSchema>;
+export type SupplierEvaluation = typeof supplierEvaluations.$inferSelect;
+
+export const supplierAudits = pgTable("supplier_audits", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  supplierId: integer("supplier_id").notNull(),
+  riskLevel: text("risk_level").default("medium"), // high | medium | low
+  riskScore: integer("risk_score"),
+  riskFactors: jsonb("risk_factors"),
+  recommendedFrequency: text("recommended_frequency"),
+  lastAuditDate: text("last_audit_date"),
+  nextAuditDate: text("next_audit_date"),
+  auditStatus: text("audit_status").default("not_scheduled"), // scheduled | overdue | completed | not_scheduled
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertSupplierAuditSchema = createInsertSchema(supplierAudits).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSupplierAudit = z.infer<typeof insertSupplierAuditSchema>;
+export type SupplierAudit = typeof supplierAudits.$inferSelect;
+
+// ─── Audit Logs ─────────────────────────────────────────────────────────────
+
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
   userId: text("user_id"),                   // null for unauthenticated attempts

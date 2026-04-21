@@ -21,7 +21,7 @@ import {
   Building2, Users, Factory, ArrowRight, ArrowLeft,
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
-  TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer,
+  TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -37,6 +37,7 @@ import ManagementReviewModule from "./ManagementReviewModule";
 import CommunicationModule from "./CommunicationModule";
 import RolesRaciModule from "./RolesRaciModule";
 import APQPModule from "./APQPModule";
+import SupplierModule from "./SupplierModule";
 import GlobalIsaWidget from "./GlobalIsaWidget";
 
 const ISA_STANDARDS = [
@@ -270,7 +271,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement' | 'apqp';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement' | 'apqp' | 'supplier_management';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -285,7 +286,8 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   risk:              [null, undefined, 'auditor'],
   management_review: [null, undefined, 'auditor'],
   internal_audit:    [null, undefined, 'auditor'],
-  measurement:       [null, undefined, 'auditor'],
+  measurement:          [null, undefined, 'auditor'],
+  supplier_management:  [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -654,14 +656,15 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
+              {(["communication","risk","management_review","internal_audit","training","measurement","supplier_management"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
-                  communication:     { icon: Mail,           label: "Communication" },
-                  risk:              { icon: AlertTriangle,  label: "Risk Assessment" },
-                  management_review: { icon: BarChart2,      label: "Management Review" },
-                  internal_audit:    { icon: ClipboardCheck, label: "Internal Audits" },
-                  training:          { icon: GraduationCap,  label: "Training" },
-                  measurement:       { icon: Activity,       label: "Measurement" },
+                  communication:       { icon: Mail,           label: "Communication" },
+                  risk:                { icon: AlertTriangle,  label: "Risk Assessment" },
+                  management_review:   { icon: BarChart2,      label: "Management Review" },
+                  internal_audit:      { icon: ClipboardCheck, label: "Internal Audits" },
+                  training:            { icon: GraduationCap,  label: "Training" },
+                  measurement:         { icon: Activity,       label: "Measurement" },
+                  supplier_management: { icon: Truck,          label: "Supplier Mgmt" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -867,6 +870,12 @@ export default function ISOManager() {
                 {canAccessSection('measurement', isoRole, isSuperadmin)
                   ? <MeasurementModule isoProjectId={project?.id} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="measurement" /></div>}
+              </div>
+            ) : activeSection === 'supplier_management' ? (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                {canAccessSection('supplier_management', isoRole, isSuperadmin)
+                  ? <SupplierModule project={project} />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="supplier_management" /></div>}
               </div>
             ) : (
               <>

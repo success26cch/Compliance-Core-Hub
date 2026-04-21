@@ -19,6 +19,11 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type IsoManagementReview, type InsertIsoManagementReview,
   type IsoReviewActionItem, type InsertIsoReviewActionItem,
   type IsoCommunication, type InsertIsoCommunication,
+  suppliers, supplierCriteria, supplierEvaluations, supplierAudits,
+  type Supplier, type InsertSupplier,
+  type SupplierCriteria, type InsertSupplierCriteria,
+  type SupplierEvaluation, type InsertSupplierEvaluation,
+  type SupplierAudit, type InsertSupplierAudit,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -343,6 +348,25 @@ export interface IStorage {
   createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication>;
   updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>, isSuperadmin?: boolean): Promise<IsoCommunication | undefined>;
   deleteIsoCommunication(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // Supplier Management
+  getSuppliers(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<Supplier[]>;
+  getSupplier(id: number): Promise<Supplier | undefined>;
+  createSupplier(data: InsertSupplier): Promise<Supplier>;
+  updateSupplier(id: number, userId: string, data: Partial<InsertSupplier>, isSuperadmin?: boolean): Promise<Supplier | undefined>;
+  deleteSupplier(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+  getSupplierCriteria(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<SupplierCriteria[]>;
+  createSupplierCriteria(data: InsertSupplierCriteria): Promise<SupplierCriteria>;
+  updateSupplierCriteria(id: number, data: Partial<InsertSupplierCriteria>): Promise<SupplierCriteria | undefined>;
+  deleteSupplierCriteria(id: number): Promise<void>;
+  getSupplierEvaluations(userId: string, isoProjectId?: number, supplierId?: number, isSuperadmin?: boolean): Promise<SupplierEvaluation[]>;
+  createSupplierEvaluation(data: InsertSupplierEvaluation): Promise<SupplierEvaluation>;
+  updateSupplierEvaluation(id: number, data: Partial<InsertSupplierEvaluation>): Promise<SupplierEvaluation | undefined>;
+  deleteSupplierEvaluation(id: number): Promise<void>;
+  getSupplierAudits(userId: string, isoProjectId?: number, supplierId?: number, isSuperadmin?: boolean): Promise<SupplierAudit[]>;
+  upsertSupplierAudit(data: InsertSupplierAudit & { supplierId: number }): Promise<SupplierAudit>;
+  updateSupplierAudit(id: number, data: Partial<InsertSupplierAudit>): Promise<SupplierAudit | undefined>;
+  deleteSupplierAudit(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1940,6 +1964,105 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteIsoCommunication(id: number, userId: string, isSuperadmin = false): Promise<void> {
     await db.delete(isoCommunications).where(isSuperadmin ? eq(isoCommunications.id, id) : and(eq(isoCommunications.id, id), eq(isoCommunications.userId, userId)));
+  }
+
+  // ─── Supplier Management ───────────────────────────────────────────────────
+  async getSuppliers(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<Supplier[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(suppliers.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(suppliers.userId, userId), eq(suppliers.isoProjectId, isoProjectId))
+        : eq(suppliers.userId, userId);
+    }
+    return db.select().from(suppliers).where(cond).orderBy(suppliers.name);
+  }
+  async getSupplier(id: number): Promise<Supplier | undefined> {
+    const [r] = await db.select().from(suppliers).where(eq(suppliers.id, id));
+    return r;
+  }
+  async createSupplier(data: InsertSupplier): Promise<Supplier> {
+    const [r] = await db.insert(suppliers).values(data).returning();
+    return r;
+  }
+  async updateSupplier(id: number, userId: string, data: Partial<InsertSupplier>, isSuperadmin = false): Promise<Supplier | undefined> {
+    const [r] = await db.update(suppliers).set({ ...data, updatedAt: new Date() })
+      .where(isSuperadmin ? eq(suppliers.id, id) : and(eq(suppliers.id, id), eq(suppliers.userId, userId))).returning();
+    return r;
+  }
+  async deleteSupplier(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(suppliers).where(isSuperadmin ? eq(suppliers.id, id) : and(eq(suppliers.id, id), eq(suppliers.userId, userId)));
+  }
+
+  async getSupplierCriteria(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<SupplierCriteria[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(supplierCriteria.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(supplierCriteria.userId, userId), eq(supplierCriteria.isoProjectId, isoProjectId))
+        : eq(supplierCriteria.userId, userId);
+    }
+    return db.select().from(supplierCriteria).where(cond).orderBy(supplierCriteria.order);
+  }
+  async createSupplierCriteria(data: InsertSupplierCriteria): Promise<SupplierCriteria> {
+    const [r] = await db.insert(supplierCriteria).values(data).returning();
+    return r;
+  }
+  async updateSupplierCriteria(id: number, data: Partial<InsertSupplierCriteria>): Promise<SupplierCriteria | undefined> {
+    const [r] = await db.update(supplierCriteria).set(data).where(eq(supplierCriteria.id, id)).returning();
+    return r;
+  }
+  async deleteSupplierCriteria(id: number): Promise<void> {
+    await db.delete(supplierCriteria).where(eq(supplierCriteria.id, id));
+  }
+
+  async getSupplierEvaluations(userId: string, isoProjectId?: number, supplierId?: number, isSuperadmin = false): Promise<SupplierEvaluation[]> {
+    const conditions: any[] = [];
+    if (!isSuperadmin) conditions.push(eq(supplierEvaluations.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(supplierEvaluations.isoProjectId, isoProjectId));
+    if (supplierId != null) conditions.push(eq(supplierEvaluations.supplierId, supplierId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(supplierEvaluations).where(cond).orderBy(desc(supplierEvaluations.evaluationDate));
+  }
+  async createSupplierEvaluation(data: InsertSupplierEvaluation): Promise<SupplierEvaluation> {
+    const [r] = await db.insert(supplierEvaluations).values(data).returning();
+    return r;
+  }
+  async updateSupplierEvaluation(id: number, data: Partial<InsertSupplierEvaluation>): Promise<SupplierEvaluation | undefined> {
+    const [r] = await db.update(supplierEvaluations).set(data).where(eq(supplierEvaluations.id, id)).returning();
+    return r;
+  }
+  async deleteSupplierEvaluation(id: number): Promise<void> {
+    await db.delete(supplierEvaluations).where(eq(supplierEvaluations.id, id));
+  }
+
+  async getSupplierAudits(userId: string, isoProjectId?: number, supplierId?: number, isSuperadmin = false): Promise<SupplierAudit[]> {
+    const conditions: any[] = [];
+    if (!isSuperadmin) conditions.push(eq(supplierAudits.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(supplierAudits.isoProjectId, isoProjectId));
+    if (supplierId != null) conditions.push(eq(supplierAudits.supplierId, supplierId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(supplierAudits).where(cond).orderBy(supplierAudits.riskLevel);
+  }
+  async upsertSupplierAudit(data: InsertSupplierAudit & { supplierId: number }): Promise<SupplierAudit> {
+    const existing = await db.select().from(supplierAudits)
+      .where(and(eq(supplierAudits.userId, data.userId), eq(supplierAudits.supplierId, data.supplierId))).limit(1);
+    if (existing.length) {
+      const [r] = await db.update(supplierAudits).set({ ...data, updatedAt: new Date() })
+        .where(eq(supplierAudits.id, existing[0].id)).returning();
+      return r;
+    }
+    const [r] = await db.insert(supplierAudits).values(data).returning();
+    return r;
+  }
+  async updateSupplierAudit(id: number, data: Partial<InsertSupplierAudit>): Promise<SupplierAudit | undefined> {
+    const [r] = await db.update(supplierAudits).set({ ...data, updatedAt: new Date() }).where(eq(supplierAudits.id, id)).returning();
+    return r;
+  }
+  async deleteSupplierAudit(id: number): Promise<void> {
+    await db.delete(supplierAudits).where(eq(supplierAudits.id, id));
   }
 }
 
