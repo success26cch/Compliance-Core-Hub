@@ -443,6 +443,12 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
     /* ── Page-wrapper receives auto-scale transform at runtime ── */
     .page-wrapper { transform-origin: top left; }
 
+    /* ── Print instruction bar ── */
+    .print-instructions { background: #1e3a5f; color: #fff; padding: 10px 18px; display: flex; align-items: center; gap: 16px; font-size: 9.5pt; margin-bottom: 14px; border-radius: 6px; }
+    .print-instructions strong { color: #fbbf24; }
+    .print-instructions .step { background: rgba(255,255,255,0.15); border-radius: 4px; padding: 3px 8px; font-size: 8.5pt; }
+    @media print { .print-instructions { display: none; } }
+
     /* ── Print button / scale notice ── */
     .print-btn    { position: fixed; bottom: 20px; right: 20px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 10pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     .scale-notice { position: fixed; bottom: 20px; left: 20px; background: #f0fdf4; border: 1px solid #86efac; color: #166534; border-radius: 6px; padding: 6px 12px; font-size: 8.5pt; font-weight: 600; }
@@ -453,6 +459,16 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
   </style>
   <style id="auto-scale-style"></style>
   </head><body>
+
+  <!-- Print instruction bar (hidden at print time) -->
+  <div class="print-instructions">
+    <span>🖨 <strong>Before printing:</strong></span>
+    <span class="step">1. Click "Print / Save PDF" below</span>
+    <span class="step">2. Set <strong>Orientation → Landscape</strong></span>
+    <span class="step">3. Set <strong>Paper → Letter (8.5 × 11 in)</strong></span>
+    <span class="step">4. Margins → <strong>Minimum</strong> or <strong>None</strong></span>
+    <span style="margin-left:auto;opacity:0.7;font-size:8pt">The map auto-scales to fit — no manual resizing needed</span>
+  </div>
 
   <div class="page-wrapper" id="page-wrapper">
 
@@ -569,7 +585,8 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
   </script>
   </body></html>`;
 
-  const w = window.open("", "_blank");
+  // Open in landscape-proportioned window so browser's print dialog defaults to landscape
+  const w = window.open("", "_blank", "width=1200,height=850,scrollbars=yes,resizable=yes");
   if (w) { w.document.write(html); w.document.close(); }
 }
 
