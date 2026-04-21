@@ -6874,6 +6874,107 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── Isa: Generate Turtle Diagram fields for a process ────────────────────────
+  app.post("/api/iso-processes/generate-turtle", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const {
+        processName, owner, clauses = [], row, site,
+        inputs, outputs, resources, keyActivities, startingPoint, endPoint,
+        risksAndOpportunities, documentedInfo, executors, csrReq,
+        orgName, standard, productsServices, totalEmployees, hasDesign
+      } = req.body as Record<string, any>;
+
+      if (!processName) return res.status(400).json({ message: "processName is required" });
+
+      const isIATF = String(standard ?? "").toUpperCase().includes("IATF");
+
+      const systemPrompt = `You are Isa, ACSI's Lead ISO Auditor AI, specializing in process analysis for ${standard ?? "ISO 9001"} Quality Management Systems. You help organizations complete Turtle Diagrams — a structured tool for documenting process inputs, outputs, resources, activities, controls, and performance measures.
+
+Your job is to generate realistic, specific, industry-appropriate content for every field of a Turtle Diagram for the process described. Write from the organization's perspective using their actual industry and products.
+
+ORGANIZATION:
+- Name: ${orgName ?? "the organization"}
+- Standard: ${standard ?? "ISO 9001"}${isIATF ? ":2016" : ":2015"}
+- Products/Services: ${productsServices ?? "Not specified"}
+- Employees: ${totalEmployees ?? "Unknown"}
+- Design Responsibility: ${hasDesign ? "YES" : "NO — products manufactured per customer specifications"}
+
+RULES:
+1. Be specific to the actual industry and process — not generic boilerplate.
+2. Inputs and Outputs must describe the actual documents, materials, or information flowing into/out of this process.
+3. Resources must name realistic equipment, systems, or competencies needed (not generic lists).
+4. Key Activities must describe the 4-6 core transformation steps in logical sequence.
+5. Risks & Opportunities must be real risks for this type of process in this industry.
+6. Documented Information must reference realistic procedure and form numbers (QP-X.X-1, FM-X.X-1).
+7. For IATF 16949, include automotive-specific elements where relevant.
+8. Keep each field concise — this is a diagram, not a procedure. Bullet-style entries separated by newlines.
+
+RESPONSE FORMAT — return ONLY a valid JSON object with exactly these keys:
+{
+  "inputs": "bullet list of inputs, one per line",
+  "startingPoint": "one sentence — what triggers this process to begin",
+  "outputs": "bullet list of outputs, one per line",
+  "endPoint": "one sentence — how you know this process is complete",
+  "resources": "bullet list of resources (people skills, equipment, systems, infrastructure)",
+  "executors": "roles who execute this process, comma-separated",
+  "keyActivities": "numbered list of 4-6 core steps, one per line",
+  "risksAndOpportunities": "bullet list of 3-5 key risks and 2-3 opportunities",
+  "documentedInfo": "bullet list of procedures, work instructions, and records",
+  "csrReq": "${isIATF ? "relevant customer-specific requirements or leave empty" : ""}",
+  "suggestedKpis": [
+    { "name": "KPI name", "target": "numeric target", "unit": "unit" }
+  ]
+}
+Return ONLY the JSON object — no preamble, no explanation, no markdown code block.`;
+
+      const userMsg = `Complete the Turtle Diagram for this process:
+
+Process Name: ${processName}
+Process Row / Type: ${row ?? "not specified"} (${row === "COP" ? "Customer-Oriented / Core" : row === "SOP" ? "Support-Oriented" : row === "MOP" ? "Management-Oriented" : "general"})
+Process Owner: ${owner ?? "not specified"}
+ISO Clauses: ${clauses.join(", ") || "not specified"}
+${isIATF && site ? `Site: ${site}` : ""}
+
+CURRENT FIELD VALUES (preserve any non-empty values the user has already entered — improve or expand them, do not discard):
+- Inputs: ${inputs || "(empty)"}
+- Outputs: ${outputs || "(empty)"}
+- Resources: ${resources || "(empty)"}
+- Key Activities: ${keyActivities || "(empty)"}
+- Starting Point / Trigger: ${startingPoint || "(empty)"}
+- End Point / Completion: ${endPoint || "(empty)"}
+- Risks & Opportunities: ${risksAndOpportunities || "(empty)"}
+- Documented Information: ${documentedInfo || "(empty)"}
+- Executors / Who Performs: ${executors || "(empty)"}
+${isIATF ? `- Customer Specific Requirements: ${csrReq || "(empty)"}` : ""}
+
+Generate the complete Turtle Diagram content as JSON now.`;
+
+      const { default: Anthropic } = await import("@anthropic-ai/sdk");
+      const client = new Anthropic({
+        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+      });
+
+      const msg = await client.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMsg }],
+      });
+
+      const raw = msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
+      // Strip markdown code fences if present
+      const jsonText = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+      const parsed = JSON.parse(jsonText);
+
+      res.json(parsed);
+    } catch (e: any) {
+      console.error("Turtle generation error:", e.message);
+      res.status(500).json({ message: e.message ?? "Generation failed" });
+    }
+  });
+
   // ─── ISO KPI Actuals (measurement log) ────────────────────────────────────────
   app.get("/api/iso-kpi-actuals", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });

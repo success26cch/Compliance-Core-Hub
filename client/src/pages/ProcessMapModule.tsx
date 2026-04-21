@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronDown, ChevronUp, Edit2, Save, X,
   Plus, Trash2, Target, AlertTriangle, FileText, Users, Zap,
-  BookOpen, Activity, MapPin, CheckCircle2, ExternalLink, Printer, Palette
+  BookOpen, Activity, MapPin, CheckCircle2, ExternalLink, Printer, Palette, Sparkles, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1003,6 +1003,8 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
   const [newKpiTarget, setNewKpiTarget] = useState("");
   const [newKpiUnit, setNewKpiUnit] = useState("");
   const [addingKpi, setAddingKpi] = useState(false);
+  const [isFillingWithIsa, setIsFillingWithIsa] = useState(false);
+  const [isaKpiSuggestions, setIsaKpiSuggestions] = useState<Array<{ name: string; target: string; unit: string }>>([]);
 
   const { data: objectives = [] } = useQuery<IsoObjective[]>({
     queryKey: ["/api/iso-objectives", { processName: process.name }],
@@ -1053,6 +1055,63 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/iso-projects"] }),
   });
 
+  const handleFillWithIsa = async () => {
+    setIsFillingWithIsa(true);
+    setIsaKpiSuggestions([]);
+    try {
+      const res = await fetch("/api/iso-processes/generate-turtle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          processName: local.name,
+          owner: local.owner,
+          clauses: local.clauses,
+          row: local.row,
+          site: local.site,
+          inputs: local.inputs,
+          outputs: local.outputs,
+          resources: local.resources,
+          keyActivities: local.keyActivities,
+          startingPoint: local.startingPoint,
+          endPoint: local.endPoint,
+          risksAndOpportunities: local.risksAndOpportunities,
+          documentedInfo: local.documentedInfo,
+          executors: local.executors,
+          csrReq: local.csrReq,
+          orgName: project.orgName,
+          standard: project.standard,
+          productsServices: project.productsServices,
+          totalEmployees: project.totalEmployees,
+          hasDesign: project.hasDesignResponsibility,
+        }),
+      });
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setLocal(prev => ({
+        ...prev,
+        inputs: data.inputs ?? prev.inputs,
+        startingPoint: data.startingPoint ?? prev.startingPoint,
+        outputs: data.outputs ?? prev.outputs,
+        endPoint: data.endPoint ?? prev.endPoint,
+        resources: data.resources ?? prev.resources,
+        executors: data.executors ?? prev.executors,
+        keyActivities: data.keyActivities ?? prev.keyActivities,
+        risksAndOpportunities: data.risksAndOpportunities ?? prev.risksAndOpportunities,
+        documentedInfo: data.documentedInfo ?? prev.documentedInfo,
+        ...(isIATF && data.csrReq ? { csrReq: data.csrReq } : {}),
+      }));
+      if (Array.isArray(data.suggestedKpis) && data.suggestedKpis.length > 0) {
+        setIsaKpiSuggestions(data.suggestedKpis);
+      }
+      toast({ title: "Isa filled the Turtle Diagram", description: "Review each field and adjust as needed, then Save." });
+    } catch {
+      toast({ title: "Isa couldn't complete the diagram", description: "Check your connection and try again.", variant: "destructive" });
+    } finally {
+      setIsFillingWithIsa(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -1095,6 +1154,17 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
           {process.clauses.slice(0, 3).map(c => (
             <Badge key={c} className="text-[10px] bg-accent/10 text-accent border-accent/20 font-mono">{c.split("—")[0].trim()}</Badge>
           ))}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleFillWithIsa}
+            disabled={isFillingWithIsa}
+            className="gap-1.5 h-7 text-xs bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700 font-bold dark:bg-violet-950/30 dark:border-violet-800/40 dark:text-violet-300 disabled:opacity-60"
+            data-testid="button-isa-fill-turtle"
+          >
+            {isFillingWithIsa ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            {isFillingWithIsa ? "Isa is thinking…" : "Ask Isa to Fill"}
+          </Button>
           <button
             onClick={() => printTurtleDiagram(local, project, objectives)}
             className="flex items-center gap-1 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-colors h-7"
@@ -1109,6 +1179,48 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
       </div>
 
       <div className="p-4 space-y-3">
+
+        {/* Isa KPI Suggestions banner */}
+        {isaKpiSuggestions.length > 0 && (
+          <div className="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+              <span className="text-xs font-bold text-violet-900 dark:text-violet-200">Isa suggests these KPIs — click + to add any</span>
+              <button onClick={() => setIsaKpiSuggestions([])} className="ml-auto text-muted-foreground hover:text-foreground transition-colors"><X className="w-3.5 h-3.5" /></button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {isaKpiSuggestions.map((kpi, i) => (
+                <button
+                  key={i}
+                  onClick={async () => {
+                    await fetch("/api/iso-objectives/upsert", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({
+                        processName: process.name,
+                        name: kpi.name,
+                        target: kpi.target,
+                        unit: kpi.unit,
+                        responsible: local.owner,
+                        isoProjectId: project.id,
+                      }),
+                    });
+                    qc.invalidateQueries({ queryKey: ["/api/iso-objectives"] });
+                    setIsaKpiSuggestions(prev => prev.filter((_, j) => j !== i));
+                    toast({ title: `KPI added: ${kpi.name}` });
+                  }}
+                  className="flex items-center gap-1.5 text-[11px] bg-white dark:bg-card border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 rounded-lg px-2.5 py-1.5 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors font-semibold"
+                  data-testid={`button-add-isa-kpi-${i}`}
+                >
+                  <Plus className="w-3 h-3" />
+                  {kpi.name} {kpi.target && `(${kpi.target}${kpi.unit ? " " + kpi.unit : ""})`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Top Row: Resources | Objectives */}
         <div className="grid grid-cols-2 gap-3">
           <TurtleField
