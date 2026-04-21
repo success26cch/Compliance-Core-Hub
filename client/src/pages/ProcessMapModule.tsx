@@ -432,10 +432,29 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
     .legend-item { display: flex; align-items: center; gap: 5px; }
     .legend-dot { width: 11px; height: 11px; border-radius: 50%; }
 
-    /* ── Print button ── */
-    .print-btn { position: fixed; bottom: 20px; right: 20px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 10pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    @media print { .print-btn { display: none; } }
-  </style></head><body>
+    /* ── No-split rules: keep every band whole, never cut mid-box ── */
+    .frame          { break-inside: avoid; page-break-inside: avoid; }
+    .mgmt-band      { break-inside: avoid; page-break-inside: avoid; }
+    .core-band      { break-inside: avoid; page-break-inside: avoid; }
+    .sup-band       { break-inside: avoid; page-break-inside: avoid; }
+    .mgmt-arrow-row { break-inside: avoid; page-break-inside: avoid; }
+    .sup-arrow-row  { break-inside: avoid; page-break-inside: avoid; }
+
+    /* ── Page-wrapper receives auto-scale transform at runtime ── */
+    .page-wrapper { transform-origin: top left; }
+
+    /* ── Print button / scale notice ── */
+    .print-btn    { position: fixed; bottom: 20px; right: 20px; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 10pt; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .scale-notice { position: fixed; bottom: 20px; left: 20px; background: #f0fdf4; border: 1px solid #86efac; color: #166534; border-radius: 6px; padding: 6px 12px; font-size: 8.5pt; font-weight: 600; }
+    @media print  { .print-btn, .scale-notice { display: none; } }
+
+    /* ── Dynamic scale injected by JS ── */
+    #auto-scale-style {}
+  </style>
+  <style id="auto-scale-style"></style>
+  </head><body>
+
+  <div class="page-wrapper" id="page-wrapper">
 
   <!-- Header -->
   <div class="doc-header">
@@ -502,7 +521,52 @@ function printProcessMap(project: IsoProject, processes: ProcessEntry[], rows: t
     <span>Printed: ${today}</span>
   </div>
 
+  </div><!-- /page-wrapper -->
+
+  <div class="scale-notice" id="scale-notice" style="display:none"></div>
   <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+
+  <script>
+  (function() {
+    function applyAutoScale() {
+      var wrapper = document.getElementById('page-wrapper');
+      if (!wrapper) return;
+
+      // Page dimensions in px: letter landscape at 96 dpi minus margins
+      // @page margin: 9mm top/bottom, 10mm left/right
+      // Letter landscape = 11in × 8.5in = 1056px × 816px at 96dpi
+      // Printable: 1056 - 2*(10mm/25.4*96) ≈ 1056 - 76 = 980px wide
+      //            816  - 2*(9mm/25.4*96)  ≈ 816  - 68 = 748px tall
+      var printW = 980;
+      var printH = 748;
+
+      var contentW = wrapper.scrollWidth;
+      var contentH = wrapper.scrollHeight;
+
+      var scaleW = contentW > printW ? printW / contentW : 1;
+      var scaleH = contentH > printH ? printH / contentH : 1;
+      var scale  = Math.min(scaleW, scaleH);
+
+      if (scale < 0.999) {
+        scale = Math.floor(scale * 100) / 100; // round down to nearest 1%
+        var styleEl = document.getElementById('auto-scale-style');
+        styleEl.textContent =
+          '@media print { .page-wrapper { transform: scale(' + scale + '); transform-origin: top left; width: ' + (100 / scale) + '%; } }';
+
+        // Also show a notice on screen
+        var notice = document.getElementById('scale-notice');
+        notice.style.display = 'block';
+        notice.textContent = 'Auto-scaled to ' + Math.round(scale * 100) + '% — everything fits on one page';
+      }
+    }
+
+    if (document.readyState === 'complete') {
+      applyAutoScale();
+    } else {
+      window.addEventListener('load', applyAutoScale);
+    }
+  })();
+  </script>
   </body></html>`;
 
   const w = window.open("", "_blank");
