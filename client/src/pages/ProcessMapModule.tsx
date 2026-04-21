@@ -6,6 +6,7 @@ import {
   Plus, Trash2, Target, AlertTriangle, FileText, Users, Zap,
   BookOpen, Activity, MapPin, CheckCircle2, ExternalLink, Printer, Palette, Sparkles, Loader2
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -655,6 +656,48 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
     saveSchemeMutation.mutate(key);
   };
 
+  // ── Add Process ─────────────────────────────────────────────────────────────
+  const defaultRow = isIATF ? "COP" : "core";
+  const [showAddProcess, setShowAddProcess] = useState(false);
+  const [addForm, setAddForm] = useState({
+    name: "", owner: "", row: defaultRow, site: "PLANT" as "PLANT" | "REMOTE_SITE" | "CORPORATE",
+    clausesRaw: "", sequence: "", conditionalLabel: "", isConditional: false,
+  });
+  const [addSaving, setAddSaving] = useState(false);
+  const { toast: pmToast } = useToast();
+
+  const openAddForRow = (rowKey: string) => {
+    setAddForm(f => ({ ...f, name: "", owner: "", row: rowKey, clausesRaw: "", sequence: "", conditionalLabel: "", isConditional: false }));
+    setShowAddProcess(true);
+  };
+
+  const handleAddProcess = async () => {
+    if (!addForm.name.trim()) return;
+    setAddSaving(true);
+    try {
+      const clauses = addForm.clausesRaw.split(",").map(c => c.trim()).filter(Boolean);
+      const newProc: ProcessEntry = {
+        name: addForm.name.trim(),
+        owner: addForm.owner.trim(),
+        row: addForm.row,
+        site: isIATF ? addForm.site : undefined,
+        clauses,
+        sequence: addForm.row === "COP" || addForm.row === "core" ? (parseInt(addForm.sequence) || processes.length + 1) : undefined,
+        conditionalLabel: addForm.isConditional && addForm.conditionalLabel.trim() ? addForm.conditionalLabel.trim() : undefined,
+        inputs: "", outputs: "", kpi: "",
+      };
+      const updated = [...processes, newProc];
+      await apiRequest("PATCH", "/api/iso-projects", { processes: updated });
+      qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      setShowAddProcess(false);
+      pmToast({ title: `"${newProc.name}" added to ${addForm.row}`, description: "Click the process box to complete the Turtle Diagram." });
+    } catch {
+      pmToast({ title: "Could not add process", variant: "destructive" });
+    } finally {
+      setAddSaving(false);
+    }
+  };
+
   const pickerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!showPicker) return;
@@ -742,6 +785,13 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
           )}
         </div>
         <button
+          onClick={() => openAddForRow(defaultRow)}
+          className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-accent border border-accent/30 hover:bg-accent/5 px-3 py-1.5 rounded-lg transition-colors"
+          data-testid="button-add-process-to-map"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add Process
+        </button>
+        <button
           onClick={() => printProcessMap(project, processes, rows, schemeKey)}
           className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
           data-testid="button-print-process-map"
@@ -823,7 +873,14 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
                   {isValueChain && (
                     <span className="text-xs text-muted-foreground font-medium">— sequence &amp; interaction flow · ISO 4.4</span>
                   )}
-                  <span className="text-sm text-muted-foreground ml-auto">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
+                  <span className="text-sm text-muted-foreground">{rowProcs.length} process{rowProcs.length !== 1 ? "es" : ""}</span>
+                  <button
+                    onClick={() => openAddForRow(row.key)}
+                    className="ml-auto flex items-center gap-1 text-xs font-bold text-accent hover:bg-accent/10 border border-accent/25 hover:border-accent/50 px-2 py-0.5 rounded-lg transition-colors"
+                    data-testid={`button-add-process-row-${row.key}`}
+                  >
+                    <Plus className="w-3 h-3" /> Add
+                  </button>
                 </div>
                 <div className="p-3 pt-0">
                   {rowProcs.length === 0 ? (
@@ -898,6 +955,131 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
           </p>
         </div>
       </div>
+
+      {/* ── Add Process Dialog ── */}
+      <Dialog open={showAddProcess} onOpenChange={setShowAddProcess}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-black">
+              <Plus className="w-4 h-4 text-accent" /> Add Process to Map
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-1">
+            <div>
+              <label className="text-xs font-bold text-muted-foreground block mb-1">Process Name <span className="text-red-500">*</span></label>
+              <Input
+                value={addForm.name}
+                onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g., Product Design & Development"
+                className="text-sm"
+                data-testid="input-add-process-name"
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground block mb-1">Process Owner</label>
+                <Input
+                  value={addForm.owner}
+                  onChange={e => setAddForm(f => ({ ...f, owner: e.target.value }))}
+                  placeholder="e.g., Engineering Manager"
+                  className="text-sm"
+                  data-testid="input-add-process-owner"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-muted-foreground block mb-1">Band / Row</label>
+                <Select value={addForm.row} onValueChange={v => setAddForm(f => ({ ...f, row: v }))}>
+                  <SelectTrigger className="text-sm" data-testid="select-add-process-row">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rows.map(r => (
+                      <SelectItem key={r.key} value={r.key}>{r.key}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground block mb-1">ISO Clause(s)</label>
+                <Input
+                  value={addForm.clausesRaw}
+                  onChange={e => setAddForm(f => ({ ...f, clausesRaw: e.target.value }))}
+                  placeholder="e.g., 8.3, 8.3.1"
+                  className="text-sm"
+                  data-testid="input-add-process-clauses"
+                />
+              </div>
+              {(addForm.row === "COP" || addForm.row === "core") && (
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground block mb-1">Sequence #</label>
+                  <Input
+                    value={addForm.sequence}
+                    onChange={e => setAddForm(f => ({ ...f, sequence: e.target.value }))}
+                    placeholder="e.g., 4"
+                    type="number"
+                    min={1}
+                    className="text-sm"
+                    data-testid="input-add-process-sequence"
+                  />
+                </div>
+              )}
+            </div>
+            {isIATF && (
+              <div>
+                <label className="text-xs font-bold text-muted-foreground block mb-1">Site</label>
+                <Select value={addForm.site} onValueChange={v => setAddForm(f => ({ ...f, site: v as any }))}>
+                  <SelectTrigger className="text-sm" data-testid="select-add-process-site">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PLANT">Plant</SelectItem>
+                    <SelectItem value="REMOTE_SITE">★ Remote Site</SelectItem>
+                    <SelectItem value="CORPORATE">◆ Corporate</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={addForm.isConditional}
+                  onChange={e => setAddForm(f => ({ ...f, isConditional: e.target.checked }))}
+                  className="rounded"
+                  data-testid="checkbox-add-process-conditional"
+                />
+                Conditional process (only applies in certain situations)
+              </label>
+              {addForm.isConditional && (
+                <Input
+                  value={addForm.conditionalLabel}
+                  onChange={e => setAddForm(f => ({ ...f, conditionalLabel: e.target.value }))}
+                  placeholder="e.g., When design is in scope"
+                  className="text-sm mt-1.5"
+                  data-testid="input-add-process-conditional-label"
+                />
+              )}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={handleAddProcess}
+                disabled={addSaving || !addForm.name.trim()}
+                className="flex-1 bg-accent hover:bg-accent/90 text-white gap-1.5"
+                data-testid="button-confirm-add-process"
+              >
+                {addSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                {addSaving ? "Adding…" : "Add to Map"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowAddProcess(false)} data-testid="button-cancel-add-process">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

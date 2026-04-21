@@ -2405,8 +2405,8 @@ function SystemProfileModule({ project, onStartWizard }: { project: IsoProject |
   const mfgTech = (project.manufacturingTech || []).filter((t: string) => t !== "Other");
 
   return (
-    <div className="flex-1 overflow-auto" data-testid="system-profile-page">
-      <ScrollArea className="h-full">
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="system-profile-page">
+      <ScrollArea className="flex-1">
         <div className="max-w-3xl mx-auto px-8 py-8 space-y-6">
 
           {/* Header */}
