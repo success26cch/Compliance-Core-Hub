@@ -6911,17 +6911,17 @@ RULES:
 3. Resources must name realistic equipment, systems, or competencies needed (not generic lists).
 4. Key Activities must describe the 4-6 core transformation steps in logical sequence.
 5. Risks & Opportunities must be real risks for this type of process in this industry.
-6. DOCUMENTED INFORMATION — STRICT RULE:
+6. DOCUMENTED INFORMATION — PRIORITY RULE:
    ${hasDocs
      ? `The organization's document library is provided. For the "documentedInfo" field:
-   - ONLY reference documents that actually appear in the EXISTING DOCUMENTS LIST below.
-   - If a relevant document is missing from the library, list it on its own line starting with "→ Suggest creating: " followed by a realistic title.
-   - Do NOT invent document numbers or titles that are not in the library.
-   - Format: list existing ones first (plain bullets), then any suggestions on separate lines starting with "→ Suggest creating: ".`
+   - FIRST: list any documents from the EXISTING DOCUMENTS LIST that are relevant to this process (plain bullet, use their actual title and number).
+   - THEN: for any important documents that are missing from the library, add a line starting with "→ Suggest creating: " followed by a realistic title — these signal gaps the org should fill.
+   - Do NOT invent document numbers or pretend documents exist if they are not in the library.
+   - NOTE: after Isa fills this field, the user may manually add references to external documents, separate software, or other systems not tracked in this library — leave that flexibility open by keeping the field concise and not exhaustive.`
      : `The organization has no documents in its library yet (this may be early in their QMS build).
-   - Do NOT reference any documents as if they exist.
-   - Instead, for the "documentedInfo" field: list the documents that SHOULD be created for this process, each on its own line starting with "→ Suggest creating: " followed by a realistic title and brief reason.
-   - Keep suggestions to 3-5 most important documents for this process type.`
+   - Do NOT reference any documents as if they already exist.
+   - For the "documentedInfo" field: list 3-5 key documents that SHOULD be created for this process, each starting with "→ Suggest creating: " followed by a realistic title and one-line reason.
+   - NOTE: the user can also manually add external references or documents from other systems after reviewing Isa's suggestions.`
    }
 7. For IATF 16949, include automotive-specific elements where relevant.
 8. Keep each field concise — this is a diagram, not a procedure. Bullet-style entries separated by newlines.
