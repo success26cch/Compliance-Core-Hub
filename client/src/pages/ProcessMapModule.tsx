@@ -1534,48 +1534,80 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header — pinned at top; content scrolls below */}
-      <div className="shrink-0 bg-white dark:bg-card border-b border-border/60 px-4 py-3 flex items-center gap-3 shadow-sm z-10">
-        <button onClick={onBack} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded hover:bg-muted">
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <h2 className="font-black text-primary text-sm">{process.name}</h2>
-          <p className="text-[10px] text-muted-foreground">Turtle Diagram · {project.standard}</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {process.clauses.slice(0, 3).map(c => (
-            <Badge key={c} className="text-[10px] bg-accent/10 text-accent border-accent/20 font-mono">{c.split("—")[0].trim()}</Badge>
-          ))}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleFillWithIsa}
-            disabled={isFillingWithIsa}
-            className="gap-1.5 h-7 text-xs bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700 font-bold dark:bg-violet-950/30 dark:border-violet-800/40 dark:text-violet-300 disabled:opacity-60"
-            data-testid="button-isa-fill-turtle"
-          >
-            {isFillingWithIsa ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-            {isFillingWithIsa ? "Isa is thinking…" : "Ask Isa to Suggest"}
-          </Button>
-          <button
-            onClick={() => printTurtleDiagram(local, project, objectives)}
-            className="flex items-center gap-1 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-colors h-7"
-            data-testid="button-print-turtle"
-          >
-            <Printer className="w-3.5 h-3.5" /> Print
+      <div className="shrink-0 bg-white dark:bg-card border-b border-border/60 shadow-sm z-10">
+        {/* Toolbar row */}
+        <div className="px-4 py-3 flex items-center gap-3">
+          <button onClick={onBack} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded hover:bg-muted">
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <button
-            onClick={handleDeleteSelf}
-            className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-50 dark:hover:bg-red-950/30 px-2.5 py-1 rounded-lg transition-colors h-7"
-            data-testid="button-delete-turtle"
-            title="Delete this process from the map"
-          >
-            <Trash2 className="w-3.5 h-3.5" /> Delete
-          </button>
-          <Button size="sm" onClick={handleSave} disabled={saving} className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-7 text-xs" data-testid="button-save-turtle">
-            <Save className="w-3 h-3" /> {saving ? "Saving…" : "Save"}
-          </Button>
+          <div>
+            <h2 className="font-black text-primary text-sm">{process.name}</h2>
+            <p className="text-[10px] text-muted-foreground">Turtle Diagram · {project.standard}</p>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {process.clauses.slice(0, 3).map(c => (
+              <Badge key={c} className="text-[10px] bg-accent/10 text-accent border-accent/20 font-mono">{c.split("—")[0].trim()}</Badge>
+            ))}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleFillWithIsa}
+              disabled={isFillingWithIsa}
+              className="gap-1.5 h-7 text-xs bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700 font-bold dark:bg-violet-950/30 dark:border-violet-800/40 dark:text-violet-300 disabled:opacity-60"
+              data-testid="button-isa-fill-turtle"
+            >
+              {isFillingWithIsa ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {isFillingWithIsa ? "Isa is thinking…" : "Ask Isa to Suggest"}
+            </Button>
+            <button
+              onClick={() => printTurtleDiagram(local, project, objectives)}
+              className="flex items-center gap-1 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-colors h-7"
+              data-testid="button-print-turtle"
+            >
+              <Printer className="w-3.5 h-3.5" /> Print
+            </button>
+            <button
+              onClick={handleDeleteSelf}
+              className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-50 dark:hover:bg-red-950/30 px-2.5 py-1 rounded-lg transition-colors h-7"
+              data-testid="button-delete-turtle"
+              title="Delete this process from the map"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-7 text-xs" data-testid="button-save-turtle">
+              <Save className="w-3 h-3" /> {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
         </div>
+        {/* IATF Site Assignment — pinned in header so it never requires scrolling */}
+        {isIATF && (
+          <div className="px-4 py-1.5 border-t border-border/40 bg-muted/20 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide shrink-0">Sites:</span>
+            {IATF_SITES.map(s => {
+              const currentSites = normalizeSites(local.site);
+              const checked = currentSites.includes(s.key);
+              return (
+                <label
+                  key={s.key}
+                  className={`flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition-all select-none ${checked ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`}
+                  data-testid={`checkbox-site-${s.key.toLowerCase()}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      const current = normalizeSites(local.site);
+                      const next = checked ? current.filter(x => x !== s.key) : [...current, s.key];
+                      setLocal(prev => ({ ...prev, site: next.length ? next : ["PLANT"] }));
+                    }}
+                    className="sr-only"
+                  />
+                  {s.label}
+                </label>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto [overflow-anchor:none] p-4 space-y-3">
@@ -1789,41 +1821,6 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
             />
           )}
         </div>
-
-        {/* IATF Site Assignment — multi-select */}
-        {isIATF && (
-          <div className="bg-muted/30 border border-border/60 rounded-xl p-3">
-            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1 block">Site Assignment (IATF)</Label>
-            <p className="text-[10px] text-muted-foreground mb-2">Select all sites where this process applies</p>
-            <div className="flex flex-wrap gap-2">
-              {IATF_SITES.map(s => {
-                const currentSites = normalizeSites(local.site);
-                const checked = currentSites.includes(s.key);
-                return (
-                  <label
-                    key={s.key}
-                    className={`flex items-center gap-1.5 cursor-pointer px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all select-none ${checked ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`}
-                    data-testid={`checkbox-site-${s.key.toLowerCase()}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => {
-                        const current = normalizeSites(local.site);
-                        const next = checked
-                          ? current.filter(x => x !== s.key)
-                          : [...current, s.key];
-                        setLocal(prev => ({ ...prev, site: next.length ? next : ["PLANT"] }));
-                      }}
-                      className="sr-only"
-                    />
-                    {s.label}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Row Assignment */}
         <div className="bg-muted/30 border border-border/60 rounded-xl p-3">
