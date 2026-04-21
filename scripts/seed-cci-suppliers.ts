@@ -272,23 +272,160 @@ const CRITERIA_SEEDS = [
   },
 ] as const;
 
-// ─── Evaluation scores (per criteria ID — resolved after insert) ─────────────
+// ─── IATF Scorecard helpers (mirrors SupplierModule.tsx logic) ───────────────
 
-// Scores 1–10 for each supplier × criteria; keyed by supplier name
-const EVAL_SCORES: Record<string, number[]> = {
-  // [cert, quality, otd, compliance, financial, technical]
-  "Univar Solutions USA LLC":                  [9, 9, 10, 9,  8, 8],
-  "BASF Corporation — Performance Chemicals":  [10, 10, 9, 10, 10, 10],
-  "Afton Chemical Corporation":                [9, 8, 9, 9, 9, 10],
-  "Ashland LLC — Specialty Ingredients":       [9, 9, 10, 9, 8, 9],
-  "Troy Corporation — Microbiology Division":  [8, 8, 9, 8, 7, 7],
-  "Greif, Inc. — Industrial Packaging":        [8, 8, 8, 8, 9, 7],
-  "Berry Global Group — Rigid Open Top Division": [10, 9, 9, 9, 10, 9],
-  "Multi-Color Corporation — Dayton Plant":    [8, 8, 9, 7, 7, 6],
-  "Intertek Testing Services — Cincinnati Lab":[10, 10, 9, 10, 9, 10],
-  "Ohio Valley Calibration Services":          [10, 9, 10, 10, 7, 8],
-  "Ruan Transportation Management Systems":    [8, 8, 8, 8, 8, 7],
-  "Hixson Chemical Logistics LLC":             [3, 6, 4, 7, 5, 5],
+function ppmScore(n: number) { return n === 0 ? 10 : n <= 100 ? 9 : n <= 300 ? 8 : n <= 500 ? 7 : n <= 750 ? 6 : n <= 1000 ? 5 : n <= 1500 ? 4 : n <= 2000 ? 3 : n <= 3000 ? 2 : 1; }
+function lotRejectScore(n: number) { return n === 0 ? 10 : n <= 1 ? 9 : n <= 2 ? 8 : n <= 3 ? 7 : n <= 5 ? 6 : n <= 7 ? 5 : n <= 10 ? 4 : n <= 15 ? 3 : n <= 20 ? 2 : 1; }
+function labRetestScore(n: number) { return n === 0 ? 10 : n === 1 ? 8 : n === 2 ? 6 : n === 3 ? 4 : n <= 5 ? 2 : 1; }
+function otdScore(n: number) { return n >= 100 ? 10 : n >= 99 ? 9 : n >= 98 ? 8 : n >= 97 ? 7 : n >= 95 ? 6 : n >= 93 ? 5 : n >= 90 ? 4 : n >= 85 ? 3 : n >= 80 ? 2 : 1; }
+function premiumFreightScore(n: number) { return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; }
+function fillRateScore(n: number) { return n >= 100 ? 10 : n >= 99 ? 8 : n >= 97 ? 7 : n >= 95 ? 6 : n >= 90 ? 4 : 2; }
+function lineStopsScore(n: number) { return n === 0 ? 10 : n === 1 ? 4 : 1; }
+function warrantyScore(n: number) { return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; }
+function dockHoldsScore(n: number) { return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 4 : 1; }
+function responseTimeScore(n: number) { return n <= 1 ? 10 : n <= 3 ? 8 : n <= 5 ? 6 : n <= 7 ? 4 : n <= 14 ? 2 : 1; }
+function ppapScore(n: number) { return n >= 100 ? 10 : n >= 95 ? 8 : n >= 90 ? 6 : n >= 80 ? 4 : 2; }
+const CERT_SCORES: Record<string, number> = { current: 10, expiring: 7, scope_change: 5, suspended: 2, lapsed: 1, none: 1 };
+const SPECIAL_SCORES: Record<string, number> = { none: 10, new_supplier: 6, cs1: 4, cs2: 2, srea: 1, q1_revoked: 1 };
+function auditFindingsScore(n: number) { return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; }
+
+function buildIatfScores(d: {
+  ppm: number; lotRejectRate: number; labRetest: number;
+  otd: number; premiumFreight: number; fillRate: number;
+  lineStops: number; warrantyReturns: number; dockHolds: number;
+  responseTimeDays: number; caEffectiveness: number; ppapOnTime: number;
+  certStatus: string; specialStatus: string; auditFindings: number;
+}) {
+  const scores = {
+    incoming_quality: {
+      ppm:           { value: d.ppm,           score: ppmScore(d.ppm) },
+      lot_reject_rate: { value: d.lotRejectRate, score: lotRejectScore(d.lotRejectRate) },
+      lab_retest:    { value: d.labRetest,      score: labRetestScore(d.labRetest) },
+    },
+    delivery_performance: {
+      otd_pct:        { value: d.otd,           score: otdScore(d.otd) },
+      premium_freight: { value: d.premiumFreight, score: premiumFreightScore(d.premiumFreight) },
+      fill_rate:      { value: d.fillRate,       score: fillRateScore(d.fillRate) },
+    },
+    customer_impact: {
+      line_stops:      { value: d.lineStops,      score: lineStopsScore(d.lineStops) },
+      warranty_returns: { value: d.warrantyReturns, score: warrantyScore(d.warrantyReturns) },
+      dock_holds:      { value: d.dockHolds,      score: dockHoldsScore(d.dockHolds) },
+    },
+    capa_responsiveness: {
+      response_time_days: { value: d.responseTimeDays, score: responseTimeScore(d.responseTimeDays) },
+      ca_effectiveness:   { value: d.caEffectiveness,  score: d.caEffectiveness },
+      ppap_on_time:       { value: d.ppapOnTime,        score: ppapScore(d.ppapOnTime) },
+    },
+    quality_system: {
+      cert_status:    { value: d.certStatus,    score: CERT_SCORES[d.certStatus] ?? 5 },
+      special_status: { value: d.specialStatus, score: SPECIAL_SCORES[d.specialStatus] ?? 5 },
+      audit_findings: { value: d.auditFindings, score: auditFindingsScore(d.auditFindings) },
+    },
+  };
+
+  // Compute weighted overall (mirrors IATF_SCORECARD weights: 30/25/20/15/10)
+  const WEIGHTS = [30, 25, 20, 15, 10];
+  const cats = Object.values(scores);
+  let overall = 0;
+  cats.forEach((cat, i) => {
+    const metricScores = Object.values(cat).map((m: any) => m.score);
+    const avg = metricScores.reduce((a: number, b: number) => a + b, 0) / metricScores.length;
+    overall += (avg / 10) * (WEIGHTS[i] / 100) * 100;
+  });
+
+  const overallScore = Math.round(overall);
+  const recommendation = overallScore >= 90 ? "preferred" : overallScore >= 75 ? "approved" : overallScore >= 60 ? "conditional" : "disqualified";
+  return { scores, overallScore, recommendation };
+}
+
+// ─── IATF evaluation data per supplier ───────────────────────────────────────
+
+const IATF_EVAL_DATA: Record<string, Parameters<typeof buildIatfScores>[0]> = {
+  "Univar Solutions USA LLC": {
+    ppm: 280, lotRejectRate: 1.8, labRetest: 1,
+    otd: 97.5, premiumFreight: 0, fillRate: 99,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 1,
+    responseTimeDays: 2, caEffectiveness: 8, ppapOnTime: 100,
+    certStatus: "current", specialStatus: "none", auditFindings: 0,
+  },
+  "BASF Corporation — Performance Chemicals": {
+    ppm: 0, lotRejectRate: 0, labRetest: 0,
+    otd: 99, premiumFreight: 0, fillRate: 100,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 0,
+    responseTimeDays: 1, caEffectiveness: 10, ppapOnTime: 100,
+    certStatus: "expiring", specialStatus: "none", auditFindings: 0,
+  },
+  "Afton Chemical Corporation": {
+    ppm: 150, lotRejectRate: 1.2, labRetest: 1,
+    otd: 98.5, premiumFreight: 0, fillRate: 100,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 0,
+    responseTimeDays: 2, caEffectiveness: 9, ppapOnTime: 100,
+    certStatus: "current", specialStatus: "none", auditFindings: 1,
+  },
+  "Ashland LLC — Specialty Ingredients": {
+    ppm: 320, lotRejectRate: 2.1, labRetest: 2,
+    otd: 97, premiumFreight: 1, fillRate: 98,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 1,
+    responseTimeDays: 3, caEffectiveness: 8, ppapOnTime: 95,
+    certStatus: "current", specialStatus: "none", auditFindings: 0,
+  },
+  "Troy Corporation — Microbiology Division": {
+    ppm: 450, lotRejectRate: 2.8, labRetest: 1,
+    otd: 95.5, premiumFreight: 1, fillRate: 97,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 1,
+    responseTimeDays: 5, caEffectiveness: 7, ppapOnTime: 90,
+    certStatus: "current", specialStatus: "none", auditFindings: 1,
+  },
+  "Greif, Inc. — Industrial Packaging": {
+    ppm: 200, lotRejectRate: 1.5, labRetest: 0,
+    otd: 96, premiumFreight: 0, fillRate: 98,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 0,
+    responseTimeDays: 4, caEffectiveness: 7, ppapOnTime: 95,
+    certStatus: "expiring", specialStatus: "none", auditFindings: 0,
+  },
+  "Berry Global Group — Rigid Open Top Division": {
+    ppm: 0, lotRejectRate: 0, labRetest: 0,
+    otd: 99.5, premiumFreight: 0, fillRate: 100,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 0,
+    responseTimeDays: 1, caEffectiveness: 10, ppapOnTime: 100,
+    certStatus: "current", specialStatus: "none", auditFindings: 0,
+  },
+  "Multi-Color Corporation — Dayton Plant": {
+    ppm: 750, lotRejectRate: 3.5, labRetest: 2,
+    otd: 94, premiumFreight: 2, fillRate: 95,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 2,
+    responseTimeDays: 7, caEffectiveness: 6, ppapOnTime: 85,
+    certStatus: "current", specialStatus: "none", auditFindings: 2,
+  },
+  "Intertek Testing Services — Cincinnati Lab": {
+    ppm: 0, lotRejectRate: 0, labRetest: 0,
+    otd: 98, premiumFreight: 0, fillRate: 100,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 0,
+    responseTimeDays: 1, caEffectiveness: 10, ppapOnTime: 100,
+    certStatus: "expiring", specialStatus: "none", auditFindings: 0,
+  },
+  "Ohio Valley Calibration Services": {
+    ppm: 0, lotRejectRate: 0, labRetest: 0,
+    otd: 100, premiumFreight: 0, fillRate: 100,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 0,
+    responseTimeDays: 1, caEffectiveness: 10, ppapOnTime: 100,
+    certStatus: "current", specialStatus: "none", auditFindings: 0,
+  },
+  "Ruan Transportation Management Systems": {
+    ppm: 0, lotRejectRate: 0, labRetest: 0,
+    otd: 97, premiumFreight: 1, fillRate: 99,
+    lineStops: 0, warrantyReturns: 0, dockHolds: 0,
+    responseTimeDays: 3, caEffectiveness: 8, ppapOnTime: 100,
+    certStatus: "current", specialStatus: "none", auditFindings: 0,
+  },
+  "Hixson Chemical Logistics LLC": {
+    ppm: 3200, lotRejectRate: 12, labRetest: 5,
+    otd: 84, premiumFreight: 4, fillRate: 89,
+    lineStops: 0, warrantyReturns: 1, dockHolds: 3,
+    responseTimeDays: 18, caEffectiveness: 3, ppapOnTime: 70,
+    certStatus: "none", specialStatus: "new_supplier", auditFindings: 3,
+  },
 };
 
 // ─── Audit risk factors ──────────────────────────────────────────────────────
@@ -382,26 +519,21 @@ async function main() {
   ).returning();
   console.log(`    ✓ ${supplierRows.length} suppliers inserted\n`);
 
-  // 3. Insert evaluations
+  // 3. Insert IATF scorecards
   console.log("📊  Inserting supplier evaluations…");
   let evalCount = 0;
   for (const sup of supplierRows) {
-    const rawScores = EVAL_SCORES[sup.name];
-    if (!rawScores) continue;
+    const evalData = IATF_EVAL_DATA[sup.name];
+    if (!evalData) continue;
 
-    // Build scores map: criteriaId → score
-    const scoresMap: Record<string, number> = {};
-    criteriaRows.forEach((c, i) => { scoresMap[String(c.id)] = rawScores[i] ?? 5; });
+    const { scores, overallScore, recommendation } = buildIatfScores(evalData);
 
-    // Weighted overall score
-    const totalWeight = criteriaRows.reduce((s, c) => s + (c.weight || 0), 0);
-    let weighted = 0;
-    criteriaRows.forEach((c, i) => {
-      weighted += ((rawScores[i] ?? 5) / 10) * ((c.weight || 0) / totalWeight) * 100;
-    });
-    const overallScore = Math.round(weighted);
-    const recommendation =
-      overallScore >= 80 ? "approved" : overallScore >= 60 ? "conditional" : "disqualified";
+    const notesByReco: Record<string, string> = {
+      preferred:    "Supplier exceeds all CCI Chemical quality and delivery requirements. Eligible for extended audit frequency.",
+      approved:     "Supplier meets CCI Chemical performance requirements. Continue regular monitoring schedule.",
+      conditional:  "Supplier requires corrective action plan within 30 days. Increase incoming inspection frequency until resolved.",
+      disqualified: "Supplier performance below acceptable threshold. Initiate disqualification process per CCI Chemical SQP-001.",
+    };
 
     await db.insert(supplierEvaluations).values({
       userId: USER_ID,
@@ -409,11 +541,11 @@ async function main() {
       supplierId: sup.id,
       evaluationDate: "2025-01-15",
       evaluatorName: "Raul Espinoza — Quality Manager",
-      period: "Annual Review 2024",
+      period: "Annual Review — FY 2024",
       overallScore,
       recommendation,
-      scores: scoresMap,
-      notes: `Annual supplier evaluation completed Jan 2025. ${recommendation === "approved" ? "Supplier meets all CCI Chemical quality requirements." : recommendation === "conditional" ? "Supplier requires corrective action plan before next evaluation." : "Supplier requires immediate quality improvement plan and probationary review."}`,
+      scores: scores as any,
+      notes: notesByReco[recommendation],
     });
     evalCount++;
   }

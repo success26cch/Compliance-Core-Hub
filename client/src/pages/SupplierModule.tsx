@@ -12,9 +12,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Truck, Plus, Pencil, Trash2, ExternalLink, AlertTriangle, CheckCircle2,
   ShieldCheck, ClipboardList, BarChart3, Calendar, AlertCircle, Info,
   FileCheck, ChevronRight, ChevronDown, Star, Award, X, Phone, Mail,
@@ -43,7 +40,8 @@ interface SupplierEvaluation {
   supplierId: number; evaluationDate: string; evaluatorName?: string | null;
   period?: string | null; overallScore?: number | null;
   recommendation?: string | null; notes?: string | null;
-  scores?: Record<string, number> | null; createdAt?: string | null;
+  scores?: Record<string, Record<string, { value: number | string; score: number }>> | null;
+  createdAt?: string | null;
 }
 interface SupplierAudit {
   id: number; userId: string; isoProjectId?: number | null;
@@ -112,23 +110,6 @@ function scoreToFrequency(score: number): string {
   return "Every 3 Years";
 }
 
-function calcOverallScore(scores: Record<string, number>, criteria: SupplierCriteria[]): number {
-  if (!criteria.length) return 0;
-  const totalWeight = criteria.reduce((s, c) => s + (c.weight || 0), 0);
-  if (!totalWeight) return 0;
-  let weighted = 0;
-  for (const c of criteria) {
-    const score = scores[String(c.id)] ?? 0;
-    weighted += (score / 10) * (c.weight / totalWeight) * 100;
-  }
-  return Math.round(weighted);
-}
-
-function scoreToRecommendation(score: number): string {
-  if (score >= 80) return "approved";
-  if (score >= 60) return "conditional";
-  return "disqualified";
-}
 
 const CRITERIA_CATEGORIES = ["quality", "logistics", "financial", "technical", "compliance"];
 const SUPPLIER_CATEGORIES = [
@@ -766,6 +747,299 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
   );
 }
 
+// ─── IATF 16949 Scorecard Definition ─────────────────────────────────────────
+// Based on IATF 16949:2016 clauses 8.4.1 and 8.4.2.4
+
+type MetricType = "number" | "slider" | "select";
+interface SelectOption { value: string; label: string; score: number }
+interface ScorecardMetric {
+  id: string; label: string; description: string; iatfNote?: string;
+  type: MetricType; unit?: string; placeholder?: string;
+  toScore: (v: number | string) => number;
+  options?: SelectOption[];
+  iatfHighlight?: boolean;
+  goodDirection?: "lower" | "higher";
+}
+interface ScorecardCategory {
+  id: string; label: string; weight: number; iatfClause: string;
+  color: string; metrics: ScorecardMetric[];
+}
+
+const IATF_SCORECARD: ScorecardCategory[] = [
+  {
+    id: "incoming_quality", label: "Incoming Quality", weight: 30,
+    iatfClause: "§8.4.1 — delivered part quality performance",
+    color: "blue",
+    metrics: [
+      {
+        id: "ppm", label: "Incoming Defect PPM", unit: "PPM",
+        description: "Parts per million defective at CCI Chemical's receiving inspection",
+        iatfNote: "Clause 8.4.1 — delivered part quality performance (IATF required)",
+        type: "number", placeholder: "e.g. 450", goodDirection: "lower",
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n <= 100 ? 9 : n <= 300 ? 8 : n <= 500 ? 7 : n <= 750 ? 6 : n <= 1000 ? 5 : n <= 1500 ? 4 : n <= 2000 ? 3 : n <= 3000 ? 2 : 1; },
+      },
+      {
+        id: "lot_reject_rate", label: "Shipment / Lot Reject Rate", unit: "%",
+        description: "Percentage of received shipments or lots failing CCI's incoming inspection",
+        type: "number", placeholder: "e.g. 2.5", goodDirection: "lower",
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n <= 1 ? 9 : n <= 2 ? 8 : n <= 3 ? 7 : n <= 5 ? 6 : n <= 7 ? 5 : n <= 10 ? 4 : n <= 15 ? 3 : n <= 20 ? 2 : 1; },
+      },
+      {
+        id: "lab_retest", label: "Lab Retest / Re-inspection Events", unit: "events",
+        description: "Count of lots requiring retest due to specification concerns or out-of-spec COA values",
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower",
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 8 : n === 2 ? 6 : n === 3 ? 4 : n <= 5 ? 2 : 1; },
+      },
+    ],
+  },
+  {
+    id: "delivery_performance", label: "Delivery Performance", weight: 25,
+    iatfClause: "§8.4.1 — delivery schedule performance",
+    color: "violet",
+    metrics: [
+      {
+        id: "otd_pct", label: "On-Time Delivery (OTD) %", unit: "%",
+        description: "Percentage of purchase orders received on or before CCI Chemical's requested delivery date",
+        iatfNote: "Clause 8.4.1 — delivery schedule performance (IATF required)",
+        type: "number", placeholder: "e.g. 97.2", goodDirection: "higher",
+        toScore: (v) => { const n = Number(v); return n >= 100 ? 10 : n >= 99 ? 9 : n >= 98 ? 8 : n >= 97 ? 7 : n >= 95 ? 6 : n >= 93 ? 5 : n >= 90 ? 4 : n >= 85 ? 3 : n >= 80 ? 2 : 1; },
+      },
+      {
+        id: "premium_freight", label: "Premium Freight Incidents", unit: "incidents",
+        description: "Number of times CCI paid premium/expedite freight costs because supplier missed schedule",
+        iatfNote: "Clause 8.4.1 — incidents of premium freight (IATF-specific requirement)",
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; },
+      },
+      {
+        id: "fill_rate", label: "Fill Rate / Complete Shipments", unit: "%",
+        description: "Percentage of order lines shipped complete — no partial or short shipments",
+        type: "number", placeholder: "e.g. 100", goodDirection: "higher",
+        toScore: (v) => { const n = Number(v); return n >= 100 ? 10 : n >= 99 ? 8 : n >= 97 ? 7 : n >= 95 ? 6 : n >= 90 ? 4 : 2; },
+      },
+    ],
+  },
+  {
+    id: "customer_impact", label: "Customer Disruptions & Impact", weight: 20,
+    iatfClause: "§8.4.1 — customer disruptions incl. field returns",
+    color: "red",
+    metrics: [
+      {
+        id: "line_stops", label: "Customer Line Stops / Plant Shutdowns", unit: "events",
+        description: "Number of production line stops or plant shutdowns at CCI Chemical caused by supplier-responsible material failures",
+        iatfNote: "Clause 8.4.1 — customer disruptions (IATF-specific requirement)",
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 4 : 1; },
+      },
+      {
+        id: "warranty_returns", label: "Warranty / Field Returns (Supplier-Responsible)", unit: "events",
+        description: "Warranty or field return events traceable to this supplier's material or components during the evaluation period",
+        iatfNote: "Clause 8.4.1 — field returns; Clause 8.4.1.2 — automotive warranty management",
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; },
+      },
+      {
+        id: "dock_holds", label: "Dock / Yard Holds", unit: "holds",
+        description: "Number of times incoming material was quarantined or placed on hold at CCI receiving pending final disposition",
+        iatfNote: "Material quarantine / yard hold events — supply chain containment indicator",
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower", iatfHighlight: true,
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 4 : 1; },
+      },
+    ],
+  },
+  {
+    id: "capa_responsiveness", label: "CAPA & Responsiveness", weight: 15,
+    iatfClause: "§8.4.2.4 — supplier monitoring",
+    color: "amber",
+    metrics: [
+      {
+        id: "response_time_days", label: "8D / SCAR Initial Response Time (avg)", unit: "days",
+        description: "Average calendar days for supplier to submit their initial 8D or Supplier Corrective Action Request (SCAR) response",
+        iatfNote: "Clause 8.4.2.4 — supplier monitoring & corrective action",
+        type: "number", placeholder: "e.g. 3", goodDirection: "lower",
+        toScore: (v) => { const n = Number(v); return n <= 1 ? 10 : n <= 3 ? 8 : n <= 5 ? 6 : n <= 7 ? 4 : n <= 14 ? 2 : 1; },
+      },
+      {
+        id: "ca_effectiveness", label: "Corrective Action Effectiveness (1–10)", unit: "/ 10",
+        description: "Assessor's judgment of the depth, thoroughness, and sustained effectiveness of supplier corrective actions",
+        type: "slider", goodDirection: "higher",
+        toScore: (v) => Number(v),
+      },
+      {
+        id: "ppap_on_time", label: "PPAP / Documentation On-Time %", unit: "%",
+        description: "Percentage of required PPAP submissions, certification renewals, or compliance documents received by CCI's due date",
+        type: "number", placeholder: "e.g. 100", goodDirection: "higher",
+        toScore: (v) => { const n = Number(v); return n >= 100 ? 10 : n >= 95 ? 8 : n >= 90 ? 6 : n >= 80 ? 4 : 2; },
+      },
+    ],
+  },
+  {
+    id: "quality_system", label: "Quality System Status", weight: 10,
+    iatfClause: "§8.4.2.4 — supplier monitoring",
+    color: "emerald",
+    metrics: [
+      {
+        id: "cert_status", label: "Certification Status",
+        description: "Current standing of the supplier's ISO 9001:2015 or IATF 16949:2016 certification",
+        type: "select",
+        options: [
+          { value: "current", label: "Current — cert in good standing", score: 10 },
+          { value: "expiring", label: "Expiring within 90 days — renewal in progress", score: 7 },
+          { value: "scope_change", label: "Scope under change — re-audit pending", score: 5 },
+          { value: "suspended", label: "Suspended — under CB surveillance", score: 2 },
+          { value: "lapsed", label: "Lapsed — certificate expired", score: 1 },
+          { value: "none", label: "Not certified", score: 1 },
+        ],
+        toScore: () => 0,
+      },
+      {
+        id: "special_status", label: "Special Status / Controlled Shipping",
+        description: "Any active customer-imposed or self-imposed special quality or shipping status",
+        iatfNote: "Clause 8.4.1 — special status customer notifications (IATF-specific requirement)",
+        type: "select", iatfHighlight: true,
+        options: [
+          { value: "none", label: "None — no special status active", score: 10 },
+          { value: "new_supplier", label: "New Supplier Designation (enhanced surveillance)", score: 6 },
+          { value: "cs1", label: "Controlled Shipping Level 1 (CS1)", score: 4 },
+          { value: "cs2", label: "Controlled Shipping Level 2 — third-party sorting", score: 2 },
+          { value: "srea", label: "SREA Active (Supplier Remediation & Escalation)", score: 1 },
+          { value: "q1_revoked", label: "Q1 / Preferred Status Revoked", score: 1 },
+        ],
+        toScore: () => 0,
+      },
+      {
+        id: "audit_findings", label: "Major NC Count (Last Audit)", unit: "major NCs",
+        description: "Number of major non-conformances identified during last internal or 2nd-party supplier audit",
+        type: "number", placeholder: "e.g. 0", goodDirection: "lower",
+        toScore: (v) => { const n = Number(v); return n === 0 ? 10 : n === 1 ? 7 : n === 2 ? 5 : n === 3 ? 3 : 1; },
+      },
+    ],
+  },
+];
+
+// Resolve score for a metric entry (handles select options)
+function resolveMetricScore(metric: ScorecardMetric, value: number | string): number {
+  if (metric.type === "select" && metric.options) {
+    return metric.options.find(o => o.value === value)?.score ?? 0;
+  }
+  return metric.toScore(value);
+}
+
+// Calculate category score (0–100) from entered values
+function calcCategoryScore(
+  category: ScorecardCategory,
+  values: Record<string, number | string>
+): number {
+  const scores = category.metrics.map(m => {
+    const v = values[m.id];
+    if (v === undefined || v === "") return null;
+    return resolveMetricScore(m, v);
+  }).filter(s => s !== null) as number[];
+  if (!scores.length) return 0;
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  return Math.round((avg / 10) * 100);
+}
+
+// Calculate weighted overall scorecard total (0–100)
+function calcIatfOverall(allValues: Record<string, Record<string, number | string>>): number {
+  const totalWeight = IATF_SCORECARD.reduce((s, c) => s + c.weight, 0);
+  let weighted = 0;
+  for (const cat of IATF_SCORECARD) {
+    const catScore = calcCategoryScore(cat, allValues[cat.id] ?? {});
+    weighted += (catScore / 100) * (cat.weight / totalWeight) * 100;
+  }
+  return Math.round(weighted);
+}
+
+function iatfRecommendation(score: number): string {
+  if (score >= 90) return "preferred";
+  if (score >= 75) return "approved";
+  if (score >= 60) return "conditional";
+  return "disqualified";
+}
+
+const RECO_STYLE: Record<string, string> = {
+  preferred:    "bg-emerald-100 text-emerald-800 border-emerald-200",
+  approved:     "bg-green-50 text-green-700 border-green-200",
+  conditional:  "bg-amber-100 text-amber-700 border-amber-200",
+  disqualified: "bg-red-100 text-red-700 border-red-200",
+};
+const RECO_LABEL: Record<string, string> = {
+  preferred:    "★ Preferred Supplier",
+  approved:     "✓ Approved",
+  conditional:  "⚠ Conditional — Improvement Plan Required",
+  disqualified: "✗ Disqualify — Immediate Action Required",
+};
+
+const CATEGORY_COLORS: Record<string, { border: string; bg: string; header: string; badge: string }> = {
+  blue:    { border: "border-blue-200",   bg: "bg-blue-50/40 dark:bg-blue-950/10",   header: "text-blue-700 dark:text-blue-400",   badge: "bg-blue-100 text-blue-700 border-blue-200" },
+  violet:  { border: "border-violet-200", bg: "bg-violet-50/40 dark:bg-violet-950/10", header: "text-violet-700 dark:text-violet-400", badge: "bg-violet-100 text-violet-700 border-violet-200" },
+  red:     { border: "border-red-200",    bg: "bg-red-50/40 dark:bg-red-950/10",     header: "text-red-700 dark:text-red-400",     badge: "bg-red-100 text-red-700 border-red-200" },
+  amber:   { border: "border-amber-200",  bg: "bg-amber-50/40 dark:bg-amber-950/10", header: "text-amber-700 dark:text-amber-400", badge: "bg-amber-100 text-amber-700 border-amber-200" },
+  emerald: { border: "border-emerald-200",bg: "bg-emerald-50/40 dark:bg-emerald-950/10",header: "text-emerald-700 dark:text-emerald-400",badge: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+};
+
+function scoreColor(s: number): string {
+  return s >= 8 ? "text-emerald-600" : s >= 6 ? "text-amber-600" : s >= 4 ? "text-orange-600" : "text-red-600";
+}
+
+function ScoreBar({ score }: { score: number }) {
+  const pct = Math.round((score / 10) * 100);
+  const color = score >= 8 ? "bg-emerald-400" : score >= 6 ? "bg-amber-400" : score >= 4 ? "bg-orange-400" : "bg-red-400";
+  return (
+    <div className="flex items-center gap-1.5 w-16">
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function MetricInput({ metric, value, onChange }: {
+  metric: ScorecardMetric;
+  value: number | string | undefined;
+  onChange: (v: number | string) => void;
+}) {
+  if (metric.type === "select" && metric.options) {
+    return (
+      <Select value={String(value ?? "")} onValueChange={onChange}>
+        <SelectTrigger className="h-7 text-xs w-64" data-testid={`select-metric-${metric.id}`}>
+          <SelectValue placeholder="Select…" />
+        </SelectTrigger>
+        <SelectContent>
+          {metric.options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    );
+  }
+  if (metric.type === "slider") {
+    const n = Number(value ?? 5);
+    return (
+      <div className="flex items-center gap-2">
+        <input type="range" min={1} max={10} step={1} value={n}
+          onChange={e => onChange(parseInt(e.target.value))}
+          className="w-24 accent-orange-500"
+          data-testid={`slider-metric-${metric.id}`}
+        />
+        <span className={`w-5 text-center text-xs font-bold ${scoreColor(n)}`}>{n}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      <Input
+        type="number" min={0} step={0.1}
+        value={value ?? ""}
+        onChange={e => onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+        placeholder={metric.placeholder}
+        className="h-7 text-xs w-28"
+        data-testid={`input-metric-${metric.id}`}
+      />
+      {metric.unit && <span className="text-[10px] text-muted-foreground">{metric.unit}</span>}
+    </div>
+  );
+}
+
 // ─── Tab 3: Supplier Evaluations ─────────────────────────────────────────────
 
 function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
@@ -773,11 +1047,14 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
   const { toast } = useToast();
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [showNewEval, setShowNewEval] = useState(false);
-  const [evalForm, setEvalForm] = useState<Record<string, any>>({
-    evaluationDate: new Date().toISOString().split("T")[0],
-    evaluatorName: "", period: "", notes: "",
-  });
-  const [scores, setScores] = useState<Record<string, number>>({});
+  const [expandedEvalId, setExpandedEvalId] = useState<number | null>(null);
+  const [evalMeta, setEvalMeta] = useState({ evaluationDate: new Date().toISOString().split("T")[0], evaluatorName: "", period: "", notes: "" });
+  // allValues: categoryId → metricId → raw entered value
+  const [allValues, setAllValues] = useState<Record<string, Record<string, number | string>>>({});
+
+  const setMetricValue = (catId: string, metricId: string, v: number | string) => {
+    setAllValues(prev => ({ ...prev, [catId]: { ...prev[catId], [metricId]: v } }));
+  };
 
   const suppliersQk = ["/api/suppliers", isoProjectId];
   const { data: suppliers = [] } = useQuery<Supplier[]>({
@@ -785,61 +1062,81 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
     queryFn: () => fetch(`/api/suppliers${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`, { credentials: "include" }).then(r => r.json()),
   });
 
-  const criteriaQk = ["/api/supplier-criteria", isoProjectId];
-  const { data: criteria = [] } = useQuery<SupplierCriteria[]>({
-    queryKey: criteriaQk,
-    queryFn: () => fetch(`/api/supplier-criteria${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`, { credentials: "include" }).then(r => r.json()),
-  });
-
   const evalsQk = ["/api/supplier-evaluations", isoProjectId, selectedSupplierId];
   const { data: evaluations = [] } = useQuery<SupplierEvaluation[]>({
     queryKey: evalsQk,
     queryFn: () => {
-      const params = new URLSearchParams();
-      if (isoProjectId) params.set("isoProjectId", String(isoProjectId));
-      if (selectedSupplierId) params.set("supplierId", String(selectedSupplierId));
-      return fetch(`/api/supplier-evaluations?${params}`, { credentials: "include" }).then(r => r.json());
+      const p = new URLSearchParams();
+      if (isoProjectId) p.set("isoProjectId", String(isoProjectId));
+      if (selectedSupplierId) p.set("supplierId", String(selectedSupplierId));
+      return fetch(`/api/supplier-evaluations?${p}`, { credentials: "include" }).then(r => r.json());
     },
     enabled: selectedSupplierId != null,
   });
 
   const createMut = useMutation({
     mutationFn: (d: any) => apiRequest("POST", "/api/supplier-evaluations", d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: evalsQk }); setShowNewEval(false); setScores({}); toast({ title: "Evaluation saved" }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: evalsQk });
+      setShowNewEval(false);
+      setAllValues({});
+      setEvalMeta({ evaluationDate: new Date().toISOString().split("T")[0], evaluatorName: "", period: "", notes: "" });
+      toast({ title: "Scorecard saved" });
+    },
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/supplier-evaluations/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: evalsQk }); toast({ title: "Evaluation deleted" }); },
   });
 
-  const overallScore = criteria.length > 0 ? calcOverallScore(scores, criteria) : 0;
-  const recommendation = scoreToRecommendation(overallScore);
+  const overallScore = calcIatfOverall(allValues);
+  const recommendation = iatfRecommendation(overallScore);
   const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
 
-  const RECO_STYLE: Record<string, string> = {
-    approved: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    conditional: "bg-amber-100 text-amber-700 border-amber-200",
-    disqualified: "bg-red-100 text-red-700 border-red-200",
+  // Build scores payload for DB — nested by category → metric
+  const buildScoresPayload = () => {
+    const out: Record<string, Record<string, { value: number | string; score: number }>> = {};
+    for (const cat of IATF_SCORECARD) {
+      out[cat.id] = {};
+      for (const m of cat.metrics) {
+        const v = allValues[cat.id]?.[m.id];
+        if (v !== undefined && v !== "") {
+          out[cat.id][m.id] = { value: v, score: resolveMetricScore(m, v) };
+        }
+      }
+    }
+    return out;
   };
 
   return (
     <div className="space-y-4">
+      {/* IATF context banner */}
+      <div className="flex items-start gap-2.5 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/40 rounded-xl px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
+        <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
+        <div>
+          <p className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">IATF 16949 Performance Scorecard — for active, ongoing suppliers</p>
+          <p className="leading-relaxed">
+            This scorecard fulfills IATF 16949 §8.4.1 (supplier monitoring) and §8.4.2.4 (supplier performance evaluation). It tracks the five required categories: delivered quality, delivery schedule performance (including <strong>premium freight</strong>), customer disruptions (including <strong>yard holds</strong> and <strong>field returns</strong>), corrective action responsiveness, and quality system status. Run this quarterly or annually for active suppliers.
+          </p>
+        </div>
+      </div>
+
       {/* Supplier picker */}
       <div className="flex items-center gap-3">
-        <div className="flex-1">
-          <Label className="text-xs font-semibold text-muted-foreground">Select Supplier to Evaluate</Label>
-          <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => setSelectedSupplierId(parseInt(v))}>
+        <div className="flex-1 max-w-sm">
+          <Label className="text-xs font-semibold text-muted-foreground">Supplier</Label>
+          <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => { setSelectedSupplierId(parseInt(v)); setShowNewEval(false); setExpandedEvalId(null); }}>
             <SelectTrigger className="mt-1 h-9" data-testid="select-supplier-evaluate">
-              <SelectValue placeholder="Choose a supplier…" />
+              <SelectValue placeholder="Choose a supplier to evaluate…" />
             </SelectTrigger>
             <SelectContent>
               {suppliers.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
-        {selectedSupplierId && (
+        {selectedSupplierId && !showNewEval && (
           <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-9 text-xs mt-5" onClick={() => setShowNewEval(true)} data-testid="button-new-evaluation">
-            <Plus className="w-3.5 h-3.5" /> New Evaluation
+            <Plus className="w-3.5 h-3.5" /> New Scorecard
           </Button>
         )}
       </div>
@@ -847,132 +1144,256 @@ function SupplierEvaluations({ isoProjectId }: { isoProjectId?: number }) {
       {!selectedSupplierId ? (
         <div className="text-center py-12 text-muted-foreground">
           <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm font-medium">Select a supplier to view evaluations</p>
+          <p className="text-sm font-medium">Select a supplier to view or add evaluations</p>
         </div>
       ) : (
         <>
-          {/* New evaluation scorecard */}
-          {showNewEval && criteria.length > 0 && (
-            <div className="border-2 border-accent/30 rounded-xl p-4 bg-accent/5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-primary">New Evaluation — {selectedSupplier?.name}</h3>
-                <button onClick={() => setShowNewEval(false)}><X className="w-4 h-4 text-muted-foreground" /></button>
+          {/* ── NEW SCORECARD FORM ── */}
+          {showNewEval && (
+            <div className="border-2 border-accent/30 rounded-xl bg-accent/5 dark:bg-accent/5 overflow-hidden">
+              {/* Form header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-accent/20">
+                <div>
+                  <p className="text-sm font-bold text-primary">IATF 16949 Supplier Scorecard</p>
+                  <p className="text-[11px] text-muted-foreground">{selectedSupplier?.name}</p>
+                </div>
+                <button onClick={() => setShowNewEval(false)} data-testid="button-close-scorecard">
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold">Date *</Label>
-                  <Input type="date" className="mt-1 h-8 text-sm" value={evalForm.evaluationDate} onChange={e => setEvalForm(f => ({ ...f, evaluationDate: e.target.value }))} />
+              <div className="p-4 space-y-5">
+                {/* Meta fields */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs font-semibold">Evaluation Date *</Label>
+                    <Input type="date" className="mt-1 h-8 text-sm" value={evalMeta.evaluationDate} onChange={e => setEvalMeta(m => ({ ...m, evaluationDate: e.target.value }))} data-testid="input-eval-date" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold">Evaluator</Label>
+                    <Input className="mt-1 h-8 text-sm" value={evalMeta.evaluatorName} onChange={e => setEvalMeta(m => ({ ...m, evaluatorName: e.target.value }))} placeholder="Name / role" data-testid="input-eval-evaluator" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold">Evaluation Period</Label>
+                    <Input className="mt-1 h-8 text-sm" value={evalMeta.period} onChange={e => setEvalMeta(m => ({ ...m, period: e.target.value }))} placeholder="e.g. Q2 2025 or FY 2025" data-testid="input-eval-period" />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold">Evaluator</Label>
-                  <Input className="mt-1 h-8 text-sm" value={evalForm.evaluatorName} onChange={e => setEvalForm(f => ({ ...f, evaluatorName: e.target.value }))} placeholder="Name or role" />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Period</Label>
-                  <Input className="mt-1 h-8 text-sm" value={evalForm.period} onChange={e => setEvalForm(f => ({ ...f, period: e.target.value }))} placeholder="e.g. Q2 2025" />
-                </div>
-              </div>
 
-              {/* Score each criteria 1–10 */}
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Score Each Criteria (1–10)</p>
-                {criteria.map(c => (
-                  <div key={c.id} className="flex items-center gap-3 bg-white dark:bg-card border border-border/50 rounded-lg p-2.5">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-semibold text-primary">{c.name}</span>
-                      <span className="ml-1.5 text-[10px] text-muted-foreground">({c.weight}% weight)</span>
+                {/* Category sections */}
+                {IATF_SCORECARD.map(cat => {
+                  const cc = CATEGORY_COLORS[cat.color];
+                  const catScore = calcCategoryScore(cat, allValues[cat.id] ?? {});
+                  return (
+                    <div key={cat.id} className={`border ${cc.border} rounded-xl overflow-hidden ${cc.bg}`}>
+                      {/* Category header */}
+                      <div className={`flex items-center justify-between px-4 py-2.5 border-b ${cc.border}`}>
+                        <div>
+                          <p className={`text-xs font-bold ${cc.header}`}>{cat.label}</p>
+                          <p className="text-[10px] text-muted-foreground">{cat.iatfClause} · {cat.weight}% of total score</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-base font-black ${scoreColor(catScore / 10)}`}>{catScore}</p>
+                          <p className="text-[9px] text-muted-foreground">cat. score</p>
+                        </div>
+                      </div>
+
+                      {/* Metrics */}
+                      <div className="divide-y divide-border/40">
+                        {cat.metrics.map(m => {
+                          const v = allValues[cat.id]?.[m.id];
+                          const score = v !== undefined && v !== "" ? resolveMetricScore(m, v) : null;
+                          return (
+                            <div key={m.id} className="px-4 py-3 bg-white/60 dark:bg-white/5">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-semibold text-primary">{m.label}</span>
+                                    {m.iatfHighlight && (
+                                      <Badge className="text-[9px] bg-orange-100 text-orange-700 border-orange-200 border px-1 py-0">IATF §8.4.1</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{m.description}</p>
+                                  {m.iatfNote && <p className="text-[9px] text-muted-foreground/60 mt-0.5 italic">{m.iatfNote}</p>}
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0 mt-0.5">
+                                  <MetricInput metric={m} value={v} onChange={nv => setMetricValue(cat.id, m.id, nv)} />
+                                  {score !== null ? (
+                                    <div className="flex items-center gap-1.5 w-14">
+                                      <ScoreBar score={score} />
+                                      <span className={`text-xs font-bold w-4 text-right ${scoreColor(score)}`}>{score}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="w-14 text-center text-[10px] text-muted-foreground/40">—</div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <input
-                        type="range" min={1} max={10} step={1}
-                        value={scores[String(c.id)] ?? 5}
-                        onChange={e => setScores(s => ({ ...s, [String(c.id)]: parseInt(e.target.value) }))}
-                        className="w-24 accent-orange-500"
-                      />
-                      <span className={`w-6 text-center text-xs font-bold ${(scores[String(c.id)] ?? 5) >= 7 ? "text-emerald-600" : (scores[String(c.id)] ?? 5) >= 4 ? "text-amber-600" : "text-red-600"}`}>
-                        {scores[String(c.id)] ?? 5}
-                      </span>
+                  );
+                })}
+
+                {/* Overall score summary */}
+                <div className="border border-border/60 rounded-xl p-4 bg-white dark:bg-card">
+                  <div className="flex items-center gap-6 flex-wrap">
+                    {/* Overall score dial */}
+                    <div className="text-center min-w-[72px]">
+                      <p className={`text-4xl font-black ${scoreColor(overallScore / 10)}`}>{overallScore}</p>
+                      <p className="text-[10px] text-muted-foreground">/ 100 overall</p>
+                    </div>
+                    <div className="h-12 w-px bg-border" />
+                    {/* Category subtotals */}
+                    <div className="flex gap-4 flex-wrap flex-1">
+                      {IATF_SCORECARD.map(cat => {
+                        const cc = CATEGORY_COLORS[cat.color];
+                        const cs = calcCategoryScore(cat, allValues[cat.id] ?? {});
+                        return (
+                          <div key={cat.id} className="text-center">
+                            <p className={`text-base font-bold ${scoreColor(cs / 10)}`}>{cs}</p>
+                            <p className={`text-[9px] font-semibold ${cc.header}`}>{cat.label.split(" ")[0]}</p>
+                            <p className="text-[9px] text-muted-foreground">{cat.weight}%</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="h-12 w-px bg-border" />
+                    {/* Recommendation */}
+                    <div>
+                      <Badge className={`text-xs border px-2.5 py-1 ${RECO_STYLE[recommendation]}`}>
+                        {RECO_LABEL[recommendation]}
+                      </Badge>
+                      <p className="text-[10px] text-muted-foreground mt-1.5">
+                        {recommendation === "preferred" ? "≥90 — Preferred supplier" :
+                          recommendation === "approved" ? "75–89 — Approved" :
+                          recommendation === "conditional" ? "60–74 — Written improvement plan required within 30 days" :
+                          "< 60 — Initiate disqualification process"}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Score summary */}
-              <div className="flex items-center gap-4 bg-white dark:bg-card border border-border/50 rounded-lg p-3">
-                <div className="text-center">
-                  <p className="text-2xl font-black text-primary">{overallScore}</p>
-                  <p className="text-[10px] text-muted-foreground">Overall Score</p>
-                </div>
-                <div className="h-12 w-px bg-border" />
-                <div>
-                  <Badge className={`text-xs border ${RECO_STYLE[recommendation]}`}>
-                    {recommendation === "approved" ? "✓ Approved" : recommendation === "conditional" ? "⚠ Conditional" : "✗ Disqualified"}
-                  </Badge>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {recommendation === "approved" ? "Score ≥ 80 — Approved supplier" : recommendation === "conditional" ? "Score 60–79 — Needs improvement plan" : "Score < 60 — Review required"}
-                  </p>
-                </div>
-                <div className="flex-1" />
-                <Textarea className="text-xs resize-none w-48 h-12" placeholder="Notes…" value={evalForm.notes} onChange={e => setEvalForm(f => ({ ...f, notes: e.target.value }))} />
-                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white shrink-0" onClick={() => {
-                  createMut.mutate({
-                    supplierId: selectedSupplierId,
-                    isoProjectId,
-                    evaluationDate: evalForm.evaluationDate,
-                    evaluatorName: evalForm.evaluatorName,
-                    period: evalForm.period,
-                    notes: evalForm.notes,
-                    overallScore,
-                    recommendation,
-                    scores,
-                  });
-                }} data-testid="button-submit-evaluation">Save Scorecard</Button>
-              </div>
-            </div>
-          )}
-
-          {showNewEval && criteria.length === 0 && (
-            <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 text-sm text-amber-700">
-              <AlertTriangle className="w-4 h-4 inline mr-1.5" />
-              No selection criteria defined. Go to the <strong>Selection Criteria</strong> tab to add criteria before evaluating suppliers.
-            </div>
-          )}
-
-          {/* Past evaluations */}
-          {evaluations.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              No evaluations on record for {selectedSupplier?.name} yet.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Past Evaluations</p>
-              {evaluations.map(ev => (
-                <div key={ev.id} className="border border-border/60 rounded-xl p-3 bg-white dark:bg-card" data-testid={`evaluation-${ev.id}`}>
-                  <div className="flex items-center gap-3">
+                  {/* Notes + Save */}
+                  <div className="flex items-end gap-3 mt-4 pt-4 border-t border-border/40">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-primary">{ev.period || ev.evaluationDate}</span>
-                        <span className="text-[11px] text-muted-foreground">{ev.evaluationDate}</span>
-                        {ev.evaluatorName && <span className="text-[11px] text-muted-foreground">· {ev.evaluatorName}</span>}
-                        <Badge className={`text-[10px] border ${RECO_STYLE[ev.recommendation || "conditional"]}`}>
-                          {ev.recommendation || "—"}
-                        </Badge>
-                      </div>
-                      {ev.notes && <p className="text-[11px] text-muted-foreground mt-0.5">{ev.notes}</p>}
+                      <Label className="text-xs font-semibold">Evaluator Notes</Label>
+                      <Textarea className="mt-1 text-xs resize-none h-14" placeholder="Summary observations, action items, escalations…"
+                        value={evalMeta.notes} onChange={e => setEvalMeta(m => ({ ...m, notes: e.target.value }))} data-testid="textarea-eval-notes" />
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-right">
-                        <p className="text-xl font-black text-primary">{ev.overallScore ?? "—"}</p>
-                        <p className="text-[10px] text-muted-foreground">/ 100</p>
-                      </div>
-                      <button onClick={() => { if (confirm("Delete this evaluation?")) deleteMut.mutate(ev.id); }} className="p-1.5 rounded hover:bg-red-50">
-                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                      </button>
-                    </div>
+                    <Button
+                      className="bg-accent hover:bg-accent/90 text-white h-14 px-6 text-sm font-semibold"
+                      onClick={() => createMut.mutate({
+                        supplierId: selectedSupplierId, isoProjectId,
+                        evaluationDate: evalMeta.evaluationDate,
+                        evaluatorName: evalMeta.evaluatorName,
+                        period: evalMeta.period,
+                        notes: evalMeta.notes,
+                        overallScore,
+                        recommendation,
+                        scores: buildScoresPayload(),
+                      })}
+                      disabled={createMut.isPending}
+                      data-testid="button-submit-evaluation"
+                    >
+                      Save Scorecard
+                    </Button>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── PAST EVALUATIONS ── */}
+          {evaluations.length === 0 && !showNewEval ? (
+            <div className="text-center py-10 text-muted-foreground">
+              <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-20" />
+              <p className="text-sm font-medium">No evaluations on record for {selectedSupplier?.name}</p>
+              <p className="text-xs mt-1">Click "New Scorecard" to run the first IATF performance evaluation</p>
+            </div>
+          ) : evaluations.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Evaluation History</p>
+              {evaluations.map(ev => {
+                const reco = ev.recommendation || "conditional";
+                const isExpanded = expandedEvalId === ev.id;
+                return (
+                  <div key={ev.id} className="border border-border/60 rounded-xl overflow-hidden bg-white dark:bg-card" data-testid={`evaluation-${ev.id}`}>
+                    {/* Row header */}
+                    <button
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/20 transition-colors ${isExpanded ? "bg-muted/10" : ""}`}
+                      onClick={() => setExpandedEvalId(isExpanded ? null : ev.id)}
+                      data-testid={`button-expand-eval-${ev.id}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-bold text-primary">{ev.period || ev.evaluationDate}</span>
+                          {ev.period && <span className="text-[11px] text-muted-foreground">{ev.evaluationDate}</span>}
+                          {ev.evaluatorName && <span className="text-[11px] text-muted-foreground">· {ev.evaluatorName}</span>}
+                          <Badge className={`text-[10px] border ${RECO_STYLE[reco]}`}>{RECO_LABEL[reco]}</Badge>
+                        </div>
+                        {ev.notes && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{ev.notes}</p>}
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right">
+                          <p className={`text-2xl font-black ${scoreColor((ev.overallScore ?? 0) / 10)}`}>{ev.overallScore ?? "—"}</p>
+                          <p className="text-[9px] text-muted-foreground">/ 100</p>
+                        </div>
+                        {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                      </div>
+                    </button>
+
+                    {/* Expanded: category breakdown */}
+                    {isExpanded && ev.scores && (
+                      <div className="border-t border-border/60 px-4 py-4 bg-muted/10 space-y-3">
+                        <div className="grid grid-cols-1 gap-3">
+                          {IATF_SCORECARD.map(cat => {
+                            const cc = CATEGORY_COLORS[cat.color];
+                            const catData = ev.scores?.[cat.id] ?? {};
+                            const catMetricScores = cat.metrics.map(m => catData[m.id]?.score).filter(Boolean) as number[];
+                            const catAvgScore = catMetricScores.length ? Math.round((catMetricScores.reduce((a, b) => a + b, 0) / catMetricScores.length / 10) * 100) : null;
+                            return (
+                              <div key={cat.id} className={`border ${cc.border} rounded-lg overflow-hidden`}>
+                                <div className={`flex items-center justify-between px-3 py-2 ${cc.bg}`}>
+                                  <p className={`text-[11px] font-bold ${cc.header}`}>{cat.label}</p>
+                                  {catAvgScore !== null && (
+                                    <span className={`text-xs font-black ${scoreColor(catAvgScore / 10)}`}>{catAvgScore}</span>
+                                  )}
+                                </div>
+                                <div className="divide-y divide-border/30">
+                                  {cat.metrics.map(m => {
+                                    const entry = catData[m.id];
+                                    if (!entry) return null;
+                                    return (
+                                      <div key={m.id} className="flex items-center justify-between px-3 py-1.5 bg-white/70 dark:bg-white/5 text-xs">
+                                        <span className="text-muted-foreground">{m.label}</span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-primary font-medium">
+                                            {m.type === "select" && m.options
+                                              ? m.options.find(o => o.value === entry.value)?.label.split("—")[0].trim()
+                                              : `${entry.value}${m.unit ? " " + m.unit : ""}`}
+                                          </span>
+                                          <ScoreBar score={entry.score} />
+                                          <span className={`w-4 text-right font-bold ${scoreColor(entry.score)}`}>{entry.score}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {ev.notes && <p className="text-[11px] text-muted-foreground italic border-t border-border/40 pt-3">{ev.notes}</p>}
+                        <div className="flex items-center justify-end pt-1">
+                          <button onClick={() => { if (confirm("Delete this evaluation?")) deleteMut.mutate(ev.id); }}
+                            className="flex items-center gap-1.5 text-[11px] text-red-500 hover:text-red-700" data-testid={`button-delete-eval-${ev.id}`}>
+                            <Trash2 className="w-3 h-3" /> Delete Evaluation
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
