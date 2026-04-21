@@ -782,6 +782,23 @@ export default function ISOManager() {
             </div>
           </div>
 
+          {/*
+            ── SCROLL PATTERN RULES — DO NOT BREAK (see replit.md rule #9) ──────
+            Two patterns exist. Never mix them on the same module.
+
+            PATTERN A (module owns its scroll via ScrollArea):
+              wrapper  → flex-1 min-h-0 overflow-hidden flex flex-col
+              module   → flex-1 min-h-0 flex flex-col  (or overflow-hidden flex flex-col)
+              inside   → <ScrollArea className="flex-1">   ← NEVER h-full
+            Modules:  documentation, context_org, system_profile, roles_raci,
+                      apqp, internal_audit, training
+
+            PATTERN B (wrapper owns the scroll, no ScrollArea in module):
+              wrapper  → flex-1 min-h-0 overflow-y-auto
+              module   → plain layout, no overflow class needed
+            Modules:  nc, process_map, communication, risk, management_review,
+                      measurement
+            ─────────────────────────────────────────────────────────────────── */}
           <div className="flex-1 min-h-0 flex flex-col relative">
             {showWizard && project ? (
               <div className="flex-1 min-h-0 overflow-hidden">

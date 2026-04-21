@@ -68,3 +68,19 @@ These rules exist because regressions are expensive and destroy user confidence.
     -   Brand accent color: `#ea6c19` (orange), referenced as `text-accent` / `bg-accent`
 
 8.  **Before marking any task complete, verify that previously working features still work.** If the task touched shared files (routes.ts, storage.ts, schema.ts, ISOManager.tsx, ProcessMapModule.tsx, Layout.tsx), re-read those files and confirm no unintended changes were made.
+
+9.  **ISOManager module scroll pattern — two patterns exist, never mix them:**
+
+    **Pattern A — module owns its scroll (uses ScrollArea internally):**
+    - ISOManager section wrapper: `className="flex-1 min-h-0 overflow-hidden flex flex-col"`
+    - Module's outer return div: `className="flex-1 min-h-0 flex flex-col"` (or `flex-1 overflow-hidden flex flex-col`)
+    - Inside module: `<ScrollArea className="flex-1">` — NEVER `h-full` on a ScrollArea
+    - Modules using this pattern: ContextOfOrg, SystemProfile, RolesRaci, APQP, internal_audit, training, Documentation
+    - **DO NOT** put `overflow-auto` or `overflow-y-auto` on the module's outer div in Pattern A — it breaks the ScrollArea height calculation.
+
+    **Pattern B — ISOManager wrapper owns the scroll (no ScrollArea in module):**
+    - ISOManager section wrapper: `className="flex-1 min-h-0 overflow-y-auto"` (or `flex-1 overflow-y-auto min-h-0`)
+    - Module renders plain content — no overflow handling on its own outer div
+    - Modules using this pattern: nc, process_map, communication, risk, management_review, measurement
+
+    **Never switch a module from one pattern to the other** without updating both the ISOManager wrapper AND the module's outer div and any internal scroll containers simultaneously.
