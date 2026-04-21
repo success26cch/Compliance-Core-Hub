@@ -38,7 +38,7 @@ export interface ProcessEntry {
   risksAndOpportunities?: string;
   documentedInfo?: string;
   csrReq?: string;
-  site?: "PLANT" | "REMOTE_SITE" | "CORPORATE";
+  site?: string[];  // multi-site: ["PLANT"], ["PLANT","CORPORATE"], ["REMOTE_SITE","CORPORATE"], etc.
   row?: string;
   sequence?: number;
   conditionalLabel?: string;
@@ -69,6 +69,13 @@ const IATF_SITES = [
   { key: "REMOTE_SITE", label: "Remote Site ★", headerClass: "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 border-x border-amber-200 dark:border-amber-800/40" },
   { key: "CORPORATE", label: "Corporate", headerClass: "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300" },
 ];
+
+// Normalizes old single-string site values to the new string[] format
+function normalizeSites(site?: string | string[] | null): string[] {
+  if (!site) return ["PLANT"];
+  if (Array.isArray(site)) return site.length ? site : ["PLANT"];
+  return [site]; // backward compat: old "PLANT" / "REMOTE_SITE" / "CORPORATE" strings
+}
 
 // ─── Process Map Color Schemes ────────────────────────────────────────────────
 interface BandColors { bg: string; border: string; text: string; badgeBg: string; badgeText: string; }
@@ -244,10 +251,14 @@ function guessRow(name: string, standard: string): string {
 
 // ─── Process Box Component ─────────────────────────────────────────────────────
 function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onClick: () => void; standard: string }) {
-  const isRemote = process.site === "REMOTE_SITE";
-  const isCorporate = process.site === "CORPORATE";
+  const sites = normalizeSites(process.site);
+  const isRemote = sites.includes("REMOTE_SITE");
+  const isCorporate = sites.includes("CORPORATE");
+  const isPlantOnly = !isRemote && !isCorporate;
 
-  const borderCls = isRemote
+  const borderCls = isRemote && isCorporate
+    ? "border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950/20"
+    : isRemote
     ? "border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/30"
     : isCorporate
     ? "border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/30"
@@ -259,19 +270,15 @@ function ProcessBox({ process, onClick, standard }: { process: ProcessEntry; onC
       data-testid={`process-box-${process.name.replace(/\s+/g, "-").toLowerCase()}`}
       className={`group relative border-2 rounded-xl p-3 text-left transition-all hover:shadow-md min-h-[90px] w-full hover:border-accent/60 ${borderCls}`}
     >
-      {/* Site badge */}
-      {isRemote && (
-        <div className="flex items-center gap-1 mb-1.5">
-          <span className="text-[10px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded leading-none flex items-center gap-0.5">
-            ★ Remote
-          </span>
-        </div>
-      )}
-      {isCorporate && (
-        <div className="flex items-center gap-1 mb-1.5">
-          <span className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none">
-            ◆ Corporate
-          </span>
+      {/* Site badges — shown for any non-Plant-only process */}
+      {!isPlantOnly && (
+        <div className="flex items-center gap-1 mb-1.5 flex-wrap">
+          {isRemote && (
+            <span className="text-[10px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded leading-none">★ Remote</span>
+          )}
+          {isCorporate && (
+            <span className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none">◆ Corporate</span>
+          )}
         </div>
       )}
       <div className="font-bold text-primary text-sm leading-tight mb-1 group-hover:text-accent transition-colors line-clamp-2">{process.name}</div>
@@ -660,14 +667,14 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
   const defaultRow = isIATF ? "COP" : "core";
   const [showAddProcess, setShowAddProcess] = useState(false);
   const [addForm, setAddForm] = useState({
-    name: "", owner: "", row: defaultRow, site: "PLANT" as "PLANT" | "REMOTE_SITE" | "CORPORATE",
+    name: "", owner: "", row: defaultRow, sites: ["PLANT"] as string[],
     clausesRaw: "", sequence: "", conditionalLabel: "", isConditional: false,
   });
   const [addSaving, setAddSaving] = useState(false);
   const { toast: pmToast } = useToast();
 
   const openAddForRow = (rowKey: string) => {
-    setAddForm(f => ({ ...f, name: "", owner: "", row: rowKey, clausesRaw: "", sequence: "", conditionalLabel: "", isConditional: false }));
+    setAddForm(f => ({ ...f, name: "", owner: "", row: rowKey, sites: ["PLANT"], clausesRaw: "", sequence: "", conditionalLabel: "", isConditional: false }));
     setShowAddProcess(true);
   };
 
@@ -680,7 +687,7 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
         name: addForm.name.trim(),
         owner: addForm.owner.trim(),
         row: addForm.row,
-        site: isIATF ? addForm.site : undefined,
+        site: isIATF ? addForm.sites : undefined,
         clauses,
         sequence: addForm.row === "COP" || addForm.row === "core" ? (parseInt(addForm.sequence) || processes.length + 1) : undefined,
         conditionalLabel: addForm.isConditional && addForm.conditionalLabel.trim() ? addForm.conditionalLabel.trim() : undefined,
@@ -813,9 +820,10 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
       {/* ─── Legend ─── */}
       <div className="mx-4 mt-3 flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg bg-muted/30 border border-border/40 text-[11px]">
         <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Legend:</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-border/40 bg-white dark:bg-card inline-block" /> Plant Process</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-border/40 bg-white dark:bg-card inline-block" /> Plant Only</span>
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-amber-400 bg-amber-50 inline-block" /> <span className="font-bold text-amber-700">★ Remote Site</span></span>
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-blue-400 bg-blue-50 inline-block" /> <span className="font-bold text-blue-700">◆ Corporate</span></span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border-2 border-violet-400 bg-violet-50 inline-block" /> <span className="font-bold text-violet-700">Multi-site</span></span>
         <span className="ml-auto text-muted-foreground">Click any process to view Turtle Diagram</span>
       </div>
 
@@ -1029,17 +1037,30 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
             </div>
             {isIATF && (
               <div>
-                <label className="text-xs font-bold text-muted-foreground block mb-1">Site</label>
-                <Select value={addForm.site} onValueChange={v => setAddForm(f => ({ ...f, site: v as any }))}>
-                  <SelectTrigger className="text-sm" data-testid="select-add-process-site">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PLANT">Plant</SelectItem>
-                    <SelectItem value="REMOTE_SITE">★ Remote Site</SelectItem>
-                    <SelectItem value="CORPORATE">◆ Corporate</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="text-xs font-bold text-muted-foreground block mb-1.5">Site Assignment <span className="text-muted-foreground/60 font-normal">(select all that apply)</span></label>
+                <div className="flex flex-wrap gap-2">
+                  {IATF_SITES.map(s => {
+                    const checked = addForm.sites.includes(s.key);
+                    return (
+                      <label key={s.key} className={`flex items-center gap-1.5 cursor-pointer px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all select-none ${checked ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`} data-testid={`checkbox-add-site-${s.key.toLowerCase()}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setAddForm(f => {
+                              const next = checked
+                                ? f.sites.filter(x => x !== s.key)
+                                : [...f.sites, s.key];
+                              return { ...f, sites: next.length ? next : ["PLANT"] };
+                            });
+                          }}
+                          className="sr-only"
+                        />
+                        {s.label}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             )}
             <div>
@@ -1605,20 +1626,37 @@ function TurtleDiagram({ process, project, onBack, onSave }: {
           )}
         </div>
 
-        {/* IATF Site Assignment */}
+        {/* IATF Site Assignment — multi-select */}
         {isIATF && (
           <div className="bg-muted/30 border border-border/60 rounded-xl p-3">
-            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 block">Site Assignment (IATF)</Label>
-            <div className="flex gap-2">
-              {IATF_SITES.map(s => (
-                <button
-                  key={s.key}
-                  onClick={() => setLocal(prev => ({ ...prev, site: s.key as ProcessEntry["site"] }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${local.site === s.key ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`}
-                >
-                  {s.label}
-                </button>
-              ))}
+            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1 block">Site Assignment (IATF)</Label>
+            <p className="text-[10px] text-muted-foreground mb-2">Select all sites where this process applies</p>
+            <div className="flex flex-wrap gap-2">
+              {IATF_SITES.map(s => {
+                const currentSites = normalizeSites(local.site);
+                const checked = currentSites.includes(s.key);
+                return (
+                  <label
+                    key={s.key}
+                    className={`flex items-center gap-1.5 cursor-pointer px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all select-none ${checked ? "bg-accent text-white border-accent" : "border-border/60 text-muted-foreground hover:border-accent/40"}`}
+                    data-testid={`checkbox-site-${s.key.toLowerCase()}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const current = normalizeSites(local.site);
+                        const next = checked
+                          ? current.filter(x => x !== s.key)
+                          : [...current, s.key];
+                        setLocal(prev => ({ ...prev, site: next.length ? next : ["PLANT"] }));
+                      }}
+                      className="sr-only"
+                    />
+                    {s.label}
+                  </label>
+                );
+              })}
             </div>
           </div>
         )}

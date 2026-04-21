@@ -6967,7 +6967,7 @@ Process Name: ${processName}
 Process Row / Type: ${row ?? "not specified"} (${row === "COP" ? "Customer-Oriented / Core" : row === "SOP" ? "Support-Oriented" : row === "MOP" ? "Management-Oriented" : "general"})
 Process Owner: ${owner ?? "not specified"}
 ISO Clauses: ${clauses.join(", ") || "not specified"}
-${isIATF && site ? `Site: ${site}` : ""}
+${isIATF && site ? `Site: ${Array.isArray(site) ? site.join(" + ") : site}` : ""}
 
 EXISTING DOCUMENTS IN LIBRARY (${hasDocs ? existingDocs.length + " documents" : "none yet"}):
 ${docsContext}
