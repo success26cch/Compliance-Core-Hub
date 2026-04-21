@@ -122,6 +122,13 @@ const MAP_COLOR_SCHEMES: Record<string, MapScheme> = {
     core:       { bg: "#FFF1F2", border: "#F43F5E", text: "#4c0519", badgeBg: "#F43F5E", badgeText: "#fff", seqBg: "#F43F5E", arrowHex: "#F43F5E" },
     support:    { bg: "#F0F9FF", border: "#7DD3FC", text: "#0369A1", badgeBg: "#0369A1", badgeText: "#fff" },
   },
+  "neutral-muted": {
+    label: "Neutral (Muted)",
+    swatches: ["#475569", "#57534E", "#6B7280"],
+    management: { bg: "#F8FAFC", border: "#CBD5E1", text: "#334155", badgeBg: "#475569", badgeText: "#fff" },
+    core:       { bg: "#FAFAF9", border: "#A8A29E", text: "#292524", badgeBg: "#57534E", badgeText: "#fff", seqBg: "#57534E", arrowHex: "#78716C" },
+    support:    { bg: "#F9FAFB", border: "#D1D5DB", text: "#374151", badgeBg: "#6B7280", badgeText: "#fff" },
+  },
 };
 
 const LEGACY_ROW_MAP: Record<string, string> = {
@@ -860,20 +867,28 @@ function ProcessInteractionMap({ project, onSelectProcess }: { project: IsoProje
             <div className="absolute top-full right-0 mt-1 z-50 bg-white dark:bg-card border border-border rounded-xl shadow-2xl p-3 w-56">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Map Color Theme</p>
               {Object.entries(MAP_COLOR_SCHEMES).map(([key, scheme]) => (
-                <button
-                  key={key}
-                  onClick={() => applyScheme(key)}
-                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors text-left ${schemeKey === key ? "bg-muted" : "hover:bg-muted/50"}`}
-                  data-testid={`scheme-option-${key}`}
-                >
-                  <div className="flex gap-1 shrink-0">
-                    {scheme.swatches.map((c, i) => (
-                      <div key={i} className="w-3.5 h-3.5 rounded-full border border-border/30" style={{ backgroundColor: c }} />
-                    ))}
-                  </div>
-                  <span className="text-xs font-medium text-primary flex-1">{scheme.label}</span>
-                  {schemeKey === key && <span className="text-[10px] font-bold" style={{ color: sch.core.seqBg }}>✓</span>}
-                </button>
+                <div key={key}>
+                  {key === "neutral-muted" && (
+                    <div className="my-2 flex items-center gap-2">
+                      <div className="flex-1 border-t border-border/50" />
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Site-chip focus</span>
+                      <div className="flex-1 border-t border-border/50" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => applyScheme(key)}
+                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors text-left ${schemeKey === key ? "bg-muted" : "hover:bg-muted/50"}`}
+                    data-testid={`scheme-option-${key}`}
+                  >
+                    <div className="flex gap-1 shrink-0">
+                      {scheme.swatches.map((c, i) => (
+                        <div key={i} className="w-3.5 h-3.5 rounded-full border border-border/30" style={{ backgroundColor: c }} />
+                      ))}
+                    </div>
+                    <span className="text-xs font-medium text-primary flex-1">{scheme.label}</span>
+                    {schemeKey === key && <span className="text-[10px] font-bold" style={{ color: sch.core.seqBg }}>✓</span>}
+                  </button>
+                </div>
               ))}
             </div>
           )}
