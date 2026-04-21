@@ -15,7 +15,7 @@ import {
   Truck, Plus, Pencil, Trash2, ExternalLink, AlertTriangle, CheckCircle2,
   ShieldCheck, ClipboardList, BarChart3, Calendar, AlertCircle, Info,
   FileCheck, ChevronRight, ChevronDown, Star, Award, X, Phone, Mail,
-  MapPin, FileText, Clock,
+  MapPin, FileText, Clock, ArrowUp, ArrowDown, ChevronsUpDown, UserCheck,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -338,6 +338,54 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
   );
 }
 
+type AslSortField = "name" | "category" | "criticality" | "status" | "cert";
+
+const CRITICALITY_ORDER: Record<string, number> = { critical: 0, major: 1, minor: 2 };
+const STATUS_ORDER: Record<string, number> = { active: 0, probationary: 1, inactive: 2, disqualified: 3 };
+
+function sortSuppliers(list: Supplier[], field: AslSortField, dir: "asc" | "desc"): Supplier[] {
+  const factor = dir === "asc" ? 1 : -1;
+  return [...list].sort((a, b) => {
+    let cmp = 0;
+    if (field === "name") {
+      cmp = a.name.localeCompare(b.name);
+    } else if (field === "category") {
+      cmp = (a.category || "").localeCompare(b.category || "");
+    } else if (field === "criticality") {
+      cmp = (CRITICALITY_ORDER[a.criticalityLevel || "minor"] ?? 2) - (CRITICALITY_ORDER[b.criticalityLevel || "minor"] ?? 2);
+    } else if (field === "status") {
+      cmp = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
+    } else if (field === "cert") {
+      const da = daysUntilExpiry(a.isoCertExpiry) ?? 99999;
+      const db_ = daysUntilExpiry(b.isoCertExpiry) ?? 99999;
+      cmp = da - db_;
+    }
+    return cmp * factor;
+  });
+}
+
+function SortHeader({ label, field, sortBy, sortDir, onSort }: {
+  label: string; field: AslSortField;
+  sortBy: AslSortField; sortDir: "asc" | "desc";
+  onSort: (f: AslSortField) => void;
+}) {
+  const active = sortBy === field;
+  return (
+    <button
+      className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest transition-colors ${active ? "text-accent" : "text-muted-foreground hover:text-foreground"}`}
+      onClick={() => onSort(field)}
+      data-testid={`sort-${field}`}
+    >
+      {label}
+      {active
+        ? sortDir === "asc"
+          ? <ArrowUp className="w-3 h-3" />
+          : <ArrowDown className="w-3 h-3" />
+        : <ChevronsUpDown className="w-3 h-3 opacity-40" />}
+    </button>
+  );
+}
+
 function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -346,6 +394,17 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sortBy, setSortBy] = useState<AslSortField>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (field: AslSortField) => {
+    if (sortBy === field) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortDir("asc");
+    }
+  };
 
   const qk = ["/api/suppliers", isoProjectId];
   const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
@@ -366,13 +425,16 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); setExpandedId(null); toast({ title: "Supplier removed" }); },
   });
 
-  const filtered = suppliers.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
-      (s.category || "").toLowerCase().includes(search.toLowerCase()) ||
-      (s.contactName || "").toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || s.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const filtered = sortSuppliers(
+    suppliers.filter(s => {
+      const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
+        (s.category || "").toLowerCase().includes(search.toLowerCase()) ||
+        (s.contactName || "").toLowerCase().includes(search.toLowerCase());
+      const matchStatus = filterStatus === "all" || s.status === filterStatus;
+      return matchSearch && matchStatus;
+    }),
+    sortBy, sortDir
+  );
 
   const expiringCount = suppliers.filter(s => {
     const days = daysUntilExpiry(s.isoCertExpiry);
@@ -464,11 +526,11 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
         <div className="border border-border/60 rounded-xl overflow-hidden bg-white dark:bg-card">
           {/* Table header */}
           <div className="grid grid-cols-[2fr_1fr_90px_100px_130px_32px] gap-0 border-b border-border/60 bg-muted/40 px-4 py-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Supplier</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Criticality</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">ISO Cert</span>
+            <SortHeader label="Supplier" field="name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+            <SortHeader label="Category" field="category" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+            <SortHeader label="Criticality" field="criticality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+            <SortHeader label="Status" field="status" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+            <SortHeader label="ISO Cert" field="cert" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
             <span />
           </div>
 
@@ -548,12 +610,38 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
 
 // ─── Tab 2: Selection Criteria ───────────────────────────────────────────────
 
+// Parse "Score 10 = X; Score 1 = Y" patterns from description text
+function parseScoreAnchors(desc: string | null | undefined): { high: string; low: string } | null {
+  if (!desc) return null;
+  const highMatch = desc.match(/[Ss]core\s*10\s*[=:]\s*([^;.]+)/);
+  const lowMatch = desc.match(/[Ss]core\s*1\s*[=:]\s*([^;.]+)/);
+  if (!highMatch && !lowMatch) return null;
+  return {
+    high: highMatch ? highMatch[1].trim() : "Meets all requirements",
+    low: lowMatch ? lowMatch[1].trim() : "Does not meet requirements",
+  };
+}
+
+// Strip the "Score X = Y" patterns from the description body for display
+function cleanDescription(desc: string | null | undefined): string {
+  if (!desc) return "";
+  return desc.replace(/\s*[Ss]core\s*\d+\s*[=:][^;.]+[;.]?/g, "").trim();
+}
+
+// Score color helper for criteria candidate scoring
+function criteriaScoreColor(s: number): string {
+  return s >= 8 ? "text-emerald-600" : s >= 6 ? "text-amber-600" : s >= 4 ? "text-orange-500" : "text-red-600";
+}
+
 function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", description: "", category: "quality", weight: 10 });
+  const [showCandidate, setShowCandidate] = useState(false);
+  const [candidateName, setCandidateName] = useState("");
+  const [candidateScores, setCandidateScores] = useState<Record<number, number>>({});
 
   const qk = ["/api/supplier-criteria", isoProjectId];
   const { data: criteria = [], isLoading } = useQuery<SupplierCriteria[]>({
@@ -580,38 +668,32 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
     return acc;
   }, {} as Record<string, SupplierCriteria[]>);
 
-  // Pre-qualification criteria — all assessable without historical performance data
+  // Candidate scoring calculations
+  const candidateOverall = (() => {
+    if (!criteria.length || !totalWeight) return 0;
+    let weighted = 0;
+    for (const c of criteria) {
+      const score = candidateScores[c.id] ?? 0;
+      weighted += (score / 10) * (c.weight / totalWeight) * 100;
+    }
+    return Math.round(weighted);
+  })();
+  const candidateReco = candidateOverall >= 75 ? "approved"
+    : candidateOverall >= 55 ? "conditional"
+    : "rejected";
+  const CANDIDATE_RECO: Record<string, { label: string; style: string; note: string }> = {
+    approved:    { label: "✓ Approved for ASL", style: "bg-emerald-100 text-emerald-800 border-emerald-200", note: "Score ≥ 75 — Proceed to ASL approval" },
+    conditional: { label: "⚠ Conditional — Clarification Needed", style: "bg-amber-100 text-amber-700 border-amber-200", note: "Score 55–74 — Supplier must address gaps before approval" },
+    rejected:    { label: "✗ Not Qualified", style: "bg-red-100 text-red-700 border-red-200", note: "Score < 55 — Does not meet pre-qualification threshold" },
+  };
+
   const DEFAULT_CRITERIA = [
-    {
-      name: "ISO / IATF Certification Held",
-      description: "Supplier holds a valid, accredited ISO 9001:2015 or IATF 16949:2016 certificate. Verify against IAF-accredited registry before approving. Score 10 = certificate in good standing; 1 = no certification.",
-      category: "quality", weight: 20,
-    },
-    {
-      name: "Completed Supplier Quality Questionnaire (SQQ)",
-      description: "Supplier has returned a fully completed SQQ covering their QMS, process controls, equipment calibration, and handling of non-conforming material. Score 10 = all sections complete; 1 = no response.",
-      category: "quality", weight: 20,
-    },
-    {
-      name: "First Article / Sample Qualification Results",
-      description: "Submitted samples or first article inspection (FAI) meet CCI Chemical's product specification. Score 10 = all characteristics pass; 1 = critical failures on first submission.",
-      category: "technical", weight: 20,
-    },
-    {
-      name: "Financial Stability & Business Continuity",
-      description: "Supplier provides a D&B credit score, bank reference, or equivalent evidence of financial health. Also scores presence of a documented business continuity or disaster recovery plan.",
-      category: "financial", weight: 15,
-    },
-    {
-      name: "Regulatory & Compliance Documentation",
-      description: "Supplier provides current SDS sheets, REACH / RoHS declarations, and any applicable FMVSS 116 supporting data prior to first shipment. Score 10 = all documents provided; 1 = none.",
-      category: "compliance", weight: 15,
-    },
-    {
-      name: "Technical Capability & Capacity Assessment",
-      description: "Supplier can demonstrate, via facility questionnaire or virtual audit, that they have the equipment, lab capability, and production capacity to meet CCI Chemical volume and purity requirements.",
-      category: "technical", weight: 10,
-    },
+    { name: "ISO / IATF Certification Held", description: "Supplier holds a valid, accredited ISO 9001:2015 or IATF 16949:2016 certificate. Verify against IAF-accredited CB registry before approval. Score 10 = active cert in good standing; Score 1 = no certification held.", category: "quality", weight: 20 },
+    { name: "Completed Supplier Quality Questionnaire (SQQ)", description: "Supplier has returned a fully completed SQQ covering QMS, process controls, calibration, and non-conforming material handling. Score 10 = all sections satisfactorily completed; Score 1 = no response received.", category: "quality", weight: 20 },
+    { name: "First Article / Sample Qualification Results", description: "Submitted samples or first article inspection (FAI) results meet CCI Chemical product specification. Score 10 = all characteristics pass on first submission; Score 1 = critical failures with no path to correction.", category: "technical", weight: 20 },
+    { name: "Financial Stability & Business Continuity", description: "Supplier provides D&B credit report, bank reference, or equivalent plus a documented business continuity plan. Score 10 = strong financials and complete BCP; Score 1 = no financial documentation provided.", category: "financial", weight: 15 },
+    { name: "Regulatory & Compliance Documentation", description: "Supplier provides current SDS sheets, REACH/RoHS declarations, and FMVSS 116 supporting data before first shipment. Score 10 = all required docs received and current; Score 1 = none provided.", category: "compliance", weight: 15 },
+    { name: "Technical Capability & Capacity Assessment", description: "Supplier demonstrates lab capability, process controls, and capacity via questionnaire or remote audit. Score 10 = fully capable and confirmed; Score 1 = cannot meet specification or volume requirements.", category: "technical", weight: 10 },
   ];
 
   return (
@@ -620,20 +702,24 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
       <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300">
         <Info className="w-4 h-4 shrink-0 mt-0.5" />
         <div>
-          <p className="font-bold mb-0.5">These are pre-qualification criteria — for selecting NEW suppliers</p>
+          <p className="font-bold mb-0.5">Pre-qualification criteria — for evaluating NEW supplier candidates</p>
           <p className="leading-relaxed text-blue-600/90 dark:text-blue-400/80">
-            When you're qualifying a supplier for the first time, you don't have delivery history or incoming quality data yet.
-            These criteria focus on what you <em>can</em> verify upfront: certifications, documentation, sample results, and financial references.
-            Once a supplier is active and orders are flowing, use the <strong>Evaluations tab</strong> to score ongoing performance (quality PPM, on-time delivery, responsiveness, etc.).
+            These criteria define what to verify before approving a supplier. Each criterion is scored <strong>1–10</strong> (anchors shown on each card below).
+            The weighted total determines qualification: <strong>≥75 = Approved</strong>, 55–74 = Conditional, &lt;55 = Not Qualified.
+            Use <strong>"Score a Candidate"</strong> to run a live evaluation. For ongoing active-supplier performance, use the <strong>Evaluations tab</strong>.
           </p>
         </div>
       </div>
 
-      {/* Weight summary */}
-      <div className="flex items-center justify-between bg-muted/30 border border-border/50 rounded-xl p-3">
-        <div>
-          <p className="text-xs font-bold text-primary">Total Weight: <span className={totalWeight === 100 ? "text-emerald-600" : "text-amber-600"}>{totalWeight}%</span></p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Weights should total 100% for accurate scoring</p>
+      {/* Toolbar row */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-xs font-bold text-primary">
+              Total Weight: <span className={totalWeight === 100 ? "text-emerald-600" : "text-amber-600"}>{totalWeight}%</span>
+            </p>
+            <p className="text-[11px] text-muted-foreground">Must total 100% for accurate scoring</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {criteria.length === 0 && (
@@ -643,11 +729,137 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
               <Star className="w-3 h-3" /> Load Defaults
             </Button>
           )}
+          {criteria.length > 0 && (
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-accent/40 text-accent hover:bg-accent/5"
+              onClick={() => { setShowCandidate(c => !c); setCandidateScores({}); }}
+              data-testid="button-score-candidate">
+              <UserCheck className="w-3.5 h-3.5" /> {showCandidate ? "Close" : "Score a Candidate"}
+            </Button>
+          )}
           <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-8 text-xs" onClick={() => setShowForm(true)} data-testid="button-add-criteria">
             <Plus className="w-3.5 h-3.5" /> Add Criteria
           </Button>
         </div>
       </div>
+
+      {/* ── CANDIDATE SCORING PANEL ── */}
+      {showCandidate && criteria.length > 0 && (
+        <div className="border-2 border-accent/30 rounded-xl bg-accent/5 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-accent/20">
+            <div>
+              <p className="text-sm font-bold text-primary">Pre-Qualification Candidate Evaluation</p>
+              <p className="text-[11px] text-muted-foreground">Score this candidate against each criterion (1 = Poor, 10 = Excellent)</p>
+            </div>
+            <button onClick={() => setShowCandidate(false)} data-testid="button-close-candidate">
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Candidate name */}
+            <div className="max-w-sm">
+              <Label className="text-xs font-semibold">Candidate Supplier Name *</Label>
+              <Input className="mt-1 h-8 text-sm" placeholder="e.g. Acme Chemical Corp." value={candidateName}
+                onChange={e => setCandidateName(e.target.value)} data-testid="input-candidate-name" />
+            </div>
+
+            {/* Per-criterion scoring */}
+            <div className="space-y-2.5">
+              {criteria.map(c => {
+                const score = candidateScores[c.id] ?? 0;
+                const anchors = parseScoreAnchors(c.description);
+                const pct = (score / 10) * 100;
+                const contribution = totalWeight > 0
+                  ? Math.round((score / 10) * (c.weight / totalWeight) * 100 * 10) / 10
+                  : 0;
+                return (
+                  <div key={c.id} className="border border-border/60 rounded-xl p-3 bg-white dark:bg-card" data-testid={`candidate-score-${c.id}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold text-primary">{c.name}</span>
+                          <Badge className="text-[9px] bg-primary/10 text-primary border-primary/20 border">{c.weight}% weight</Badge>
+                        </div>
+                        {/* Scoring anchors */}
+                        {anchors ? (
+                          <div className="mt-1.5 space-y-1">
+                            <div className="flex items-center gap-2 text-[10px]">
+                              <span className="w-14 shrink-0 font-semibold text-emerald-600">Score 10:</span>
+                              <span className="text-muted-foreground">{anchors.high}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px]">
+                              <span className="w-14 shrink-0 font-semibold text-red-500">Score 1:</span>
+                              <span className="text-muted-foreground">{anchors.low}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-4 mt-1.5 text-[10px] text-muted-foreground">
+                            <span className="text-emerald-600 font-semibold">10 = Fully meets requirement</span>
+                            <span className="text-muted-foreground/50">·</span>
+                            <span className="text-red-500 font-semibold">1 = Does not meet requirement</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Score input */}
+                      <div className="flex flex-col items-center gap-1 shrink-0 min-w-[120px]">
+                        <div className="flex items-center gap-2 w-full">
+                          <input
+                            type="range" min={0} max={10} step={1}
+                            value={score}
+                            onChange={e => setCandidateScores(s => ({ ...s, [c.id]: parseInt(e.target.value) }))}
+                            className="flex-1 accent-orange-500"
+                            data-testid={`slider-candidate-${c.id}`}
+                          />
+                          <span className={`w-6 text-center text-sm font-black ${score === 0 ? "text-muted-foreground/40" : criteriaScoreColor(score)}`}>
+                            {score === 0 ? "–" : score}
+                          </span>
+                        </div>
+                        {score > 0 && (
+                          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${score >= 8 ? "bg-emerald-400" : score >= 6 ? "bg-amber-400" : score >= 4 ? "bg-orange-400" : "bg-red-400"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        )}
+                        {score > 0 && <p className="text-[9px] text-muted-foreground">+{contribution} pts</p>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Overall score summary */}
+            <div className="flex items-center gap-5 bg-white dark:bg-card border border-border/60 rounded-xl p-4 flex-wrap">
+              <div className="text-center min-w-[64px]">
+                <p className={`text-4xl font-black ${candidateOverall >= 75 ? "text-emerald-600" : candidateOverall >= 55 ? "text-amber-600" : candidateOverall > 0 ? "text-red-600" : "text-muted-foreground/30"}`}>
+                  {candidateOverall > 0 ? candidateOverall : "—"}
+                </p>
+                <p className="text-[10px] text-muted-foreground">/ 100</p>
+              </div>
+              <div className="h-10 w-px bg-border" />
+              <div>
+                {candidateOverall > 0 && (
+                  <>
+                    <Badge className={`text-xs border px-2.5 py-1 ${CANDIDATE_RECO[candidateReco].style}`}>
+                      {CANDIDATE_RECO[candidateReco].label}
+                    </Badge>
+                    <p className="text-[10px] text-muted-foreground mt-1">{CANDIDATE_RECO[candidateReco].note}</p>
+                  </>
+                )}
+                {candidateOverall === 0 && <p className="text-xs text-muted-foreground">Score each criterion above to see the result</p>}
+              </div>
+              <div className="ml-auto">
+                {candidateName && candidateOverall > 0 && (
+                  <p className="text-xs text-muted-foreground">Candidate: <span className="font-semibold text-primary">{candidateName}</span></p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add form */}
       {showForm && (
@@ -671,7 +883,9 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
             </div>
             <div className="col-span-2">
               <Label className="text-xs font-semibold">Description</Label>
-              <Textarea className="mt-1 text-sm resize-none" rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="What does this criteria measure?" />
+              <Textarea className="mt-1 text-sm resize-none" rows={3} value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder={`What does this criterion measure?\n\nTip: include scoring anchors like "Score 10 = fully certified; Score 1 = no documentation"`} />
             </div>
           </div>
           <div className="flex justify-end gap-2">
@@ -693,51 +907,86 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
         <div className="space-y-3">
           {CRITERIA_CATEGORIES.filter(cat => byCategory[cat]?.length > 0).map(cat => (
             <div key={cat}>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1.5">{cat}</p>
-              <div className="space-y-1.5">
-                {byCategory[cat].map(c => (
-                  <div key={c.id} className="border border-border/60 rounded-lg p-3 bg-white dark:bg-card flex items-start gap-3" data-testid={`criteria-${c.id}`}>
-                    {editId === c.id ? (
-                      <div className="flex-1 space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input className="h-7 text-xs" defaultValue={c.name} id={`edit-name-${c.id}`} />
-                          <Input type="number" className="h-7 text-xs" defaultValue={c.weight} id={`edit-weight-${c.id}`} min={1} max={100} />
-                        </div>
-                        <Textarea className="text-xs resize-none" rows={2} defaultValue={c.description || ""} id={`edit-desc-${c.id}`} />
-                        <div className="flex gap-2">
-                          <Button size="sm" className="h-7 text-xs bg-accent hover:bg-accent/90 text-white" onClick={() => {
-                            const name = (document.getElementById(`edit-name-${c.id}`) as HTMLInputElement)?.value;
-                            const weight = parseInt((document.getElementById(`edit-weight-${c.id}`) as HTMLInputElement)?.value);
-                            const description = (document.getElementById(`edit-desc-${c.id}`) as HTMLTextAreaElement)?.value;
-                            updateMut.mutate({ id: c.id, d: { name, weight, description } });
-                          }}>Save</Button>
-                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditId(null)}>Cancel</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-primary">{c.name}</span>
-                            <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">{c.weight}%</Badge>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1.5 ml-1">{cat}</p>
+              <div className="space-y-2">
+                {byCategory[cat].map(c => {
+                  const anchors = parseScoreAnchors(c.description);
+                  const body = cleanDescription(c.description);
+                  return (
+                    <div key={c.id} className="border border-border/60 rounded-xl p-3.5 bg-white dark:bg-card" data-testid={`criteria-${c.id}`}>
+                      {editId === c.id ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input className="h-7 text-xs" defaultValue={c.name} id={`edit-name-${c.id}`} />
+                            <Input type="number" className="h-7 text-xs" defaultValue={c.weight} id={`edit-weight-${c.id}`} min={1} max={100} />
                           </div>
-                          {c.description && <p className="text-[11px] text-muted-foreground mt-0.5">{c.description}</p>}
-                          <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden w-full max-w-xs">
-                            <div className="h-full bg-accent rounded-full" style={{ width: `${Math.min(c.weight, 100)}%` }} />
+                          <Textarea className="text-xs resize-none" rows={3} defaultValue={c.description || ""} id={`edit-desc-${c.id}`} />
+                          <div className="flex gap-2">
+                            <Button size="sm" className="h-7 text-xs bg-accent hover:bg-accent/90 text-white" onClick={() => {
+                              const name = (document.getElementById(`edit-name-${c.id}`) as HTMLInputElement)?.value;
+                              const weight = parseInt((document.getElementById(`edit-weight-${c.id}`) as HTMLInputElement)?.value);
+                              const description = (document.getElementById(`edit-desc-${c.id}`) as HTMLTextAreaElement)?.value;
+                              updateMut.mutate({ id: c.id, d: { name, weight, description } });
+                            }}>Save</Button>
+                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditId(null)}>Cancel</Button>
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          <button onClick={() => setEditId(c.id)} className="p-1.5 rounded hover:bg-muted">
-                            <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                          <button onClick={() => { if (confirm("Remove this criteria?")) deleteMut.mutate(c.id); }} className="p-1.5 rounded hover:bg-red-50">
-                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                          </button>
+                      ) : (
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            {/* Header row */}
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-sm font-bold text-primary">{c.name}</span>
+                              <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20 border">{c.weight}%</Badge>
+                            </div>
+
+                            {/* Weight bar */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-1.5 bg-muted rounded-full overflow-hidden w-32">
+                                <div className="h-full bg-accent rounded-full" style={{ width: `${Math.min(c.weight, 100)}%` }} />
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">{c.weight}% of total score</span>
+                            </div>
+
+                            {/* Body description (anchors stripped out) */}
+                            {body && <p className="text-[11px] text-muted-foreground mb-2 leading-relaxed">{body}</p>}
+
+                            {/* Scoring anchors — shown prominently */}
+                            {anchors && (
+                              <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-border/50 text-[10px] mt-1">
+                                <div className="flex-1 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-2 border-r border-border/50">
+                                  <p className="font-bold text-emerald-700 dark:text-emerald-400 mb-0.5">Score 10 — Excellent</p>
+                                  <p className="text-emerald-600/80 dark:text-emerald-500/80 leading-snug">{anchors.high}</p>
+                                </div>
+                                <div className="flex-1 bg-red-50 dark:bg-red-950/20 px-3 py-2">
+                                  <p className="font-bold text-red-600 dark:text-red-400 mb-0.5">Score 1 — Does Not Meet</p>
+                                  <p className="text-red-500/80 dark:text-red-500/80 leading-snug">{anchors.low}</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Scale indicator */}
+                            <div className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground/50">
+                              <span>1</span>
+                              <div className="flex-1 h-px bg-gradient-to-r from-red-300 via-amber-300 to-emerald-300 rounded-full opacity-60" />
+                              <span>10</span>
+                              <span className="ml-1">Scored 1–10</span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-1 shrink-0 mt-0.5">
+                            <button onClick={() => setEditId(c.id)} className="p-1.5 rounded hover:bg-muted" data-testid={`button-edit-criteria-${c.id}`}>
+                              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                            <button onClick={() => { if (confirm("Remove this criteria?")) deleteMut.mutate(c.id); }} className="p-1.5 rounded hover:bg-red-50" data-testid={`button-delete-criteria-${c.id}`}>
+                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            </button>
+                          </div>
                         </div>
-                      </>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
