@@ -2058,6 +2058,9 @@ export const calibrationRecords = pgTable("calibration_records", {
   preCalibrationChecks: jsonb("pre_calibration_checks"),   // { visualInspectionPass, zeroCheckPass, equipmentClean, notes }
   referenceStandards: jsonb("reference_standards"),        // [{ id, description, identification, certNumber, certDueDate, traceability }]
   measurementData: jsonb("measurement_data"),              // [{ id, nominalValue, unit, trial1, trial2, trial3, withinTolerance, notes }]
+  // ── Calibration Type & Lab ───────────────────────────────────────────────
+  calType: text("cal_type").default("external"),           // "internal" | "external"
+  labId: integer("lab_id"),                                // FK → calibration_labs.id (for external cal)
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const insertCalibrationRecordSchema = createInsertSchema(calibrationRecords).omit({ id: true, createdAt: true });
@@ -2085,6 +2088,30 @@ export const calibrationOotAssessments = pgTable("calibration_oot_assessments", 
 export const insertCalibrationOotAssessmentSchema = createInsertSchema(calibrationOotAssessments).omit({ id: true, createdAt: true });
 export type InsertCalibrationOotAssessment = z.infer<typeof insertCalibrationOotAssessmentSchema>;
 export type CalibrationOotAssessment = typeof calibrationOotAssessments.$inferSelect;
+
+// ─── Calibration Labs ────────────────────────────────────────────────────────
+// Registry of external calibration laboratories. ISO 17025 cert stored once per lab,
+// linked to all calibration records performed by that lab.
+
+export const calibrationLabs = pgTable("calibration_labs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  name: text("name").notNull(),                            // Lab name e.g. "Trescal, Inc."
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  address: text("address"),
+  accreditationBody: text("accreditation_body"),           // A2LA | NVLAP | UKAS | DAkkS | other
+  accreditationNumber: text("accreditation_number"),       // e.g. "A2LA #2567.01"
+  scope: text("scope"),                                    // e.g. "Dimensional, Temperature, Pressure"
+  iso17025CertUrl: text("iso17025_cert_url"),              // stored file path
+  certExpiryDate: text("cert_expiry_date"),                // ISO date string
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertCalibrationLabSchema = createInsertSchema(calibrationLabs).omit({ id: true, createdAt: true });
+export type InsertCalibrationLab = z.infer<typeof insertCalibrationLabSchema>;
+export type CalibrationLab = typeof calibrationLabs.$inferSelect;
 
 // ─── Audit Logs ─────────────────────────────────────────────────────────────
 

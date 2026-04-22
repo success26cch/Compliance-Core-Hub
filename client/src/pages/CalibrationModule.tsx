@@ -17,13 +17,13 @@ import {
   Gauge, Plus, Pencil, Trash2, AlertTriangle,
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
   Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User, X,
-  CheckCircle2, Thermometer, FlaskConical,
+  CheckCircle2, Thermometer, FlaskConical, Building2,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type CalTab = "register" | "oot" | "msa";
+type CalTab = "register" | "oot" | "msa" | "labs";
 
 interface WorkInstruction {
   id: number;
@@ -64,6 +64,23 @@ interface CalibrationRecord {
   preCalibrationChecks?: unknown | null;
   referenceStandards?: unknown | null;
   measurementData?: unknown | null;
+  // Internal / External
+  calType?: string | null;
+  labId?: number | null;
+  createdAt?: string | null;
+}
+
+interface CalibrationLab {
+  id: number; userId: string; isoProjectId?: number | null;
+  name: string;
+  accreditationBody?: string | null;
+  accreditationNumber?: string | null;
+  iso17025CertUrl?: string | null;
+  certExpiryDate?: string | null;
+  scope?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   createdAt?: string | null;
 }
 
@@ -387,7 +404,7 @@ function calcRowStats(row: MeasurementPoint) {
   return { avg, err };
 }
 
-function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, isAerospaceProject, isMedicalProject, initial }: {
+function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, isAerospaceProject, isMedicalProject, initial, labs = [], onCreateLab, onUploadLabCert }: {
   equipment: CalibrationEquipment;
   isoProjectId?: number | null;
   onSave: (rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>, certFile?: File) => void;
@@ -396,6 +413,9 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
   isAerospaceProject?: boolean;
   isMedicalProject?: boolean;
   initial?: Partial<CalibrationRecord>;
+  labs?: CalibrationLab[];
+  onCreateLab?: (data: Partial<CalibrationLab>) => Promise<CalibrationLab>;
+  onUploadLabCert?: (labId: number, file: File) => Promise<void>;
 }) {
   const [form, setForm] = useState<Partial<CalibrationRecord & { showOot: boolean }>>({
     ...EMPTY_REC,
@@ -407,6 +427,28 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
   const [certFile, setCertFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Internal / External calibration state
+  const [calType, setCalType] = useState<"internal" | "external">(
+    (initial?.calType as "internal" | "external" | undefined | null) ?? "external"
+  );
+  const [selectedLabId, setSelectedLabId] = useState<number | null>(initial?.labId ?? null);
+  const [showAddLab, setShowAddLab] = useState(false);
+  const [addLabForm, setAddLabForm] = useState({
+    name: "", accreditationBody: "A2LA", accreditationNumber: "",
+    certExpiryDate: "", scope: "", contactName: "", contactEmail: "",
+  });
+  const [labCertFile, setLabCertFile] = useState<File | null>(null);
+  const [labCertUploading, setLabCertUploading] = useState(false);
+  const labCertInputRef = useRef<HTMLInputElement>(null);
+
+  const selectedLab = labs.find(l => l.id === selectedLabId) ?? null;
+  const labCertExpired = selectedLab?.certExpiryDate
+    ? new Date(selectedLab.certExpiryDate) < new Date()
+    : false;
+  const labCertDaysDue = selectedLab?.certExpiryDate
+    ? Math.ceil((new Date(selectedLab.certExpiryDate).getTime() - Date.now()) / 86400000)
+    : null;
 
   // Variable-gage measurement data
   const [preCalChecks, setPreCalChecks] = useState<PreCalChecks>(
@@ -448,9 +490,11 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
     }
     const payload: Partial<CalibrationRecord> = {
       ...form,
-      preCalibrationChecks: preCalChecks,
-      referenceStandards: refStds.length > 0 ? refStds : null,
-      measurementData: measData.length > 0 ? measData : null,
+      calType,
+      labId: calType === "external" ? selectedLabId : null,
+      preCalibrationChecks: calType === "internal" ? preCalChecks : null,
+      referenceStandards: calType === "internal" && refStds.length > 0 ? refStds : null,
+      measurementData: calType === "internal" && measData.length > 0 ? measData : null,
     };
     onSave(payload, showOot && isIatfProject ? oot : undefined, certFile ?? undefined);
   }
@@ -473,8 +517,41 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         {equipment.measurementRange && <span className="text-muted-foreground ml-2">· Range: {equipment.measurementRange}</span>}
       </div>
 
-      {/* ── Pre-Calibration Checks ── */}
-      <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/10">
+      {/* ── Calibration Type Toggle ── */}
+      <div className="border border-border rounded-lg p-3 bg-muted/10">
+        <p className="text-xs font-bold uppercase tracking-wide mb-2">Calibration Type</p>
+        <div className="flex gap-2">
+          <button type="button"
+            onClick={() => setCalType("external")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+              calType === "external"
+                ? "bg-accent text-white border-accent"
+                : "border-border hover:border-accent/60 hover:bg-accent/5 text-foreground"
+            }`}
+            data-testid="toggle-external">
+            <Building2 className="w-4 h-4" /> External Lab
+          </button>
+          <button type="button"
+            onClick={() => setCalType("internal")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+              calType === "internal"
+                ? "bg-accent text-white border-accent"
+                : "border-border hover:border-accent/60 hover:bg-accent/5 text-foreground"
+            }`}
+            data-testid="toggle-internal">
+            <FlaskConical className="w-4 h-4" /> Internal / In-House
+          </button>
+        </div>
+        {calType === "external" && (
+          <p className="text-[11px] text-muted-foreground mt-1.5">Performed by an accredited external calibration laboratory — link to your lab registry below.</p>
+        )}
+        {calType === "internal" && (
+          <p className="text-[11px] text-muted-foreground mt-1.5">Performed by in-house personnel using internal equipment and reference standards.</p>
+        )}
+      </div>
+
+      {/* ── Pre-Calibration Checks (Internal only) ── */}
+      {calType === "internal" && <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/10">
         <p className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
           <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Pre-Calibration Checks
         </p>
@@ -498,7 +575,7 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
             onChange={e => setPreCalChecks(p => ({ ...p, notes: e.target.value }))}
             placeholder="Any conditions to note before calibration…" />
         </div>
-      </div>
+      </div>}
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -530,8 +607,190 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         <p className="text-[11px] text-muted-foreground mt-0.5">Comma-separated list of calibration standards used.</p>
       </div>
 
-      {/* ── Environmental Conditions ── */}
-      <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/10">
+      {/* ── External Lab Section (external only) ── */}
+      {calType === "external" && (
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="bg-muted/40 px-3 py-2 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-accent" /> External Calibration Laboratory
+              </p>
+              <p className="text-[11px] text-muted-foreground">Select the accredited lab from your registry or add a new one</p>
+            </div>
+          </div>
+          <div className="p-3 space-y-3">
+            {/* Lab selector */}
+            <div>
+              <Label className="text-sm font-semibold">Lab</Label>
+              <Select
+                value={showAddLab ? "__add__" : (selectedLabId ? String(selectedLabId) : "__none__")}
+                onValueChange={v => {
+                  if (v === "__add__") { setShowAddLab(true); setSelectedLabId(null); }
+                  else if (v === "__none__") { setShowAddLab(false); setSelectedLabId(null); }
+                  else { setShowAddLab(false); setSelectedLabId(Number(v)); }
+                }}>
+                <SelectTrigger className="mt-1 h-9" data-testid="select-lab">
+                  <SelectValue placeholder="Select a lab…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— No lab selected —</SelectItem>
+                  {labs.map(l => (
+                    <SelectItem key={l.id} value={String(l.id)}>{l.name}{l.accreditationNumber ? ` (${l.accreditationNumber})` : ""}</SelectItem>
+                  ))}
+                  {onCreateLab && (
+                    <SelectItem value="__add__" className="text-accent font-medium">+ Add new lab to registry…</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Selected lab details */}
+            {selectedLab && !showAddLab && (
+              <div className={`rounded-lg border p-3 text-sm space-y-1 ${
+                labCertExpired ? "bg-red-50 border-red-200" :
+                labCertDaysDue !== null && labCertDaysDue <= 30 ? "bg-amber-50 border-amber-200" :
+                "bg-emerald-50 border-emerald-200"
+              }`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold">{selectedLab.name}</p>
+                    {selectedLab.accreditationBody && (
+                      <p className="text-xs text-muted-foreground">{selectedLab.accreditationBody}{selectedLab.accreditationNumber ? ` · ${selectedLab.accreditationNumber}` : ""}</p>
+                    )}
+                  </div>
+                  <div className="shrink-0">
+                    {selectedLab.iso17025CertUrl ? (
+                      <Badge className={`text-[10px] ${labCertExpired ? "bg-red-100 text-red-700 border-red-200" : labCertDaysDue !== null && labCertDaysDue <= 30 ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-emerald-100 text-emerald-700 border-emerald-200"}`}>
+                        {labCertExpired ? "ISO 17025 Cert EXPIRED" : labCertDaysDue !== null && labCertDaysDue <= 30 ? `ISO 17025 Cert Expiring ${labCertDaysDue}d` : "ISO 17025 Cert ✓"}
+                      </Badge>
+                    ) : (
+                      <Badge className="text-[10px] bg-slate-100 text-slate-500 border-slate-300">No 17025 cert on file</Badge>
+                    )}
+                  </div>
+                </div>
+                {selectedLab.certExpiryDate && (
+                  <p className="text-xs text-muted-foreground">Cert expires: {selectedLab.certExpiryDate}</p>
+                )}
+                {selectedLab.scope && (
+                  <p className="text-xs text-muted-foreground">Scope: {selectedLab.scope}</p>
+                )}
+                {selectedLab.contactName && (
+                  <p className="text-xs text-muted-foreground">Contact: {selectedLab.contactName}{selectedLab.contactEmail ? ` · ${selectedLab.contactEmail}` : ""}</p>
+                )}
+                {/* 17025 cert upload for this lab */}
+                {onUploadLabCert && (
+                  <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-2">
+                    <input type="file" ref={labCertInputRef} accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                      onChange={async e => {
+                        const f = e.target.files?.[0];
+                        if (!f || !selectedLab) return;
+                        setLabCertUploading(true);
+                        try {
+                          await onUploadLabCert(selectedLab.id, f);
+                          toast({ title: "ISO 17025 certificate uploaded" });
+                        } catch {
+                          toast({ title: "Upload failed", variant: "destructive" });
+                        } finally { setLabCertUploading(false); }
+                      }} />
+                    <Button type="button" size="sm" variant="outline" className="h-7 text-xs gap-1"
+                      disabled={labCertUploading}
+                      onClick={() => labCertInputRef.current?.click()}>
+                      <FileUp className="w-3 h-3" />
+                      {selectedLab.iso17025CertUrl ? "Replace 17025 Cert" : "Upload 17025 Cert"}
+                    </Button>
+                    {selectedLab.iso17025CertUrl && (
+                      <a href={`/api/calibration/labs/${selectedLab.id}/iso17025`} target="_blank" rel="noreferrer"
+                        className="flex items-center gap-1 text-xs text-accent underline">
+                        <Download className="w-3 h-3" /> View cert
+                      </a>
+                    )}
+                    {labCertUploading && <span className="text-xs text-muted-foreground">Uploading…</span>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Add new lab inline form */}
+            {showAddLab && onCreateLab && (
+              <div className="border border-accent/30 rounded-lg p-3 bg-accent/5 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-accent">New Lab</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <Label className="text-xs font-semibold">Lab Name *</Label>
+                    <Input className="mt-1 h-8" value={addLabForm.name}
+                      onChange={e => setAddLabForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. Trescal, Inc." />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold">Accreditation Body</Label>
+                    <Select value={addLabForm.accreditationBody}
+                      onValueChange={v => setAddLabForm(f => ({ ...f, accreditationBody: v }))}>
+                      <SelectTrigger className="mt-1 h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["A2LA", "NVLAP", "ILAC", "UKAS", "DAkkS", "COFRAC", "NABL", "Other"].map(o => (
+                          <SelectItem key={o} value={o}>{o}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold">Accreditation Number</Label>
+                    <Input className="mt-1 h-8" value={addLabForm.accreditationNumber}
+                      onChange={e => setAddLabForm(f => ({ ...f, accreditationNumber: e.target.value }))}
+                      placeholder="e.g. 1384.01" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold">17025 Cert Expiry</Label>
+                    <Input type="date" className="mt-1 h-8" value={addLabForm.certExpiryDate}
+                      onChange={e => setAddLabForm(f => ({ ...f, certExpiryDate: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold">Contact Name</Label>
+                    <Input className="mt-1 h-8" value={addLabForm.contactName}
+                      onChange={e => setAddLabForm(f => ({ ...f, contactName: e.target.value }))}
+                      placeholder="e.g. Jane Smith" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs font-semibold">Scope of Accreditation</Label>
+                    <Input className="mt-1 h-8" value={addLabForm.scope}
+                      onChange={e => setAddLabForm(f => ({ ...f, scope: e.target.value }))}
+                      placeholder="e.g. Dimensional, Torque, Pressure, Electrical" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs font-semibold">Contact Email</Label>
+                    <Input className="mt-1 h-8 col-span-2" value={addLabForm.contactEmail}
+                      onChange={e => setAddLabForm(f => ({ ...f, contactEmail: e.target.value }))}
+                      placeholder="lab@example.com" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm"
+                    className="bg-accent hover:bg-accent/90 text-white h-8 text-xs"
+                    disabled={!addLabForm.name.trim()}
+                    onClick={async () => {
+                      if (!addLabForm.name.trim()) return;
+                      try {
+                        const created = await onCreateLab({ ...addLabForm, isoProjectId });
+                        setSelectedLabId(created.id);
+                        setShowAddLab(false);
+                        toast({ title: "Lab added to registry", description: created.name });
+                      } catch {
+                        toast({ title: "Failed to add lab", variant: "destructive" });
+                      }
+                    }}>
+                    Save Lab to Registry
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" className="h-8 text-xs"
+                    onClick={() => setShowAddLab(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Environmental Conditions (Internal only) ── */}
+      {calType === "internal" && <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/10">
         <p className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
           <Thermometer className="w-3.5 h-3.5 text-blue-500" /> Environmental Conditions
           <span className="text-[10px] font-normal text-muted-foreground normal-case tracking-normal ml-1">Temperature must be 68°F / 20°C per ANSI standard for dimensional measurement</span>
@@ -572,10 +831,10 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
               placeholder="e.g. vibration-free surface" />
           </div>
         </div>
-      </div>
+      </div>}
 
-      {/* ── Reference Standards Used ── */}
-      <div className="border border-border rounded-lg overflow-hidden">
+      {/* ── Reference Standards Used (Internal only) ── */}
+      {calType === "internal" && <div className="border border-border rounded-lg overflow-hidden">
         <div className="bg-muted/40 px-3 py-2 flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
@@ -631,10 +890,10 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
             </button>
           </div>
         ))}
-      </div>
+      </div>}
 
-      {/* ── Measurement Data Table ── */}
-      <div className="border border-border rounded-lg overflow-hidden">
+      {/* ── Measurement Data Table (Internal only) ── */}
+      {calType === "internal" && <div className="border border-border rounded-lg overflow-hidden">
         <div className="bg-muted/40 px-3 py-2 flex items-start justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
@@ -736,7 +995,7 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
             )}
           </div>
         )}
-      </div>
+      </div>}
 
       <div>
         <Label className="text-sm font-semibold">Result *</Label>
@@ -961,6 +1220,138 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
   );
 }
 
+// ─── Lab Form ─────────────────────────────────────────────────────────────────
+
+const EMPTY_LAB: Partial<CalibrationLab> = {
+  name: "", accreditationBody: "A2LA", accreditationNumber: "",
+  certExpiryDate: "", scope: "", contactName: "", contactEmail: "", contactPhone: "",
+};
+
+function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
+  initial?: Partial<CalibrationLab>;
+  isoProjectId?: number | null;
+  onSave: (data: Partial<CalibrationLab>) => Promise<void>;
+  onCancel: () => void;
+  onUploadCert?: (labId: number, file: File) => Promise<void>;
+}) {
+  const [form, setForm] = useState<Partial<CalibrationLab>>({ ...EMPTY_LAB, ...initial });
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const certFileRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const set = <K extends keyof CalibrationLab>(k: K) => (v: CalibrationLab[K]) =>
+    setForm(f => ({ ...f, [k]: v }));
+
+  async function handleSubmit() {
+    if (!form.name?.trim()) {
+      toast({ title: "Lab name is required", variant: "destructive" }); return;
+    }
+    await onSave({ ...form, isoProjectId });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <Label className="text-sm font-semibold">Lab Name *</Label>
+          <Input className="mt-1 h-8" value={form.name ?? ""}
+            onChange={e => set("name")(e.target.value)} placeholder="e.g. Trescal, Inc." data-testid="input-lab-name" />
+        </div>
+        <div>
+          <Label className="text-sm font-semibold">Accreditation Body</Label>
+          <Select value={form.accreditationBody ?? "A2LA"}
+            onValueChange={v => set("accreditationBody")(v)}>
+            <SelectTrigger className="mt-1 h-8"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {["A2LA", "NVLAP", "ILAC", "UKAS", "DAkkS", "COFRAC", "NABL", "Other"].map(o => (
+                <SelectItem key={o} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-sm font-semibold">Accreditation Number</Label>
+          <Input className="mt-1 h-8" value={form.accreditationNumber ?? ""}
+            onChange={e => set("accreditationNumber")(e.target.value)} placeholder="e.g. 1384.01" />
+        </div>
+        <div>
+          <Label className="text-sm font-semibold">ISO 17025 Cert Expiry</Label>
+          <Input type="date" className="mt-1 h-8" value={form.certExpiryDate ?? ""}
+            onChange={e => set("certExpiryDate")(e.target.value)} data-testid="input-lab-cert-expiry" />
+        </div>
+        <div>
+          <Label className="text-sm font-semibold">Contact Name</Label>
+          <Input className="mt-1 h-8" value={form.contactName ?? ""}
+            onChange={e => set("contactName")(e.target.value)} placeholder="e.g. Jane Smith" />
+        </div>
+        <div>
+          <Label className="text-sm font-semibold">Contact Email</Label>
+          <Input className="mt-1 h-8" value={form.contactEmail ?? ""}
+            onChange={e => set("contactEmail")(e.target.value)} placeholder="lab@example.com" />
+        </div>
+        <div>
+          <Label className="text-sm font-semibold">Contact Phone</Label>
+          <Input className="mt-1 h-8" value={form.contactPhone ?? ""}
+            onChange={e => set("contactPhone")(e.target.value)} placeholder="e.g. +1 (800) 555-0000" />
+        </div>
+        <div className="col-span-2">
+          <Label className="text-sm font-semibold">Scope of Accreditation</Label>
+          <Textarea className="mt-1 resize-none" rows={2} value={form.scope ?? ""}
+            onChange={e => set("scope")(e.target.value)}
+            placeholder="e.g. Dimensional, Torque, Pressure, Temperature, Electrical…" />
+        </div>
+        {/* ISO 17025 cert upload (only when editing an existing lab) */}
+        {initial?.id && onUploadCert && (
+          <div className="col-span-2">
+            <Label className="text-sm font-semibold">ISO 17025 Accreditation Certificate</Label>
+            <div className="mt-1 flex items-center gap-2">
+              <input type="file" ref={certFileRef} accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                onChange={e => setCertFile(e.target.files?.[0] ?? null)} />
+              <Button type="button" size="sm" variant="outline" className="h-8 text-xs gap-1"
+                onClick={() => certFileRef.current?.click()}>
+                <FileUp className="w-3 h-3" />
+                {form.iso17025CertUrl ? "Replace Certificate" : "Upload Certificate"}
+              </Button>
+              {certFile && <span className="text-xs text-muted-foreground">{certFile.name}</span>}
+              {form.iso17025CertUrl && !certFile && (
+                <a href={`/api/calibration/labs/${initial.id}/iso17025`} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1 text-xs text-accent underline">
+                  <Download className="w-3 h-3" /> View current cert
+                </a>
+              )}
+              {certFile && initial?.id && (
+                <Button type="button" size="sm" variant="outline" className="h-8 text-xs gap-1 bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                  disabled={uploading}
+                  onClick={async () => {
+                    if (!certFile || !initial?.id) return;
+                    setUploading(true);
+                    try {
+                      await onUploadCert(initial.id, certFile);
+                      setCertFile(null);
+                      toast({ title: "ISO 17025 certificate uploaded" });
+                    } catch {
+                      toast({ title: "Upload failed", variant: "destructive" });
+                    } finally { setUploading(false); }
+                  }}>
+                  {uploading ? "Uploading…" : "Upload Now"}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button onClick={handleSubmit}
+          className="bg-accent hover:bg-accent/90 text-white" data-testid="button-save-lab">
+          {initial?.id ? "Update Lab" : "Add Lab to Registry"}
+        </Button>
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Module ──────────────────────────────────────────────────────────────
 
 interface CalibrationModuleProps {
@@ -983,6 +1374,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [searchGage, setSearchGage] = useState<string>("");
   const [viewRecord, setViewRecord] = useState<CalibrationRecord | null>(null);
   const [viewRecordEquip, setViewRecordEquip] = useState<CalibrationEquipment | null>(null);
+  const [labRegistryDialog, setLabRegistryDialog] = useState(false);
+  const [editLabTarget, setEditLabTarget] = useState<CalibrationLab | null>(null);
   const iatf = isIatf(project);
   const aerospace = isAerospace(project);
   const medical = isMedical(project);
@@ -1013,6 +1406,12 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const { data: allDocs = [] } = useQuery<WorkInstruction[]>({
     queryKey: ["/api/iso-documents", projectId],
     queryFn: () => fetch(wiQueryUrl, { credentials: "include" }).then(r => r.json()),
+  });
+
+  const labsUrl = projectId ? `/api/calibration/labs?isoProjectId=${projectId}` : "/api/calibration/labs";
+  const { data: labs = [] } = useQuery<CalibrationLab[]>({
+    queryKey: ["/api/calibration/labs", projectId],
+    queryFn: () => fetch(labsUrl, { credentials: "include" }).then(r => r.json()),
   });
   const workInstructions = allDocs.filter(
     d => d.docType === "work_instruction" && d.status !== "obsolete",
@@ -1098,6 +1497,41 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
       qc.invalidateQueries({ queryKey: ["/api/calibration/oot-assessments", projectId] });
     },
   });
+
+  const createLab = useMutation({
+    mutationFn: async (d: Partial<CalibrationLab>) => {
+      const res = await apiRequest("POST", "/api/calibration/labs", d);
+      return res.json() as Promise<CalibrationLab>;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/calibration/labs", projectId] }),
+  });
+
+  const updateLab = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CalibrationLab> }) => {
+      const res = await apiRequest("PATCH", `/api/calibration/labs/${id}`, data);
+      return res.json() as Promise<CalibrationLab>;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/calibration/labs", projectId] }),
+  });
+
+  const deleteLab = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/calibration/labs/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/calibration/labs", projectId] }),
+  });
+
+  async function handleCreateLab(data: Partial<CalibrationLab>): Promise<CalibrationLab> {
+    return createLab.mutateAsync(data);
+  }
+
+  async function handleUploadLabCert(labId: number, file: File) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/calibration/labs/${labId}/iso17025`, {
+      method: "POST", credentials: "include", body: fd,
+    });
+    if (!res.ok) throw new Error("Lab cert upload failed");
+    qc.invalidateQueries({ queryKey: ["/api/calibration/labs", projectId] });
+  }
 
   async function uploadCertFile(recordId: number, file: File) {
     const fd = new FormData();
@@ -1243,6 +1677,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
           {[
             { key: "register", label: "Master Calibration Register", icon: ClipboardList },
             { key: "oot", label: `OOT Assessments${ootAssessments.length > 0 ? ` (${ootAssessments.length})` : ""}`, icon: AlertTriangle },
+            { key: "labs", label: `Labs Registry${labs.length > 0 ? ` (${labs.length})` : ""}`, icon: Building2 },
             ...(iatf ? [{ key: "msa", label: "MSA (Gauge R&R)", icon: BarChart3 }] : []),
           ].map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setTab(key as CalTab)}
@@ -1611,6 +2046,90 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             </div>
           )}
 
+          {/* ── Labs Registry Tab ── */}
+          {tab === "labs" && (
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold">External Calibration Lab Registry</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    ISO 17025-accredited laboratories used for external calibration. Track accreditation status and link ISO 17025 certificates.
+                  </p>
+                </div>
+                <Button size="sm"
+                  className="bg-accent hover:bg-accent/90 text-white shrink-0"
+                  onClick={() => setLabRegistryDialog(true)}
+                  data-testid="button-add-lab">
+                  <Plus className="w-4 h-4 mr-1" /> Add Lab
+                </Button>
+              </div>
+
+              {labs.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
+                  <Building2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-medium">No labs registered yet</p>
+                  <p className="text-xs mt-1">Add external calibration labs to track their ISO 17025 accreditation status.</p>
+                </div>
+              )}
+
+              {labs.map(lab => {
+                const certExpired = lab.certExpiryDate ? new Date(lab.certExpiryDate) < new Date() : false;
+                const daysDue = lab.certExpiryDate ? Math.ceil((new Date(lab.certExpiryDate).getTime() - Date.now()) / 86400000) : null;
+                return (
+                  <Card key={lab.id} className="border border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm">{lab.name}</span>
+                            {lab.iso17025CertUrl ? (
+                              <Badge className={`text-[10px] ${certExpired ? "bg-red-100 text-red-700 border-red-200" : daysDue !== null && daysDue <= 30 ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-emerald-100 text-emerald-700 border-emerald-200"}`}>
+                                {certExpired ? "ISO 17025 EXPIRED" : daysDue !== null && daysDue <= 30 ? `ISO 17025 Expiring ${daysDue}d` : "ISO 17025 Accredited ✓"}
+                              </Badge>
+                            ) : (
+                              <Badge className="text-[10px] bg-slate-100 text-slate-500 border-slate-300">No 17025 cert on file</Badge>
+                            )}
+                          </div>
+                          {lab.accreditationBody && (
+                            <p className="text-xs text-muted-foreground">{lab.accreditationBody}{lab.accreditationNumber ? ` · ${lab.accreditationNumber}` : ""}</p>
+                          )}
+                          {lab.certExpiryDate && (
+                            <p className="text-xs text-muted-foreground">Cert expires: {lab.certExpiryDate}</p>
+                          )}
+                          {lab.scope && (
+                            <p className="text-xs text-muted-foreground">Scope: {lab.scope}</p>
+                          )}
+                          {lab.contactName && (
+                            <p className="text-xs text-muted-foreground">Contact: {lab.contactName}{lab.contactEmail ? ` · ${lab.contactEmail}` : ""}</p>
+                          )}
+                        </div>
+                        <div className="flex items-start gap-2 shrink-0">
+                          {lab.iso17025CertUrl && (
+                            <a href={`/api/calibration/labs/${lab.id}/iso17025`} target="_blank" rel="noreferrer">
+                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                                <Download className="w-3 h-3" /> 17025 Cert
+                              </Button>
+                            </a>
+                          )}
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1"
+                            onClick={() => { setEditLabTarget(lab); setLabRegistryDialog(true); }}
+                            data-testid={`button-edit-lab-${lab.id}`}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => deleteLab.mutate(lab.id)}
+                            data-testid={`button-delete-lab-${lab.id}`}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
         </div>
       </ScrollArea>
 
@@ -1661,6 +2180,45 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   </span>
                   {r.outOfTolerance && <Badge className="bg-red-100 text-red-700 border-red-300">OOT {oots.length > 0 ? "— Assessed ✓" : "— Pending Assessment"}</Badge>}
                 </div>
+
+                {/* Cal Type + Lab */}
+                {(() => {
+                  const calTypeLab = labs.find(l => l.id === r.labId);
+                  return (
+                    <div className="flex flex-wrap gap-2 items-start">
+                      <Badge className={`text-xs ${r.calType === "internal" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"}`}>
+                        {r.calType === "internal" ? "Internal Calibration" : "External Calibration"}
+                      </Badge>
+                      {calTypeLab && (
+                        <div className={`flex-1 rounded-lg border p-2.5 text-xs space-y-0.5 ${
+                          calTypeLab.certExpiryDate && new Date(calTypeLab.certExpiryDate) < new Date() ? "bg-red-50 border-red-200" :
+                          "bg-purple-50 border-purple-100"
+                        }`}>
+                          <div className="flex items-center gap-1.5 font-semibold">
+                            <Building2 className="w-3.5 h-3.5 text-purple-600" /> {calTypeLab.name}
+                            {calTypeLab.iso17025CertUrl ? (
+                              <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200 ml-1">ISO 17025 ✓</Badge>
+                            ) : (
+                              <Badge className="text-[10px] bg-slate-100 text-slate-500 ml-1">No 17025 cert</Badge>
+                            )}
+                          </div>
+                          {calTypeLab.accreditationBody && (
+                            <p className="text-muted-foreground">{calTypeLab.accreditationBody}{calTypeLab.accreditationNumber ? ` · ${calTypeLab.accreditationNumber}` : ""}</p>
+                          )}
+                          {calTypeLab.certExpiryDate && (
+                            <p className="text-muted-foreground">Cert expires: {calTypeLab.certExpiryDate}</p>
+                          )}
+                          {calTypeLab.iso17025CertUrl && (
+                            <a href={`/api/calibration/labs/${calTypeLab.id}/iso17025`} target="_blank" rel="noreferrer"
+                              className="flex items-center gap-1 text-accent underline mt-1">
+                              <Download className="w-3 h-3" /> View ISO 17025 Certificate
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Core fields grid */}
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -1932,6 +2490,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               isIatfProject={iatf}
               isAerospaceProject={aerospace}
               isMedicalProject={medical}
+              labs={labs}
+              onCreateLab={handleCreateLab}
+              onUploadLabCert={handleUploadLabCert}
             />
           )}
           {!logForEquip && (
@@ -1950,6 +2511,32 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         </DialogContent>
       </Dialog>
 
+      {/* ── Lab Registry Dialog ── */}
+      <Dialog open={labRegistryDialog} onOpenChange={v => { setLabRegistryDialog(v); if (!v) setEditLabTarget(null); }}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editLabTarget ? "Edit Lab" : "Add Lab to Registry"}</DialogTitle>
+          </DialogHeader>
+          <LabForm
+            initial={editLabTarget ?? undefined}
+            isoProjectId={project?.id}
+            onSave={async (data) => {
+              if (editLabTarget) {
+                await updateLab.mutateAsync({ id: editLabTarget.id, data });
+                toast({ title: "Lab updated" });
+              } else {
+                await handleCreateLab(data);
+                toast({ title: "Lab added to registry" });
+              }
+              setLabRegistryDialog(false);
+              setEditLabTarget(null);
+            }}
+            onCancel={() => { setLabRegistryDialog(false); setEditLabTarget(null); }}
+            onUploadCert={handleUploadLabCert}
+          />
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!editRecord} onOpenChange={v => { if (!v) { setEditRecord(null); setEditRecordEquip(null); } }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1965,6 +2552,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               isAerospaceProject={aerospace}
               isMedicalProject={medical}
               initial={editRecord}
+              labs={labs}
+              onCreateLab={handleCreateLab}
+              onUploadLabCert={handleUploadLabCert}
             />
           )}
         </DialogContent>

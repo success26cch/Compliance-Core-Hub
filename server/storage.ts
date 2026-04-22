@@ -25,10 +25,11 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type SupplierCandidateAssessment, type InsertSupplierCandidateAssessment,
   type SupplierEvaluation, type InsertSupplierEvaluation,
   type SupplierAudit, type InsertSupplierAudit,
-  calibrationEquipment, calibrationRecords, calibrationOotAssessments,
+  calibrationEquipment, calibrationRecords, calibrationOotAssessments, calibrationLabs,
   type CalibrationEquipment, type InsertCalibrationEquipment,
   type CalibrationRecord, type InsertCalibrationRecord,
   type CalibrationOotAssessment, type InsertCalibrationOotAssessment,
+  type CalibrationLab, type InsertCalibrationLab,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -392,6 +393,12 @@ export interface IStorage {
   getCalibrationOotAssessments(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationOotAssessment[]>;
   createCalibrationOotAssessment(data: InsertCalibrationOotAssessment): Promise<CalibrationOotAssessment>;
   updateCalibrationOotAssessment(id: number, userId: string, data: Partial<InsertCalibrationOotAssessment>, isSuperadmin?: boolean): Promise<CalibrationOotAssessment | undefined>;
+
+  // ── Calibration Labs ───────────────────────────────────────────────────────
+  getCalibrationLabs(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationLab[]>;
+  createCalibrationLab(data: InsertCalibrationLab): Promise<CalibrationLab>;
+  updateCalibrationLab(id: number, userId: string, data: Partial<InsertCalibrationLab>, isSuperadmin?: boolean): Promise<CalibrationLab | undefined>;
+  deleteCalibrationLab(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2179,6 +2186,36 @@ export class DatabaseStorage implements IStorage {
       : and(eq(calibrationOotAssessments.id, id), eq(calibrationOotAssessments.userId, userId));
     const [r] = await db.update(calibrationOotAssessments).set(data).where(where).returning();
     return r;
+  }
+
+  // ── Calibration Labs ────────────────────────────────────────────────────────
+
+  async getCalibrationLabs(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<CalibrationLab[]> {
+    const conditions = [];
+    if (!isSuperadmin) conditions.push(eq(calibrationLabs.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(calibrationLabs.isoProjectId, isoProjectId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(calibrationLabs).where(cond).orderBy(calibrationLabs.name);
+  }
+
+  async createCalibrationLab(data: InsertCalibrationLab): Promise<CalibrationLab> {
+    const [r] = await db.insert(calibrationLabs).values(data).returning();
+    return r;
+  }
+
+  async updateCalibrationLab(id: number, userId: string, data: Partial<InsertCalibrationLab>, isSuperadmin = false): Promise<CalibrationLab | undefined> {
+    const where = isSuperadmin
+      ? eq(calibrationLabs.id, id)
+      : and(eq(calibrationLabs.id, id), eq(calibrationLabs.userId, userId));
+    const [r] = await db.update(calibrationLabs).set(data).where(where).returning();
+    return r;
+  }
+
+  async deleteCalibrationLab(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin
+      ? eq(calibrationLabs.id, id)
+      : and(eq(calibrationLabs.id, id), eq(calibrationLabs.userId, userId));
+    await db.delete(calibrationLabs).where(where);
   }
 }
 

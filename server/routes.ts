@@ -9690,5 +9690,84 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.json({ sent, checked: rows.rows.length });
   });
 
+  // ── Calibration Labs ─────────────────────────────────────────────────────────
+
+  app.get("/api/calibration/labs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isoProjectId = req.query.isoProjectId ? Number(req.query.isoProjectId) : undefined;
+    const labs = await storage.getCalibrationLabs(req.session.userId, req.user?.claims?.isSuperadmin, isoProjectId);
+    res.json(labs);
+  });
+
+  app.post("/api/calibration/labs", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const lab = await storage.createCalibrationLab({ ...req.body, userId: req.session.userId });
+    res.status(201).json(lab);
+  });
+
+  app.patch("/api/calibration/labs/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const id = Number(req.params.id);
+    const updated = await storage.updateCalibrationLab(id, req.session.userId, req.body, req.user?.claims?.isSuperadmin);
+    if (!updated) return res.status(404).json({ message: "Lab not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/calibration/labs/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const id = Number(req.params.id);
+    await storage.deleteCalibrationLab(id, req.session.userId, req.user?.claims?.isSuperadmin);
+    res.json({ success: true });
+  });
+
+  // ISO 17025 cert upload/download for a lab
+  const labCertStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = path.join(process.cwd(), "uploads", "lab-certs");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `lab-cert-${Date.now()}${ext}`);
+    },
+  });
+  const labCertUpload = multer({
+    storage: labCertStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const allowed = new Set([".pdf", ".jpg", ".jpeg", ".png"]);
+      if (allowed.has(ext)) cb(null, true);
+      else cb(new Error("Only PDF, JPEG, and PNG files are accepted"));
+    },
+  });
+
+  app.get("/api/calibration/labs/:id/iso17025", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const id = Number(req.params.id);
+    const labs = await storage.getCalibrationLabs(req.session.userId, req.user?.claims?.isSuperadmin);
+    const lab = labs.find(l => l.id === id);
+    if (!lab || !lab.iso17025CertUrl) return res.status(404).json({ message: "No certificate on file" });
+    const filePath = path.resolve(process.cwd(), lab.iso17025CertUrl.replace(/^\//, ""));
+    const safeBase = path.resolve(process.cwd(), "uploads", "lab-certs");
+    if (!filePath.startsWith(safeBase)) return res.status(403).json({ message: "Forbidden" });
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: "File not found" });
+    res.sendFile(filePath);
+  });
+
+  app.post("/api/calibration/labs/:id/iso17025", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const id = Number(req.params.id);
+    labCertUpload.single("file")(req, res, async (err) => {
+      if (err) return res.status(400).json({ message: err.message });
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+      const fileUrl = `/uploads/lab-certs/${req.file.filename}`;
+      const updated = await storage.updateCalibrationLab(id, req.session!.userId!, { iso17025CertUrl: fileUrl }, req.user?.claims?.isSuperadmin);
+      if (!updated) return res.status(404).json({ message: "Lab not found" });
+      res.json({ iso17025CertUrl: fileUrl });
+    });
+  });
+
   return httpServer;
 }
