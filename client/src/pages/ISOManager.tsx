@@ -22,6 +22,7 @@ import {
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
+  Gauge, Wrench,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -613,9 +614,34 @@ export default function ISOManager() {
               </button>
             )}
 
-            {/* Core Modules */}
+            {/* Setup */}
             {sidebarOpen && (
               <div className="pt-1 pb-1">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">Setup</span>
+                  <div className="h-px flex-1 bg-border/60" />
+                </div>
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {(["system_profile"] as SectionKey[]).map((section) => {
+                const META: Record<string, { icon: any; label: string }> = {
+                  system_profile: { icon: Building2, label: "My System Profile" },
+                };
+                const { icon, label } = META[section];
+                const locked = !canAccessSection(section, isoRole, isSuperadmin);
+                return (
+                  <ModuleNavButton key={section} active={activeSection === section}
+                    onClick={() => handleSectionChange(section)} icon={icon} label={label}
+                    testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
+                );
+              })}
+            </div>
+
+            {/* Core Modules */}
+            {sidebarOpen && (
+              <div className="pt-3 pb-1">
                 <div className="flex items-center gap-2 px-1">
                   <div className="h-px flex-1 bg-border/60" />
                   <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">Core</span>
@@ -623,16 +649,21 @@ export default function ISOManager() {
                 </div>
               </div>
             )}
+            {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["context_org","system_profile","process_map","nc","documentation","roles_raci","apqp"] as SectionKey[]).map((section) => {
+              {(["context_org","process_map","nc","documentation","roles_raci","communication","risk","management_review","internal_audit","training","measurement"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
-                  context_org:    { icon: Compass,       label: "Context of the Org" },
-                  system_profile: { icon: Building2,     label: "My System Profile" },
-                  process_map:    { icon: MapPin,        label: "Process Maps" },
-                  nc:             { icon: Shield,        label: "NC & CAPA" },
-                  documentation:  { icon: FileText,      label: "Documentation" },
-                  roles_raci:     { icon: Users,         label: "Roles & RACI" },
-                  apqp:           { icon: Layers,        label: "APQP / Programs" },
+                  context_org:        { icon: Compass,       label: "Context of the Org" },
+                  process_map:        { icon: MapPin,        label: "Process Maps" },
+                  nc:                 { icon: Shield,        label: "NC & CAPA" },
+                  documentation:      { icon: FileText,      label: "Documentation" },
+                  roles_raci:         { icon: Users,         label: "Roles & RACI" },
+                  communication:      { icon: Mail,          label: "Communication" },
+                  risk:               { icon: AlertTriangle, label: "Risk Assessment" },
+                  management_review:  { icon: BarChart2,     label: "Management Review" },
+                  internal_audit:     { icon: ClipboardCheck,label: "Internal Audits" },
+                  training:           { icon: GraduationCap, label: "Training" },
+                  measurement:        { icon: Activity,      label: "Measurement" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -656,15 +687,10 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["communication","risk","management_review","internal_audit","training","measurement","supplier_management"] as SectionKey[]).map((section) => {
+              {(["supplier_management","apqp"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
-                  communication:       { icon: Mail,           label: "Communication" },
-                  risk:                { icon: AlertTriangle,  label: "Risk Assessment" },
-                  management_review:   { icon: BarChart2,      label: "Management Review" },
-                  internal_audit:      { icon: ClipboardCheck, label: "Internal Audits" },
-                  training:            { icon: GraduationCap,  label: "Training" },
-                  measurement:         { icon: Activity,       label: "Measurement" },
-                  supplier_management: { icon: Truck,          label: "Supplier Mgmt" },
+                  supplier_management: { icon: Truck,   label: "Supplier Mgmt" },
+                  apqp:                { icon: Layers,  label: "APQP / Programs" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -674,6 +700,20 @@ export default function ISOManager() {
                     testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
                 );
               })}
+              {/* Coming soon placeholders */}
+              {[
+                { icon: Gauge, label: "Calibration", testId: "nav-calibration" },
+                { icon: Wrench, label: "Maintenance", testId: "nav-maintenance" },
+              ].map(({ icon: Icon, label, testId }) => (
+                <button key={testId} disabled title={!sidebarOpen ? label : undefined}
+                  data-testid={testId}
+                  className={`w-full flex items-center rounded-lg transition-all duration-150 text-sm font-medium opacity-40 cursor-not-allowed text-muted-foreground
+                    ${!sidebarOpen ? "justify-center h-10 px-0" : "gap-3 px-3 py-2.5"}`}>
+                  <Icon className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && <span className="truncate flex-1">{label}</span>}
+                  {sidebarOpen && <span className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">Soon</span>}
+                </button>
+              ))}
             </div>
 
             {/* Recent Sessions (only when expanded) */}
