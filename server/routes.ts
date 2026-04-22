@@ -9405,6 +9405,21 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
         certificateFileUrl: d.certificateFileUrl ?? null,
         nextDueDate: d.nextDueDate ?? null,
         notes: d.notes ?? null,
+        calType: d.calType ?? "external",
+        labId: d.labId ?? null,
+        preCalibrationChecks: d.preCalibrationChecks ?? null,
+        environmentConditions: d.environmentConditions ?? null,
+        referenceStandards: Array.isArray(d.referenceStandards) && d.referenceStandards.length > 0
+          ? d.referenceStandards : null,
+        measurementData: Array.isArray(d.measurementData) && d.measurementData.length > 0
+          ? d.measurementData : null,
+        measurementUncertainty: d.measurementUncertainty ?? null,
+        asFoundReading: d.asFoundReading ?? null,
+        asLeftReading: d.asLeftReading ?? null,
+        labAccredited: d.labAccredited ?? null,
+        acceptanceCriteria: d.acceptanceCriteria ?? null,
+        equipmentLabelConfirmed: d.equipmentLabelConfirmed ?? false,
+        softwareVerified: d.softwareVerified ?? false,
       }).returning();
 
       if (oot && d.ootAssessment) {
@@ -9470,6 +9485,21 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       certificateFileUrl: d.certificateFileUrl ?? null,
       nextDueDate: d.nextDueDate ?? null,
       notes: d.notes ?? null,
+      calType: d.calType ?? "external",
+      labId: d.labId ?? null,
+      preCalibrationChecks: d.preCalibrationChecks ?? null,
+      environmentConditions: d.environmentConditions ?? null,
+      referenceStandards: Array.isArray(d.referenceStandards) && d.referenceStandards.length > 0
+        ? d.referenceStandards : null,
+      measurementData: Array.isArray(d.measurementData) && d.measurementData.length > 0
+        ? d.measurementData : null,
+      measurementUncertainty: d.measurementUncertainty ?? null,
+      asFoundReading: d.asFoundReading ?? null,
+      asLeftReading: d.asLeftReading ?? null,
+      labAccredited: d.labAccredited ?? null,
+      acceptanceCriteria: d.acceptanceCriteria ?? null,
+      equipmentLabelConfirmed: d.equipmentLabelConfirmed ?? false,
+      softwareVerified: d.softwareVerified ?? false,
     }, isSuperadmin);
     if (!row) return res.status(404).json({ message: "Not found" });
     res.json(row);
