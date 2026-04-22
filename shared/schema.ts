@@ -1905,6 +1905,23 @@ export const insertSupplierCriteriaSchema = createInsertSchema(supplierCriteria)
 export type InsertSupplierCriteria = z.infer<typeof insertSupplierCriteriaSchema>;
 export type SupplierCriteria = typeof supplierCriteria.$inferSelect;
 
+export const supplierCandidateAssessments = pgTable("supplier_candidate_assessments", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  candidateName: text("candidate_name").notNull(),
+  assessmentDate: text("assessment_date").notNull(),
+  evaluatorName: text("evaluator_name"),
+  overallScore: integer("overall_score"),
+  recommendation: text("recommendation"),
+  notes: text("notes"),
+  scores: jsonb("scores"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertSupplierCandidateAssessmentSchema = createInsertSchema(supplierCandidateAssessments).omit({ id: true, createdAt: true });
+export type InsertSupplierCandidateAssessment = z.infer<typeof insertSupplierCandidateAssessmentSchema>;
+export type SupplierCandidateAssessment = typeof supplierCandidateAssessments.$inferSelect;
+
 export const supplierEvaluations = pgTable("supplier_evaluations", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),

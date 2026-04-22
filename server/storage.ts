@@ -19,9 +19,10 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type IsoManagementReview, type InsertIsoManagementReview,
   type IsoReviewActionItem, type InsertIsoReviewActionItem,
   type IsoCommunication, type InsertIsoCommunication,
-  suppliers, supplierCriteria, supplierEvaluations, supplierAudits,
+  suppliers, supplierCriteria, supplierCandidateAssessments, supplierEvaluations, supplierAudits,
   type Supplier, type InsertSupplier,
   type SupplierCriteria, type InsertSupplierCriteria,
+  type SupplierCandidateAssessment, type InsertSupplierCandidateAssessment,
   type SupplierEvaluation, type InsertSupplierEvaluation,
   type SupplierAudit, type InsertSupplierAudit,
 } from "@shared/schema";
@@ -359,6 +360,9 @@ export interface IStorage {
   createSupplierCriteria(data: InsertSupplierCriteria): Promise<SupplierCriteria>;
   updateSupplierCriteria(id: number, data: Partial<InsertSupplierCriteria>): Promise<SupplierCriteria | undefined>;
   deleteSupplierCriteria(id: number): Promise<void>;
+  getSupplierCandidateAssessments(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<SupplierCandidateAssessment[]>;
+  createSupplierCandidateAssessment(data: InsertSupplierCandidateAssessment): Promise<SupplierCandidateAssessment>;
+  deleteSupplierCandidateAssessment(id: number): Promise<void>;
   getSupplierEvaluations(userId: string, isoProjectId?: number, supplierId?: number, isSuperadmin?: boolean): Promise<SupplierEvaluation[]>;
   createSupplierEvaluation(data: InsertSupplierEvaluation): Promise<SupplierEvaluation>;
   updateSupplierEvaluation(id: number, data: Partial<InsertSupplierEvaluation>): Promise<SupplierEvaluation | undefined>;
@@ -2016,6 +2020,21 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteSupplierCriteria(id: number): Promise<void> {
     await db.delete(supplierCriteria).where(eq(supplierCriteria.id, id));
+  }
+
+  async getSupplierCandidateAssessments(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<SupplierCandidateAssessment[]> {
+    const conditions: any[] = [];
+    if (!isSuperadmin) conditions.push(eq(supplierCandidateAssessments.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(supplierCandidateAssessments.isoProjectId, isoProjectId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(supplierCandidateAssessments).where(cond).orderBy(desc(supplierCandidateAssessments.assessmentDate), desc(supplierCandidateAssessments.id));
+  }
+  async createSupplierCandidateAssessment(data: InsertSupplierCandidateAssessment): Promise<SupplierCandidateAssessment> {
+    const [r] = await db.insert(supplierCandidateAssessments).values(data).returning();
+    return r;
+  }
+  async deleteSupplierCandidateAssessment(id: number): Promise<void> {
+    await db.delete(supplierCandidateAssessments).where(eq(supplierCandidateAssessments.id, id));
   }
 
   async getSupplierEvaluations(userId: string, isoProjectId?: number, supplierId?: number, isSuperadmin = false): Promise<SupplierEvaluation[]> {

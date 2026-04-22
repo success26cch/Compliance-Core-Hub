@@ -36,6 +36,13 @@ interface SupplierCriteria {
   name: string; description?: string | null; category?: string | null;
   weight: number; order: number; createdAt?: string | null;
 }
+interface SupplierCandidateAssessment {
+  id: number; userId: string; isoProjectId?: number | null;
+  candidateName: string; assessmentDate: string; evaluatorName?: string | null;
+  overallScore?: number | null; recommendation?: string | null; notes?: string | null;
+  scores?: Record<string, { criteriaId: number; name: string; category?: string | null; weight: number; score: number; contribution: number }> | null;
+  createdAt?: string | null;
+}
 interface SupplierEvaluation {
   id: number; userId: string; isoProjectId?: number | null;
   supplierId: number; evaluationDate: string; evaluatorName?: string | null;
@@ -676,12 +683,20 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
   const [form, setForm] = useState({ name: "", description: "", category: "quality", weight: 10 });
   const [showCandidate, setShowCandidate] = useState(false);
   const [candidateName, setCandidateName] = useState("");
+  const [candidateEvaluator, setCandidateEvaluator] = useState("");
+  const [candidateNotes, setCandidateNotes] = useState("");
+  const [expandedAssessmentId, setExpandedAssessmentId] = useState<number | null>(null);
   const [candidateScores, setCandidateScores] = useState<Record<number, number>>({});
 
   const qk = ["/api/supplier-criteria", isoProjectId];
   const { data: criteria = [], isLoading } = useQuery<SupplierCriteria[]>({
     queryKey: qk,
     queryFn: () => fetch(`/api/supplier-criteria${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`, { credentials: "include" }).then(r => r.json()),
+  });
+  const assessmentsQk = ["/api/supplier-candidate-assessments", isoProjectId];
+  const { data: candidateAssessments = [] } = useQuery<SupplierCandidateAssessment[]>({
+    queryKey: assessmentsQk,
+    queryFn: () => fetch(`/api/supplier-candidate-assessments${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`, { credentials: "include" }).then(r => r.json()),
   });
 
   const createMut = useMutation({
@@ -695,6 +710,25 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
   const deleteMut = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/supplier-criteria/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); toast({ title: "Criteria removed" }); },
+  });
+  const saveCandidateMut = useMutation({
+    mutationFn: (d: any) => apiRequest("POST", "/api/supplier-candidate-assessments", d),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: assessmentsQk });
+      setCandidateName("");
+      setCandidateEvaluator("");
+      setCandidateNotes("");
+      setCandidateScores({});
+      setShowCandidate(false);
+      toast({ title: "Candidate assessment saved" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Save failed", description: e.message || "Could not save candidate assessment", variant: "destructive" });
+    },
+  });
+  const deleteCandidateAssessmentMut = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/supplier-candidate-assessments/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: assessmentsQk }); toast({ title: "Candidate assessment deleted" }); },
   });
 
   const totalWeight = criteria.reduce((s, c) => s + (c.weight || 0), 0);
@@ -720,6 +754,23 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
     approved:    { label: "✓ Approved for ASL", style: "bg-emerald-100 text-emerald-800 border-emerald-200", note: "Score ≥ 75 — Proceed to ASL approval" },
     conditional: { label: "⚠ Conditional — Clarification Needed", style: "bg-amber-100 text-amber-700 border-amber-200", note: "Score 55–74 — Supplier must address gaps before approval" },
     rejected:    { label: "✗ Not Qualified", style: "bg-red-100 text-red-700 border-red-200", note: "Score < 55 — Does not meet pre-qualification threshold" },
+  };
+
+  const buildCandidateScoresPayload = () => {
+    const out: Record<string, { criteriaId: number; name: string; category?: string | null; weight: number; score: number; contribution: number }> = {};
+    for (const c of criteria) {
+      const score = candidateScores[c.id] ?? 0;
+      if (score <= 0) continue;
+      out[String(c.id)] = {
+        criteriaId: c.id,
+        name: c.name,
+        category: c.category,
+        weight: c.weight || 0,
+        score,
+        contribution: totalWeight > 0 ? Math.round((score / 10) * (c.weight / totalWeight) * 100 * 10) / 10 : 0,
+      };
+    }
+    return out;
   };
 
   const DEFAULT_CRITERIA = [
@@ -766,7 +817,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
           )}
           {criteria.length > 0 && (
             <Button variant="outline" size="sm" className="h-8 text-sm gap-1.5 border-accent/40 text-accent hover:bg-accent/5"
-              onClick={() => { setShowCandidate(c => !c); setCandidateScores({}); }}
+              onClick={() => { setShowCandidate(c => !c); setCandidateScores({}); setCandidateEvaluator(""); setCandidateNotes(""); }}
               data-testid="button-score-candidate">
               <UserCheck className="w-3.5 h-3.5" /> {showCandidate ? "Close" : "Score a Candidate"}
             </Button>
@@ -792,10 +843,17 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
 
           <div className="p-4 space-y-4">
             {/* Candidate name */}
-            <div className="max-w-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
               <Label className="text-sm font-semibold">Candidate Supplier Name *</Label>
               <Input className="mt-1 h-8 text-base" placeholder="e.g. Acme Chemical Corp." value={candidateName}
                 onChange={e => setCandidateName(e.target.value)} data-testid="input-candidate-name" />
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">Evaluator</Label>
+              <Input className="mt-1 h-8 text-base" placeholder="e.g. Raul Villarreal" value={candidateEvaluator}
+                onChange={e => setCandidateEvaluator(e.target.value)} data-testid="input-candidate-evaluator" />
+            </div>
             </div>
 
             {/* Per-criterion scoring */}
@@ -891,6 +949,31 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                   <p className="text-sm text-muted-foreground">Candidate: <span className="font-semibold text-primary">{candidateName}</span></p>
                 )}
               </div>
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">Assessment Notes</Label>
+              <Textarea className="mt-1 text-base resize-none" rows={2} value={candidateNotes}
+                onChange={e => setCandidateNotes(e.target.value)}
+                placeholder="Document evidence reviewed, gaps, conditions, or next steps for approval."
+                data-testid="textarea-candidate-notes" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowCandidate(false)} data-testid="button-cancel-candidate-assessment">Cancel</Button>
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5"
+                disabled={!candidateName.trim() || candidateOverall <= 0 || saveCandidateMut.isPending}
+                onClick={() => saveCandidateMut.mutate({
+                  isoProjectId,
+                  candidateName: candidateName.trim(),
+                  assessmentDate: new Date().toISOString().split("T")[0],
+                  evaluatorName: candidateEvaluator.trim() || undefined,
+                  overallScore: candidateOverall,
+                  recommendation: candidateReco,
+                  notes: candidateNotes.trim() || undefined,
+                  scores: buildCandidateScoresPayload(),
+                })}
+                data-testid="button-save-candidate-assessment">
+                <FileCheck className="w-3.5 h-3.5" /> {saveCandidateMut.isPending ? "Saving…" : "Save Assessment Record"}
+              </Button>
             </div>
           </div>
         </div>
@@ -1025,6 +1108,64 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {candidateAssessments.length > 0 && (
+        <div className="border border-border/60 rounded-xl overflow-hidden bg-white dark:bg-card">
+          <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
+            <p className="text-base font-bold text-primary">Saved Candidate Assessment Records</p>
+            <p className="text-sm text-muted-foreground">Pre-qualification decisions completed before adding a supplier to the ASL</p>
+          </div>
+          <div className="divide-y divide-border/50">
+            {candidateAssessments.map(a => {
+              const expanded = expandedAssessmentId === a.id;
+              const reco = a.recommendation || "rejected";
+              const score = a.overallScore ?? 0;
+              return (
+                <div key={a.id} className="px-4 py-3" data-testid={`candidate-assessment-${a.id}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <button className="flex items-center gap-2 text-left flex-1 min-w-0"
+                      onClick={() => setExpandedAssessmentId(expanded ? null : a.id)}
+                      data-testid={`button-expand-candidate-assessment-${a.id}`}>
+                      {expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                      <div className="min-w-0">
+                        <p className="text-base font-bold text-primary truncate">{a.candidateName}</p>
+                        <p className="text-sm text-muted-foreground">{a.assessmentDate} {a.evaluatorName ? `· ${a.evaluatorName}` : ""}</p>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-2xl font-black ${score >= 75 ? "text-emerald-600" : score >= 55 ? "text-amber-600" : "text-red-600"}`}>{score}</p>
+                      <Badge className={`text-sm border ${CANDIDATE_RECO[reco]?.style ?? CANDIDATE_RECO.rejected.style}`}>{CANDIDATE_RECO[reco]?.label ?? reco}</Badge>
+                    </div>
+                  </div>
+                  {expanded && (
+                    <div className="mt-3 pl-6 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {Object.values(a.scores ?? {}).map(s => (
+                          <div key={s.criteriaId} className="border border-border/50 rounded-lg p-2 bg-muted/10">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-semibold text-primary">{s.name}</p>
+                              <Badge className="text-xs bg-primary/10 text-primary border-primary/20 border">{s.weight}%</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Score: <span className={criteriaScoreColor(s.score)}>{s.score}/10</span> · Contribution: {s.contribution} pts</p>
+                          </div>
+                        ))}
+                      </div>
+                      {a.notes && <p className="text-sm text-muted-foreground italic border-t border-border/40 pt-2">{a.notes}</p>}
+                      <div className="flex justify-end">
+                        <button onClick={() => { if (confirm("Delete this candidate assessment?")) deleteCandidateAssessmentMut.mutate(a.id); }}
+                          className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700"
+                          data-testid={`button-delete-candidate-assessment-${a.id}`}>
+                          <Trash2 className="w-3 h-3" /> Delete Record
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

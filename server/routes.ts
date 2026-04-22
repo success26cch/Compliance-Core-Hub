@@ -7991,6 +7991,37 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  app.get("/api/supplier-candidate-assessments", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+    try {
+      const list = await storage.getSupplierCandidateAssessments(userId, isoProjectId, isSuperadmin);
+      res.json(list);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/supplier-candidate-assessments", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertSupplierCandidateAssessmentSchema } = await import("@shared/schema");
+      const parsed = insertSupplierCandidateAssessmentSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const assessment = await storage.createSupplierCandidateAssessment(parsed.data);
+      res.json(assessment);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/supplier-candidate-assessments/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteSupplierCandidateAssessment(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   app.get("/api/supplier-evaluations", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
