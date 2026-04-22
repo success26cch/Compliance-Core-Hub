@@ -642,7 +642,7 @@ function RecordForm({ equipment, allEquipment, isoProjectId, initial, onSave, on
   const pct = stepCount > 0 ? Math.round((doneCount / stepCount) * 100) : 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col">
 
       {/* ── Equipment banner + checklist progress (sticky sub-header) ── */}
       <div className="shrink-0 px-4 sm:px-5 pb-3 pt-2 bg-muted/30 border-b border-border space-y-2">
@@ -1250,12 +1250,12 @@ function PmRecordDialog({ open, onOpenChange, title, children }: {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 gap-0 flex flex-col w-full max-w-2xl
         h-[100dvh] rounded-none
-        sm:h-auto sm:max-h-[94vh] sm:rounded-xl
+        sm:h-[92vh] sm:rounded-xl
         overflow-hidden">
         <DialogHeader className="shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b border-border">
           <DialogTitle className="text-lg">{title}</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {children}
         </div>
       </DialogContent>
