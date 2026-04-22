@@ -1997,7 +1997,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           {/* Status */}
                           <div className="px-3 py-3">
                             <Badge className={`text-xs border ${STATUS_COLORS[eq.status ?? "active"]}`}>
-                              {eq.status === "out_of_service" ? "Out of Svc" : (eq.status ?? "active")}
+                              {eq.status === "out_of_service" ? "Out of Svc" : eq.status === "retired" ? "Retired" : "Active"}
                             </Badge>
                           </div>
                           {/* Cal Type */}
