@@ -9803,6 +9803,22 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     });
   });
 
+  // ─── Internal Lab Scope (IATF §7.1.5.3.1) ───────────────────────────────────
+  app.get("/api/calibration/lab-scope", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isoProjectId = req.query.isoProjectId ? Number(req.query.isoProjectId) : null;
+    const scope = await storage.getLabScope(req.session.userId, req.user?.claims?.isSuperadmin, isoProjectId);
+    res.json(scope ?? null);
+  });
+
+  app.put("/api/calibration/lab-scope", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isoProjectId = req.body.isoProjectId != null ? Number(req.body.isoProjectId) : null;
+    const { isoProjectId: _pid, ...data } = req.body;
+    const scope = await storage.upsertLabScope(req.session.userId, isoProjectId, data);
+    res.json(scope);
+  });
+
   // ─── Preventive Maintenance ──────────────────────────────────────────────────
 
   app.get("/api/pm/equipment", async (req: Request, res: Response) => {

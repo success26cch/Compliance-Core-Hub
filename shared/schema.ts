@@ -2118,6 +2118,36 @@ export const insertCalibrationLabSchema = createInsertSchema(calibrationLabs).om
 export type InsertCalibrationLab = z.infer<typeof insertCalibrationLabSchema>;
 export type CalibrationLab = typeof calibrationLabs.$inferSelect;
 
+// ─── Calibration Internal Lab Scope (IATF §7.1.5.3.1) ───────────────────────
+export const calibrationLabScope = pgTable("calibration_lab_scope", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  // Document header
+  labName: text("lab_name"),
+  labDocumentNumber: text("lab_document_number"),
+  labLocation: text("lab_location"),
+  labManager: text("lab_manager"),
+  qualitySystemStatement: text("quality_system_statement"),
+  revision: text("revision").default("A"),
+  effectiveDate: text("effective_date"),
+  nextReviewDate: text("next_review_date"),
+  approvedBy: text("approved_by"),
+  // §7.1.5.3.1 (c) — Personnel competency requirements
+  personnelRequirements: jsonb("personnel_requirements"),   // PersonnelRequirement[]
+  // §7.1.5.3.1 (e) — Environmental / laboratory conditions
+  environmentalRequirements: jsonb("environmental_requirements"), // LabEnvironment object
+  // §7.1.5.3.1 (f) — Customer-specific requirements
+  customerRequirements: jsonb("customer_requirements"),    // CustomerReq[]
+  // §7.1.5.3.1 (a+b) — Additional test capabilities beyond calibration gages
+  additionalCapabilities: jsonb("additional_capabilities"), // LabCapability[]
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertCalibrationLabScopeSchema = createInsertSchema(calibrationLabScope).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCalibrationLabScope = z.infer<typeof insertCalibrationLabScopeSchema>;
+export type CalibrationLabScope = typeof calibrationLabScope.$inferSelect;
+
 // ─── Preventive Maintenance ──────────────────────────────────────────────────
 
 export const pmEquipment = pgTable("pm_equipment", {

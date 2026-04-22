@@ -25,11 +25,12 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type SupplierCandidateAssessment, type InsertSupplierCandidateAssessment,
   type SupplierEvaluation, type InsertSupplierEvaluation,
   type SupplierAudit, type InsertSupplierAudit,
-  calibrationEquipment, calibrationRecords, calibrationOotAssessments, calibrationLabs,
+  calibrationEquipment, calibrationRecords, calibrationOotAssessments, calibrationLabs, calibrationLabScope,
   type CalibrationEquipment, type InsertCalibrationEquipment,
   type CalibrationRecord, type InsertCalibrationRecord,
   type CalibrationOotAssessment, type InsertCalibrationOotAssessment,
   type CalibrationLab, type InsertCalibrationLab,
+  type CalibrationLabScope, type InsertCalibrationLabScope,
   pmEquipment, pmRecords,
   type PmEquipment, type InsertPmEquipment,
   type PmRecord, type InsertPmRecord,
@@ -402,6 +403,10 @@ export interface IStorage {
   createCalibrationLab(data: InsertCalibrationLab): Promise<CalibrationLab>;
   updateCalibrationLab(id: number, userId: string, data: Partial<InsertCalibrationLab>, isSuperadmin?: boolean): Promise<CalibrationLab | undefined>;
   deleteCalibrationLab(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ── Internal Lab Scope (IATF §7.1.5.3.1) ────────────────────────────────
+  getLabScope(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationLabScope | undefined>;
+  upsertLabScope(userId: string, isoProjectId: number | null, data: Partial<InsertCalibrationLabScope>): Promise<CalibrationLabScope>;
 
   // ── Preventive Maintenance Equipment ───────────────────────────────────────
   getPmEquipment(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<PmEquipment[]>;
@@ -2231,6 +2236,33 @@ export class DatabaseStorage implements IStorage {
       ? eq(calibrationLabs.id, id)
       : and(eq(calibrationLabs.id, id), eq(calibrationLabs.userId, userId));
     await db.delete(calibrationLabs).where(where);
+  }
+
+  // ── Internal Lab Scope (IATF §7.1.5.3.1) ────────────────────────────────
+  async getLabScope(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<CalibrationLabScope | undefined> {
+    const conditions: any[] = [];
+    if (!isSuperadmin) conditions.push(eq(calibrationLabScope.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(calibrationLabScope.isoProjectId, isoProjectId));
+    const cond = conditions.length > 1 ? and(...conditions) : conditions[0];
+    const rows = await db.select().from(calibrationLabScope).where(cond).limit(1);
+    return rows[0];
+  }
+
+  async upsertLabScope(userId: string, isoProjectId: number | null, data: Partial<InsertCalibrationLabScope>): Promise<CalibrationLabScope> {
+    const existing = await this.getLabScope(userId, false, isoProjectId);
+    if (existing) {
+      const [updated] = await db
+        .update(calibrationLabScope)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(calibrationLabScope.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db
+      .insert(calibrationLabScope)
+      .values({ userId, isoProjectId, ...data })
+      .returning();
+    return created;
   }
 
   // ── Preventive Maintenance Equipment ─────────────────────────────────────

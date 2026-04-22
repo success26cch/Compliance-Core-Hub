@@ -18,12 +18,13 @@ import {
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
   Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User, X,
   CheckCircle2, Thermometer, FlaskConical, Building2, ExternalLink, Link2,
+  Microscope, Users, Shield, BookOpen, Cpu, Save, ChevronRight,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type CalTab = "register" | "oot" | "msa" | "labs";
+type CalTab = "register" | "oot" | "msa" | "labs" | "lab_scope";
 
 interface WorkInstruction {
   id: number;
@@ -32,6 +33,62 @@ interface WorkInstruction {
   status: string;
 }
 
+interface LabCapability {
+  id: string;
+  parameter: string;
+  method: string;
+  equipment: string;
+  range: string;
+  tolerance: string;
+  traceability: string;
+  workInstruction?: string;
+  linkedDocumentId?: number | null;
+}
+
+interface PersonnelRequirement {
+  id: string;
+  role: string;
+  minEducation: string;
+  requiredTraining: string;
+  certifications: string;
+  competencyVerification: string;
+  supervisionRequired: boolean;
+}
+
+interface LabEnvironment {
+  temperature: string;
+  humidity: string;
+  lighting: string;
+  vibration: string;
+  cleanliness: string;
+  monitoring: string;
+  additionalControls: string;
+}
+
+interface CustomerReq {
+  id: string;
+  customer: string;
+  requirement: string;
+  reference: string;
+  applicableTo: string;
+}
+
+interface LabScopeDoc {
+  id?: number;
+  labName: string | null;
+  labDocumentNumber: string | null;
+  labLocation: string | null;
+  labManager: string | null;
+  qualitySystemStatement: string | null;
+  revision: string | null;
+  effectiveDate: string | null;
+  nextReviewDate: string | null;
+  approvedBy: string | null;
+  personnelRequirements: PersonnelRequirement[] | null;
+  environmentalRequirements: LabEnvironment | null;
+  customerRequirements: CustomerReq[] | null;
+  additionalCapabilities: LabCapability[] | null;
+}
 
 interface CalibrationEquipment {
   id: number; userId: string; isoProjectId?: number | null;
@@ -1596,6 +1653,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [viewRecordEquip, setViewRecordEquip] = useState<CalibrationEquipment | null>(null);
   const [labRegistryDialog, setLabRegistryDialog] = useState(false);
   const [editLabTarget, setEditLabTarget] = useState<CalibrationLab | null>(null);
+  const [labScopeDialog, setLabScopeDialog] = useState(false);
+  const [labScopeSection, setLabScopeSection] = useState<"header"|"personnel"|"environmental"|"csrs"|"capabilities">("header");
+  const [labScopeDraft, setLabScopeDraft] = useState<Partial<LabScopeDoc>>({});
   const iatf = isIatf(project);
   const aerospace = isAerospace(project);
   const medical = isMedical(project);
@@ -1636,6 +1696,23 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const workInstructions = allDocs.filter(
     d => d.docType === "work_instruction" && d.status !== "obsolete",
   );
+
+  const labScopeUrl = projectId ? `/api/calibration/lab-scope?isoProjectId=${projectId}` : "/api/calibration/lab-scope";
+  const { data: labScope } = useQuery<LabScopeDoc | null>({
+    queryKey: ["/api/calibration/lab-scope", projectId],
+    queryFn: () => fetch(labScopeUrl, { credentials: "include" }).then(r => r.json()),
+  });
+
+  const labScopeMutation = useMutation({
+    mutationFn: (data: Partial<LabScopeDoc> & { isoProjectId?: number | null }) =>
+      apiRequest("PUT", "/api/calibration/lab-scope", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/calibration/lab-scope", projectId] });
+      setLabScopeDialog(false);
+      toast({ title: "Lab Scope saved", description: "IATF §7.1.5.3.1 Internal Laboratory Scope updated." });
+    },
+    onError: () => toast({ title: "Save failed", variant: "destructive" }),
+  });
 
   // Fire reminder check on load (no-await, best-effort)
   useEffect(() => {
@@ -1900,6 +1977,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             { key: "oot", label: `OOT Assessments${ootAssessments.length > 0 ? ` (${ootAssessments.length})` : ""}`, icon: AlertTriangle },
             { key: "labs", label: `Labs Registry${labs.length > 0 ? ` (${labs.length})` : ""}`, icon: Building2 },
             ...(iatf ? [{ key: "msa", label: "MSA (Gauge R&R)", icon: BarChart3 }] : []),
+            ...(iatf ? [{ key: "lab_scope", label: "Internal Lab Scope", icon: Microscope }] : []),
           ].map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setTab(key as CalTab)}
               data-testid={`tab-cal-${key}`}
@@ -2297,6 +2375,391 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               </p>
             </div>
           )}
+
+          {/* ── Internal Lab Scope Tab (IATF §7.1.5.3.1) ── */}
+          {tab === "lab_scope" && (() => {
+            const internalEquip = equipment.filter(e => e.calType === "internal" && e.status !== "out_of_service");
+
+            function inferStandard(eq: CalibrationEquipment): string {
+              const n = (eq.name ?? "").toLowerCase();
+              const t = (eq.type ?? "").toLowerCase();
+              if (n.includes("ph") || t.includes("ph")) return "ASTM D1293";
+              if (n.includes("refract") || t.includes("refract")) return "ASTM E1967";
+              if (n.includes("conductivity") || t.includes("conductivity")) return "ASTM D1125";
+              if (n.includes("turbid") || t.includes("turbid")) return "ASTM D7679 / EPA 180.1";
+              if (n.includes("caliper") || n.includes("dimensional") || t.includes("dimensional")) return "ASME B89.1.14";
+              if (n.includes("thermometer") || n.includes("temperature") || t.includes("temperature")) return "ASTM E220";
+              if (n.includes("viscosity") || n.includes("viscom") || t.includes("viscosity")) return "ASTM D2170 / D2171";
+              if (n.includes("torque") || t.includes("torque")) return "ASME B107.300";
+              if (n.includes("pressure") || t.includes("pressure")) return "ASME B40.100";
+              if (n.includes("balance") || n.includes("scale") || t.includes("balance")) return "ASTM E617 / OIML R111";
+              if (n.includes("hydrometer") || t.includes("hydrometer")) return "ASTM E100";
+              if (n.includes("boiling") || n.includes("ebullio")) return "ASTM D1120";
+              if (n.includes("flow") || t.includes("flow")) return "ASTM D1003";
+              return "In-House Calibration Procedure";
+            }
+
+            function inferTraceability(eq: CalibrationEquipment): string {
+              const n = (eq.name ?? "").toLowerCase();
+              const t = (eq.type ?? "").toLowerCase();
+              if (n.includes("ph") || t.includes("ph")) return "NIST SRM 185h / 186h Buffer Solutions";
+              if (n.includes("refract") || t.includes("refract")) return "NIST SRM 1937 Sucrose Solution";
+              if (n.includes("conductivity") || t.includes("conductivity")) return "NIST SRM 3190 KCl Standard";
+              if (n.includes("turbid") || t.includes("turbid")) return "EPA 180.1 Formazin Primary Standard";
+              if (n.includes("caliper") || t.includes("dimensional")) return "NIST-Traceable Gauge Block (Grade K)";
+              if (n.includes("thermometer") || t.includes("temperature")) return "NIST SRM 934 / PT100 Reference Probe";
+              if (n.includes("balance") || n.includes("scale") || t.includes("balance")) return "NIST Class F Calibration Weights";
+              if (n.includes("viscosity") || t.includes("viscosity")) return "NIST SRM 2950a Viscosity Standard";
+              if (n.includes("pressure") || t.includes("pressure")) return "NIST-Traceable Deadweight Tester";
+              return "NIST-Traceable Reference Standard";
+            }
+
+            const autoCapabilities: LabCapability[] = internalEquip.map(eq => {
+              const wi = eq.linkedDocumentId ? workInstructions.find(w => w.id === eq.linkedDocumentId) : null;
+              return {
+                id: `eq-${eq.id}`,
+                parameter: eq.name,
+                method: inferStandard(eq),
+                equipment: `${eq.gageId} — ${[eq.manufacturer, eq.model].filter(Boolean).join(" ") || eq.name}`,
+                range: eq.measurementRange ?? "See specification",
+                tolerance: eq.tolerance ?? "Per certificate",
+                traceability: inferTraceability(eq),
+                workInstruction: wi ? wi.title : undefined,
+                linkedDocumentId: eq.linkedDocumentId,
+              };
+            });
+
+            const additionalCaps = (labScope?.additionalCapabilities as LabCapability[] | null) ?? [];
+            const allCapabilities = [...autoCapabilities, ...additionalCaps];
+            const personnel = (labScope?.personnelRequirements as PersonnelRequirement[] | null) ?? [];
+            const envReqs = (labScope?.environmentalRequirements as LabEnvironment | null);
+            const csrs = (labScope?.customerRequirements as CustomerReq[] | null) ?? [];
+
+            const openEdit = (section: typeof labScopeSection) => {
+              setLabScopeDraft({
+                labName: labScope?.labName ?? "",
+                labDocumentNumber: labScope?.labDocumentNumber ?? "",
+                labLocation: labScope?.labLocation ?? "",
+                labManager: labScope?.labManager ?? "",
+                qualitySystemStatement: labScope?.qualitySystemStatement ?? "",
+                revision: labScope?.revision ?? "A",
+                effectiveDate: labScope?.effectiveDate ?? "",
+                nextReviewDate: labScope?.nextReviewDate ?? "",
+                approvedBy: labScope?.approvedBy ?? "",
+                personnelRequirements: (labScope?.personnelRequirements as PersonnelRequirement[] | null) ?? [],
+                environmentalRequirements: (labScope?.environmentalRequirements as LabEnvironment | null) ?? { temperature: "", humidity: "", lighting: "", vibration: "", cleanliness: "", monitoring: "", additionalControls: "" },
+                customerRequirements: (labScope?.customerRequirements as CustomerReq[] | null) ?? [],
+                additionalCapabilities: (labScope?.additionalCapabilities as LabCapability[] | null) ?? [],
+              });
+              setLabScopeSection(section);
+              setLabScopeDialog(true);
+            };
+
+            return (
+              <div className="mt-4 space-y-5">
+                {/* IATF Banner */}
+                <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <Microscope className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-blue-800">IATF 16949 §7.1.5.3.1 — Internal Laboratory Scope</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Internal labs must document their scope of activity covering: (a) measurement capabilities, (b) technical procedures &amp; WI references,
+                      (c) personnel competency requirements, (d) equipment &amp; reference standards, (e) environmental controls, and (f) customer-specific requirements.
+                      This controlled document satisfies §7.1.5.3.1 requirements and must be reviewed at minimum annually.
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => openEdit("header")} data-testid="button-edit-lab-scope">
+                    <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                  </Button>
+                </div>
+
+                {/* Document Header */}
+                <Card className="border border-border">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 text-xs">
+                      {[
+                        { label: "Laboratory Name", value: labScope?.labName || "Internal Quality Control Laboratory" },
+                        { label: "Document No.", value: labScope?.labDocumentNumber || "LAB-SCOPE-001" },
+                        { label: "Revision", value: labScope?.revision || "A" },
+                        { label: "Effective Date", value: labScope?.effectiveDate || "—" },
+                        { label: "Lab Manager", value: labScope?.labManager || "—" },
+                        { label: "Approved By", value: labScope?.approvedBy || "—" },
+                        { label: "Lab Location", value: labScope?.labLocation || "—" },
+                        { label: "Next Review", value: labScope?.nextReviewDate || "—" },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">{label}</p>
+                          <p className="font-medium mt-0.5">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {labScope?.qualitySystemStatement && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Scope Statement</p>
+                        <p className="text-xs">{labScope.qualitySystemStatement}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Section A+B: Capabilities & Technical Procedures */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <FlaskConical className="w-4 h-4 text-accent" />
+                      <p className="text-sm font-bold">§ (a)+(b) — Measurement Capabilities &amp; Technical Procedures</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
+                      onClick={() => openEdit("capabilities")} data-testid="button-edit-capabilities">
+                      <Plus className="w-3 h-3 mr-1" /> Add Capability
+                    </Button>
+                  </div>
+                  {allCapabilities.length === 0 ? (
+                    <div className="text-center py-8 border border-dashed rounded-lg text-muted-foreground">
+                      <FlaskConical className="w-7 h-7 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No internal gages registered.</p>
+                      <p className="text-xs mt-1">Add gages marked "Internal" in the Master Register to auto-populate this section.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted/60 border-b border-border">
+                            {["#", "Measurement Parameter", "Equipment / Instrument", "Range", "Tolerance", "Technical Procedure / Standard", "NIST Traceability"].map(h => (
+                              <th key={h} className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allCapabilities.map((cap, i) => {
+                            const wi = cap.linkedDocumentId ? workInstructions.find(w => w.id === cap.linkedDocumentId) : null;
+                            const isAdditional = cap.id.startsWith("cap-");
+                            return (
+                              <tr key={cap.id} className={`border-b border-border/60 hover:bg-muted/20 transition-colors ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
+                                <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                                <td className="px-3 py-2 font-medium">
+                                  {cap.parameter}
+                                  {isAdditional && <Badge variant="outline" className="ml-1.5 text-[9px] text-purple-600 border-purple-300">Manual</Badge>}
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground max-w-[180px] truncate" title={cap.equipment}>{cap.equipment}</td>
+                                <td className="px-3 py-2 whitespace-nowrap">{cap.range}</td>
+                                <td className="px-3 py-2 whitespace-nowrap">{cap.tolerance}</td>
+                                <td className="px-3 py-2">
+                                  <p className="font-medium">{cap.method}</p>
+                                  {(wi || cap.workInstruction) && (
+                                    <p className="text-[10px] text-blue-600 flex items-center gap-0.5 mt-0.5">
+                                      <BookOpen className="w-2.5 h-2.5 shrink-0" />
+                                      {wi ? wi.title : cap.workInstruction}
+                                    </p>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground max-w-[200px]">{cap.traceability}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                    Auto-populated from internal gages in Master Register. Add supplemental test capabilities (viscosity, boiling point, etc.) via Add Capability.
+                  </p>
+                </div>
+
+                {/* Section C: Personnel Competency */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-accent" />
+                      <p className="text-sm font-bold">§ (c) — Personnel Competency Requirements</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
+                      onClick={() => openEdit("personnel")} data-testid="button-edit-personnel">
+                      <Pencil className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                  </div>
+                  {personnel.length === 0 ? (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-800">No personnel requirements defined. Click Edit to specify required qualifications, training records, and competency verification methods per IATF §7.1.5.3.1(c).</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted/60 border-b border-border">
+                            {["Role", "Min. Education", "Required Training / WI References", "Certifications", "Competency Verification", "Supervision"].map(h => (
+                              <th key={h} className="text-left px-3 py-2 font-semibold text-muted-foreground">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {personnel.map((p, i) => (
+                            <tr key={p.id} className={`border-b border-border/60 ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
+                              <td className="px-3 py-2 font-medium whitespace-nowrap">{p.role}</td>
+                              <td className="px-3 py-2">{p.minEducation}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{p.requiredTraining}</td>
+                              <td className="px-3 py-2">{p.certifications || "—"}</td>
+                              <td className="px-3 py-2">{p.competencyVerification}</td>
+                              <td className="px-3 py-2">
+                                {p.supervisionRequired
+                                  ? <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700">Required</Badge>
+                                  : <Badge variant="outline" className="text-[10px] text-green-700 border-green-300">Independent</Badge>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section D: Equipment & Reference Standards */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Cpu className="w-4 h-4 text-accent" />
+                    <p className="text-sm font-bold">§ (d) — Laboratory Equipment &amp; Reference Standards</p>
+                  </div>
+                  {internalEquip.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-xs">
+                      No internal laboratory equipment registered. Add internal gages in the Master Register.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-muted/60 border-b border-border">
+                            {["Gage ID", "Instrument", "Manufacturer / Model", "Serial No.", "Location", "Responsible Person", "Cal Due Date", "Status"].map(h => (
+                              <th key={h} className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {internalEquip.map((eq, i) => {
+                            const due = eq.nextDueDate ? new Date(eq.nextDueDate) : null;
+                            const today = new Date();
+                            const overdue = due && due < today;
+                            const dueSoon = due && !overdue && (due.getTime() - today.getTime()) < 30 * 86400000;
+                            return (
+                              <tr key={eq.id} className={`border-b border-border/60 ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
+                                <td className="px-3 py-2 font-mono font-bold text-accent">{eq.gageId}</td>
+                                <td className="px-3 py-2 font-medium">{eq.name}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{[eq.manufacturer, eq.model].filter(Boolean).join(" / ") || "—"}</td>
+                                <td className="px-3 py-2 font-mono">{eq.serialNumber ?? "—"}</td>
+                                <td className="px-3 py-2">{eq.location ?? "—"}</td>
+                                <td className="px-3 py-2">{eq.responsiblePerson ?? "—"}</td>
+                                <td className={`px-3 py-2 font-medium whitespace-nowrap ${overdue ? "text-red-600" : dueSoon ? "text-amber-600" : ""}`}>
+                                  {eq.nextDueDate ? new Date(eq.nextDueDate).toLocaleDateString() : "—"}
+                                  {overdue && <span className="ml-1 text-[9px] bg-red-100 text-red-600 px-1 rounded">OVERDUE</span>}
+                                  {dueSoon && !overdue && <span className="ml-1 text-[9px] bg-amber-100 text-amber-600 px-1 rounded">DUE SOON</span>}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <Badge variant="outline" className={`text-[10px] ${eq.status === "active" || !eq.status ? "text-green-700 border-green-300" : "text-red-700 border-red-300"}`}>
+                                    {eq.status === "active" || !eq.status ? "Active" : eq.status}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                    All reference standards must have NIST-traceable calibration certificates on file per §7.1.5.3.1(d).
+                  </p>
+                </div>
+
+                {/* Section E: Environmental Requirements */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Thermometer className="w-4 h-4 text-accent" />
+                      <p className="text-sm font-bold">§ (e) — Laboratory Environmental Controls</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
+                      onClick={() => openEdit("environmental")} data-testid="button-edit-environmental">
+                      <Pencil className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                  </div>
+                  {!envReqs || !envReqs.temperature ? (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-800">
+                        Environmental requirements not documented. Click Edit to specify temperature, humidity, lighting, vibration controls, and monitoring methods required for valid measurements per §7.1.5.3.1(e).
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {([
+                        { key: "temperature" as const, label: "Temperature", icon: Thermometer, color: "text-orange-500" },
+                        { key: "humidity" as const, label: "Relative Humidity", icon: Activity, color: "text-blue-500" },
+                        { key: "lighting" as const, label: "Lighting", icon: Info, color: "text-yellow-500" },
+                        { key: "vibration" as const, label: "Vibration Control", icon: Activity, color: "text-purple-500" },
+                        { key: "cleanliness" as const, label: "Cleanliness / PPE", icon: CheckCircle2, color: "text-green-500" },
+                        { key: "monitoring" as const, label: "Monitoring Method", icon: ClipboardList, color: "text-accent" },
+                        { key: "additionalControls" as const, label: "Additional Controls", icon: Shield, color: "text-gray-500" },
+                      ]).map(({ key, label, icon: Icon, color }) => {
+                        const val = envReqs[key];
+                        if (!val) return null;
+                        return (
+                          <div key={key} className="flex items-start gap-2.5 bg-muted/30 rounded-lg p-3">
+                            <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${color}`} />
+                            <div>
+                              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">{label}</p>
+                              <p className="text-xs mt-0.5 font-medium">{val}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Section F: Customer-Specific Requirements */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-accent" />
+                      <p className="text-sm font-bold">§ (f) — Customer-Specific Requirements (CSRs)</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
+                      onClick={() => openEdit("csrs")} data-testid="button-edit-csrs">
+                      <Pencil className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                  </div>
+                  {csrs.length === 0 ? (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-800">
+                        No customer-specific requirements defined. Click Edit to add OEM requirements from GM, Ford, Stellantis, or other customers applicable to your internal laboratory per §7.1.5.3.1(f).
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {csrs.map((csr) => (
+                        <div key={csr.id} className="border border-border rounded-lg p-3">
+                          <div className="flex items-start gap-2">
+                            <Badge variant="outline" className="text-[10px] text-blue-700 border-blue-300 shrink-0 mt-0.5">{csr.customer}</Badge>
+                            <div className="flex-1">
+                              <p className="text-xs font-medium">{csr.requirement}</p>
+                              {csr.reference && <p className="text-[10px] text-muted-foreground mt-0.5">Reference: {csr.reference}</p>}
+                              {csr.applicableTo && <p className="text-[10px] text-muted-foreground">Applicable to: {csr.applicableTo}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-[10px] text-muted-foreground text-center pb-4 border-t border-border pt-3 mt-2">
+                  IATF 16949:2016 §7.1.5.3.1 — Internal Laboratory Scope. Document controlled under QMS. Annual review required. Retain records per §7.5.
+                </p>
+              </div>
+            );
+          })()}
 
           {/* ── Labs Registry Tab ── */}
           {tab === "labs" && (
@@ -2875,6 +3338,322 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               workInstructions={workInstructions}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Lab Scope Edit Dialog (IATF §7.1.5.3.1) ── */}
+      <Dialog open={labScopeDialog} onOpenChange={v => { setLabScopeDialog(v); }}>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Microscope className="w-4 h-4 text-blue-600" />
+              Edit Internal Laboratory Scope — IATF §7.1.5.3.1
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Section tabs */}
+          <div className="flex gap-1 flex-wrap border-b border-border mb-4 -mx-1 px-1">
+            {([
+              { key: "header" as const, label: "Document Header", icon: FileCheck },
+              { key: "personnel" as const, label: "Personnel", icon: Users },
+              { key: "environmental" as const, label: "Environmental", icon: Thermometer },
+              { key: "csrs" as const, label: "CSRs", icon: Shield },
+              { key: "capabilities" as const, label: "Add. Capabilities", icon: FlaskConical },
+            ]).map(({ key, label, icon: Icon }) => (
+              <button key={key} onClick={() => setLabScopeSection(key)}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition-colors ${labScopeSection === key ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                <Icon className="w-3.5 h-3.5" />{label}
+              </button>
+            ))}
+          </div>
+
+          {/* Header Section */}
+          {labScopeSection === "header" && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Laboratory Name</Label>
+                  <Input className="mt-1 h-8 text-sm" value={labScopeDraft.labName ?? ""} placeholder="e.g. CCI Chemical QC Laboratory"
+                    onChange={e => setLabScopeDraft(d => ({ ...d, labName: e.target.value }))} data-testid="input-lab-name" />
+                </div>
+                <div>
+                  <Label className="text-xs">Document Number</Label>
+                  <Input className="mt-1 h-8 text-sm" value={labScopeDraft.labDocumentNumber ?? ""} placeholder="e.g. LAB-SCOPE-001"
+                    onChange={e => setLabScopeDraft(d => ({ ...d, labDocumentNumber: e.target.value }))} data-testid="input-lab-doc-number" />
+                </div>
+                <div>
+                  <Label className="text-xs">Revision</Label>
+                  <Input className="mt-1 h-8 text-sm" value={labScopeDraft.revision ?? ""} placeholder="e.g. A"
+                    onChange={e => setLabScopeDraft(d => ({ ...d, revision: e.target.value }))} data-testid="input-lab-revision" />
+                </div>
+                <div>
+                  <Label className="text-xs">Lab Location</Label>
+                  <Input className="mt-1 h-8 text-sm" value={labScopeDraft.labLocation ?? ""} placeholder="e.g. Building A, QC Lab Room 102"
+                    onChange={e => setLabScopeDraft(d => ({ ...d, labLocation: e.target.value }))} data-testid="input-lab-location" />
+                </div>
+                <div>
+                  <Label className="text-xs">Lab Manager</Label>
+                  <Input className="mt-1 h-8 text-sm" value={labScopeDraft.labManager ?? ""} placeholder="e.g. Jane Smith"
+                    onChange={e => setLabScopeDraft(d => ({ ...d, labManager: e.target.value }))} data-testid="input-lab-manager" />
+                </div>
+                <div>
+                  <Label className="text-xs">Approved By</Label>
+                  <Input className="mt-1 h-8 text-sm" value={labScopeDraft.approvedBy ?? ""} placeholder="e.g. John Doe, Quality Director"
+                    onChange={e => setLabScopeDraft(d => ({ ...d, approvedBy: e.target.value }))} data-testid="input-lab-approved-by" />
+                </div>
+                <div>
+                  <Label className="text-xs">Effective Date</Label>
+                  <Input type="date" className="mt-1 h-8 text-sm" value={labScopeDraft.effectiveDate ?? ""}
+                    onChange={e => setLabScopeDraft(d => ({ ...d, effectiveDate: e.target.value }))} data-testid="input-lab-effective-date" />
+                </div>
+                <div>
+                  <Label className="text-xs">Next Review Date</Label>
+                  <Input type="date" className="mt-1 h-8 text-sm" value={labScopeDraft.nextReviewDate ?? ""}
+                    onChange={e => setLabScopeDraft(d => ({ ...d, nextReviewDate: e.target.value }))} data-testid="input-lab-review-date" />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Scope Statement / Quality System Reference</Label>
+                <Textarea className="mt-1 text-sm" rows={3} value={labScopeDraft.qualitySystemStatement ?? ""}
+                  placeholder="This Internal Laboratory Scope defines the scope of calibration and testing activities performed by [Company] in accordance with IATF 16949:2016 §7.1.5.3.1 and the QMS Quality Manual..."
+                  onChange={e => setLabScopeDraft(d => ({ ...d, qualitySystemStatement: e.target.value }))} data-testid="textarea-lab-scope-statement" />
+              </div>
+            </div>
+          )}
+
+          {/* Personnel Section */}
+          {labScopeSection === "personnel" && (() => {
+            const personnel = (labScopeDraft.personnelRequirements as PersonnelRequirement[] | null) ?? [];
+            const addRow = () => setLabScopeDraft(d => ({
+              ...d, personnelRequirements: [...personnel, { id: `pr-${Date.now()}`, role: "", minEducation: "", requiredTraining: "", certifications: "", competencyVerification: "", supervisionRequired: false }],
+            }));
+            const removeRow = (id: string) => setLabScopeDraft(d => ({ ...d, personnelRequirements: personnel.filter(p => p.id !== id) }));
+            const updateRow = (id: string, field: keyof PersonnelRequirement, value: string | boolean) =>
+              setLabScopeDraft(d => ({ ...d, personnelRequirements: personnel.map(p => p.id === id ? { ...p, [field]: value } : p) }));
+            return (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Define required qualifications, training, and competency verification for each laboratory personnel role (§7.1.5.3.1 c).</p>
+                {personnel.length === 0 && (
+                  <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-xs">
+                    No personnel requirements defined. Click "Add Role" to start.
+                  </div>
+                )}
+                {personnel.map((p, i) => (
+                  <div key={p.id} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-muted-foreground">Role #{i + 1}</p>
+                      <button onClick={() => removeRow(p.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px]">Role / Title</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={p.role} placeholder="e.g. QC Technician"
+                          onChange={e => updateRow(p.id, "role", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Min. Education</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={p.minEducation} placeholder="e.g. High School Diploma"
+                          onChange={e => updateRow(p.id, "minEducation", e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-[10px]">Required Training / WI References</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={p.requiredTraining} placeholder="e.g. WI-CAL-003, WI-002, IATF awareness training"
+                          onChange={e => updateRow(p.id, "requiredTraining", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Certifications (if any)</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={p.certifications} placeholder="e.g. ASQ CQT, or 'None required'"
+                          onChange={e => updateRow(p.id, "certifications", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Competency Verification Method</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={p.competencyVerification} placeholder="e.g. Annual practical assessment"
+                          onChange={e => updateRow(p.id, "competencyVerification", e.target.value)} />
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <input type="checkbox" id={`sup-${p.id}`} checked={p.supervisionRequired}
+                          onChange={e => updateRow(p.id, "supervisionRequired", e.target.checked)}
+                          className="w-3.5 h-3.5 accent-orange-500" />
+                        <Label htmlFor={`sup-${p.id}`} className="text-[10px] cursor-pointer">Supervision required</Label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={addRow} data-testid="button-add-personnel-role">
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Role
+                </Button>
+              </div>
+            );
+          })()}
+
+          {/* Environmental Section */}
+          {labScopeSection === "environmental" && (() => {
+            const env = (labScopeDraft.environmentalRequirements as LabEnvironment | null) ?? { temperature: "", humidity: "", lighting: "", vibration: "", cleanliness: "", monitoring: "", additionalControls: "" };
+            const setEnv = (field: keyof LabEnvironment, val: string) =>
+              setLabScopeDraft(d => ({ ...d, environmentalRequirements: { ...env, [field]: val } }));
+            return (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Specify environmental conditions required for valid measurements. All conditions must be monitored and recorded (§7.1.5.3.1 e).</p>
+                {([
+                  { key: "temperature" as const, label: "Temperature Range", placeholder: "e.g. 20°C ± 2°C (68°F ± 4°F)" },
+                  { key: "humidity" as const, label: "Relative Humidity", placeholder: "e.g. 40–60% RH" },
+                  { key: "lighting" as const, label: "Lighting Requirements", placeholder: "e.g. Minimum 500 lux at measurement workstation" },
+                  { key: "vibration" as const, label: "Vibration Control", placeholder: "e.g. Vibration-isolated bench required for dimensional measurements" },
+                  { key: "cleanliness" as const, label: "Cleanliness / PPE Requirements", placeholder: "e.g. Lab coat, gloves, and shoe covers required. No food or drink." },
+                  { key: "monitoring" as const, label: "Environmental Monitoring Method", placeholder: "e.g. Temperature and humidity logged daily via CCI-ENV-MON-001 form" },
+                  { key: "additionalControls" as const, label: "Additional Controls", placeholder: "e.g. Electrostatic discharge protection required; no magnetic materials near pH meters" },
+                ]).map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <Label className="text-xs">{label}</Label>
+                    <Input className="mt-1 h-8 text-sm" value={env[key]} placeholder={placeholder}
+                      onChange={e => setEnv(key, e.target.value)} data-testid={`input-env-${key}`} />
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* CSRs Section */}
+          {labScopeSection === "csrs" && (() => {
+            const csrs = (labScopeDraft.customerRequirements as CustomerReq[] | null) ?? [];
+            const addCsr = () => setLabScopeDraft(d => ({
+              ...d, customerRequirements: [...csrs, { id: `csr-${Date.now()}`, customer: "", requirement: "", reference: "", applicableTo: "" }],
+            }));
+            const removeCsr = (id: string) => setLabScopeDraft(d => ({ ...d, customerRequirements: csrs.filter(c => c.id !== id) }));
+            const updateCsr = (id: string, field: keyof CustomerReq, value: string) =>
+              setLabScopeDraft(d => ({ ...d, customerRequirements: csrs.map(c => c.id === id ? { ...c, [field]: value } : c) }));
+            return (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Document OEM customer requirements applicable to your internal laboratory (§7.1.5.3.1 f). Common sources: GM Supplier Requirements, Ford Q1, Stellantis STDS, AIAG CSR supplements.</p>
+                {csrs.length === 0 && (
+                  <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-xs">
+                    No CSRs defined. Click "Add CSR" to start.
+                  </div>
+                )}
+                {csrs.map((csr, i) => (
+                  <div key={csr.id} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-muted-foreground">CSR #{i + 1}</p>
+                      <button onClick={() => removeCsr(csr.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px]">Customer / OEM</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={csr.customer} placeholder="e.g. General Motors"
+                          onChange={e => updateCsr(csr.id, "customer", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Reference Document</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={csr.reference} placeholder="e.g. GM Supplier Requirements Manual Rev. 9"
+                          onChange={e => updateCsr(csr.id, "reference", e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-[10px]">Requirement Description</Label>
+                        <Textarea className="mt-0.5 text-xs" rows={2} value={csr.requirement}
+                          placeholder="e.g. PPAP-level documentation is required for all new measurement systems referenced in the Control Plan."
+                          onChange={e => updateCsr(csr.id, "requirement", e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-[10px]">Applicable To (Scope)</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={csr.applicableTo} placeholder="e.g. All measurement systems in PPAP scope for GM programs"
+                          onChange={e => updateCsr(csr.id, "applicableTo", e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={addCsr} data-testid="button-add-csr">
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Customer Requirement
+                </Button>
+              </div>
+            );
+          })()}
+
+          {/* Additional Capabilities Section */}
+          {labScopeSection === "capabilities" && (() => {
+            const caps = (labScopeDraft.additionalCapabilities as LabCapability[] | null) ?? [];
+            const addCap = () => setLabScopeDraft(d => ({
+              ...d, additionalCapabilities: [...caps, { id: `cap-${Date.now()}`, parameter: "", method: "", equipment: "", range: "", tolerance: "", traceability: "", workInstruction: "" }],
+            }));
+            const removeCap = (id: string) => setLabScopeDraft(d => ({ ...d, additionalCapabilities: caps.filter(c => c.id !== id) }));
+            const updateCap = (id: string, field: keyof LabCapability, value: string) =>
+              setLabScopeDraft(d => ({ ...d, additionalCapabilities: caps.map(c => c.id === id ? { ...c, [field]: value } : c) }));
+            return (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Add supplemental test capabilities not represented by calibrated gages in the Master Register (e.g. viscosity testing, boiling point, visual inspection). Auto-populated capabilities from internal gages are shown read-only in the lab scope view.</p>
+                {caps.length === 0 && (
+                  <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-xs">
+                    No additional capabilities defined. Internal gage capabilities are auto-populated. Use this to add test methods without dedicated calibration gages.
+                  </div>
+                )}
+                {caps.map((cap, i) => (
+                  <div key={cap.id} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-muted-foreground">Capability #{i + 1}</p>
+                      <button onClick={() => removeCap(cap.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px]">Measurement Parameter</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.parameter} placeholder="e.g. Kinematic Viscosity"
+                          onChange={e => updateCap(cap.id, "parameter", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Technical Standard / Method</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.method} placeholder="e.g. ASTM D2170 / D2171"
+                          onChange={e => updateCap(cap.id, "method", e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-[10px]">Equipment / Instrument Used</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.equipment} placeholder="e.g. Cannon-Fenske Viscometer — Model CF-200"
+                          onChange={e => updateCap(cap.id, "equipment", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Measurement Range</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.range} placeholder="e.g. 0.4–16,000 mm²/s"
+                          onChange={e => updateCap(cap.id, "range", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Tolerance / Accuracy</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.tolerance} placeholder="e.g. ±0.35%"
+                          onChange={e => updateCap(cap.id, "tolerance", e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-[10px]">NIST Traceability Reference</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.traceability} placeholder="e.g. NIST SRM 2950a Viscosity Standard"
+                          onChange={e => updateCap(cap.id, "traceability", e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-[10px]">Work Instruction Reference (if any)</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.workInstruction ?? ""} placeholder="e.g. WI-002 Viscosity Testing Procedure (Cannon-Fenske)"
+                          onChange={e => updateCap(cap.id, "workInstruction", e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={addCap} data-testid="button-add-capability">
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Capability
+                </Button>
+              </div>
+            );
+          })()}
+
+          {/* Footer */}
+          <div className="flex justify-end gap-2 pt-3 border-t border-border mt-2">
+            <Button variant="outline" size="sm" onClick={() => setLabScopeDialog(false)} data-testid="button-cancel-lab-scope">Cancel</Button>
+            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white"
+              disabled={labScopeMutation.isPending}
+              onClick={() => labScopeMutation.mutate({ ...labScopeDraft, isoProjectId: projectId })}
+              data-testid="button-save-lab-scope">
+              <Save className="w-3.5 h-3.5 mr-1" />
+              {labScopeMutation.isPending ? "Saving..." : "Save Lab Scope"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

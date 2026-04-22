@@ -17,6 +17,7 @@ import {
   calibrationEquipment,
   calibrationRecords,
   calibrationOotAssessments,
+  calibrationLabScope,
   isoDocuments,
 } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
@@ -1009,6 +1010,51 @@ async function main() {
       }
     }
   }
+
+  // ── IATF §7.1.5.3.1 Internal Lab Scope ──────────────────────────────────
+  console.log("\n  ── Internal Lab Scope (§7.1.5.3.1) ─────────────────");
+  await db.delete(calibrationLabScope).where(eq(calibrationLabScope.userId, USER_ID));
+  await db.insert(calibrationLabScope).values({
+    userId: USER_ID,
+    isoProjectId: PROJECT_ID,
+    labName: "CCI Chemical Internal Quality Control Laboratory",
+    labDocumentNumber: "LAB-SCOPE-001",
+    labLocation: "Building A, QC Laboratory — 4420 Industrial Pkwy, Dayton, OH 45414",
+    labManager: "Ebeni Villarreal, Quality Engineer",
+    qualitySystemStatement: "This Internal Laboratory Scope defines the scope of calibration and testing activities performed by CCI Chemical, Inc. in accordance with IATF 16949:2016 §7.1.5.3.1. The laboratory is responsible for all in-process quality control measurements, inline calibration of designated gages, and measurement system validation for brake fluid (DOT 3, DOT 4, DOT 5.1) and automotive coolant (EG/PG-based) product lines. All laboratory activities are conducted in accordance with this scope document, the CCI Chemical Quality Manual (QM-001), and applicable customer-specific requirements.",
+    revision: "A",
+    effectiveDate: "2025-01-15",
+    nextReviewDate: "2026-01-15",
+    approvedBy: "David Rojas, Quality Director",
+    personnelRequirements: [
+      { id: "pr-1", role: "QC Technician", minEducation: "High School Diploma or GED", requiredTraining: "WI-CAL-003 (Conductivity Meter), WI-002 (Viscosity Testing), WI-003 (Incoming RM Inspection), IATF 16949 Awareness Training, Lab Safety & PPE Orientation", certifications: "None required (internal competency evaluation conducted annually)", competencyVerification: "Annual practical competency demonstration scored on CCI-COMP-EVAL-001 form; minimum score 80% required", supervisionRequired: false },
+      { id: "pr-2", role: "QC Lead / Lab Supervisor", minEducation: "Associate degree in Chemistry, Chemical Technology, or related field", requiredTraining: "All QC Technician training plus: Internal Auditor Training (IATF 16949), MSA Awareness, APQP/PPAP fundamentals, Customer-Specific Requirements (GM, Ford, Stellantis)", certifications: "Preferred: ASQ CQI or CQT; Internal Auditor certification", competencyVerification: "Annual performance review; bi-annual practical assessment. Must demonstrate ability to perform and document all in-scope calibrations independently.", supervisionRequired: false },
+      { id: "pr-3", role: "QC Intern / New Hire (Probationary)", minEducation: "High School Diploma or GED", requiredTraining: "WI-CAL-003, WI-002, WI-003, Lab Safety & PPE. All training must be completed within 30 days of start date.", certifications: "None required", competencyVerification: "Monthly practical check during first 90 days; requires supervisor sign-off on each calibration performed during probation", supervisionRequired: true },
+    ],
+    environmentalRequirements: {
+      temperature: "20°C ± 2°C (68°F ± 4°F) — monitored continuously; measurements invalid if temperature deviates > ±2°C from nominal",
+      humidity: "35–65% RH — relative humidity monitored and logged daily; pH and conductivity measurements require humidity ≤ 60%",
+      lighting: "Minimum 500 lux at all measurement workstations (calibrated annually via lux meter); 750 lux required at visual inspection stations",
+      vibration: "Vibration-isolated workbench required for pH meter and conductivity meter measurements; caliper measurements require stable, non-vibrating surface. Blending operations in adjacent bays must be suspended during precision dimensional measurements.",
+      cleanliness: "Lab coat and nitrile gloves required for all measurements. No food, drink, or strong chemical odors in the QC lab. Sample containers must be clean and labeled per CCI-LAB-PROT-001. pH electrode storage solution must be replaced monthly.",
+      monitoring: "Temperature and humidity logged three times daily on CCI-ENV-MON-001 form. Electronic probe (Traceable® Temp/RH Meter, Serial: TM-2024-001) calibrated annually. Monitoring records retained for minimum 3 years.",
+      additionalControls: "Electromagnetic interference: pH meters and conductivity meters must be kept ≥ 50 cm from transformers, motors, or high-current equipment. Chemicals: brake fluid and coolant samples must be sealed when not in use. All reference standards stored per manufacturer SDS at 4–25°C.",
+    },
+    customerRequirements: [
+      { id: "csr-1", customer: "General Motors (GM)", requirement: "All measurement systems referenced in the GM PPAP Control Plan must have documented MSA studies (Gage R&R ≤ 30% for critical characteristics). PPAP documentation must include measurement system validation results. pH, conductivity, and concentration measurements for GM-approved brake fluid and coolant programs require documented calibration traceability to NIST.", reference: "GM Supplier Requirements Manual (GSDB) — Rev. 9, Section 4.2; GM CSR Supplement to IATF 16949 §7.1.5", applicableTo: "All in-process and final inspection measurement systems for GM-approved product lines (DOT 3, DOT 4 brake fluids; DexCool® compatible coolants)" },
+      { id: "csr-2", customer: "Ford Motor Company", requirement: "Ford Q1 Program: Measurement systems must be validated per AIAG MSA Reference Manual (4th edition). Calibration certificates for all reference standards must be retained and traceable to NIST or international equivalents. Ford CSR requires that any OOT finding be reported to Ford SQE within 24 hours if product shipped to Ford was potentially affected.", reference: "Ford Q1 Manufacturing Site Assessment; Ford CSR for IATF 16949 — Section 7.1.5; Ford PPAP Requirements Manual", applicableTo: "All measurement systems for Ford-directed product programs; OOT notification applies to products in Ford's current model year supply chain" },
+      { id: "csr-3", customer: "Stellantis (formerly FCA)", requirement: "Stellantis CSR requires use of AIAG MSA 4th Ed. for all new measurement systems. Calibration recall system must generate automatic notifications ≥ 30 days before calibration due date. Lab scope document must be reviewed annually and records of review retained.", reference: "Stellantis Supplier Quality Requirements (SQ00010); Stellantis CSR for IATF 16949", applicableTo: "Stellantis-directed product programs; DOT 3/4 brake fluid and engine coolant supply" },
+      { id: "csr-4", customer: "AIAG / VDA FMEA (Industry Standard)", requirement: "Product and Process FMEA must reference measurement system adequacy as a detection control effectiveness factor. Control Plans must identify measurement method, sample frequency, control method, and reaction plan for each characteristic. Measurement systems cited in Control Plans must have corresponding entries in this Lab Scope.", reference: "AIAG-VDA FMEA Handbook (1st Ed., 2019); AIAG APQP & Control Plan Reference Manual (2nd Ed.)", applicableTo: "All product characteristics in the FMEA and Control Plan for IATF 16949 certified programs" },
+    ],
+    additionalCapabilities: [
+      { id: "cap-1", parameter: "Kinematic Viscosity", method: "ASTM D2170 / ASTM D2171", equipment: "Cannon-Fenske Viscometer — Size 200 (Lot: CF-CCI-001)", range: "0.4 – 16,000 mm²/s (cSt)", tolerance: "± 0.35% of reading", traceability: "NIST SRM 2950a Viscosity Standard (traceable to SI units via NIST Certificate of Calibration)", workInstruction: "WI-002 Viscosity Testing Procedure — Cannon-Fenske Reverse-Flow Method" },
+      { id: "cap-2", parameter: "Wet Boiling Point (WBP) — Brake Fluid", method: "ASTM D1120 / FMVSS No. 116", equipment: "Boiling Point Tester — Stanhope-Seta Model 17200 (GAG-013 — External Cal)", range: "150°C – 300°C", tolerance: "± 1°C", traceability: "NIST SRM 934 SPRT Reference Thermometer (used for annual verification of reference thermometer)", workInstruction: "CCI-BP-TEST-001 Wet Boiling Point Procedure per ASTM D1120" },
+      { id: "cap-3", parameter: "Equilibrium Reflux Boiling Point (ERBP) — Brake Fluid", method: "ASTM D2093 / ISO 7308", equipment: "ERBP Apparatus — Stanhope-Seta EAI Model 25.000 (Serial: ERBP-001)", range: "175°C – 350°C", tolerance: "± 1°C", traceability: "NIST-traceable reference thermometer (calibrated annually by external ISO 17025 lab)", workInstruction: "CCI-ERBP-PROC-001 Equilibrium Reflux Boiling Point Procedure" },
+      { id: "cap-4", parameter: "pH of Aqueous Extract — Coolant", method: "ASTM D1384 / ASTM E70", equipment: "GAG-001 — Orion Star A111 pH Meter (Internal Cal)", range: "4.0 – 10.0 pH units", tolerance: "± 0.05 pH units", traceability: "NIST SRM 185h (pH 4.00) / SRM 186h (pH 6.86 / 9.18) Buffer Reference Solutions", workInstruction: "pH testing per ASTM D1384 Section 7.3 using GAG-001 internal calibration procedure" },
+      { id: "cap-5", parameter: "Specific Gravity / Coolant Concentration", method: "ASTM E1164 / ASTM E100", equipment: "GAG-004 — Bellingham+Stanley Refractometer (Internal Cal); GAG-015 — Anton Paar Densitometer (External)", range: "0.900 – 1.200 g/mL; 1.3330 – 1.4300 nD", tolerance: "± 0.0005 g/mL; ± 0.0002 nD", traceability: "NIST SRM 1937 Certified Sucrose Reference Solution; NIST-traceable hydrometer set", workInstruction: "CCI-CONC-TEST-001 Refractometer concentration check; ASTM E1164 for densitometer" },
+    ],
+  });
+  console.log("    ✓ Internal Lab Scope (LAB-SCOPE-001) — Rev. A, 5 additional capabilities, 3 personnel roles, 4 CSRs");
 
   console.log(`\n  ─── Summary ────────────────────────────────────────`);
   console.log(`  Equipment inserted : ${insertedEquip.length}`);
