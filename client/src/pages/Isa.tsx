@@ -42,6 +42,29 @@ function IsaAvatar({ size = 32 }: { size?: number }) {
   );
 }
 
+function cleanIsaContent(raw: string): string {
+  return raw
+    .split("\n")
+    .map(line => {
+      const t = line.trim();
+      // Drop pure table separator rows like |---|---|
+      if (/^\|[\s\-:|]+\|$/.test(t)) return null;
+      // Convert table data/header rows: | A | B | C | → "A — B — C"
+      if (t.startsWith("|") && t.endsWith("|")) {
+        const cells = t.slice(1, -1).split("|").map(c => c.trim()).filter(Boolean);
+        return cells.join(" — ");
+      }
+      // Strip blockquote markers
+      if (t.startsWith("> ")) return line.replace(/^(\s*)>\s?/, "$1");
+      // Replace standalone --- dividers with nothing (they'd render as <hr>)
+      if (/^-{3,}$/.test(t)) return null;
+      return line;
+    })
+    .filter(line => line !== null)
+    .join("\n")
+    .trim();
+}
+
 function MessageBubble({ msg }: { msg: { role: string; content: string } }) {
   const isUser = msg.role === "user";
   return (
@@ -72,14 +95,8 @@ function MessageBubble({ msg }: { msg: { role: string; content: string } }) {
               components={{
                 hr: () => <div className="my-2" />,
                 blockquote: ({ children }) => <span className="text-white/80">{children}</span>,
-                table: ({ children }) => <div className="space-y-0.5 my-1">{children}</div>,
-                thead: ({ children }) => <div className="font-semibold text-white/90">{children}</div>,
-                tbody: ({ children }) => <div>{children}</div>,
-                tr: ({ children }) => <div className="flex flex-wrap gap-x-3">{children}</div>,
-                th: ({ children }) => <span className="text-white/90 font-semibold">{children}: </span>,
-                td: ({ children }) => <span className="text-white/75">{children}{"  "}</span>,
               }}
-            >{msg.content}</ReactMarkdown>
+            >{cleanIsaContent(msg.content)}</ReactMarkdown>
           </div>
         ) : (
           <span className="opacity-40 italic">Isa is thinking…</span>
