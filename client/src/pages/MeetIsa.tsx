@@ -296,8 +296,8 @@ export default function MeetIsa() {
                 <img
                   src={isaBotImg}
                   alt="Isa AI"
-                  className="relative w-36 h-36 rounded-full object-cover border-4 shadow-2xl"
-                  style={{ borderColor: `${ORANGE}50`, boxShadow: `0 0 40px ${ORANGE}25` }}
+                  className="relative w-48 h-48 rounded-full object-cover border-4 shadow-2xl"
+                  style={{ borderColor: `${ORANGE}60`, boxShadow: `0 0 60px ${ORANGE}30` }}
                   data-testid="img-isa-hero"
                 />
               </div>
