@@ -16,13 +16,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Gauge, Plus, Pencil, Trash2, AlertTriangle,
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
-  Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User, History,
+  Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type CalTab = "register" | "log" | "oot" | "msa";
+type CalTab = "register" | "oot" | "msa";
 
 interface WorkInstruction {
   id: number;
@@ -666,10 +666,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [expandedOot, setExpandedOot] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchGage, setSearchGage] = useState<string>("");
-  const [filterLogEquip, setFilterLogEquip] = useState<string>("all");
-  const [filterLogResult, setFilterLogResult] = useState<string>("all");
-  const [logSortField, setLogSortField] = useState<"date" | "gage" | "result" | "nextDue" | "performedBy">("date");
-  const [logSortDir, setLogSortDir] = useState<"asc" | "desc">("desc");
+  const [viewRecord, setViewRecord] = useState<CalibrationRecord | null>(null);
+  const [viewRecordEquip, setViewRecordEquip] = useState<CalibrationEquipment | null>(null);
   const iatf = isIatf(project);
   const aerospace = isAerospace(project);
   const medical = isMedical(project);
@@ -895,10 +893,10 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               {medical && <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200">ISO 13485 §7.6</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">
-              Master Calibration Register (all gages) · Calibration Log (event history)
+              All measuring instruments · expand any gage to see its calibration history · click a record to open the full detail view
               {iatf ? " · IATF §7.1.5.3 OOT Assessments" : ""}
-              {aerospace ? " · AS9100D uncertainty & as-found/as-left data" : ""}
-              {medical ? " · ISO 13485 §7.6 acceptance criteria" : ""}.
+              {aerospace ? " · AS9100D §7.1.5.2 measurement data" : ""}
+              {medical ? " · ISO 13485 §7.6" : ""}.
             </p>
           </div>
           <Button onClick={() => { setEditEquip(null); setEquipDialog(true); }}
@@ -929,7 +927,6 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         <div className="flex gap-1 mt-4 border-b border-border flex-wrap">
           {[
             { key: "register", label: "Master Calibration Register", icon: ClipboardList },
-            { key: "log", label: "Calibration Log", icon: FileCheck },
             { key: "oot", label: `OOT Assessments${ootAssessments.length > 0 ? ` (${ootAssessments.length})` : ""}`, icon: AlertTriangle },
             ...(iatf ? [{ key: "msa", label: "MSA (Gauge R&R)", icon: BarChart3 }] : []),
           ].map(({ key, label, icon: Icon }) => (
@@ -1074,43 +1071,89 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           </div>
                         </div>
 
-                        {/* Expanded detail panel — gage specs only */}
+                        {/* Expanded panel — specs + full calibration history */}
                         {isExpanded && (
-                          <div className="border-t border-border/40 bg-muted/10 px-4 py-3 text-xs">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-muted-foreground">
-                              <p className="col-span-2 font-semibold text-foreground uppercase tracking-wide text-[10px] mb-1">Instrument Specifications</p>
-                              {eq.manufacturer && <p><span className="font-medium text-foreground">Manufacturer:</span> {eq.manufacturer}{eq.model ? ` — ${eq.model}` : ""}</p>}
-                              {eq.serialNumber && <p><span className="font-medium text-foreground">S/N:</span> {eq.serialNumber}</p>}
-                              {eq.responsiblePerson && <p><span className="font-medium text-foreground">Responsible:</span> {eq.responsiblePerson}</p>}
-                              {eq.responsibleEmail && <p><span className="font-medium text-foreground">Email:</span> {eq.responsibleEmail}</p>}
-                              {eq.measurementRange && <p><span className="font-medium text-foreground">Range:</span> {eq.measurementRange}</p>}
-                              {eq.resolution && <p><span className="font-medium text-foreground">Resolution:</span> {eq.resolution}</p>}
-                              {eq.tolerance && <p><span className="font-medium text-foreground">Tolerance:</span> {eq.tolerance}</p>}
-                              {eq.calFrequencyMonths && <p><span className="font-medium text-foreground">Cal Frequency:</span> Every {eq.calFrequencyMonths} months ({eq.calType === "internal" ? "Internal" : "External"})</p>}
-                              {eq.traceableStandard && <p><span className="font-medium text-foreground">Traceable to:</span> {eq.traceableStandard}</p>}
-                              {eq.calibrationLab && <p><span className="font-medium text-foreground">Cal Lab:</span> {eq.calibrationLab}</p>}
-                              {eq.linkedDocumentId && (() => {
-                                const wi = workInstructions.find(w => w.id === eq.linkedDocumentId);
-                                return wi ? (
-                                  <p className="col-span-2"><span className="font-medium text-foreground">WI:</span>{" "}
-                                    <a href="/iso-manager?module=documentation" className="text-accent underline hover:opacity-80">{wi.title}</a>
-                                  </p>
-                                ) : null;
-                              })()}
-                              {eq.notes && <p className="col-span-2 italic mt-1">{eq.notes}</p>}
+                          <div className="border-t border-border/40 bg-muted/10 text-xs">
+                            {/* Instrument specs */}
+                            <div className="px-4 pt-3 pb-2">
+                              <p className="font-semibold text-foreground uppercase tracking-wide text-[10px] mb-2">Instrument Specifications</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1 text-muted-foreground">
+                                {eq.manufacturer && <p><span className="font-medium text-foreground">Manufacturer:</span> {eq.manufacturer}{eq.model ? ` — ${eq.model}` : ""}</p>}
+                                {eq.serialNumber && <p><span className="font-medium text-foreground">S/N:</span> {eq.serialNumber}</p>}
+                                {eq.responsiblePerson && <p><span className="font-medium text-foreground">Responsible:</span> {eq.responsiblePerson}</p>}
+                                {eq.measurementRange && <p><span className="font-medium text-foreground">Range:</span> {eq.measurementRange}</p>}
+                                {eq.resolution && <p><span className="font-medium text-foreground">Resolution:</span> {eq.resolution}</p>}
+                                {eq.tolerance && <p><span className="font-medium text-foreground">Tolerance:</span> {eq.tolerance}</p>}
+                                {eq.calFrequencyMonths && <p><span className="font-medium text-foreground">Frequency:</span> Every {eq.calFrequencyMonths} mo ({eq.calType === "internal" ? "Internal" : "External"})</p>}
+                                {eq.traceableStandard && <p><span className="font-medium text-foreground">Traceable to:</span> {eq.traceableStandard}</p>}
+                                {eq.calibrationLab && <p><span className="font-medium text-foreground">Cal Lab:</span> {eq.calibrationLab}</p>}
+                                {eq.linkedDocumentId && (() => {
+                                  const wi = workInstructions.find(w => w.id === eq.linkedDocumentId);
+                                  return wi ? <p className="col-span-3"><span className="font-medium text-foreground">WI:</span> <a href="/iso-manager?module=documentation" className="text-accent underline">{wi.title}</a></p> : null;
+                                })()}
+                                {eq.notes && <p className="col-span-3 italic mt-0.5">{eq.notes}</p>}
+                              </div>
                             </div>
-                            {/* View History link — navigates to Log tab filtered to this gage */}
-                            <div className="mt-3 pt-2 border-t border-border/30 flex items-center gap-3">
-                              <button
-                                onClick={() => {
-                                  setFilterLogEquip(String(eq.id));
-                                  setTab("log");
-                                }}
-                                className="flex items-center gap-1.5 text-xs text-accent underline hover:opacity-75 font-medium"
-                                data-testid={`button-view-history-${eq.id}`}>
-                                <History className="w-3.5 h-3.5" />
-                                View Calibration History in Log ({recordsForEquip(eq.id).length} record{recordsForEquip(eq.id).length !== 1 ? "s" : ""})
-                              </button>
+
+                            {/* Calibration history */}
+                            <div className="border-t border-border/30 px-4 pt-3 pb-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="font-semibold text-foreground uppercase tracking-wide text-[10px]">
+                                  Calibration History ({recs.length} record{recs.length !== 1 ? "s" : ""})
+                                </p>
+                                <button
+                                  onClick={() => { setLogForEquip(eq); setLogDialog(true); }}
+                                  className="flex items-center gap-1 text-[11px] text-accent font-semibold hover:opacity-75"
+                                  data-testid={`button-log-inline-${eq.id}`}>
+                                  <Plus className="w-3 h-3" /> Log New Calibration
+                                </button>
+                              </div>
+
+                              {recs.length === 0 ? (
+                                <p className="text-muted-foreground italic py-2">No calibration records yet — click "Log New Calibration" to add the first one.</p>
+                              ) : (
+                                <div className="rounded border border-border overflow-hidden">
+                                  <div className="grid grid-cols-[1fr_80px_110px_1fr_32px] bg-muted/50 border-b border-border text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                    <div className="px-2.5 py-2">Date</div>
+                                    <div className="px-2.5 py-2">Result</div>
+                                    <div className="px-2.5 py-2">Cert #</div>
+                                    <div className="px-2.5 py-2">Performed By</div>
+                                    <div className="px-2.5 py-2" />
+                                  </div>
+                                  {recs.map((r, ri) => {
+                                    const oots = ootForRecord(r.id);
+                                    return (
+                                      <div key={r.id}
+                                        className={`grid grid-cols-[1fr_80px_110px_1fr_32px] items-center border-b border-border/50 last:border-0 cursor-pointer hover:bg-accent/5 transition-colors ${ri % 2 === 1 ? "bg-muted/20" : ""} ${r.outOfTolerance ? "bg-red-50/40" : ""}`}
+                                        onClick={() => { setViewRecord(r); setViewRecordEquip(eq); }}
+                                        data-testid={`row-cal-record-${r.id}`}>
+                                        <div className="px-2.5 py-2 font-medium text-foreground flex items-center gap-1.5">
+                                          <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
+                                          {r.calibrationDate}
+                                        </div>
+                                        <div className="px-2.5 py-2">
+                                          <div className="flex flex-col gap-0.5">
+                                            <span className={`inline-block px-1.5 py-0.5 rounded border font-medium text-[10px] w-fit ${RESULT_COLORS[r.result ?? "pass"]}`}>
+                                              {(r.result ?? "pass").toUpperCase()}
+                                            </span>
+                                            {r.outOfTolerance && <Badge className="text-[9px] bg-red-100 text-red-700 border-red-200 w-fit px-1 py-0">OOT</Badge>}
+                                            {oots.length > 0 && <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200 w-fit px-1 py-0">Assessed</Badge>}
+                                          </div>
+                                        </div>
+                                        <div className="px-2.5 py-2 text-muted-foreground">
+                                          {r.certNumber || <span className="text-border">—</span>}
+                                        </div>
+                                        <div className="px-2.5 py-2 text-muted-foreground truncate">
+                                          {r.performedBy || <span className="text-border">—</span>}
+                                        </div>
+                                        <div className="px-2.5 py-2 text-muted-foreground">
+                                          <ChevronDown className="w-3.5 h-3.5 rotate-[-90deg] text-muted-foreground" />
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1122,236 +1165,6 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             </div>
           )}
 
-          {/* ── Calibration Log Tab ── */}
-          {tab === "log" && (() => {
-            const toggleLogSort = (field: typeof logSortField) => {
-              if (logSortField === field) setLogSortDir(d => d === "asc" ? "desc" : "asc");
-              else { setLogSortField(field); setLogSortDir("desc"); }
-            };
-            const SortIcon = ({ field }: { field: typeof logSortField }) => (
-              logSortField === field
-                ? logSortDir === "desc"
-                  ? <ChevronDown className="w-3 h-3 inline ml-0.5 text-accent" />
-                  : <ChevronUp className="w-3 h-3 inline ml-0.5 text-accent" />
-                : <span className="w-3 h-3 inline-block ml-0.5 opacity-30">↕</span>
-            );
-            const filteredLogs = [...records]
-              .filter(r => filterLogEquip === "all" || String(r.equipmentId) === filterLogEquip)
-              .filter(r => filterLogResult === "all" || r.result === filterLogResult)
-              .sort((a, b) => {
-                const eq_a = equipment.find(e => e.id === a.equipmentId);
-                const eq_b = equipment.find(e => e.id === b.equipmentId);
-                let cmp = 0;
-                if (logSortField === "date") cmp = a.calibrationDate.localeCompare(b.calibrationDate);
-                else if (logSortField === "gage") cmp = (eq_a?.gageId ?? "").localeCompare(eq_b?.gageId ?? "");
-                else if (logSortField === "result") cmp = (a.result ?? "").localeCompare(b.result ?? "");
-                else if (logSortField === "nextDue") cmp = (a.nextDueDate ?? "").localeCompare(b.nextDueDate ?? "");
-                else if (logSortField === "performedBy") cmp = (a.performedBy ?? "").localeCompare(b.performedBy ?? "");
-                return logSortDir === "asc" ? cmp : -cmp;
-              });
-
-            return (
-              <div className="mt-2 space-y-3">
-                {/* Filter bar */}
-                <div className="flex flex-wrap gap-2 items-center">
-                  <Select value={filterLogEquip} onValueChange={setFilterLogEquip}>
-                    <SelectTrigger className="h-8 w-52 text-xs" data-testid="select-log-equip-filter">
-                      <SelectValue placeholder="All gages" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All gages</SelectItem>
-                      {equipment.map(e => (
-                        <SelectItem key={e.id} value={String(e.id)}>{e.gageId} — {e.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filterLogResult} onValueChange={setFilterLogResult}>
-                    <SelectTrigger className="h-8 w-36 text-xs" data-testid="select-log-result-filter">
-                      <SelectValue placeholder="All results" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All results</SelectItem>
-                      <SelectItem value="pass">Pass</SelectItem>
-                      <SelectItem value="fail">Fail</SelectItem>
-                      <SelectItem value="conditional">Conditional</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {filteredLogs.length} record{filteredLogs.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-
-                {records.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileCheck className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                    <p className="font-medium">No calibration records yet</p>
-                    <p className="text-xs mt-1">Open the Master Calibration Register and click "+" next to a gage to log a calibration.</p>
-                  </div>
-                )}
-
-                {filteredLogs.length === 0 && records.length > 0 && (
-                  <div className="text-center py-8 text-muted-foreground text-sm">No records match the current filters.</div>
-                )}
-
-                {filteredLogs.length > 0 && (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    {/* Table header */}
-                    <div className="grid grid-cols-[1fr_1.6fr_90px_1.2fr_1fr_80px] gap-0 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      <button onClick={() => toggleLogSort("date")}
-                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
-                        data-testid="sort-log-date">
-                        Date <SortIcon field="date" />
-                      </button>
-                      <button onClick={() => toggleLogSort("gage")}
-                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
-                        data-testid="sort-log-gage">
-                        Gage <SortIcon field="gage" />
-                      </button>
-                      <button onClick={() => toggleLogSort("result")}
-                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
-                        data-testid="sort-log-result">
-                        Result <SortIcon field="result" />
-                      </button>
-                      <button onClick={() => toggleLogSort("performedBy")}
-                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
-                        data-testid="sort-log-performedBy">
-                        Performed By <SortIcon field="performedBy" />
-                      </button>
-                      <button onClick={() => toggleLogSort("nextDue")}
-                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
-                        data-testid="sort-log-nextDue">
-                        Next Due <SortIcon field="nextDue" />
-                      </button>
-                      <div className="px-3 py-2.5">Actions</div>
-                    </div>
-
-                    {/* Table rows */}
-                    {filteredLogs.map((r, idx) => {
-                      const eq = equipment.find(e => e.id === r.equipmentId);
-                      const oots = ootForRecord(r.id);
-                      const isExpanded = expandedEquip === -(r.id);
-                      return (
-                        <div key={r.id} className={`border-b border-border/60 last:border-0 ${r.outOfTolerance ? "bg-red-50/30 dark:bg-red-950/10" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
-                          <div className="grid grid-cols-[1fr_1.6fr_90px_1.2fr_1fr_80px] gap-0 items-center">
-                            {/* Date */}
-                            <div className="px-3 py-2.5 text-xs font-medium text-foreground flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
-                              {r.calibrationDate}
-                            </div>
-                            {/* Gage */}
-                            <div className="px-3 py-2.5 text-xs min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {eq && <span className="font-mono font-bold bg-muted px-1 py-0.5 rounded text-[11px]">{eq.gageId}</span>}
-                                <span className="text-foreground font-medium truncate">{eq?.name ?? `Equip #${r.equipmentId}`}</span>
-                              </div>
-                              {r.certNumber && <div className="text-muted-foreground text-[11px] mt-0.5">Cert: {r.certNumber}</div>}
-                            </div>
-                            {/* Result */}
-                            <div className="px-3 py-2.5 text-xs">
-                              <div className="flex flex-col gap-0.5">
-                                <span className={`inline-block px-1.5 py-0.5 rounded border font-medium text-[11px] w-fit ${RESULT_COLORS[r.result ?? "pass"]}`}>
-                                  {r.result?.toUpperCase()}
-                                </span>
-                                {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200 w-fit">OOT</Badge>}
-                                {oots.length > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200 w-fit">Assessed ✓</Badge>}
-                              </div>
-                            </div>
-                            {/* Performed By */}
-                            <div className="px-3 py-2.5 text-xs text-muted-foreground">
-                              {r.performedBy ?? <span className="text-border">—</span>}
-                            </div>
-                            {/* Next Due */}
-                            <div className="px-3 py-2.5 text-xs">
-                              {r.nextDueDate ? (
-                                <span className={(() => {
-                                  const days = Math.ceil((new Date(r.nextDueDate).getTime() - Date.now()) / 86400000);
-                                  return days < 0 ? "text-red-600 font-medium" : days <= 30 ? "text-amber-600 font-medium" : "text-muted-foreground";
-                                })()}>{r.nextDueDate}</span>
-                              ) : <span className="text-border">—</span>}
-                              {r.certificateFileUrl && (
-                                <a href={`/api/calibration/records/${r.id}/certificate`} target="_blank" rel="noreferrer"
-                                  className="flex items-center gap-0.5 text-accent text-[10px] mt-0.5 underline w-fit">
-                                  <Download className="w-2.5 h-2.5" /> Cert
-                                </a>
-                              )}
-                            </div>
-                            {/* Actions */}
-                            <div className="px-3 py-2.5 flex items-center gap-0.5">
-                              <button onClick={() => setExpandedEquip(isExpanded ? null : -(r.id))}
-                                className="p-1 rounded hover:bg-muted text-muted-foreground" title="Details">
-                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                              </button>
-                              <button onClick={() => { setEditRecord(r); setEditRecordEquip(eq ?? null); }}
-                                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent"
-                                data-testid={`button-edit-record-${r.id}`} title="Edit">
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
-                                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-red-600" title="Delete">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                          {/* Expanded detail row */}
-                          {isExpanded && (
-                            <div className="px-4 pb-3 pt-2 border-t border-border/40 bg-muted/10 text-xs text-muted-foreground space-y-1.5">
-                              {r.standardsReferenced && r.standardsReferenced.length > 0 && (
-                                <p><span className="font-medium text-foreground">Standards:</span> {r.standardsReferenced.join(", ")}</p>
-                              )}
-                              {r.adjustmentsMade && (
-                                <p><span className="font-medium text-foreground">Adjustments:</span> {r.adjustmentsMade}</p>
-                              )}
-                              {/* IATF §7.1.5.2.1 */}
-                              {iatf && (
-                                <p className="flex items-center gap-1.5">
-                                  <span className="font-medium text-amber-700">IATF Software Verified:</span>
-                                  <span className={r.softwareVerified ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>
-                                    {r.softwareVerified ? "Yes ✓" : "No / N/A"}
-                                  </span>
-                                </p>
-                              )}
-                              {/* AS9100D §7.1.5.2 */}
-                              {aerospace && (r.measurementUncertainty || r.asFoundReading || r.asLeftReading || r.environmentConditions) && (
-                                <div className="border border-blue-200 rounded p-2 bg-blue-50/30 space-y-0.5">
-                                  <p className="font-bold text-blue-800 text-[10px] uppercase tracking-wide mb-1">AS9100D Calibration Data</p>
-                                  {r.measurementUncertainty && <p><span className="font-medium text-foreground">Uncertainty:</span> {r.measurementUncertainty}</p>}
-                                  {r.asFoundReading && <p><span className="font-medium text-foreground">As-Found:</span> {r.asFoundReading}</p>}
-                                  {r.asLeftReading && <p><span className="font-medium text-foreground">As-Left:</span> {r.asLeftReading}</p>}
-                                  {r.environmentConditions && <p><span className="font-medium text-foreground">Environment:</span> {r.environmentConditions}</p>}
-                                  {r.labAccredited !== null && r.labAccredited !== undefined && (
-                                    <p><span className="font-medium text-foreground">ILAC-accredited Lab:</span>{" "}
-                                      <span className={r.labAccredited ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>{r.labAccredited ? "Yes ✓" : "No"}</span>
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                              {/* ISO 13485 §7.6 */}
-                              {medical && (r.acceptanceCriteria || r.equipmentLabelConfirmed !== null) && (
-                                <div className="border border-purple-200 rounded p-2 bg-purple-50/30 space-y-0.5">
-                                  <p className="font-bold text-purple-800 text-[10px] uppercase tracking-wide mb-1">ISO 13485 §7.6 Data</p>
-                                  {r.acceptanceCriteria && <p><span className="font-medium text-foreground">Acceptance Criteria:</span> {r.acceptanceCriteria}</p>}
-                                  {r.equipmentLabelConfirmed !== null && r.equipmentLabelConfirmed !== undefined && (
-                                    <p><span className="font-medium text-foreground">Label Confirmed:</span>{" "}
-                                      <span className={r.equipmentLabelConfirmed ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>{r.equipmentLabelConfirmed ? "Yes ✓" : "No"}</span>
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                              {r.notes && <p className="italic">{r.notes}</p>}
-                              {!r.standardsReferenced?.length && !r.adjustmentsMade && !r.notes &&
-                               !r.measurementUncertainty && !r.asFoundReading && !r.acceptanceCriteria && (
-                                <p className="text-border">No additional details.</p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
 
           {/* ── OOT Assessments Tab ── */}
           {tab === "oot" && (
@@ -1496,6 +1309,177 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             onCancel={() => { setEquipDialog(false); setEditEquip(null); }}
             workInstructions={workInstructions}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Calibration Record Detail Dialog ── */}
+      <Dialog open={!!viewRecord} onOpenChange={v => { if (!v) { setViewRecord(null); setViewRecordEquip(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="w-5 h-5 text-accent" />
+              Calibration Record
+              {viewRecordEquip && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  — <span className="font-mono font-bold">{viewRecordEquip.gageId}</span> {viewRecordEquip.name}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {viewRecord && viewRecordEquip && (() => {
+            const r = viewRecord;
+            const eq = viewRecordEquip;
+            const oots = ootForRecord(r.id);
+            return (
+              <div className="space-y-4 text-sm">
+                {/* Status banner */}
+                <div className={`flex items-center gap-3 p-3 rounded-lg border ${
+                  r.outOfTolerance ? "bg-red-50 border-red-200" :
+                  r.result === "fail" ? "bg-red-50 border-red-200" :
+                  r.result === "conditional" ? "bg-amber-50 border-amber-200" :
+                  "bg-emerald-50 border-emerald-200"}`}>
+                  <span className={`text-lg font-black ${r.outOfTolerance || r.result === "fail" ? "text-red-700" : r.result === "conditional" ? "text-amber-700" : "text-emerald-700"}`}>
+                    {r.outOfTolerance ? "OUT OF TOLERANCE" : (r.result ?? "PASS").toUpperCase()}
+                  </span>
+                  {r.outOfTolerance && <Badge className="bg-red-100 text-red-700 border-red-300">OOT {oots.length > 0 ? "— Assessed ✓" : "— Pending Assessment"}</Badge>}
+                </div>
+
+                {/* Core fields grid */}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Calibration Date</p>
+                    <p className="font-medium">{r.calibrationDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Next Due Date</p>
+                    <p className={`font-medium ${(() => { const d = r.nextDueDate ? Math.ceil((new Date(r.nextDueDate).getTime() - Date.now()) / 86400000) : null; return d !== null && d < 0 ? "text-red-600" : d !== null && d <= 30 ? "text-amber-600" : "text-foreground"; })()}`}>
+                      {r.nextDueDate ?? "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Performed By</p>
+                    <p>{r.performedBy ?? "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Certificate Number</p>
+                    <p className="font-mono">{r.certNumber ?? "—"}</p>
+                  </div>
+                  {r.standardsReferenced && r.standardsReferenced.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Standards Referenced</p>
+                      <p>{r.standardsReferenced.join(", ")}</p>
+                    </div>
+                  )}
+                  {r.adjustmentsMade && (
+                    <div className="col-span-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Adjustments / Corrections Made</p>
+                      <p>{r.adjustmentsMade}</p>
+                    </div>
+                  )}
+                  {r.notes && (
+                    <div className="col-span-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Notes</p>
+                      <p className="italic text-muted-foreground">{r.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Certificate download */}
+                {r.certificateFileUrl && (
+                  <div className="border border-border rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileCheck className="w-4 h-4 text-accent" />
+                      <span className="font-medium">Calibration Certificate on file</span>
+                    </div>
+                    <a href={`/api/calibration/records/${r.id}/certificate`} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1.5 text-sm text-accent underline font-medium hover:opacity-75">
+                      <Download className="w-3.5 h-3.5" /> Download
+                    </a>
+                  </div>
+                )}
+
+                {/* IATF §7.1.5.2.1 */}
+                {iatf && (
+                  <div className="border border-amber-200 rounded-lg p-3 bg-amber-50/40 space-y-1">
+                    <p className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5" /> IATF §7.1.5.2.1 — Production Software
+                    </p>
+                    <p className="text-sm">
+                      Software verified:{" "}
+                      <span className={r.softwareVerified ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>
+                        {r.softwareVerified ? "Yes ✓" : "No / Not applicable"}
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {/* AS9100D §7.1.5.2 */}
+                {aerospace && (r.measurementUncertainty || r.asFoundReading || r.asLeftReading || r.environmentConditions || r.labAccredited !== null) && (
+                  <div className="border border-blue-200 rounded-lg p-3 bg-blue-50/30 space-y-1.5">
+                    <p className="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1.5">
+                      <Info className="w-3.5 h-3.5" /> AS9100D §7.1.5.2 — Measurement Data
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      {r.measurementUncertainty && <p><span className="font-medium">Uncertainty (U):</span> {r.measurementUncertainty}</p>}
+                      {r.labAccredited !== null && r.labAccredited !== undefined && <p><span className="font-medium">ILAC Lab:</span> {r.labAccredited ? "Accredited ✓" : "Not accredited"}</p>}
+                      {r.asFoundReading && <p><span className="font-medium">As-Found:</span> {r.asFoundReading}</p>}
+                      {r.asLeftReading && <p><span className="font-medium">As-Left:</span> {r.asLeftReading}</p>}
+                      {r.environmentConditions && <p className="col-span-2"><span className="font-medium">Conditions:</span> {r.environmentConditions}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {/* ISO 13485 §7.6 */}
+                {medical && (r.acceptanceCriteria || r.equipmentLabelConfirmed !== null) && (
+                  <div className="border border-purple-200 rounded-lg p-3 bg-purple-50/30 space-y-1.5">
+                    <p className="text-xs font-bold text-purple-800 uppercase tracking-wide flex items-center gap-1.5">
+                      <Info className="w-3.5 h-3.5" /> ISO 13485 §7.6 — Medical Device
+                    </p>
+                    {r.acceptanceCriteria && <p className="text-sm"><span className="font-medium">Acceptance Criteria:</span> {r.acceptanceCriteria}</p>}
+                    {r.equipmentLabelConfirmed !== null && r.equipmentLabelConfirmed !== undefined && (
+                      <p className="text-sm"><span className="font-medium">Label Confirmed:</span>{" "}
+                        <span className={r.equipmentLabelConfirmed ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>
+                          {r.equipmentLabelConfirmed ? "Yes ✓" : "No"}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* OOT assessment summary */}
+                {oots.length > 0 && oots.map(oot => (
+                  <div key={oot.id} className="border border-red-200 rounded-lg p-3 bg-red-50/30 space-y-1.5">
+                    <p className="text-xs font-bold text-red-800 uppercase tracking-wide flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" /> IATF §7.1.5.3 — OOT Risk Assessment
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      <p><span className="font-medium">Risk Level:</span> <span className={oot.riskLevel === "high" ? "text-red-700 font-bold" : oot.riskLevel === "medium" ? "text-amber-700 font-bold" : "text-emerald-700 font-bold"}>{(oot.riskLevel ?? "medium").toUpperCase()}</span></p>
+                      <p><span className="font-medium">Disposition:</span> {oot.disposition ?? "—"}</p>
+                      {oot.affectedProducts && <p className="col-span-2"><span className="font-medium">Affected Products:</span> {oot.affectedProducts}</p>}
+                      {oot.containmentActions && <p className="col-span-2"><span className="font-medium">Containment:</span> {oot.containmentActions}</p>}
+                      {oot.correctiveActionRef && <p className="col-span-2"><span className="font-medium">CAPA Ref:</span> {oot.correctiveActionRef}</p>}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Action buttons */}
+                <div className="flex gap-2 pt-2 border-t border-border">
+                  <Button size="sm" variant="outline"
+                    onClick={() => { setEditRecord(r); setEditRecordEquip(eq); setViewRecord(null); setViewRecordEquip(null); }}>
+                    <Pencil className="w-3.5 h-3.5 mr-1" /> Edit Record
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:border-red-300"
+                    onClick={() => { if (confirm("Delete this calibration record?")) { deleteRecord.mutate(r.id); setViewRecord(null); setViewRecordEquip(null); } }}>
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                  </Button>
+                  <Button size="sm" variant="outline" className="ml-auto"
+                    onClick={() => { setViewRecord(null); setViewRecordEquip(null); }}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
