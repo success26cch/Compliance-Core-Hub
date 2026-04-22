@@ -34,6 +34,7 @@ import { TrainingAwarenessModule } from "./TrainingAwarenessModule";
 import { ProcessMapModule, type ProcessEntry } from "./ProcessMapModule";
 import RiskAssessmentModule from "./RiskAssessmentModule";
 import MeasurementModule from "./MeasurementModule";
+import { CalibrationModule } from "./CalibrationModule";
 import ManagementReviewModule from "./ManagementReviewModule";
 import CommunicationModule from "./CommunicationModule";
 import RolesRaciModule from "./RolesRaciModule";
@@ -272,7 +273,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement' | 'apqp' | 'supplier_management';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -289,6 +290,7 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   internal_audit:    [null, undefined, 'auditor'],
   measurement:          [null, undefined, 'auditor'],
   supplier_management:  [null, undefined, 'auditor'],
+  calibration:          [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -687,10 +689,11 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["supplier_management","apqp"] as SectionKey[]).map((section) => {
+              {(["supplier_management","apqp","calibration"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
                   supplier_management: { icon: Truck,   label: "Supplier Mgmt" },
                   apqp:                { icon: Layers,  label: "APQP / Programs" },
+                  calibration:         { icon: Gauge,   label: "Calibration" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -702,7 +705,6 @@ export default function ISOManager() {
               })}
               {/* Coming soon placeholders */}
               {[
-                { icon: Gauge, label: "Calibration", testId: "nav-calibration" },
                 { icon: Wrench, label: "Maintenance", testId: "nav-maintenance" },
               ].map(({ icon: Icon, label, testId }) => (
                 <button key={testId} disabled title={!sidebarOpen ? label : undefined}
@@ -916,6 +918,12 @@ export default function ISOManager() {
                 {canAccessSection('supplier_management', isoRole, isSuperadmin)
                   ? <SupplierModule project={project} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="supplier_management" /></div>}
+              </div>
+            ) : activeSection === 'calibration' ? (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                {canAccessSection('calibration', isoRole, isSuperadmin)
+                  ? <CalibrationModule project={project} />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="calibration" /></div>}
               </div>
             ) : (
               <>

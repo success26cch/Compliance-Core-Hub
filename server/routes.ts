@@ -9264,5 +9264,243 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.status(201).json(rows.rows[0]);
   });
 
+  // ─── Calibration Equipment ───────────────────────────────────────────────────
+
+  app.get("/api/calibration/equipment", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`
+      SELECT * FROM calibration_equipment WHERE user_id = ${req.session.userId}
+      ORDER BY gage_id ASC
+    `);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/calibration/equipment", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO calibration_equipment (
+        user_id, iso_project_id, gage_id, name, type, manufacturer, model, serial_number,
+        location, responsible_person, responsible_email, measurement_range, resolution,
+        tolerance, cal_frequency_months, cal_type, calibration_lab, traceable_standard,
+        customer_owned, linked_document_id, status, next_due_date, notes
+      ) VALUES (
+        ${req.session.userId}, ${d.isoProjectId ?? null}, ${d.gageId}, ${d.name},
+        ${d.type ?? null}, ${d.manufacturer ?? null}, ${d.model ?? null}, ${d.serialNumber ?? null},
+        ${d.location ?? null}, ${d.responsiblePerson ?? null}, ${d.responsibleEmail ?? null},
+        ${d.measurementRange ?? null}, ${d.resolution ?? null}, ${d.tolerance ?? null},
+        ${d.calFrequencyMonths ?? 12}, ${d.calType ?? 'external'}, ${d.calibrationLab ?? null},
+        ${d.traceableStandard ?? 'NIST'}, ${d.customerOwned ?? false},
+        ${d.linkedDocumentId ?? null}, ${d.status ?? 'active'}, ${d.nextDueDate ?? null},
+        ${d.notes ?? null}
+      ) RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.patch("/api/calibration/equipment/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      UPDATE calibration_equipment SET
+        gage_id = ${d.gageId}, name = ${d.name}, type = ${d.type ?? null},
+        manufacturer = ${d.manufacturer ?? null}, model = ${d.model ?? null},
+        serial_number = ${d.serialNumber ?? null}, location = ${d.location ?? null},
+        responsible_person = ${d.responsiblePerson ?? null}, responsible_email = ${d.responsibleEmail ?? null},
+        measurement_range = ${d.measurementRange ?? null}, resolution = ${d.resolution ?? null},
+        tolerance = ${d.tolerance ?? null}, cal_frequency_months = ${d.calFrequencyMonths ?? 12},
+        cal_type = ${d.calType ?? 'external'}, calibration_lab = ${d.calibrationLab ?? null},
+        traceable_standard = ${d.traceableStandard ?? 'NIST'}, customer_owned = ${d.customerOwned ?? false},
+        status = ${d.status ?? 'active'}, next_due_date = ${d.nextDueDate ?? null},
+        notes = ${d.notes ?? null}, updated_at = NOW()
+      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
+      RETURNING *
+    `);
+    res.json(rows.rows[0]);
+  });
+
+  app.delete("/api/calibration/equipment/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM calibration_equipment WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // ─── Calibration Records ─────────────────────────────────────────────────────
+
+  app.get("/api/calibration/records", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`
+      SELECT * FROM calibration_records WHERE user_id = ${req.session.userId}
+      ORDER BY calibration_date DESC
+    `);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/calibration/records", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const oot = d.result === 'fail' || d.outOfTolerance === true;
+    // Insert the record
+    const recRows = await db.execute(sql`
+      INSERT INTO calibration_records (
+        user_id, iso_project_id, equipment_id, calibration_date, performed_by,
+        cert_number, standards_referenced, result, out_of_tolerance, adjustments_made,
+        certificate_file_url, next_due_date, notes
+      ) VALUES (
+        ${req.session.userId}, ${d.isoProjectId ?? null}, ${d.equipmentId},
+        ${d.calibrationDate}, ${d.performedBy ?? null}, ${d.certNumber ?? null},
+        ${d.standardsReferenced ?? null}, ${d.result ?? 'pass'}, ${oot},
+        ${d.adjustmentsMade ?? null}, ${d.certificateFileUrl ?? null},
+        ${d.nextDueDate ?? null}, ${d.notes ?? null}
+      ) RETURNING *
+    `);
+    const record = recRows.rows[0] as any;
+    // Update equipment next_due_date & updated_at
+    if (d.nextDueDate) {
+      await db.execute(sql`
+        UPDATE calibration_equipment SET next_due_date = ${d.nextDueDate}, updated_at = NOW()
+        WHERE id = ${d.equipmentId} AND user_id = ${req.session.userId}
+      `);
+    }
+    res.status(201).json(record);
+  });
+
+  app.delete("/api/calibration/records/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`DELETE FROM calibration_records WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    res.json({ success: true });
+  });
+
+  // ─── Calibration OOT Assessments ─────────────────────────────────────────────
+
+  app.get("/api/calibration/oot-assessments", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`
+      SELECT * FROM calibration_oot_assessments WHERE user_id = ${req.session.userId}
+      ORDER BY created_at DESC
+    `);
+    res.json(rows.rows);
+  });
+
+  app.post("/api/calibration/oot-assessments", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      INSERT INTO calibration_oot_assessments (
+        user_id, iso_project_id, calibration_record_id, equipment_id,
+        affected_products, suspect_date_start, suspect_date_end, disposition,
+        risk_level, containment_actions, corrective_action_ref, assessed_by,
+        assessment_date, notes
+      ) VALUES (
+        ${req.session.userId}, ${d.isoProjectId ?? null}, ${d.calibrationRecordId},
+        ${d.equipmentId}, ${d.affectedProducts ?? null}, ${d.suspectDateStart ?? null},
+        ${d.suspectDateEnd ?? null}, ${d.disposition ?? null}, ${d.riskLevel ?? 'medium'},
+        ${d.containmentActions ?? null}, ${d.correctiveActionRef ?? null},
+        ${d.assessedBy ?? null}, ${d.assessmentDate ?? null}, ${d.notes ?? null}
+      ) RETURNING *
+    `);
+    res.status(201).json(rows.rows[0]);
+  });
+
+  app.patch("/api/calibration/oot-assessments/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const rows = await db.execute(sql`
+      UPDATE calibration_oot_assessments SET
+        affected_products = ${d.affectedProducts ?? null},
+        suspect_date_start = ${d.suspectDateStart ?? null},
+        suspect_date_end = ${d.suspectDateEnd ?? null},
+        disposition = ${d.disposition ?? null},
+        risk_level = ${d.riskLevel ?? 'medium'},
+        containment_actions = ${d.containmentActions ?? null},
+        corrective_action_ref = ${d.correctiveActionRef ?? null},
+        assessed_by = ${d.assessedBy ?? null},
+        assessment_date = ${d.assessmentDate ?? null},
+        notes = ${d.notes ?? null}
+      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
+      RETURNING *
+    `);
+    res.json(rows.rows[0]);
+  });
+
+  // ─── Calibration reminder check (called by frontend on module load) ──────────
+
+  app.post("/api/calibration/check-reminders", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const { sendEmail, brandedHtml } = await import("./emailService");
+
+    const today = new Date();
+    const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 30);
+    const throttle = new Date(today); throttle.setDate(throttle.getDate() - 7);
+
+    const rows = await db.execute(sql`
+      SELECT * FROM calibration_equipment
+      WHERE user_id = ${req.session.userId}
+        AND status = 'active'
+        AND next_due_date IS NOT NULL
+        AND next_due_date <= ${cutoff.toISOString().split("T")[0]}
+        AND (last_reminder_sent_at IS NULL OR last_reminder_sent_at < ${throttle.toISOString()})
+    `);
+
+    let sent = 0;
+    for (const eq of rows.rows as any[]) {
+      if (!eq.responsible_email) continue;
+      const dueDate = new Date(eq.next_due_date);
+      const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
+      const subject = daysLeft <= 0
+        ? `⚠️ Calibration OVERDUE: ${eq.name} (${eq.gage_id})`
+        : `📅 Calibration Due in ${daysLeft} days: ${eq.name} (${eq.gage_id})`;
+
+      const body = `
+        <h2 style="color:#1e3a5f;margin:0 0 16px">Calibration ${daysLeft <= 0 ? "Overdue" : "Reminder"}</h2>
+        <p>The following measuring equipment requires calibration attention:</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+          <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;width:40%">Equipment</td><td style="padding:8px;">${eq.name}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Gage ID</td><td style="padding:8px;">${eq.gage_id}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Location</td><td style="padding:8px;">${eq.location ?? "—"}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Calibration Due</td>
+            <td style="padding:8px;color:${daysLeft <= 0 ? "#dc2626" : daysLeft <= 7 ? "#d97706" : "#16a34a"};font-weight:bold;">
+              ${eq.next_due_date}${daysLeft <= 0 ? " (OVERDUE)" : ` (${daysLeft} days)`}
+            </td>
+          </tr>
+          <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Calibration Type</td><td style="padding:8px;">${eq.cal_type === "internal" ? "Internal" : "External"}</td></tr>
+          ${eq.calibration_lab ? `<tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Lab</td><td style="padding:8px;">${eq.calibration_lab}</td></tr>` : ""}
+        </table>
+        <p style="color:#6b7280;font-size:13px;">Please schedule calibration per your quality system procedures (IATF 16949 §7.1.5.3).</p>
+      `;
+      const ok = await sendEmail(eq.responsible_email, subject, brandedHtml(subject, body));
+      if (ok) {
+        await db.execute(sql`
+          UPDATE calibration_equipment SET last_reminder_sent_at = NOW()
+          WHERE id = ${eq.id} AND user_id = ${req.session.userId}
+        `);
+        sent++;
+      }
+    }
+    res.json({ sent, checked: rows.rows.length });
+  });
+
   return httpServer;
 }

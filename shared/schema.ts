@@ -1993,6 +1993,84 @@ export const insertSupplierAuditSchema = createInsertSchema(supplierAudits).omit
 export type InsertSupplierAudit = z.infer<typeof insertSupplierAuditSchema>;
 export type SupplierAudit = typeof supplierAudits.$inferSelect;
 
+// ─── Calibration ─────────────────────────────────────────────────────────────
+
+export const calibrationEquipment = pgTable("calibration_equipment", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  gageId: text("gage_id").notNull(),           // tag/asset number e.g. "G-001"
+  name: text("name").notNull(),
+  type: text("type"),                           // caliper, micrometer, gauge, CMM, thermometer, scale, etc.
+  manufacturer: text("manufacturer"),
+  model: text("model"),
+  serialNumber: text("serial_number"),
+  location: text("location"),
+  responsiblePerson: text("responsible_person"),
+  responsibleEmail: text("responsible_email"),
+  measurementRange: text("measurement_range"),  // e.g. "0–6 in"
+  resolution: text("resolution"),               // e.g. "0.0001 in"
+  tolerance: text("tolerance"),                 // e.g. "±0.001 in"
+  calFrequencyMonths: integer("cal_frequency_months").default(12),
+  calType: text("cal_type").default("external"), // internal | external
+  calibrationLab: text("calibration_lab"),
+  traceableStandard: text("traceable_standard").default("NIST"),
+  customerOwned: boolean("customer_owned").default(false),
+  linkedDocumentId: integer("linked_document_id"),
+  status: text("status").default("active"),     // active | out_of_service | retired
+  nextDueDate: text("next_due_date"),           // computed from last record
+  lastReminderSentAt: timestamp("last_reminder_sent_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertCalibrationEquipmentSchema = createInsertSchema(calibrationEquipment).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCalibrationEquipment = z.infer<typeof insertCalibrationEquipmentSchema>;
+export type CalibrationEquipment = typeof calibrationEquipment.$inferSelect;
+
+export const calibrationRecords = pgTable("calibration_records", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  equipmentId: integer("equipment_id").notNull(),
+  calibrationDate: text("calibration_date").notNull(),
+  performedBy: text("performed_by"),
+  certNumber: text("cert_number"),
+  standardsReferenced: text("standards_referenced").array(),
+  result: text("result").default("pass"),       // pass | fail | conditional
+  outOfTolerance: boolean("out_of_tolerance").default(false),
+  adjustmentsMade: text("adjustments_made"),
+  certificateFileUrl: text("certificate_file_url"),
+  nextDueDate: text("next_due_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertCalibrationRecordSchema = createInsertSchema(calibrationRecords).omit({ id: true, createdAt: true });
+export type InsertCalibrationRecord = z.infer<typeof insertCalibrationRecordSchema>;
+export type CalibrationRecord = typeof calibrationRecords.$inferSelect;
+
+export const calibrationOotAssessments = pgTable("calibration_oot_assessments", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  calibrationRecordId: integer("calibration_record_id").notNull(),
+  equipmentId: integer("equipment_id").notNull(),
+  affectedProducts: text("affected_products"),
+  suspectDateStart: text("suspect_date_start"),
+  suspectDateEnd: text("suspect_date_end"),
+  disposition: text("disposition"),             // accept_as_is | rework | scrap | customer_notification | recall
+  riskLevel: text("risk_level").default("medium"), // low | medium | high
+  containmentActions: text("containment_actions"),
+  correctiveActionRef: text("corrective_action_ref"),
+  assessedBy: text("assessed_by"),
+  assessmentDate: text("assessment_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertCalibrationOotAssessmentSchema = createInsertSchema(calibrationOotAssessments).omit({ id: true, createdAt: true });
+export type InsertCalibrationOotAssessment = z.infer<typeof insertCalibrationOotAssessmentSchema>;
+export type CalibrationOotAssessment = typeof calibrationOotAssessments.$inferSelect;
+
 // ─── Audit Logs ─────────────────────────────────────────────────────────────
 
 export const auditLogs = pgTable("audit_logs", {
