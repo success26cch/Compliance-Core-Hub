@@ -2,6 +2,8 @@ import type { Express, Request, Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
 import path from "path";
+import os from "os";
+import fs from "fs";
 import { chatStorage } from "./storage";
 import { storage } from "../../storage";
 import { CCH_SYSTEM_PROMPT, CCH_TRIAL_SYSTEM_PROMPT, CCH_LANDING_SYSTEM_PROMPT } from "./systemPrompt";
@@ -874,9 +876,17 @@ The OEM supplier data above is for scope identification ONLY. Customer Specific 
 
       try {
         if (ext === ".pdf") {
-          const pdfParse = (await import("pdf-parse")).default;
-          const data = await pdfParse(buffer);
-          text = data.text;
+          // pdf-parse v2 API: write buffer to a temp file and parse via file:// URL
+          const tmpFile = path.join(os.tmpdir(), `isa_upload_${Date.now()}_${Math.random().toString(36).slice(2)}.pdf`);
+          fs.writeFileSync(tmpFile, buffer);
+          try {
+            const { PDFParse } = await import("pdf-parse");
+            const parser = new PDFParse({ url: `file://${tmpFile}` });
+            const result = await parser.getText();
+            text = result.text ?? "";
+          } finally {
+            fs.unlinkSync(tmpFile);
+          }
         } else if (ext === ".docx" || ext === ".doc") {
           const mammoth = await import("mammoth");
           const result = await mammoth.extractRawText({ buffer });
