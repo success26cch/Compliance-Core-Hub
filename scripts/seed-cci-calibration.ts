@@ -451,6 +451,7 @@ function buildRecords(equipIds: number[]): Array<{
       equipmentId: equipIds[0],
       records: [
         {
+          calType: "internal" as const,
           calibrationDate: daysFromNow(-372),
           performedBy: "Ebeni Villarreal",
           certNumber: "INT-PH-2023-001",
@@ -461,6 +462,7 @@ function buildRecords(equipIds: number[]): Array<{
           notes: "Two-point buffer calibration. Slope 99.2% — within spec.",
         },
         {
+          calType: "internal" as const,
           calibrationDate: daysFromNow(-6),
           performedBy: "Ebeni Villarreal",
           certNumber: "INT-PH-2024-001",
@@ -546,6 +548,7 @@ function buildRecords(equipIds: number[]): Array<{
       equipmentId: equipIds[3],
       records: [
         {
+          calType: "internal" as const,
           calibrationDate: daysFromNow(-162),
           performedBy: "Ebeni Villarreal",
           certNumber: "INT-RF-2024-003",
@@ -564,6 +567,7 @@ function buildRecords(equipIds: number[]): Array<{
       equipmentId: equipIds[4],
       records: [
         {
+          calType: "internal" as const,
           calibrationDate: daysFromNow(-175),
           performedBy: "Ebeni Villarreal",
           certNumber: "INT-COND-2024-002",
@@ -684,6 +688,7 @@ function buildRecords(equipIds: number[]): Array<{
       equipmentId: equipIds[11],
       records: [
         {
+          calType: "internal" as const,
           calibrationDate: daysFromNow(-298),
           performedBy: "Ebeni Villarreal",
           certNumber: "INT-CAL-2023-012",
@@ -718,6 +723,7 @@ function buildRecords(equipIds: number[]): Array<{
       equipmentId: equipIds[13],
       records: [
         {
+          calType: "internal" as const,
           calibrationDate: daysFromNow(-171),
           performedBy: "Latasha Monroe",
           certNumber: "INT-TURB-2024-001",
