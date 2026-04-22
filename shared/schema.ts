@@ -2191,6 +2191,8 @@ export const pmRecords = pgTable("pm_records", {
   fodCheckCompleted: boolean("fod_check_completed"),     // AS9100D: post-PM FOD check done
   // ── ISO 13485 — Post-PM validation ────────────────────────────────────────
   equipmentValidatedPostPm: boolean("equipment_validated_post_pm"), // ISO 13485 §6.3
+  // ── Interactive procedure checklist ────────────────────────────────────────
+  checklistData: text("checklist_data"),  // JSON: array of booleans, one per parsed step
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const insertPmRecordSchema = createInsertSchema(pmRecords).omit({ id: true, createdAt: true });
