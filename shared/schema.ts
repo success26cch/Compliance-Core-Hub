@@ -2043,6 +2043,17 @@ export const calibrationRecords = pgTable("calibration_records", {
   certificateFileUrl: text("certificate_file_url"),
   nextDueDate: text("next_due_date"),
   notes: text("notes"),
+  // ── IATF 16949 §7.1.5.2.1 ───────────────────────────────────────────────
+  softwareVerified: boolean("software_verified"),     // production software verification checkbox
+  // ── AS9100D §7.1.5.2 (Aerospace) ────────────────────────────────────────
+  measurementUncertainty: text("measurement_uncertainty"),  // e.g. "±0.002 mm (k=2, 95% CI)"
+  asFoundReading: text("as_found_reading"),                 // reading BEFORE adjustment
+  asLeftReading: text("as_left_reading"),                   // reading AFTER adjustment
+  environmentConditions: text("environment_conditions"),    // "23°C ±1°C, RH 50% ±5%"
+  labAccredited: boolean("lab_accredited"),                 // ILAC / A2LA / NVLAP accredited
+  // ── ISO 13485 §7.6 (Medical Devices) ────────────────────────────────────
+  acceptanceCriteria: text("acceptance_criteria"),          // documented pass/fail criteria
+  equipmentLabelConfirmed: boolean("equipment_label_confirmed"), // calibration status label on device
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const insertCalibrationRecordSchema = createInsertSchema(calibrationRecords).omit({ id: true, createdAt: true });

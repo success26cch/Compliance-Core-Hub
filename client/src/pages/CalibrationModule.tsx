@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Gauge, Plus, Pencil, Trash2, AlertTriangle,
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
-  Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User,
+  Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User, History,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -51,6 +51,14 @@ interface CalibrationRecord {
   certNumber?: string | null; standardsReferenced?: string[] | null;
   result?: string | null; outOfTolerance?: boolean | null; adjustmentsMade?: string | null;
   certificateFileUrl?: string | null; nextDueDate?: string | null; notes?: string | null;
+  // IATF §7.1.5.2.1
+  softwareVerified?: boolean | null;
+  // AS9100D §7.1.5.2
+  measurementUncertainty?: string | null; asFoundReading?: string | null;
+  asLeftReading?: string | null; environmentConditions?: string | null;
+  labAccredited?: boolean | null;
+  // ISO 13485 §7.6
+  acceptanceCriteria?: string | null; equipmentLabelConfirmed?: boolean | null;
   createdAt?: string | null;
 }
 
@@ -118,6 +126,12 @@ function calcNextDue(calDate: string, freqMonths: number): string {
 
 function isIatf(project?: IsoProject | null): boolean {
   return /iatf\s*16949/i.test(project?.standard ?? "");
+}
+function isAerospace(project?: IsoProject | null): boolean {
+  return /as\s*9100|as\s*9110|as\s*9120/i.test(project?.standard ?? "");
+}
+function isMedical(project?: IsoProject | null): boolean {
+  return /iso\s*13485/i.test(project?.standard ?? "");
 }
 
 // ─── Equipment Form ───────────────────────────────────────────────────────────
@@ -306,6 +320,12 @@ const EMPTY_REC: Partial<CalibrationRecord & { showOot: boolean }> = {
   calibrationDate: new Date().toISOString().split("T")[0],
   performedBy: "", certNumber: "", result: "pass",
   outOfTolerance: false, adjustmentsMade: "", nextDueDate: "", notes: "", showOot: false,
+  // IATF
+  softwareVerified: false,
+  // AS9100D
+  measurementUncertainty: "", asFoundReading: "", asLeftReading: "", environmentConditions: "", labAccredited: false,
+  // ISO 13485
+  acceptanceCriteria: "", equipmentLabelConfirmed: false,
 };
 
 const EMPTY_OOT: Partial<CalibrationOotAssessment> = {
@@ -314,12 +334,14 @@ const EMPTY_OOT: Partial<CalibrationOotAssessment> = {
   correctiveActionRef: "", assessedBy: "", assessmentDate: new Date().toISOString().split("T")[0], notes: "",
 };
 
-function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, initial }: {
+function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, isAerospaceProject, isMedicalProject, initial }: {
   equipment: CalibrationEquipment;
   isoProjectId?: number | null;
   onSave: (rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>, certFile?: File) => void;
   onCancel: () => void;
   isIatfProject?: boolean;
+  isAerospaceProject?: boolean;
+  isMedicalProject?: boolean;
   initial?: Partial<CalibrationRecord>;
 }) {
   const [form, setForm] = useState<Partial<CalibrationRecord & { showOot: boolean }>>({
@@ -453,6 +475,93 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         </div>
       </div>
 
+      {/* ── IATF §7.1.5.2.1 — Production Software Verification ── */}
+      {isIatfProject && (
+        <div className="border border-amber-200 rounded-lg p-3 bg-amber-50/40 space-y-2">
+          <p className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
+            <Activity className="w-3.5 h-3.5" /> IATF §7.1.5.2.1 — Production Software
+          </p>
+          <div className="flex items-start gap-2">
+            <input type="checkbox" id="softwareVerified" checked={!!form.softwareVerified}
+              onChange={e => set("softwareVerified")(e.target.checked)}
+              className="w-4 h-4 rounded border-border accent-orange-500 mt-0.5" />
+            <Label htmlFor="softwareVerified" className="text-sm cursor-pointer leading-snug">
+              Production software verified — any software used for product or process control (SCADA, SPC, vision systems, PLCs) has been validated or verified before use and is included in this calibration activity if applicable.
+            </Label>
+          </div>
+        </div>
+      )}
+
+      {/* ── AS9100D §7.1.5.2 — Aerospace Measurement Requirements ── */}
+      {isAerospaceProject && (
+        <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/30 space-y-3">
+          <p className="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5" /> AS9100D §7.1.5.2 — Aerospace Calibration Requirements
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label className="text-sm font-semibold">Measurement Uncertainty (U)</Label>
+              <Input className="mt-1 h-8" value={form.measurementUncertainty ?? ""}
+                onChange={e => set("measurementUncertainty")(e.target.value)}
+                placeholder="e.g. ±0.002 mm (k=2, 95% confidence)" />
+              <p className="text-[11px] text-muted-foreground mt-0.5">AS9100D requires documented measurement uncertainty for all cal records.</p>
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">As-Found Reading (before adjustment)</Label>
+              <Input className="mt-1 h-8" value={form.asFoundReading ?? ""}
+                onChange={e => set("asFoundReading")(e.target.value)}
+                placeholder="e.g. 25.003 mm" />
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">As-Left Reading (after adjustment)</Label>
+              <Input className="mt-1 h-8" value={form.asLeftReading ?? ""}
+                onChange={e => set("asLeftReading")(e.target.value)}
+                placeholder="e.g. 25.000 mm" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-sm font-semibold">Environmental Conditions During Calibration</Label>
+              <Input className="mt-1 h-8" value={form.environmentConditions ?? ""}
+                onChange={e => set("environmentConditions")(e.target.value)}
+                placeholder="e.g. 23°C ±1°C, RH 50% ±5%, atmospheric pressure 101 kPa" />
+            </div>
+            <div className="col-span-2 flex items-start gap-2">
+              <input type="checkbox" id="labAccredited" checked={!!form.labAccredited}
+                onChange={e => set("labAccredited")(e.target.checked)}
+                className="w-4 h-4 rounded border-border accent-orange-500 mt-0.5" />
+              <Label htmlFor="labAccredited" className="text-sm cursor-pointer leading-snug">
+                Calibration performed by ILAC/MRA-accredited laboratory (A2LA, NVLAP, UKAS, DAkkS, etc.) — certificate on file confirms accreditation scope.
+              </Label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ISO 13485 §7.6 — Medical Device Calibration Requirements ── */}
+      {isMedicalProject && (
+        <div className="border border-purple-200 rounded-lg p-4 bg-purple-50/30 space-y-3">
+          <p className="text-xs font-bold text-purple-800 uppercase tracking-wide flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5" /> ISO 13485 §7.6 — Medical Device Calibration
+          </p>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm font-semibold">Acceptance Criteria</Label>
+              <Textarea className="mt-1 resize-none" rows={2} value={form.acceptanceCriteria ?? ""}
+                onChange={e => set("acceptanceCriteria")(e.target.value)}
+                placeholder="Document the specific pass/fail criteria used (e.g. 'Max error ±0.05 mm per calibration SOP-QC-007')" />
+              <p className="text-[11px] text-muted-foreground mt-0.5">ISO 13485 §7.6 requires explicit acceptance criteria to be documented on each cal record.</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <input type="checkbox" id="equipmentLabelConfirmed" checked={!!form.equipmentLabelConfirmed}
+                onChange={e => set("equipmentLabelConfirmed")(e.target.checked)}
+                className="w-4 h-4 rounded border-border accent-orange-500 mt-0.5" />
+              <Label htmlFor="equipmentLabelConfirmed" className="text-sm cursor-pointer leading-snug">
+                Calibration status label / identification confirmed on physical equipment — label shows next due date, unique ID, and calibration status (§7.6 label requirement).
+              </Label>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── IATF OOT Risk Assessment ── */}
       {showOot && isIatfProject && (
         <div className="border-2 border-red-200 rounded-lg p-4 space-y-3 bg-red-50/50">
@@ -562,6 +671,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [logSortField, setLogSortField] = useState<"date" | "gage" | "result" | "nextDue" | "performedBy">("date");
   const [logSortDir, setLogSortDir] = useState<"asc" | "desc">("desc");
   const iatf = isIatf(project);
+  const aerospace = isAerospace(project);
+  const medical = isMedical(project);
 
   const projectId = project?.id ?? null;
   const equipUrl = projectId ? `/api/calibration/equipment?projectId=${projectId}` : "/api/calibration/equipment";
@@ -775,14 +886,19 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
       <div className="px-4 sm:px-6 pt-5 pb-3 flex-shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <Gauge className="w-5 h-5 text-accent" />
               <h2 className="text-xl font-black text-foreground">Calibration</h2>
               <span className="text-xs font-mono text-accent font-bold">§7.1.5</span>
-              {iatf && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">IATF 16949</Badge>}
+              {iatf && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">IATF 16949 §7.1.5.2.1</Badge>}
+              {aerospace && <Badge className="text-[10px] bg-blue-100 text-blue-700 border-blue-200">AS9100D §7.1.5.2</Badge>}
+              {medical && <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200">ISO 13485 §7.6</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">
-              Gage register, calibration log, and {iatf ? "IATF §7.1.5.3 OOT risk assessment" : "calibration records"}.
+              Master Calibration Register (all gages) · Calibration Log (event history)
+              {iatf ? " · IATF §7.1.5.3 OOT Assessments" : ""}
+              {aerospace ? " · AS9100D uncertainty & as-found/as-left data" : ""}
+              {medical ? " · ISO 13485 §7.6 acceptance criteria" : ""}.
             </p>
           </div>
           <Button onClick={() => { setEditEquip(null); setEquipDialog(true); }}
@@ -958,54 +1074,43 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           </div>
                         </div>
 
-                        {/* Expanded detail panel */}
+                        {/* Expanded detail panel — gage specs only */}
                         {isExpanded && (
-                          <div className="border-t border-border/40 bg-muted/10 px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                            {/* Left: gage specs */}
-                            <div className="space-y-1.5 text-muted-foreground">
-                              <p className="font-semibold text-foreground uppercase tracking-wide text-[10px] mb-2">Instrument Details</p>
+                          <div className="border-t border-border/40 bg-muted/10 px-4 py-3 text-xs">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-muted-foreground">
+                              <p className="col-span-2 font-semibold text-foreground uppercase tracking-wide text-[10px] mb-1">Instrument Specifications</p>
                               {eq.manufacturer && <p><span className="font-medium text-foreground">Manufacturer:</span> {eq.manufacturer}{eq.model ? ` — ${eq.model}` : ""}</p>}
                               {eq.serialNumber && <p><span className="font-medium text-foreground">S/N:</span> {eq.serialNumber}</p>}
                               {eq.responsiblePerson && <p><span className="font-medium text-foreground">Responsible:</span> {eq.responsiblePerson}</p>}
+                              {eq.responsibleEmail && <p><span className="font-medium text-foreground">Email:</span> {eq.responsibleEmail}</p>}
                               {eq.measurementRange && <p><span className="font-medium text-foreground">Range:</span> {eq.measurementRange}</p>}
                               {eq.resolution && <p><span className="font-medium text-foreground">Resolution:</span> {eq.resolution}</p>}
                               {eq.tolerance && <p><span className="font-medium text-foreground">Tolerance:</span> {eq.tolerance}</p>}
+                              {eq.calFrequencyMonths && <p><span className="font-medium text-foreground">Cal Frequency:</span> Every {eq.calFrequencyMonths} months ({eq.calType === "internal" ? "Internal" : "External"})</p>}
                               {eq.traceableStandard && <p><span className="font-medium text-foreground">Traceable to:</span> {eq.traceableStandard}</p>}
                               {eq.calibrationLab && <p><span className="font-medium text-foreground">Cal Lab:</span> {eq.calibrationLab}</p>}
                               {eq.linkedDocumentId && (() => {
                                 const wi = workInstructions.find(w => w.id === eq.linkedDocumentId);
                                 return wi ? (
-                                  <p><span className="font-medium text-foreground">WI:</span>{" "}
+                                  <p className="col-span-2"><span className="font-medium text-foreground">WI:</span>{" "}
                                     <a href="/iso-manager?module=documentation" className="text-accent underline hover:opacity-80">{wi.title}</a>
                                   </p>
                                 ) : null;
                               })()}
-                              {eq.notes && <p className="italic mt-1">{eq.notes}</p>}
+                              {eq.notes && <p className="col-span-2 italic mt-1">{eq.notes}</p>}
                             </div>
-                            {/* Right: calibration history */}
-                            <div>
-                              <p className="font-semibold text-foreground uppercase tracking-wide text-[10px] mb-2">Calibration History</p>
-                              {recs.length === 0 ? (
-                                <p className="text-muted-foreground">No records yet.</p>
-                              ) : (
-                                <div className="space-y-1">
-                                  {recs.map(r => (
-                                    <div key={r.id} className="flex items-center gap-2 text-xs bg-background border border-border/60 rounded px-2.5 py-1.5">
-                                      <span className="font-medium text-foreground">{r.calibrationDate}</span>
-                                      <span className={`px-1 py-0.5 rounded border font-medium text-[11px] ${RESULT_COLORS[r.result ?? "pass"]}`}>
-                                        {r.result?.toUpperCase()}
-                                      </span>
-                                      {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200">OOT</Badge>}
-                                      {r.certNumber && <span className="text-muted-foreground">#{r.certNumber}</span>}
-                                      {r.nextDueDate && <span className="ml-auto text-muted-foreground">Next: {r.nextDueDate}</span>}
-                                      <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
-                                        className="text-muted-foreground hover:text-red-600 shrink-0">
-                                        <Trash2 className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                            {/* View History link — navigates to Log tab filtered to this gage */}
+                            <div className="mt-3 pt-2 border-t border-border/30 flex items-center gap-3">
+                              <button
+                                onClick={() => {
+                                  setFilterLogEquip(String(eq.id));
+                                  setTab("log");
+                                }}
+                                className="flex items-center gap-1.5 text-xs text-accent underline hover:opacity-75 font-medium"
+                                data-testid={`button-view-history-${eq.id}`}>
+                                <History className="w-3.5 h-3.5" />
+                                View Calibration History in Log ({recordsForEquip(eq.id).length} record{recordsForEquip(eq.id).length !== 1 ? "s" : ""})
+                              </button>
                             </div>
                           </div>
                         )}
@@ -1189,15 +1294,52 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           </div>
                           {/* Expanded detail row */}
                           {isExpanded && (
-                            <div className="px-4 pb-3 pt-0 border-t border-border/40 bg-muted/10 text-xs text-muted-foreground space-y-1">
+                            <div className="px-4 pb-3 pt-2 border-t border-border/40 bg-muted/10 text-xs text-muted-foreground space-y-1.5">
                               {r.standardsReferenced && r.standardsReferenced.length > 0 && (
                                 <p><span className="font-medium text-foreground">Standards:</span> {r.standardsReferenced.join(", ")}</p>
                               )}
                               {r.adjustmentsMade && (
                                 <p><span className="font-medium text-foreground">Adjustments:</span> {r.adjustmentsMade}</p>
                               )}
+                              {/* IATF §7.1.5.2.1 */}
+                              {iatf && (
+                                <p className="flex items-center gap-1.5">
+                                  <span className="font-medium text-amber-700">IATF Software Verified:</span>
+                                  <span className={r.softwareVerified ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>
+                                    {r.softwareVerified ? "Yes ✓" : "No / N/A"}
+                                  </span>
+                                </p>
+                              )}
+                              {/* AS9100D §7.1.5.2 */}
+                              {aerospace && (r.measurementUncertainty || r.asFoundReading || r.asLeftReading || r.environmentConditions) && (
+                                <div className="border border-blue-200 rounded p-2 bg-blue-50/30 space-y-0.5">
+                                  <p className="font-bold text-blue-800 text-[10px] uppercase tracking-wide mb-1">AS9100D Calibration Data</p>
+                                  {r.measurementUncertainty && <p><span className="font-medium text-foreground">Uncertainty:</span> {r.measurementUncertainty}</p>}
+                                  {r.asFoundReading && <p><span className="font-medium text-foreground">As-Found:</span> {r.asFoundReading}</p>}
+                                  {r.asLeftReading && <p><span className="font-medium text-foreground">As-Left:</span> {r.asLeftReading}</p>}
+                                  {r.environmentConditions && <p><span className="font-medium text-foreground">Environment:</span> {r.environmentConditions}</p>}
+                                  {r.labAccredited !== null && r.labAccredited !== undefined && (
+                                    <p><span className="font-medium text-foreground">ILAC-accredited Lab:</span>{" "}
+                                      <span className={r.labAccredited ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>{r.labAccredited ? "Yes ✓" : "No"}</span>
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              {/* ISO 13485 §7.6 */}
+                              {medical && (r.acceptanceCriteria || r.equipmentLabelConfirmed !== null) && (
+                                <div className="border border-purple-200 rounded p-2 bg-purple-50/30 space-y-0.5">
+                                  <p className="font-bold text-purple-800 text-[10px] uppercase tracking-wide mb-1">ISO 13485 §7.6 Data</p>
+                                  {r.acceptanceCriteria && <p><span className="font-medium text-foreground">Acceptance Criteria:</span> {r.acceptanceCriteria}</p>}
+                                  {r.equipmentLabelConfirmed !== null && r.equipmentLabelConfirmed !== undefined && (
+                                    <p><span className="font-medium text-foreground">Label Confirmed:</span>{" "}
+                                      <span className={r.equipmentLabelConfirmed ? "text-emerald-700 font-semibold" : "text-muted-foreground"}>{r.equipmentLabelConfirmed ? "Yes ✓" : "No"}</span>
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                               {r.notes && <p className="italic">{r.notes}</p>}
-                              {!r.standardsReferenced?.length && !r.adjustmentsMade && !r.notes && (
+                              {!r.standardsReferenced?.length && !r.adjustmentsMade && !r.notes &&
+                               !r.measurementUncertainty && !r.asFoundReading && !r.acceptanceCriteria && (
                                 <p className="text-border">No additional details.</p>
                               )}
                             </div>
@@ -1369,6 +1511,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               onSave={handleSaveRecord}
               onCancel={() => { setLogDialog(false); setLogForEquip(null); }}
               isIatfProject={iatf}
+              isAerospaceProject={aerospace}
+              isMedicalProject={medical}
             />
           )}
           {!logForEquip && (
@@ -1399,6 +1543,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               onSave={handleEditRecord}
               onCancel={() => { setEditRecord(null); setEditRecordEquip(null); }}
               isIatfProject={iatf}
+              isAerospaceProject={aerospace}
+              isMedicalProject={medical}
               initial={editRecord}
             />
           )}
