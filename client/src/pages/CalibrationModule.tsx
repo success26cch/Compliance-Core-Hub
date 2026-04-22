@@ -558,6 +558,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchGage, setSearchGage] = useState<string>("");
   const [filterLogEquip, setFilterLogEquip] = useState<string>("all");
+  const [filterLogResult, setFilterLogResult] = useState<string>("all");
+  const [logSortField, setLogSortField] = useState<"date" | "gage" | "result" | "nextDue" | "performedBy">("date");
+  const [logSortDir, setLogSortDir] = useState<"asc" | "desc">("desc");
   const iatf = isIatf(project);
 
   const projectId = project?.id ?? null;
@@ -809,7 +812,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         {/* Tabs */}
         <div className="flex gap-1 mt-4 border-b border-border flex-wrap">
           {[
-            { key: "register", label: "Gage Register", icon: ClipboardList },
+            { key: "register", label: "Master Calibration Register", icon: ClipboardList },
             { key: "log", label: "Calibration Log", icon: FileCheck },
             { key: "oot", label: `OOT Assessments${ootAssessments.length > 0 ? ` (${ootAssessments.length})` : ""}`, icon: AlertTriangle },
             ...(iatf ? [{ key: "msa", label: "MSA (Gauge R&R)", icon: BarChart3 }] : []),
@@ -857,7 +860,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               {filteredEquip.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Gauge className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No equipment in gage register</p>
+                  <p className="font-medium">No equipment in the Master Calibration Register</p>
                   <p className="text-xs mt-1">Click "Add Equipment" to register your first measuring instrument.</p>
                 </div>
               )}
@@ -979,15 +982,40 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
           )}
 
           {/* ── Calibration Log Tab ── */}
-          {tab === "log" && (
-            <div className="mt-2 space-y-2">
-              {/* Equipment filter for log */}
-              {equipment.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground shrink-0">Filter by gage:</span>
+          {tab === "log" && (() => {
+            const toggleLogSort = (field: typeof logSortField) => {
+              if (logSortField === field) setLogSortDir(d => d === "asc" ? "desc" : "asc");
+              else { setLogSortField(field); setLogSortDir("desc"); }
+            };
+            const SortIcon = ({ field }: { field: typeof logSortField }) => (
+              logSortField === field
+                ? logSortDir === "desc"
+                  ? <ChevronDown className="w-3 h-3 inline ml-0.5 text-accent" />
+                  : <ChevronUp className="w-3 h-3 inline ml-0.5 text-accent" />
+                : <span className="w-3 h-3 inline-block ml-0.5 opacity-30">↕</span>
+            );
+            const filteredLogs = [...records]
+              .filter(r => filterLogEquip === "all" || String(r.equipmentId) === filterLogEquip)
+              .filter(r => filterLogResult === "all" || r.result === filterLogResult)
+              .sort((a, b) => {
+                const eq_a = equipment.find(e => e.id === a.equipmentId);
+                const eq_b = equipment.find(e => e.id === b.equipmentId);
+                let cmp = 0;
+                if (logSortField === "date") cmp = a.calibrationDate.localeCompare(b.calibrationDate);
+                else if (logSortField === "gage") cmp = (eq_a?.gageId ?? "").localeCompare(eq_b?.gageId ?? "");
+                else if (logSortField === "result") cmp = (a.result ?? "").localeCompare(b.result ?? "");
+                else if (logSortField === "nextDue") cmp = (a.nextDueDate ?? "").localeCompare(b.nextDueDate ?? "");
+                else if (logSortField === "performedBy") cmp = (a.performedBy ?? "").localeCompare(b.performedBy ?? "");
+                return logSortDir === "asc" ? cmp : -cmp;
+              });
+
+            return (
+              <div className="mt-2 space-y-3">
+                {/* Filter bar */}
+                <div className="flex flex-wrap gap-2 items-center">
                   <Select value={filterLogEquip} onValueChange={setFilterLogEquip}>
-                    <SelectTrigger className="h-8 w-56" data-testid="select-log-equip-filter">
-                      <SelectValue />
+                    <SelectTrigger className="h-8 w-52 text-xs" data-testid="select-log-equip-filter">
+                      <SelectValue placeholder="All gages" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All gages</SelectItem>
@@ -996,70 +1024,156 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <span className="text-xs text-muted-foreground">
-                    {(filterLogEquip === "all" ? records : records.filter(r => String(r.equipmentId) === filterLogEquip)).length} record{records.length !== 1 ? "s" : ""}
+                  <Select value={filterLogResult} onValueChange={setFilterLogResult}>
+                    <SelectTrigger className="h-8 w-36 text-xs" data-testid="select-log-result-filter">
+                      <SelectValue placeholder="All results" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All results</SelectItem>
+                      <SelectItem value="pass">Pass</SelectItem>
+                      <SelectItem value="fail">Fail</SelectItem>
+                      <SelectItem value="conditional">Conditional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {filteredLogs.length} record{filteredLogs.length !== 1 ? "s" : ""}
                   </span>
                 </div>
-              )}
-              {records.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <FileCheck className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No calibration records yet</p>
-                  <p className="text-xs mt-1">Open the Gage Register and click "+" next to a gage to log a calibration.</p>
-                </div>
-              )}
-              {[...records]
-                .filter(r => filterLogEquip === "all" || String(r.equipmentId) === filterLogEquip)
-                .sort((a, b) => b.calibrationDate.localeCompare(a.calibrationDate)).map(r => {
-                const eq = equipment.find(e => e.id === r.equipmentId);
-                const oots = ootForRecord(r.id);
-                return (
-                  <div key={r.id} className={`border rounded-lg p-3 ${r.outOfTolerance ? "border-red-200 bg-red-50/30" : "border-border/60"}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {eq && <span className="font-mono text-xs font-bold bg-muted px-1.5 py-0.5 rounded">{eq.gageId}</span>}
-                          <span className="text-sm font-semibold">{eq?.name ?? `Equipment #${r.equipmentId}`}</span>
-                          <span className={`text-xs font-medium px-1.5 py-0.5 rounded border ${RESULT_COLORS[r.result ?? "pass"]}`}>
-                            {r.result?.toUpperCase()}
-                          </span>
-                          {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200">OOT</Badge>}
-                          {oots.length > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">OOT Assessment ✓</Badge>}
-                          {r.certificateFileUrl && (
-                            <a href={`/api/calibration/records/${r.id}/certificate`} target="_blank" rel="noreferrer"
-                              className="text-[10px] flex items-center gap-0.5 text-accent underline">
-                              <Download className="w-3 h-3" /> Cert
-                            </a>
+
+                {records.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileCheck className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="font-medium">No calibration records yet</p>
+                    <p className="text-xs mt-1">Open the Master Calibration Register and click "+" next to a gage to log a calibration.</p>
+                  </div>
+                )}
+
+                {filteredLogs.length === 0 && records.length > 0 && (
+                  <div className="text-center py-8 text-muted-foreground text-sm">No records match the current filters.</div>
+                )}
+
+                {filteredLogs.length > 0 && (
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    {/* Table header */}
+                    <div className="grid grid-cols-[1fr_1.6fr_90px_1.2fr_1fr_80px] gap-0 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      <button onClick={() => toggleLogSort("date")}
+                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
+                        data-testid="sort-log-date">
+                        Date <SortIcon field="date" />
+                      </button>
+                      <button onClick={() => toggleLogSort("gage")}
+                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
+                        data-testid="sort-log-gage">
+                        Gage <SortIcon field="gage" />
+                      </button>
+                      <button onClick={() => toggleLogSort("result")}
+                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
+                        data-testid="sort-log-result">
+                        Result <SortIcon field="result" />
+                      </button>
+                      <button onClick={() => toggleLogSort("performedBy")}
+                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
+                        data-testid="sort-log-performedBy">
+                        Performed By <SortIcon field="performedBy" />
+                      </button>
+                      <button onClick={() => toggleLogSort("nextDue")}
+                        className="flex items-center gap-0.5 px-3 py-2.5 hover:text-foreground text-left"
+                        data-testid="sort-log-nextDue">
+                        Next Due <SortIcon field="nextDue" />
+                      </button>
+                      <div className="px-3 py-2.5">Actions</div>
+                    </div>
+
+                    {/* Table rows */}
+                    {filteredLogs.map((r, idx) => {
+                      const eq = equipment.find(e => e.id === r.equipmentId);
+                      const oots = ootForRecord(r.id);
+                      const isExpanded = expandedEquip === -(r.id);
+                      return (
+                        <div key={r.id} className={`border-b border-border/60 last:border-0 ${r.outOfTolerance ? "bg-red-50/30 dark:bg-red-950/10" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
+                          <div className="grid grid-cols-[1fr_1.6fr_90px_1.2fr_1fr_80px] gap-0 items-center">
+                            {/* Date */}
+                            <div className="px-3 py-2.5 text-xs font-medium text-foreground flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
+                              {r.calibrationDate}
+                            </div>
+                            {/* Gage */}
+                            <div className="px-3 py-2.5 text-xs min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {eq && <span className="font-mono font-bold bg-muted px-1 py-0.5 rounded text-[11px]">{eq.gageId}</span>}
+                                <span className="text-foreground font-medium truncate">{eq?.name ?? `Equip #${r.equipmentId}`}</span>
+                              </div>
+                              {r.certNumber && <div className="text-muted-foreground text-[11px] mt-0.5">Cert: {r.certNumber}</div>}
+                            </div>
+                            {/* Result */}
+                            <div className="px-3 py-2.5 text-xs">
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`inline-block px-1.5 py-0.5 rounded border font-medium text-[11px] w-fit ${RESULT_COLORS[r.result ?? "pass"]}`}>
+                                  {r.result?.toUpperCase()}
+                                </span>
+                                {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200 w-fit">OOT</Badge>}
+                                {oots.length > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200 w-fit">Assessed ✓</Badge>}
+                              </div>
+                            </div>
+                            {/* Performed By */}
+                            <div className="px-3 py-2.5 text-xs text-muted-foreground">
+                              {r.performedBy ?? <span className="text-border">—</span>}
+                            </div>
+                            {/* Next Due */}
+                            <div className="px-3 py-2.5 text-xs">
+                              {r.nextDueDate ? (
+                                <span className={(() => {
+                                  const days = Math.ceil((new Date(r.nextDueDate).getTime() - Date.now()) / 86400000);
+                                  return days < 0 ? "text-red-600 font-medium" : days <= 30 ? "text-amber-600 font-medium" : "text-muted-foreground";
+                                })()}>{r.nextDueDate}</span>
+                              ) : <span className="text-border">—</span>}
+                              {r.certificateFileUrl && (
+                                <a href={`/api/calibration/records/${r.id}/certificate`} target="_blank" rel="noreferrer"
+                                  className="flex items-center gap-0.5 text-accent text-[10px] mt-0.5 underline w-fit">
+                                  <Download className="w-2.5 h-2.5" /> Cert
+                                </a>
+                              )}
+                            </div>
+                            {/* Actions */}
+                            <div className="px-3 py-2.5 flex items-center gap-0.5">
+                              <button onClick={() => setExpandedEquip(isExpanded ? null : -(r.id))}
+                                className="p-1 rounded hover:bg-muted text-muted-foreground" title="Details">
+                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              </button>
+                              <button onClick={() => { setEditRecord(r); setEditRecordEquip(eq ?? null); }}
+                                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent"
+                                data-testid={`button-edit-record-${r.id}`} title="Edit">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
+                                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-red-600" title="Delete">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          {/* Expanded detail row */}
+                          {isExpanded && (
+                            <div className="px-4 pb-3 pt-0 border-t border-border/40 bg-muted/10 text-xs text-muted-foreground space-y-1">
+                              {r.standardsReferenced && r.standardsReferenced.length > 0 && (
+                                <p><span className="font-medium text-foreground">Standards:</span> {r.standardsReferenced.join(", ")}</p>
+                              )}
+                              {r.adjustmentsMade && (
+                                <p><span className="font-medium text-foreground">Adjustments:</span> {r.adjustmentsMade}</p>
+                              )}
+                              {r.notes && <p className="italic">{r.notes}</p>}
+                              {!r.standardsReferenced?.length && !r.adjustmentsMade && !r.notes && (
+                                <p className="text-border">No additional details.</p>
+                              )}
+                            </div>
                           )}
                         </div>
-                        <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{r.calibrationDate}</span>
-                          {r.performedBy && <span>By: {r.performedBy}</span>}
-                          {r.certNumber && <span>Cert #: {r.certNumber}</span>}
-                          {r.nextDueDate && <span>Next due: {r.nextDueDate}</span>}
-                        </div>
-                        {r.standardsReferenced && r.standardsReferenced.length > 0 && (
-                          <p className="mt-1 text-xs text-muted-foreground">Standards: {r.standardsReferenced.join(", ")}</p>
-                        )}
-                        {r.adjustmentsMade && <p className="mt-1 text-xs text-muted-foreground">Adjustments: {r.adjustmentsMade}</p>}
-                        {r.notes && <p className="mt-0.5 text-xs text-muted-foreground italic">{r.notes}</p>}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => { setEditRecord(r); setEditRecordEquip(eq ?? null); }}
-                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-accent" data-testid={`button-edit-record-${r.id}`}>
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
-                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-red-600">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── OOT Assessments Tab ── */}
           {tab === "oot" && (
