@@ -607,6 +607,10 @@ export const isoProjects = pgTable("iso_projects", {
     roles: Array<{ id: string; title: string; department: string }>;
     assignments: Record<string, Record<string, string>>;
   }>(),
+  supplierApprovalSettings: jsonb("supplier_approval_settings").$type<{
+    approvalThreshold: number;
+    conditionalThreshold: number;
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1914,6 +1918,7 @@ export const supplierCandidateAssessments = pgTable("supplier_candidate_assessme
   evaluatorName: text("evaluator_name"),
   overallScore: integer("overall_score"),
   recommendation: text("recommendation"),
+  thresholds: jsonb("thresholds"),
   notes: text("notes"),
   scores: jsonb("scores"),
   createdAt: timestamp("created_at").defaultNow(),

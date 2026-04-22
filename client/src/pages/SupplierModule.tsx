@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ interface SupplierCandidateAssessment {
   id: number; userId: string; isoProjectId?: number | null;
   candidateName: string; assessmentDate: string; evaluatorName?: string | null;
   overallScore?: number | null; recommendation?: string | null; notes?: string | null;
+  thresholds?: { approvalThreshold?: number; conditionalThreshold?: number } | null;
   scores?: Record<string, { criteriaId: number; name: string; category?: string | null; weight: number; score: number; contribution: number }> | null;
   createdAt?: string | null;
 }
@@ -675,7 +676,7 @@ function criteriaScoreColor(s: number): string {
   return s >= 8 ? "text-emerald-600" : s >= 6 ? "text-amber-600" : s >= 4 ? "text-orange-500" : "text-red-600";
 }
 
-function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
+function SelectionCriteria({ isoProjectId, project }: { isoProjectId?: number; project?: IsoProject | null }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
@@ -687,6 +688,13 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
   const [candidateNotes, setCandidateNotes] = useState("");
   const [expandedAssessmentId, setExpandedAssessmentId] = useState<number | null>(null);
   const [candidateScores, setCandidateScores] = useState<Record<number, number>>({});
+  const [approvalThreshold, setApprovalThreshold] = useState(project?.supplierApprovalSettings?.approvalThreshold ?? 75);
+  const [conditionalThreshold, setConditionalThreshold] = useState(project?.supplierApprovalSettings?.conditionalThreshold ?? 55);
+
+  useEffect(() => {
+    setApprovalThreshold(project?.supplierApprovalSettings?.approvalThreshold ?? 75);
+    setConditionalThreshold(project?.supplierApprovalSettings?.conditionalThreshold ?? 55);
+  }, [project?.supplierApprovalSettings?.approvalThreshold, project?.supplierApprovalSettings?.conditionalThreshold]);
 
   const qk = ["/api/supplier-criteria", isoProjectId];
   const { data: criteria = [], isLoading } = useQuery<SupplierCriteria[]>({
@@ -730,6 +738,23 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
     mutationFn: (id: number) => apiRequest("DELETE", `/api/supplier-candidate-assessments/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: assessmentsQk }); toast({ title: "Candidate assessment deleted" }); },
   });
+  const updateThresholdsMut = useMutation({
+    mutationFn: () => apiRequest("PATCH", "/api/iso-projects", {
+      id: isoProjectId,
+      supplierApprovalSettings: {
+        approvalThreshold: Math.max(1, Math.min(100, approvalThreshold || 75)),
+        conditionalThreshold: Math.max(1, Math.min(approvalThreshold - 1, conditionalThreshold || 55)),
+      },
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
+      qc.invalidateQueries({ queryKey: ["/api/iso-projects/all"] });
+      toast({ title: "Approval thresholds saved" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Save failed", description: e.message || "Could not save approval thresholds", variant: "destructive" });
+    },
+  });
 
   const totalWeight = criteria.reduce((s, c) => s + (c.weight || 0), 0);
   const byCategory = CRITERIA_CATEGORIES.reduce((acc, cat) => {
@@ -747,13 +772,15 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
     }
     return Math.round(weighted);
   })();
-  const candidateReco = candidateOverall >= 75 ? "approved"
-    : candidateOverall >= 55 ? "conditional"
+  const effectiveApprovalThreshold = Math.max(1, Math.min(100, approvalThreshold || 75));
+  const effectiveConditionalThreshold = Math.max(1, Math.min(effectiveApprovalThreshold - 1, conditionalThreshold || 55));
+  const candidateReco = candidateOverall >= effectiveApprovalThreshold ? "approved"
+    : candidateOverall >= effectiveConditionalThreshold ? "conditional"
     : "rejected";
   const CANDIDATE_RECO: Record<string, { label: string; style: string; note: string }> = {
-    approved:    { label: "✓ Approved for ASL", style: "bg-emerald-100 text-emerald-800 border-emerald-200", note: "Score ≥ 75 — Proceed to ASL approval" },
-    conditional: { label: "⚠ Conditional — Clarification Needed", style: "bg-amber-100 text-amber-700 border-amber-200", note: "Score 55–74 — Supplier must address gaps before approval" },
-    rejected:    { label: "✗ Not Qualified", style: "bg-red-100 text-red-700 border-red-200", note: "Score < 55 — Does not meet pre-qualification threshold" },
+    approved:    { label: "✓ Approved for ASL", style: "bg-emerald-100 text-emerald-800 border-emerald-200", note: `Score ≥ ${effectiveApprovalThreshold} — Proceed to ASL approval` },
+    conditional: { label: "⚠ Conditional — Clarification Needed", style: "bg-amber-100 text-amber-700 border-amber-200", note: `Score ${effectiveConditionalThreshold}–${effectiveApprovalThreshold - 1} — Supplier must address gaps before approval` },
+    rejected:    { label: "✗ Not Qualified", style: "bg-red-100 text-red-700 border-red-200", note: `Score < ${effectiveConditionalThreshold} — Does not meet pre-qualification threshold` },
   };
 
   const buildCandidateScoresPayload = () => {
@@ -791,7 +818,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
           <p className="font-bold mb-0.5">Pre-qualification criteria — for evaluating NEW supplier candidates</p>
           <p className="leading-relaxed text-blue-600/90 dark:text-blue-400/80">
             These criteria define what to verify before approving a supplier. Each criterion is scored <strong>1–10</strong> (anchors shown on each card below).
-            The weighted total determines qualification: <strong>≥75 = Approved</strong>, 55–74 = Conditional, &lt;55 = Not Qualified.
+            The weighted total determines qualification: <strong>≥{effectiveApprovalThreshold} = Approved</strong>, {effectiveConditionalThreshold}–{effectiveApprovalThreshold - 1} = Conditional, &lt;{effectiveConditionalThreshold} = Not Qualified.
             Use <strong>"Score a Candidate"</strong> to run a live evaluation. For ongoing active-supplier performance, use the <strong>Evaluations tab</strong>.
           </p>
         </div>
@@ -806,6 +833,28 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
             </p>
             <p className="text-sm text-muted-foreground">Must total 100% for accurate scoring</p>
           </div>
+        </div>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground">Approved ≥</Label>
+            <Input type="number" min={1} max={100} className="h-8 w-20 text-base mt-1"
+              value={approvalThreshold}
+              onChange={e => setApprovalThreshold(parseInt(e.target.value) || 75)}
+              data-testid="input-approval-threshold" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground">Conditional ≥</Label>
+            <Input type="number" min={1} max={99} className="h-8 w-20 text-base mt-1"
+              value={conditionalThreshold}
+              onChange={e => setConditionalThreshold(parseInt(e.target.value) || 55)}
+              data-testid="input-conditional-threshold" />
+          </div>
+          <Button variant="outline" size="sm" className="h-8 text-sm"
+            onClick={() => updateThresholdsMut.mutate()}
+            disabled={effectiveConditionalThreshold >= effectiveApprovalThreshold || updateThresholdsMut.isPending}
+            data-testid="button-save-approval-thresholds">
+            {updateThresholdsMut.isPending ? "Saving…" : "Save Thresholds"}
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           {criteria.length === 0 && (
@@ -927,7 +976,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
             {/* Overall score summary */}
             <div className="flex items-center gap-5 bg-white dark:bg-card border border-border/60 rounded-xl p-4 flex-wrap">
               <div className="text-center min-w-[64px]">
-                <p className={`text-4xl font-black ${candidateOverall >= 75 ? "text-emerald-600" : candidateOverall >= 55 ? "text-amber-600" : candidateOverall > 0 ? "text-red-600" : "text-muted-foreground/30"}`}>
+                <p className={`text-4xl font-black ${candidateOverall >= effectiveApprovalThreshold ? "text-emerald-600" : candidateOverall >= effectiveConditionalThreshold ? "text-amber-600" : candidateOverall > 0 ? "text-red-600" : "text-muted-foreground/30"}`}>
                   {candidateOverall > 0 ? candidateOverall : "—"}
                 </p>
                 <p className="text-sm text-muted-foreground">/ 100</p>
@@ -968,6 +1017,10 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                   evaluatorName: candidateEvaluator.trim() || undefined,
                   overallScore: candidateOverall,
                   recommendation: candidateReco,
+                  thresholds: {
+                    approvalThreshold: effectiveApprovalThreshold,
+                    conditionalThreshold: effectiveConditionalThreshold,
+                  },
                   notes: candidateNotes.trim() || undefined,
                   scores: buildCandidateScoresPayload(),
                 })}
@@ -1132,6 +1185,7 @@ function SelectionCriteria({ isoProjectId }: { isoProjectId?: number }) {
                       <div className="min-w-0">
                         <p className="text-base font-bold text-primary truncate">{a.candidateName}</p>
                         <p className="text-sm text-muted-foreground">{a.assessmentDate} {a.evaluatorName ? `· ${a.evaluatorName}` : ""}</p>
+                        <p className="text-xs text-muted-foreground">Policy used: Approved ≥{a.thresholds?.approvalThreshold ?? 75} · Conditional ≥{a.thresholds?.conditionalThreshold ?? 55}</p>
                       </div>
                     </button>
                     <div className="flex items-center gap-2">
@@ -2370,7 +2424,7 @@ export default function SupplierModule({ project }: SupplierModuleProps) {
           </div>
 
           {tab === "asl"      && <ApprovedSupplierList isoProjectId={isoProjectId} />}
-          {tab === "criteria" && <SelectionCriteria isoProjectId={isoProjectId} />}
+          {tab === "criteria" && <SelectionCriteria isoProjectId={isoProjectId} project={project} />}
           {tab === "evals"    && <SupplierEvaluations isoProjectId={isoProjectId} isIATF={isIATF} />}
           {tab === "audits"   && isIATF && <SupplierAuditSchedule isoProjectId={isoProjectId} />}
         </div>
