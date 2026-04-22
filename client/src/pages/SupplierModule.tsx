@@ -94,11 +94,31 @@ const RISK_COLORS: Record<string, string> = {
   low:    "bg-emerald-100 text-emerald-700",
 };
 
+function supplierHasIatfCertification(supplier?: Supplier | null): boolean {
+  return /iatf\s*16949/i.test(supplier?.isoCertType || "");
+}
+
+function supplierHasIso9001Certification(supplier?: Supplier | null): boolean {
+  return /iso\s*9001/i.test(supplier?.isoCertType || "");
+}
+
+function getSupplierCertificationRiskFactors(supplier?: Supplier | null): Record<string, boolean> {
+  if (!supplier) return {};
+  const hasIatf = supplierHasIatfCertification(supplier);
+  const hasIso9001 = supplierHasIso9001Certification(supplier);
+  return {
+    iso9001Only: hasIso9001 && !hasIatf,
+    noQualityCert: !hasIso9001 && !hasIatf,
+  };
+}
+
 function calcRiskScore(factors: Record<string, boolean>): number {
   let score = 0;
   if (factors.criticalPart)      score += 30;
   if (factors.recentNC)          score += 25;
   if (factors.noCert)            score += 20;
+  if (factors.iso9001Only)       score += 15;
+  if (factors.noQualityCert)     score += 25;
   if (factors.certExpiringSoon)  score += 15;
   if (factors.singleSource)      score += 15;
   if (factors.poorDelivery)      score += 20;
@@ -2126,10 +2146,11 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
 
 // ─── Tab 4: Supplier Audit Schedule (IATF Only) ──────────────────────────────
 
-const RISK_FACTORS: Array<{ key: string; label: string; desc: string; weight: number }> = [
+const RISK_FACTORS: Array<{ key: string; label: string; desc: string; weight: number; auto?: boolean }> = [
   { key: "criticalPart",     label: "Supplies Critical / Safety Part",       desc: "Part directly affects vehicle safety or regulatory compliance", weight: 30 },
   { key: "recentNC",        label: "Recent Nonconformance",                  desc: "Supplier had a significant NC in the past 12 months",           weight: 25 },
-  { key: "noCert",          label: "No ISO / IATF Certification",            desc: "Supplier lacks IATF 16949 or ISO 9001 certification",           weight: 20 },
+  { key: "iso9001Only",     label: "ISO 9001 Certified — IATF Development Required", desc: "Supplier is ISO 9001 certified but not IATF 16949 certified; IATF requires development toward IATF", weight: 15, auto: true },
+  { key: "noQualityCert",   label: "No ISO 9001 / IATF 16949 Certification", desc: "Supplier lacks recognized QMS certification and requires stronger development controls", weight: 25, auto: true },
   { key: "certExpiringSoon",label: "Cert Expiring Within 90 Days",           desc: "ISO/IATF certificate expires within 90 days",                  weight: 15 },
   { key: "singleSource",    label: "Single-Source Supplier",                 desc: "No qualified alternative supplier available",                  weight: 15 },
   { key: "poorDelivery",    label: "Poor Delivery Performance",              desc: "On-time delivery < 95% in past 6 months",                     weight: 20 },
@@ -2165,10 +2186,12 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: auditsQk }); toast({ title: "Audit record removed" }); },
   });
 
-  const riskScore = calcRiskScore(factors);
+  const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
+  const certificationRiskFactors = getSupplierCertificationRiskFactors(selectedSupplier);
+  const effectiveFactors = { ...factors, noCert: false, ...certificationRiskFactors };
+  const riskScore = calcRiskScore(effectiveFactors);
   const riskLevel = scoreToRiskLevel(riskScore);
   const frequency = scoreToFrequency(riskScore);
-  const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
   const existingAudit = audits.find(a => a.supplierId === selectedSupplierId);
 
   function handleSave() {
@@ -2178,7 +2201,7 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
       isoProjectId,
       riskScore,
       riskLevel,
-      riskFactors: factors,
+      riskFactors: effectiveFactors,
       recommendedFrequency: frequency,
       lastAuditDate: scheduleForm.lastAuditDate || null,
       nextAuditDate: scheduleForm.nextAuditDate || null,
@@ -2191,7 +2214,7 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-lg px-3 py-2 text-sm text-blue-700 dark:text-blue-300">
         <Info className="w-3.5 h-3.5 shrink-0" />
-        <span>IATF 16949 requires a risk-based supplier audit program. Use this tool to determine audit frequency per supplier based on objective risk criteria (§8.4.2).</span>
+        <span>IATF 16949 requires a risk-based supplier audit program. ISO 9001-only suppliers are treated as a development risk because IATF requires supplier development toward IATF 16949 (§8.4.2).</span>
       </div>
 
       {/* Supplier selector */}
@@ -2227,21 +2250,25 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
             {/* Risk factor checklist */}
             <div className="space-y-2">
               <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">Risk Factors</p>
-              {RISK_FACTORS.map(rf => (
-                <label key={rf.key} className={`flex items-start gap-2.5 cursor-pointer p-2.5 rounded-lg border transition-all ${factors[rf.key] ? "bg-red-50 border-red-200 dark:bg-red-950/20" : "border-border/50 hover:border-border bg-white dark:bg-card"}`} data-testid={`checkbox-risk-${rf.key}`}>
+              {RISK_FACTORS.map(rf => {
+                const checked = !!effectiveFactors[rf.key];
+                return (
+                <label key={rf.key} className={`flex items-start gap-2.5 ${rf.auto ? "cursor-default" : "cursor-pointer"} p-2.5 rounded-lg border transition-all ${checked ? "bg-red-50 border-red-200 dark:bg-red-950/20" : "border-border/50 hover:border-border bg-white dark:bg-card"}`} data-testid={`checkbox-risk-${rf.key}`}>
                   <input
                     type="checkbox"
-                    checked={!!factors[rf.key]}
+                    checked={checked}
+                    disabled={rf.auto}
                     onChange={e => setFactors(f => ({ ...f, [rf.key]: e.target.checked }))}
                     className="mt-0.5 accent-red-500"
                   />
                   <div>
-                    <p className="text-sm font-semibold text-primary">{rf.label}</p>
+                    <p className="text-sm font-semibold text-primary">{rf.label} {rf.auto && <span className="text-xs text-muted-foreground font-medium">(auto)</span>}</p>
                     <p className="text-sm text-muted-foreground">{rf.desc}</p>
                   </div>
-                  <Badge className={`ml-auto text-xs shrink-0 ${factors[rf.key] ? "bg-red-100 text-red-700 border-red-200" : "bg-muted text-muted-foreground border-border/50"}`}>+{rf.weight}</Badge>
+                  <Badge className={`ml-auto text-xs shrink-0 ${checked ? "bg-red-100 text-red-700 border-red-200" : "bg-muted text-muted-foreground border-border/50"}`}>+{rf.weight}</Badge>
                 </label>
-              ))}
+              );
+              })}
             </div>
 
             {/* Risk result + schedule */}
@@ -2257,13 +2284,13 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
               {/* Risk breakdown bar */}
               <div className="bg-white dark:bg-card border border-border/60 rounded-xl p-3 space-y-1.5">
                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">Risk Breakdown</p>
-                {RISK_FACTORS.filter(rf => factors[rf.key]).map(rf => (
+                {RISK_FACTORS.filter(rf => effectiveFactors[rf.key]).map(rf => (
                   <div key={rf.key} className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground truncate flex-1">{rf.label}</span>
                     <Badge className="text-xs bg-red-100 text-red-700 border-red-200">+{rf.weight}</Badge>
                   </div>
                 ))}
-                {Object.values(factors).every(v => !v) && <p className="text-sm text-muted-foreground">No risk factors selected</p>}
+                {Object.values(effectiveFactors).every(v => !v) && <p className="text-sm text-muted-foreground">No risk factors selected</p>}
               </div>
 
               {/* Schedule fields */}
