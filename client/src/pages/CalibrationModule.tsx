@@ -441,9 +441,11 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Internal / External calibration state
+  // Internal / External calibration state — default to equipment's own calType, then "external"
   const [calType, setCalType] = useState<"internal" | "external">(
-    (initial?.calType as "internal" | "external" | undefined | null) ?? "external"
+    (initial?.calType as "internal" | "external" | undefined | null) ??
+    (equipment?.calType as "internal" | "external" | undefined | null) ??
+    "external"
   );
   const [selectedLabId, setSelectedLabId] = useState<number | null>(initial?.labId ?? null);
   const [scopeVerified, setScopeVerified] = useState<boolean>(initial?.scopeVerified ?? false);
@@ -2057,7 +2059,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
 
                         {/* Expanded panel — specs + full calibration history */}
                         {isExpanded && (
-                          <div className="border-t border-border/40 bg-muted/10 text-xs">
+                          <div className="border-t border-border bg-muted/10 text-xs border-b-2 border-b-accent/20 border-l-2 border-l-accent/30 ml-0">
                             {/* Instrument specs */}
                             <div className="px-4 pt-3 pb-2">
                               <p className="font-semibold text-foreground uppercase tracking-wide text-[10px] mb-2">Instrument Specifications</p>
