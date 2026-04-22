@@ -17,7 +17,7 @@ import {
   Gauge, Plus, Pencil, Trash2, AlertTriangle,
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
   Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User, X,
-  CheckCircle2, Thermometer, FlaskConical, Building2,
+  CheckCircle2, Thermometer, FlaskConical, Building2, ExternalLink, Link2,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -88,6 +88,7 @@ interface CalibrationLab {
   accreditationNumber?: string | null;
   iso17025CertUrl?: string | null;
   certExpiryDate?: string | null;
+  websiteUrl?: string | null;
   scope?: string | null;
   scopeItems?: ScopeItem[] | null;
   contactName?: string | null;
@@ -1308,7 +1309,7 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
 
 const EMPTY_LAB: Partial<CalibrationLab> = {
   name: "", accreditationBody: "A2LA", accreditationNumber: "",
-  certExpiryDate: "", scope: "", contactName: "", contactEmail: "", contactPhone: "",
+  certExpiryDate: "", websiteUrl: "", scope: "", contactName: "", contactEmail: "", contactPhone: "",
 };
 
 const SCOPE_DISCIPLINES = [
@@ -1366,6 +1367,19 @@ function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
           <Label className="text-sm font-semibold">Lab Name *</Label>
           <Input className="mt-1 h-8" value={form.name ?? ""}
             onChange={e => set("name")(e.target.value)} placeholder="e.g. Trescal, Inc." data-testid="input-lab-name" />
+        </div>
+        <div className="col-span-2">
+          <Label className="text-sm font-semibold">Lab Website / Online Scope URL</Label>
+          <div className="mt-1 relative">
+            <Link2 className="absolute left-2.5 top-2 w-4 h-4 text-muted-foreground" />
+            <Input className="h-8 pl-8" value={form.websiteUrl ?? ""}
+              onChange={e => set("websiteUrl")(e.target.value)}
+              placeholder="https://www.a2la.org/directory/... or lab website URL"
+              data-testid="input-lab-website" />
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Link to the lab's accreditation directory page or their scope of accreditation online — or upload their certificate below.
+          </p>
         </div>
         <div>
           <Label className="text-sm font-semibold">Accreditation Body</Label>
@@ -1915,9 +1929,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               {filteredEquip.length > 0 && (
                 <div className="rounded-lg border border-border overflow-hidden">
                   {/* Table header */}
-                  <div className="grid grid-cols-[110px_1fr_110px_110px_110px_90px] gap-0 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    <div className="px-3 py-2.5">Gage ID</div>
-                    <div className="px-3 py-2.5">Name / Type</div>
+                  <div className="grid grid-cols-[140px_1fr_130px_130px_130px_88px] gap-0 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    <div className="px-3 py-2.5">Gage ID / S/N</div>
+                    <div className="px-3 py-2.5">Name · Type · Responsible</div>
                     <div className="px-3 py-2.5">Status</div>
                     <div className="px-3 py-2.5">Next Due</div>
                     <div className="px-3 py-2.5">Last Cal</div>
@@ -1932,78 +1946,87 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                       <div key={eq.id} className={`border-b border-border/60 last:border-0 ${idx % 2 === 1 ? "bg-muted/20" : ""}`}>
                         {/* Compact row — entire row clickable to expand */}
                         <div
-                          className={`grid grid-cols-[110px_1fr_110px_110px_110px_90px] gap-0 items-center cursor-pointer hover:bg-accent/5 transition-colors select-none ${isExpanded ? "bg-accent/5" : ""}`}
+                          className={`grid grid-cols-[140px_1fr_130px_130px_130px_88px] gap-0 items-center cursor-pointer hover:bg-accent/5 transition-colors select-none ${isExpanded ? "bg-accent/5" : ""}`}
                           onClick={() => setExpandedEquip(isExpanded ? null : eq.id)}
                           data-testid={`row-equip-${eq.id}`}
                         >
-                          {/* Gage ID */}
+                          {/* Gage ID + Serial Number */}
                           <div className="px-3 py-3">
-                            <span className="font-mono text-xs font-bold bg-muted px-1.5 py-0.5 rounded">{eq.gageId}</span>
+                            <span className="font-mono text-sm font-bold bg-muted px-1.5 py-0.5 rounded">{eq.gageId}</span>
+                            {eq.serialNumber && (
+                              <div className="mt-1 text-xs text-muted-foreground font-mono">S/N: {eq.serialNumber}</div>
+                            )}
                             {eq.customerOwned && (
                               <div className="mt-0.5">
-                                <span className="text-[10px] text-blue-600 font-medium">Customer-Owned</span>
+                                <span className="text-xs text-blue-600 font-medium">Customer-Owned</span>
                               </div>
                             )}
                           </div>
-                          {/* Name / Type */}
+                          {/* Name / Type / Responsible */}
                           <div className="px-3 py-3 min-w-0">
-                            <div className="text-xs font-medium text-foreground truncate">{eq.name}</div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
+                            <div className="text-sm font-semibold text-foreground truncate">{eq.name}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                               {eq.type && <span>{eq.type}</span>}
-                              {eq.location && <span className="flex items-center gap-0.5 truncate"><MapPin className="w-2.5 h-2.5 shrink-0" />{eq.location}</span>}
+                              {eq.location && <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3 shrink-0" />{eq.location}</span>}
                             </div>
+                            {eq.responsiblePerson && (
+                              <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                <User className="w-3 h-3 shrink-0 text-muted-foreground/60" />
+                                <span className="truncate">{eq.responsiblePerson}</span>
+                              </div>
+                            )}
                           </div>
                           {/* Status */}
                           <div className="px-3 py-3">
-                            <Badge className={`text-[11px] border ${STATUS_COLORS[eq.status ?? "active"]}`}>
+                            <Badge className={`text-xs border ${STATUS_COLORS[eq.status ?? "active"]}`}>
                               {eq.status === "out_of_service" ? "Out of Svc" : (eq.status ?? "active")}
                             </Badge>
                           </div>
                           {/* Next Due */}
-                          <div className="px-3 py-3 text-xs">
+                          <div className="px-3 py-3">
                             {eq.nextDueDate ? (
                               <div>
-                                <span className={(() => {
+                                <span className={`text-sm font-medium ${(() => {
                                   const days = Math.ceil((new Date(eq.nextDueDate).getTime() - Date.now()) / 86400000);
                                   return days < 0 ? "text-red-600 font-semibold" : days <= 30 ? "text-amber-600 font-semibold" : "text-foreground";
-                                })()}>{eq.nextDueDate}</span>
-                                <div className="text-[10px] text-muted-foreground mt-0.5">
-                                  {eq.calType === "internal" ? "Int" : "Ext"} · {eq.calFrequencyMonths ?? 12}mo
+                                })()}`}>{eq.nextDueDate}</span>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {eq.calType === "internal" ? "Internal" : "External"} · {eq.calFrequencyMonths ?? 12}mo
                                 </div>
                               </div>
-                            ) : <span className="text-muted-foreground">—</span>}
+                            ) : <span className="text-sm text-muted-foreground">—</span>}
                           </div>
                           {/* Last Cal */}
-                          <div className="px-3 py-3 text-xs">
+                          <div className="px-3 py-3">
                             {lastRec ? (
                               <div>
-                                <span className={`inline-block px-1.5 py-0.5 rounded border font-medium text-[11px] ${RESULT_COLORS[lastRec.result ?? "pass"]}`}>
+                                <span className={`inline-block px-1.5 py-0.5 rounded border font-semibold text-xs ${RESULT_COLORS[lastRec.result ?? "pass"]}`}>
                                   {lastRec.result?.toUpperCase()}
                                 </span>
-                                <div className="text-[10px] text-muted-foreground mt-0.5">{lastRec.calibrationDate}</div>
-                                {lastRec.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200 mt-0.5">OOT</Badge>}
+                                <div className="text-xs text-muted-foreground mt-0.5">{lastRec.calibrationDate}</div>
+                                {lastRec.outOfTolerance && <Badge className="text-xs bg-red-100 text-red-700 border-red-200 mt-0.5">OOT</Badge>}
                               </div>
-                            ) : <span className="text-muted-foreground text-[11px]">No records</span>}
+                            ) : <span className="text-sm text-muted-foreground">No records</span>}
                           </div>
                           {/* Actions — stopPropagation so they don't toggle the row */}
                           <div className="px-3 py-3 flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
                             <button onClick={() => { setLogForEquip(eq); setLogDialog(true); }}
                               data-testid={`button-log-cal-${eq.id}`}
-                              title="Log Calibration" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent">
-                              <Plus className="w-3.5 h-3.5" />
+                              title="Log Calibration" className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-accent">
+                              <Plus className="w-4 h-4" />
                             </button>
                             <button onClick={() => { setEditEquip(eq); setEquipDialog(true); }}
                               data-testid={`button-edit-equip-${eq.id}`}
-                              title="Edit Gage" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent">
-                              <Pencil className="w-3.5 h-3.5" />
+                              title="Edit Gage" className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-accent">
+                              <Pencil className="w-4 h-4" />
                             </button>
                             <button onClick={() => { if (confirm(`Remove ${eq.name}?`)) deleteEquip.mutate(eq.id); }}
                               data-testid={`button-delete-equip-${eq.id}`}
-                              title="Delete" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-red-600">
-                              <Trash2 className="w-3.5 h-3.5" />
+                              title="Delete" className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-red-600">
+                              <Trash2 className="w-4 h-4" />
                             </button>
                             <span className="p-1 text-muted-foreground">
-                              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </span>
                           </div>
                         </div>
@@ -2299,24 +2322,38 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                             <p className="text-xs text-muted-foreground">Contact: {lab.contactName}{lab.contactEmail ? ` · ${lab.contactEmail}` : ""}</p>
                           )}
                         </div>
-                        <div className="flex items-start gap-2 shrink-0">
-                          {lab.iso17025CertUrl && (
-                            <a href={`/api/calibration/labs/${lab.id}/iso17025`} target="_blank" rel="noreferrer">
-                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-                                <Download className="w-3 h-3" /> 17025 Cert
-                              </Button>
-                            </a>
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <div className="flex items-center gap-2">
+                            {lab.websiteUrl && (
+                              <a href={lab.websiteUrl.startsWith("http") ? lab.websiteUrl : `https://${lab.websiteUrl}`} target="_blank" rel="noreferrer">
+                                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 border-accent/40 text-accent hover:bg-accent/10">
+                                  <ExternalLink className="w-3 h-3" /> View Scope Online
+                                </Button>
+                              </a>
+                            )}
+                            {lab.iso17025CertUrl && (
+                              <a href={`/api/calibration/labs/${lab.id}/iso17025`} target="_blank" rel="noreferrer">
+                                <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                                  <Download className="w-3 h-3" /> ISO 17025 Cert
+                                </Button>
+                              </a>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1"
+                              onClick={() => { setEditLabTarget(lab); setLabRegistryDialog(true); }}
+                              data-testid={`button-edit-lab-${lab.id}`}>
+                              <Pencil className="w-3 h-3" /> Edit
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => deleteLab.mutate(lab.id)}
+                              data-testid={`button-delete-lab-${lab.id}`}>
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          {!lab.websiteUrl && !lab.iso17025CertUrl && (
+                            <p className="text-xs text-muted-foreground italic text-right">No cert or scope link on file</p>
                           )}
-                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1"
-                            onClick={() => { setEditLabTarget(lab); setLabRegistryDialog(true); }}
-                            data-testid={`button-edit-lab-${lab.id}`}>
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => deleteLab.mutate(lab.id)}
-                            data-testid={`button-delete-lab-${lab.id}`}>
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
                         </div>
                       </div>
                     </CardContent>

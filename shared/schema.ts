@@ -2102,6 +2102,7 @@ export const calibrationLabs = pgTable("calibration_labs", {
   name: text("name").notNull(),                            // Lab name e.g. "Trescal, Inc."
   contactName: text("contact_name"),
   contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
   address: text("address"),
   accreditationBody: text("accreditation_body"),           // A2LA | NVLAP | UKAS | DAkkS | other
   accreditationNumber: text("accreditation_number"),       // e.g. "A2LA #2567.01"
@@ -2109,6 +2110,7 @@ export const calibrationLabs = pgTable("calibration_labs", {
   scopeItems: jsonb("scope_items"),                        // [{id,discipline,rangeMin,rangeMax,unit,cmc}]
   iso17025CertUrl: text("iso17025_cert_url"),              // stored file path
   certExpiryDate: text("cert_expiry_date"),                // ISO date string
+  websiteUrl: text("website_url"),                         // link to lab's online scope / directory page
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
