@@ -9481,6 +9481,34 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.json(rowToCamel(rows.rows[0] as Record<string, unknown>));
   });
 
+  // ─── Calibration certificate upload ──────────────────────────────────────────
+
+  const certStorage = multer.diskStorage({
+    destination: (_req: Request, _file: Express.Multer.File, cb: (err: Error | null, dest: string) => void) => {
+      const dir = path.join(process.cwd(), "uploads", "certificates");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req: Request, file: Express.Multer.File, cb: (err: Error | null, filename: string) => void) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `cert-${Date.now()}${ext}`);
+    },
+  });
+  const certUpload = multer({ storage: certStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+  app.post("/api/calibration/records/:id/certificate", certUpload.single("file"), async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const certUrl = `/uploads/certificates/${req.file.filename}`;
+    await db.execute(sql`
+      UPDATE calibration_records SET certificate_file_url = ${certUrl}
+      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
+    `);
+    res.json({ certificateFileUrl: certUrl });
+  });
+
   // ─── Calibration reminder check (called by frontend on module load) ──────────
 
   app.post("/api/calibration/check-reminders", async (req: Request, res: Response) => {
@@ -9502,9 +9530,12 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
         AND (last_reminder_sent_at IS NULL OR last_reminder_sent_at < ${throttle.toISOString()})
     `);
 
+    // Fetch account owner email
+    const ownerRows = await db.execute(sql`SELECT email FROM users WHERE id = ${req.session.userId}`);
+    const ownerEmail: string | null = (ownerRows.rows[0] as any)?.email ?? null;
+
     let sent = 0;
     for (const eq of rows.rows as any[]) {
-      if (!eq.responsible_email) continue;
       const dueDate = new Date(eq.next_due_date);
       const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
       const subject = daysLeft <= 0
@@ -9523,13 +9554,23 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
               ${eq.next_due_date}${daysLeft <= 0 ? " (OVERDUE)" : ` (${daysLeft} days)`}
             </td>
           </tr>
+          <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Responsible</td><td style="padding:8px;">${eq.responsible_person ?? "—"}</td></tr>
           <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Calibration Type</td><td style="padding:8px;">${eq.cal_type === "internal" ? "Internal" : "External"}</td></tr>
           ${eq.calibration_lab ? `<tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Lab</td><td style="padding:8px;">${eq.calibration_lab}</td></tr>` : ""}
         </table>
-        <p style="color:#6b7280;font-size:13px;">Please schedule calibration per your quality system procedures (IATF 16949 §7.1.5.3).</p>
+        <p style="color:#6b7280;font-size:13px;">Please schedule calibration per your quality system procedures (ISO 9001 §7.1.5 / IATF 16949 §7.1.5.3).</p>
       `;
-      const ok = await sendEmail(eq.responsible_email, subject, brandedHtml(subject, body));
-      if (ok) {
+
+      const recipients: string[] = [];
+      if (eq.responsible_email) recipients.push(eq.responsible_email);
+      if (ownerEmail && ownerEmail !== eq.responsible_email) recipients.push(ownerEmail);
+
+      let anySent = false;
+      for (const to of recipients) {
+        const ok = await sendEmail(to, subject, brandedHtml(subject, body));
+        if (ok) anySent = true;
+      }
+      if (anySent) {
         await db.execute(sql`
           UPDATE calibration_equipment SET last_reminder_sent_at = NOW()
           WHERE id = ${eq.id} AND user_id = ${req.session.userId}

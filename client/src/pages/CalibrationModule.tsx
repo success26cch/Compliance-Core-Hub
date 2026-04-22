@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -8,15 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Gauge, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, Clock,
+  Gauge, Plus, Pencil, Trash2, AlertTriangle,
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
-  Calendar, User, MapPin, FlaskConical, Wrench, Activity, Info,
+  Calendar, Activity, Info, FileUp, Download, BarChart3,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -282,21 +282,36 @@ const EMPTY_OOT: Partial<CalibrationOotAssessment> = {
   correctiveActionRef: "", assessedBy: "", assessmentDate: new Date().toISOString().split("T")[0], notes: "",
 };
 
-function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject }: {
+function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, initial }: {
   equipment: CalibrationEquipment;
   isoProjectId?: number | null;
-  onSave: (rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>) => void;
+  onSave: (rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>, certFile?: File) => void;
   onCancel: () => void;
   isIatfProject?: boolean;
+  initial?: Partial<CalibrationRecord>;
 }) {
   const [form, setForm] = useState<Partial<CalibrationRecord & { showOot: boolean }>>({
     ...EMPTY_REC,
     equipmentId: equipment.id,
     nextDueDate: calcNextDue(EMPTY_REC.calibrationDate!, equipment.calFrequencyMonths ?? 12),
+    ...initial,
   });
   const [oot, setOot] = useState<Partial<CalibrationOotAssessment>>(EMPTY_OOT);
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   const set = (k: string) => (v: any) => setForm(f => ({ ...f, [k]: v }));
   const setO = (k: string) => (v: any) => setOot(f => ({ ...f, [k]: v }));
+
+  function handleSubmit() {
+    if (!form.calibrationDate) {
+      toast({ title: "Calibration date is required", variant: "destructive" }); return;
+    }
+    if (showOot && isIatfProject && !(oot.assessedBy ?? "").trim()) {
+      toast({ title: "OOT assessment requires 'Assessed By' field", description: "IATF §7.1.5.3 mandates the assessor be identified.", variant: "destructive" }); return;
+    }
+    onSave(form, showOot && isIatfProject ? oot : undefined, certFile ?? undefined);
+  }
 
   const showOot = form.result === "fail" || form.outOfTolerance === true;
 
@@ -364,6 +379,27 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject }
         <Label className="text-sm font-semibold">Notes</Label>
         <Textarea className="mt-1 resize-none" rows={2} value={form.notes ?? ""}
           onChange={e => set("notes")(e.target.value)} placeholder="Additional notes…" />
+      </div>
+
+      {/* ── Certificate Upload ── */}
+      <div>
+        <Label className="text-sm font-semibold">Calibration Certificate (PDF / Image)</Label>
+        <div className="mt-1 flex items-center gap-2">
+          <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg"
+            className="hidden" onChange={e => setCertFile(e.target.files?.[0] ?? null)} />
+          <Button type="button" variant="outline" size="sm"
+            onClick={() => fileInputRef.current?.click()} className="h-8 gap-1.5" data-testid="button-upload-cert">
+            <FileUp className="w-3.5 h-3.5" />
+            {certFile ? "Change File" : "Attach Certificate"}
+          </Button>
+          {certFile && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{certFile.name}</span>}
+          {!certFile && form.certificateFileUrl && (
+            <a href={form.certificateFileUrl} target="_blank" rel="noreferrer"
+              className="text-xs text-accent underline flex items-center gap-1">
+              <Download className="w-3 h-3" /> View existing cert
+            </a>
+          )}
+        </div>
       </div>
 
       {/* ── IATF OOT Risk Assessment ── */}
@@ -440,7 +476,7 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject }
       )}
 
       <div className="flex gap-2 pt-1">
-        <Button onClick={() => onSave(form, showOot && isIatfProject ? oot : undefined)}
+        <Button onClick={handleSubmit}
           className="bg-accent hover:bg-accent/90 text-white" data-testid="button-save-record">
           Save Calibration Record
         </Button>
@@ -459,11 +495,13 @@ interface CalibrationModuleProps {
 export function CalibrationModule({ project }: CalibrationModuleProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"register" | "log" | "oot">("register");
+  const [tab, setTab] = useState<"register" | "log" | "oot" | "msa">("register");
   const [equipDialog, setEquipDialog] = useState(false);
   const [editEquip, setEditEquip] = useState<CalibrationEquipment | null>(null);
   const [logDialog, setLogDialog] = useState(false);
   const [logForEquip, setLogForEquip] = useState<CalibrationEquipment | null>(null);
+  const [editRecord, setEditRecord] = useState<CalibrationRecord | null>(null);
+  const [editRecordEquip, setEditRecordEquip] = useState<CalibrationEquipment | null>(null);
   const [expandedEquip, setExpandedEquip] = useState<number | null>(null);
   const [expandedOot, setExpandedOot] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -539,6 +577,17 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
     },
   });
 
+  const patchRecord = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CalibrationRecord> }) => {
+      const res = await apiRequest("PATCH", `/api/calibration/records/${id}`, { ...data, isoProjectId: project?.id });
+      return res.json() as Promise<CalibrationRecord>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/calibration/records", projectId] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment", projectId] });
+    },
+  });
+
   const deleteRecord = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/calibration/records/${id}`),
     onSuccess: () => {
@@ -547,7 +596,17 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
     },
   });
 
-  async function handleSaveRecord(rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>) {
+  async function uploadCertFile(recordId: number, file: File) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/calibration/records/${recordId}/certificate`, {
+      method: "POST", credentials: "include", body: fd,
+    });
+    if (!res.ok) throw new Error("Certificate upload failed");
+    return res.json() as Promise<{ certificateFileUrl: string }>;
+  }
+
+  async function handleSaveRecord(rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>, certFile?: File) {
     try {
       const record = await saveRecord.mutateAsync(rec);
       if (oot && (rec.result === "fail" || rec.outOfTolerance)) {
@@ -557,10 +616,37 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
           equipmentId: rec.equipmentId!,
         });
       }
+      if (certFile) {
+        try {
+          await uploadCertFile(record.id, certFile);
+          qc.invalidateQueries({ queryKey: ["/api/calibration/records", projectId] });
+        } catch {
+          toast({ title: "Record saved, but certificate upload failed", variant: "destructive" });
+        }
+      }
       setLogDialog(false); setLogForEquip(null);
       toast({ title: "Calibration record logged", description: oot ? "OOT assessment saved." : "" });
     } catch {
       toast({ title: "Error logging record", variant: "destructive" });
+    }
+  }
+
+  async function handleEditRecord(rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>, certFile?: File) {
+    if (!editRecord) return;
+    try {
+      await patchRecord.mutateAsync({ id: editRecord.id, data: rec });
+      if (certFile) {
+        try {
+          await uploadCertFile(editRecord.id, certFile);
+          qc.invalidateQueries({ queryKey: ["/api/calibration/records", projectId] });
+        } catch {
+          toast({ title: "Record updated, but certificate upload failed", variant: "destructive" });
+        }
+      }
+      setEditRecord(null); setEditRecordEquip(null);
+      toast({ title: "Calibration record updated" });
+    } catch {
+      toast({ title: "Error updating record", variant: "destructive" });
     }
   }
 
@@ -628,11 +714,12 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-4 border-b border-border">
+        <div className="flex gap-1 mt-4 border-b border-border flex-wrap">
           {[
             { key: "register", label: "Gage Register", icon: ClipboardList },
             { key: "log", label: "Calibration Log", icon: FileCheck },
             { key: "oot", label: `OOT Assessments${ootAssessments.length > 0 ? ` (${ootAssessments.length})` : ""}`, icon: AlertTriangle },
+            ...(iatf ? [{ key: "msa", label: "MSA (Gauge R&R)", icon: BarChart3 }] : []),
           ].map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setTab(key as any)}
               data-testid={`tab-cal-${key}`}
@@ -804,20 +891,32 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           </span>
                           {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200">OOT</Badge>}
                           {oots.length > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">OOT Assessment ✓</Badge>}
+                          {r.certificateFileUrl && (
+                            <a href={r.certificateFileUrl} target="_blank" rel="noreferrer"
+                              className="text-[10px] flex items-center gap-0.5 text-accent underline">
+                              <Download className="w-3 h-3" /> Cert
+                            </a>
+                          )}
                         </div>
                         <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{r.calibrationDate}</span>
                           {r.performedBy && <span>By: {r.performedBy}</span>}
-                          {r.certNumber && <span>Cert: {r.certNumber}</span>}
+                          {r.certNumber && <span>Cert #: {r.certNumber}</span>}
                           {r.nextDueDate && <span>Next due: {r.nextDueDate}</span>}
                         </div>
                         {r.adjustmentsMade && <p className="mt-1 text-xs text-muted-foreground">Adjustments: {r.adjustmentsMade}</p>}
                         {r.notes && <p className="mt-0.5 text-xs text-muted-foreground italic">{r.notes}</p>}
                       </div>
-                      <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
-                        className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-red-600">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => { setEditRecord(r); setEditRecordEquip(eq ?? null); }}
+                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-accent" data-testid={`button-edit-record-${r.id}`}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
+                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-red-600">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -905,26 +1004,50 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 );
               })}
 
-              {/* MSA Placeholder for IATF */}
-              {iatf && (
-                <Card className="border border-dashed border-border/60 mt-4">
-                  <CardContent className="p-4 flex items-start gap-3">
-                    <Activity className="w-5 h-5 text-muted-foreground/50 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-muted-foreground">Measurement System Analysis (MSA)</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        IATF 16949 §7.1.5.2 requires MSA studies (Gage R&R, Bias, Linearity) for measurement systems in the Control Plan.
-                        MSA module coming soon.
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {["Gage R&R (GRR)", "Bias Study", "Linearity Study", "Stability Study", "Attribute Agreement Analysis"].map(s => (
-                          <span key={s} className="text-[10px] bg-muted border border-border px-2 py-0.5 rounded-full text-muted-foreground">{s}</span>
-                        ))}
+            </div>
+          )}
+
+          {/* ── MSA Tab (IATF only) ── */}
+          {tab === "msa" && (
+            <div className="mt-4 space-y-4">
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <BarChart3 className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-amber-800">IATF 16949 §7.1.5.2 — Measurement System Analysis (MSA)</p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    IATF 16949 requires MSA studies for measurement systems referenced in the Control Plan. Studies assess Gage R&R
+                    (repeatability & reproducibility), bias, linearity, and stability. Results guide whether a measurement system is
+                    acceptable for production use (%GRR &lt;10% = acceptable, 10–30% = conditional, &gt;30% = unacceptable; NDC ≥5 required).
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { type: "Gage R&R (GRR)", desc: "Repeatability & Reproducibility study — quantifies measurement variation due to the gage and appraisers. Primary MSA tool for variable data." },
+                  { type: "Bias Study", desc: "Compares the average of repeated measurements to a reference value to identify systematic error in the measurement system." },
+                  { type: "Linearity Study", desc: "Evaluates whether gage bias is consistent across the full operating range of the instrument." },
+                  { type: "Stability Study", desc: "Monitors measurement system variation over time using control charts to detect drift or shifts." },
+                  { type: "Attribute Agreement Analysis (AAA)", desc: "Assesses repeatability and reproducibility for pass/fail or attribute-type gages and inspectors." },
+                ].map(s => (
+                  <Card key={s.type} className="border border-dashed border-border/60">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-2">
+                        <Activity className="w-4 h-4 text-muted-foreground/50 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{s.type}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                          <Badge variant="outline" className="mt-2 text-[10px] text-muted-foreground">Coming Soon</Badge>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center pb-4">
+                MSA data entry and GRR analysis will be available in a future update. Reference: AIAG MSA Reference Manual (4th Ed.), IATF 16949 §7.1.5.2.
+              </p>
             </div>
           )}
 
@@ -972,6 +1095,24 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 </button>
               ))}
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editRecord} onOpenChange={v => { if (!v) { setEditRecord(null); setEditRecordEquip(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Calibration Record</DialogTitle>
+          </DialogHeader>
+          {editRecord && editRecordEquip && (
+            <RecordForm
+              equipment={editRecordEquip}
+              isoProjectId={project?.id}
+              onSave={handleEditRecord}
+              onCancel={() => { setEditRecord(null); setEditRecordEquip(null); }}
+              isIatfProject={iatf}
+              initial={editRecord}
+            />
           )}
         </DialogContent>
       </Dialog>
