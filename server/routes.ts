@@ -9385,45 +9385,52 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       }
     }
 
-    const record = await storage.createCalibrationRecord({
-      userId: req.session.userId,
-      isoProjectId: d.isoProjectId ?? null,
-      equipmentId: Number(d.equipmentId),
-      calibrationDate: d.calibrationDate,
-      performedBy: d.performedBy ?? null,
-      certNumber: d.certNumber ?? null,
-      standardsReferenced: Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
-        ? d.standardsReferenced : null,
-      result: d.result ?? "pass",
-      outOfTolerance: oot,
-      adjustmentsMade: d.adjustmentsMade ?? null,
-      certificateFileUrl: d.certificateFileUrl ?? null,
-      nextDueDate: d.nextDueDate ?? null,
-      notes: d.notes ?? null,
+    const { db: dbConn } = await import("./db");
+    const { calibrationRecords: calRecTable, calibrationOotAssessments: calOotTable } = await import("@shared/schema");
+
+    // Transactionally create record (+ OOT assessment if applicable)
+    const record = await dbConn.transaction(async (tx) => {
+      const [newRec] = await tx.insert(calRecTable).values({
+        userId: req.session!.userId!,
+        isoProjectId: d.isoProjectId ?? null,
+        equipmentId: Number(d.equipmentId),
+        calibrationDate: d.calibrationDate,
+        performedBy: d.performedBy ?? null,
+        certNumber: d.certNumber ?? null,
+        standardsReferenced: Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
+          ? d.standardsReferenced : null,
+        result: d.result ?? "pass",
+        outOfTolerance: oot,
+        adjustmentsMade: d.adjustmentsMade ?? null,
+        certificateFileUrl: d.certificateFileUrl ?? null,
+        nextDueDate: d.nextDueDate ?? null,
+        notes: d.notes ?? null,
+      }).returning();
+
+      if (oot && d.ootAssessment) {
+        const o = d.ootAssessment as Record<string, string>;
+        await tx.insert(calOotTable).values({
+          userId: req.session!.userId!,
+          isoProjectId: d.isoProjectId ?? null,
+          calibrationRecordId: newRec.id,
+          equipmentId: Number(d.equipmentId),
+          affectedProducts: o.affectedProducts ?? null,
+          suspectDateStart: o.suspectDateStart ?? null,
+          suspectDateEnd: o.suspectDateEnd ?? null,
+          disposition: o.disposition ?? null,
+          riskLevel: o.riskLevel ?? "medium",
+          containmentActions: o.containmentActions ?? null,
+          correctiveActionRef: o.correctiveActionRef ?? null,
+          assessedBy: o.assessedBy ?? null,
+          assessmentDate: o.assessmentDate ?? null,
+          notes: o.notes ?? null,
+        });
+      }
+
+      return newRec;
     });
 
-    // Atomically create OOT assessment if provided
-    if (oot && d.ootAssessment) {
-      const o = d.ootAssessment as Record<string, string>;
-      await storage.createCalibrationOotAssessment({
-        userId: req.session.userId,
-        isoProjectId: d.isoProjectId ?? null,
-        calibrationRecordId: record.id,
-        equipmentId: Number(d.equipmentId),
-        affectedProducts: o.affectedProducts ?? null,
-        suspectDateStart: o.suspectDateStart ?? null,
-        suspectDateEnd: o.suspectDateEnd ?? null,
-        disposition: o.disposition ?? null,
-        riskLevel: o.riskLevel ?? "medium",
-        containmentActions: o.containmentActions ?? null,
-        correctiveActionRef: o.correctiveActionRef ?? null,
-        assessedBy: o.assessedBy ?? null,
-        assessmentDate: o.assessmentDate ?? null,
-        notes: o.notes ?? null,
-      });
-    }
-
-    // Update equipment next_due_date
+    // Update equipment next_due_date (outside transaction — best-effort)
     if (d.nextDueDate) {
       await storage.updateCalibrationEquipment(Number(d.equipmentId), req.session.userId,
         { nextDueDate: d.nextDueDate }, false);
@@ -9436,6 +9443,21 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
     const d = req.body;
     const oot = d.result === "fail" || d.outOfTolerance === true;
+
+    // IATF §7.1.5.3: mirror POST validation for edits — require assessedBy + disposition
+    if (oot && d.isoProjectId) {
+      const project = await storage.getIsoProjectById(Number(d.isoProjectId));
+      if (project && /iatf\s*16949/i.test(project.standard ?? "")) {
+        const ootData = d.ootAssessment as Record<string, string> | undefined;
+        if (!ootData?.assessedBy?.trim()) {
+          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'assessedBy' in ootAssessment" });
+        }
+        if (!ootData?.disposition?.trim()) {
+          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'disposition' in ootAssessment" });
+        }
+      }
+    }
+
     const row = await storage.updateCalibrationRecord(Number(req.params.id), req.session.userId, {
       calibrationDate: d.calibrationDate,
       performedBy: d.performedBy ?? null,

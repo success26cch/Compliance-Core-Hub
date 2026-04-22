@@ -132,12 +132,13 @@ app.use((req, res, next) => {
       const throttle = new Date(today);
       throttle.setDate(throttle.getDate() - 7);
 
-      // Fetch all gages due/overdue across all users
+      // Fetch all active gages due/overdue across all users
       const rows = await db.execute(sql`
         SELECT ce.*, u.email AS owner_email
         FROM calibration_equipment ce
         JOIN users u ON u.id = ce.user_id
-        WHERE ce.next_due_date IS NOT NULL
+        WHERE ce.status = 'active'
+          AND ce.next_due_date IS NOT NULL
           AND ce.next_due_date <= ${cutoff.toISOString().split("T")[0]}
           AND (ce.last_reminder_sent_at IS NULL OR ce.last_reminder_sent_at < ${throttle.toISOString()})
       `);
