@@ -2061,6 +2061,8 @@ export const calibrationRecords = pgTable("calibration_records", {
   // ── Calibration Type & Lab ───────────────────────────────────────────────
   calType: text("cal_type").default("external"),           // "internal" | "external"
   labId: integer("lab_id"),                                // FK → calibration_labs.id (for external cal)
+  scopeVerified: boolean("scope_verified").default(false), // technician confirmed lab scope covers this cal
+  scopeCitedItem: text("scope_cited_item"),                // which scope line item was cited
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const insertCalibrationRecordSchema = createInsertSchema(calibrationRecords).omit({ id: true, createdAt: true });
@@ -2104,6 +2106,7 @@ export const calibrationLabs = pgTable("calibration_labs", {
   accreditationBody: text("accreditation_body"),           // A2LA | NVLAP | UKAS | DAkkS | other
   accreditationNumber: text("accreditation_number"),       // e.g. "A2LA #2567.01"
   scope: text("scope"),                                    // e.g. "Dimensional, Temperature, Pressure"
+  scopeItems: jsonb("scope_items"),                        // [{id,discipline,rangeMin,rangeMax,unit,cmc}]
   iso17025CertUrl: text("iso17025_cert_url"),              // stored file path
   certExpiryDate: text("cert_expiry_date"),                // ISO date string
   notes: text("notes"),

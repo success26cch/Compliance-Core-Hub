@@ -67,7 +67,18 @@ interface CalibrationRecord {
   // Internal / External
   calType?: string | null;
   labId?: number | null;
+  scopeVerified?: boolean | null;
+  scopeCitedItem?: string | null;
   createdAt?: string | null;
+}
+
+interface ScopeItem {
+  id: string;
+  discipline: string;
+  rangeMin: string;
+  rangeMax: string;
+  unit: string;
+  cmc: string;
 }
 
 interface CalibrationLab {
@@ -78,6 +89,7 @@ interface CalibrationLab {
   iso17025CertUrl?: string | null;
   certExpiryDate?: string | null;
   scope?: string | null;
+  scopeItems?: ScopeItem[] | null;
   contactName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
@@ -433,6 +445,8 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
     (initial?.calType as "internal" | "external" | undefined | null) ?? "external"
   );
   const [selectedLabId, setSelectedLabId] = useState<number | null>(initial?.labId ?? null);
+  const [scopeVerified, setScopeVerified] = useState<boolean>(initial?.scopeVerified ?? false);
+  const [scopeCitedItem, setScopeCitedItem] = useState<string>(initial?.scopeCitedItem ?? "");
   const [showAddLab, setShowAddLab] = useState(false);
   const [addLabForm, setAddLabForm] = useState({
     name: "", accreditationBody: "A2LA", accreditationNumber: "",
@@ -480,6 +494,9 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
     if (!form.calibrationDate) {
       toast({ title: "Calibration date is required", variant: "destructive" }); return;
     }
+    if (calType === "external" && selectedLabId && !scopeVerified) {
+      toast({ title: "Scope verification required", description: "Confirm the lab's ISO 17025 scope of accreditation covers this equipment type and measurement range.", variant: "destructive" }); return;
+    }
     if (showOot && isIatfProject) {
       if (!(oot.assessedBy ?? "").trim()) {
         toast({ title: "OOT assessment requires 'Assessed By'", description: "IATF §7.1.5.3 mandates the assessor be identified.", variant: "destructive" }); return;
@@ -492,6 +509,8 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
       ...form,
       calType,
       labId: calType === "external" ? selectedLabId : null,
+      scopeVerified: calType === "external" ? scopeVerified : false,
+      scopeCitedItem: calType === "external" && scopeCitedItem.trim() ? scopeCitedItem.trim() : null,
       preCalibrationChecks: calType === "internal" ? preCalChecks : null,
       referenceStandards: calType === "internal" && refStds.length > 0 ? refStds : null,
       measurementData: calType === "internal" && measData.length > 0 ? measData : null,
@@ -707,6 +726,71 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
                     {labCertUploading && <span className="text-xs text-muted-foreground">Uploading…</span>}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Scope Coverage Verification (only when a lab is selected) */}
+            {selectedLab && !showAddLab && (
+              <div className={`rounded-lg border p-3 space-y-2.5 ${scopeVerified ? "border-emerald-200 bg-emerald-50/40" : "border-amber-200 bg-amber-50/40"}`}>
+                <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 text-amber-800">
+                  <FileCheck className="w-3.5 h-3.5" /> ISO 17025 Scope Coverage Verification
+                </p>
+
+                {/* No scope items on file — warning */}
+                {(!selectedLab.scopeItems || selectedLab.scopeItems.length === 0) && (
+                  <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-100 rounded p-2">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <span>No structured scope items are on file for this lab. Verify manually that their ISO 17025 certificate covers this equipment type and measurement range before proceeding.</span>
+                  </div>
+                )}
+
+                {/* Scope items table — when available */}
+                {selectedLab.scopeItems && selectedLab.scopeItems.length > 0 && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1.5">Select the scope line item that covers this calibration:</p>
+                    <div className="border border-border/60 rounded overflow-hidden text-xs">
+                      <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr] bg-muted/50 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        <div className="px-2 py-1.5">Discipline</div>
+                        <div className="px-2 py-1.5">Range Min</div>
+                        <div className="px-2 py-1.5">Range Max</div>
+                        <div className="px-2 py-1.5">Unit</div>
+                        <div className="px-2 py-1.5">CMC Uncertainty</div>
+                      </div>
+                      {selectedLab.scopeItems.map(si => (
+                        <button key={si.id} type="button"
+                          onClick={() => setScopeCitedItem(`${si.discipline}: ${si.rangeMin}–${si.rangeMax} ${si.unit}${si.cmc ? ` (CMC: ${si.cmc})` : ""}`)}
+                          className={`w-full grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr] border-t border-border/40 hover:bg-accent/5 transition-colors text-left ${scopeCitedItem.startsWith(si.discipline) ? "bg-accent/10 font-semibold" : ""}`}>
+                          <div className="px-2 py-1.5">{si.discipline}</div>
+                          <div className="px-2 py-1.5 font-mono">{si.rangeMin || "—"}</div>
+                          <div className="px-2 py-1.5 font-mono">{si.rangeMax || "—"}</div>
+                          <div className="px-2 py-1.5">{si.unit || "—"}</div>
+                          <div className="px-2 py-1.5 font-mono">{si.cmc || "—"}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual scope citation text input */}
+                <div>
+                  <Label className="text-xs font-semibold">Cited Scope Item / Notes</Label>
+                  <Input className="mt-1 h-8 text-xs"
+                    value={scopeCitedItem}
+                    onChange={e => setScopeCitedItem(e.target.value)}
+                    placeholder="e.g. Dimensional: 0–300 mm (CMC: ±0.5 μm) — click a row above to auto-fill"
+                    data-testid="input-scope-cited-item" />
+                </div>
+
+                {/* Scope Verified checkbox */}
+                <label className="flex items-start gap-2 cursor-pointer select-none">
+                  <input type="checkbox" className="mt-0.5 accent-accent w-4 h-4"
+                    checked={scopeVerified}
+                    onChange={e => setScopeVerified(e.target.checked)}
+                    data-testid="checkbox-scope-verified" />
+                  <span className={`text-xs leading-snug ${scopeVerified ? "text-emerald-800 font-semibold" : "text-foreground"}`}>
+                    I confirm that the lab's current ISO 17025 scope of accreditation covers the measurement discipline, type, and range for this calibration. {!scopeVerified && <span className="text-amber-700 font-semibold">(Required)</span>}
+                  </span>
+                </label>
               </div>
             )}
 
@@ -1227,6 +1311,13 @@ const EMPTY_LAB: Partial<CalibrationLab> = {
   certExpiryDate: "", scope: "", contactName: "", contactEmail: "", contactPhone: "",
 };
 
+const SCOPE_DISCIPLINES = [
+  "Dimensional / Mechanical", "Temperature", "Electrical / Electronic",
+  "Pressure / Vacuum", "Mass / Weighing", "Flow", "Torque / Force",
+  "Acoustic / Vibration", "Optical / Photometric", "Chemical / pH",
+  "Humidity", "Time / Frequency", "RF / Microwave", "Other",
+];
+
 function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
   initial?: Partial<CalibrationLab>;
   isoProjectId?: number | null;
@@ -1235,6 +1326,9 @@ function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
   onUploadCert?: (labId: number, file: File) => Promise<void>;
 }) {
   const [form, setForm] = useState<Partial<CalibrationLab>>({ ...EMPTY_LAB, ...initial });
+  const [scopeItems, setScopeItems] = useState<ScopeItem[]>(
+    (initial?.scopeItems as ScopeItem[] | undefined) ?? []
+  );
   const [certFile, setCertFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const certFileRef = useRef<HTMLInputElement>(null);
@@ -1243,11 +1337,26 @@ function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
   const set = <K extends keyof CalibrationLab>(k: K) => (v: CalibrationLab[K]) =>
     setForm(f => ({ ...f, [k]: v }));
 
+  function addScopeRow() {
+    setScopeItems(prev => [...prev, {
+      id: `si-${Date.now()}`, discipline: "Dimensional / Mechanical",
+      rangeMin: "", rangeMax: "", unit: "mm", cmc: "",
+    }]);
+  }
+
+  function updateScopeRow(id: string, field: keyof ScopeItem, value: string) {
+    setScopeItems(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  }
+
+  function removeScopeRow(id: string) {
+    setScopeItems(prev => prev.filter(r => r.id !== id));
+  }
+
   async function handleSubmit() {
     if (!form.name?.trim()) {
       toast({ title: "Lab name is required", variant: "destructive" }); return;
     }
-    await onSave({ ...form, isoProjectId });
+    await onSave({ ...form, scopeItems: scopeItems.length > 0 ? scopeItems : null, isoProjectId });
   }
 
   return (
@@ -1296,10 +1405,11 @@ function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
             onChange={e => set("contactPhone")(e.target.value)} placeholder="e.g. +1 (800) 555-0000" />
         </div>
         <div className="col-span-2">
-          <Label className="text-sm font-semibold">Scope of Accreditation</Label>
+          <Label className="text-sm font-semibold">Scope Summary (text)</Label>
           <Textarea className="mt-1 resize-none" rows={2} value={form.scope ?? ""}
             onChange={e => set("scope")(e.target.value)}
             placeholder="e.g. Dimensional, Torque, Pressure, Temperature, Electrical…" />
+          <p className="text-[11px] text-muted-foreground mt-0.5">Free-text summary. For structured scope verification, add scope line items below.</p>
         </div>
         {/* ISO 17025 cert upload (only when editing an existing lab) */}
         {initial?.id && onUploadCert && (
@@ -1341,6 +1451,80 @@ function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
           </div>
         )}
       </div>
+
+      {/* ── Structured Scope Line Items ── */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/40 px-3 py-2 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+              <FileCheck className="w-3.5 h-3.5 text-accent" /> ISO 17025 Scope Line Items
+            </p>
+            <p className="text-[11px] text-muted-foreground">Enter each measurement discipline covered by this lab's accreditation. These are used for scope verification when logging external calibrations.</p>
+          </div>
+          <Button type="button" size="sm" variant="outline" className="h-7 text-xs gap-1 shrink-0"
+            onClick={addScopeRow} data-testid="button-add-scope-item">
+            <Plus className="w-3 h-3" /> Add Item
+          </Button>
+        </div>
+
+        {scopeItems.length === 0 ? (
+          <div className="px-3 py-4 text-center text-xs text-muted-foreground bg-amber-50/50">
+            <AlertTriangle className="w-4 h-4 mx-auto mb-1 text-amber-500" />
+            No scope items defined — technicians will see a warning during scope verification when using this lab.
+          </div>
+        ) : (
+          <div>
+            <div className="grid grid-cols-[2fr_80px_80px_70px_1.2fr_28px] bg-muted/40 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground border-t border-border">
+              <div className="px-2 py-1.5">Measurement Discipline</div>
+              <div className="px-2 py-1.5">Range Min</div>
+              <div className="px-2 py-1.5">Range Max</div>
+              <div className="px-2 py-1.5">Unit</div>
+              <div className="px-2 py-1.5">CMC Uncertainty</div>
+              <div />
+            </div>
+            {scopeItems.map((si, idx) => (
+              <div key={si.id}
+                className={`grid grid-cols-[2fr_80px_80px_70px_1.2fr_28px] border-t border-border/40 items-center ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                <div className="px-1.5 py-1">
+                  <Select value={si.discipline} onValueChange={v => updateScopeRow(si.id, "discipline", v)}>
+                    <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {SCOPE_DISCIPLINES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="px-1 py-1">
+                  <Input className="h-7 text-xs font-mono" value={si.rangeMin}
+                    onChange={e => updateScopeRow(si.id, "rangeMin", e.target.value)}
+                    placeholder="0" data-testid={`input-scope-range-min-${idx}`} />
+                </div>
+                <div className="px-1 py-1">
+                  <Input className="h-7 text-xs font-mono" value={si.rangeMax}
+                    onChange={e => updateScopeRow(si.id, "rangeMax", e.target.value)}
+                    placeholder="300" data-testid={`input-scope-range-max-${idx}`} />
+                </div>
+                <div className="px-1 py-1">
+                  <Input className="h-7 text-xs" value={si.unit}
+                    onChange={e => updateScopeRow(si.id, "unit", e.target.value)}
+                    placeholder="mm" />
+                </div>
+                <div className="px-1 py-1">
+                  <Input className="h-7 text-xs font-mono" value={si.cmc}
+                    onChange={e => updateScopeRow(si.id, "cmc", e.target.value)}
+                    placeholder="e.g. ±0.5 μm" />
+                </div>
+                <div className="flex items-center justify-center">
+                  <button type="button" onClick={() => removeScopeRow(si.id)}
+                    className="text-muted-foreground hover:text-red-600 transition-colors p-1">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="flex gap-2 pt-1">
         <Button onClick={handleSubmit}
           className="bg-accent hover:bg-accent/90 text-white" data-testid="button-save-lab">
@@ -2096,6 +2280,18 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           {lab.certExpiryDate && (
                             <p className="text-xs text-muted-foreground">Cert expires: {lab.certExpiryDate}</p>
                           )}
+                          {/* Scope coverage badge */}
+                          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                            {lab.scopeItems && (lab.scopeItems as ScopeItem[]).length > 0 ? (
+                              <Badge className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
+                                {(lab.scopeItems as ScopeItem[]).length} Scope Item{(lab.scopeItems as ScopeItem[]).length !== 1 ? "s" : ""} Configured
+                              </Badge>
+                            ) : (
+                              <Badge className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                <AlertTriangle className="w-2.5 h-2.5 mr-0.5" /> Scope Not Configured
+                              </Badge>
+                            )}
+                          </div>
                           {lab.scope && (
                             <p className="text-xs text-muted-foreground">Scope: {lab.scope}</p>
                           )}
@@ -2219,6 +2415,24 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                     </div>
                   );
                 })()}
+
+                {/* Scope Coverage Evidence (external only) */}
+                {r.calType === "external" && r.labId && (
+                  <div className={`rounded-lg border p-3 space-y-1.5 text-sm ${r.scopeVerified ? "bg-emerald-50/40 border-emerald-200" : "bg-amber-50/40 border-amber-200"}`}>
+                    <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 text-muted-foreground">
+                      <FileCheck className="w-3.5 h-3.5" /> ISO 17025 Scope Coverage
+                    </p>
+                    <p>
+                      Scope Verified:{" "}
+                      <span className={r.scopeVerified ? "text-emerald-700 font-semibold" : "text-amber-700 font-semibold"}>
+                        {r.scopeVerified ? "Yes ✓" : "Not recorded"}
+                      </span>
+                    </p>
+                    {r.scopeCitedItem && (
+                      <p><span className="font-medium">Cited Scope Item:</span> {r.scopeCitedItem}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Core fields grid */}
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">

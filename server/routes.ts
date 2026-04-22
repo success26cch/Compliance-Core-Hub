@@ -9407,6 +9407,8 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
         notes: d.notes ?? null,
         calType: d.calType ?? "external",
         labId: d.labId ?? null,
+        scopeVerified: d.scopeVerified ?? false,
+        scopeCitedItem: d.scopeCitedItem ?? null,
         preCalibrationChecks: d.preCalibrationChecks ?? null,
         environmentConditions: d.environmentConditions ?? null,
         referenceStandards: Array.isArray(d.referenceStandards) && d.referenceStandards.length > 0
@@ -9487,6 +9489,8 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       notes: d.notes ?? null,
       calType: d.calType ?? "external",
       labId: d.labId ?? null,
+      scopeVerified: d.scopeVerified ?? false,
+      scopeCitedItem: d.scopeCitedItem ?? null,
       preCalibrationChecks: d.preCalibrationChecks ?? null,
       environmentConditions: d.environmentConditions ?? null,
       referenceStandards: Array.isArray(d.referenceStandards) && d.referenceStandards.length > 0
