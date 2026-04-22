@@ -440,6 +440,122 @@ function computeLineDiff(oldText: string, newText: string): DiffLine[] {
   return result;
 }
 
+// Adjust this threshold (characters) to change when the summary view activates.
+// At 8 000 chars a full line-diff is typically 300+ changed lines — too many to scan.
+const LARGE_DOC_THRESHOLD = 8000;
+
+function splitDocIntoSections(text: string): Array<{ heading: string; content: string }> {
+  const lines = text.split('\n');
+  // Recognises: Markdown headings (# … ######), ISO/IATF clause numbers (4.1.2 …),
+  // plain clause numbers (4 Context), and "Section N" / "SECTION N" prefixes.
+  const isHeading = (l: string) =>
+    /^#{1,6}\s/.test(l) ||
+    /^(\d+\.)+\d*\s/.test(l.trim()) ||
+    /^\d+\s+[A-Z]/.test(l.trim()) ||
+    /^(?:Section|SECTION|Clause|CLAUSE)\s+\d/i.test(l.trim());
+  const sections: Array<{ heading: string; content: string }> = [];
+  let currentHeading = 'Preamble';
+  let currentLines: string[] = [];
+  for (const line of lines) {
+    if (isHeading(line.trim())) {
+      if (currentLines.some(l => l.trim())) {
+        sections.push({ heading: currentHeading, content: currentLines.join('\n') });
+      }
+      currentHeading = line.trim().replace(/^#{1,6}\s*/, '');
+      currentLines = [];
+    } else {
+      currentLines.push(line);
+    }
+  }
+  if (currentLines.some(l => l.trim())) {
+    sections.push({ heading: currentHeading, content: currentLines.join('\n') });
+  }
+  return sections;
+}
+
+function computeRevisionSummary(oldText: string, newText: string): { section: string; removedCount: number; addedCount: number; isNew?: boolean; isRemoved?: boolean }[] {
+  const oldSections = splitDocIntoSections(oldText);
+  const newSections = splitDocIntoSections(newText);
+
+  // Build position-aware keys to handle duplicate section headings correctly.
+  // Key format: "<heading>::<occurrence-index>" so two "Introduction" sections
+  // are treated as separate entries rather than collapsed into one.
+  const makeKey = (sections: Array<{ heading: string }>, idx: number): string => {
+    const heading = sections[idx].heading;
+    const prior = sections.slice(0, idx).filter(s => s.heading === heading).length;
+    return prior === 0 ? heading : `${heading} (${prior + 1})`;
+  };
+
+  const newMap = new Map(newSections.map((s, i) => [makeKey(newSections, i), s.content]));
+
+  const results: { section: string; removedCount: number; addedCount: number; isNew?: boolean; isRemoved?: boolean }[] = [];
+  const oldKeys = new Set<string>();
+
+  for (let i = 0; i < oldSections.length; i++) {
+    const key = makeKey(oldSections, i);
+    const displayHeading = oldSections[i].heading;
+    const content = oldSections[i].content;
+    oldKeys.add(key);
+
+    const newContent = newMap.get(key);
+    if (newContent === undefined) {
+      const removed = content.split('\n').filter(l => l.trim()).length;
+      results.push({ section: displayHeading, removedCount: removed, addedCount: 0, isRemoved: true });
+    } else if (newContent !== content) {
+      const oldLines = content.split('\n').filter(l => l.trim());
+      const newLines = newContent.split('\n').filter(l => l.trim());
+      const oldSet = new Set(oldLines);
+      const newSet = new Set(newLines);
+      const removed = oldLines.filter(l => !newSet.has(l)).length;
+      const added = newLines.filter(l => !oldSet.has(l)).length;
+      if (removed > 0 || added > 0) {
+        results.push({ section: displayHeading, removedCount: removed, addedCount: added });
+      }
+    }
+  }
+
+  for (let i = 0; i < newSections.length; i++) {
+    const key = makeKey(newSections, i);
+    if (!oldKeys.has(key)) {
+      const added = newSections[i].content.split('\n').filter(l => l.trim()).length;
+      results.push({ section: newSections[i].heading, removedCount: 0, addedCount: added, isNew: true });
+    }
+  }
+
+  return results.length > 0 ? results : [{ section: 'Minor formatting changes', removedCount: 0, addedCount: 0 }];
+}
+
+function RevisionSummaryView({ oldText, newText }: { oldText: string; newText: string }) {
+  const summary = computeRevisionSummary(oldText, newText);
+  return (
+    <div className="space-y-1.5" data-testid="container-revision-summary">
+      {summary.map((item, idx) => (
+        <div key={idx} className="flex items-start gap-2 bg-white dark:bg-card border border-violet-100 dark:border-violet-800/30 rounded-lg px-3 py-2">
+          <FileText className="w-3.5 h-3.5 mt-0.5 text-violet-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-xs font-medium text-foreground truncate" title={item.section}>{item.section}</p>
+              {item.isNew && <span className="text-[9px] font-bold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/40 rounded px-1">NEW</span>}
+              {item.isRemoved && <span className="text-[9px] font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 rounded px-1">REMOVED</span>}
+            </div>
+            <div className="flex gap-2 mt-0.5">
+              {item.removedCount > 0 && (
+                <span className="text-[10px] text-red-600 dark:text-red-400">−{item.removedCount} line{item.removedCount !== 1 ? 's' : ''}</span>
+              )}
+              {item.addedCount > 0 && (
+                <span className="text-[10px] text-green-600 dark:text-green-400">+{item.addedCount} line{item.addedCount !== 1 ? 's' : ''}</span>
+              )}
+              {item.removedCount === 0 && item.addedCount === 0 && (
+                <span className="text-[10px] text-muted-foreground italic">formatting only</span>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LineDiffView({ oldText, newText }: { oldText: string; newText: string }) {
   const lines = computeLineDiff(oldText, newText);
   const hasChanges = lines.some(l => l.type !== 'same');
@@ -482,6 +598,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const [isaAcceptReason, setIsaAcceptReason] = useState("AI-assisted revision by Isa");
   const [isAcceptingIsaDraft, setIsAcceptingIsaDraft] = useState(false);
   const [prevShowExpanded, setPrevShowExpanded] = useState(false);
+  const [showFullDiff, setShowFullDiff] = useState(false);
   const [isaNote, setIsaNote] = useState("");
   const [formReviewOpen, setFormReviewOpen] = useState(false);
   const [formReviewText, setFormReviewText] = useState("");
@@ -627,6 +744,8 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     setDraftReady(false);
     setIsDrafting(false);
     setDraftIsRevision(false);
+    setPrevShowExpanded(false);
+    setShowFullDiff(false);
     setIsaNote("");
   };
 
@@ -637,6 +756,8 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
     setDraftReady(false);
     setIsDrafting(false);
     setDraftIsRevision(true);
+    setPrevShowExpanded(false);
+    setShowFullDiff(false);
     setIsaNote("");
   };
 
@@ -728,6 +849,8 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
       setDraftContent("");
       setDraftContext("");
       setDraftReady(false);
+      setPrevShowExpanded(false);
+      setShowFullDiff(false);
       // Store undo snapshot so user can revert
       if (originalContent.trim()) {
         setUndoSnapshot({ docId: draftDoc.id, content: originalContent, version: originalVersion });
@@ -798,6 +921,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
       setDraftReady(false);
       setIsaAcceptReason("AI-assisted revision by Isa");
       setPrevShowExpanded(false);
+      setShowFullDiff(false);
       toast({
         title: `✓ Accepted as Rev. ${data.newVersion}`,
         description: `Change Request #${data.dcrId} created and awaiting approval.`,
@@ -1058,7 +1182,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
               </Button>
             )}
             <button
-              onClick={() => { setDraftDoc(null); setDraftContent(""); setIsaNote(""); }}
+              onClick={() => { setDraftDoc(null); setDraftContent(""); setDraftReady(false); setPrevShowExpanded(false); setShowFullDiff(false); setIsaNote(""); }}
               className="text-violet-500 hover:text-violet-800 dark:hover:text-violet-200 transition-colors"
               data-testid="button-close-draft"
             >
@@ -1157,15 +1281,41 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                 <p className="text-[11px] text-violet-700 dark:text-violet-400 mt-0.5">Accepting will bump the revision number and open a Change Request for formal approval. Discard returns you to the context step.</p>
               </div>
 
-              {/* Inline diff view — only changed lines shown */}
-              <div>
-                <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5">
-                  Inline Changes (Rev. {draftDoc.version ?? "1.0"} → proposed)
-                </p>
-                <div className="bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[42vh] overflow-y-auto" data-testid="container-line-diff">
-                  <LineDiffView oldText={draftDoc.content ?? ""} newText={draftContent} />
+              {/* Diff / summary view */}
+              {draftContent.length >= LARGE_DOC_THRESHOLD ? (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider">
+                      Revision Summary (Rev. {draftDoc.version ?? "1.0"} → proposed)
+                    </p>
+                    <button
+                      onClick={() => setShowFullDiff(v => !v)}
+                      className="flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 hover:underline"
+                      data-testid="button-toggle-full-diff"
+                    >
+                      <ChevronRight className={`w-3 h-3 transition-transform ${showFullDiff ? "rotate-90" : ""}`} />
+                      {showFullDiff ? "Hide full diff" : "View full diff"}
+                    </button>
+                  </div>
+                  <div className="max-h-[42vh] overflow-y-auto">
+                    <RevisionSummaryView oldText={draftDoc.content ?? ""} newText={draftContent} />
+                    {showFullDiff && (
+                      <div className="mt-2 bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3" data-testid="container-line-diff">
+                        <LineDiffView oldText={draftDoc.content ?? ""} newText={draftContent} />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider mb-1.5">
+                    Inline Changes (Rev. {draftDoc.version ?? "1.0"} → proposed)
+                  </p>
+                  <div className="bg-white dark:bg-card border border-violet-200 dark:border-violet-700/50 rounded-lg p-3 max-h-[42vh] overflow-y-auto" data-testid="container-line-diff">
+                    <LineDiffView oldText={draftDoc.content ?? ""} newText={draftContent} />
+                  </div>
+                </div>
+              )}
 
               {/* Full proposed content — collapsible */}
               <div>
@@ -1211,7 +1361,7 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
                   {isAcceptingIsaDraft ? "Accepting…" : "Accept as Official Draft"}
                 </Button>
                 <Button
-                  onClick={() => { setDraftReady(false); setDraftContent(""); setPrevShowExpanded(false); setIsaNote(""); }}
+                  onClick={() => { setDraftReady(false); setDraftContent(""); setPrevShowExpanded(false); setShowFullDiff(false); setIsaNote(""); }}
                   variant="outline"
                   className="text-xs h-8"
                   data-testid="button-discard-isa-draft"
