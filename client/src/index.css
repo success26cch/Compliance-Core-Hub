@@ -107,6 +107,20 @@
   .glass-card {
     @apply bg-white dark:bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300;
   }
+
+  .supplier-module-scroll [data-slot="scroll-area-scrollbar"] {
+    width: 0.9rem;
+    padding: 2px;
+  }
+
+  .supplier-module-scroll [data-slot="scroll-area-thumb"] {
+    background-color: hsl(var(--primary) / 0.62);
+    border: 1px solid hsl(var(--background));
+  }
+
+  .supplier-module-scroll [data-slot="scroll-area-thumb"]:hover {
+    background-color: hsl(var(--accent) / 0.9);
+  }
 }
 
 @media print {

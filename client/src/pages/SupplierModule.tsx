@@ -2477,7 +2477,7 @@ export default function SupplierModule({ project }: SupplierModuleProps) {
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="supplier-module-scroll flex-1">
         <div className="p-4 sm:p-6 max-w-5xl">
           {/* Header */}
           <div className="mb-5">
