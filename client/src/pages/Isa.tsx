@@ -69,7 +69,7 @@ function MessageBubble({ msg }: { msg: { role: string; content: string } }) {
             prose-td:border prose-td:border-white/10 prose-td:px-2 prose-td:py-1
             prose-code:text-orange-300 prose-code:bg-white/10 prose-code:px-1 prose-code:rounded prose-code:text-xs
             prose-pre:bg-white/10 prose-pre:rounded-xl prose-pre:text-xs
-            prose-blockquote:border-l-orange-400 prose-blockquote:text-white/60 prose-blockquote:italic">
+            prose-blockquote:border-l-0 prose-blockquote:pl-0 prose-blockquote:not-italic prose-blockquote:text-white/80">
             <ReactMarkdown>{msg.content}</ReactMarkdown>
           </div>
         ) : (
