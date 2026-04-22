@@ -17,8 +17,126 @@ import {
   calibrationEquipment,
   calibrationRecords,
   calibrationOotAssessments,
+  isoDocuments,
 } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
+
+const CAL_WI_TITLE = "WI-CAL-003 Conductivity Meter Inline Calibration Procedure";
+
+const CAL_WI_CONTENT = `# WI-CAL-003 Conductivity Meter Inline Calibration Procedure
+
+**Revision:** A  |  **Effective Date:** 2025-01-15  |  **Approved By:** Ebeni Villarreal, Quality Engineer
+
+---
+
+## 1. Purpose
+This work instruction defines the two-point in-house calibration procedure for the CCI Chemical inline conductivity meter (CCI-GAG-005). It establishes the method for verifying instrument accuracy across the process range using NIST-traceable reference standards.
+
+## 2. Scope
+Applies to: CCI-GAG-005 — Conductivity Meter — Inline (Manufacturer: Hach, Model CM10). Calibration is performed every 6 months or after any repair/adjustment.
+
+## 3. References
+- NIST SRM 3190 (Conductivity Standard, 1413 µS/cm)
+- NIST SRM 917d (KCl Solution, 84 µS/cm)
+- ISO 10012:2003 — Measurement management systems
+- IATF 16949:2016 §7.1.5 — Monitoring and measuring resources
+- ASTM D5391 — Conductivity of Water Measurement
+
+## 4. Responsibility
+The Quality Engineer or designated QC Technician with documented training on WI-CAL-003 shall perform this calibration.
+
+## 5. Required Equipment & Reference Standards
+| Item | Description | ID No. | Cal Cert No. | Traceable To |
+|------|-------------|--------|-------------|---------------|
+| Ref Std 1 | NIST SRM 3190 — Conductivity Std, 1413 µS/cm | NIST-STD-001 | NIST-3190-2024-889 | NIST |
+| Ref Std 2 | NIST SRM 917d — KCl Std, 84 µS/cm | NIST-STD-002 | NIST-917D-2024-445 | NIST |
+| Thermometer | ASTM 12C Reference Thermometer | CCI-GAG-006 | See GAG-006 Cal Record | NIST |
+| DI Water | Conductivity < 1 µS/cm (verified) | N/A | N/A | Internal |
+
+## 6. Safety Precautions
+- Wear appropriate PPE (lab coat, nitrile gloves, safety glasses) when handling reference solutions.
+- Reference standards are not hazardous but must be handled to prevent contamination.
+- Dispose of used reference solutions per SOP-EHS-003.
+
+## 7. Environmental Conditions
+Calibration shall be performed in the QC Laboratory under the following conditions:
+- **Temperature:** 20°C ± 1°C (68°F ± 2°F)
+- **Humidity:** 40–60% RH
+- **Condition verification:** Record temperature and humidity from calibrated QC Lab environmental monitor at time of calibration.
+
+## 8. Calibration Procedure — Two-Point Method
+
+### Step 1 — Pre-Calibration Checks (Required)
+□ Perform visual inspection of electrode, probe tip, and cable connections. No corrosion, cracks, or physical damage.
+□ Verify electrode is clean and free of process residue. Rinse with DI water. Blot dry with lint-free tissue (do not wipe).
+□ Verify zero/DI water check: immerse probe in DI water (< 1 µS/cm). Reading must be < 2 µS/cm.
+□ Verify instrument zero offset is within acceptable limits.
+
+### Step 2 — Low-Point Calibration (84 µS/cm)
+1. Pour NIST SRM 917d into a clean beaker. Verify solution temperature is 20°C ± 1°C.
+2. Immerse probe completely — electrode must be fully submerged; no air bubbles.
+3. Allow reading to stabilize (typically 30–60 sec).
+4. Record Trial 1 reading. Remove probe, rinse with DI water, blot dry. Re-immerse in fresh aliquot. Record Trials 2 and 3.
+5. Calculate average. Acceptance: within ±1.5% of 84 µS/cm (82.74–85.26 µS/cm).
+
+### Step 3 — High-Point Calibration (1413 µS/cm)
+1. Rinse probe 3× with DI water. Blot dry.
+2. Pour NIST SRM 3190 into a clean beaker. Verify temperature is 20°C ± 1°C.
+3. Immerse probe — electrode fully submerged. Allow reading to stabilize.
+4. Record Trials 1, 2, 3.
+5. Calculate average. Acceptance: within ±1.5% of 1413 µS/cm (1391.81–1434.20 µS/cm).
+
+### Step 4 — Instrument Adjustment (if needed)
+If either calibration point fails acceptance criteria, perform instrument cell constant adjustment per manufacturer procedure and repeat. If instrument fails again, remove from service and open CAR per QP-004-1.
+
+### Step 5 — Temperature Compensation Verification
+Verify instrument TC is active and set to linear mode (2.0%/°C). Record bath temperature using CCI-GAG-006. Confirm readout is compensated to 25°C reference.
+
+## 9. Acceptance Criteria
+| Point | Nominal | Tolerance | Min | Max |
+|-------|---------|-----------|-----|-----|
+| Low | 84 µS/cm | ±1.5% | 82.74 µS/cm | 85.26 µS/cm |
+| High | 1413 µS/cm | ±1.5% | 1391.81 µS/cm | 1434.20 µS/cm |
+
+## 10. Calibration Record Completion
+Complete Calibration Record CCI-GAG-005 in the CCHUB Calibration Module. Issue internal certificate number: INT-COND-[YEAR]-[NNN]. Update next due date (6 months). Apply calibration sticker: GAG ID, Cal Date, Next Due, Performed By.
+
+## 11. Document Control
+| Rev | Date | Description | Author |
+|-----|------|-------------|--------|
+| A | 2025-01-15 | Initial release | E. Villarreal |
+`;
+
+async function ensureCalibrationWI(): Promise<number> {
+  const existing = await db
+    .select({ id: isoDocuments.id })
+    .from(isoDocuments)
+    .where(eq(isoDocuments.title, CAL_WI_TITLE))
+    .limit(1);
+  if (existing.length > 0) {
+    console.log(`    ✓ WI already exists (ID ${existing[0].id}) — reusing`);
+    return existing[0].id;
+  }
+  const [doc] = await db
+    .insert(isoDocuments)
+    .values({
+      userId: USER_ID,
+      isoProjectId: PROJECT_ID,
+      docType: "work_instruction",
+      title: CAL_WI_TITLE,
+      content: CAL_WI_CONTENT,
+      isoClause: "7.1.5",
+      status: "approved",
+      version: "A",
+      approvedBy: "Ebeni Villarreal",
+      approvalDate: "2025-01-15",
+      reviewDate: "2026-01-15",
+      tags: ["calibration", "conductivity", "internal-calibration", "measurement"],
+    })
+    .returning({ id: isoDocuments.id });
+  console.log(`    ✓ Created WI-CAL-003 (ID ${doc.id})`);
+  return doc.id;
+}
 
 const PROJECT_ID = 4;
 const USER_ID = "54320068";
@@ -562,7 +680,7 @@ function buildRecords(equipIds: number[]): Array<{
       ],
     },
 
-    // GAG-005 Conductivity — past cal, due in 5 days
+    // GAG-005 Conductivity — fully completed internal calibration example, due in 5 days
     {
       equipmentId: equipIds[4],
       records: [
@@ -571,11 +689,65 @@ function buildRecords(equipIds: number[]): Array<{
           calibrationDate: daysFromNow(-175),
           performedBy: "Ebeni Villarreal",
           certNumber: "INT-COND-2024-002",
-          standardsReferenced: ["NIST SRM 3190 (conductivity standard 1413 µS/cm)"],
+          standardsReferenced: [
+            "NIST SRM 917d (KCl solution, 84 µS/cm)",
+            "NIST SRM 3190 (conductivity standard, 1413 µS/cm)",
+          ],
           result: "pass",
           outOfTolerance: false,
           nextDueDate: daysFromNow(5),
-          notes: "Two-point calibration at 84 µS/cm and 1413 µS/cm. Cell constant verified. Temperature compensation confirmed.",
+          environmentConditions: "Temp: 20°C, Humidity: 48%, Climate-controlled QC Lab",
+          measurementUncertainty: "±0.5 µS/cm (k=2, 95% confidence)",
+          asFoundReading: "Low 84 µS/cm avg 83.93 µS/cm; High 1413 µS/cm avg 1410.57 µS/cm",
+          asLeftReading: "No adjustment required — both points within ±1.5% tolerance",
+          adjustmentsMade: "None. Both calibration points passed acceptance criteria on first attempt.",
+          preCalibrationChecks: {
+            visualInspectionPass: true,
+            zeroCheckPass: true,
+            equipmentClean: true,
+            notes: "Probe tip rinsed 3× DI water, blotted dry. DI water check: 0.8 µS/cm — within limit. Zero offset normal.",
+          },
+          referenceStandards: [
+            {
+              id: "ref-std-cond-1",
+              description: "NIST SRM 917d — Potassium Chloride Standard, 84 µS/cm",
+              identification: "NIST-STD-002",
+              certNumber: "NIST-917D-2024-445",
+              certDueDate: "2026-03-31",
+              traceability: "NIST",
+            },
+            {
+              id: "ref-std-cond-2",
+              description: "NIST SRM 3190 — Conductivity Standard, 1413 µS/cm",
+              identification: "NIST-STD-001",
+              certNumber: "NIST-3190-2024-889",
+              certDueDate: "2026-10-31",
+              traceability: "NIST",
+            },
+          ],
+          measurementData: [
+            {
+              id: "meas-cond-1",
+              nominalValue: "84",
+              unit: "µS/cm",
+              trial1: "83.9",
+              trial2: "84.1",
+              trial3: "83.8",
+              withinTolerance: true,
+              notes: "Low-point: NIST SRM 917d. Acceptance 82.74–85.26 µS/cm. Avg: 83.93",
+            },
+            {
+              id: "meas-cond-2",
+              nominalValue: "1413",
+              unit: "µS/cm",
+              trial1: "1409.2",
+              trial2: "1411.7",
+              trial3: "1410.8",
+              withinTolerance: true,
+              notes: "High-point: NIST SRM 3190. Acceptance 1391.81–1434.20 µS/cm. Avg: 1410.57",
+            },
+          ],
+          notes: "Two-point calibration per WI-CAL-003. Low point (84 µS/cm): avg 83.93 µS/cm (error −0.08%). High point (1413 µS/cm): avg 1410.57 µS/cm (error −0.17%). Cell constant K=1.0001 verified. TC active at 2.0%/°C linear, compensated to 25°C reference. Approved for continued service.",
         },
       ],
     },
@@ -765,6 +937,10 @@ async function main() {
 
   await clearExisting();
 
+  // Ensure the conductivity meter calibration work instruction exists
+  console.log("  Ensuring calibration work instruction (WI-CAL-003)…");
+  const calWiId = await ensureCalibrationWI();
+
   // Insert equipment
   console.log("  Inserting calibration equipment…");
   const insertedEquip: number[] = [];
@@ -781,6 +957,13 @@ async function main() {
     insertedEquip.push(row.id);
     console.log(`    ✓ ${eq.gageId} — ${eq.name}`);
   }
+
+  // Link WI-CAL-003 to GAG-005 (Conductivity Meter — index 4 in EQUIPMENT_SEEDS)
+  await db
+    .update(calibrationEquipment)
+    .set({ linkedDocumentId: calWiId })
+    .where(eq(calibrationEquipment.id, insertedEquip[4]));
+  console.log(`    ✓ Linked WI-CAL-003 (doc ID ${calWiId}) → CCI-GAG-005`);
 
   console.log(`\n  Inserting calibration history records…`);
   const recordSets = buildRecords(insertedEquip);
