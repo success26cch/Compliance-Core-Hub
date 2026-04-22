@@ -9264,17 +9264,29 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.status(201).json(rows.rows[0]);
   });
 
+  // ─── Calibration helpers ─────────────────────────────────────────────────────
+
+  function toCamel(str: string) {
+    return str.replace(/_([a-z])/g, (_: string, c: string) => c.toUpperCase());
+  }
+  function rowToCamel(row: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(row).map(([k, v]) => [toCamel(k), v]));
+  }
+
   // ─── Calibration Equipment ───────────────────────────────────────────────────
 
   app.get("/api/calibration/equipment", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     const { db } = await import("./db");
     const { sql } = await import("drizzle-orm");
+    const projectId = req.query.projectId ? Number(req.query.projectId) : null;
     const rows = await db.execute(sql`
-      SELECT * FROM calibration_equipment WHERE user_id = ${req.session.userId}
+      SELECT * FROM calibration_equipment
+      WHERE user_id = ${req.session.userId}
+        AND (${projectId}::integer IS NULL OR iso_project_id = ${projectId})
       ORDER BY gage_id ASC
     `);
-    res.json(rows.rows);
+    res.json(rows.rows.map(rowToCamel));
   });
 
   app.post("/api/calibration/equipment", async (req: Request, res: Response) => {
@@ -9299,7 +9311,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
         ${d.notes ?? null}
       ) RETURNING *
     `);
-    res.status(201).json(rows.rows[0]);
+    res.status(201).json(rowToCamel(rows.rows[0] as Record<string, unknown>));
   });
 
   app.patch("/api/calibration/equipment/:id", async (req: Request, res: Response) => {
@@ -9322,7 +9334,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
       RETURNING *
     `);
-    res.json(rows.rows[0]);
+    res.json(rowToCamel(rows.rows[0] as Record<string, unknown>));
   });
 
   app.delete("/api/calibration/equipment/:id", async (req: Request, res: Response) => {
@@ -9339,11 +9351,14 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     const { db } = await import("./db");
     const { sql } = await import("drizzle-orm");
+    const projectId = req.query.projectId ? Number(req.query.projectId) : null;
     const rows = await db.execute(sql`
-      SELECT * FROM calibration_records WHERE user_id = ${req.session.userId}
+      SELECT * FROM calibration_records
+      WHERE user_id = ${req.session.userId}
+        AND (${projectId}::integer IS NULL OR iso_project_id = ${projectId})
       ORDER BY calibration_date DESC
     `);
-    res.json(rows.rows);
+    res.json(rows.rows.map(rowToCamel));
   });
 
   app.post("/api/calibration/records", async (req: Request, res: Response) => {
@@ -9366,7 +9381,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
         ${d.nextDueDate ?? null}, ${d.notes ?? null}
       ) RETURNING *
     `);
-    const record = recRows.rows[0] as any;
+    const record = rowToCamel(recRows.rows[0] as Record<string, unknown>);
     // Update equipment next_due_date & updated_at
     if (d.nextDueDate) {
       await db.execute(sql`
@@ -9375,6 +9390,26 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       `);
     }
     res.status(201).json(record);
+  });
+
+  app.patch("/api/calibration/records/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    const d = req.body;
+    const oot = d.result === 'fail' || d.outOfTolerance === true;
+    const rows = await db.execute(sql`
+      UPDATE calibration_records SET
+        calibration_date = ${d.calibrationDate}, performed_by = ${d.performedBy ?? null},
+        cert_number = ${d.certNumber ?? null}, standards_referenced = ${d.standardsReferenced ?? null},
+        result = ${d.result ?? 'pass'}, out_of_tolerance = ${oot},
+        adjustments_made = ${d.adjustmentsMade ?? null},
+        certificate_file_url = ${d.certificateFileUrl ?? null},
+        next_due_date = ${d.nextDueDate ?? null}, notes = ${d.notes ?? null}
+      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
+      RETURNING *
+    `);
+    res.json(rowToCamel(rows.rows[0] as Record<string, unknown>));
   });
 
   app.delete("/api/calibration/records/:id", async (req: Request, res: Response) => {
@@ -9391,11 +9426,14 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     const { db } = await import("./db");
     const { sql } = await import("drizzle-orm");
+    const projectId = req.query.projectId ? Number(req.query.projectId) : null;
     const rows = await db.execute(sql`
-      SELECT * FROM calibration_oot_assessments WHERE user_id = ${req.session.userId}
+      SELECT * FROM calibration_oot_assessments
+      WHERE user_id = ${req.session.userId}
+        AND (${projectId}::integer IS NULL OR iso_project_id = ${projectId})
       ORDER BY created_at DESC
     `);
-    res.json(rows.rows);
+    res.json(rows.rows.map(rowToCamel));
   });
 
   app.post("/api/calibration/oot-assessments", async (req: Request, res: Response) => {
@@ -9417,7 +9455,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
         ${d.assessedBy ?? null}, ${d.assessmentDate ?? null}, ${d.notes ?? null}
       ) RETURNING *
     `);
-    res.status(201).json(rows.rows[0]);
+    res.status(201).json(rowToCamel(rows.rows[0] as Record<string, unknown>));
   });
 
   app.patch("/api/calibration/oot-assessments/:id", async (req: Request, res: Response) => {
@@ -9440,7 +9478,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
       RETURNING *
     `);
-    res.json(rows.rows[0]);
+    res.json(rowToCamel(rows.rows[0] as Record<string, unknown>));
   });
 
   // ─── Calibration reminder check (called by frontend on module load) ──────────

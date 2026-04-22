@@ -469,16 +469,24 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const iatf = isIatf(project);
 
+  const projectId = project?.id ?? null;
+  const equipUrl = projectId ? `/api/calibration/equipment?projectId=${projectId}` : "/api/calibration/equipment";
+  const recordsUrl = projectId ? `/api/calibration/records?projectId=${projectId}` : "/api/calibration/records";
+  const ootUrl = projectId ? `/api/calibration/oot-assessments?projectId=${projectId}` : "/api/calibration/oot-assessments";
+
   const { data: equipment = [] } = useQuery<CalibrationEquipment[]>({
-    queryKey: ["/api/calibration/equipment"],
+    queryKey: ["/api/calibration/equipment", projectId],
+    queryFn: () => fetch(equipUrl, { credentials: "include" }).then(r => r.json()),
   });
 
   const { data: records = [] } = useQuery<CalibrationRecord[]>({
-    queryKey: ["/api/calibration/records"],
+    queryKey: ["/api/calibration/records", projectId],
+    queryFn: () => fetch(recordsUrl, { credentials: "include" }).then(r => r.json()),
   });
 
   const { data: ootAssessments = [] } = useQuery<CalibrationOotAssessment[]>({
-    queryKey: ["/api/calibration/oot-assessments"],
+    queryKey: ["/api/calibration/oot-assessments", projectId],
+    queryFn: () => fetch(ootUrl, { credentials: "include" }).then(r => r.json()),
   });
 
   // Fire reminder check on load (no-await, best-effort)
@@ -495,7 +503,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         ? apiRequest("PATCH", `/api/calibration/equipment/${editEquip.id}`, { ...d, isoProjectId: project?.id })
         : apiRequest("POST", "/api/calibration/equipment", { ...d, isoProjectId: project?.id }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment"] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment", projectId] });
       setEquipDialog(false); setEditEquip(null);
       toast({ title: editEquip ? "Equipment updated" : "Equipment added", description: "" });
     },
@@ -505,43 +513,47 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const deleteEquip = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/calibration/equipment/${id}`),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment"] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment", projectId] });
       toast({ title: "Equipment removed" });
     },
   });
 
   const saveRecord = useMutation({
-    mutationFn: (d: Partial<CalibrationRecord>) =>
-      apiRequest("POST", "/api/calibration/records", { ...d, isoProjectId: project?.id }),
+    mutationFn: async (d: Partial<CalibrationRecord>) => {
+      const res = await apiRequest("POST", "/api/calibration/records", { ...d, isoProjectId: project?.id });
+      return res.json() as Promise<CalibrationRecord>;
+    },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/calibration/records"] });
-      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment"] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/records", projectId] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment", projectId] });
     },
   });
 
   const saveOot = useMutation({
-    mutationFn: (d: Partial<CalibrationOotAssessment>) =>
-      apiRequest("POST", "/api/calibration/oot-assessments", { ...d, isoProjectId: project?.id }),
+    mutationFn: async (d: Partial<CalibrationOotAssessment>) => {
+      const res = await apiRequest("POST", "/api/calibration/oot-assessments", { ...d, isoProjectId: project?.id });
+      return res.json() as Promise<CalibrationOotAssessment>;
+    },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/calibration/oot-assessments"] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/oot-assessments", projectId] });
     },
   });
 
   const deleteRecord = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/calibration/records/${id}`),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/calibration/records"] });
-      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment"] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/records", projectId] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/equipment", projectId] });
     },
   });
 
   async function handleSaveRecord(rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>) {
     try {
-      const result = await saveRecord.mutateAsync(rec);
+      const record = await saveRecord.mutateAsync(rec);
       if (oot && (rec.result === "fail" || rec.outOfTolerance)) {
         await saveOot.mutateAsync({
           ...oot,
-          calibrationRecordId: (result as any).id,
+          calibrationRecordId: record.id,
           equipmentId: rec.equipmentId!,
         });
       }
