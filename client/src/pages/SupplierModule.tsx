@@ -141,6 +141,19 @@ function scoreToFrequency(score: number): string {
   return "Every 3 Years";
 }
 
+const FREQUENCY_MONTHS: Record<string, number> = {
+  "Annual": 12,
+  "Every 2 Years": 24,
+  "Every 3 Years": 36,
+};
+
+function calcNextAuditDate(lastDate: string, frequency: string): string {
+  if (!lastDate || !FREQUENCY_MONTHS[frequency]) return "";
+  const d = new Date(lastDate);
+  d.setMonth(d.getMonth() + FREQUENCY_MONTHS[frequency]);
+  return d.toISOString().split("T")[0];
+}
+
 
 const CRITERIA_CATEGORIES = ["quality", "logistics", "financial", "technical", "compliance"];
 const SUPPLIER_CATEGORIES = [
@@ -2216,6 +2229,17 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
   const riskScore = calcRiskScore(effectiveFactors);
   const riskLevel = scoreToRiskLevel(riskScore);
   const frequency = scoreToFrequency(riskScore);
+
+  // Auto-populate next audit date when last audit date or frequency changes
+  useEffect(() => {
+    if (scheduleForm.lastAuditDate && frequency) {
+      const computed = calcNextAuditDate(scheduleForm.lastAuditDate, frequency);
+      if (computed) {
+        setScheduleForm(f => ({ ...f, nextAuditDate: computed }));
+      }
+    }
+  }, [scheduleForm.lastAuditDate, frequency]);
+
   const existingAudit = audits.find(a => a.supplierId === selectedSupplierId);
   const selectedSupplierAudits = selectedSupplierId
     ? audits.filter(a => a.supplierId === selectedSupplierId)
@@ -2349,11 +2373,32 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">Audit Schedule</p>
                 <div>
                   <Label className="text-sm font-semibold">Last Audit Date</Label>
-                  <Input type="date" className="mt-1 h-8 text-base" value={scheduleForm.lastAuditDate} onChange={e => setScheduleForm(f => ({ ...f, lastAuditDate: e.target.value }))} />
+                  <Input type="date" className="mt-1 h-8 text-base" value={scheduleForm.lastAuditDate}
+                    onChange={e => setScheduleForm(f => ({ ...f, lastAuditDate: e.target.value }))}
+                    data-testid="input-last-audit-date" />
+                  <p className="text-xs text-muted-foreground mt-1">Enter the date of the most recent onsite audit to auto-calculate the next due date.</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-semibold">Next Audit Date</Label>
-                  <Input type="date" className="mt-1 h-8 text-base" value={scheduleForm.nextAuditDate} onChange={e => setScheduleForm(f => ({ ...f, nextAuditDate: e.target.value }))} />
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-semibold">Next Audit Date</Label>
+                    {scheduleForm.lastAuditDate && scheduleForm.nextAuditDate && (
+                      <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                        Auto-calculated · {frequency}
+                      </span>
+                    )}
+                  </div>
+                  <Input type="date" className="mt-1 h-8 text-base" value={scheduleForm.nextAuditDate}
+                    onChange={e => setScheduleForm(f => ({ ...f, nextAuditDate: e.target.value }))}
+                    data-testid="input-next-audit-date" />
+                  {scheduleForm.lastAuditDate && scheduleForm.nextAuditDate && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Based on last audit {new Date(scheduleForm.lastAuditDate).toLocaleDateString()} + {frequency.toLowerCase()} cycle.
+                      You can adjust this date manually if needed.
+                    </p>
+                  )}
+                  {!scheduleForm.lastAuditDate && (
+                    <p className="text-xs text-muted-foreground mt-1">Set the Last Audit Date above to auto-populate this field.</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-semibold">Audit Status</Label>
