@@ -1693,6 +1693,7 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
   const { toast } = useToast();
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [showNewEval, setShowNewEval] = useState(false);
+  const [filterSupplierId, setFilterSupplierId] = useState<number | null>(null);
   const [expandedEvalId, setExpandedEvalId] = useState<number | null>(null);
   const [evalMeta, setEvalMeta] = useState({ evaluationDate: new Date().toISOString().split("T")[0], evaluatorName: "", period: "", notes: "" });
   const [allValues, setAllValues] = useState<Record<string, Record<string, number | string>>>({});
@@ -1709,23 +1710,28 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
     queryFn: () => fetch(`/api/suppliers${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`, { credentials: "include" }).then(r => r.json()),
   });
 
-  const evalsQk = ["/api/supplier-evaluations", isoProjectId, selectedSupplierId];
-  const { data: evaluations = [] } = useQuery<SupplierEvaluation[]>({
+  // Load ALL evaluations for the project regardless of filter — show history immediately
+  const evalsQk = ["/api/supplier-evaluations", isoProjectId];
+  const { data: allEvaluations = [] } = useQuery<SupplierEvaluation[]>({
     queryKey: evalsQk,
     queryFn: () => {
       const p = new URLSearchParams();
       if (isoProjectId) p.set("isoProjectId", String(isoProjectId));
-      if (selectedSupplierId) p.set("supplierId", String(selectedSupplierId));
       return fetch(`/api/supplier-evaluations?${p}`, { credentials: "include" }).then(r => r.json());
     },
-    enabled: selectedSupplierId != null,
   });
+
+  // Apply supplier filter for history view
+  const evaluations = filterSupplierId
+    ? allEvaluations.filter(e => e.supplierId === filterSupplierId)
+    : allEvaluations;
 
   const createMut = useMutation({
     mutationFn: (d: any) => apiRequest("POST", "/api/supplier-evaluations", d),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: evalsQk });
       setShowNewEval(false);
+      setSelectedSupplierId(null);
       setAllValues({});
       setEvalMeta({ evaluationDate: new Date().toISOString().split("T")[0], evaluatorName: "", period: "", notes: "" });
       toast({ title: "Scorecard saved" });
@@ -1757,7 +1763,6 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
 
   const overallScore = calcIatfOverall(allValues, activeScorecard);
   const recommendation = iatfRecommendation(overallScore);
-  const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
 
   // Build scores payload for DB — nested by category → metric
   const buildScoresPayload = () => {
@@ -1774,6 +1779,9 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
     return out;
   };
 
+  const selectedSupplier = suppliers.find(s => s.id === selectedSupplierId);
+  const filterSupplier = suppliers.find(s => s.id === filterSupplierId);
+
   return (
     <div className="space-y-4">
       {/* Standard context banner */}
@@ -1785,30 +1793,31 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
             {isIATF
               ? <>This scorecard fulfills IATF 16949 §8.4.1 (supplier monitoring) and §8.4.2.4 (supplier performance evaluation). It tracks five required categories: delivered quality, delivery schedule performance (including <strong>premium freight</strong>), customer disruptions (including <strong>yard holds</strong> and <strong>field returns</strong>), corrective action responsiveness, and quality system status.</>
               : <>This scorecard fulfills ISO 9001:2015 §8.4 (control of externally provided processes, products and services). It tracks three categories: incoming quality, delivery performance, corrective action responsiveness, and quality system status. IATF 16949-specific metrics (premium freight, PPAP, controlled shipping status, line stops, yard holds, warranty returns) are not included for ISO 9001 clients.</>
-            }{" "}Run this {selectedSupplier?.scorecardFrequency ?? "quarterly"} for active suppliers.
+            }
           </p>
         </div>
       </div>
 
-      {/* Supplier picker + frequency */}
+      {/* Top action bar: filter + new scorecard */}
       <div className="flex items-end gap-3 flex-wrap">
-        <div className="flex-1 min-w-[200px] max-w-sm">
-          <Label className="text-sm font-semibold text-muted-foreground">Supplier</Label>
-          <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => { setSelectedSupplierId(parseInt(v)); setShowNewEval(false); setExpandedEvalId(null); setSendingId(null); }}>
-            <SelectTrigger className="mt-1 h-9" data-testid="select-supplier-evaluate">
-              <SelectValue placeholder="Choose a supplier to evaluate…" />
+        <div className="flex-1 min-w-[200px] max-w-xs">
+          <Label className="text-sm font-semibold text-muted-foreground">Filter by Supplier</Label>
+          <Select value={filterSupplierId ? String(filterSupplierId) : ""} onValueChange={v => { setFilterSupplierId(v ? parseInt(v) : null); setExpandedEvalId(null); setSendingId(null); }}>
+            <SelectTrigger className="mt-1 h-9" data-testid="select-filter-supplier">
+              <SelectValue placeholder="All suppliers" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="">All suppliers</SelectItem>
               {suppliers.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
-        {selectedSupplier && (
+        {filterSupplier && (
           <div>
             <Label className="text-sm font-semibold text-muted-foreground">Scorecard Frequency</Label>
-            <Select value={selectedSupplier.scorecardFrequency || "quarterly"}
-              onValueChange={v => updateFreqMut.mutate({ id: selectedSupplier.id, freq: v })}>
+            <Select value={filterSupplier.scorecardFrequency || "quarterly"}
+              onValueChange={v => updateFreqMut.mutate({ id: filterSupplier.id, freq: v })}>
               <SelectTrigger className="mt-1 h-9 w-40" data-testid="select-eval-frequency">
                 <SelectValue />
               </SelectTrigger>
@@ -1819,17 +1828,17 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
           </div>
         )}
 
-        {selectedSupplierId && !showNewEval && (
-          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-9 text-sm" onClick={() => setShowNewEval(true)} data-testid="button-new-evaluation">
+        {!showNewEval && (
+          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white gap-1.5 h-9 text-sm" onClick={() => { setShowNewEval(true); setSelectedSupplierId(null); }} data-testid="button-new-evaluation">
             <Plus className="w-3.5 h-3.5" /> New Scorecard
           </Button>
         )}
       </div>
 
-      {/* Next due date indicator */}
-      {selectedSupplier && evaluations.length > 0 && (() => {
+      {/* Next due date indicator (when filtered to one supplier) */}
+      {filterSupplier && evaluations.length > 0 && (() => {
         const lastEval = evaluations[0];
-        const dueDate = nextScorecardDue(lastEval.evaluationDate, selectedSupplier.scorecardFrequency);
+        const dueDate = nextScorecardDue(lastEval.evaluationDate, filterSupplier.scorecardFrequency);
         const badge = scorecardDueLabel(dueDate);
         if (!badge) return null;
         return (
@@ -1837,18 +1846,12 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
             <Calendar className="w-3.5 h-3.5" />
             <span className="font-semibold">Next scorecard:</span>
             <span>{badge.label}</span>
-            <span className="opacity-60 ml-1">· Based on {selectedSupplier.scorecardFrequency ?? "quarterly"} frequency + last eval date</span>
+            <span className="opacity-60 ml-1">· Based on {filterSupplier.scorecardFrequency ?? "quarterly"} frequency + last eval date</span>
           </div>
         );
       })()}
 
-      {!selectedSupplierId ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-base font-medium">Select a supplier to view or add evaluations</p>
-        </div>
-      ) : (
-        <>
+      <>
           {/* ── NEW SCORECARD FORM ── */}
           {showNewEval && (
             <div className="border-2 border-accent/30 rounded-xl bg-accent/5 dark:bg-accent/5 overflow-hidden">
@@ -1856,14 +1859,27 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
               <div className="flex items-center justify-between px-4 py-3 border-b border-accent/20">
                 <div>
                   <p className="text-base font-bold text-primary">{standardLabel} Supplier Scorecard</p>
-                  <p className="text-sm text-muted-foreground">{selectedSupplier?.name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedSupplier ? selectedSupplier.name : "Select a supplier below"}</p>
                 </div>
-                <button onClick={() => setShowNewEval(false)} data-testid="button-close-scorecard">
+                <button onClick={() => { setShowNewEval(false); setSelectedSupplierId(null); }} data-testid="button-close-scorecard">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
 
               <div className="p-4 space-y-5">
+                {/* Supplier selector inside form */}
+                <div>
+                  <Label className="text-sm font-semibold">Supplier *</Label>
+                  <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => setSelectedSupplierId(parseInt(v))}>
+                    <SelectTrigger className="mt-1 h-9" data-testid="select-new-eval-supplier">
+                      <SelectValue placeholder="Choose supplier to evaluate…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Meta fields */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
@@ -2003,19 +2019,23 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
             </div>
           )}
 
-          {/* ── PAST EVALUATIONS ── */}
+          {/* ── EVALUATION HISTORY ── */}
           {evaluations.length === 0 && !showNewEval ? (
             <div className="text-center py-10 text-muted-foreground">
               <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-20" />
-              <p className="text-base font-medium">No evaluations on record for {selectedSupplier?.name}</p>
+              <p className="text-base font-medium">{filterSupplierId ? `No evaluations on record for ${filterSupplier?.name}` : "No evaluations on record yet"}</p>
               <p className="text-sm mt-1">Click "New Scorecard" to run the first {standardLabel} performance evaluation</p>
             </div>
           ) : evaluations.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Evaluation History</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Evaluation History</p>
+                <span className="text-sm text-muted-foreground">({evaluations.length} record{evaluations.length !== 1 ? "s" : ""}{filterSupplierId ? ` for ${filterSupplier?.name}` : " — all suppliers"})</span>
+              </div>
               {evaluations.map(ev => {
                 const reco = ev.recommendation || "conditional";
                 const isExpanded = expandedEvalId === ev.id;
+                const evSupplier = suppliers.find(s => s.id === ev.supplierId);
                 return (
                   <div key={ev.id} className="border border-border/60 rounded-xl overflow-hidden bg-white dark:bg-card" data-testid={`evaluation-${ev.id}`}>
                     {/* Row header */}
@@ -2026,6 +2046,8 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
+                          {evSupplier && <span className="text-sm font-black text-accent">{evSupplier.name}</span>}
+                          {evSupplier && <span className="text-muted-foreground/50">·</span>}
                           <span className="text-base font-bold text-primary">{ev.period || ev.evaluationDate}</span>
                           {ev.period && <span className="text-sm text-muted-foreground">{ev.evaluationDate}</span>}
                           {ev.evaluatorName && <span className="text-sm text-muted-foreground">· {ev.evaluatorName}</span>}
@@ -2108,8 +2130,8 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
                               <Button variant="outline" size="sm" className="h-7 text-sm" onClick={() => { setSendingId(null); setSendToEmail(""); }}>Cancel</Button>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {selectedSupplier?.email
-                                ? `Leave blank to use the email on file (${selectedSupplier.email}), or type a different address.`
+                              {evSupplier?.email
+                                ? `Leave blank to use the email on file (${evSupplier.email}), or type a different address.`
                                 : "No email on file for this supplier — enter one above, or add it in the ASL tab."}
                             </p>
                           </div>
@@ -2118,7 +2140,7 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
                         <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2">
                           <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" className="h-7 text-sm gap-1.5"
-                              onClick={() => printScorecard(ev, selectedSupplier?.name ?? "Supplier", undefined, activeScorecard)}
+                              onClick={() => printScorecard(ev, evSupplier?.name ?? "Supplier", undefined, activeScorecard)}
                               data-testid={`button-print-eval-${ev.id}`}>
                               <Printer className="w-3 h-3" /> Print / PDF
                             </Button>
@@ -2141,7 +2163,6 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
             </div>
           )}
         </>
-      )}
     </div>
   );
 }
