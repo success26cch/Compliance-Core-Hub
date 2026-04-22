@@ -9803,5 +9803,141 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     });
   });
 
+  // ─── Preventive Maintenance ──────────────────────────────────────────────────
+
+  app.get("/api/pm/equipment", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isSuperadmin = (req.user as any)?.isSuperadmin ?? false;
+    const projectId = req.query.projectId ? Number(req.query.projectId) : null;
+    const rows = await storage.getPmEquipment(req.session.userId, isSuperadmin, projectId);
+    res.json(rows);
+  });
+
+  app.post("/api/pm/equipment", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const d = req.body;
+    const row = await storage.createPmEquipment({
+      userId: req.session.userId,
+      isoProjectId: d.isoProjectId ?? null,
+      equipmentId: d.equipmentId,
+      name: d.name,
+      type: d.type ?? null,
+      manufacturer: d.manufacturer ?? null,
+      model: d.model ?? null,
+      serialNumber: d.serialNumber ?? null,
+      location: d.location ?? null,
+      department: d.department ?? null,
+      responsiblePerson: d.responsiblePerson ?? null,
+      responsibleEmail: d.responsibleEmail ?? null,
+      frequencyType: d.frequencyType ?? "monthly",
+      frequencyDays: d.frequencyDays ?? 30,
+      lastPmDate: d.lastPmDate ?? null,
+      nextDueDate: d.nextDueDate ?? null,
+      estimatedDurationHours: d.estimatedDurationHours ?? null,
+      procedureNotes: d.procedureNotes ?? null,
+      status: d.status ?? "active",
+      notes: d.notes ?? null,
+    });
+    res.status(201).json(row);
+  });
+
+  app.patch("/api/pm/equipment/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isSuperadmin = (req.user as any)?.isSuperadmin ?? false;
+    const d = req.body;
+    const row = await storage.updatePmEquipment(Number(req.params.id), req.session.userId, {
+      equipmentId: d.equipmentId,
+      name: d.name,
+      type: d.type ?? null,
+      manufacturer: d.manufacturer ?? null,
+      model: d.model ?? null,
+      serialNumber: d.serialNumber ?? null,
+      location: d.location ?? null,
+      department: d.department ?? null,
+      responsiblePerson: d.responsiblePerson ?? null,
+      responsibleEmail: d.responsibleEmail ?? null,
+      frequencyType: d.frequencyType ?? "monthly",
+      frequencyDays: d.frequencyDays ?? 30,
+      lastPmDate: d.lastPmDate ?? null,
+      nextDueDate: d.nextDueDate ?? null,
+      estimatedDurationHours: d.estimatedDurationHours ?? null,
+      procedureNotes: d.procedureNotes ?? null,
+      status: d.status ?? "active",
+      notes: d.notes ?? null,
+    }, isSuperadmin);
+    if (!row) return res.status(404).json({ message: "Not found" });
+    res.json(row);
+  });
+
+  app.delete("/api/pm/equipment/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isSuperadmin = (req.user as any)?.isSuperadmin ?? false;
+    await storage.deletePmEquipment(Number(req.params.id), req.session.userId, isSuperadmin);
+    res.json({ success: true });
+  });
+
+  app.get("/api/pm/records", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isSuperadmin = (req.user as any)?.isSuperadmin ?? false;
+    const projectId = req.query.projectId ? Number(req.query.projectId) : null;
+    const rows = await storage.getPmRecords(req.session.userId, isSuperadmin, projectId);
+    res.json(rows);
+  });
+
+  app.post("/api/pm/records", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const d = req.body;
+    const row = await storage.createPmRecord({
+      userId: req.session.userId,
+      isoProjectId: d.isoProjectId ?? null,
+      equipmentId: Number(d.equipmentId),
+      pmDate: d.pmDate,
+      performedBy: d.performedBy ?? null,
+      result: d.result ?? "completed",
+      laborHours: d.laborHours ?? null,
+      partsReplaced: d.partsReplaced ?? null,
+      findings: d.findings ?? null,
+      correctiveAction: d.correctiveAction ?? null,
+      nextDueDate: d.nextDueDate ?? null,
+      attachmentUrl: d.attachmentUrl ?? null,
+      notes: d.notes ?? null,
+    });
+    // Update equipment's lastPmDate and nextDueDate
+    if (d.nextDueDate || d.pmDate) {
+      await storage.updatePmEquipment(Number(d.equipmentId), req.session.userId, {
+        lastPmDate: d.pmDate,
+        nextDueDate: d.nextDueDate ?? null,
+      }, false);
+    }
+    res.status(201).json(row);
+  });
+
+  app.patch("/api/pm/records/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isSuperadmin = (req.user as any)?.isSuperadmin ?? false;
+    const d = req.body;
+    const row = await storage.updatePmRecord(Number(req.params.id), req.session.userId, {
+      pmDate: d.pmDate,
+      performedBy: d.performedBy ?? null,
+      result: d.result ?? "completed",
+      laborHours: d.laborHours ?? null,
+      partsReplaced: d.partsReplaced ?? null,
+      findings: d.findings ?? null,
+      correctiveAction: d.correctiveAction ?? null,
+      nextDueDate: d.nextDueDate ?? null,
+      attachmentUrl: d.attachmentUrl ?? null,
+      notes: d.notes ?? null,
+    }, isSuperadmin);
+    if (!row) return res.status(404).json({ message: "Not found" });
+    res.json(row);
+  });
+
+  app.delete("/api/pm/records/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isSuperadmin = (req.user as any)?.isSuperadmin ?? false;
+    await storage.deletePmRecord(Number(req.params.id), req.session.userId, isSuperadmin);
+    res.json({ success: true });
+  });
+
   return httpServer;
 }

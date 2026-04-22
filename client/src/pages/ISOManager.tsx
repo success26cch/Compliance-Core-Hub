@@ -35,6 +35,7 @@ import { ProcessMapModule, type ProcessEntry } from "./ProcessMapModule";
 import RiskAssessmentModule from "./RiskAssessmentModule";
 import MeasurementModule from "./MeasurementModule";
 import { CalibrationModule } from "./CalibrationModule";
+import { PreventiveMaintenanceModule } from "./PreventiveMaintenanceModule";
 import ManagementReviewModule from "./ManagementReviewModule";
 import CommunicationModule from "./CommunicationModule";
 import RolesRaciModule from "./RolesRaciModule";
@@ -273,7 +274,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -289,8 +290,9 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   management_review: [null, undefined, 'auditor'],
   internal_audit:    [null, undefined, 'auditor'],
   measurement:          [null, undefined, 'auditor'],
-  supplier_management:  [null, undefined, 'auditor'],
-  calibration:          [null, undefined, 'auditor'],
+  supplier_management:      [null, undefined, 'auditor'],
+  calibration:              [null, undefined, 'auditor'],
+  preventive_maintenance:   [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -689,11 +691,12 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["supplier_management","apqp","calibration"] as SectionKey[]).map((section) => {
+              {(["supplier_management","apqp","calibration","preventive_maintenance"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
-                  supplier_management: { icon: Truck,   label: "Supplier Mgmt" },
-                  apqp:                { icon: Layers,  label: "APQP / Programs" },
-                  calibration:         { icon: Gauge,   label: "Calibration" },
+                  supplier_management:    { icon: Truck,   label: "Supplier Mgmt" },
+                  apqp:                   { icon: Layers,  label: "APQP / Programs" },
+                  calibration:            { icon: Gauge,   label: "Calibration" },
+                  preventive_maintenance: { icon: Wrench,  label: "Maintenance" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -703,19 +706,6 @@ export default function ISOManager() {
                     testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
                 );
               })}
-              {/* Coming soon placeholders */}
-              {[
-                { icon: Wrench, label: "Maintenance", testId: "nav-maintenance" },
-              ].map(({ icon: Icon, label, testId }) => (
-                <button key={testId} disabled title={!sidebarOpen ? label : undefined}
-                  data-testid={testId}
-                  className={`w-full flex items-center rounded-lg transition-all duration-150 text-sm font-medium opacity-40 cursor-not-allowed text-muted-foreground
-                    ${!sidebarOpen ? "justify-center h-10 px-0" : "gap-3 px-3 py-2.5"}`}>
-                  <Icon className="w-5 h-5 shrink-0" />
-                  {sidebarOpen && <span className="truncate flex-1">{label}</span>}
-                  {sidebarOpen && <span className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">Soon</span>}
-                </button>
-              ))}
             </div>
 
             {/* Recent Sessions (only when expanded) */}
@@ -924,6 +914,12 @@ export default function ISOManager() {
                 {canAccessSection('calibration', isoRole, isSuperadmin)
                   ? <CalibrationModule project={project} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="calibration" /></div>}
+              </div>
+            ) : activeSection === 'preventive_maintenance' ? (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                {canAccessSection('preventive_maintenance', isoRole, isSuperadmin)
+                  ? <PreventiveMaintenanceModule project={project} />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="preventive_maintenance" /></div>}
               </div>
             ) : (
               <>

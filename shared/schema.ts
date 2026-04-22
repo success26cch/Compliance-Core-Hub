@@ -2116,6 +2116,57 @@ export const insertCalibrationLabSchema = createInsertSchema(calibrationLabs).om
 export type InsertCalibrationLab = z.infer<typeof insertCalibrationLabSchema>;
 export type CalibrationLab = typeof calibrationLabs.$inferSelect;
 
+// ─── Preventive Maintenance ──────────────────────────────────────────────────
+
+export const pmEquipment = pgTable("pm_equipment", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  equipmentId: text("equipment_id").notNull(),          // user-defined asset ID e.g. "PM-001"
+  name: text("name").notNull(),
+  type: text("type"),                                    // e.g. "HVAC", "Compressor", "Conveyor"
+  manufacturer: text("manufacturer"),
+  model: text("model"),
+  serialNumber: text("serial_number"),
+  location: text("location"),
+  department: text("department"),
+  responsiblePerson: text("responsible_person"),
+  responsibleEmail: text("responsible_email"),
+  frequencyType: text("frequency_type").default("monthly"), // daily|weekly|monthly|quarterly|semi_annual|annual|custom
+  frequencyDays: integer("frequency_days").default(30),
+  lastPmDate: text("last_pm_date"),
+  nextDueDate: text("next_due_date"),
+  estimatedDurationHours: text("estimated_duration_hours"),
+  procedureNotes: text("procedure_notes"),
+  status: text("status").default("active"),              // active|inactive|decommissioned
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertPmEquipmentSchema = createInsertSchema(pmEquipment).omit({ id: true, createdAt: true });
+export type InsertPmEquipment = z.infer<typeof insertPmEquipmentSchema>;
+export type PmEquipment = typeof pmEquipment.$inferSelect;
+
+export const pmRecords = pgTable("pm_records", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  equipmentId: integer("equipment_id").notNull(),        // FK → pm_equipment.id
+  pmDate: text("pm_date").notNull(),
+  performedBy: text("performed_by"),
+  result: text("result").default("completed"),           // completed|incomplete|needs_attention
+  laborHours: text("labor_hours"),
+  partsReplaced: text("parts_replaced"),
+  findings: text("findings"),
+  correctiveAction: text("corrective_action"),
+  nextDueDate: text("next_due_date"),
+  attachmentUrl: text("attachment_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertPmRecordSchema = createInsertSchema(pmRecords).omit({ id: true, createdAt: true });
+export type InsertPmRecord = z.infer<typeof insertPmRecordSchema>;
+export type PmRecord = typeof pmRecords.$inferSelect;
+
 // ─── Audit Logs ─────────────────────────────────────────────────────────────
 
 export const auditLogs = pgTable("audit_logs", {

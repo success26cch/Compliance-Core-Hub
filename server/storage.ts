@@ -30,6 +30,9 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type CalibrationRecord, type InsertCalibrationRecord,
   type CalibrationOotAssessment, type InsertCalibrationOotAssessment,
   type CalibrationLab, type InsertCalibrationLab,
+  pmEquipment, pmRecords,
+  type PmEquipment, type InsertPmEquipment,
+  type PmRecord, type InsertPmRecord,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -399,6 +402,18 @@ export interface IStorage {
   createCalibrationLab(data: InsertCalibrationLab): Promise<CalibrationLab>;
   updateCalibrationLab(id: number, userId: string, data: Partial<InsertCalibrationLab>, isSuperadmin?: boolean): Promise<CalibrationLab | undefined>;
   deleteCalibrationLab(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ── Preventive Maintenance Equipment ───────────────────────────────────────
+  getPmEquipment(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<PmEquipment[]>;
+  createPmEquipment(data: InsertPmEquipment): Promise<PmEquipment>;
+  updatePmEquipment(id: number, userId: string, data: Partial<InsertPmEquipment>, isSuperadmin?: boolean): Promise<PmEquipment | undefined>;
+  deletePmEquipment(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ── Preventive Maintenance Records ─────────────────────────────────────────
+  getPmRecords(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<PmRecord[]>;
+  createPmRecord(data: InsertPmRecord): Promise<PmRecord>;
+  updatePmRecord(id: number, userId: string, data: Partial<InsertPmRecord>, isSuperadmin?: boolean): Promise<PmRecord | undefined>;
+  deletePmRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2216,6 +2231,64 @@ export class DatabaseStorage implements IStorage {
       ? eq(calibrationLabs.id, id)
       : and(eq(calibrationLabs.id, id), eq(calibrationLabs.userId, userId));
     await db.delete(calibrationLabs).where(where);
+  }
+
+  // ── Preventive Maintenance Equipment ─────────────────────────────────────
+  async getPmEquipment(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<PmEquipment[]> {
+    const conditions: any[] = [];
+    if (!isSuperadmin) conditions.push(eq(pmEquipment.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(pmEquipment.isoProjectId, isoProjectId));
+    const cond = conditions.length > 1 ? and(...conditions) : conditions[0];
+    return db.select().from(pmEquipment).where(cond).orderBy(pmEquipment.equipmentId);
+  }
+
+  async createPmEquipment(data: InsertPmEquipment): Promise<PmEquipment> {
+    const [r] = await db.insert(pmEquipment).values(data).returning();
+    return r;
+  }
+
+  async updatePmEquipment(id: number, userId: string, data: Partial<InsertPmEquipment>, isSuperadmin = false): Promise<PmEquipment | undefined> {
+    const where = isSuperadmin
+      ? eq(pmEquipment.id, id)
+      : and(eq(pmEquipment.id, id), eq(pmEquipment.userId, userId));
+    const [r] = await db.update(pmEquipment).set(data).where(where).returning();
+    return r;
+  }
+
+  async deletePmEquipment(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin
+      ? eq(pmEquipment.id, id)
+      : and(eq(pmEquipment.id, id), eq(pmEquipment.userId, userId));
+    await db.delete(pmEquipment).where(where);
+  }
+
+  // ── Preventive Maintenance Records ───────────────────────────────────────
+  async getPmRecords(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<PmRecord[]> {
+    const conditions: any[] = [];
+    if (!isSuperadmin) conditions.push(eq(pmRecords.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(pmRecords.isoProjectId, isoProjectId));
+    const cond = conditions.length > 1 ? and(...conditions) : conditions[0];
+    return db.select().from(pmRecords).where(cond).orderBy(desc(pmRecords.pmDate));
+  }
+
+  async createPmRecord(data: InsertPmRecord): Promise<PmRecord> {
+    const [r] = await db.insert(pmRecords).values(data).returning();
+    return r;
+  }
+
+  async updatePmRecord(id: number, userId: string, data: Partial<InsertPmRecord>, isSuperadmin = false): Promise<PmRecord | undefined> {
+    const where = isSuperadmin
+      ? eq(pmRecords.id, id)
+      : and(eq(pmRecords.id, id), eq(pmRecords.userId, userId));
+    const [r] = await db.update(pmRecords).set(data).where(where).returning();
+    return r;
+  }
+
+  async deletePmRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin
+      ? eq(pmRecords.id, id)
+      : and(eq(pmRecords.id, id), eq(pmRecords.userId, userId));
+    await db.delete(pmRecords).where(where);
   }
 }
 
