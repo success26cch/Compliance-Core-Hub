@@ -22,6 +22,37 @@ import type { IsoProject } from "@shared/schema";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
+interface Iso13485Fields {
+  criticalSupplier?: boolean;
+  qualityAgreementOnFile?: boolean;
+  qualityAgreementExpiry?: string;
+  regulatoryConformity?: string;
+  changeNotificationRequired?: boolean;
+}
+interface As9100Fields {
+  faiRequired?: boolean;
+  faiStatus?: string;
+  counterfeitPartsProgram?: boolean;
+  nadcapProcesses?: string;
+  itarControlled?: boolean;
+  flowDownRequirements?: string;
+  rightOfAccessAgreement?: boolean;
+}
+interface Iso27001Fields {
+  supplierAccessType?: string;
+  informationAccessLevel?: string;
+  infoSecAgreementOnFile?: boolean;
+  dpaRequired?: boolean;
+  dpaOnFile?: boolean;
+  dpaExpiry?: string;
+  lastSecurityAssessmentDate?: string;
+}
+interface StandardSpecificFields {
+  iso13485?: Iso13485Fields;
+  as9100?: As9100Fields;
+  iso27001?: Iso27001Fields;
+}
+
 interface Supplier {
   id: number; userId: string; isoProjectId?: number | null;
   name: string; contactName?: string | null; email?: string | null;
@@ -29,6 +60,7 @@ interface Supplier {
   criticalityLevel?: string | null; status: string;
   isoCertUrl?: string | null; isoCertType?: string | null; isoCertExpiry?: string | null;
   reminderDaysBefore?: number | null; notes?: string | null;
+  standardSpecificFields?: StandardSpecificFields | null;
   createdAt?: string | null; updatedAt?: string | null;
 }
 interface SupplierCriteria {
@@ -97,6 +129,24 @@ const RISK_COLORS: Record<string, string> = {
 
 function supplierHasIatfCertification(supplier?: Supplier | null): boolean {
   return /iatf\s*16949/i.test(supplier?.isoCertType || "");
+}
+
+function hasStd(stds: string[] | null | undefined, key: string): boolean {
+  return (stds || []).some(s => s.toLowerCase().includes(key.toLowerCase()));
+}
+
+function BoolField({ label, checked, onChange }: { label: string; checked?: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={!!checked}
+        onChange={e => onChange(e.target.checked)}
+        className="w-4 h-4 rounded border-border accent-orange-500"
+      />
+      <span className="text-sm">{label}</span>
+    </label>
+  );
 }
 
 function supplierHasIso9001Certification(supplier?: Supplier | null): boolean {
@@ -193,11 +243,36 @@ const EMPTY_SUP: Partial<Supplier> = {
   scorecardFrequency: "quarterly", notes: "",
 };
 
-function SupplierForm({ initial, onSave, onCancel }: {
+function SupplierForm({ initial, onSave, onCancel, selectedStandards }: {
   initial: Partial<Supplier>; onSave: (d: Partial<Supplier>) => void; onCancel: () => void;
+  selectedStandards?: string[] | null;
 }) {
   const [form, setForm] = useState<Partial<Supplier>>(initial);
   const set = (k: keyof Supplier) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+  const setStdField = <S extends keyof StandardSpecificFields>(
+    std: S,
+    key: string,
+    value: unknown
+  ) => {
+    setForm(f => ({
+      ...f,
+      standardSpecificFields: {
+        ...f.standardSpecificFields,
+        [std]: {
+          ...(f.standardSpecificFields?.[std] || {}),
+          [key]: value,
+        },
+      },
+    }));
+  };
+
+  const show13485 = hasStd(selectedStandards, "13485");
+  const showAs9100 = hasStd(selectedStandards, "as9100");
+  const show27001 = hasStd(selectedStandards, "27001");
+  const sf = form.standardSpecificFields || {};
+  const f13 = sf.iso13485 || {};
+  const fas = sf.as9100 || {};
+  const f27 = sf.iso27001 || {};
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
@@ -290,6 +365,176 @@ function SupplierForm({ initial, onSave, onCancel }: {
         <Textarea className="mt-1 text-base resize-none" rows={2} value={form.notes || ""} onChange={e => set("notes")(e.target.value)} placeholder="Any relevant notes…" />
       </div>
 
+      {/* ── ISO 13485 Medical Device Requirements ── */}
+      {show13485 && (
+        <div className="border-t border-purple-200 pt-3 space-y-3">
+          <p className="text-sm font-bold text-purple-700 uppercase tracking-wide flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5" /> ISO 13485 — Medical Device Requirements
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 flex flex-wrap gap-4">
+              <BoolField
+                label="Critical Supplier (Clause 7.4.1)"
+                checked={f13.criticalSupplier}
+                onChange={v => setStdField("iso13485", "criticalSupplier", v)}
+              />
+              <BoolField
+                label="Quality Agreement on File"
+                checked={f13.qualityAgreementOnFile}
+                onChange={v => setStdField("iso13485", "qualityAgreementOnFile", v)}
+              />
+              <BoolField
+                label="Change Notification Required"
+                checked={f13.changeNotificationRequired}
+                onChange={v => setStdField("iso13485", "changeNotificationRequired", v)}
+              />
+            </div>
+            {f13.qualityAgreementOnFile && (
+              <div>
+                <Label className="text-sm font-semibold">Quality Agreement Expiry</Label>
+                <Input type="date" className="mt-1 h-8 text-base" value={f13.qualityAgreementExpiry || ""} onChange={e => setStdField("iso13485", "qualityAgreementExpiry", e.target.value)} data-testid="input-qa-expiry" />
+              </div>
+            )}
+            <div className={f13.qualityAgreementOnFile ? "" : "col-span-2"}>
+              <Label className="text-sm font-semibold">Regulatory Conformity</Label>
+              <Select value={f13.regulatoryConformity || ""} onValueChange={v => setStdField("iso13485", "regulatoryConformity", v)}>
+                <SelectTrigger className="mt-1 h-8 text-base"><SelectValue placeholder="Select framework…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FDA 21 CFR Part 820">FDA 21 CFR Part 820 (QSR)</SelectItem>
+                  <SelectItem value="EU MDR 2017/745">EU MDR 2017/745</SelectItem>
+                  <SelectItem value="EU IVDR 2017/746">EU IVDR 2017/746</SelectItem>
+                  <SelectItem value="Health Canada MDR">Health Canada MDR</SelectItem>
+                  <SelectItem value="TGA (Australia)">TGA (Australia)</SelectItem>
+                  <SelectItem value="PMDA (Japan)">PMDA (Japan)</SelectItem>
+                  <SelectItem value="Multiple">Multiple Jurisdictions</SelectItem>
+                  <SelectItem value="N/A">N/A — Not regulated</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── AS9100 Rev D Aerospace Requirements ── */}
+      {showAs9100 && (
+        <div className="border-t border-blue-200 pt-3 space-y-3">
+          <p className="text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5" /> AS9100 Rev D — Aerospace Requirements
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 flex flex-wrap gap-4">
+              <BoolField
+                label="FAI Required (8.4.2.c)"
+                checked={fas.faiRequired}
+                onChange={v => setStdField("as9100", "faiRequired", v)}
+              />
+              <BoolField
+                label="Counterfeit Parts Prevention Program (8.4.2.f)"
+                checked={fas.counterfeitPartsProgram}
+                onChange={v => setStdField("as9100", "counterfeitPartsProgram", v)}
+              />
+              <BoolField
+                label="ITAR Controlled"
+                checked={fas.itarControlled}
+                onChange={v => setStdField("as9100", "itarControlled", v)}
+              />
+              <BoolField
+                label="Right-of-Access Agreement on File (8.4.3.b)"
+                checked={fas.rightOfAccessAgreement}
+                onChange={v => setStdField("as9100", "rightOfAccessAgreement", v)}
+              />
+            </div>
+            {fas.faiRequired && (
+              <div>
+                <Label className="text-sm font-semibold">FAI Status</Label>
+                <Select value={fas.faiStatus || ""} onValueChange={v => setStdField("as9100", "faiStatus", v)}>
+                  <SelectTrigger className="mt-1 h-8 text-base"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="complete">Complete</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="not_required">Not Required for this Order</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <Label className="text-sm font-semibold">NADCAP Special Processes</Label>
+              <Input className="mt-1 h-8 text-base" value={fas.nadcapProcesses || ""} onChange={e => setStdField("as9100", "nadcapProcesses", e.target.value)} placeholder="e.g. Heat Treatment, Welding, NDT" data-testid="input-nadcap" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-sm font-semibold">Flow-Down Requirements (8.4.3)</Label>
+              <Textarea className="mt-1 text-base resize-none" rows={2} value={fas.flowDownRequirements || ""} onChange={e => setStdField("as9100", "flowDownRequirements", e.target.value)} placeholder="List customer/regulatory requirements flowed to this supplier…" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ISO 27001 Information Security Requirements ── */}
+      {show27001 && (
+        <div className="border-t border-emerald-200 pt-3 space-y-3">
+          <p className="text-sm font-bold text-emerald-700 uppercase tracking-wide flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5" /> ISO 27001 — Information Security Requirements
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-sm font-semibold">Supplier Access Type (A.5.19)</Label>
+              <Select value={f27.supplierAccessType || ""} onValueChange={v => setStdField("iso27001", "supplierAccessType", v)}>
+                <SelectTrigger className="mt-1 h-8 text-base"><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cloud">Cloud / SaaS Provider</SelectItem>
+                  <SelectItem value="saas">Software / IT Services</SelectItem>
+                  <SelectItem value="hardware">Hardware / Equipment</SelectItem>
+                  <SelectItem value="professional">Professional Services</SelectItem>
+                  <SelectItem value="data_processing">Data Processing / Sub-processor</SelectItem>
+                  <SelectItem value="no_access">No System/Data Access</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">Information Access Level (A.5.20)</Label>
+              <Select value={f27.informationAccessLevel || ""} onValueChange={v => setStdField("iso27001", "informationAccessLevel", v)}>
+                <SelectTrigger className="mt-1 h-8 text-base"><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="confidential">Confidential (PII / Trade Secrets)</SelectItem>
+                  <SelectItem value="internal">Internal (Business Data)</SelectItem>
+                  <SelectItem value="restricted">Restricted (Sensitive Operational)</SelectItem>
+                  <SelectItem value="public">Public Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 flex flex-wrap gap-4">
+              <BoolField
+                label="InfoSec Agreement / NDA on File (A.5.20)"
+                checked={f27.infoSecAgreementOnFile}
+                onChange={v => setStdField("iso27001", "infoSecAgreementOnFile", v)}
+              />
+              <BoolField
+                label="DPA Required"
+                checked={f27.dpaRequired}
+                onChange={v => setStdField("iso27001", "dpaRequired", v)}
+              />
+              {f27.dpaRequired && (
+                <BoolField
+                  label="DPA on File"
+                  checked={f27.dpaOnFile}
+                  onChange={v => setStdField("iso27001", "dpaOnFile", v)}
+                />
+              )}
+            </div>
+            {f27.dpaRequired && (
+              <div>
+                <Label className="text-sm font-semibold">DPA Renewal Date</Label>
+                <Input type="date" className="mt-1 h-8 text-base" value={f27.dpaExpiry || ""} onChange={e => setStdField("iso27001", "dpaExpiry", e.target.value)} data-testid="input-dpa-expiry" />
+              </div>
+            )}
+            <div>
+              <Label className="text-sm font-semibold">Last Security Assessment Date (A.5.22)</Label>
+              <Input type="date" className="mt-1 h-8 text-base" value={f27.lastSecurityAssessmentDate || ""} onChange={e => setStdField("iso27001", "lastSecurityAssessmentDate", e.target.value)} data-testid="input-security-assessment-date" />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="outline" size="sm" onClick={onCancel} data-testid="button-cancel-supplier">Cancel</Button>
         <Button size="sm" className="bg-accent hover:bg-accent/90 text-white" onClick={() => onSave(form)} disabled={!form.name?.trim()} data-testid="button-save-supplier">Save Supplier</Button>
@@ -300,12 +545,13 @@ function SupplierForm({ initial, onSave, onCancel }: {
 
 // ─── Tab 1: Approved Supplier List ──────────────────────────────────────────
 
-function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
+function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving, selectedStandards }: {
   s: Supplier;
   onEdit: () => void;
   onClose: () => void;
   onDelete: () => void;
   isSaving?: boolean;
+  selectedStandards?: string[] | null;
 }) {
   const days = daysUntilExpiry(s.isoCertExpiry);
   const certExpired = days !== null && days < 0;
@@ -402,6 +648,61 @@ function SupplierDetailPanel({ s, onEdit, onClose, onDelete, isSaving }: {
         </div>
       </div>
 
+      {/* Standard-Specific Compliance Data */}
+      {(() => {
+        const sf = s.standardSpecificFields;
+        if (!sf) return null;
+        const show13485 = hasStd(selectedStandards, "13485");
+        const showAs9100 = hasStd(selectedStandards, "as9100");
+        const show27001 = hasStd(selectedStandards, "27001");
+        const has13 = show13485 && sf.iso13485 && Object.values(sf.iso13485).some(v => v !== undefined && v !== null && v !== "" && v !== false);
+        const hasAs = showAs9100 && sf.as9100 && Object.values(sf.as9100).some(v => v !== undefined && v !== null && v !== "" && v !== false);
+        const has27 = show27001 && sf.iso27001 && Object.values(sf.iso27001).some(v => v !== undefined && v !== null && v !== "" && v !== false);
+        if (!has13 && !hasAs && !has27) return null;
+        return (
+          <div className="mt-4 pt-3 border-t border-border/40 space-y-3">
+            {has13 && sf.iso13485 && (
+              <div>
+                <p className="text-xs font-bold text-purple-700 uppercase tracking-wide mb-1.5">ISO 13485 Compliance</p>
+                <div className="flex flex-wrap gap-2">
+                  {sf.iso13485.criticalSupplier && <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200">Critical Supplier</Badge>}
+                  {sf.iso13485.qualityAgreementOnFile && <Badge className="text-xs bg-purple-50 text-purple-600 border-purple-200">QA on File{sf.iso13485.qualityAgreementExpiry ? ` · ${new Date(sf.iso13485.qualityAgreementExpiry).toLocaleDateString()}` : ""}</Badge>}
+                  {sf.iso13485.changeNotificationRequired && <Badge className="text-xs bg-purple-50 text-purple-600 border-purple-200">Change Notify ✓</Badge>}
+                  {sf.iso13485.regulatoryConformity && <Badge className="text-xs bg-slate-100 text-slate-600 border-slate-200">{sf.iso13485.regulatoryConformity}</Badge>}
+                </div>
+              </div>
+            )}
+            {hasAs && sf.as9100 && (
+              <div>
+                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1.5">AS9100 Rev D Compliance</p>
+                <div className="flex flex-wrap gap-2">
+                  {sf.as9100.faiRequired && <Badge className="text-xs bg-blue-50 text-blue-700 border-blue-200">FAI Required{sf.as9100.faiStatus ? ` · ${sf.as9100.faiStatus === "complete" ? "Complete ✓" : sf.as9100.faiStatus === "pending" ? "Pending" : "N/A"}` : ""}</Badge>}
+                  {sf.as9100.counterfeitPartsProgram && <Badge className="text-xs bg-blue-50 text-blue-700 border-blue-200">Anti-Counterfeit ✓</Badge>}
+                  {sf.as9100.itarControlled && <Badge className="text-xs bg-red-100 text-red-700 border-red-200">ITAR Controlled</Badge>}
+                  {sf.as9100.rightOfAccessAgreement && <Badge className="text-xs bg-blue-50 text-blue-600 border-blue-200">Right-of-Access ✓</Badge>}
+                  {sf.as9100.nadcapProcesses && <Badge className="text-xs bg-slate-100 text-slate-600 border-slate-200">NADCAP: {sf.as9100.nadcapProcesses}</Badge>}
+                </div>
+                {sf.as9100.flowDownRequirements && (
+                  <p className="text-xs text-muted-foreground mt-1.5"><span className="font-semibold">Flow-Down:</span> {sf.as9100.flowDownRequirements}</p>
+                )}
+              </div>
+            )}
+            {has27 && sf.iso27001 && (
+              <div>
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide mb-1.5">ISO 27001 Information Security</p>
+                <div className="flex flex-wrap gap-2">
+                  {sf.iso27001.supplierAccessType && <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">{sf.iso27001.supplierAccessType}</Badge>}
+                  {sf.iso27001.informationAccessLevel && <Badge className="text-xs bg-emerald-50 text-emerald-600 border-emerald-200">{sf.iso27001.informationAccessLevel} access</Badge>}
+                  {sf.iso27001.infoSecAgreementOnFile && <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">InfoSec Agreement ✓</Badge>}
+                  {sf.iso27001.dpaRequired && <Badge className={`text-xs border ${sf.iso27001.dpaOnFile ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>DPA {sf.iso27001.dpaOnFile ? "on File ✓" : "Required — Pending"}</Badge>}
+                  {sf.iso27001.lastSecurityAssessmentDate && <Badge className="text-xs bg-slate-100 text-slate-600 border-slate-200">Assessed {new Date(sf.iso27001.lastSecurityAssessmentDate).toLocaleDateString()}</Badge>}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Actions */}
       <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/40">
         <Button size="sm" variant="outline" className="h-7 text-sm gap-1.5" onClick={onEdit} data-testid={`button-edit-supplier-${s.id}`}>
@@ -464,7 +765,8 @@ function SortHeader({ label, field, sortBy, sortDir, onSort }: {
   );
 }
 
-function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
+function ApprovedSupplierList({ isoProjectId, project }: { isoProjectId?: number; project?: IsoProject | null }) {
+  const selectedStandards = project?.selectedStandards;
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
@@ -587,6 +889,7 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
             initial={editing ?? EMPTY_SUP}
             onSave={d => editing ? updateMut.mutate({ id: editing.id, d }) : createMut.mutate(d)}
             onCancel={() => { setShowForm(false); setEditing(null); }}
+            selectedStandards={selectedStandards}
           />
         </div>
       )}
@@ -666,6 +969,7 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
                     onEdit={() => setEditing(s)}
                     onClose={() => setExpandedId(null)}
                     onDelete={() => { if (confirm(`Remove ${s.name} from the ASL?`)) deleteMut.mutate(s.id); }}
+                    selectedStandards={selectedStandards}
                   />
                 )}
                 {isExpanded && editing?.id === s.id && (
@@ -674,6 +978,7 @@ function ApprovedSupplierList({ isoProjectId }: { isoProjectId?: number }) {
                       initial={editing}
                       onSave={d => updateMut.mutate({ id: s.id, d })}
                       onCancel={() => setEditing(null)}
+                      selectedStandards={selectedStandards}
                     />
                   </div>
                 )}
@@ -2568,7 +2873,7 @@ export default function SupplierModule({ project }: SupplierModuleProps) {
             </p>
           </div>
 
-          {tab === "asl"      && <ApprovedSupplierList isoProjectId={isoProjectId} />}
+          {tab === "asl"      && <ApprovedSupplierList isoProjectId={isoProjectId} project={project} />}
           {tab === "criteria" && <SelectionCriteria isoProjectId={isoProjectId} project={project} />}
           {tab === "evals"    && <SupplierEvaluations isoProjectId={isoProjectId} isIATF={isIATF} />}
           {tab === "audits"   && isIATF && <SupplierAuditSchedule isoProjectId={isoProjectId} />}

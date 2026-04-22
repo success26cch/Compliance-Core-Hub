@@ -1887,6 +1887,34 @@ export const suppliers = pgTable("suppliers", {
   reminderDaysBefore: integer("reminder_days_before").default(30),
   scorecardFrequency: text("scorecard_frequency").default("quarterly"), // monthly | quarterly | semi-annual | annual
   notes: text("notes"),
+  // Standard-specific compliance fields (conditional per project scope)
+  standardSpecificFields: jsonb("standard_specific_fields").$type<{
+    iso13485?: {
+      criticalSupplier?: boolean;
+      qualityAgreementOnFile?: boolean;
+      qualityAgreementExpiry?: string;
+      regulatoryConformity?: string;
+      changeNotificationRequired?: boolean;
+    };
+    as9100?: {
+      faiRequired?: boolean;
+      faiStatus?: string;
+      counterfeitPartsProgram?: boolean;
+      nadcapProcesses?: string;
+      itarControlled?: boolean;
+      flowDownRequirements?: string;
+      rightOfAccessAgreement?: boolean;
+    };
+    iso27001?: {
+      supplierAccessType?: string;
+      informationAccessLevel?: string;
+      infoSecAgreementOnFile?: boolean;
+      dpaRequired?: boolean;
+      dpaOnFile?: boolean;
+      dpaExpiry?: string;
+      lastSecurityAssessmentDate?: string;
+    };
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
