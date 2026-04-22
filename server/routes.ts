@@ -9273,75 +9273,82 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     return Object.fromEntries(Object.entries(row).map(([k, v]) => [toCamel(k), v]));
   }
 
-  // ─── Calibration Equipment ───────────────────────────────────────────────────
+  // ─── Calibration Equipment ────────────────────────────────────────────────────
 
   app.get("/api/calibration/equipment", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
     const projectId = req.query.projectId ? Number(req.query.projectId) : null;
-    const rows = await db.execute(sql`
-      SELECT * FROM calibration_equipment
-      WHERE user_id = ${req.session.userId}
-        AND (${projectId}::integer IS NULL OR iso_project_id = ${projectId})
-      ORDER BY gage_id ASC
-    `);
-    res.json(rows.rows.map(rowToCamel));
+    const rows = await storage.getCalibrationEquipment(req.session.userId, isSuperadmin, projectId);
+    res.json(rows);
   });
 
   app.post("/api/calibration/equipment", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
     const d = req.body;
-    const rows = await db.execute(sql`
-      INSERT INTO calibration_equipment (
-        user_id, iso_project_id, gage_id, name, type, manufacturer, model, serial_number,
-        location, responsible_person, responsible_email, measurement_range, resolution,
-        tolerance, cal_frequency_months, cal_type, calibration_lab, traceable_standard,
-        customer_owned, linked_document_id, status, next_due_date, notes
-      ) VALUES (
-        ${req.session.userId}, ${d.isoProjectId ?? null}, ${d.gageId}, ${d.name},
-        ${d.type ?? null}, ${d.manufacturer ?? null}, ${d.model ?? null}, ${d.serialNumber ?? null},
-        ${d.location ?? null}, ${d.responsiblePerson ?? null}, ${d.responsibleEmail ?? null},
-        ${d.measurementRange ?? null}, ${d.resolution ?? null}, ${d.tolerance ?? null},
-        ${d.calFrequencyMonths ?? 12}, ${d.calType ?? 'external'}, ${d.calibrationLab ?? null},
-        ${d.traceableStandard ?? 'NIST'}, ${d.customerOwned ?? false},
-        ${d.linkedDocumentId ?? null}, ${d.status ?? 'active'}, ${d.nextDueDate ?? null},
-        ${d.notes ?? null}
-      ) RETURNING *
-    `);
-    res.status(201).json(rowToCamel(rows.rows[0] as Record<string, unknown>));
+    const row = await storage.createCalibrationEquipment({
+      userId: req.session.userId,
+      isoProjectId: d.isoProjectId ?? null,
+      gageId: d.gageId,
+      name: d.name,
+      type: d.type ?? null,
+      manufacturer: d.manufacturer ?? null,
+      model: d.model ?? null,
+      serialNumber: d.serialNumber ?? null,
+      location: d.location ?? null,
+      responsiblePerson: d.responsiblePerson ?? null,
+      responsibleEmail: d.responsibleEmail ?? null,
+      measurementRange: d.measurementRange ?? null,
+      resolution: d.resolution ?? null,
+      tolerance: d.tolerance ?? null,
+      calFrequencyMonths: d.calFrequencyMonths ?? 12,
+      calType: d.calType ?? "external",
+      calibrationLab: d.calibrationLab ?? null,
+      traceableStandard: d.traceableStandard ?? "NIST",
+      customerOwned: d.customerOwned ?? false,
+      linkedDocumentId: d.linkedDocumentId ?? null,
+      status: d.status ?? "active",
+      nextDueDate: d.nextDueDate ?? null,
+      notes: d.notes ?? null,
+    });
+    res.status(201).json(row);
   });
 
   app.patch("/api/calibration/equipment/:id", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
     const d = req.body;
-    const rows = await db.execute(sql`
-      UPDATE calibration_equipment SET
-        gage_id = ${d.gageId}, name = ${d.name}, type = ${d.type ?? null},
-        manufacturer = ${d.manufacturer ?? null}, model = ${d.model ?? null},
-        serial_number = ${d.serialNumber ?? null}, location = ${d.location ?? null},
-        responsible_person = ${d.responsiblePerson ?? null}, responsible_email = ${d.responsibleEmail ?? null},
-        measurement_range = ${d.measurementRange ?? null}, resolution = ${d.resolution ?? null},
-        tolerance = ${d.tolerance ?? null}, cal_frequency_months = ${d.calFrequencyMonths ?? 12},
-        cal_type = ${d.calType ?? 'external'}, calibration_lab = ${d.calibrationLab ?? null},
-        traceable_standard = ${d.traceableStandard ?? 'NIST'}, customer_owned = ${d.customerOwned ?? false},
-        status = ${d.status ?? 'active'}, next_due_date = ${d.nextDueDate ?? null},
-        notes = ${d.notes ?? null}, updated_at = NOW()
-      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
-      RETURNING *
-    `);
-    res.json(rowToCamel(rows.rows[0] as Record<string, unknown>));
+    const row = await storage.updateCalibrationEquipment(Number(req.params.id), req.session.userId, {
+      gageId: d.gageId,
+      name: d.name,
+      type: d.type ?? null,
+      manufacturer: d.manufacturer ?? null,
+      model: d.model ?? null,
+      serialNumber: d.serialNumber ?? null,
+      location: d.location ?? null,
+      responsiblePerson: d.responsiblePerson ?? null,
+      responsibleEmail: d.responsibleEmail ?? null,
+      measurementRange: d.measurementRange ?? null,
+      resolution: d.resolution ?? null,
+      tolerance: d.tolerance ?? null,
+      calFrequencyMonths: d.calFrequencyMonths ?? 12,
+      calType: d.calType ?? "external",
+      calibrationLab: d.calibrationLab ?? null,
+      traceableStandard: d.traceableStandard ?? "NIST",
+      customerOwned: d.customerOwned ?? false,
+      linkedDocumentId: d.linkedDocumentId ?? null,
+      status: d.status ?? "active",
+      nextDueDate: d.nextDueDate ?? null,
+      notes: d.notes ?? null,
+    }, isSuperadmin);
+    if (!row) return res.status(404).json({ message: "Not found" });
+    res.json(row);
   });
 
   app.delete("/api/calibration/equipment/:id", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
-    await db.execute(sql`DELETE FROM calibration_equipment WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
+    await storage.deleteCalibrationEquipment(Number(req.params.id), req.session.userId, isSuperadmin);
     res.json({ success: true });
   });
 
@@ -9349,79 +9356,66 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
 
   app.get("/api/calibration/records", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
     const projectId = req.query.projectId ? Number(req.query.projectId) : null;
-    const rows = await db.execute(sql`
-      SELECT * FROM calibration_records
-      WHERE user_id = ${req.session.userId}
-        AND (${projectId}::integer IS NULL OR iso_project_id = ${projectId})
-      ORDER BY calibration_date DESC
-    `);
-    res.json(rows.rows.map(rowToCamel));
+    const rows = await storage.getCalibrationRecords(req.session.userId, isSuperadmin, projectId);
+    res.json(rows);
   });
 
   app.post("/api/calibration/records", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
     const d = req.body;
-    const oot = d.result === 'fail' || d.outOfTolerance === true;
-    // Serialize text[] — Drizzle raw sql doesn't auto-cast JS arrays to pg text[]
-    const standardsArr: string[] | null = Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
-      ? d.standardsReferenced : null;
-    const recRows = await db.execute(sql`
-      INSERT INTO calibration_records (
-        user_id, iso_project_id, equipment_id, calibration_date, performed_by,
-        cert_number, standards_referenced, result, out_of_tolerance, adjustments_made,
-        certificate_file_url, next_due_date, notes
-      ) VALUES (
-        ${req.session.userId}, ${d.isoProjectId ?? null}, ${d.equipmentId},
-        ${d.calibrationDate}, ${d.performedBy ?? null}, ${d.certNumber ?? null},
-        ${standardsArr ? sql`${sql.raw(`ARRAY[${standardsArr.map(s => `'${s.replace(/'/g, "''")}'`).join(',')}]`)}` : sql`NULL`},
-        ${d.result ?? 'pass'}, ${oot},
-        ${d.adjustmentsMade ?? null}, ${d.certificateFileUrl ?? null},
-        ${d.nextDueDate ?? null}, ${d.notes ?? null}
-      ) RETURNING *
-    `);
-    const record = rowToCamel(recRows.rows[0] as Record<string, unknown>);
+    const oot = d.result === "fail" || d.outOfTolerance === true;
+    const record = await storage.createCalibrationRecord({
+      userId: req.session.userId,
+      isoProjectId: d.isoProjectId ?? null,
+      equipmentId: Number(d.equipmentId),
+      calibrationDate: d.calibrationDate,
+      performedBy: d.performedBy ?? null,
+      certNumber: d.certNumber ?? null,
+      standardsReferenced: Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
+        ? d.standardsReferenced : null,
+      result: d.result ?? "pass",
+      outOfTolerance: oot,
+      adjustmentsMade: d.adjustmentsMade ?? null,
+      certificateFileUrl: d.certificateFileUrl ?? null,
+      nextDueDate: d.nextDueDate ?? null,
+      notes: d.notes ?? null,
+    });
+    // Update equipment next_due_date
     if (d.nextDueDate) {
-      await db.execute(sql`
-        UPDATE calibration_equipment SET next_due_date = ${d.nextDueDate}, updated_at = NOW()
-        WHERE id = ${d.equipmentId} AND user_id = ${req.session.userId}
-      `);
+      await storage.updateCalibrationEquipment(Number(d.equipmentId), req.session.userId,
+        { nextDueDate: d.nextDueDate }, false);
     }
     res.status(201).json(record);
   });
 
   app.patch("/api/calibration/records/:id", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
     const d = req.body;
-    const oot = d.result === 'fail' || d.outOfTolerance === true;
-    const standardsArr: string[] | null = Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
-      ? d.standardsReferenced : null;
-    const rows = await db.execute(sql`
-      UPDATE calibration_records SET
-        calibration_date = ${d.calibrationDate}, performed_by = ${d.performedBy ?? null},
-        cert_number = ${d.certNumber ?? null},
-        standards_referenced = ${standardsArr ? sql`${sql.raw(`ARRAY[${standardsArr.map(s => `'${s.replace(/'/g, "''")}'`).join(',')}]`)}` : sql`NULL`},
-        result = ${d.result ?? 'pass'}, out_of_tolerance = ${oot},
-        adjustments_made = ${d.adjustmentsMade ?? null},
-        certificate_file_url = ${d.certificateFileUrl ?? null},
-        next_due_date = ${d.nextDueDate ?? null}, notes = ${d.notes ?? null}
-      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
-      RETURNING *
-    `);
-    res.json(rowToCamel(rows.rows[0] as Record<string, unknown>));
+    const oot = d.result === "fail" || d.outOfTolerance === true;
+    const row = await storage.updateCalibrationRecord(Number(req.params.id), req.session.userId, {
+      calibrationDate: d.calibrationDate,
+      performedBy: d.performedBy ?? null,
+      certNumber: d.certNumber ?? null,
+      standardsReferenced: Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
+        ? d.standardsReferenced : null,
+      result: d.result ?? "pass",
+      outOfTolerance: oot,
+      adjustmentsMade: d.adjustmentsMade ?? null,
+      certificateFileUrl: d.certificateFileUrl ?? null,
+      nextDueDate: d.nextDueDate ?? null,
+      notes: d.notes ?? null,
+    }, isSuperadmin);
+    if (!row) return res.status(404).json({ message: "Not found" });
+    res.json(row);
   });
 
   app.delete("/api/calibration/records/:id", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
-    await db.execute(sql`DELETE FROM calibration_records WHERE id = ${req.params.id} AND user_id = ${req.session.userId}`);
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
+    await storage.deleteCalibrationRecord(Number(req.params.id), req.session.userId, isSuperadmin);
     res.json({ success: true });
   });
 
@@ -9429,61 +9423,52 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
 
   app.get("/api/calibration/oot-assessments", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
     const projectId = req.query.projectId ? Number(req.query.projectId) : null;
-    const rows = await db.execute(sql`
-      SELECT * FROM calibration_oot_assessments
-      WHERE user_id = ${req.session.userId}
-        AND (${projectId}::integer IS NULL OR iso_project_id = ${projectId})
-      ORDER BY created_at DESC
-    `);
-    res.json(rows.rows.map(rowToCamel));
+    const rows = await storage.getCalibrationOotAssessments(req.session.userId, isSuperadmin, projectId);
+    res.json(rows);
   });
 
   app.post("/api/calibration/oot-assessments", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
     const d = req.body;
-    const rows = await db.execute(sql`
-      INSERT INTO calibration_oot_assessments (
-        user_id, iso_project_id, calibration_record_id, equipment_id,
-        affected_products, suspect_date_start, suspect_date_end, disposition,
-        risk_level, containment_actions, corrective_action_ref, assessed_by,
-        assessment_date, notes
-      ) VALUES (
-        ${req.session.userId}, ${d.isoProjectId ?? null}, ${d.calibrationRecordId},
-        ${d.equipmentId}, ${d.affectedProducts ?? null}, ${d.suspectDateStart ?? null},
-        ${d.suspectDateEnd ?? null}, ${d.disposition ?? null}, ${d.riskLevel ?? 'medium'},
-        ${d.containmentActions ?? null}, ${d.correctiveActionRef ?? null},
-        ${d.assessedBy ?? null}, ${d.assessmentDate ?? null}, ${d.notes ?? null}
-      ) RETURNING *
-    `);
-    res.status(201).json(rowToCamel(rows.rows[0] as Record<string, unknown>));
+    const row = await storage.createCalibrationOotAssessment({
+      userId: req.session.userId,
+      isoProjectId: d.isoProjectId ?? null,
+      calibrationRecordId: Number(d.calibrationRecordId),
+      equipmentId: Number(d.equipmentId),
+      affectedProducts: d.affectedProducts ?? null,
+      suspectDateStart: d.suspectDateStart ?? null,
+      suspectDateEnd: d.suspectDateEnd ?? null,
+      disposition: d.disposition ?? null,
+      riskLevel: d.riskLevel ?? "medium",
+      containmentActions: d.containmentActions ?? null,
+      correctiveActionRef: d.correctiveActionRef ?? null,
+      assessedBy: d.assessedBy ?? null,
+      assessmentDate: d.assessmentDate ?? null,
+      notes: d.notes ?? null,
+    });
+    res.status(201).json(row);
   });
 
   app.patch("/api/calibration/oot-assessments/:id", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
     const d = req.body;
-    const rows = await db.execute(sql`
-      UPDATE calibration_oot_assessments SET
-        affected_products = ${d.affectedProducts ?? null},
-        suspect_date_start = ${d.suspectDateStart ?? null},
-        suspect_date_end = ${d.suspectDateEnd ?? null},
-        disposition = ${d.disposition ?? null},
-        risk_level = ${d.riskLevel ?? 'medium'},
-        containment_actions = ${d.containmentActions ?? null},
-        corrective_action_ref = ${d.correctiveActionRef ?? null},
-        assessed_by = ${d.assessedBy ?? null},
-        assessment_date = ${d.assessmentDate ?? null},
-        notes = ${d.notes ?? null}
-      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
-      RETURNING *
-    `);
-    res.json(rowToCamel(rows.rows[0] as Record<string, unknown>));
+    const row = await storage.updateCalibrationOotAssessment(Number(req.params.id), req.session.userId, {
+      affectedProducts: d.affectedProducts ?? null,
+      suspectDateStart: d.suspectDateStart ?? null,
+      suspectDateEnd: d.suspectDateEnd ?? null,
+      disposition: d.disposition ?? null,
+      riskLevel: d.riskLevel ?? "medium",
+      containmentActions: d.containmentActions ?? null,
+      correctiveActionRef: d.correctiveActionRef ?? null,
+      assessedBy: d.assessedBy ?? null,
+      assessmentDate: d.assessmentDate ?? null,
+      notes: d.notes ?? null,
+    }, isSuperadmin);
+    if (!row) return res.status(404).json({ message: "Not found" });
+    res.json(row);
   });
 
   // ─── Calibration certificate upload ──────────────────────────────────────────
@@ -9514,23 +9499,31 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     },
   });
 
-  app.post("/api/calibration/records/:id/certificate", (req: Request, res: Response, next: import("express").NextFunction) => {
-    certUpload.single("file")(req, res, (err) => {
-      if (err) return res.status(400).json({ message: err.message ?? "File upload error" });
+  app.post(
+    "/api/calibration/records/:id/certificate",
+    (req: Request, res: Response, next: import("express").NextFunction) => {
+      if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
       next();
-    });
-  }, async (req: Request, res: Response) => {
-    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    const { db } = await import("./db");
-    const { sql } = await import("drizzle-orm");
-    const certUrl = `/uploads/certificates/${req.file.filename}`;
-    await db.execute(sql`
-      UPDATE calibration_records SET certificate_file_url = ${certUrl}
-      WHERE id = ${req.params.id} AND user_id = ${req.session.userId}
-    `);
-    res.json({ certificateFileUrl: certUrl });
-  });
+    },
+    (req: Request, res: Response, next: import("express").NextFunction) => {
+      certUpload.single("file")(req, res, (err) => {
+        if (err) return res.status(400).json({ message: err.message ?? "File upload error" });
+        next();
+      });
+    },
+    async (req: Request, res: Response) => {
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+      const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
+      const certUrl = `/uploads/certificates/${req.file.filename}`;
+      await storage.updateCalibrationRecord(
+        Number(req.params.id),
+        req.session!.userId!,
+        { certificateFileUrl: certUrl },
+        isSuperadmin,
+      );
+      res.json({ certificateFileUrl: certUrl });
+    },
+  );
 
   // ─── Calibration reminder check (called by frontend on module load) ──────────
 

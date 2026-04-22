@@ -25,6 +25,10 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type SupplierCandidateAssessment, type InsertSupplierCandidateAssessment,
   type SupplierEvaluation, type InsertSupplierEvaluation,
   type SupplierAudit, type InsertSupplierAudit,
+  calibrationEquipment, calibrationRecords, calibrationOotAssessments,
+  type CalibrationEquipment, type InsertCalibrationEquipment,
+  type CalibrationRecord, type InsertCalibrationRecord,
+  type CalibrationOotAssessment, type InsertCalibrationOotAssessment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -371,6 +375,23 @@ export interface IStorage {
   upsertSupplierAudit(data: InsertSupplierAudit & { supplierId: number }): Promise<SupplierAudit>;
   updateSupplierAudit(id: number, data: Partial<InsertSupplierAudit>): Promise<SupplierAudit | undefined>;
   deleteSupplierAudit(id: number): Promise<void>;
+
+  // ── Calibration Equipment ──────────────────────────────────────────────────
+  getCalibrationEquipment(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationEquipment[]>;
+  createCalibrationEquipment(data: InsertCalibrationEquipment): Promise<CalibrationEquipment>;
+  updateCalibrationEquipment(id: number, userId: string, data: Partial<InsertCalibrationEquipment>, isSuperadmin?: boolean): Promise<CalibrationEquipment | undefined>;
+  deleteCalibrationEquipment(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ── Calibration Records ────────────────────────────────────────────────────
+  getCalibrationRecords(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationRecord[]>;
+  createCalibrationRecord(data: InsertCalibrationRecord): Promise<CalibrationRecord>;
+  updateCalibrationRecord(id: number, userId: string, data: Partial<InsertCalibrationRecord>, isSuperadmin?: boolean): Promise<CalibrationRecord | undefined>;
+  deleteCalibrationRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ── Calibration OOT Assessments ────────────────────────────────────────────
+  getCalibrationOotAssessments(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationOotAssessment[]>;
+  createCalibrationOotAssessment(data: InsertCalibrationOotAssessment): Promise<CalibrationOotAssessment>;
+  updateCalibrationOotAssessment(id: number, userId: string, data: Partial<InsertCalibrationOotAssessment>, isSuperadmin?: boolean): Promise<CalibrationOotAssessment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2075,6 +2096,89 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteSupplierAudit(id: number): Promise<void> {
     await db.delete(supplierAudits).where(eq(supplierAudits.id, id));
+  }
+
+  // ── Calibration Equipment ────────────────────────────────────────────────────
+
+  async getCalibrationEquipment(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<CalibrationEquipment[]> {
+    const conditions = [];
+    if (!isSuperadmin) conditions.push(eq(calibrationEquipment.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(calibrationEquipment.isoProjectId, isoProjectId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(calibrationEquipment).where(cond).orderBy(calibrationEquipment.gageId);
+  }
+
+  async createCalibrationEquipment(data: InsertCalibrationEquipment): Promise<CalibrationEquipment> {
+    const [r] = await db.insert(calibrationEquipment).values(data).returning();
+    return r;
+  }
+
+  async updateCalibrationEquipment(id: number, userId: string, data: Partial<InsertCalibrationEquipment>, isSuperadmin = false): Promise<CalibrationEquipment | undefined> {
+    const where = isSuperadmin
+      ? eq(calibrationEquipment.id, id)
+      : and(eq(calibrationEquipment.id, id), eq(calibrationEquipment.userId, userId));
+    const [r] = await db.update(calibrationEquipment).set({ ...data, updatedAt: new Date() }).where(where).returning();
+    return r;
+  }
+
+  async deleteCalibrationEquipment(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin
+      ? eq(calibrationEquipment.id, id)
+      : and(eq(calibrationEquipment.id, id), eq(calibrationEquipment.userId, userId));
+    await db.delete(calibrationEquipment).where(where);
+  }
+
+  // ── Calibration Records ──────────────────────────────────────────────────────
+
+  async getCalibrationRecords(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<CalibrationRecord[]> {
+    const conditions = [];
+    if (!isSuperadmin) conditions.push(eq(calibrationRecords.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(calibrationRecords.isoProjectId, isoProjectId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(calibrationRecords).where(cond).orderBy(desc(calibrationRecords.calibrationDate));
+  }
+
+  async createCalibrationRecord(data: InsertCalibrationRecord): Promise<CalibrationRecord> {
+    const [r] = await db.insert(calibrationRecords).values(data).returning();
+    return r;
+  }
+
+  async updateCalibrationRecord(id: number, userId: string, data: Partial<InsertCalibrationRecord>, isSuperadmin = false): Promise<CalibrationRecord | undefined> {
+    const where = isSuperadmin
+      ? eq(calibrationRecords.id, id)
+      : and(eq(calibrationRecords.id, id), eq(calibrationRecords.userId, userId));
+    const [r] = await db.update(calibrationRecords).set(data).where(where).returning();
+    return r;
+  }
+
+  async deleteCalibrationRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin
+      ? eq(calibrationRecords.id, id)
+      : and(eq(calibrationRecords.id, id), eq(calibrationRecords.userId, userId));
+    await db.delete(calibrationRecords).where(where);
+  }
+
+  // ── Calibration OOT Assessments ──────────────────────────────────────────────
+
+  async getCalibrationOotAssessments(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<CalibrationOotAssessment[]> {
+    const conditions = [];
+    if (!isSuperadmin) conditions.push(eq(calibrationOotAssessments.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(calibrationOotAssessments.isoProjectId, isoProjectId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(calibrationOotAssessments).where(cond).orderBy(desc(calibrationOotAssessments.createdAt));
+  }
+
+  async createCalibrationOotAssessment(data: InsertCalibrationOotAssessment): Promise<CalibrationOotAssessment> {
+    const [r] = await db.insert(calibrationOotAssessments).values(data).returning();
+    return r;
+  }
+
+  async updateCalibrationOotAssessment(id: number, userId: string, data: Partial<InsertCalibrationOotAssessment>, isSuperadmin = false): Promise<CalibrationOotAssessment | undefined> {
+    const where = isSuperadmin
+      ? eq(calibrationOotAssessments.id, id)
+      : and(eq(calibrationOotAssessments.id, id), eq(calibrationOotAssessments.userId, userId));
+    const [r] = await db.update(calibrationOotAssessments).set(data).where(where).returning();
+    return r;
   }
 }
 

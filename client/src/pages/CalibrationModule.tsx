@@ -556,6 +556,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [expandedEquip, setExpandedEquip] = useState<number | null>(null);
   const [expandedOot, setExpandedOot] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchGage, setSearchGage] = useState<string>("");
+  const [filterLogEquip, setFilterLogEquip] = useState<string>("all");
   const iatf = isIatf(project);
 
   const projectId = project?.id ?? null;
@@ -658,6 +660,16 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
     },
   });
 
+  const patchOot = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CalibrationOotAssessment> }) => {
+      const res = await apiRequest("PATCH", `/api/calibration/oot-assessments/${id}`, { ...data, isoProjectId: project?.id });
+      return res.json() as Promise<CalibrationOotAssessment>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/calibration/oot-assessments", projectId] });
+    },
+  });
+
   async function uploadCertFile(recordId: number, file: File) {
     const fd = new FormData();
     fd.append("file", file);
@@ -697,6 +709,18 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
     if (!editRecord) return;
     try {
       await patchRecord.mutateAsync({ id: editRecord.id, data: rec });
+      if (oot && (rec.result === "fail" || rec.outOfTolerance)) {
+        const existingOot = ootAssessments.find(o => o.calibrationRecordId === editRecord.id);
+        if (existingOot) {
+          await patchOot.mutateAsync({ id: existingOot.id, data: oot });
+        } else {
+          await saveOot.mutateAsync({
+            ...oot,
+            calibrationRecordId: editRecord.id,
+            equipmentId: editRecord.equipmentId,
+          });
+        }
+      }
       if (certFile) {
         try {
           await uploadCertFile(editRecord.id, certFile);
@@ -706,7 +730,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         }
       }
       setEditRecord(null); setEditRecordEquip(null);
-      toast({ title: "Calibration record updated" });
+      toast({ title: "Calibration record updated", description: oot ? "OOT assessment saved." : "" });
     } catch {
       toast({ title: "Error updating record", variant: "destructive" });
     }
@@ -714,9 +738,17 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
 
   // ─── Derived data ─────────────────────────────────────────────────────────
 
-  const filteredEquip = equipment.filter(e =>
-    filterStatus === "all" ? true : e.status === filterStatus
-  );
+  const filteredEquip = equipment.filter(e => {
+    const matchesStatus = filterStatus === "all" || e.status === filterStatus;
+    const q = searchGage.toLowerCase();
+    const matchesSearch = !q ||
+      e.gageId.toLowerCase().includes(q) ||
+      e.name.toLowerCase().includes(q) ||
+      (e.type ?? "").toLowerCase().includes(q) ||
+      (e.location ?? "").toLowerCase().includes(q) ||
+      (e.manufacturer ?? "").toLowerCase().includes(q);
+    return matchesStatus && matchesSearch;
+  });
 
   const overdue = equipment.filter(e => {
     const d = daysUntil(e.nextDueDate);
@@ -802,16 +834,25 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
           {tab === "register" && (
             <div className="space-y-3 mt-2">
               {/* Filters */}
-              <div className="flex gap-2 items-center">
-                <span className="text-xs text-muted-foreground">Filter:</span>
-                {["all", "active", "out_of_service", "retired"].map(s => (
-                  <button key={s} onClick={() => setFilterStatus(s)}
-                    className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
-                      filterStatus === s ? "bg-accent text-white border-accent" : "text-muted-foreground border-border hover:border-accent"}`}>
-                    {s === "all" ? "All" : s === "out_of_service" ? "Out of Service" : s.charAt(0).toUpperCase() + s.slice(1)}
-                  </button>
-                ))}
-                <span className="text-xs text-muted-foreground ml-auto">{filteredEquip.length} item{filteredEquip.length !== 1 ? "s" : ""}</span>
+              <div className="flex flex-col gap-2">
+                <Input
+                  className="h-8 max-w-xs"
+                  placeholder="Search by ID, name, type, location…"
+                  value={searchGage}
+                  onChange={e => setSearchGage(e.target.value)}
+                  data-testid="input-search-gage"
+                />
+                <div className="flex gap-2 items-center flex-wrap">
+                  <span className="text-xs text-muted-foreground">Status:</span>
+                  {["all", "active", "out_of_service", "retired"].map(s => (
+                    <button key={s} onClick={() => setFilterStatus(s)}
+                      className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                        filterStatus === s ? "bg-accent text-white border-accent" : "text-muted-foreground border-border hover:border-accent"}`}>
+                      {s === "all" ? "All" : s === "out_of_service" ? "Out of Service" : s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-auto">{filteredEquip.length} item{filteredEquip.length !== 1 ? "s" : ""}</span>
+                </div>
               </div>
 
               {filteredEquip.length === 0 && (
@@ -870,8 +911,10 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           {eq.linkedDocumentId && (() => {
                             const wi = workInstructions.find(w => w.id === eq.linkedDocumentId);
                             return wi ? (
-                              <p className="mt-1 text-xs text-accent">
-                                WI: {wi.title}
+                              <p className="mt-1 text-xs">
+                                <a href="/iso-manager?module=documentation" className="text-accent underline hover:opacity-80">
+                                  WI: {wi.title}
+                                </a>
                               </p>
                             ) : null;
                           })()}
@@ -939,6 +982,26 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
           {/* ── Calibration Log Tab ── */}
           {tab === "log" && (
             <div className="mt-2 space-y-2">
+              {/* Equipment filter for log */}
+              {equipment.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground shrink-0">Filter by gage:</span>
+                  <Select value={filterLogEquip} onValueChange={setFilterLogEquip}>
+                    <SelectTrigger className="h-8 w-56" data-testid="select-log-equip-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All gages</SelectItem>
+                      {equipment.map(e => (
+                        <SelectItem key={e.id} value={String(e.id)}>{e.gageId} — {e.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-xs text-muted-foreground">
+                    {(filterLogEquip === "all" ? records : records.filter(r => String(r.equipmentId) === filterLogEquip)).length} record{records.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
               {records.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <FileCheck className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -946,7 +1009,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   <p className="text-xs mt-1">Open the Gage Register and click "+" next to a gage to log a calibration.</p>
                 </div>
               )}
-              {[...records].sort((a, b) => b.calibrationDate.localeCompare(a.calibrationDate)).map(r => {
+              {[...records]
+                .filter(r => filterLogEquip === "all" || String(r.equipmentId) === filterLogEquip)
+                .sort((a, b) => b.calibrationDate.localeCompare(a.calibrationDate)).map(r => {
                 const eq = equipment.find(e => e.id === r.equipmentId);
                 const oots = ootForRecord(r.id);
                 return (
