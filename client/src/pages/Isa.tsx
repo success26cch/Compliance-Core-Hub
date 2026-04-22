@@ -59,18 +59,27 @@ function MessageBubble({ msg }: { msg: { role: string; content: string } }) {
           msg.content || <span className="opacity-40 italic">…</span>
         ) : msg.content ? (
           <div className="prose prose-sm prose-invert max-w-none
-            prose-p:my-1 prose-p:leading-relaxed
-            prose-headings:text-white prose-headings:font-bold prose-headings:mt-3 prose-headings:mb-1
+            prose-p:my-1.5 prose-p:leading-relaxed
+            prose-headings:text-white prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1
             prose-strong:text-white
             prose-ul:my-1 prose-ul:pl-4 prose-ol:my-1 prose-ol:pl-4
             prose-li:my-0.5
-            prose-table:text-xs prose-table:w-full
-            prose-th:text-white prose-th:font-semibold prose-th:border prose-th:border-white/20 prose-th:px-2 prose-th:py-1
-            prose-td:border prose-td:border-white/10 prose-td:px-2 prose-td:py-1
             prose-code:text-orange-300 prose-code:bg-white/10 prose-code:px-1 prose-code:rounded prose-code:text-xs
             prose-pre:bg-white/10 prose-pre:rounded-xl prose-pre:text-xs
-            prose-blockquote:border-l-0 prose-blockquote:pl-0 prose-blockquote:not-italic prose-blockquote:text-white/80">
-            <ReactMarkdown>{msg.content}</ReactMarkdown>
+            prose-blockquote:border-l-0 prose-blockquote:pl-0 prose-blockquote:not-italic prose-blockquote:text-white/80
+            prose-hr:border-0 prose-hr:my-2">
+            <ReactMarkdown
+              components={{
+                hr: () => <div className="my-2" />,
+                blockquote: ({ children }) => <span className="text-white/80">{children}</span>,
+                table: ({ children }) => <div className="space-y-0.5 my-1">{children}</div>,
+                thead: ({ children }) => <div className="font-semibold text-white/90">{children}</div>,
+                tbody: ({ children }) => <div>{children}</div>,
+                tr: ({ children }) => <div className="flex flex-wrap gap-x-3">{children}</div>,
+                th: ({ children }) => <span className="text-white/90 font-semibold">{children}: </span>,
+                td: ({ children }) => <span className="text-white/75">{children}{"  "}</span>,
+              }}
+            >{msg.content}</ReactMarkdown>
           </div>
         ) : (
           <span className="opacity-40 italic">Isa is thinking…</span>
