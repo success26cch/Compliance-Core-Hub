@@ -2122,7 +2122,7 @@ export const pmEquipment = pgTable("pm_equipment", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
   isoProjectId: integer("iso_project_id"),
-  equipmentId: text("equipment_id").notNull(),          // user-defined asset ID e.g. "PM-001"
+  equipmentId: text("equipment_id").notNull(),           // user-defined asset ID e.g. "PM-001"
   name: text("name").notNull(),
   type: text("type"),                                    // e.g. "HVAC", "Compressor", "Conveyor"
   manufacturer: text("manufacturer"),
@@ -2140,6 +2140,24 @@ export const pmEquipment = pgTable("pm_equipment", {
   procedureNotes: text("procedure_notes"),
   status: text("status").default("active"),              // active|inactive|decommissioned
   notes: text("notes"),
+  // ── Asset tracking ────────────────────────────────────────────────────────
+  installDate: text("install_date"),
+  warrantyExpiry: text("warranty_expiry"),
+  maintenanceContractor: text("maintenance_contractor"),  // external service provider
+  maintenanceType: text("maintenance_type").default("preventive"), // preventive|predictive|tpm|condition_based|reactive
+  criticalityRating: text("criticality_rating").default("medium"), // critical|high|medium|low
+  // ── IATF 16949 §8.5.1.1 — Total Productive Maintenance ───────────────────
+  isKeyProductionEquipment: boolean("is_key_production_equipment").default(false),
+  breakdownImpact: text("breakdown_impact"),             // impact on production/quality if this fails
+  contingencyPlan: text("contingency_plan"),             // backup equipment / alternative process
+  sparePartsInventory: text("spare_parts_inventory"),    // spare parts kept on hand
+  oeeTarget: text("oee_target"),                         // Overall Equipment Effectiveness target %
+  // ── AS9100D — Foreign Object Damage ───────────────────────────────────────
+  fodRisk: boolean("fod_risk").default(false),           // AS9100D: FOD risk present
+  // ── ISO 13485 §6.3 — Equipment Validation ─────────────────────────────────
+  validationRequired: boolean("validation_required").default(false),
+  validationStatus: text("validation_status"),           // validated|not_validated|overdue
+  validationDate: text("validation_date"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const insertPmEquipmentSchema = createInsertSchema(pmEquipment).omit({ id: true, createdAt: true });
@@ -2161,6 +2179,18 @@ export const pmRecords = pgTable("pm_records", {
   nextDueDate: text("next_due_date"),
   attachmentUrl: text("attachment_url"),
   notes: text("notes"),
+  // ── Enhanced record fields ─────────────────────────────────────────────────
+  downtimeHours: text("downtime_hours"),                 // machine downtime (lost production)
+  workOrderNumber: text("work_order_number"),            // WO reference for traceability
+  technicianCertification: text("technician_certification"), // credentials / trade cert
+  sparesCost: text("spares_cost"),                       // cost of parts/materials used
+  rootCause: text("root_cause"),                         // root cause of any issue found
+  // ── Safety & compliance checks ─────────────────────────────────────────────
+  safetyCheckPassed: boolean("safety_check_passed"),     // LOTO / safety check before work
+  // ── AS9100D — FOD check ───────────────────────────────────────────────────
+  fodCheckCompleted: boolean("fod_check_completed"),     // AS9100D: post-PM FOD check done
+  // ── ISO 13485 — Post-PM validation ────────────────────────────────────────
+  equipmentValidatedPostPm: boolean("equipment_validated_post_pm"), // ISO 13485 §6.3
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const insertPmRecordSchema = createInsertSchema(pmRecords).omit({ id: true, createdAt: true });
