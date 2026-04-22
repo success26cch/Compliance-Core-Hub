@@ -2054,6 +2054,10 @@ export const calibrationRecords = pgTable("calibration_records", {
   // ── ISO 13485 §7.6 (Medical Devices) ────────────────────────────────────
   acceptanceCriteria: text("acceptance_criteria"),          // documented pass/fail criteria
   equipmentLabelConfirmed: boolean("equipment_label_confirmed"), // calibration status label on device
+  // ── Variable-Gage Measurement Data ──────────────────────────────────────
+  preCalibrationChecks: jsonb("pre_calibration_checks"),   // { visualInspectionPass, zeroCheckPass, equipmentClean, notes }
+  referenceStandards: jsonb("reference_standards"),        // [{ id, description, identification, certNumber, certDueDate, traceability }]
+  measurementData: jsonb("measurement_data"),              // [{ id, nominalValue, unit, trial1, trial2, trial3, withinTolerance, notes }]
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const insertCalibrationRecordSchema = createInsertSchema(calibrationRecords).omit({ id: true, createdAt: true });

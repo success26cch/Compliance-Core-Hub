@@ -16,7 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Gauge, Plus, Pencil, Trash2, AlertTriangle,
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
-  Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User,
+  Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User, X,
+  CheckCircle2, Thermometer, FlaskConical,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -59,6 +60,10 @@ interface CalibrationRecord {
   labAccredited?: boolean | null;
   // ISO 13485 §7.6
   acceptanceCriteria?: string | null; equipmentLabelConfirmed?: boolean | null;
+  // Variable-gage measurement data
+  preCalibrationChecks?: unknown | null;
+  referenceStandards?: unknown | null;
+  measurementData?: unknown | null;
   createdAt?: string | null;
 }
 
@@ -334,6 +339,54 @@ const EMPTY_OOT: Partial<CalibrationOotAssessment> = {
   correctiveActionRef: "", assessedBy: "", assessmentDate: new Date().toISOString().split("T")[0], notes: "",
 };
 
+// ─── Variable-Gage Data Structures ───────────────────────────────────────────
+
+interface MeasurementPoint {
+  id: string;
+  nominalValue: string;
+  unit: string;
+  trial1: string;
+  trial2: string;
+  trial3: string;
+  withinTolerance: boolean;
+  notes: string;
+}
+
+interface ReferenceStandard {
+  id: string;
+  description: string;
+  identification: string;
+  certNumber: string;
+  certDueDate: string;
+  traceability: string;
+}
+
+interface PreCalChecks {
+  visualInspectionPass: boolean;
+  zeroCheckPass: boolean;
+  equipmentClean: boolean;
+  notes: string;
+}
+
+function newMeasRow(): MeasurementPoint {
+  return { id: crypto.randomUUID(), nominalValue: "", unit: "in", trial1: "", trial2: "", trial3: "", withinTolerance: true, notes: "" };
+}
+function newRefStd(): ReferenceStandard {
+  return { id: crypto.randomUUID(), description: "", identification: "", certNumber: "", certDueDate: "", traceability: "NIST" };
+}
+
+const UNIT_OPTIONS = ["in", "mm", "µm", "°", "°F", "°C", "psi", "kPa", "N·m", "lbf", "kg", "N", "%", "other"];
+const TRACE_OPTIONS = ["NIST", "NPL (UK)", "PTB (Germany)", "BIPM", "NMIJ (Japan)", "A2LA", "NVLAP", "UKAS", "DAkkS", "Internal"];
+
+function calcRowStats(row: MeasurementPoint) {
+  const trials = [row.trial1, row.trial2, row.trial3]
+    .map(v => v.trim()).filter(Boolean).map(Number).filter(n => !isNaN(n));
+  const avg = trials.length > 0 ? trials.reduce((a, b) => a + b, 0) / trials.length : null;
+  const nom = parseFloat(row.nominalValue);
+  const err = avg !== null && !isNaN(nom) ? avg - nom : null;
+  return { avg, err };
+}
+
 function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, isAerospaceProject, isMedicalProject, initial }: {
   equipment: CalibrationEquipment;
   isoProjectId?: number | null;
@@ -355,6 +408,25 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Variable-gage measurement data
+  const [preCalChecks, setPreCalChecks] = useState<PreCalChecks>(
+    (initial?.preCalibrationChecks as PreCalChecks | undefined) ??
+    { visualInspectionPass: false, zeroCheckPass: false, equipmentClean: false, notes: "" }
+  );
+  const [refStds, setRefStds] = useState<ReferenceStandard[]>(
+    (initial?.referenceStandards as ReferenceStandard[] | undefined) ?? []
+  );
+  const [measData, setMeasData] = useState<MeasurementPoint[]>(
+    (initial?.measurementData as MeasurementPoint[] | undefined) ?? []
+  );
+
+  function updateRefStd(id: string, field: keyof ReferenceStandard, value: string) {
+    setRefStds(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  }
+  function updateMeasRow(id: string, field: keyof MeasurementPoint, value: string | boolean) {
+    setMeasData(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  }
+
   type RecordState = Partial<CalibrationRecord & { showOot: boolean }>;
   type OotState = Partial<CalibrationOotAssessment>;
   const set = <K extends keyof RecordState>(k: K) => (v: RecordState[K]) =>
@@ -374,7 +446,13 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         toast({ title: "OOT assessment requires 'Disposition'", description: "IATF §7.1.5.3 requires a documented disposition decision.", variant: "destructive" }); return;
       }
     }
-    onSave(form, showOot && isIatfProject ? oot : undefined, certFile ?? undefined);
+    const payload: Partial<CalibrationRecord> = {
+      ...form,
+      preCalibrationChecks: preCalChecks,
+      referenceStandards: refStds.length > 0 ? refStds : null,
+      measurementData: measData.length > 0 ? measData : null,
+    };
+    onSave(payload, showOot && isIatfProject ? oot : undefined, certFile ?? undefined);
   }
 
   const showOot = form.result === "fail" || form.outOfTolerance === true;
@@ -391,6 +469,35 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
       <div className="bg-muted/40 rounded-lg p-3 text-sm">
         <span className="font-bold">{equipment.gageId}</span> — {equipment.name}
         {equipment.location && <span className="text-muted-foreground ml-2">· {equipment.location}</span>}
+        {equipment.tolerance && <span className="text-muted-foreground ml-2">· Tolerance: <span className="font-semibold text-foreground">{equipment.tolerance}</span></span>}
+        {equipment.measurementRange && <span className="text-muted-foreground ml-2">· Range: {equipment.measurementRange}</span>}
+      </div>
+
+      {/* ── Pre-Calibration Checks ── */}
+      <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/10">
+        <p className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Pre-Calibration Checks
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          {([
+            ["visualInspectionPass", "Visual Inspection — no damage, corrosion, or defects"],
+            ["zeroCheckPass",        "Zero / Master Check — instrument zeros or references correctly"],
+            ["equipmentClean",       "Equipment Clean & Dry — free of oil, chips, debris"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="flex items-start gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={preCalChecks[key]}
+                onChange={e => setPreCalChecks(p => ({ ...p, [key]: e.target.checked }))}
+                className="w-4 h-4 mt-0.5 accent-orange-500 shrink-0" />
+              <span className="text-xs text-foreground leading-snug">{label}</span>
+            </label>
+          ))}
+        </div>
+        <div>
+          <Label className="text-xs font-semibold">Pre-Cal Notes</Label>
+          <Input className="mt-1 h-7 text-xs" value={preCalChecks.notes}
+            onChange={e => setPreCalChecks(p => ({ ...p, notes: e.target.value }))}
+            placeholder="Any conditions to note before calibration…" />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -421,6 +528,214 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
           onChange={e => set("standardsReferenced")(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
           placeholder="e.g. NIST HB 44, ISO 10012, ANSI/NCSL Z540" data-testid="input-standards-ref" />
         <p className="text-[11px] text-muted-foreground mt-0.5">Comma-separated list of calibration standards used.</p>
+      </div>
+
+      {/* ── Environmental Conditions ── */}
+      <div className="border border-border rounded-lg p-3 space-y-2 bg-muted/10">
+        <p className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
+          <Thermometer className="w-3.5 h-3.5 text-blue-500" /> Environmental Conditions
+          <span className="text-[10px] font-normal text-muted-foreground normal-case tracking-normal ml-1">Temperature must be 68°F / 20°C per ANSI standard for dimensional measurement</span>
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <Label className="text-xs font-semibold">Temperature</Label>
+            <div className="flex gap-1 mt-1">
+              <Input className="h-7 text-xs" value={form.environmentConditions?.match(/Temp:\s*([^\s,]+)/)?.[1] ?? ""}
+                onChange={e => {
+                  const cur = form.environmentConditions ?? "";
+                  const next = cur.includes("Temp:") ? cur.replace(/Temp:\s*[^\s,]+/, `Temp: ${e.target.value}`) : `Temp: ${e.target.value}${cur ? ", " + cur : ""}`;
+                  set("environmentConditions")(next);
+                }}
+                placeholder="e.g. 68°F" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold">Humidity (RH %)</Label>
+            <Input className="h-7 text-xs mt-1" value={form.environmentConditions?.match(/Humidity:\s*([^\s,]+)/)?.[1] ?? ""}
+              onChange={e => {
+                const cur = form.environmentConditions ?? "";
+                const next = cur.includes("Humidity:") ? cur.replace(/Humidity:\s*[^\s,]+/, `Humidity: ${e.target.value}`) : (cur ? cur + `, Humidity: ${e.target.value}` : `Humidity: ${e.target.value}`);
+                set("environmentConditions")(next);
+              }}
+              placeholder="e.g. 45%" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold">Other Conditions</Label>
+            <Input className="h-7 text-xs mt-1" value={form.environmentConditions?.replace(/Temp:\s*[^\s,]+,?\s*/, "").replace(/Humidity:\s*[^\s,]+,?\s*/, "").trim() ?? ""}
+              onChange={e => {
+                const cur = form.environmentConditions ?? "";
+                const tempPart = cur.match(/Temp:\s*[^\s,]+/)?.[0] ?? "";
+                const humPart = cur.match(/Humidity:\s*[^\s,]+/)?.[0] ?? "";
+                const parts = [tempPart, humPart, e.target.value].filter(Boolean);
+                set("environmentConditions")(parts.join(", "));
+              }}
+              placeholder="e.g. vibration-free surface" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Reference Standards Used ── */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/40 px-3 py-2 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+              <FlaskConical className="w-3.5 h-3.5 text-accent" /> Reference Standards Used
+            </p>
+            <p className="text-[11px] text-muted-foreground">Gage blocks, masters, or any reference artifacts used during this calibration</p>
+          </div>
+          <Button type="button" size="sm" variant="outline" className="h-7 text-xs gap-1 shrink-0"
+            onClick={() => setRefStds(p => [...p, newRefStd()])}>
+            <Plus className="w-3 h-3" /> Add Standard
+          </Button>
+        </div>
+        {refStds.length === 0 && (
+          <p className="text-xs text-muted-foreground italic px-3 py-3 text-center">No reference standards added — click "Add Standard" to record the gage blocks or masters used.</p>
+        )}
+        {refStds.map((std, idx) => (
+          <div key={std.id} className={`border-t border-border/40 px-3 py-2 grid grid-cols-[2fr_1.2fr_1.2fr_1.2fr_1fr_28px] gap-2 items-end ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+            <div>
+              <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Description</Label>
+              <Input className="h-7 text-xs mt-0.5" value={std.description}
+                onChange={e => updateRefStd(std.id, "description", e.target.value)}
+                placeholder="e.g. Grade 2 Gage Block Set, 81-pc" />
+            </div>
+            <div>
+              <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">ID / Set No.</Label>
+              <Input className="h-7 text-xs mt-0.5" value={std.identification}
+                onChange={e => updateRefStd(std.id, "identification", e.target.value)}
+                placeholder="e.g. GB-001" />
+            </div>
+            <div>
+              <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Cert Number</Label>
+              <Input className="h-7 text-xs mt-0.5" value={std.certNumber}
+                onChange={e => updateRefStd(std.id, "certNumber", e.target.value)}
+                placeholder="e.g. CERT-2024-101" />
+            </div>
+            <div>
+              <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Cert Expiry</Label>
+              <Input type="date" className="h-7 text-xs mt-0.5" value={std.certDueDate}
+                onChange={e => updateRefStd(std.id, "certDueDate", e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Traceable To</Label>
+              <Select value={std.traceability} onValueChange={v => updateRefStd(std.id, "traceability", v)}>
+                <SelectTrigger className="h-7 text-xs mt-0.5"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TRACE_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <button type="button" onClick={() => setRefStds(p => p.filter(r => r.id !== std.id))}
+              className="mb-0.5 text-muted-foreground hover:text-red-600 p-1 rounded hover:bg-muted">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Measurement Data Table ── */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/40 px-3 py-2 flex items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+              <BarChart3 className="w-3.5 h-3.5 text-accent" /> Measurement Data — Variable Gage Readings
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              One row per gage block / reference checkpoint across the instrument range.
+              Average and error auto-calculate from trial readings.{" "}
+              {equipment.tolerance && <span className="font-medium text-foreground">Tolerance: {equipment.tolerance}</span>}
+            </p>
+          </div>
+          <Button type="button" size="sm" variant="outline" className="h-7 text-xs gap-1 shrink-0"
+            onClick={() => setMeasData(p => [...p, newMeasRow()])}>
+            <Plus className="w-3 h-3" /> Add Row
+          </Button>
+        </div>
+        {/* Table header */}
+        <div className="grid grid-cols-[1.4fr_60px_80px_80px_80px_75px_80px_48px_28px] gap-0 border-b border-border bg-muted/30 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+          <div className="px-2 py-1.5">Nominal (Ref Std Value)</div>
+          <div className="px-1 py-1.5">Unit</div>
+          <div className="px-1 py-1.5">Trial 1</div>
+          <div className="px-1 py-1.5">Trial 2</div>
+          <div className="px-1 py-1.5">Trial 3</div>
+          <div className="px-1 py-1.5">Average</div>
+          <div className="px-1 py-1.5">Error</div>
+          <div className="px-1 py-1.5 text-center">Pass</div>
+          <div />
+        </div>
+        {measData.length === 0 && (
+          <p className="text-xs text-muted-foreground italic px-3 py-3 text-center">
+            No measurement points yet — click "Add Row" for each gage block checkpoint across the instrument range.
+          </p>
+        )}
+        {measData.map((row, idx) => {
+          const { avg, err } = calcRowStats(row);
+          const errStr = err !== null ? ((err >= 0 ? "+" : "") + err.toFixed(5).replace(/0+$/, "").replace(/\.$/, "")) : "—";
+          const avgStr = avg !== null ? avg.toFixed(5).replace(/0+$/, "").replace(/\.$/, "") : "—";
+          return (
+            <div key={row.id}
+              className={`grid grid-cols-[1.4fr_60px_80px_80px_80px_75px_80px_48px_28px] gap-0 items-center border-b border-border/40 last:border-0 ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+              <div className="px-2 py-1">
+                <Input className="h-6 text-xs font-mono" value={row.nominalValue}
+                  onChange={e => updateMeasRow(row.id, "nominalValue", e.target.value)}
+                  placeholder="e.g. 1.0000" />
+              </div>
+              <div className="px-1 py-1">
+                <Select value={row.unit} onValueChange={v => updateMeasRow(row.id, "unit", v)}>
+                  <SelectTrigger className="h-6 text-xs px-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {UNIT_OPTIONS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="px-1 py-1">
+                <Input className="h-6 text-xs font-mono" value={row.trial1}
+                  onChange={e => updateMeasRow(row.id, "trial1", e.target.value)} placeholder="—" />
+              </div>
+              <div className="px-1 py-1">
+                <Input className="h-6 text-xs font-mono" value={row.trial2}
+                  onChange={e => updateMeasRow(row.id, "trial2", e.target.value)} placeholder="—" />
+              </div>
+              <div className="px-1 py-1">
+                <Input className="h-6 text-xs font-mono" value={row.trial3}
+                  onChange={e => updateMeasRow(row.id, "trial3", e.target.value)} placeholder="—" />
+              </div>
+              <div className="px-2 py-1 text-xs font-mono text-muted-foreground">{avgStr}</div>
+              <div className={`px-2 py-1 text-xs font-mono font-semibold ${err === null ? "text-muted-foreground" : row.withinTolerance ? "text-emerald-700" : "text-red-600"}`}>
+                {errStr}
+              </div>
+              <div className="px-2 py-1 flex justify-center">
+                <input type="checkbox" checked={!!row.withinTolerance}
+                  onChange={e => updateMeasRow(row.id, "withinTolerance", e.target.checked)}
+                  title="Within tolerance"
+                  className="w-4 h-4 accent-orange-500" />
+              </div>
+              <div className="py-1 flex justify-center">
+                <button type="button" onClick={() => setMeasData(p => p.filter(r => r.id !== row.id))}
+                  className="text-muted-foreground hover:text-red-600 p-0.5 rounded hover:bg-muted">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {measData.length > 0 && (
+          <div className="px-3 py-2 border-t border-border/40 bg-muted/10 flex items-center gap-4 text-xs">
+            <span className="text-muted-foreground">
+              {measData.filter(r => r.withinTolerance).length}/{measData.length} points within tolerance
+            </span>
+            {measData.some(r => !r.withinTolerance) && (
+              <span className="text-red-600 font-semibold flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> {measData.filter(r => !r.withinTolerance).length} point(s) out of tolerance — consider marking result as Fail
+              </span>
+            )}
+            {measData.length > 0 && measData.every(r => r.withinTolerance) && (
+              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> All points within tolerance
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div>
@@ -1302,7 +1617,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
       {/* ── Dialogs ── */}
 
       <Dialog open={equipDialog} onOpenChange={v => { setEquipDialog(v); if (!v) setEditEquip(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editEquip ? "Edit Equipment" : "Add Measuring Equipment"}</DialogTitle>
           </DialogHeader>
@@ -1317,7 +1632,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
 
       {/* ── Calibration Record Detail Dialog ── */}
       <Dialog open={!!viewRecord} onOpenChange={v => { if (!v) { setViewRecord(null); setViewRecordEquip(null); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileCheck className="w-5 h-5 text-accent" />
@@ -1400,6 +1715,123 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                     </a>
                   </div>
                 )}
+
+                {/* Pre-Calibration Checks */}
+                {(() => {
+                  const p = r.preCalibrationChecks as PreCalChecks | undefined | null;
+                  if (!p) return null;
+                  return (
+                    <div className="border border-border rounded-lg p-3 bg-muted/10 space-y-1.5">
+                      <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Pre-Calibration Checks
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        {[
+                          ["Visual Inspection", p.visualInspectionPass],
+                          ["Zero / Master Check", p.zeroCheckPass],
+                          ["Equipment Clean", p.equipmentClean],
+                        ].map(([lbl, val]) => (
+                          <span key={String(lbl)} className={val ? "text-emerald-700 font-medium" : "text-muted-foreground"}>
+                            {val ? "✓" : "✗"} {String(lbl)}
+                          </span>
+                        ))}
+                      </div>
+                      {p.notes && <p className="text-xs text-muted-foreground italic">{p.notes}</p>}
+                    </div>
+                  );
+                })()}
+
+                {/* Environmental Conditions */}
+                {r.environmentConditions && (
+                  <div className="border border-border rounded-lg p-3 bg-muted/10">
+                    <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 mb-1">
+                      <Thermometer className="w-3.5 h-3.5 text-blue-500" /> Environmental Conditions
+                    </p>
+                    <p className="text-sm">{r.environmentConditions}</p>
+                  </div>
+                )}
+
+                {/* Reference Standards Used */}
+                {(() => {
+                  const stds = r.referenceStandards as ReferenceStandard[] | undefined | null;
+                  if (!stds || stds.length === 0) return null;
+                  return (
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="bg-muted/40 px-3 py-2">
+                        <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                          <FlaskConical className="w-3.5 h-3.5 text-accent" /> Reference Standards Used
+                        </p>
+                      </div>
+                      <div className="divide-y divide-border/40">
+                        {stds.map(std => (
+                          <div key={std.id} className="px-3 py-2 grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-x-4 gap-y-0.5 text-xs">
+                            <div><span className="font-medium">{std.description || "—"}</span></div>
+                            <div><span className="text-muted-foreground">ID:</span> {std.identification || "—"}</div>
+                            <div><span className="text-muted-foreground">Cert:</span> {std.certNumber || "—"}</div>
+                            <div><span className="text-muted-foreground">Exp:</span> {std.certDueDate || "—"}</div>
+                            <div><span className="text-muted-foreground">Trace:</span> {std.traceability || "—"}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Measurement Data */}
+                {(() => {
+                  const rows = r.measurementData as MeasurementPoint[] | undefined | null;
+                  if (!rows || rows.length === 0) return null;
+                  return (
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="bg-muted/40 px-3 py-2">
+                        <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                          <BarChart3 className="w-3.5 h-3.5 text-accent" /> Measurement Data
+                        </p>
+                      </div>
+                      {/* Header */}
+                      <div className="grid grid-cols-[1.4fr_55px_70px_70px_70px_75px_80px_50px] gap-0 border-b border-border bg-muted/30 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                        <div className="px-2 py-1.5">Nominal</div>
+                        <div className="px-1 py-1.5">Unit</div>
+                        <div className="px-1 py-1.5">Trial 1</div>
+                        <div className="px-1 py-1.5">Trial 2</div>
+                        <div className="px-1 py-1.5">Trial 3</div>
+                        <div className="px-1 py-1.5">Average</div>
+                        <div className="px-1 py-1.5">Error</div>
+                        <div className="px-1 py-1.5 text-center">Pass</div>
+                      </div>
+                      {rows.map((row, idx) => {
+                        const { avg, err } = calcRowStats(row);
+                        const avgStr = avg !== null ? avg.toFixed(5).replace(/0+$/, "").replace(/\.$/, "") : "—";
+                        const errStr = err !== null ? ((err >= 0 ? "+" : "") + err.toFixed(5).replace(/0+$/, "").replace(/\.$/, "")) : "—";
+                        return (
+                          <div key={row.id}
+                            className={`grid grid-cols-[1.4fr_55px_70px_70px_70px_75px_80px_50px] gap-0 items-center border-b border-border/40 last:border-0 text-xs ${idx % 2 === 1 ? "bg-muted/10" : ""}`}>
+                            <div className="px-2 py-1.5 font-mono font-semibold">{row.nominalValue || "—"}</div>
+                            <div className="px-1 py-1.5 text-muted-foreground">{row.unit}</div>
+                            <div className="px-1 py-1.5 font-mono">{row.trial1 || "—"}</div>
+                            <div className="px-1 py-1.5 font-mono">{row.trial2 || "—"}</div>
+                            <div className="px-1 py-1.5 font-mono">{row.trial3 || "—"}</div>
+                            <div className="px-1 py-1.5 font-mono text-muted-foreground">{avgStr}</div>
+                            <div className={`px-1 py-1.5 font-mono font-semibold ${err === null ? "text-muted-foreground" : row.withinTolerance ? "text-emerald-700" : "text-red-600"}`}>{errStr}</div>
+                            <div className="px-1 py-1.5 text-center">
+                              <span className={row.withinTolerance ? "text-emerald-700 font-bold" : "text-red-600 font-bold"}>
+                                {row.withinTolerance ? "✓" : "✗"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="px-3 py-1.5 border-t border-border/40 bg-muted/10 text-xs text-muted-foreground">
+                        {rows.filter(r2 => r2.withinTolerance).length}/{rows.length} points within tolerance
+                        {rows.some(r2 => !r2.withinTolerance) && (
+                          <span className="text-red-600 font-semibold ml-3">
+                            {rows.filter(r2 => !r2.withinTolerance).length} point(s) out of tolerance
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* IATF §7.1.5.2.1 */}
                 {iatf && (
@@ -1487,7 +1919,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
       </Dialog>
 
       <Dialog open={logDialog} onOpenChange={v => { setLogDialog(v); if (!v) setLogForEquip(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Log Calibration Record</DialogTitle>
           </DialogHeader>
@@ -1519,7 +1951,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
       </Dialog>
 
       <Dialog open={!!editRecord} onOpenChange={v => { if (!v) { setEditRecord(null); setEditRecordEquip(null); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Calibration Record</DialogTitle>
           </DialogHeader>
