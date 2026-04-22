@@ -121,6 +121,7 @@ function calcRiskScore(factors: Record<string, boolean>): number {
   if (factors.noQualityCert)     score += 25;
   if (factors.certExpiringSoon)  score += 15;
   if (factors.singleSource)      score += 15;
+  if (factors.longDistance)      score += 10;
   if (factors.poorDelivery)      score += 20;
   if (factors.noRecentEval)      score += 15;
   if (factors.newSupplier)       score += 10;
@@ -2153,6 +2154,7 @@ const RISK_FACTORS: Array<{ key: string; label: string; desc: string; weight: nu
   { key: "noQualityCert",   label: "No ISO 9001 / IATF 16949 Certification", desc: "Supplier lacks recognized QMS certification and requires stronger development controls", weight: 25, auto: true },
   { key: "certExpiringSoon",label: "Cert Expiring Within 90 Days",           desc: "ISO/IATF certificate expires within 90 days",                  weight: 15 },
   { key: "singleSource",    label: "Single-Source Supplier",                 desc: "No qualified alternative supplier available",                  weight: 15 },
+  { key: "longDistance",    label: "Long Distance / Difficult Onsite Access", desc: "Supplier location increases travel burden, onsite audit difficulty, logistics exposure, or border/customs risk", weight: 10 },
   { key: "poorDelivery",    label: "Poor Delivery Performance",              desc: "On-time delivery < 95% in past 6 months",                     weight: 20 },
   { key: "noRecentEval",    label: "No Evaluation in Past 12 Months",        desc: "Supplier has not been formally evaluated recently",            weight: 15 },
   { key: "newSupplier",     label: "New Supplier (< 1 Year)",                desc: "Supplier has been qualified for less than one year",           weight: 10 },
