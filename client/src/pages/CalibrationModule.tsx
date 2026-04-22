@@ -444,8 +444,8 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
             {certFile ? "Change File" : "Attach Certificate"}
           </Button>
           {certFile && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{certFile.name}</span>}
-          {!certFile && form.certificateFileUrl && (
-            <a href={form.certificateFileUrl} target="_blank" rel="noreferrer"
+          {!certFile && form.certificateFileUrl && form.id && (
+            <a href={`/api/calibration/records/${form.id}/certificate`} target="_blank" rel="noreferrer"
               className="text-xs text-accent underline flex items-center gap-1">
               <Download className="w-3 h-3" /> View existing cert
             </a>
@@ -621,13 +621,15 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   });
 
   const saveRecord = useMutation({
-    mutationFn: async (d: Partial<CalibrationRecord>) => {
-      const res = await apiRequest("POST", "/api/calibration/records", { ...d, isoProjectId: project?.id });
+    mutationFn: async ({ rec, ootAssessment }: { rec: Partial<CalibrationRecord>; ootAssessment?: Partial<CalibrationOotAssessment> }) => {
+      const body = { ...rec, isoProjectId: project?.id, ...(ootAssessment ? { ootAssessment } : {}) };
+      const res = await apiRequest("POST", "/api/calibration/records", body);
       return res.json() as Promise<CalibrationRecord>;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/calibration/records", projectId] });
       qc.invalidateQueries({ queryKey: ["/api/calibration/equipment", projectId] });
+      qc.invalidateQueries({ queryKey: ["/api/calibration/oot-assessments", projectId] });
     },
   });
 
@@ -682,14 +684,11 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
 
   async function handleSaveRecord(rec: Partial<CalibrationRecord>, oot?: Partial<CalibrationOotAssessment>, certFile?: File) {
     try {
-      const record = await saveRecord.mutateAsync(rec);
-      if (oot && (rec.result === "fail" || rec.outOfTolerance)) {
-        await saveOot.mutateAsync({
-          ...oot,
-          calibrationRecordId: record.id,
-          equipmentId: rec.equipmentId!,
-        });
-      }
+      const isOot = rec.result === "fail" || rec.outOfTolerance === true;
+      const record = await saveRecord.mutateAsync({
+        rec,
+        ootAssessment: isOot && oot ? oot : undefined,
+      });
       if (certFile) {
         try {
           await uploadCertFile(record.id, certFile);
@@ -699,7 +698,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         }
       }
       setLogDialog(false); setLogForEquip(null);
-      toast({ title: "Calibration record logged", description: oot ? "OOT assessment saved." : "" });
+      toast({ title: "Calibration record logged", description: isOot && oot ? "OOT assessment saved." : "" });
     } catch {
       toast({ title: "Error logging record", variant: "destructive" });
     }
@@ -1027,7 +1026,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200">OOT</Badge>}
                           {oots.length > 0 && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">OOT Assessment ✓</Badge>}
                           {r.certificateFileUrl && (
-                            <a href={r.certificateFileUrl} target="_blank" rel="noreferrer"
+                            <a href={`/api/calibration/records/${r.id}/certificate`} target="_blank" rel="noreferrer"
                               className="text-[10px] flex items-center gap-0.5 text-accent underline">
                               <Download className="w-3 h-3" /> Cert
                             </a>

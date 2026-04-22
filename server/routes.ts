@@ -4659,6 +4659,10 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   // Delete training assignment
   const uploadsDir = path.resolve(process.cwd(), "uploads");
   app.use("/uploads", (req, res, next) => {
+    // Calibration certificates are sensitive documents — serve only through the authenticated API
+    if (req.path.startsWith("/certificates/")) {
+      return res.status(403).json({ message: "Access denied. Use /api/calibration/records/:id/certificate." });
+    }
     const resolved = path.resolve(uploadsDir, req.path.replace(/^\//, ""));
     if (!resolved.startsWith(uploadsDir)) {
       return res.status(403).json({ message: "Forbidden" });
@@ -9366,6 +9370,21 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     const d = req.body;
     const oot = d.result === "fail" || d.outOfTolerance === true;
+
+    // IATF §7.1.5.3: if OOT and project is IATF, require OOT assessment in same request
+    if (oot && d.isoProjectId) {
+      const project = await storage.getIsoProjectById(Number(d.isoProjectId));
+      if (project && /iatf\s*16949/i.test(project.standard ?? "")) {
+        const ootData = d.ootAssessment as Record<string, string> | undefined;
+        if (!ootData?.assessedBy?.trim()) {
+          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'assessedBy' in ootAssessment" });
+        }
+        if (!ootData?.disposition?.trim()) {
+          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'disposition' in ootAssessment" });
+        }
+      }
+    }
+
     const record = await storage.createCalibrationRecord({
       userId: req.session.userId,
       isoProjectId: d.isoProjectId ?? null,
@@ -9382,6 +9401,28 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       nextDueDate: d.nextDueDate ?? null,
       notes: d.notes ?? null,
     });
+
+    // Atomically create OOT assessment if provided
+    if (oot && d.ootAssessment) {
+      const o = d.ootAssessment as Record<string, string>;
+      await storage.createCalibrationOotAssessment({
+        userId: req.session.userId,
+        isoProjectId: d.isoProjectId ?? null,
+        calibrationRecordId: record.id,
+        equipmentId: Number(d.equipmentId),
+        affectedProducts: o.affectedProducts ?? null,
+        suspectDateStart: o.suspectDateStart ?? null,
+        suspectDateEnd: o.suspectDateEnd ?? null,
+        disposition: o.disposition ?? null,
+        riskLevel: o.riskLevel ?? "medium",
+        containmentActions: o.containmentActions ?? null,
+        correctiveActionRef: o.correctiveActionRef ?? null,
+        assessedBy: o.assessedBy ?? null,
+        assessmentDate: o.assessmentDate ?? null,
+        notes: o.notes ?? null,
+      });
+    }
+
     // Update equipment next_due_date
     if (d.nextDueDate) {
       await storage.updateCalibrationEquipment(Number(d.equipmentId), req.session.userId,
@@ -9499,6 +9540,23 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     },
   });
 
+  // Authenticated download of a calibration certificate
+  app.get("/api/calibration/records/:id/certificate", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isSuperadmin = (req.user as { isSuperadmin?: boolean })?.isSuperadmin ?? false;
+    const row = await storage.getCalibrationRecords(req.session.userId, isSuperadmin).then(
+      rows => rows.find(r => r.id === Number(req.params.id))
+    );
+    if (!row) return res.status(404).json({ message: "Record not found or access denied" });
+    if (!row.certificateFileUrl) return res.status(404).json({ message: "No certificate attached" });
+    // certificateFileUrl is stored as /uploads/certificates/filename
+    const filePath = path.resolve(process.cwd(), row.certificateFileUrl.replace(/^\//, ""));
+    const safeBase = path.resolve(process.cwd(), "uploads", "certificates");
+    if (!filePath.startsWith(safeBase)) return res.status(403).json({ message: "Forbidden" });
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: "File not found" });
+    res.sendFile(filePath);
+  });
+
   app.post(
     "/api/calibration/records/:id/certificate",
     (req: Request, res: Response, next: import("express").NextFunction) => {
@@ -9533,6 +9591,19 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     const { sql } = await import("drizzle-orm");
     const { sendEmail, brandedHtml } = await import("./emailService");
 
+    interface ReminderEquipRow {
+      id: number;
+      name: string;
+      gage_id: string;
+      location: string | null;
+      next_due_date: string;
+      responsible_person: string | null;
+      responsible_email: string | null;
+      cal_type: string | null;
+      calibration_lab: string | null;
+    }
+    interface OwnerRow { email: string | null; }
+
     const today = new Date();
     const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 30);
     const throttle = new Date(today); throttle.setDate(throttle.getDate() - 7);
@@ -9548,10 +9619,10 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
 
     // Fetch account owner email
     const ownerRows = await db.execute(sql`SELECT email FROM users WHERE id = ${req.session.userId}`);
-    const ownerEmail: string | null = (ownerRows.rows[0] as any)?.email ?? null;
+    const ownerEmail: string | null = (ownerRows.rows[0] as OwnerRow)?.email ?? null;
 
     let sent = 0;
-    for (const eq of rows.rows as any[]) {
+    for (const eq of rows.rows as ReminderEquipRow[]) {
       const dueDate = new Date(eq.next_due_date);
       const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
       const subject = daysLeft <= 0
