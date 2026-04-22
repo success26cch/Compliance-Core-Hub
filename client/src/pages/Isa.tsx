@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
+import ReactMarkdown from "react-markdown";
 import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,11 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Plus, Send, Menu, X, ChevronRight, MessageSquare, Loader2,
   BookOpen, ClipboardCheck, MessageCircle, Share2, Monitor, Smartphone,
-  ArrowRight,
+  ArrowRight, Trash2,
 } from "lucide-react";
 import {
   useIsaConversations,
   useCreateIsaConversation,
+  useDeleteIsaConversation,
   useIsaChatStream,
 } from "@/hooks/use-isa-chat";
 
@@ -45,16 +47,33 @@ function MessageBubble({ msg }: { msg: { role: string; content: string } }) {
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"} mb-4`}>
       {!isUser && <IsaAvatar size={32} />}
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
           isUser
-            ? "text-white rounded-br-sm"
+            ? "text-white rounded-br-sm whitespace-pre-wrap"
             : "text-white/90 rounded-bl-sm border border-white/10"
         }`}
-        style={{
-          background: isUser ? ORANGE : "rgba(255,255,255,0.06)",
-        }}
+        style={{ background: isUser ? ORANGE : "rgba(255,255,255,0.06)" }}
       >
-        {msg.content || <span className="opacity-40 italic">Isa is thinking…</span>}
+        {isUser ? (
+          msg.content || <span className="opacity-40 italic">…</span>
+        ) : msg.content ? (
+          <div className="prose prose-sm prose-invert max-w-none
+            prose-p:my-1 prose-p:leading-relaxed
+            prose-headings:text-white prose-headings:font-bold prose-headings:mt-3 prose-headings:mb-1
+            prose-strong:text-white
+            prose-ul:my-1 prose-ul:pl-4 prose-ol:my-1 prose-ol:pl-4
+            prose-li:my-0.5
+            prose-table:text-xs prose-table:w-full
+            prose-th:text-white prose-th:font-semibold prose-th:border prose-th:border-white/20 prose-th:px-2 prose-th:py-1
+            prose-td:border prose-td:border-white/10 prose-td:px-2 prose-td:py-1
+            prose-code:text-orange-300 prose-code:bg-white/10 prose-code:px-1 prose-code:rounded prose-code:text-xs
+            prose-pre:bg-white/10 prose-pre:rounded-xl prose-pre:text-xs
+            prose-blockquote:border-l-orange-400 prose-blockquote:text-white/60 prose-blockquote:italic">
+            <ReactMarkdown>{msg.content}</ReactMarkdown>
+          </div>
+        ) : (
+          <span className="opacity-40 italic">Isa is thinking…</span>
+        )}
       </div>
       {isUser && (
         <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white/60 text-xs font-bold shrink-0">
@@ -230,6 +249,7 @@ export default function IsaApp() {
   const { data: isaProfile } = useQuery<any>({ queryKey: ["/api/isa-profile"], retry: false });
   const { data: conversations = [] } = useIsaConversations();
   const createConversation = useCreateIsaConversation();
+  const deleteConversation = useDeleteIsaConversation();
 
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -255,6 +275,15 @@ export default function IsaApp() {
     const conv = await createConversation.mutateAsync({ title: "New Conversation", source: "standalone" });
     setActiveConvId(conv.id);
     setSidebarOpen(false);
+  };
+
+  const handleDeleteConv = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    await deleteConversation.mutateAsync(id);
+    if (activeConvId === id) {
+      const remaining = (conversations as any[]).filter((c: any) => c.id !== id);
+      setActiveConvId(remaining.length > 0 ? remaining[0].id : null);
+    }
   };
 
   if (loading) {
@@ -345,20 +374,32 @@ export default function IsaApp() {
         {/* Conversation list */}
         <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
           {(conversations as any[]).map((conv: any) => (
-            <button
+            <div
               key={conv.id}
-              onClick={() => { setActiveConvId(conv.id); setSidebarOpen(false); }}
-              data-testid={`button-conv-${conv.id}`}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all text-sm"
+              className="group relative flex items-center rounded-xl transition-all"
               style={{
                 background: activeConvId === conv.id ? `${ORANGE}18` : "transparent",
-                color: activeConvId === conv.id ? "white" : "rgba(255,255,255,0.5)",
                 borderLeft: activeConvId === conv.id ? `2px solid ${ORANGE}` : "2px solid transparent",
               }}
             >
-              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{conv.title || "Conversation"}</span>
-            </button>
+              <button
+                onClick={() => { setActiveConvId(conv.id); setSidebarOpen(false); }}
+                data-testid={`button-conv-${conv.id}`}
+                className="flex-1 flex items-center gap-2 px-3 py-2.5 text-left text-sm min-w-0"
+                style={{ color: activeConvId === conv.id ? "white" : "rgba(255,255,255,0.5)" }}
+              >
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{conv.title || "Conversation"}</span>
+              </button>
+              <button
+                onClick={(e) => handleDeleteConv(e, conv.id)}
+                data-testid={`button-delete-conv-${conv.id}`}
+                className="shrink-0 opacity-0 group-hover:opacity-100 p-1.5 mr-1.5 rounded-lg transition-all text-white/30 hover:text-red-400 hover:bg-red-400/10"
+                title="Delete conversation"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           ))}
           {conversations.length === 0 && (
             <p className="text-white/25 text-xs px-3 pt-2">No conversations yet. Start your first one!</p>

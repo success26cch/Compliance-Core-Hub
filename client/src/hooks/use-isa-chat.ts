@@ -45,6 +45,22 @@ export function useCreateIsaConversation() {
   });
 }
 
+export function useDeleteIsaConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/isa-conversations/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok && res.status !== 204) throw new Error('Failed to delete conversation');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/isa-conversations'] });
+    },
+  });
+}
+
 export function useIsaChatStream(conversationId: number, onMessageSent?: () => void) {
   const [messages, setMessages] = useState<any[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
