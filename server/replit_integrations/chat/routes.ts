@@ -874,11 +874,11 @@ The OEM supplier data above is for scope identification ONLY. Customer Specific 
 
       try {
         if (ext === ".pdf") {
-          const pdfParse = require("pdf-parse");
+          const pdfParse = (await import("pdf-parse")).default;
           const data = await pdfParse(buffer);
           text = data.text;
         } else if (ext === ".docx" || ext === ".doc") {
-          const mammoth = require("mammoth");
+          const mammoth = await import("mammoth");
           const result = await mammoth.extractRawText({ buffer });
           text = result.value;
         } else {
@@ -898,8 +898,8 @@ The OEM supplier data above is for scope identification ONLY. Customer Specific 
 
         res.json({ filename, text, wordCount, charCount: text.length, truncated });
       } catch (err: any) {
-        console.error("Document extraction error:", err);
-        res.status(500).json({ error: "Could not extract text. Try a .txt or .docx file." });
+        console.error("Document extraction error:", err?.message || err);
+        res.status(500).json({ error: "Could not extract text from this file. Try saving as .docx or .txt and uploading again." });
       }
     }
   );
