@@ -58,6 +58,7 @@ interface SupplierAudit {
   riskFactors?: Record<string, boolean> | null; recommendedFrequency?: string | null;
   lastAuditDate?: string | null; nextAuditDate?: string | null;
   auditStatus?: string | null; notes?: string | null;
+  createdAt?: string | null; updatedAt?: string | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -2195,6 +2196,10 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
   const riskLevel = scoreToRiskLevel(riskScore);
   const frequency = scoreToFrequency(riskScore);
   const existingAudit = audits.find(a => a.supplierId === selectedSupplierId);
+  const selectedSupplierAudits = selectedSupplierId
+    ? audits.filter(a => a.supplierId === selectedSupplierId)
+    : [];
+  const latestAudit = selectedSupplierAudits[0];
 
   function handleSave() {
     if (!selectedSupplierId) return;
@@ -2212,6 +2217,12 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
     });
   }
 
+  function resetAssessmentView() {
+    setSelectedSupplierId(null);
+    setFactors({});
+    setScheduleForm({ lastAuditDate: "", nextAuditDate: "", auditStatus: "not_scheduled", notes: "" });
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-lg px-3 py-2 text-sm text-blue-700 dark:text-blue-300">
@@ -2222,6 +2233,9 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
       {/* Supplier selector */}
       <div>
         <Label className="text-sm font-semibold text-muted-foreground">Select Supplier</Label>
+        <p className="text-sm text-muted-foreground mt-1">
+          Choose a supplier to view their most recent saved risk assessment and create a new annual assessment record. Each save is retained in the audit history.
+        </p>
         <Select value={selectedSupplierId ? String(selectedSupplierId) : ""} onValueChange={v => {
           const id = parseInt(v);
           setSelectedSupplierId(id);
@@ -2248,6 +2262,20 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
 
       {selectedSupplierId && (
         <>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-white dark:bg-card px-3 py-2">
+            <div>
+              <p className="text-sm font-bold text-primary">{selectedSupplier?.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {latestAudit
+                  ? `Most recent assessment: ${latestAudit.createdAt ? new Date(latestAudit.createdAt).toLocaleDateString() : "saved record"} · ${latestAudit.riskLevel || "—"} risk (${latestAudit.riskScore ?? "—"}) · ${latestAudit.recommendedFrequency || "—"}`
+                  : "No saved risk assessment yet. Complete the checklist below and save the first annual record."}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" className="text-sm" onClick={resetAssessmentView} data-testid="button-back-audit-schedule">
+              Back to Schedule
+            </Button>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             {/* Risk factor checklist */}
             <div className="space-y-2">
@@ -2323,8 +2351,11 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
                   <Textarea className="mt-1 text-base resize-none" rows={2} value={scheduleForm.notes} onChange={e => setScheduleForm(f => ({ ...f, notes: e.target.value }))} />
                 </div>
                 <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white gap-1.5 text-sm" onClick={handleSave} disabled={upsertMut.isPending} data-testid="button-save-audit-schedule">
-                  <Calendar className="w-3.5 h-3.5" /> Save Audit Assessment
+                  <Calendar className="w-3.5 h-3.5" /> Save Annual Risk Assessment Record
                 </Button>
+                <p className="text-sm text-muted-foreground">
+                  Saving creates a new dated record for annual audit-planning history. Prior assessments remain available in the table below.
+                </p>
               </div>
             </div>
           </div>
@@ -2334,12 +2365,13 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
       {/* Audit schedule summary table */}
       {audits.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">All Supplier Audit Records</p>
+          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">Supplier Audit Assessment History</p>
           <div className="border border-border/60 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 border-b border-border/50">
                 <tr>
                   <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Supplier</th>
+                  <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Saved</th>
                   <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Risk</th>
                   <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Frequency</th>
                   <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Next Audit</th>
@@ -2353,6 +2385,7 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
                   return (
                     <tr key={a.id} className="border-b border-border/30 last:border-0 hover:bg-muted/20" data-testid={`audit-row-${a.id}`}>
                       <td className="px-3 py-2 font-semibold text-primary">{sup?.name ?? "—"}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "—"}</td>
                       <td className="px-3 py-2">
                         <Badge className={`text-sm ${RISK_COLORS[a.riskLevel || "medium"]}`}>{a.riskLevel || "—"} ({a.riskScore})</Badge>
                       </td>
@@ -2364,9 +2397,26 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
                         </Badge>
                       </td>
                       <td className="px-3 py-2">
-                        <button onClick={() => { if (confirm("Remove audit record?")) deleteMut.mutate(a.id); }} className="p-1 rounded hover:bg-red-50">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedSupplierId(a.supplierId);
+                              setFactors((a.riskFactors as Record<string, boolean>) || {});
+                              setScheduleForm({
+                                lastAuditDate: a.lastAuditDate || "",
+                                nextAuditDate: a.nextAuditDate || "",
+                                auditStatus: a.auditStatus || "not_scheduled",
+                                notes: a.notes || "",
+                              });
+                            }}
+                            className="px-2 py-1 rounded border border-border/60 hover:bg-muted text-sm text-primary"
+                            data-testid={`button-view-audit-${a.id}`}>
+                            View
+                          </button>
+                          <button onClick={() => { if (confirm("Remove audit record?")) deleteMut.mutate(a.id); }} className="p-1 rounded hover:bg-red-50" data-testid={`button-delete-audit-${a.id}`}>
                           <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                        </button>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -2063,16 +2063,9 @@ export class DatabaseStorage implements IStorage {
     if (isoProjectId != null) conditions.push(eq(supplierAudits.isoProjectId, isoProjectId));
     if (supplierId != null) conditions.push(eq(supplierAudits.supplierId, supplierId));
     const cond = conditions.length ? and(...conditions) : undefined;
-    return db.select().from(supplierAudits).where(cond).orderBy(supplierAudits.riskLevel);
+    return db.select().from(supplierAudits).where(cond).orderBy(desc(supplierAudits.createdAt), desc(supplierAudits.id));
   }
   async upsertSupplierAudit(data: InsertSupplierAudit & { supplierId: number }): Promise<SupplierAudit> {
-    const existing = await db.select().from(supplierAudits)
-      .where(and(eq(supplierAudits.userId, data.userId), eq(supplierAudits.supplierId, data.supplierId))).limit(1);
-    if (existing.length) {
-      const [r] = await db.update(supplierAudits).set({ ...data, updatedAt: new Date() })
-        .where(eq(supplierAudits.id, existing[0].id)).returning();
-      return r;
-    }
     const [r] = await db.insert(supplierAudits).values(data).returning();
     return r;
   }
