@@ -285,10 +285,6 @@ export default function MeetIsa() {
         {/* Hero */}
         <div className="relative z-10 max-w-5xl mx-auto px-6 pt-10 pb-16">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
-            <div className="flex justify-center mb-4">
-              <img src={acsiLogo} alt="ACSI" style={{ width: "180px", mixBlendMode: "multiply" }} />
-            </div>
-
             {/* Isa Avatar */}
             <div className="flex justify-center mb-5">
               <div className="relative">
