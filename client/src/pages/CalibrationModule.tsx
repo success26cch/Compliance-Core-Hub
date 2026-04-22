@@ -1946,10 +1946,11 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               {filteredEquip.length > 0 && (
                 <div className="rounded-lg border border-border overflow-hidden">
                   {/* Table header */}
-                  <div className="grid grid-cols-[140px_1fr_130px_130px_130px_88px] gap-0 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <div className="grid grid-cols-[140px_1fr_100px_100px_120px_120px_84px] gap-0 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     <div className="px-3 py-2.5">Gage ID / S/N</div>
                     <div className="px-3 py-2.5">Name · Type · Responsible</div>
                     <div className="px-3 py-2.5">Status</div>
+                    <div className="px-3 py-2.5">Cal Type</div>
                     <div className="px-3 py-2.5">Next Due</div>
                     <div className="px-3 py-2.5">Last Cal</div>
                     <div className="px-3 py-2.5">Actions</div>
@@ -1963,7 +1964,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                       <div key={eq.id} className={`border-b border-border/60 last:border-0 ${idx % 2 === 1 ? "bg-muted/20" : ""}`}>
                         {/* Compact row — entire row clickable to expand */}
                         <div
-                          className={`grid grid-cols-[140px_1fr_130px_130px_130px_88px] gap-0 items-center cursor-pointer hover:bg-accent/5 transition-colors select-none ${isExpanded ? "bg-accent/5" : ""}`}
+                          className={`grid grid-cols-[140px_1fr_100px_100px_120px_120px_84px] gap-0 items-center cursor-pointer hover:bg-accent/5 transition-colors select-none ${isExpanded ? "bg-accent/5" : ""}`}
                           onClick={() => setExpandedEquip(isExpanded ? null : eq.id)}
                           data-testid={`row-equip-${eq.id}`}
                         >
@@ -1993,16 +1994,17 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                               </div>
                             )}
                           </div>
-                          {/* Status + Cal Type */}
-                          <div className="px-3 py-3 space-y-1">
+                          {/* Status */}
+                          <div className="px-3 py-3">
                             <Badge className={`text-xs border ${STATUS_COLORS[eq.status ?? "active"]}`}>
                               {eq.status === "out_of_service" ? "Out of Svc" : (eq.status ?? "active")}
                             </Badge>
-                            <div>
-                              <Badge className={`text-xs border ${eq.calType === "internal" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-sky-50 text-sky-700 border-sky-200"}`}>
-                                {eq.calType === "internal" ? "Internal" : "External"}
-                              </Badge>
-                            </div>
+                          </div>
+                          {/* Cal Type */}
+                          <div className="px-3 py-3">
+                            <Badge className={`text-xs border ${eq.calType === "internal" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-sky-50 text-sky-700 border-sky-200"}`}>
+                              {eq.calType === "internal" ? "Internal" : "External"}
+                            </Badge>
                           </div>
                           {/* Next Due */}
                           <div className="px-3 py-3">
