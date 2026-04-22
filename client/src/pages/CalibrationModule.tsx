@@ -865,119 +865,155 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 </div>
               )}
 
-              {filteredEquip.map(eq => {
-                const recs = recordsForEquip(eq.id);
-                const lastRec = recs[0];
-                const isExpanded = expandedEquip === eq.id;
-                return (
-                  <Card key={eq.id} className="border border-border/60">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
+              {filteredEquip.length > 0 && (
+                <div className="rounded-lg border border-border overflow-hidden">
+                  {/* Table header */}
+                  <div className="grid grid-cols-[110px_1fr_110px_110px_110px_90px] gap-0 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    <div className="px-3 py-2.5">Gage ID</div>
+                    <div className="px-3 py-2.5">Name / Type</div>
+                    <div className="px-3 py-2.5">Status</div>
+                    <div className="px-3 py-2.5">Next Due</div>
+                    <div className="px-3 py-2.5">Last Cal</div>
+                    <div className="px-3 py-2.5">Actions</div>
+                  </div>
+
+                  {filteredEquip.map((eq, idx) => {
+                    const recs = recordsForEquip(eq.id);
+                    const lastRec = recs[0];
+                    const isExpanded = expandedEquip === eq.id;
+                    return (
+                      <div key={eq.id} className={`border-b border-border/60 last:border-0 ${idx % 2 === 1 ? "bg-muted/20" : ""}`}>
+                        {/* Compact row */}
+                        <div className="grid grid-cols-[110px_1fr_110px_110px_110px_90px] gap-0 items-center">
+                          {/* Gage ID */}
+                          <div className="px-3 py-2.5">
                             <span className="font-mono text-xs font-bold bg-muted px-1.5 py-0.5 rounded">{eq.gageId}</span>
-                            <span className="font-semibold text-sm text-foreground">{eq.name}</span>
-                            {eq.type && <Badge variant="outline" className="text-xs">{eq.type}</Badge>}
-                            <Badge className={`text-xs border ${STATUS_COLORS[eq.status ?? "active"]}`}>
-                              {eq.status === "out_of_service" ? "Out of Service" : eq.status ?? "active"}
+                            {eq.customerOwned && (
+                              <div className="mt-0.5">
+                                <span className="text-[10px] text-blue-600 font-medium">Customer-Owned</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Name / Type */}
+                          <div className="px-3 py-2.5 min-w-0">
+                            <div className="text-xs font-medium text-foreground truncate">{eq.name}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
+                              {eq.type && <span>{eq.type}</span>}
+                              {eq.location && <span className="flex items-center gap-0.5 truncate"><MapPin className="w-2.5 h-2.5 shrink-0" />{eq.location}</span>}
+                            </div>
+                          </div>
+                          {/* Status */}
+                          <div className="px-3 py-2.5">
+                            <Badge className={`text-[11px] border ${STATUS_COLORS[eq.status ?? "active"]}`}>
+                              {eq.status === "out_of_service" ? "Out of Svc" : (eq.status ?? "active")}
                             </Badge>
-                            {eq.customerOwned && <Badge variant="outline" className="text-xs border-blue-200 text-blue-700">Customer-Owned</Badge>}
                           </div>
-                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                            {eq.manufacturer && <span>{eq.manufacturer}{eq.model ? ` · ${eq.model}` : ""}</span>}
-                            {eq.serialNumber && <span>S/N: {eq.serialNumber}</span>}
-                            {eq.location && <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{eq.location}</span>}
-                            {eq.responsiblePerson && <span className="flex items-center gap-0.5"><User className="w-3 h-3" />{eq.responsiblePerson}</span>}
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2 items-center">
-                            {dueBadge(eq)}
-                            {eq.calType && (
-                              <span className="text-xs text-muted-foreground">
-                                {eq.calType === "internal" ? "Internal" : "External"} · {eq.calFrequencyMonths ?? 12}mo
-                              </span>
-                            )}
-                            {eq.traceableStandard && <span className="text-xs text-muted-foreground">Traceable to {eq.traceableStandard}</span>}
-                            {lastRec && (
-                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded border ${RESULT_COLORS[lastRec.result ?? "pass"]}`}>
-                                Last: {lastRec.result?.toUpperCase()} ({lastRec.calibrationDate})
-                              </span>
-                            )}
-                          </div>
-                          {eq.measurementRange && (
-                            <div className="mt-1 text-xs text-muted-foreground flex gap-3">
-                              <span>Range: {eq.measurementRange}</span>
-                              {eq.resolution && <span>Res: {eq.resolution}</span>}
-                              {eq.tolerance && <span>Tol: {eq.tolerance}</span>}
-                            </div>
-                          )}
-                          {eq.linkedDocumentId && (() => {
-                            const wi = workInstructions.find(w => w.id === eq.linkedDocumentId);
-                            return wi ? (
-                              <p className="mt-1 text-xs">
-                                <a href="/iso-manager?module=documentation" className="text-accent underline hover:opacity-80">
-                                  WI: {wi.title}
-                                </a>
-                              </p>
-                            ) : null;
-                          })()}
-                        </div>
-
-                        <div className="flex flex-col gap-1 shrink-0">
-                          <button onClick={() => setLogForEquip(eq) || setLogDialog(true)}
-                            data-testid={`button-log-cal-${eq.id}`}
-                            title="Log Calibration" className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-accent border border-border">
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => { setEditEquip(eq); setEquipDialog(true); }}
-                            data-testid={`button-edit-equip-${eq.id}`}
-                            title="Edit" className="p-1.5 rounded hover:bg-muted text-muted-foreground border border-border">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => { if (confirm(`Remove ${eq.name}?`)) deleteEquip.mutate(eq.id); }}
-                            data-testid={`button-delete-equip-${eq.id}`}
-                            title="Delete" className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-red-600 border border-border">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => setExpandedEquip(isExpanded ? null : eq.id)}
-                            className="p-1.5 rounded hover:bg-muted text-muted-foreground">
-                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Expanded: calibration history */}
-                      {isExpanded && (
-                        <div className="mt-3 border-t pt-3">
-                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Calibration History</p>
-                          {recs.length === 0 ? (
-                            <p className="text-xs text-muted-foreground">No calibration records yet.</p>
-                          ) : (
-                            <div className="space-y-1.5">
-                              {recs.map(r => (
-                                <div key={r.id} className="flex items-center gap-2 text-xs bg-muted/40 rounded px-3 py-2">
-                                  <span className="font-medium">{r.calibrationDate}</span>
-                                  <span className={`px-1.5 py-0.5 rounded border font-medium ${RESULT_COLORS[r.result ?? "pass"]}`}>
-                                    {r.result?.toUpperCase()}
-                                  </span>
-                                  {r.certNumber && <span className="text-muted-foreground">Cert: {r.certNumber}</span>}
-                                  {r.performedBy && <span className="text-muted-foreground">By: {r.performedBy}</span>}
-                                  {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700">OOT</Badge>}
-                                  {r.nextDueDate && <span className="ml-auto text-muted-foreground">Next: {r.nextDueDate}</span>}
-                                  <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
-                                    className="text-muted-foreground hover:text-red-600 ml-1">
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
+                          {/* Next Due */}
+                          <div className="px-3 py-2.5 text-xs">
+                            {eq.nextDueDate ? (
+                              <div>
+                                <span className={(() => {
+                                  const days = Math.ceil((new Date(eq.nextDueDate).getTime() - Date.now()) / 86400000);
+                                  return days < 0 ? "text-red-600 font-semibold" : days <= 30 ? "text-amber-600 font-semibold" : "text-foreground";
+                                })()}>{eq.nextDueDate}</span>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">
+                                  {eq.calType === "internal" ? "Int" : "Ext"} · {eq.calFrequencyMonths ?? 12}mo
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                          {eq.notes && <p className="mt-2 text-xs text-muted-foreground italic">{eq.notes}</p>}
+                              </div>
+                            ) : <span className="text-muted-foreground">—</span>}
+                          </div>
+                          {/* Last Cal */}
+                          <div className="px-3 py-2.5 text-xs">
+                            {lastRec ? (
+                              <div>
+                                <span className={`inline-block px-1.5 py-0.5 rounded border font-medium text-[11px] ${RESULT_COLORS[lastRec.result ?? "pass"]}`}>
+                                  {lastRec.result?.toUpperCase()}
+                                </span>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">{lastRec.calibrationDate}</div>
+                                {lastRec.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200 mt-0.5">OOT</Badge>}
+                              </div>
+                            ) : <span className="text-muted-foreground text-[11px]">No records</span>}
+                          </div>
+                          {/* Actions */}
+                          <div className="px-3 py-2.5 flex items-center gap-0.5">
+                            <button onClick={() => setLogForEquip(eq) || setLogDialog(true)}
+                              data-testid={`button-log-cal-${eq.id}`}
+                              title="Log Calibration" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent">
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => { setEditEquip(eq); setEquipDialog(true); }}
+                              data-testid={`button-edit-equip-${eq.id}`}
+                              title="Edit Gage" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => { if (confirm(`Remove ${eq.name}?`)) deleteEquip.mutate(eq.id); }}
+                              data-testid={`button-delete-equip-${eq.id}`}
+                              title="Delete" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-red-600">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setExpandedEquip(isExpanded ? null : eq.id)}
+                              title="Details" className="p-1 rounded hover:bg-muted text-muted-foreground">
+                              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+
+                        {/* Expanded detail panel */}
+                        {isExpanded && (
+                          <div className="border-t border-border/40 bg-muted/10 px-4 py-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            {/* Left: gage specs */}
+                            <div className="space-y-1.5 text-muted-foreground">
+                              <p className="font-semibold text-foreground uppercase tracking-wide text-[10px] mb-2">Instrument Details</p>
+                              {eq.manufacturer && <p><span className="font-medium text-foreground">Manufacturer:</span> {eq.manufacturer}{eq.model ? ` — ${eq.model}` : ""}</p>}
+                              {eq.serialNumber && <p><span className="font-medium text-foreground">S/N:</span> {eq.serialNumber}</p>}
+                              {eq.responsiblePerson && <p><span className="font-medium text-foreground">Responsible:</span> {eq.responsiblePerson}</p>}
+                              {eq.measurementRange && <p><span className="font-medium text-foreground">Range:</span> {eq.measurementRange}</p>}
+                              {eq.resolution && <p><span className="font-medium text-foreground">Resolution:</span> {eq.resolution}</p>}
+                              {eq.tolerance && <p><span className="font-medium text-foreground">Tolerance:</span> {eq.tolerance}</p>}
+                              {eq.traceableStandard && <p><span className="font-medium text-foreground">Traceable to:</span> {eq.traceableStandard}</p>}
+                              {eq.calibrationLab && <p><span className="font-medium text-foreground">Cal Lab:</span> {eq.calibrationLab}</p>}
+                              {eq.linkedDocumentId && (() => {
+                                const wi = workInstructions.find(w => w.id === eq.linkedDocumentId);
+                                return wi ? (
+                                  <p><span className="font-medium text-foreground">WI:</span>{" "}
+                                    <a href="/iso-manager?module=documentation" className="text-accent underline hover:opacity-80">{wi.title}</a>
+                                  </p>
+                                ) : null;
+                              })()}
+                              {eq.notes && <p className="italic mt-1">{eq.notes}</p>}
+                            </div>
+                            {/* Right: calibration history */}
+                            <div>
+                              <p className="font-semibold text-foreground uppercase tracking-wide text-[10px] mb-2">Calibration History</p>
+                              {recs.length === 0 ? (
+                                <p className="text-muted-foreground">No records yet.</p>
+                              ) : (
+                                <div className="space-y-1">
+                                  {recs.map(r => (
+                                    <div key={r.id} className="flex items-center gap-2 text-xs bg-background border border-border/60 rounded px-2.5 py-1.5">
+                                      <span className="font-medium text-foreground">{r.calibrationDate}</span>
+                                      <span className={`px-1 py-0.5 rounded border font-medium text-[11px] ${RESULT_COLORS[r.result ?? "pass"]}`}>
+                                        {r.result?.toUpperCase()}
+                                      </span>
+                                      {r.outOfTolerance && <Badge className="text-[10px] bg-red-100 text-red-700 border-red-200">OOT</Badge>}
+                                      {r.certNumber && <span className="text-muted-foreground">#{r.certNumber}</span>}
+                                      {r.nextDueDate && <span className="ml-auto text-muted-foreground">Next: {r.nextDueDate}</span>}
+                                      <button onClick={() => { if (confirm("Delete this record?")) deleteRecord.mutate(r.id); }}
+                                        className="text-muted-foreground hover:text-red-600 shrink-0">
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
