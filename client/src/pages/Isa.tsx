@@ -7,10 +7,11 @@ import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Send, Menu, X, ChevronRight, MessageSquare, Loader2,
   BookOpen, ClipboardCheck, MessageCircle, Share2, Monitor, Smartphone,
-  ArrowRight, Trash2,
+  ArrowRight, Trash2, Paperclip, FileText, CheckCircle2,
 } from "lucide-react";
 import {
   useIsaConversations,
@@ -152,18 +153,74 @@ function WelcomeModal({ open, onClose }: { open: boolean; onClose: () => void })
 
 function IsaChatInterface({ conversationId, onNewChat }: { conversationId: number; onNewChat: () => void }) {
   const { messages, sendMessage, isStreaming } = useIsaChatStream(conversationId);
+  const { toast } = useToast();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Document attachment state
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachedText, setAttachedText] = useState<string | null>(null);
+  const [attachedWordCount, setAttachedWordCount] = useState<number>(0);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedFile(file);
+    setAttachedText(null);
+    setIsExtracting(true);
+    try {
+      const formData = new FormData();
+      formData.append("document", file);
+      const res = await fetch("/api/isa/extract-document", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Extraction failed");
+      const data = await res.json();
+      setAttachedText(data.text);
+      setAttachedWordCount(data.wordCount);
+      if (data.truncated) {
+        toast({ title: "Document truncated", description: "Only the first 80,000 characters were loaded — the document is very large." });
+      }
+    } catch {
+      toast({ title: "Could not read document", description: "Try a PDF, DOCX, or plain text file.", variant: "destructive" });
+      setAttachedFile(null);
+      setAttachedText(null);
+    } finally {
+      setIsExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function clearAttachment() {
+    setAttachedFile(null);
+    setAttachedText(null);
+    setAttachedWordCount(0);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   const handleSend = async (text?: string) => {
-    const content = text || input.trim();
-    if (!content || isStreaming) return;
+    const userInput = text || input.trim();
+    if ((!userInput && !attachedText) || isStreaming || isExtracting) return;
+
+    let content = userInput;
+    if (attachedText && attachedFile) {
+      const docBlock = `[Attached Document: ${attachedFile.name}]\n\n${attachedText}\n\n---`;
+      content = userInput
+        ? `${docBlock}\n\n${userInput}`
+        : `${docBlock}\n\nPlease review this document from the perspective of a Lead ISO Auditor. Identify any compliance gaps, missing requirements, or areas that would not hold up under a third-party certification audit. Cite specific clause numbers.`;
+    }
+
     setInput("");
+    clearAttachment();
     await sendMessage(content);
   };
 
@@ -173,6 +230,8 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
       handleSend();
     }
   };
+
+  const canSend = (input.trim().length > 0 || (!!attachedText && !isExtracting)) && !isStreaming;
 
   return (
     <div className="flex flex-col h-full">
@@ -196,6 +255,15 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
                 </button>
               ))}
             </div>
+            {/* Upload hint on empty state */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-4 flex items-center gap-2 text-white/30 hover:text-white/55 transition-colors text-xs"
+              data-testid="button-attach-hint"
+            >
+              <Paperclip className="w-3.5 h-3.5" />
+              Or attach a document for Isa to audit (PDF, DOCX, TXT)
+            </button>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -212,15 +280,75 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="px-4 pb-4 pt-2 border-t border-white/10">
+      {/* Input area */}
+      <div className="px-4 pb-4 pt-2 border-t border-white/10 space-y-2">
+
+        {/* File attachment badge */}
+        {attachedFile && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.07] px-3 py-2 flex-1 min-w-0">
+              {isExtracting ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: ORANGE }} />
+              ) : attachedText ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+              ) : (
+                <FileText className="w-4 h-4 shrink-0" style={{ color: ORANGE }} />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-white/85 text-xs font-semibold truncate">{attachedFile.name}</p>
+                {isExtracting && <p className="text-white/35 text-[10px]">Extracting text…</p>}
+                {attachedText && <p className="text-white/35 text-[10px]">{attachedWordCount.toLocaleString()} words extracted — ready to send</p>}
+              </div>
+              <button
+                onClick={clearAttachment}
+                className="shrink-0 text-white/25 hover:text-white/60 transition-colors p-0.5"
+                title="Remove attachment"
+                data-testid="button-remove-attachment"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          accept=".pdf,.docx,.doc,.txt,.md,.csv,.json"
+          className="hidden"
+          data-testid="input-file-upload"
+        />
+
+        {/* Text input row */}
         <div className="flex gap-2 items-end">
+          {/* Paperclip button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isStreaming || isExtracting}
+            title="Attach document for Isa to analyze (PDF, DOCX, TXT, CSV)"
+            data-testid="button-attach-document"
+            className={`shrink-0 w-11 h-11 rounded-xl border flex items-center justify-center transition-all
+              ${attachedText
+                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                : "border-white/15 bg-white/[0.07] text-white/40 hover:text-white/70 hover:bg-white/[0.10] hover:border-white/25"
+              } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            {isExtracting
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : attachedText
+                ? <CheckCircle2 className="w-4 h-4" />
+                : <Paperclip className="w-4 h-4" />
+            }
+          </button>
+
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Isa a question…"
+            placeholder={attachedText ? "Add a question about this document, or send as-is for a full audit review…" : "Ask Isa a question…"}
             rows={1}
             className="resize-none bg-white/[0.07] border-white/15 text-white placeholder:text-white/30 focus:border-orange-500 rounded-xl text-sm"
             style={{ minHeight: "44px", maxHeight: "120px" }}
@@ -228,7 +356,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
           />
           <Button
             onClick={() => handleSend()}
-            disabled={!input.trim() || isStreaming}
+            disabled={!canSend}
             className="shrink-0 text-white h-11 w-11 rounded-xl p-0"
             style={{ background: ORANGE }}
             data-testid="button-isa-send"
@@ -236,7 +364,11 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
             {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-        <p className="text-center text-white/20 text-[10px] mt-2">Isa cites clause numbers. Always verify with the official standard text.</p>
+
+        <p className="text-center text-white/20 text-[10px]">
+          Isa cites clause numbers. Always verify with the official standard text.
+          {" · "}Supports PDF, DOCX, TXT, CSV
+        </p>
       </div>
     </div>
   );

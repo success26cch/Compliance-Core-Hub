@@ -1,5 +1,7 @@
 import type { Express, Request, Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
+import multer from "multer";
+import path from "path";
 import { chatStorage } from "./storage";
 import { storage } from "../../storage";
 import { CCH_SYSTEM_PROMPT, CCH_TRIAL_SYSTEM_PROMPT, CCH_LANDING_SYSTEM_PROMPT } from "./systemPrompt";
@@ -852,5 +854,54 @@ The OEM supplier data above is for scope identification ONLY. Customer Specific 
       }
     }
   });
+
+  // ── Document text extraction for Isa analysis ────────────────────────────
+  const docExtractUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB max
+  });
+
+  app.post("/api/isa/extract-document",
+    docExtractUpload.single("document"),
+    async (req: Request, res: Response) => {
+      if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+      const filename = req.file.originalname;
+      const ext = path.extname(filename).toLowerCase();
+      const buffer = req.file.buffer;
+      let text = "";
+
+      try {
+        if (ext === ".pdf") {
+          const pdfParse = require("pdf-parse");
+          const data = await pdfParse(buffer);
+          text = data.text;
+        } else if (ext === ".docx" || ext === ".doc") {
+          const mammoth = require("mammoth");
+          const result = await mammoth.extractRawText({ buffer });
+          text = result.value;
+        } else {
+          // Plain text, markdown, CSV, JSON
+          text = buffer.toString("utf-8");
+        }
+
+        // Normalize whitespace
+        text = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+
+        // Cap at 80,000 chars (~20K tokens) to avoid overflowing context
+        const MAX_CHARS = 80000;
+        const truncated = text.length > MAX_CHARS;
+        if (truncated) text = text.slice(0, MAX_CHARS) + "\n\n[Document truncated — first 80,000 characters shown]";
+
+        const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+        res.json({ filename, text, wordCount, charCount: text.length, truncated });
+      } catch (err: any) {
+        console.error("Document extraction error:", err);
+        res.status(500).json({ error: "Could not extract text. Try a .txt or .docx file." });
+      }
+    }
+  );
 }
 
