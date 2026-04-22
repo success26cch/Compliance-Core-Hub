@@ -893,7 +893,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               {medical && <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200">ISO 13485 §7.6</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">
-              All measuring instruments · expand any gage to see its calibration history · click a record to open the full detail view
+              All measuring instruments · click any gage row to see its specs and calibration history · click a record to open the full detail view
               {iatf ? " · IATF §7.1.5.3 OOT Assessments" : ""}
               {aerospace ? " · AS9100D §7.1.5.2 measurement data" : ""}
               {medical ? " · ISO 13485 §7.6" : ""}.
@@ -996,10 +996,14 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                     const isExpanded = expandedEquip === eq.id;
                     return (
                       <div key={eq.id} className={`border-b border-border/60 last:border-0 ${idx % 2 === 1 ? "bg-muted/20" : ""}`}>
-                        {/* Compact row */}
-                        <div className="grid grid-cols-[110px_1fr_110px_110px_110px_90px] gap-0 items-center">
+                        {/* Compact row — entire row clickable to expand */}
+                        <div
+                          className={`grid grid-cols-[110px_1fr_110px_110px_110px_90px] gap-0 items-center cursor-pointer hover:bg-accent/5 transition-colors select-none ${isExpanded ? "bg-accent/5" : ""}`}
+                          onClick={() => setExpandedEquip(isExpanded ? null : eq.id)}
+                          data-testid={`row-equip-${eq.id}`}
+                        >
                           {/* Gage ID */}
-                          <div className="px-3 py-2.5">
+                          <div className="px-3 py-3">
                             <span className="font-mono text-xs font-bold bg-muted px-1.5 py-0.5 rounded">{eq.gageId}</span>
                             {eq.customerOwned && (
                               <div className="mt-0.5">
@@ -1008,7 +1012,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                             )}
                           </div>
                           {/* Name / Type */}
-                          <div className="px-3 py-2.5 min-w-0">
+                          <div className="px-3 py-3 min-w-0">
                             <div className="text-xs font-medium text-foreground truncate">{eq.name}</div>
                             <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
                               {eq.type && <span>{eq.type}</span>}
@@ -1016,13 +1020,13 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                             </div>
                           </div>
                           {/* Status */}
-                          <div className="px-3 py-2.5">
+                          <div className="px-3 py-3">
                             <Badge className={`text-[11px] border ${STATUS_COLORS[eq.status ?? "active"]}`}>
                               {eq.status === "out_of_service" ? "Out of Svc" : (eq.status ?? "active")}
                             </Badge>
                           </div>
                           {/* Next Due */}
-                          <div className="px-3 py-2.5 text-xs">
+                          <div className="px-3 py-3 text-xs">
                             {eq.nextDueDate ? (
                               <div>
                                 <span className={(() => {
@@ -1036,7 +1040,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                             ) : <span className="text-muted-foreground">—</span>}
                           </div>
                           {/* Last Cal */}
-                          <div className="px-3 py-2.5 text-xs">
+                          <div className="px-3 py-3 text-xs">
                             {lastRec ? (
                               <div>
                                 <span className={`inline-block px-1.5 py-0.5 rounded border font-medium text-[11px] ${RESULT_COLORS[lastRec.result ?? "pass"]}`}>
@@ -1047,9 +1051,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                               </div>
                             ) : <span className="text-muted-foreground text-[11px]">No records</span>}
                           </div>
-                          {/* Actions */}
-                          <div className="px-3 py-2.5 flex items-center gap-0.5">
-                            <button onClick={() => setLogForEquip(eq) || setLogDialog(true)}
+                          {/* Actions — stopPropagation so they don't toggle the row */}
+                          <div className="px-3 py-3 flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => { setLogForEquip(eq); setLogDialog(true); }}
                               data-testid={`button-log-cal-${eq.id}`}
                               title="Log Calibration" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-accent">
                               <Plus className="w-3.5 h-3.5" />
@@ -1064,10 +1068,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                               title="Delete" className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-red-600">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => setExpandedEquip(isExpanded ? null : eq.id)}
-                              title="Details" className="p-1 rounded hover:bg-muted text-muted-foreground">
+                            <span className="p-1 text-muted-foreground">
                               {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                            </button>
+                            </span>
                           </div>
                         </div>
 
