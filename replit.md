@@ -85,3 +85,6 @@ The CCHUB platform is built with a modern web stack: React, Vite, TailwindCSS, a
         The script is idempotent; it exits immediately if content already meets the ≥40,000-char (~10,000 token) target with no progress markers.
         If re-seeding is needed, truncate the `iso_documents` row content first, then re-run.
     -   QM prompt logic lives in `server/qm-prompts.ts` (exports `buildQmPartAPrompt`, `buildQmPartBPrompt`, `QmPromptParams`). Both the seed script and live generation in `routes.ts` use these shared builders to stay in sync.
+    -   `scripts/seed-cci-calibration.ts` — seeds CCI Chemical's Calibration Module (IATF §7.1.5) with 15 realistic gages, 18 calibration history records, and 1 OOT assessment (Viscometer, CAPA CAR-2023-017). User ID: `54320068`, project ID: `4`. Idempotent — clears and re-seeds each run.
+        Run: `npx tsx scripts/seed-cci-calibration.ts`
+        Includes: pH meters, analytical balance, viscometer, refractometer, conductivity meter, thermometer, pressure gauge, flow meter, torque wrench, hydrometers, boiling point tester, caliper, customer-owned instrument, turbidity meter, temperature datalogger. Mix of statuses: 5 gages due within 30 days (trigger reminders), 2 overdue (active), 1 overdue + out-of-service.
