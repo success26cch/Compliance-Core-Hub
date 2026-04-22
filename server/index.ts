@@ -116,6 +116,94 @@ app.use((req, res, next) => {
     console.error("Failed to seed DODO products:", error);
   }
 
+  // ─── Daily calibration reminder scheduler ───────────────────────────────────
+  // Runs once at startup and then every 24 hours. Sends reminder emails for
+  // gages due within 30 days or overdue. Does not depend on a user opening the
+  // calibration module (per-gage 7-day throttle prevents duplicate emails).
+  async function runCalibrationReminders() {
+    try {
+      const { db } = await import("./db");
+      const { sql } = await import("drizzle-orm");
+      const { sendEmail, brandedHtml } = await import("./emailService");
+
+      const today = new Date();
+      const cutoff = new Date(today);
+      cutoff.setDate(cutoff.getDate() + 30);
+      const throttle = new Date(today);
+      throttle.setDate(throttle.getDate() - 7);
+
+      // Fetch all gages due/overdue across all users
+      const rows = await db.execute(sql`
+        SELECT ce.*, u.email AS owner_email
+        FROM calibration_equipment ce
+        JOIN users u ON u.id = ce.user_id
+        WHERE ce.next_due_date IS NOT NULL
+          AND ce.next_due_date <= ${cutoff.toISOString().split("T")[0]}
+          AND (ce.last_reminder_sent_at IS NULL OR ce.last_reminder_sent_at < ${throttle.toISOString()})
+      `);
+
+      let sent = 0;
+      for (const row of rows.rows as Record<string, unknown>[]) {
+        const dueDate = new Date(row.next_due_date as string);
+        const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
+        const subject = daysLeft <= 0
+          ? `⚠️ Calibration OVERDUE: ${row.name} (${row.gage_id})`
+          : `📅 Calibration Due in ${daysLeft} days: ${row.name} (${row.gage_id})`;
+        const body = `
+          <h2 style="color:#1e3a5f;margin:0 0 16px">Calibration ${daysLeft <= 0 ? "Overdue" : "Reminder"}</h2>
+          <p>The following measuring equipment requires calibration attention:</p>
+          <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+            <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;width:40%">Equipment</td><td style="padding:8px;">${row.name}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Gage ID</td><td style="padding:8px;">${row.gage_id}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Location</td><td style="padding:8px;">${row.location ?? "—"}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Responsible</td><td style="padding:8px;">${row.responsible_person ?? "—"}</td></tr>
+            <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Calibration Due</td>
+              <td style="padding:8px;color:${daysLeft <= 0 ? "#dc2626" : daysLeft <= 7 ? "#d97706" : "#16a34a"};font-weight:bold;">
+                ${row.next_due_date}${daysLeft <= 0 ? " (OVERDUE)" : ` (${daysLeft} days)`}
+              </td>
+            </tr>
+          </table>
+          <p style="margin-top:16px;">
+            <a href="https://corecompliancehub.com/iso-manager" style="background:#ea6c19;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">
+              Open Calibration Module
+            </a>
+          </p>
+          <p style="color:#6b7280;font-size:13px;margin-top:16px;">
+            This is an automated reminder from Core Compliance Hub (ISO 9001 §7.1.5 / IATF 16949 §7.1.5.3).
+          </p>
+        `;
+
+        const recipients: string[] = [];
+        if (row.responsible_email) recipients.push(row.responsible_email as string);
+        if (row.owner_email && row.owner_email !== row.responsible_email) recipients.push(row.owner_email as string);
+
+        let anySent = false;
+        for (const to of recipients) {
+          const ok = await sendEmail(to as string, subject, brandedHtml(subject, body));
+          if (ok) anySent = true;
+        }
+        if (anySent) {
+          await db.execute(sql`
+            UPDATE calibration_equipment SET last_reminder_sent_at = NOW()
+            WHERE id = ${row.id}
+          `);
+          sent++;
+        }
+      }
+      if (rows.rows.length > 0) {
+        log(`Calibration reminders: checked ${rows.rows.length} gages, sent ${sent} email(s).`, "scheduler");
+      }
+    } catch (err) {
+      console.error("[scheduler] Calibration reminder check failed:", err);
+    }
+  }
+
+  // Run once on startup (after a short delay) then every 24 hours
+  setTimeout(() => {
+    runCalibrationReminders();
+    setInterval(runCalibrationReminders, 24 * 60 * 60 * 1000);
+  }, 60 * 1000); // 1-minute startup delay
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

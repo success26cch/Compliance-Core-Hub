@@ -16,11 +16,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Gauge, Plus, Pencil, Trash2, AlertTriangle,
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
-  Calendar, Activity, Info, FileUp, Download, BarChart3,
+  Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
+
+type CalTab = "register" | "log" | "oot" | "msa";
+
+interface WorkInstruction {
+  id: number;
+  title: string;
+  docType: string;
+  status: string;
+}
+
 
 interface CalibrationEquipment {
   id: number; userId: string; isoProjectId?: number | null;
@@ -120,13 +130,14 @@ const EMPTY_EQ: Partial<CalibrationEquipment> = {
   traceableStandard: "NIST", customerOwned: false, status: "active", notes: "",
 };
 
-function EquipmentForm({ initial, onSave, onCancel }: {
+function EquipmentForm({ initial, onSave, onCancel, workInstructions }: {
   initial: Partial<CalibrationEquipment>;
   onSave: (d: Partial<CalibrationEquipment>) => void;
   onCancel: () => void;
+  workInstructions?: WorkInstruction[];
 }) {
   const [form, setForm] = useState<Partial<CalibrationEquipment>>(initial);
-  const set = (k: keyof CalibrationEquipment) => (v: string | number | boolean) =>
+  const set = (k: keyof CalibrationEquipment) => (v: string | number | boolean | null) =>
     setForm(f => ({ ...f, [k]: v }));
 
   return (
@@ -255,6 +266,27 @@ function EquipmentForm({ initial, onSave, onCancel }: {
         <Label htmlFor="customerOwned" className="text-sm cursor-pointer">Customer-owned gage (MSA requirement)</Label>
       </div>
 
+      {workInstructions && workInstructions.length > 0 && (
+        <div>
+          <Label className="text-sm font-semibold">Linked Work Instruction (optional)</Label>
+          <Select
+            value={form.linkedDocumentId != null ? String(form.linkedDocumentId) : "none"}
+            onValueChange={v => set("linkedDocumentId")(v === "none" ? null : parseInt(v))}
+          >
+            <SelectTrigger className="mt-1 h-8" data-testid="select-linked-wi">
+              <SelectValue placeholder="Select work instruction…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">— None —</SelectItem>
+              {workInstructions.map(wi => (
+                <SelectItem key={wi.id} value={String(wi.id)}>{wi.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground mt-1">Link a calibration work instruction from your Documentation module.</p>
+        </div>
+      )}
+
       <div>
         <Label className="text-sm font-semibold">Notes</Label>
         <Textarea className="mt-1 resize-none" rows={2} value={form.notes ?? ""} onChange={e => set("notes")(e.target.value)} placeholder="Any additional notes…" />
@@ -300,15 +332,25 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
   const [certFile, setCertFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const set = (k: string) => (v: any) => setForm(f => ({ ...f, [k]: v }));
-  const setO = (k: string) => (v: any) => setOot(f => ({ ...f, [k]: v }));
+
+  type RecordState = Partial<CalibrationRecord & { showOot: boolean }>;
+  type OotState = Partial<CalibrationOotAssessment>;
+  const set = <K extends keyof RecordState>(k: K) => (v: RecordState[K]) =>
+    setForm(f => ({ ...f, [k]: v }));
+  const setO = <K extends keyof OotState>(k: K) => (v: OotState[K]) =>
+    setOot(f => ({ ...f, [k]: v }));
 
   function handleSubmit() {
     if (!form.calibrationDate) {
       toast({ title: "Calibration date is required", variant: "destructive" }); return;
     }
-    if (showOot && isIatfProject && !(oot.assessedBy ?? "").trim()) {
-      toast({ title: "OOT assessment requires 'Assessed By' field", description: "IATF §7.1.5.3 mandates the assessor be identified.", variant: "destructive" }); return;
+    if (showOot && isIatfProject) {
+      if (!(oot.assessedBy ?? "").trim()) {
+        toast({ title: "OOT assessment requires 'Assessed By'", description: "IATF §7.1.5.3 mandates the assessor be identified.", variant: "destructive" }); return;
+      }
+      if (!(oot.disposition ?? "").trim()) {
+        toast({ title: "OOT assessment requires 'Disposition'", description: "IATF §7.1.5.3 requires a documented disposition decision.", variant: "destructive" }); return;
+      }
     }
     onSave(form, showOot && isIatfProject ? oot : undefined, certFile ?? undefined);
   }
@@ -348,6 +390,15 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
           <Input type="date" className="mt-1 h-8" value={form.nextDueDate ?? ""}
             onChange={e => set("nextDueDate")(e.target.value)} data-testid="input-next-due" />
         </div>
+      </div>
+
+      <div>
+        <Label className="text-sm font-semibold">Standards Referenced</Label>
+        <Input className="mt-1 h-8"
+          value={(form.standardsReferenced ?? []).join(", ")}
+          onChange={e => set("standardsReferenced")(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+          placeholder="e.g. NIST HB 44, ISO 10012, ANSI/NCSL Z540" data-testid="input-standards-ref" />
+        <p className="text-[11px] text-muted-foreground mt-0.5">Comma-separated list of calibration standards used.</p>
       </div>
 
       <div>
@@ -495,7 +546,7 @@ interface CalibrationModuleProps {
 export function CalibrationModule({ project }: CalibrationModuleProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"register" | "log" | "oot" | "msa">("register");
+  const [tab, setTab] = useState<CalTab>("register");
   const [equipDialog, setEquipDialog] = useState(false);
   const [editEquip, setEditEquip] = useState<CalibrationEquipment | null>(null);
   const [logDialog, setLogDialog] = useState(false);
@@ -526,6 +577,17 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
     queryKey: ["/api/calibration/oot-assessments", projectId],
     queryFn: () => fetch(ootUrl, { credentials: "include" }).then(r => r.json()),
   });
+
+  const wiQueryUrl = projectId
+    ? `/api/iso-documents?isoProjectId=${projectId}`
+    : "/api/iso-documents";
+  const { data: allDocs = [] } = useQuery<WorkInstruction[]>({
+    queryKey: ["/api/iso-documents", projectId],
+    queryFn: () => fetch(wiQueryUrl, { credentials: "include" }).then(r => r.json()),
+  });
+  const workInstructions = allDocs.filter(
+    d => d.docType === "work_instruction" && d.status !== "obsolete",
+  );
 
   // Fire reminder check on load (no-await, best-effort)
   useEffect(() => {
@@ -721,7 +783,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             { key: "oot", label: `OOT Assessments${ootAssessments.length > 0 ? ` (${ootAssessments.length})` : ""}`, icon: AlertTriangle },
             ...(iatf ? [{ key: "msa", label: "MSA (Gauge R&R)", icon: BarChart3 }] : []),
           ].map(({ key, label, icon: Icon }) => (
-            <button key={key} onClick={() => setTab(key as any)}
+            <button key={key} onClick={() => setTab(key as CalTab)}
               data-testid={`tab-cal-${key}`}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
                 tab === key ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
@@ -805,6 +867,14 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                               {eq.tolerance && <span>Tol: {eq.tolerance}</span>}
                             </div>
                           )}
+                          {eq.linkedDocumentId && (() => {
+                            const wi = workInstructions.find(w => w.id === eq.linkedDocumentId);
+                            return wi ? (
+                              <p className="mt-1 text-xs text-accent">
+                                WI: {wi.title}
+                              </p>
+                            ) : null;
+                          })()}
                         </div>
 
                         <div className="flex flex-col gap-1 shrink-0">
@@ -904,6 +974,9 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           {r.certNumber && <span>Cert #: {r.certNumber}</span>}
                           {r.nextDueDate && <span>Next due: {r.nextDueDate}</span>}
                         </div>
+                        {r.standardsReferenced && r.standardsReferenced.length > 0 && (
+                          <p className="mt-1 text-xs text-muted-foreground">Standards: {r.standardsReferenced.join(", ")}</p>
+                        )}
                         {r.adjustmentsMade && <p className="mt-1 text-xs text-muted-foreground">Adjustments: {r.adjustmentsMade}</p>}
                         {r.notes && <p className="mt-0.5 text-xs text-muted-foreground italic">{r.notes}</p>}
                       </div>
@@ -1065,6 +1138,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             initial={editEquip ?? EMPTY_EQ}
             onSave={d => saveEquip.mutate(d)}
             onCancel={() => { setEquipDialog(false); setEditEquip(null); }}
+            workInstructions={workInstructions}
           />
         </DialogContent>
       </Dialog>

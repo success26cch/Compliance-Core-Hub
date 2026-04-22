@@ -9367,7 +9367,9 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     const { sql } = await import("drizzle-orm");
     const d = req.body;
     const oot = d.result === 'fail' || d.outOfTolerance === true;
-    // Insert the record
+    // Serialize text[] — Drizzle raw sql doesn't auto-cast JS arrays to pg text[]
+    const standardsArr: string[] | null = Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
+      ? d.standardsReferenced : null;
     const recRows = await db.execute(sql`
       INSERT INTO calibration_records (
         user_id, iso_project_id, equipment_id, calibration_date, performed_by,
@@ -9376,13 +9378,13 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       ) VALUES (
         ${req.session.userId}, ${d.isoProjectId ?? null}, ${d.equipmentId},
         ${d.calibrationDate}, ${d.performedBy ?? null}, ${d.certNumber ?? null},
-        ${d.standardsReferenced ?? null}, ${d.result ?? 'pass'}, ${oot},
+        ${standardsArr ? sql`${sql.raw(`ARRAY[${standardsArr.map(s => `'${s.replace(/'/g, "''")}'`).join(',')}]`)}` : sql`NULL`},
+        ${d.result ?? 'pass'}, ${oot},
         ${d.adjustmentsMade ?? null}, ${d.certificateFileUrl ?? null},
         ${d.nextDueDate ?? null}, ${d.notes ?? null}
       ) RETURNING *
     `);
     const record = rowToCamel(recRows.rows[0] as Record<string, unknown>);
-    // Update equipment next_due_date & updated_at
     if (d.nextDueDate) {
       await db.execute(sql`
         UPDATE calibration_equipment SET next_due_date = ${d.nextDueDate}, updated_at = NOW()
@@ -9398,10 +9400,13 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     const { sql } = await import("drizzle-orm");
     const d = req.body;
     const oot = d.result === 'fail' || d.outOfTolerance === true;
+    const standardsArr: string[] | null = Array.isArray(d.standardsReferenced) && d.standardsReferenced.length > 0
+      ? d.standardsReferenced : null;
     const rows = await db.execute(sql`
       UPDATE calibration_records SET
         calibration_date = ${d.calibrationDate}, performed_by = ${d.performedBy ?? null},
-        cert_number = ${d.certNumber ?? null}, standards_referenced = ${d.standardsReferenced ?? null},
+        cert_number = ${d.certNumber ?? null},
+        standards_referenced = ${standardsArr ? sql`${sql.raw(`ARRAY[${standardsArr.map(s => `'${s.replace(/'/g, "''")}'`).join(',')}]`)}` : sql`NULL`},
         result = ${d.result ?? 'pass'}, out_of_tolerance = ${oot},
         adjustments_made = ${d.adjustmentsMade ?? null},
         certificate_file_url = ${d.certificateFileUrl ?? null},
@@ -9494,9 +9499,27 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       cb(null, `cert-${Date.now()}${ext}`);
     },
   });
-  const certUpload = multer({ storage: certStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+  const CERT_ALLOWED_MIMES = new Set(["application/pdf", "image/jpeg", "image/jpg", "image/png"]);
+  const CERT_ALLOWED_EXTS = new Set([".pdf", ".jpg", ".jpeg", ".png"]);
+  const certUpload = multer({
+    storage: certStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (CERT_ALLOWED_MIMES.has(file.mimetype) && CERT_ALLOWED_EXTS.has(ext)) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only PDF, JPEG, and PNG files are accepted for calibration certificates."));
+      }
+    },
+  });
 
-  app.post("/api/calibration/records/:id/certificate", certUpload.single("file"), async (req: Request, res: Response) => {
+  app.post("/api/calibration/records/:id/certificate", (req: Request, res: Response, next: import("express").NextFunction) => {
+    certUpload.single("file")(req, res, (err) => {
+      if (err) return res.status(400).json({ message: err.message ?? "File upload error" });
+      next();
+    });
+  }, async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
     const { db } = await import("./db");
