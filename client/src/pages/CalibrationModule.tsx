@@ -1569,6 +1569,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [expandedEquip, setExpandedEquip] = useState<number | null>(null);
   const [expandedOot, setExpandedOot] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterCalType, setFilterCalType] = useState<string>("all");
   const [searchGage, setSearchGage] = useState<string>("");
   const [viewRecord, setViewRecord] = useState<CalibrationRecord | null>(null);
   const [viewRecordEquip, setViewRecordEquip] = useState<CalibrationEquipment | null>(null);
@@ -1798,6 +1799,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
 
   const filteredEquip = equipment.filter(e => {
     const matchesStatus = filterStatus === "all" || e.status === filterStatus;
+    const matchesCalType = filterCalType === "all" || (e.calType ?? "external") === filterCalType;
     const q = searchGage.toLowerCase();
     const matchesSearch = !q ||
       e.gageId.toLowerCase().includes(q) ||
@@ -1805,7 +1807,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
       (e.type ?? "").toLowerCase().includes(q) ||
       (e.location ?? "").toLowerCase().includes(q) ||
       (e.manufacturer ?? "").toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesCalType && matchesSearch;
   });
 
   const overdue = equipment.filter(e => {
@@ -1914,6 +1916,21 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                       {s === "all" ? "All" : s === "out_of_service" ? "Out of Service" : s.charAt(0).toUpperCase() + s.slice(1)}
                     </button>
                   ))}
+                </div>
+                <div className="flex gap-2 items-center flex-wrap">
+                  <span className="text-xs text-muted-foreground">Cal Type:</span>
+                  {[
+                    { key: "all", label: "All" },
+                    { key: "internal", label: "Internal" },
+                    { key: "external", label: "External" },
+                  ].map(({ key, label }) => (
+                    <button key={key} onClick={() => setFilterCalType(key)}
+                      data-testid={`filter-caltype-${key}`}
+                      className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                        filterCalType === key ? "bg-accent text-white border-accent" : "text-muted-foreground border-border hover:border-accent"}`}>
+                      {label}
+                    </button>
+                  ))}
                   <span className="text-xs text-muted-foreground ml-auto">{filteredEquip.length} item{filteredEquip.length !== 1 ? "s" : ""}</span>
                 </div>
               </div>
@@ -1976,11 +1993,16 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                               </div>
                             )}
                           </div>
-                          {/* Status */}
-                          <div className="px-3 py-3">
+                          {/* Status + Cal Type */}
+                          <div className="px-3 py-3 space-y-1">
                             <Badge className={`text-xs border ${STATUS_COLORS[eq.status ?? "active"]}`}>
                               {eq.status === "out_of_service" ? "Out of Svc" : (eq.status ?? "active")}
                             </Badge>
+                            <div>
+                              <Badge className={`text-xs border ${eq.calType === "internal" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-sky-50 text-sky-700 border-sky-200"}`}>
+                                {eq.calType === "internal" ? "Internal" : "External"}
+                              </Badge>
+                            </div>
                           </div>
                           {/* Next Due */}
                           <div className="px-3 py-3">
@@ -1991,7 +2013,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                                   return days < 0 ? "text-red-600 font-semibold" : days <= 30 ? "text-amber-600 font-semibold" : "text-foreground";
                                 })()}`}>{eq.nextDueDate}</span>
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  {eq.calType === "internal" ? "Internal" : "External"} · {eq.calFrequencyMonths ?? 12}mo
+                                  {eq.calFrequencyMonths ?? 12}mo cycle
                                 </div>
                               </div>
                             ) : <span className="text-sm text-muted-foreground">—</span>}
