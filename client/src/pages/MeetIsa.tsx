@@ -288,6 +288,21 @@ export default function MeetIsa() {
             <div className="flex justify-center mb-4">
               <img src={acsiLogo} alt="ACSI" style={{ width: "180px", mixBlendMode: "multiply" }} />
             </div>
+
+            {/* Isa Avatar */}
+            <div className="flex justify-center mb-5">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full blur-[40px]" style={{ background: `${ORANGE}30` }} />
+                <img
+                  src={isaBotImg}
+                  alt="Isa AI"
+                  className="relative w-36 h-36 rounded-full object-cover border-4 shadow-2xl"
+                  style={{ borderColor: `${ORANGE}50`, boxShadow: `0 0 40px ${ORANGE}25` }}
+                  data-testid="img-isa-hero"
+                />
+              </div>
+            </div>
+
             <div className="flex justify-center mb-5">
               <span
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white"
