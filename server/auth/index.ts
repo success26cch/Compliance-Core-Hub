@@ -115,20 +115,19 @@ export async function setupAuth(app: Express) {
   } catch (e) {
     console.error("[startup] Demo password reset failed:", e);
   }
-  // ── Remove Raul's test ISO projects so superadmin sees CCI Chemical ───────
+  // ── Ensure Raul is superadmin + clear his test ISO projects ──────────────
   try {
-    // Raul has incomplete test projects in both dev and prod — remove them
-    // so the superadmin fallback loads CCI Chemical (project id=4) automatically.
     const RAUL_IDS = [
       "c2df200b-5806-4310-ba66-e127f2095625", // dev
       "a60ec465-679d-4967-9e0f-e7a36d465a1c",  // prod
     ];
     for (const rid of RAUL_IDS) {
+      await db.update(users).set({ isSuperadmin: true, updatedAt: new Date() }).where(eq(users.id, rid));
       await db.delete(isoProjects).where(eq(isoProjects.userId, rid));
     }
-    console.log("[startup] Raul's test ISO projects cleared — CCI Chemical will show.");
+    console.log("[startup] Raul superadmin ensured + test ISO projects cleared.");
   } catch (e) {
-    console.error("[startup] ISO project cleanup failed:", e);
+    console.error("[startup] Raul setup failed:", e);
   }
   // ─────────────────────────────────────────────────────────────────────────
   app.set("trust proxy", 1);
