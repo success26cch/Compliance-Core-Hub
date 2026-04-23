@@ -5,6 +5,7 @@ import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { db } from "../db";
 import { users, auditLogs, passwordResetTokens, subscriptions, isoProjects } from "@shared/schema";
+import { seedDemoDataIfEmpty } from "../demo-seed";
 import { eq, and, gt, or } from "drizzle-orm";
 import { sendEmail, brandedHtml } from "../emailService";
 
@@ -115,7 +116,7 @@ export async function setupAuth(app: Express) {
   } catch (e) {
     console.error("[startup] Demo password reset failed:", e);
   }
-  // ── Ensure Raul is superadmin + clear his test ISO projects ──────────────
+  // ── Ensure Raul is superadmin ──────────────────────────────────────────────
   try {
     const RAUL_IDS = [
       "c2df200b-5806-4310-ba66-e127f2095625", // dev
@@ -123,12 +124,13 @@ export async function setupAuth(app: Express) {
     ];
     for (const rid of RAUL_IDS) {
       await db.update(users).set({ isSuperadmin: true, updatedAt: new Date() }).where(eq(users.id, rid));
-      await db.delete(isoProjects).where(eq(isoProjects.userId, rid));
     }
-    console.log("[startup] Raul superadmin ensured + test ISO projects cleared.");
+    console.log("[startup] Raul superadmin ensured.");
   } catch (e) {
     console.error("[startup] Raul setup failed:", e);
   }
+  // ── Seed demo data if production DB is empty ───────────────────────────────
+  await seedDemoDataIfEmpty();
   // ─────────────────────────────────────────────────────────────────────────
   app.set("trust proxy", 1);
   app.use(getSession());
