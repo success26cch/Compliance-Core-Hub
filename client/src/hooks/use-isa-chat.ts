@@ -109,6 +109,15 @@ export function useIsaChatStream(conversationId: number, onMessageSent?: () => v
             return;
           }
         }
+        if (response.status === 404) {
+          setMessages((prev) => prev.slice(0, -1));
+          toast({
+            title: "Conversation not found",
+            description: "This conversation is no longer available. Please start a new chat.",
+            variant: "destructive",
+          });
+          return;
+        }
         throw new Error('Failed to send message');
       }
 

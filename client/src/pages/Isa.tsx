@@ -459,8 +459,11 @@ export default function IsaApp() {
   }, [isIsaSubscriber]);
 
   useEffect(() => {
-    if (conversations.length > 0 && !activeConvId) {
-      setActiveConvId(conversations[0].id);
+    if (conversations.length > 0) {
+      const convIds = (conversations as any[]).map((c: any) => c.id);
+      if (!activeConvId || !convIds.includes(activeConvId)) {
+        setActiveConvId((conversations as any[])[0].id);
+      }
     }
   }, [conversations]);
 

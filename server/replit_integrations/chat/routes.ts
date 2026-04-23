@@ -612,6 +612,7 @@ export function registerChatRoutes(app: Express): void {
       // When no filter is passed from standalone Isa, show only standalone conversations
       const source = (req.query.source as string) ?? "standalone";
       const convs = await chatStorage.getAllConversations(userId + ":isa", source);
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
       res.json(convs);
     } catch (error) {
       console.error("Error fetching Isa conversations:", error);

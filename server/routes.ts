@@ -7662,7 +7662,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       const anthropicClient = createAnthropicClient();
       const response = await anthropicClient.messages.create({
         model: "claude-sonnet-4-5",
-        max_tokens: 1024,
+        max_tokens: 4096,
         system: systemPrompt || "You are Isa, Lead ISO Auditor for ACSI ISO Manager. Provide expert ISO guidance.",
         messages: messages.map(m => ({ role: m.role === "user" ? "user" as const : "assistant" as const, content: String(m.content) })),
       });
