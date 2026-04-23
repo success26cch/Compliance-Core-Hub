@@ -2530,31 +2530,15 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   </CardContent>
                 </Card>
 
-                {/* Section A+B: Inspection, Tests & Technical Procedures */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <FlaskConical className="w-4 h-4 text-accent" />
-                      <p className="text-sm font-bold">§ (a)+(b) — Inspection, Tests &amp; Technical Procedures</p>
-                    </div>
-                    <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
-                      onClick={() => openEdit("capabilities")} data-testid="button-edit-capabilities">
-                      <Plus className="w-3 h-3 mr-1" /> Add Capability
-                    </Button>
-                  </div>
-                  {allCapabilities.length === 0 ? (
-                    <div className="text-center py-8 border border-dashed rounded-lg text-muted-foreground">
-                      <FlaskConical className="w-7 h-7 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No internal gages registered.</p>
-                      <p className="text-xs mt-1">Add gages marked "Internal" in the Master Register to auto-populate this section.</p>
-                    </div>
-                  ) : (
+                {/* Helper to render a capability table (shared between both sub-sections) */}
+                {(() => {
+                  const renderCapTable = (caps: LabCapability[], startIndex: number, isCalibSection: boolean) => (
                     <div className="overflow-x-auto rounded-lg border border-border">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="bg-muted/60 border-b border-border">
                             <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground w-6">#</th>
-                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Inspection / Test / Calibration</th>
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">{isCalibSection ? "Calibration Performed" : "Inspection / Test Performed"}</th>
                             <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Equipment Used</th>
                             <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Work Instruction / Internal Procedure</th>
                             <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Industry Standard / Method</th>
@@ -2563,18 +2547,17 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           </tr>
                         </thead>
                         <tbody>
-                          {allCapabilities.map((cap, i) => {
+                          {caps.map((cap, i) => {
                             const linkedWi = cap.linkedDocumentId ? workInstructions.find(w => w.id === cap.linkedDocumentId) : null;
-                            const isAdditional = cap.id.startsWith("cap-");
-                            const wiLabel = linkedWi ? linkedWi.title : (cap.workInstruction || "Customer Specific Requirements");
+                            const wiLabel = linkedWi ? linkedWi.title : (cap.workInstruction || "Customer Specific Requirements / In-House Procedure");
+                            const displayName = isCalibSection ? `Calibration of ${cap.parameter}` : cap.parameter;
                             return (
                               <tr key={cap.id} className={`border-b border-border/60 hover:bg-muted/20 transition-colors align-top ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
-                                <td className="px-3 py-2.5 text-muted-foreground">{i + 1}</td>
+                                <td className="px-3 py-2.5 text-muted-foreground">{startIndex + i}</td>
                                 <td className="px-3 py-2.5 font-medium">
-                                  <div>{cap.parameter}</div>
-                                  {isAdditional && <Badge variant="outline" className="mt-0.5 text-[9px] text-purple-600 border-purple-300">Manual</Badge>}
-                                  {cap.range !== "See specification" && cap.range && (
-                                    <div className="text-[10px] text-muted-foreground mt-0.5">Range: {cap.range}</div>
+                                  <div>{displayName}</div>
+                                  {cap.range && cap.range !== "See specification" && (
+                                    <div className="text-[10px] text-muted-foreground mt-0.5">Range: {cap.range} {cap.tolerance ? `± ${cap.tolerance}` : ""}</div>
                                   )}
                                 </td>
                                 <td className="px-3 py-2.5 text-muted-foreground">
@@ -2593,33 +2576,77 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                                 </td>
                                 <td className="px-3 py-2.5 font-medium text-foreground">{cap.method}</td>
                                 <td className="px-3 py-2.5 text-muted-foreground">{cap.competencyRequired || "Internal Training"}</td>
-                                <td className="px-3 py-2.5 text-muted-foreground">{cap.recordGenerated || "Calibration Log"}</td>
+                                <td className="px-3 py-2.5 text-muted-foreground">{cap.recordGenerated || (isCalibSection ? "Calibration Log" : "Test Report")}</td>
                               </tr>
                             );
                           })}
                         </tbody>
                       </table>
                     </div>
-                  )}
-                  <p className="text-[10px] text-muted-foreground mt-1 ml-1">
-                    Auto-populated from internal gages in Master Register. Add supplemental test capabilities via Add Capability.
-                  </p>
-                </div>
+                  );
 
-                {/* References Section */}
+                  return (
+                    <>
+                      {/* Section A — Calibrations */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FlaskConical className="w-4 h-4 text-accent" />
+                          <p className="text-sm font-bold">§ (a) — Calibrations</p>
+                        </div>
+                        {autoCapabilities.length === 0 ? (
+                          <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground">
+                            <FlaskConical className="w-7 h-7 mx-auto mb-2 opacity-30" />
+                            <p className="text-sm">No internal gages registered.</p>
+                            <p className="text-xs mt-1">Add gages marked "Internal" in the Master Register to auto-populate this section.</p>
+                          </div>
+                        ) : renderCapTable(autoCapabilities, 1, true)}
+                        <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                          Auto-populated from gages marked "Internal" in the Master Calibration Register.
+                        </p>
+                      </div>
+
+                      {/* Section B — Inspection & Testing Performed */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Microscope className="w-4 h-4 text-accent" />
+                            <p className="text-sm font-bold">§ (b) — Inspection &amp; Testing Performed</p>
+                          </div>
+                          <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
+                            onClick={() => openEdit("capabilities")} data-testid="button-edit-capabilities">
+                            <Plus className="w-3 h-3 mr-1" /> Add Test Method
+                          </Button>
+                        </div>
+                        {additionalCaps.length === 0 ? (
+                          <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground">
+                            <Microscope className="w-7 h-7 mx-auto mb-2 opacity-30" />
+                            <p className="text-sm">No inspection or test methods defined.</p>
+                            <p className="text-xs mt-1">Add your lab's inspection and test activities (viscosity, pH, boiling point, etc.) via Add Test Method.</p>
+                          </div>
+                        ) : renderCapTable(additionalCaps, autoCapabilities.length + 1, false)}
+                        <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+                          Manually defined inspection and testing activities performed by the laboratory.
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {/* References Section — pulled from both calibration gages and test methods */}
                 {(() => {
                   const linkedWIs = allCapabilities
                     .filter(c => c.linkedDocumentId != null)
                     .map(c => workInstructions.find(w => w.id === c.linkedDocumentId))
                     .filter(Boolean) as WorkInstruction[];
                   const manualWIRefs = allCapabilities
-                    .filter(c => !c.linkedDocumentId && c.workInstruction && !c.workInstruction.includes("Customer Specific"))
+                    .filter(c => !c.linkedDocumentId && c.workInstruction && !c.workInstruction.includes("Customer Specific") && !c.workInstruction.includes("In-House"))
                     .map(c => ({ id: 0, title: c.workInstruction!, docType: "work_instruction", status: "active" }));
-                  const allRefs = [...linkedWIs, ...manualWIRefs];
-                  const wiRefs = Array.from(new Map(allRefs.map(w => [w.title, w])).values());
-                  const stdRefs = Array.from(new Set(allCapabilities.map(c => c.method).filter(m => m && m !== "In-House Calibration Procedure")));
+                  const wiRefs = Array.from(new Map([...linkedWIs, ...manualWIRefs].map(w => [w.title, w])).values());
+                  const calibStds = Array.from(new Set(autoCapabilities.map(c => c.method).filter(m => m && m !== "In-House Calibration Procedure")));
+                  const testStds  = Array.from(new Set(additionalCaps.map(c => c.method).filter(Boolean)));
+                  const allStds   = Array.from(new Set([...calibStds, ...testStds]));
 
-                  if (wiRefs.length === 0 && stdRefs.length === 0) return null;
+                  if (wiRefs.length === 0 && allStds.length === 0) return null;
                   return (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
@@ -2630,26 +2657,39 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="bg-muted/60 border-b border-border">
+                              <th className="text-left px-3 py-2 font-semibold text-muted-foreground w-8">#</th>
                               <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Reference Name</th>
                               <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Type</th>
+                              <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Applicable Section</th>
                             </tr>
                           </thead>
                           <tbody>
                             {wiRefs.map((wi, i) => (
                               <tr key={`wi-${i}`} className={`border-b border-border/60 ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
-                                <td className="px-3 py-2 flex items-center gap-1.5">
-                                  <BookOpen className="w-3 h-3 text-blue-500 shrink-0" />
-                                  <span className="font-medium text-blue-700">{wi.title}</span>
+                                <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <BookOpen className="w-3 h-3 text-blue-500 shrink-0" />
+                                    <span className="font-medium text-blue-700">{wi.title}</span>
+                                  </div>
                                 </td>
                                 <td className="px-3 py-2 text-muted-foreground">Work Instruction</td>
+                                <td className="px-3 py-2 text-muted-foreground">§ (a) Calibrations</td>
                               </tr>
                             ))}
-                            {stdRefs.map((std, i) => (
-                              <tr key={`std-${i}`} className={`border-b border-border/60 ${(wiRefs.length + i) % 2 !== 0 ? "bg-muted/10" : ""}`}>
-                                <td className="px-3 py-2 font-medium">{std}</td>
-                                <td className="px-3 py-2 text-muted-foreground">Industry Standard</td>
-                              </tr>
-                            ))}
+                            {allStds.map((std, i) => {
+                              const inCalib = calibStds.includes(std);
+                              const inTest  = testStds.includes(std);
+                              const section = inCalib && inTest ? "§ (a) + § (b)" : inCalib ? "§ (a) Calibrations" : "§ (b) Inspection & Testing";
+                              return (
+                                <tr key={`std-${i}`} className={`border-b border-border/60 ${(wiRefs.length + i) % 2 !== 0 ? "bg-muted/10" : ""}`}>
+                                  <td className="px-3 py-2 text-muted-foreground">{wiRefs.length + i + 1}</td>
+                                  <td className="px-3 py-2 font-medium">{std}</td>
+                                  <td className="px-3 py-2 text-muted-foreground">Industry Standard</td>
+                                  <td className="px-3 py-2 text-muted-foreground">{section}</td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
