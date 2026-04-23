@@ -4,7 +4,7 @@
  */
 import { db } from "./db";
 import { isoProjects, users, nonconformances } from "@shared/schema";
-import { eq, count } from "drizzle-orm";
+import { eq, count, sql } from "drizzle-orm";
 
 const DEMO_USER_ID_PROD = "a60ec465-679d-4967-9e0f-e7a36d465a1c";
 const DEMO_USER_ID_DEV  = "c2df200b-5806-4310-ba66-e127f2095625";
@@ -38,82 +38,59 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
       ownerUserId = devRaul ? DEMO_USER_ID_DEV : EBENI_USER_ID;
     }
 
-    // Create the CCI Chemical ISO project
-    const [project] = await db.insert(isoProjects).values({
-      userId: ownerUserId,
-      standard: "IATF 16949",
-      phase: 3,
-      status: "complete",
-      orgName: "CCI Chemical, Inc.",
-      orgAddress: "4200 Springboro Pike, Dayton, OH 45439",
-      totalEmployees: 85,
-      productionEmployees: 55,
-      adminEmployees: 30,
-      productsServices: "DOT 3 and DOT 4 brake fluids, DEX-COOL engine coolant, OAT coolant, power steering fluid — supplied to Tier 1 and OEM automotive customers",
-      manufacturingTech: ["batch_chemical_blending", "automated_fill_line", "automated_inspection", "spc_monitoring"],
-      hasDesignResponsibility: true,
-      processes: CCI_PROCESSES as any,
-      pestleData: CCI_PESTLE as any,
-      swotData: CCI_SWOT as any,
-      interestedParties: CCI_INTERESTED_PARTIES as any,
-      mapColorScheme: "navy-orange",
-      coreValues: "Safety First: No production target justifies compromising employee or product safety\nQuality Integrity: Every batch meets specification — no shortcuts, no waivers without authorization\nCustomer Commitment: Our customers' assembly lines depend on us; we treat delivery promises as obligations\nContinuous Improvement: We systematically eliminate waste, defects, and variation\nTeam Accountability: Every person owns their process and speaks up when something is wrong",
-      riskPhilosophy: "CCI Chemical takes a risk-based approach to quality management. We proactively identify risks across our process map using PFMEA, control plans, and supplier risk assessments. Risks with high severity or occurrence are escalated to leadership for resource allocation. Opportunities are evaluated through the management review process and incorporated into annual quality objectives.",
-    }).returning();
+    // Create the CCI Chemical ISO project using raw SQL to avoid JSONB serialisation issues
+    const processesJson = JSON.stringify(CCI_PROCESSES);
+    const pestleJson    = JSON.stringify(CCI_PESTLE);
+    const swotJson      = JSON.stringify(CCI_SWOT);
+    const partiesJson   = JSON.stringify(CCI_INTERESTED_PARTIES);
 
-    console.log(`[demo-seed] Created CCI Chemical ISO project id=${project.id} for userId=${ownerUserId}`);
+    const result = await db.execute(sql`
+      INSERT INTO iso_projects (
+        user_id, standard, phase, status,
+        org_name, org_address, total_employees, production_employees, admin_employees,
+        products_services, manufacturing_tech, has_design_responsibility,
+        processes, pestle_data, swot_data, interested_parties,
+        map_color_scheme, core_values, risk_philosophy, created_at, updated_at
+      ) VALUES (
+        ${ownerUserId}, 'IATF 16949', 3, 'complete',
+        'CCI Chemical, Inc.', '4200 Springboro Pike, Dayton, OH 45439', 85, 55, 30,
+        'DOT 3 and DOT 4 brake fluids, DEX-COOL engine coolant, OAT coolant, power steering fluid — supplied to Tier 1 and OEM automotive customers',
+        ARRAY['batch_chemical_blending','automated_fill_line','automated_inspection','spc_monitoring'],
+        true,
+        ${processesJson}::jsonb, ${pestleJson}::jsonb, ${swotJson}::jsonb, ${partiesJson}::jsonb,
+        'navy-orange',
+        'Safety First: No production target justifies compromising employee or product safety
+Quality Integrity: Every batch meets specification — no shortcuts, no waivers without authorization
+Customer Commitment: Our customers'' assembly lines depend on us; we treat delivery promises as obligations
+Continuous Improvement: We systematically eliminate waste, defects, and variation
+Team Accountability: Every person owns their process and speaks up when something is wrong',
+        'CCI Chemical takes a risk-based approach to quality management. We proactively identify risks across our process map using PFMEA, control plans, and supplier risk assessments.',
+        NOW(), NOW()
+      ) RETURNING id
+    `);
 
-    // Seed sample nonconformances
-    const today = new Date();
-    const ncs = [
-      {
-        isoProjectId: project.id,
-        userId: ownerUserId,
-        title: "Viscometer Cal Failure — Out of Tolerance",
-        description: "Cannon-Fenske viscometer #VIS-003 found out of tolerance during annual calibration. Measured viscosity 4.3% above upper control limit on reference standard. All batches tested with this instrument since last calibration are suspect.",
-        severity: "major",
-        status: "open",
-        sourceType: "internal_audit",
-        detectedDate: new Date(today.getTime() - 14 * 86400000),
-        responsiblePerson: "QC Lab Manager",
-        isoClause: "7.1.5",
-        immediateContainment: "Quarantined instrument. Identified all lots tested with VIS-003 since last calibration (23 lots). Implemented 100% re-test with calibrated reference viscometer.",
-      },
-      {
-        isoProjectId: project.id,
-        userId: ownerUserId,
-        title: "Brake Fluid pH Out of Spec — Batch #BF-2024-0312",
-        description: "Batch BF-2024-0312 DOT 3 brake fluid failed final QC pH acceptance criterion (7.0–11.5). pH measured at 6.6. Batch placed on hold prior to shipment.",
-        severity: "major",
-        status: "action_in_progress",
-        sourceType: "process_observation",
-        detectedDate: new Date(today.getTime() - 21 * 86400000),
-        responsiblePerson: "Production Supervisor",
-        isoClause: "8.7",
-        immediateContainment: "Batch quarantined and tagged nonconforming. No product shipped. Raw material lot trace completed.",
-      },
-      {
-        isoProjectId: project.id,
-        userId: ownerUserId,
-        title: "Supplier COA Discrepancy — Glycol Ether Lot",
-        description: "Incoming glycol ether lot (Supplier: Dow Chemical, Lot GE-2024-441) COA stated purity 99.5%. Internal verification testing measured 97.8%. Discrepancy exceeds 1% tolerance.",
-        severity: "minor",
-        status: "closed",
-        sourceType: "supplier",
-        detectedDate: new Date(today.getTime() - 45 * 86400000),
-        responsiblePerson: "Procurement Manager",
-        isoClause: "8.4.3",
-        immediateContainment: "Lot quarantined. Supplier notified. Material returned to supplier.",
-        closureDate: new Date(today.getTime() - 20 * 86400000),
-        closureNotes: "Supplier acknowledged COA discrepancy. Updated incoming inspection spec to require dual verification. Root cause: supplier lab calibration drift. Supplier submitted 8D.",
-      },
-    ];
+    const projectId: number = (result.rows[0] as any).id;
+    console.log(`[demo-seed] Created CCI Chemical ISO project id=${projectId} for userId=${ownerUserId}`);
 
-    for (const nc of ncs) {
-      await db.insert(nonconformances).values(nc);
-    }
+    // Seed sample nonconformances using raw SQL
+    await db.execute(sql`
+      INSERT INTO nonconformances (iso_project_id, user_id, title, description, severity, status, source_type, detected_date, responsible_person, iso_clause, immediate_containment, created_at)
+      VALUES
+      (${projectId}, ${ownerUserId}, 'Viscometer Cal Failure — Out of Tolerance',
+       'Cannon-Fenske viscometer #VIS-003 found out of tolerance during annual calibration. Measured viscosity 4.3% above upper control limit on reference standard.',
+       'major', 'open', 'internal_audit', NOW() - INTERVAL '14 days', 'QC Lab Manager', '7.1.5',
+       'Quarantined instrument. Identified all lots tested with VIS-003 since last calibration (23 lots). Implemented 100% re-test with calibrated reference viscometer.', NOW()),
+      (${projectId}, ${ownerUserId}, 'Brake Fluid pH Out of Spec — Batch #BF-2024-0312',
+       'Batch BF-2024-0312 DOT 3 brake fluid failed final QC pH acceptance criterion (7.0–11.5). pH measured at 6.6. Batch placed on hold prior to shipment.',
+       'major', 'action_in_progress', 'process_observation', NOW() - INTERVAL '21 days', 'Production Supervisor', '8.7',
+       'Batch quarantined and tagged nonconforming. No product shipped. Raw material lot trace completed.', NOW()),
+      (${projectId}, ${ownerUserId}, 'Supplier COA Discrepancy — Glycol Ether Lot',
+       'Incoming glycol ether lot (Supplier: Dow Chemical, Lot GE-2024-441) COA stated purity 99.5%. Internal verification testing measured 97.8%. Discrepancy exceeds 1% tolerance.',
+       'minor', 'closed', 'supplier', NOW() - INTERVAL '45 days', 'Procurement Manager', '8.4.3',
+       'Lot quarantined. Supplier notified. Material returned to supplier.', NOW())
+    `);
 
-    console.log(`[demo-seed] Seeded ${ncs.length} nonconformances.`);
+    console.log("[demo-seed] Seeded 3 nonconformances.");
     console.log("[demo-seed] CCI Chemical demo seed complete ✓");
   } catch (err: any) {
     console.error("[demo-seed] Seed error:", err.message);
