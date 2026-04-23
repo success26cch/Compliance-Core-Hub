@@ -38,56 +38,53 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
       ownerUserId = devRaul ? DEMO_USER_ID_DEV : EBENI_USER_ID;
     }
 
-    // Create the CCI Chemical ISO project — all values parameterized to avoid SQL injection / parsing issues
-    const standard       = "IATF 16949";
-    const status         = "complete";
-    const orgName        = "CCI Chemical, Inc.";
-    const orgAddress     = "4200 Springboro Pike, Dayton, OH 45439";
-    const products       = "DOT 3 and DOT 4 brake fluids, DEX-COOL engine coolant, OAT coolant, power steering fluid — supplied to Tier 1 and OEM automotive customers";
-    const techArray      = "{batch_chemical_blending,automated_fill_line,automated_inspection,spc_monitoring}";
-    const processesJson  = JSON.stringify(CCI_PROCESSES);
-    const pestleJson     = JSON.stringify(CCI_PESTLE);
-    const swotJson       = JSON.stringify(CCI_SWOT);
-    const partiesJson    = JSON.stringify(CCI_INTERESTED_PARTIES);
-    const colorScheme    = "navy-orange";
-    const coreValues     = "Safety First: No production target justifies compromising employee or product safety\nQuality Integrity: Every batch meets specification — no shortcuts, no waivers without authorization\nCustomer Commitment: Our customers' assembly lines depend on us; we treat delivery promises as obligations\nContinuous Improvement: We systematically eliminate waste, defects, and variation\nTeam Accountability: Every person owns their process and speaks up when something is wrong";
-    const riskPhilosophy = "CCI Chemical takes a risk-based approach to quality management. We proactively identify risks across our process map using PFMEA, control plans, and supplier risk assessments. Risks with high severity or occurrence are escalated to leadership for resource allocation.";
+    // Minimal insert — only columns that cannot cause type-casting issues in the prod CJS bundle
+    const standard      = "IATF 16949";
+    const statusVal     = "complete";
+    const orgName       = "CCI Chemical, Inc.";
+    const processesJson = JSON.stringify(CCI_PROCESSES);
+    const pestleJson    = JSON.stringify(CCI_PESTLE);
+    const swotJson      = JSON.stringify(CCI_SWOT);
+    const partiesJson   = JSON.stringify(CCI_INTERESTED_PARTIES);
 
     const result = await db.execute(sql`
       INSERT INTO iso_projects (
-        user_id, standard, phase, status,
-        org_name, org_address, total_employees, production_employees, admin_employees,
-        products_services, manufacturing_tech, has_design_responsibility,
+        user_id, standard, phase, status, org_name,
         processes, pestle_data, swot_data, interested_parties,
-        map_color_scheme, core_values, risk_philosophy, created_at, updated_at
+        created_at, updated_at
       ) VALUES (
-        ${ownerUserId}, ${standard}, 3, ${status},
-        ${orgName}, ${orgAddress}, 85, 55, 30,
-        ${products}, ${techArray}::text[], true,
+        ${ownerUserId}, ${standard}, 3, ${statusVal}, ${orgName},
         ${processesJson}::jsonb, ${pestleJson}::jsonb, ${swotJson}::jsonb, ${partiesJson}::jsonb,
-        ${colorScheme}, ${coreValues}, ${riskPhilosophy}, NOW(), NOW()
+        NOW(), NOW()
       ) RETURNING id
     `);
 
     const projectId: number = (result.rows[0] as any).id;
     console.log(`[demo-seed] Created CCI Chemical ISO project id=${projectId} for userId=${ownerUserId}`);
 
-    // Seed sample nonconformances using raw SQL
+    // Seed sample nonconformances — one INSERT per row to avoid multi-value parsing issues
+    const nc1Title = "Viscometer Cal Failure - Out of Tolerance";
+    const nc1Desc  = "VIS-003 viscometer found out of tolerance during annual calibration. Measured viscosity 4.3% above upper control limit.";
+    const nc1Cont  = "Quarantined instrument. 23 lots identified for re-test with calibrated reference viscometer.";
     await db.execute(sql`
       INSERT INTO nonconformances (iso_project_id, user_id, title, description, severity, status, source_type, detected_date, responsible_person, iso_clause, immediate_containment, created_at)
-      VALUES
-      (${projectId}, ${ownerUserId}, 'Viscometer Cal Failure — Out of Tolerance',
-       'Cannon-Fenske viscometer #VIS-003 found out of tolerance during annual calibration. Measured viscosity 4.3% above upper control limit on reference standard.',
-       'major', 'open', 'internal_audit', NOW() - INTERVAL '14 days', 'QC Lab Manager', '7.1.5',
-       'Quarantined instrument. Identified all lots tested with VIS-003 since last calibration (23 lots). Implemented 100% re-test with calibrated reference viscometer.', NOW()),
-      (${projectId}, ${ownerUserId}, 'Brake Fluid pH Out of Spec — Batch #BF-2024-0312',
-       'Batch BF-2024-0312 DOT 3 brake fluid failed final QC pH acceptance criterion (7.0–11.5). pH measured at 6.6. Batch placed on hold prior to shipment.',
-       'major', 'action_in_progress', 'process_observation', NOW() - INTERVAL '21 days', 'Production Supervisor', '8.7',
-       'Batch quarantined and tagged nonconforming. No product shipped. Raw material lot trace completed.', NOW()),
-      (${projectId}, ${ownerUserId}, 'Supplier COA Discrepancy — Glycol Ether Lot',
-       'Incoming glycol ether lot (Supplier: Dow Chemical, Lot GE-2024-441) COA stated purity 99.5%. Internal verification testing measured 97.8%. Discrepancy exceeds 1% tolerance.',
-       'minor', 'closed', 'supplier', NOW() - INTERVAL '45 days', 'Procurement Manager', '8.4.3',
-       'Lot quarantined. Supplier notified. Material returned to supplier.', NOW())
+      VALUES (${projectId}, ${ownerUserId}, ${nc1Title}, ${nc1Desc}, 'major', 'open', 'internal_audit', NOW() - INTERVAL '14 days', 'QC Lab Manager', '7.1.5', ${nc1Cont}, NOW())
+    `);
+
+    const nc2Title = "Brake Fluid pH Out of Spec - Batch BF-2024-0312";
+    const nc2Desc  = "Batch BF-2024-0312 DOT 3 brake fluid failed final QC pH criterion (7.0-11.5). pH measured at 6.6. Batch on hold.";
+    const nc2Cont  = "Batch quarantined. No product shipped. Raw material lot trace completed.";
+    await db.execute(sql`
+      INSERT INTO nonconformances (iso_project_id, user_id, title, description, severity, status, source_type, detected_date, responsible_person, iso_clause, immediate_containment, created_at)
+      VALUES (${projectId}, ${ownerUserId}, ${nc2Title}, ${nc2Desc}, 'major', 'action_in_progress', 'process_observation', NOW() - INTERVAL '21 days', 'Production Supervisor', '8.7', ${nc2Cont}, NOW())
+    `);
+
+    const nc3Title = "Supplier COA Discrepancy - Glycol Ether Lot";
+    const nc3Desc  = "Glycol ether lot COA stated purity 99.5%. Internal verification measured 97.8%. Discrepancy exceeds 1% tolerance.";
+    const nc3Cont  = "Lot quarantined. Supplier notified. Material returned.";
+    await db.execute(sql`
+      INSERT INTO nonconformances (iso_project_id, user_id, title, description, severity, status, source_type, detected_date, responsible_person, iso_clause, immediate_containment, created_at)
+      VALUES (${projectId}, ${ownerUserId}, ${nc3Title}, ${nc3Desc}, 'minor', 'closed', 'supplier', NOW() - INTERVAL '45 days', 'Procurement Manager', '8.4.3', ${nc3Cont}, NOW())
     `);
 
     console.log("[demo-seed] Seeded 3 nonconformances.");
