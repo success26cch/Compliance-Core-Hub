@@ -105,6 +105,20 @@ export const isAuthenticated: RequestHandler = (req: any, res, next) => {
 // ── Auth routes ───────────────────────────────────────────────────────────────
 
 export async function setupAuth(app: Express) {
+  // ── Demo account password ensure (runs once on startup) ──────────────────
+  try {
+    const { scryptSync, randomBytes: rb } = await import("crypto");
+    const salt = rb(16).toString("hex");
+    const derived = scryptSync("CCHub2024!", salt, 64) as Buffer;
+    const hash = `${salt}:${derived.toString("hex")}`;
+    await db.update(users)
+      .set({ passwordHash: hash, updatedAt: new Date() })
+      .where(eq(users.id, "54320068"));
+    console.log("[startup] Demo account password ensured.");
+  } catch (e) {
+    console.error("[startup] Demo password reset failed:", e);
+  }
+  // ─────────────────────────────────────────────────────────────────────────
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(authMiddleware());
