@@ -8,11 +8,9 @@ import { chatStorage } from "./storage";
 import { storage } from "../../storage";
 import { CCH_SYSTEM_PROMPT, CCH_TRIAL_SYSTEM_PROMPT, CCH_LANDING_SYSTEM_PROMPT } from "./systemPrompt";
 import { ISA_SYSTEM_PROMPT } from "./isaSystemPrompt";
+import { createAnthropicClient } from "../../anthropicClient";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-});
+const anthropic = createAnthropicClient();
 
 const FREE_QUESTION_LIMIT = 3;
 const LANDING_BOT_LIMIT = 3;

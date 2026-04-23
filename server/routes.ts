@@ -10,6 +10,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { auditLogs } from "@shared/schema";
 import { buildQmPartAPrompt, buildQmPartBPrompt } from "./qm-prompts";
+import { createAnthropicClient } from "./anthropicClient";
 
 // ─── Audit Logging Helper ─────────────────────────────────────────────────────
 async function logAudit(
@@ -61,7 +62,6 @@ import {
 } from "./emailService";
 import { insertEmployeeSchema, insertIncidentSchema, insertCorrectiveActionSchema, insertActionItemSchema, insertAuditReadinessSchema, insertCompanyProfileSchema, insertIsoProjectSchema, insertNonconformanceSchema, insertIsoDocumentSchema } from "@shared/schema";
 import type { IsoRisk } from "@shared/schema";
-import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
 import multer from "multer";
 import path from "path";
@@ -344,10 +344,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   registerChatRoutes(app);
 
   // Spanish to English Translation (Spanish Bilingual Medical Assistant)
-  const translationAnthropic = new Anthropic({
-    apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-    baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-  });
+  const translationAnthropic = createAnthropicClient();
 
   const BMA_SYSTEM_PROMPT = `You are a specialized Bilingual Medical Assistant (BMA) facilitating real-time communication between healthcare providers and patients in occupational health settings. Your goal is to provide highly interactive, bidirectional translation and clinical summarization in English and Spanish.
 
@@ -1619,11 +1616,7 @@ Rules:
       const incident = await storage.getIncident(id, userId);
       if (!incident) return res.status(404).json({ message: "Incident not found" });
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropic = createAnthropicClient();
 
       const prompt = `You are Corey, a Senior Occupational Health, Safety & Compliance Expert. An incident has just been logged. Analyze it and provide:
 
@@ -1685,11 +1678,7 @@ Be concise and direct. Use regulatory citations.`;
       const incident = await storage.getIncident(id, userId);
       if (!incident) return res.status(404).json({ message: "Incident not found" });
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropic = createAnthropicClient();
 
       const prompt = `You are Corey, a Senior Occupational Health, Safety & Compliance Expert with 30 years of experience conducting incident root cause analyses. You are generating a structured CAPA (Corrective Action Plan) for a workplace incident.
 
@@ -2025,11 +2014,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     if (!systemPrompt) return res.status(400).json({ message: "Unknown situation type" });
 
     try {
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropic = createAnthropicClient();
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -6082,10 +6067,7 @@ ${doc.content}
 
 Evaluate whether this document satisfies the requirements of ${doc.isoClause} under ${standard}. Return a JSON compliance verdict.`;
 
-      const anthropicClient = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropicClient = createAnthropicClient();
 
       const response = await anthropicClient.messages.create({
         model: "claude-sonnet-4-5",
@@ -6994,11 +6976,7 @@ ${isIATF ? `- Customer Specific Requirements: ${csrReq || "(empty)"}` : ""}
 
 Generate the complete Turtle Diagram content as JSON now.`;
 
-      const { default: Anthropic } = await import("@anthropic-ai/sdk");
-      const client = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const client = createAnthropicClient();
 
       const msg = await client.messages.create({
         model: "claude-sonnet-4-5",
@@ -7188,10 +7166,7 @@ Always end with: "Would you like me to draft any of the additional procedures li
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const anthropicClient = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropicClient = createAnthropicClient();
       const stream = anthropicClient.messages.stream({
         model: "claude-sonnet-4-5",
         max_tokens: 4096,
@@ -7361,10 +7336,7 @@ If this single procedure fully covers all requirements for the clause, write:
 
 Always end with: "Would you like me to draft any of the additional procedures listed above? I can create each one fully tailored to ${project?.orgName ?? "your organization"}."`;
 
-      const anthropicClient = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropicClient = createAnthropicClient();
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -7620,10 +7592,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const anthropicClient = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropicClient = createAnthropicClient();
 
       const stream = anthropicClient.messages.stream({
         model: "claude-sonnet-4-5",
@@ -7657,10 +7626,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     try {
       const { messages, systemPrompt } = req.body as { messages: { role: string; content: string }[]; systemPrompt?: string };
       if (!messages || !Array.isArray(messages)) return res.status(400).json({ message: "messages required" });
-      const anthropicClient = new Anthropic({
-        apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-        baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-      });
+      const anthropicClient = createAnthropicClient();
       const response = await anthropicClient.messages.create({
         model: "claude-sonnet-4-5",
         max_tokens: 1024,
