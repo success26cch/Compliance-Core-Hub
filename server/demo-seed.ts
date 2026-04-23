@@ -38,11 +38,20 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
       ownerUserId = devRaul ? DEMO_USER_ID_DEV : EBENI_USER_ID;
     }
 
-    // Create the CCI Chemical ISO project using raw SQL to avoid JSONB serialisation issues
-    const processesJson = JSON.stringify(CCI_PROCESSES);
-    const pestleJson    = JSON.stringify(CCI_PESTLE);
-    const swotJson      = JSON.stringify(CCI_SWOT);
-    const partiesJson   = JSON.stringify(CCI_INTERESTED_PARTIES);
+    // Create the CCI Chemical ISO project — all values parameterized to avoid SQL injection / parsing issues
+    const standard       = "IATF 16949";
+    const status         = "complete";
+    const orgName        = "CCI Chemical, Inc.";
+    const orgAddress     = "4200 Springboro Pike, Dayton, OH 45439";
+    const products       = "DOT 3 and DOT 4 brake fluids, DEX-COOL engine coolant, OAT coolant, power steering fluid — supplied to Tier 1 and OEM automotive customers";
+    const techArray      = "{batch_chemical_blending,automated_fill_line,automated_inspection,spc_monitoring}";
+    const processesJson  = JSON.stringify(CCI_PROCESSES);
+    const pestleJson     = JSON.stringify(CCI_PESTLE);
+    const swotJson       = JSON.stringify(CCI_SWOT);
+    const partiesJson    = JSON.stringify(CCI_INTERESTED_PARTIES);
+    const colorScheme    = "navy-orange";
+    const coreValues     = "Safety First: No production target justifies compromising employee or product safety\nQuality Integrity: Every batch meets specification — no shortcuts, no waivers without authorization\nCustomer Commitment: Our customers' assembly lines depend on us; we treat delivery promises as obligations\nContinuous Improvement: We systematically eliminate waste, defects, and variation\nTeam Accountability: Every person owns their process and speaks up when something is wrong";
+    const riskPhilosophy = "CCI Chemical takes a risk-based approach to quality management. We proactively identify risks across our process map using PFMEA, control plans, and supplier risk assessments. Risks with high severity or occurrence are escalated to leadership for resource allocation.";
 
     const result = await db.execute(sql`
       INSERT INTO iso_projects (
@@ -52,20 +61,11 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
         processes, pestle_data, swot_data, interested_parties,
         map_color_scheme, core_values, risk_philosophy, created_at, updated_at
       ) VALUES (
-        ${ownerUserId}, 'IATF 16949', 3, 'complete',
-        'CCI Chemical, Inc.', '4200 Springboro Pike, Dayton, OH 45439', 85, 55, 30,
-        'DOT 3 and DOT 4 brake fluids, DEX-COOL engine coolant, OAT coolant, power steering fluid — supplied to Tier 1 and OEM automotive customers',
-        ARRAY['batch_chemical_blending','automated_fill_line','automated_inspection','spc_monitoring'],
-        true,
+        ${ownerUserId}, ${standard}, 3, ${status},
+        ${orgName}, ${orgAddress}, 85, 55, 30,
+        ${products}, ${techArray}::text[], true,
         ${processesJson}::jsonb, ${pestleJson}::jsonb, ${swotJson}::jsonb, ${partiesJson}::jsonb,
-        'navy-orange',
-        'Safety First: No production target justifies compromising employee or product safety
-Quality Integrity: Every batch meets specification — no shortcuts, no waivers without authorization
-Customer Commitment: Our customers'' assembly lines depend on us; we treat delivery promises as obligations
-Continuous Improvement: We systematically eliminate waste, defects, and variation
-Team Accountability: Every person owns their process and speaks up when something is wrong',
-        'CCI Chemical takes a risk-based approach to quality management. We proactively identify risks across our process map using PFMEA, control plans, and supplier risk assessments.',
-        NOW(), NOW()
+        ${colorScheme}, ${coreValues}, ${riskPhilosophy}, NOW(), NOW()
       ) RETURNING id
     `);
 
