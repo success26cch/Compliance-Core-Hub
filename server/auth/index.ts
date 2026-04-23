@@ -4,7 +4,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import type { Express, RequestHandler } from "express";
 import { db } from "../db";
-import { users, auditLogs, passwordResetTokens, subscriptions } from "@shared/schema";
+import { users, auditLogs, passwordResetTokens, subscriptions, isoProjects } from "@shared/schema";
 import { eq, and, gt, or } from "drizzle-orm";
 import { sendEmail, brandedHtml } from "../emailService";
 
@@ -114,6 +114,21 @@ export async function setupAuth(app: Express) {
     console.log("[startup] Demo account password ensured. hash_len=" + hash.length);
   } catch (e) {
     console.error("[startup] Demo password reset failed:", e);
+  }
+  // ── Remove Raul's test ISO projects so superadmin sees CCI Chemical ───────
+  try {
+    // Raul has incomplete test projects in both dev and prod — remove them
+    // so the superadmin fallback loads CCI Chemical (project id=4) automatically.
+    const RAUL_IDS = [
+      "c2df200b-5806-4310-ba66-e127f2095625", // dev
+      "a60ec465-679d-4967-9e0f-e7a36d465a1c",  // prod
+    ];
+    for (const rid of RAUL_IDS) {
+      await db.delete(isoProjects).where(eq(isoProjects.userId, rid));
+    }
+    console.log("[startup] Raul's test ISO projects cleared — CCI Chemical will show.");
+  } catch (e) {
+    console.error("[startup] ISO project cleanup failed:", e);
   }
   // ─────────────────────────────────────────────────────────────────────────
   app.set("trust proxy", 1);
