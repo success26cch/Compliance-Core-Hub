@@ -190,6 +190,8 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
   const [attachedText, setAttachedText] = useState<string | null>(null);
   const [attachedWordCount, setAttachedWordCount] = useState<number>(0);
   const [isExtracting, setIsExtracting] = useState(false);
+  // Local-only ISA advisory notice shown when file extraction fails
+  const [fileNotice, setFileNotice] = useState<string | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -200,6 +202,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
     if (!file) return;
     setAttachedFile(file);
     setAttachedText(null);
+    setFileNotice(null);
     setIsExtracting(true);
     try {
       const formData = new FormData();
@@ -209,15 +212,29 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
         body: formData,
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Extraction failed");
       const data = await res.json();
+
+      if (!res.ok) {
+        // Build a helpful ISA advisory based on the specific error code
+        let notice: string;
+        if (data.errorCode === "unsupported_file_type") {
+          notice = `I wasn't able to read **${file.name}** — ${data.format} is a binary format I can't extract text from.\n\n${data.suggestion}\n\nI'm still here and ready to answer your question. Just type it below and send it, or re-upload the document in a supported format first.`;
+        } else {
+          notice = `I had trouble extracting the text from **${file.name}**. The file may be password-protected, corrupted, or in a format I can't read.\n\nTry saving it as a **PDF** or **.docx** and re-uploading. I can still answer your question — just type it below.`;
+        }
+        setFileNotice(notice);
+        setAttachedFile(null);
+        setAttachedText(null);
+        return;
+      }
+
       setAttachedText(data.text);
       setAttachedWordCount(data.wordCount);
       if (data.truncated) {
-        toast({ title: "Document truncated", description: "Only the first 80,000 characters were loaded — the document is very large." });
+        setFileNotice(`This is a large document — I've loaded the first portion for analysis. I'll work with what was extracted and let you know if I need more context.`);
       }
     } catch {
-      toast({ title: "Could not read document", description: "Try a PDF, DOCX, or plain text file.", variant: "destructive" });
+      setFileNotice(`I had trouble reading **${file.name}**. Try uploading a PDF, Word (.docx), or CSV file instead. Your question is still here — type it below and I'll answer.`);
       setAttachedFile(null);
       setAttachedText(null);
     } finally {
@@ -246,6 +263,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
     }
 
     setInput("");
+    setFileNotice(null);
     clearAttachment();
     await sendMessage(content);
   };
@@ -288,7 +306,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
               data-testid="button-attach-hint"
             >
               <Paperclip className="w-3.5 h-3.5" />
-              Or attach a document for Isa to audit (PDF, DOCX, TXT)
+              Or attach a document for Isa to audit (PDF, DOCX, TXT, CSV — not Excel)
             </button>
           </div>
         )}
@@ -300,6 +318,23 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
             <IsaAvatar size={32} />
             <div className="px-4 py-3 rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.06]">
               <Loader2 className="w-4 h-4 animate-spin text-white/40" />
+            </div>
+          </div>
+        )}
+
+        {/* ISA advisory notice — shown when a file couldn't be extracted */}
+        {fileNotice && (
+          <div className="flex gap-3 mb-4">
+            <IsaAvatar size={32} />
+            <div className="max-w-[80%] rounded-2xl rounded-bl-sm border px-4 py-3 text-sm leading-relaxed text-white/90"
+              style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(234,108,25,0.35)" }}>
+              <div className="prose prose-sm prose-invert max-w-none prose-p:my-1.5 prose-strong:text-white prose-ul:my-1 prose-ul:pl-4 prose-li:my-0.5">
+                <ReactMarkdown>{fileNotice}</ReactMarkdown>
+              </div>
+              <button onClick={() => setFileNotice(null)}
+                className="mt-2 text-[10px] text-white/30 hover:text-white/60 transition-colors flex items-center gap-1">
+                <X className="w-3 h-3" /> Dismiss
+              </button>
             </div>
           </div>
         )}
@@ -342,7 +377,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
           type="file"
           ref={fileInputRef}
           onChange={handleFileSelect}
-          accept=".pdf,.docx,.doc,.txt,.md,.csv,.json"
+          accept=".pdf,.docx,.doc,.txt,.md,.csv"
           className="hidden"
           data-testid="input-file-upload"
         />
@@ -353,7 +388,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isStreaming || isExtracting}
-            title="Attach document for Isa to analyze (PDF, DOCX, TXT, CSV)"
+            title="Attach document for Isa to analyze (PDF, DOCX, TXT, CSV — Excel not supported, save as CSV first)"
             data-testid="button-attach-document"
             className={`shrink-0 w-11 h-11 rounded-xl border flex items-center justify-center transition-all
               ${attachedText
@@ -393,7 +428,7 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
 
         <p className="text-center text-white/20 text-[10px]">
           Isa cites clause numbers. Always verify with the official standard text.
-          {" · "}Supports PDF, DOCX, TXT, CSV
+          {" · "}Attach: PDF, Word (.docx), TXT, CSV — not Excel (save as CSV first)
         </p>
       </div>
     </div>

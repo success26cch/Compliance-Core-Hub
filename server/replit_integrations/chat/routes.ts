@@ -875,6 +875,27 @@ The OEM supplier data above is for scope identification ONLY. Customer Specific 
       let text = "";
 
       try {
+        // Reject Excel files immediately — binary format, cannot be read as text
+        if (ext === ".xlsx" || ext === ".xls" || ext === ".xlsm" || ext === ".xlsb") {
+          return res.status(422).json({
+            errorCode: "unsupported_file_type",
+            format: ext.replace(".", "").toUpperCase(),
+            error: `Excel files (${ext}) cannot be read directly.`,
+            suggestion: "Please export your spreadsheet as a CSV (File → Save As → CSV) or as a PDF, then re-upload.",
+          });
+        }
+
+        // Reject other known binary formats that would produce garbled output
+        const binaryExts = [".pptx", ".ppt", ".odt", ".ods", ".odp", ".pages", ".numbers"];
+        if (binaryExts.includes(ext)) {
+          return res.status(422).json({
+            errorCode: "unsupported_file_type",
+            format: ext.replace(".", "").toUpperCase(),
+            error: `${ext} files cannot be read directly.`,
+            suggestion: "Please export your document as a PDF or copy the text into a .txt file and re-upload.",
+          });
+        }
+
         if (ext === ".pdf") {
           // pdf-parse v2 API: write buffer to a temp file and parse via file:// URL
           const tmpFile = path.join(os.tmpdir(), `isa_upload_${Date.now()}_${Math.random().toString(36).slice(2)}.pdf`);
@@ -892,7 +913,7 @@ The OEM supplier data above is for scope identification ONLY. Customer Specific 
           const result = await mammoth.extractRawText({ buffer });
           text = result.value;
         } else {
-          // Plain text, markdown, CSV, JSON
+          // Plain text, markdown, CSV, JSON, TXT
           text = buffer.toString("utf-8");
         }
 
