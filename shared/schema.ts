@@ -1646,6 +1646,51 @@ export const insertApqpGateReviewSchema = createInsertSchema(apqpGateReviews, {
 export type ApqpGateReview = typeof apqpGateReviews.$inferSelect;
 export type InsertApqpGateReview = z.infer<typeof insertApqpGateReviewSchema>;
 
+// ─── Design & Development Plans (IATF 16949 §8.3) ────────────────────────────
+export const designDevPlans = pgTable("design_dev_plans", {
+  id: serial("id").primaryKey(),
+  apqpProjectId: integer("apqp_project_id").notNull().unique(),
+  userId: text("user_id").notNull(),
+  // §8.3.1 General
+  isProductResponsible: boolean("is_product_responsible").default(true),
+  designScope: text("design_scope"),
+  // §8.3.2 Planning
+  crossFunctionalTeam: jsonb("cross_functional_team").$type<Array<{ name: string; dept: string; role: string; skills: string }>>().default([]),
+  requiredSkills: text("required_skills"),
+  prototypeRequired: boolean("prototype_required").default(false),
+  prototypeDetails: text("prototype_details"),
+  // §8.3.3 Inputs
+  productDesignInputs: jsonb("product_design_inputs").$type<Array<{ input: string; source: string; status: string }>>().default([]),
+  mfgProcessInputs: jsonb("mfg_process_inputs").$type<Array<{ input: string; source: string; status: string }>>().default([]),
+  specialCharacteristics: jsonb("special_characteristics").$type<Array<{ characteristic: string; symbol: string; controlMethod: string; drawing: string }>>().default([]),
+  // §8.3.4 Controls
+  designReviews: jsonb("design_reviews").$type<Array<{ type: string; date: string; attendees: string; outcome: string; actionItems: string }>>().default([]),
+  verificationMethod: text("verification_method"),
+  verificationStatus: text("verification_status").default("not_started"),
+  validationMethod: text("validation_method"),
+  validationStatus: text("validation_status").default("not_started"),
+  validationDate: text("validation_date"),
+  // §8.3.5 Outputs
+  designOutputDocs: jsonb("design_output_docs").$type<Array<{ doc: string; rev: string; status: string; approvedBy: string }>>().default([]),
+  pfdComplete: boolean("pfd_complete").default(false),
+  pfmeaComplete: boolean("pfmea_complete").default(false),
+  controlPlanComplete: boolean("control_plan_complete").default(false),
+  workInstructionsComplete: boolean("work_instructions_complete").default(false),
+  mfgProcessOutputNotes: text("mfg_process_output_notes"),
+  // §8.3.6 Changes
+  designChanges: jsonb("design_changes").$type<Array<{ date: string; description: string; authorizedBy: string; impact: string; approved: boolean }>>().default([]),
+  // §8.3.7 Externally Provided D&D
+  externalDdResponsible: text("external_dd_responsible"),
+  externalDdControls: text("external_dd_controls"),
+  externalDdSuppliers: jsonb("external_dd_suppliers").$type<Array<{ supplier: string; scope: string; controlMethod: string }>>().default([]),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDesignDevPlanSchema = createInsertSchema(designDevPlans).omit({ id: true, updatedAt: true });
+export type DesignDevPlan = typeof designDevPlans.$inferSelect;
+export type InsertDesignDevPlan = z.infer<typeof insertDesignDevPlanSchema>;
+
 // ─── Environmental Compliance Hub ─────────────────────────────────────────────
 
 export const envFacilityProfiles = pgTable("env_facility_profiles", {

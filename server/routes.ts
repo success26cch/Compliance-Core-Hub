@@ -1949,6 +1949,39 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
     } catch (e) { res.status(500).json({ message: "Failed" }); }
   });
 
+  // ─── DESIGN & DEVELOPMENT §8.3 ───────────────────────────────────────────────
+  app.get("/api/apqp-projects/:id/design-dev", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const projectId = parseInt(req.params.id);
+    try {
+      const { db } = await import("./db");
+      const { designDevPlans } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const [row] = await db.select().from(designDevPlans).where(eq(designDevPlans.apqpProjectId, projectId));
+      res.json(row || null);
+    } catch (e) { res.status(500).json({ message: "Failed to load D&D plan" }); }
+  });
+
+  app.put("/api/apqp-projects/:id/design-dev", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const projectId = parseInt(req.params.id);
+    const userId = (req.user as any).claims?.sub || (req.user as any).id;
+    try {
+      const { db } = await import("./db");
+      const { designDevPlans } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const [existing] = await db.select().from(designDevPlans).where(eq(designDevPlans.apqpProjectId, projectId));
+      const payload = { ...req.body, apqpProjectId: projectId, userId, updatedAt: new Date() };
+      let row;
+      if (existing) {
+        [row] = await db.update(designDevPlans).set(payload).where(eq(designDevPlans.apqpProjectId, projectId)).returning();
+      } else {
+        [row] = await db.insert(designDevPlans).values(payload).returning();
+      }
+      res.json(row);
+    } catch (e) { console.error(e); res.status(500).json({ message: "Failed to save D&D plan" }); }
+  });
+
   // ─── EMERGENCY RESPONSE GUIDANCE (T008) ─────────────────────────────────────
   app.post("/api/emergency-guidance", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
