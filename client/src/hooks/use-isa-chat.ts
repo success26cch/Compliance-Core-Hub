@@ -10,6 +10,8 @@ export function useIsaConversations() {
       if (!res.ok) throw new Error('Failed to fetch conversations');
       return res.json();
     },
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -23,6 +25,8 @@ export function useIsaConversation(id: number | null) {
       return res.json();
     },
     enabled: !!id,
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
