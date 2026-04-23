@@ -2249,18 +2249,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertLabScope(userId: string, isoProjectId: number | null, data: Partial<InsertCalibrationLabScope>): Promise<CalibrationLabScope> {
+    // Strip timestamp fields that may arrive as strings from the request body
+    const { createdAt: _c, updatedAt: _u, id: _id, userId: _uid, isoProjectId: _pid, ...cleanData } = data as any;
     const existing = await this.getLabScope(userId, false, isoProjectId);
     if (existing) {
       const [updated] = await db
         .update(calibrationLabScope)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...cleanData, updatedAt: new Date() })
         .where(eq(calibrationLabScope.id, existing.id))
         .returning();
       return updated;
     }
     const [created] = await db
       .insert(calibrationLabScope)
-      .values({ userId, isoProjectId, ...data })
+      .values({ userId, isoProjectId, ...cleanData })
       .returning();
     return created;
   }

@@ -36,13 +36,15 @@ interface WorkInstruction {
 interface LabCapability {
   id: string;
   parameter: string;
-  method: string;
+  method: string;          // Industry standard (ASTM D1125, ASME B89.1.14, etc.)
   equipment: string;
   range: string;
   tolerance: string;
   traceability: string;
-  workInstruction?: string;
+  workInstruction?: string;           // Internal procedure / WI title or reference
   linkedDocumentId?: number | null;
+  competencyRequired?: string;        // e.g. "Internal Training", "ASQ CQT"
+  recordGenerated?: string;           // e.g. "Calibration Log Record", "pH Test Report"
 }
 
 interface PersonnelRequirement {
@@ -2414,6 +2416,29 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               return "NIST-Traceable Reference Standard";
             }
 
+            function inferCompetency(eq: CalibrationEquipment): string {
+              const n = (eq.name ?? "").toLowerCase();
+              if (n.includes("caliper") || n.includes("dimensional")) return "Internal Training + Dimensional Measurement";
+              if (n.includes("viscosity") || n.includes("viscom")) return "Internal Training + ASTM D2170/D2171";
+              if (n.includes("boiling") || n.includes("ebullio")) return "Internal Training + FMVSS 116 / ASTM D1120";
+              return "Internal Training";
+            }
+
+            function inferRecord(eq: CalibrationEquipment): string {
+              const n = (eq.name ?? "").toLowerCase();
+              if (n.includes("ph")) return "pH Calibration Log";
+              if (n.includes("conductivity")) return "Conductivity Calibration Log";
+              if (n.includes("refract")) return "Refractometer Calibration Log";
+              if (n.includes("turbid")) return "Turbidity Calibration Log";
+              if (n.includes("caliper") || n.includes("dimensional")) return "Dimensional Calibration Log";
+              if (n.includes("thermometer") || n.includes("temperature")) return "Temperature Calibration Log";
+              if (n.includes("balance") || n.includes("scale")) return "Balance Calibration Log";
+              if (n.includes("viscosity") || n.includes("viscom")) return "Viscosity Test Report";
+              if (n.includes("boiling")) return "Boiling Point Test Report";
+              if (n.includes("pressure")) return "Pressure Calibration Log";
+              return "Calibration Log Record";
+            }
+
             const autoCapabilities: LabCapability[] = internalEquip.map(eq => {
               const wi = eq.linkedDocumentId ? workInstructions.find(w => w.id === eq.linkedDocumentId) : null;
               return {
@@ -2424,8 +2449,10 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 range: eq.measurementRange ?? "See specification",
                 tolerance: eq.tolerance ?? "Per certificate",
                 traceability: inferTraceability(eq),
-                workInstruction: wi ? wi.title : undefined,
+                workInstruction: wi ? wi.title : "Customer Specific Requirements / In-House Procedure",
                 linkedDocumentId: eq.linkedDocumentId,
+                competencyRequired: inferCompetency(eq),
+                recordGenerated: inferRecord(eq),
               };
             });
 
@@ -2503,12 +2530,12 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   </CardContent>
                 </Card>
 
-                {/* Section A+B: Capabilities & Technical Procedures */}
+                {/* Section A+B: Inspection, Tests & Technical Procedures */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <FlaskConical className="w-4 h-4 text-accent" />
-                      <p className="text-sm font-bold">§ (a)+(b) — Measurement Capabilities &amp; Technical Procedures</p>
+                      <p className="text-sm font-bold">§ (a)+(b) — Inspection, Tests &amp; Technical Procedures</p>
                     </div>
                     <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
                       onClick={() => openEdit("capabilities")} data-testid="button-edit-capabilities">
@@ -2526,35 +2553,47 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="bg-muted/60 border-b border-border">
-                            {["#", "Measurement Parameter", "Equipment / Instrument", "Range", "Tolerance", "Technical Procedure / Standard", "NIST Traceability"].map(h => (
-                              <th key={h} className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-                            ))}
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground w-6">#</th>
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Inspection / Test / Calibration</th>
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Equipment Used</th>
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Work Instruction / Internal Procedure</th>
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Industry Standard / Method</th>
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Competency Required</th>
+                            <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">Record to be Generated</th>
                           </tr>
                         </thead>
                         <tbody>
                           {allCapabilities.map((cap, i) => {
-                            const wi = cap.linkedDocumentId ? workInstructions.find(w => w.id === cap.linkedDocumentId) : null;
+                            const linkedWi = cap.linkedDocumentId ? workInstructions.find(w => w.id === cap.linkedDocumentId) : null;
                             const isAdditional = cap.id.startsWith("cap-");
+                            const wiLabel = linkedWi ? linkedWi.title : (cap.workInstruction || "Customer Specific Requirements");
                             return (
-                              <tr key={cap.id} className={`border-b border-border/60 hover:bg-muted/20 transition-colors ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
-                                <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                                <td className="px-3 py-2 font-medium">
-                                  {cap.parameter}
-                                  {isAdditional && <Badge variant="outline" className="ml-1.5 text-[9px] text-purple-600 border-purple-300">Manual</Badge>}
-                                </td>
-                                <td className="px-3 py-2 text-muted-foreground max-w-[180px] truncate" title={cap.equipment}>{cap.equipment}</td>
-                                <td className="px-3 py-2 whitespace-nowrap">{cap.range}</td>
-                                <td className="px-3 py-2 whitespace-nowrap">{cap.tolerance}</td>
-                                <td className="px-3 py-2">
-                                  <p className="font-medium">{cap.method}</p>
-                                  {(wi || cap.workInstruction) && (
-                                    <p className="text-[10px] text-blue-600 flex items-center gap-0.5 mt-0.5">
-                                      <BookOpen className="w-2.5 h-2.5 shrink-0" />
-                                      {wi ? wi.title : cap.workInstruction}
-                                    </p>
+                              <tr key={cap.id} className={`border-b border-border/60 hover:bg-muted/20 transition-colors align-top ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
+                                <td className="px-3 py-2.5 text-muted-foreground">{i + 1}</td>
+                                <td className="px-3 py-2.5 font-medium">
+                                  <div>{cap.parameter}</div>
+                                  {isAdditional && <Badge variant="outline" className="mt-0.5 text-[9px] text-purple-600 border-purple-300">Manual</Badge>}
+                                  {cap.range !== "See specification" && cap.range && (
+                                    <div className="text-[10px] text-muted-foreground mt-0.5">Range: {cap.range}</div>
                                   )}
                                 </td>
-                                <td className="px-3 py-2 text-muted-foreground max-w-[200px]">{cap.traceability}</td>
+                                <td className="px-3 py-2.5 text-muted-foreground">
+                                  <div className="font-mono text-[10px] text-accent font-semibold">{cap.equipment.split("—")[0].trim()}</div>
+                                  <div className="text-[10px] mt-0.5">{cap.equipment.includes("—") ? cap.equipment.split("—").slice(1).join("—").trim() : ""}</div>
+                                </td>
+                                <td className="px-3 py-2.5">
+                                  {linkedWi ? (
+                                    <div className="flex items-start gap-1">
+                                      <BookOpen className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />
+                                      <span className="text-blue-700 font-medium">{wiLabel}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground italic text-[10px]">{wiLabel}</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2.5 font-medium text-foreground">{cap.method}</td>
+                                <td className="px-3 py-2.5 text-muted-foreground">{cap.competencyRequired || "Internal Training"}</td>
+                                <td className="px-3 py-2.5 text-muted-foreground">{cap.recordGenerated || "Calibration Log"}</td>
                               </tr>
                             );
                           })}
@@ -2563,9 +2602,60 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                     </div>
                   )}
                   <p className="text-[10px] text-muted-foreground mt-1 ml-1">
-                    Auto-populated from internal gages in Master Register. Add supplemental test capabilities (viscosity, boiling point, etc.) via Add Capability.
+                    Auto-populated from internal gages in Master Register. Add supplemental test capabilities via Add Capability.
                   </p>
                 </div>
+
+                {/* References Section */}
+                {(() => {
+                  const linkedWIs = allCapabilities
+                    .filter(c => c.linkedDocumentId != null)
+                    .map(c => workInstructions.find(w => w.id === c.linkedDocumentId))
+                    .filter(Boolean) as WorkInstruction[];
+                  const manualWIRefs = allCapabilities
+                    .filter(c => !c.linkedDocumentId && c.workInstruction && !c.workInstruction.includes("Customer Specific"))
+                    .map(c => ({ id: 0, title: c.workInstruction!, docType: "work_instruction", status: "active" }));
+                  const allRefs = [...linkedWIs, ...manualWIRefs];
+                  const wiRefs = Array.from(new Map(allRefs.map(w => [w.title, w])).values());
+                  const stdRefs = Array.from(new Set(allCapabilities.map(c => c.method).filter(m => m && m !== "In-House Calibration Procedure")));
+
+                  if (wiRefs.length === 0 && stdRefs.length === 0) return null;
+                  return (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <BookOpen className="w-4 h-4 text-accent" />
+                        <p className="text-sm font-bold">References</p>
+                      </div>
+                      <div className="overflow-x-auto rounded-lg border border-border">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-muted/60 border-b border-border">
+                              <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Reference Name</th>
+                              <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Type</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {wiRefs.map((wi, i) => (
+                              <tr key={`wi-${i}`} className={`border-b border-border/60 ${i % 2 !== 0 ? "bg-muted/10" : ""}`}>
+                                <td className="px-3 py-2 flex items-center gap-1.5">
+                                  <BookOpen className="w-3 h-3 text-blue-500 shrink-0" />
+                                  <span className="font-medium text-blue-700">{wi.title}</span>
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">Work Instruction</td>
+                              </tr>
+                            ))}
+                            {stdRefs.map((std, i) => (
+                              <tr key={`std-${i}`} className={`border-b border-border/60 ${(wiRefs.length + i) % 2 !== 0 ? "bg-muted/10" : ""}`}>
+                                <td className="px-3 py-2 font-medium">{std}</td>
+                                <td className="px-3 py-2 text-muted-foreground">Industry Standard</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Section C: Personnel Competency */}
                 <div>
@@ -3576,7 +3666,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
           {labScopeSection === "capabilities" && (() => {
             const caps = (labScopeDraft.additionalCapabilities as LabCapability[] | null) ?? [];
             const addCap = () => setLabScopeDraft(d => ({
-              ...d, additionalCapabilities: [...caps, { id: `cap-${Date.now()}`, parameter: "", method: "", equipment: "", range: "", tolerance: "", traceability: "", workInstruction: "" }],
+              ...d, additionalCapabilities: [...caps, { id: `cap-${Date.now()}`, parameter: "", method: "", equipment: "", range: "", tolerance: "", traceability: "", workInstruction: "", competencyRequired: "Internal Training", recordGenerated: "" }],
             }));
             const removeCap = (id: string) => setLabScopeDraft(d => ({ ...d, additionalCapabilities: caps.filter(c => c.id !== id) }));
             const updateCap = (id: string, field: keyof LabCapability, value: string) =>
@@ -3629,9 +3719,19 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                           onChange={e => updateCap(cap.id, "traceability", e.target.value)} />
                       </div>
                       <div className="col-span-2">
-                        <Label className="text-[10px]">Work Instruction Reference (if any)</Label>
-                        <Input className="mt-0.5 h-7 text-xs" value={cap.workInstruction ?? ""} placeholder="e.g. WI-002 Viscosity Testing Procedure (Cannon-Fenske)"
+                        <Label className="text-[10px]">Work Instruction / Internal Procedure</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.workInstruction ?? ""} placeholder="e.g. WI-LAB-002 Viscosity Testing Procedure"
                           onChange={e => updateCap(cap.id, "workInstruction", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Competency Required</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.competencyRequired ?? ""} placeholder="e.g. Internal Training"
+                          onChange={e => updateCap(cap.id, "competencyRequired", e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Record to be Generated</Label>
+                        <Input className="mt-0.5 h-7 text-xs" value={cap.recordGenerated ?? ""} placeholder="e.g. Viscosity Test Report"
+                          onChange={e => updateCap(cap.id, "recordGenerated", e.target.value)} />
                       </div>
                     </div>
                   </div>
