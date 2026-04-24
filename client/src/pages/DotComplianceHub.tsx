@@ -263,21 +263,21 @@ export default function DotComplianceHub() {
               }}
               data-testid="overlay-video-cta"
             >
-              <div className="mb-5 relative">
+              <div className="mb-6 relative">
                 <div className="absolute inset-0 rounded-full bg-accent/30 animate-ping" />
-                <div className="relative w-20 h-20 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-200">
-                  <Play className="w-8 h-8 text-white fill-white ml-1" />
+                <div className="relative w-28 h-28 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-200">
+                  <Play className="w-12 h-12 text-white fill-white ml-1" />
                 </div>
               </div>
-              <p className="text-white font-bold text-xl md:text-2xl text-center px-4 drop-shadow-lg">
+              <p className="text-white font-bold text-3xl md:text-4xl text-center px-4 drop-shadow-lg">
                 43 seconds that could save your fleet
               </p>
-              <p className="text-white/70 text-sm mt-2 text-center px-4">
+              <p className="text-white/70 text-base md:text-lg mt-3 text-center px-4">
                 See exactly how DOT Fleet HUB keeps you compliant — automatically
               </p>
-              <div className="mt-4 flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5">
-                <Play className="w-3 h-3 text-accent fill-accent" />
-                <span className="text-white/90 text-xs font-medium tracking-wide">WATCH NOW — 0:43</span>
+              <div className="mt-5 flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-5 py-2">
+                <Play className="w-4 h-4 text-accent fill-accent" />
+                <span className="text-white/90 text-sm font-medium tracking-wide">WATCH NOW — 0:43</span>
               </div>
             </div>
           )}
