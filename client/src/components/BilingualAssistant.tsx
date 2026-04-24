@@ -880,7 +880,13 @@ function BmaInteractiveChatMode() {
     };
 
     recognition.onerror = (event: any) => {
-      if (!["no-speech", "aborted"].includes(event.error)) {
+      if (event.error === "not-allowed") {
+        toast({
+          title: "Micrófono bloqueado / Microphone Blocked",
+          description: "Click 'Allow' when the browser asks for microphone access. If denied, open browser site settings and set Microphone to Allow.",
+          variant: "destructive",
+        });
+      } else if (!["no-speech", "aborted"].includes(event.error)) {
         console.warn("Patient mic error:", event.error);
       }
       if (recognitionRef.current === recognition) recognitionRef.current = null;
@@ -899,31 +905,20 @@ function BmaInteractiveChatMode() {
       patientShouldListenRef.current = false;
       setIsListening(false);
     }
-  }, []);
+  }, [toast]);
 
-  const togglePatientListening = useCallback(async () => {
+  const togglePatientListening = useCallback(() => {
     if (isListening) {
       patientShouldListenRef.current = false;
       safeStopRecognition(recognitionRef);
       setIsListening(false);
     } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (_) {
-        toast({
-          title: "Micrófono bloqueado / Microphone Blocked",
-          description: "Spanish speech recognition requires browser mic access. Click the 🔒 lock icon in your browser's address bar → Site settings → Allow Microphone, then refresh.",
-          variant: "destructive",
-        });
-        return;
-      }
       patientTranscriptRef.current = patientSpoken;
       patientShouldListenRef.current = true;
       setIsListening(true);
       startPatientRecognition();
     }
-  }, [isListening, patientSpoken, startPatientRecognition, toast]);
+  }, [isListening, patientSpoken, startPatientRecognition]);
 
   // ── Provider (English) mic ─────────────────────────────────────────────────
   const startProviderRecognition = useCallback(() => {
@@ -962,7 +957,13 @@ function BmaInteractiveChatMode() {
     };
 
     recognition.onerror = (event: any) => {
-      if (!["no-speech", "aborted"].includes(event.error)) {
+      if (event.error === "not-allowed") {
+        toast({
+          title: "Microphone Access Denied",
+          description: "Click 'Allow' when the browser asks for microphone access. Windows alternative: ⊞ Win + H. Mac: press Fn twice for Dictation.",
+          variant: "destructive",
+        });
+      } else if (!["no-speech", "aborted"].includes(event.error)) {
         console.warn("Provider mic error:", event.error);
       }
       if (providerRecognitionRef.current === recognition) providerRecognitionRef.current = null;
@@ -981,31 +982,20 @@ function BmaInteractiveChatMode() {
       providerShouldListenRef.current = false;
       setIsProviderListening(false);
     }
-  }, []);
+  }, [toast]);
 
-  const toggleProviderListening = useCallback(async () => {
+  const toggleProviderListening = useCallback(() => {
     if (isProviderListening) {
       providerShouldListenRef.current = false;
       safeStopRecognition(providerRecognitionRef);
       setIsProviderListening(false);
     } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (_) {
-        toast({
-          title: "Microphone Access Denied",
-          description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your text, then paste it here.",
-          variant: "destructive",
-        });
-        return;
-      }
       providerTranscriptRef.current = providerInput;
       providerShouldListenRef.current = true;
       setIsProviderListening(true);
       startProviderRecognition();
     }
-  }, [isProviderListening, providerInput, startProviderRecognition, toast]);
+  }, [isProviderListening, providerInput, startProviderRecognition]);
 
   useEffect(() => {
     return () => {
@@ -1457,22 +1447,10 @@ function InjuryReportingMode() {
     translateTimerRef.current = setTimeout(() => translateText(value), 800);
   }, [translateText]);
 
-  const toggleSpeechToText = useCallback(async () => {
+  const toggleSpeechToText = useCallback(() => {
     if (isListening) {
       safeStopRecognition(recognitionRef);
       setIsListening(false);
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop());
-    } catch (_) {
-      injuryToast({
-        title: "Micrófono bloqueado / Microphone Blocked",
-        description: "Spanish speech recognition requires browser mic access. Click the 🔒 lock icon in your browser's address bar → Site settings → Allow Microphone, then refresh.",
-        variant: "destructive",
-      });
       return;
     }
 
@@ -1504,8 +1482,13 @@ function InjuryReportingMode() {
     };
 
     recognition.onerror = (event: any) => {
-      const ignorable = ["no-speech", "aborted"];
-      if (!ignorable.includes(event.error)) {
+      if (event.error === "not-allowed") {
+        injuryToast({
+          title: "Micrófono bloqueado / Microphone Blocked",
+          description: "Click 'Allow' when the browser asks for microphone access. If it doesn't ask, open browser site settings and set Microphone to Allow.",
+          variant: "destructive",
+        });
+      } else if (!["no-speech", "aborted"].includes(event.error)) {
         console.warn("Injury report speech recognition error:", event.error);
       }
       setIsListening(false);
