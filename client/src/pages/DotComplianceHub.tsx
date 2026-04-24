@@ -130,7 +130,7 @@ const PRICING = [
     highlighted: false,
   },
   {
-    tier: "DOT + Corey AI Bundle",
+    tier: "The HUB + Corey AI",
     price: "$499",
     period: "/mo",
     description: "Full DOT Fleet HUB plus Corey — your AI compliance expert for OSHA, EPA, and DOT regulations. Ask anything. Get cited answers.",
@@ -149,7 +149,7 @@ const PRICING = [
     highlighted: true,
   },
   {
-    tier: "DOT + Employer Platform",
+    tier: `The HUB + Corey + The Command Center — "The Works"`,
     price: "$999",
     period: "/mo",
     description: "The full Command Center. DOT Fleet HUB plus the complete OSHA employer platform — incidents, CAPA, medical surveillance, OSHA 300 log, training LMS.",
