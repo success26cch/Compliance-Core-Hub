@@ -1251,54 +1251,55 @@ function BmaInteractiveChatMode() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="rounded-md bg-gray-800/60 border border-green-500/30 p-3 space-y-2">
+        <div className="space-y-3">
+          <div className="rounded-lg border-2 border-green-500 bg-gray-900 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-green-400 font-semibold">
-                Patient speaks / types in Spanish
+              <span className="text-xs font-bold text-green-400">
+                🎤 Patient — Type or speak in Spanish
               </span>
-              <div className="flex items-center gap-2">
-                {patientSpoken && (
-                  <button
-                    type="button"
-                    onClick={() => { setPatientSpoken(""); patientTranscriptRef.current = ""; }}
-                    className="text-[10px] text-red-400 hover:text-red-300 underline"
-                    data-testid="btn-bma-clear-patient"
-                  >
-                    Clear
-                  </button>
-                )}
+              {patientSpoken && (
                 <button
                   type="button"
-                  onClick={togglePatientListening}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md border text-xs font-semibold transition-colors ${
-                    isPatientListening
-                      ? "bg-red-500/20 border-red-500/60 text-red-400 animate-pulse"
-                      : "bg-green-500/20 border-green-500/60 text-green-400"
-                  }`}
-                  data-testid="btn-bma-patient-mic"
+                  onClick={() => { setPatientSpoken(""); patientTranscriptRef.current = ""; }}
+                  className="text-[10px] text-red-400 hover:text-red-300 underline"
+                  data-testid="btn-bma-clear-patient"
                 >
-                  {isPatientListening ? (
-                    <><MicOff className="w-3.5 h-3.5" /> Stop mic</>
-                  ) : (
-                    <><Mic className="w-3.5 h-3.5" /> Mic (Spanish)</>
-                  )}
+                  Clear
                 </button>
-              </div>
+              )}
             </div>
             <textarea
               value={patientSpoken}
               onChange={(e) => { setPatientSpoken(e.target.value); patientTranscriptRef.current = e.target.value; }}
-              rows={3}
-              placeholder={isPatientListening ? "Listening… speak in Spanish" : "Type in Spanish — or tap Mic (Spanish) to speak"}
-              className={`w-full text-sm text-white bg-transparent resize-none outline-none placeholder:text-gray-500 ${isPatientListening ? "ring-1 ring-green-500/40 rounded" : ""}`}
+              rows={4}
+              placeholder={isPatientListening ? "🎙 Listening… speak in Spanish now" : "Type Spanish here — or press the microphone button below"}
+              className={`w-full text-sm text-white bg-gray-800 border rounded-md px-3 py-2 resize-none outline-none placeholder:text-gray-400 ${
+                isPatientListening ? "border-green-400 ring-2 ring-green-400/40" : "border-gray-600 focus:border-green-500"
+              }`}
               data-testid="bma-patient-spoken"
+              autoFocus={false}
             />
+            <button
+              type="button"
+              onClick={togglePatientListening}
+              className={`w-full flex items-center justify-center gap-2 py-2 rounded-md border font-semibold text-sm transition-colors ${
+                isPatientListening
+                  ? "bg-red-500/30 border-red-400 text-red-300 animate-pulse"
+                  : "bg-green-600 border-green-500 text-white hover:bg-green-500"
+              }`}
+              data-testid="btn-bma-patient-mic"
+            >
+              {isPatientListening ? (
+                <><MicOff className="w-4 h-4" /> Stop Listening</>
+              ) : (
+                <><Mic className="w-4 h-4" /> Press to Speak in Spanish</>
+              )}
+            </button>
           </div>
           <Button
             size="sm"
             variant="default"
-            className="w-full bg-green-600 hover:bg-green-700"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2"
             onClick={() => sendMessage(patientSpoken, "patient")}
             disabled={isLoading || !patientSpoken.trim()}
             data-testid="btn-bma-send-patient"
