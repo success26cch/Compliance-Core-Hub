@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { CartTrigger } from "@/components/CartDrawer";
 import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 import logoUrl from "@assets/7_1772719327857.png";
+import dotNavLogoUrl from "@assets/6_1777062245566.png";
 import dotVideoSrc from "@assets/DOT_regualtions_can_be_confusing_1775780745689.mp4";
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
@@ -225,7 +226,7 @@ export default function DotComplianceHub() {
       <nav className="border-b border-border/50 bg-white/95 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/">
-            <img src={logoUrl} alt="CCHUB" className="h-10 object-contain cursor-pointer" />
+            <img src={dotNavLogoUrl} alt="CCHUB" className="h-10 object-contain cursor-pointer" />
           </Link>
           <div className="flex items-center gap-3">
             <CartTrigger />
@@ -269,22 +270,14 @@ export default function DotComplianceHub() {
             <motion.p variants={fadeUp} className="text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed">
               The Clearinghouse is a trap. One missed annual query, one expired medical card, one incomplete DQ file — and you're exposed. DOT Fleet HUB tracks every driver, every deadline, every document. Automatically.
             </motion.p>
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/get-started">
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white text-base px-8 h-12" data-testid="button-hero-get-started">
-                  Get Started — $349/mo
+            <motion.div variants={fadeUp}>
+              <a href="#get-started-section">
+                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white text-base px-8 h-12" data-testid="button-hero-learn-more">
+                  See How It Works
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button size="lg" className="bg-black hover:bg-black/90 text-white text-base px-8 h-12 border border-black/20" data-testid="button-hero-login">
-                  Access Your Dashboard
-                </Button>
-              </Link>
+              </a>
             </motion.div>
-            <motion.p variants={fadeUp} className="mt-6 text-white/50 text-sm">
-              One-time onboarding setup · Client self-service after go-live · No long-term contracts
-            </motion.p>
           </motion.div>
         </div>
 
@@ -503,7 +496,7 @@ export default function DotComplianceHub() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-primary text-white text-center">
+      <section id="get-started-section" className="py-20 bg-primary text-white text-center">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <ShieldCheck className="w-12 h-12 text-accent mx-auto mb-6" />
           <h2 className="text-3xl font-display font-bold mb-4">Your Fleet Is Either Compliant or It's Not.</h2>
@@ -515,13 +508,21 @@ export default function DotComplianceHub() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
+            <Link href="/dashboard">
+              <Button size="lg" className="bg-black hover:bg-black/90 text-white px-8 h-12 border border-black/20" data-testid="button-bottom-dashboard">
+                Access Your Dashboard
+              </Button>
+            </Link>
             <Link href="/contact">
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 h-12" data-testid="button-contact-dot">
                 Talk to a Specialist
               </Button>
             </Link>
           </div>
-          <p className="mt-6 text-white/40 text-xs">
+          <p className="mt-6 text-white/50 text-sm">
+            One-time onboarding setup · Client self-service after go-live · No long-term contracts
+          </p>
+          <p className="mt-2 text-white/40 text-xs">
             FMCSA 49 CFR Parts 40, 382, 383, 391 compliance · Setup fee covers initial data migration and training
           </p>
         </div>
