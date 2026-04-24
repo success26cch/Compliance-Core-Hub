@@ -491,7 +491,7 @@ export default function DotComplianceHub() {
       <section id="get-started-section" className="py-20 bg-primary text-white text-center">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <ShieldCheck className="w-12 h-12 text-accent mx-auto mb-6" />
-          <h2 className="text-3xl font-display font-bold text-white mb-4">Your Fleet Is Either Compliant or It's Not.</h2>
+          <h2 className="text-3xl font-display font-bold text-white mb-4">Your Fleet Is Either <span className="text-green-400">Compliant or It's Not.</span></h2>
           <p className="text-white/75 mb-8 text-lg">Let's get compliant — and stay that way — before an FMCSA auditor shows up.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/get-started">
@@ -506,7 +506,7 @@ export default function DotComplianceHub() {
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 h-12" data-testid="button-contact-dot">
+              <Button size="lg" className="bg-slate-600 hover:bg-slate-500 text-white border border-slate-500 px-8 h-12" data-testid="button-contact-dot">
                 Talk to a Specialist
               </Button>
             </Link>
