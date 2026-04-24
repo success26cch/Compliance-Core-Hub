@@ -195,7 +195,7 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
     } catch (_) {
       toast({
         title: "Microphone Access Denied",
-        description: "Please allow microphone access in your browser or device settings, then try again.",
+        description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your question, then paste it here.",
         variant: "destructive",
       });
       return;

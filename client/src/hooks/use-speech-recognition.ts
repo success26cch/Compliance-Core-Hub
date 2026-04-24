@@ -61,7 +61,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
         setIsListening(false);
         toast({
           title: "Microphone Access Denied",
-          description: "Please allow microphone access in your browser settings and try again.",
+          description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your question, then paste it here.",
           variant: "destructive",
         });
         return;
@@ -127,7 +127,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       setPermissionStatus("denied");
       toast({
         title: "Microphone Access Denied",
-        description: "Please allow microphone access in your browser or device settings, then try again.",
+        description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your question, then paste it here.",
         variant: "destructive",
       });
       return;
