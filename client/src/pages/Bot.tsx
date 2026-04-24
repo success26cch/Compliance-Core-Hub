@@ -172,7 +172,7 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
     };
   }, [toast]);
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (!recognitionRef.current) {
       toast({
         title: "Voice Input Not Supported",
@@ -185,10 +185,32 @@ function ChatInterface({ conversationId, onMessageSent }: { conversationId: numb
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
-    } else {
+      return;
+    }
+
+    // Explicitly request mic permission first — required for PWA and first-time use
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (_) {
+      toast({
+        title: "Microphone Access Denied",
+        description: "Please allow microphone access in your browser or device settings, then try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
       setInput("");
       recognitionRef.current.start();
       setIsListening(true);
+    } catch (_) {
+      toast({
+        title: "Could Not Start Microphone",
+        description: "Voice input failed to start. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export type MicPermission = "unknown" | "granted" | "denied" | "prompt";
 
@@ -9,10 +10,9 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
   const onTranscriptRef = useRef(onTranscript);
   const shouldBeListeningRef = useRef(false);
   const restartingRef = useRef(false);
-  // Accumulated finals from all completed sessions
   const crossSessionFinalsRef = useRef("");
-  // Finals seen in the current session
   const lastSessionFinalsRef = useRef("");
+  const { toast } = useToast();
 
   onTranscriptRef.current = onTranscript;
 
@@ -35,18 +35,12 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-
-    // continuous: false — each session ends cleanly after a pause, with NO
-    // audio buffer re-processing on the next start. This prevents duplication.
-    // We auto-restart in onend so the user never experiences a cutoff.
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = "en-US";
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
-      // Rebuild this session's transcript from scratch every event.
-      // event.results holds the full state for this session — no need to +=.
       let sessionFinals = "";
       let interim = "";
       for (let i = 0; i < event.results.length; i++) {
@@ -55,8 +49,6 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
         else interim += r[0].transcript;
       }
       lastSessionFinalsRef.current = sessionFinals;
-
-      // Full transcript = everything finalized in past sessions + this session
       const combined = (crossSessionFinalsRef.current + sessionFinals + interim).trim();
       if (combined) onTranscriptRef.current(combined);
     };
@@ -67,9 +59,13 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
         shouldBeListeningRef.current = false;
         restartingRef.current = false;
         setIsListening(false);
+        toast({
+          title: "Microphone Access Denied",
+          description: "Please allow microphone access in your browser settings and try again.",
+          variant: "destructive",
+        });
         return;
       }
-      // no-speech and aborted are non-fatal — onend will fire and restart
       if (event.error !== "aborted" && event.error !== "no-speech") {
         console.warn("[SpeechRecognition] error:", event.error);
       }
@@ -77,14 +73,10 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
 
     recognition.onend = () => {
       if (shouldBeListeningRef.current) {
-        // Session ended naturally (pause detected). Save what was finalized
-        // and immediately restart — continuous: false gives us a clean buffer
-        // so the new session won't re-process old audio (no duplication).
         crossSessionFinalsRef.current += lastSessionFinalsRef.current;
         lastSessionFinalsRef.current = "";
         scheduleRestart(recognition);
       } else {
-        // User tapped mic to stop
         crossSessionFinalsRef.current = "";
         lastSessionFinalsRef.current = "";
         restartingRef.current = false;
@@ -111,7 +103,7 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       restartingRef.current = false;
       try { recognition.abort(); } catch (_) {}
     };
-  }, [scheduleRestart]);
+  }, [scheduleRestart, toast]);
 
   const toggleListening = useCallback(async () => {
     if (!recognitionRef.current) return;
@@ -126,20 +118,19 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
       return;
     }
 
-    // Request mic permission explicitly on first tap — required for PWA installs
-    if (permissionStatus !== "granted") {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setPermissionStatus("denied");
-        return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-        setPermissionStatus("granted");
-      } catch (_) {
-        setPermissionStatus("denied");
-        return;
-      }
+    // Explicitly request mic permission — required for PWA installs and first-time use
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setPermissionStatus("granted");
+    } catch (_) {
+      setPermissionStatus("denied");
+      toast({
+        title: "Microphone Access Denied",
+        description: "Please allow microphone access in your browser or device settings, then try again.",
+        variant: "destructive",
+      });
+      return;
     }
 
     crossSessionFinalsRef.current = "";
@@ -150,11 +141,18 @@ export function useSpeechRecognition(onTranscript: (text: string) => void) {
     try {
       recognitionRef.current.start();
       setIsListening(true);
-    } catch (_) {
+    } catch (err: any) {
       shouldBeListeningRef.current = false;
       setIsListening(false);
+      if (err?.name !== "InvalidStateError") {
+        toast({
+          title: "Could Not Start Microphone",
+          description: "Voice input failed to start. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
-  }, [isListening, permissionStatus]);
+  }, [isListening, toast]);
 
   const stopListening = useCallback(() => {
     if (!recognitionRef.current || !isListening) return;
