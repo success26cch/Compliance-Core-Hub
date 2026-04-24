@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -769,6 +770,7 @@ function BmaInteractiveChatMode() {
   // Whether the user wants the mic to stay on (drives auto-restart on mobile)
   const patientShouldListenRef = useRef(false);
   const providerShouldListenRef = useRef(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const el = chatContainerRef.current;
@@ -899,18 +901,29 @@ function BmaInteractiveChatMode() {
     }
   }, []);
 
-  const togglePatientListening = useCallback(() => {
+  const togglePatientListening = useCallback(async () => {
     if (isListening) {
       patientShouldListenRef.current = false;
-      safeStopRecognition(recognitionRef); // nulls handlers first → onend won't restart
+      safeStopRecognition(recognitionRef);
       setIsListening(false);
     } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (_) {
+        toast({
+          title: "Microphone Access Denied",
+          description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your text, then paste it here.",
+          variant: "destructive",
+        });
+        return;
+      }
       patientTranscriptRef.current = patientSpoken;
       patientShouldListenRef.current = true;
       setIsListening(true);
       startPatientRecognition();
     }
-  }, [isListening, patientSpoken, startPatientRecognition]);
+  }, [isListening, patientSpoken, startPatientRecognition, toast]);
 
   // ── Provider (English) mic ─────────────────────────────────────────────────
   const startProviderRecognition = useCallback(() => {
@@ -970,18 +983,29 @@ function BmaInteractiveChatMode() {
     }
   }, []);
 
-  const toggleProviderListening = useCallback(() => {
+  const toggleProviderListening = useCallback(async () => {
     if (isProviderListening) {
       providerShouldListenRef.current = false;
       safeStopRecognition(providerRecognitionRef);
       setIsProviderListening(false);
     } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (_) {
+        toast({
+          title: "Microphone Access Denied",
+          description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your text, then paste it here.",
+          variant: "destructive",
+        });
+        return;
+      }
       providerTranscriptRef.current = providerInput;
       providerShouldListenRef.current = true;
       setIsProviderListening(true);
       startProviderRecognition();
     }
-  }, [isProviderListening, providerInput, startProviderRecognition]);
+  }, [isProviderListening, providerInput, startProviderRecognition, toast]);
 
   useEffect(() => {
     return () => {
@@ -1402,6 +1426,7 @@ function InjuryReportingMode() {
   const translateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const { toast: injuryToast } = useToast();
 
   const translateText = useCallback(async (text: string) => {
     if (!text.trim()) {
@@ -1432,10 +1457,22 @@ function InjuryReportingMode() {
     translateTimerRef.current = setTimeout(() => translateText(value), 800);
   }, [translateText]);
 
-  const toggleSpeechToText = useCallback(() => {
+  const toggleSpeechToText = useCallback(async () => {
     if (isListening) {
       safeStopRecognition(recognitionRef);
       setIsListening(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (_) {
+      injuryToast({
+        title: "Microphone Access Denied",
+        description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your text, then paste it here.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -1482,7 +1519,7 @@ function InjuryReportingMode() {
       console.warn("Could not start speech recognition:", err);
       recognitionRef.current = null;
     }
-  }, [isListening, data.description, handleDescriptionChange]);
+  }, [isListening, data.description, handleDescriptionChange, injuryToast]);
 
   useEffect(() => {
     return () => {
