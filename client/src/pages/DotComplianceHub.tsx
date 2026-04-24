@@ -4,9 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import {
   Truck, ShieldCheck, AlertTriangle, CheckCircle2, ArrowRight,
   Clock, FileText, Users, BarChart3, Download, Bell,
-  Car, ClipboardList, Calendar, Zap, Lock, ChevronDown
+  Car, ClipboardList, Calendar, Zap, Lock, ChevronDown, Play
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { CartTrigger } from "@/components/CartDrawer";
 import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
@@ -198,6 +198,8 @@ const FAQS = [
 
 export default function DotComplianceHub() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [videoStarted, setVideoStarted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [leadName, setLeadName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadSubmitted, setLeadSubmitted] = useState(false);
@@ -242,13 +244,43 @@ export default function DotComplianceHub() {
 
       {/* Intro Video */}
       <section className="bg-black">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto relative">
           <video
+            ref={videoRef}
             src={dotVideoSrc}
             controls
             className="w-full max-h-[500px] object-contain"
             data-testid="video-dot-compliance-intro"
+            onPlay={() => setVideoStarted(true)}
           />
+          {!videoStarted && (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group"
+              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.2) 100%)" }}
+              onClick={() => {
+                setVideoStarted(true);
+                videoRef.current?.play();
+              }}
+              data-testid="overlay-video-cta"
+            >
+              <div className="mb-5 relative">
+                <div className="absolute inset-0 rounded-full bg-accent/30 animate-ping" />
+                <div className="relative w-20 h-20 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-200">
+                  <Play className="w-8 h-8 text-white fill-white ml-1" />
+                </div>
+              </div>
+              <p className="text-white font-bold text-xl md:text-2xl text-center px-4 drop-shadow-lg">
+                43 seconds that could save your fleet
+              </p>
+              <p className="text-white/70 text-sm mt-2 text-center px-4">
+                See exactly how DOT Fleet HUB keeps you compliant — automatically
+              </p>
+              <div className="mt-4 flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5">
+                <Play className="w-3 h-3 text-accent fill-accent" />
+                <span className="text-white/90 text-xs font-medium tracking-wide">WATCH NOW — 0:43</span>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
