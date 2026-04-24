@@ -66,7 +66,8 @@ import { randomUUID } from "crypto";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { textToSpeech, openai } from "./replit_integrations/audio/client";
+import { textToSpeech, openai, ensureCompatibleFormat } from "./replit_integrations/audio/client";
+import { toFile } from "openai";
 
 const HARDCODED_ADMIN_EMAILS = [
   "raulv9471@gmail.com",
@@ -535,6 +536,28 @@ Rules:
     } catch (error) {
       console.error("BMA TTS error:", error);
       res.status(500).json({ error: "TTS failed" });
+    }
+  });
+
+  // BMA Speech-to-Text — records audio from browser, transcribes via OpenAI Whisper
+  app.post("/api/bma-stt", async (req, res) => {
+    try {
+      const { audio, lang } = req.body;
+      if (!audio || typeof audio !== "string") {
+        return res.status(400).json({ error: "audio (base64) required" });
+      }
+      const raw = Buffer.from(audio, "base64");
+      const { buffer, format } = await ensureCompatibleFormat(raw);
+      const file = await toFile(buffer, `audio.${format}`);
+      const result = await openai.audio.transcriptions.create({
+        file,
+        model: "gpt-4o-mini-transcribe",
+        language: typeof lang === "string" && lang ? lang : "es",
+      });
+      res.json({ transcript: result.text || "" });
+    } catch (error) {
+      console.error("BMA STT error:", error);
+      res.status(500).json({ error: "Transcription failed" });
     }
   });
 

@@ -752,23 +752,19 @@ function BmaInteractiveChatMode() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeSpeaker, setActiveSpeaker] = useState<"provider" | "patient">("provider");
   const [context, setContext] = useState("general");
-  const [isListening, setIsListening] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isProviderListening, setIsProviderListening] = useState(false);
   const [patientSpoken, setPatientSpoken] = useState("");
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const providerRecognitionRef = useRef<any>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Accumulated transcript refs — written directly, not via state, to avoid stale closures
+  // Transcript refs — written directly to avoid stale closures
   const patientTranscriptRef = useRef("");
   const providerTranscriptRef = useRef("");
-  // Track how many final results have been consumed in the CURRENT session.
-  // Chrome Android replays ALL results from index 0 on every onresult event —
-  // this ref prevents already-processed results from being appended again.
-  const patientLastFinalRef = useRef(0);
   const providerLastFinalRef = useRef(0);
-  // Whether the user wants the mic to stay on (drives auto-restart on mobile)
-  const patientShouldListenRef = useRef(false);
   const providerShouldListenRef = useRef(false);
   const { toast } = useToast();
 
@@ -794,9 +790,9 @@ function BmaInteractiveChatMode() {
 
     // Auto-stop whichever mic is active when a message is sent
     if (speaker === "patient") {
-      patientShouldListenRef.current = false;
-      safeStopRecognition(recognitionRef);
-      setIsListening(false);
+      mediaRecorderRef.current?.stop();
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
     } else {
       providerShouldListenRef.current = false;
       safeStopRecognition(providerRecognitionRef);
@@ -836,89 +832,65 @@ function BmaInteractiveChatMode() {
     }
   }, [messages, isLoading, context]);
 
-  // ── Patient (Spanish) mic ──────────────────────────────────────────────────
-  // continuous:false = one utterance per session → Chrome Android cannot
-  // accumulate/replay a growing result list.
-  // safeStopRecognition nulls all handlers before abort → onend can never
-  // fire an unwanted restart after the user taps Stop.
-  const startPatientRecognition = useCallback(() => {
-    if (recognitionRef.current) return; // already running — do not double-start
-    const recognition = createRecognition("es-MX", false);
-    if (!recognition) return;
-    recognitionRef.current = recognition;
+  // ── Patient (Spanish) mic — MediaRecorder + OpenAI Whisper ────────────────
+  const togglePatientRecording = useCallback(async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      mediaRecorderRef.current = null;
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
 
-    recognition.onresult = (event: any) => {
-      // With continuous:false each session has exactly one utterance.
-      // We only append on isFinal so interim previews never duplicate.
-      let interim = "";
-      for (let i = 0; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript.trim();
-        if (event.results[i].isFinal) {
-          if (t) patientTranscriptRef.current += (patientTranscriptRef.current ? " " : "") + t;
-          setPatientSpoken(patientTranscriptRef.current);
-        } else {
-          interim = t;
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setIsRecording(false);
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        if (blob.size < 500) return;
+        setIsTranscribing(true);
+        try {
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
+            reader.readAsDataURL(blob);
+          });
+          const res = await fetch("/api/bma-stt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audio: base64, lang: "es" }),
+          });
+          const data = await res.json();
+          if (data.transcript?.trim()) {
+            const updated = patientTranscriptRef.current
+              ? `${patientTranscriptRef.current} ${data.transcript.trim()}`
+              : data.transcript.trim();
+            patientTranscriptRef.current = updated;
+            setPatientSpoken(updated);
+          }
+        } catch {
+          toast({ title: "Transcripción fallida / Transcription failed", description: "Please try again.", variant: "destructive" });
+        } finally {
+          setIsTranscribing(false);
         }
-      }
-      if (interim) {
-        setPatientSpoken(
-          patientTranscriptRef.current + (patientTranscriptRef.current ? " " : "") + interim
-        );
-      }
-    };
+      };
 
-    recognition.onend = () => {
-      // Only restart if this is still the active session (not replaced by safeStop)
-      if (recognitionRef.current === recognition) recognitionRef.current = null;
-      if (patientShouldListenRef.current) {
-        setTimeout(() => {
-          if (patientShouldListenRef.current) startPatientRecognition();
-        }, 200);
-      } else {
-        setIsListening(false);
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      if (event.error === "not-allowed") {
-        toast({
-          title: "Micrófono bloqueado / Microphone Blocked",
-          description: "Click 'Allow' when the browser asks for microphone access. If denied, open browser site settings and set Microphone to Allow.",
-          variant: "destructive",
-        });
-      } else if (!["no-speech", "aborted"].includes(event.error)) {
-        console.warn("Patient mic error:", event.error);
-      }
-      if (recognitionRef.current === recognition) recognitionRef.current = null;
-      if (patientShouldListenRef.current && event.error !== "not-allowed") {
-        setTimeout(() => {
-          if (patientShouldListenRef.current) startPatientRecognition();
-        }, 300);
-      } else {
-        patientShouldListenRef.current = false;
-        setIsListening(false);
-      }
-    };
-
-    try { recognition.start(); } catch {
-      recognitionRef.current = null;
-      patientShouldListenRef.current = false;
-      setIsListening(false);
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      toast({
+        title: "Micrófono bloqueado / Microphone Blocked",
+        description: "Click 'Allow' when the browser asks for microphone access. If already blocked, open browser site settings and set Microphone to Allow, then refresh.",
+        variant: "destructive",
+      });
     }
-  }, [toast]);
-
-  const togglePatientListening = useCallback(() => {
-    if (isListening) {
-      patientShouldListenRef.current = false;
-      safeStopRecognition(recognitionRef);
-      setIsListening(false);
-    } else {
-      patientTranscriptRef.current = patientSpoken;
-      patientShouldListenRef.current = true;
-      setIsListening(true);
-      startPatientRecognition();
-    }
-  }, [isListening, patientSpoken, startPatientRecognition]);
+  }, [isRecording, toast]);
 
   // ── Provider (English) mic ─────────────────────────────────────────────────
   const startProviderRecognition = useCallback(() => {
@@ -999,9 +971,9 @@ function BmaInteractiveChatMode() {
 
   useEffect(() => {
     return () => {
-      patientShouldListenRef.current = false;
+      mediaRecorderRef.current?.stop();
+      mediaRecorderRef.current = null;
       providerShouldListenRef.current = false;
-      safeStopRecognition(recognitionRef);
       safeStopRecognition(providerRecognitionRef);
     };
   }, []);
@@ -1273,31 +1245,37 @@ function BmaInteractiveChatMode() {
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             <button
               type="button"
-              onClick={togglePatientListening}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md border transition-colors ${
-                isListening
+              onClick={togglePatientRecording}
+              disabled={isTranscribing}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md border transition-colors disabled:opacity-50 ${
+                isRecording
                   ? "bg-red-500/20 border-red-500/50 animate-pulse"
                   : "bg-green-500/20 border-green-500/50"
               }`}
               data-testid="btn-bma-patient-mic"
             >
-              {isListening ? (
+              {isRecording ? (
                 <>
                   <MicOff className="w-4 h-4 text-red-400" />
-                  <span className="text-sm font-bold text-red-400">Stop</span>
+                  <span className="text-sm font-bold text-red-400">Stop Recording</span>
+                </>
+              ) : isTranscribing ? (
+                <>
+                  <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+                  <span className="text-sm font-bold text-yellow-400">Transcribing…</span>
                 </>
               ) : (
                 <>
                   <Mic className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-bold text-green-400">Record Patient</span>
+                  <span className="text-sm font-bold text-green-400">Speech to Text</span>
                 </>
               )}
             </button>
             <span className="text-xs text-gray-500">
-              {isListening ? "Listening for Spanish..." : "Press to record patient speaking Spanish"}
+              {isRecording ? "Recording — tap Stop when done speaking" : isTranscribing ? "Processing Spanish audio…" : "Tap to record patient speaking Spanish"}
             </span>
           </div>
           {patientSpoken && (
