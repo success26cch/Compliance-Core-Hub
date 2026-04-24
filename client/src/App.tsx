@@ -75,6 +75,7 @@ import Security from "@/pages/Security";
 import DCRReviewPage from "@/pages/DCRReviewPage";
 import EnvComplianceHub from "@/pages/EnvComplianceHub";
 import EnvHub from "@/pages/EnvHub";
+import BmaPatientPhone from "@/pages/BmaPatientPhone";
 import NotFound from "@/pages/not-found";
 
 function PageTracker() {
@@ -201,6 +202,7 @@ function Router() {
       <Route path="/employee-passport" component={EmployeePassport} />
       <Route path="/clinic-assistant" component={ClinicAssistant} />
       <Route path="/bma" component={BMA} />
+      <Route path="/bma-patient/:sessionId" component={BmaPatientPhone} />
       <Route path="/bma-subscription" component={BMASubscription} />
       <Route path="/clinic-agreement" component={ClinicAgreement} />
       <Route path="/sms-consent" component={SMSConsent} />

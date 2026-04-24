@@ -561,6 +561,44 @@ Rules:
     }
   });
 
+  // ── BMA Phone Session — ephemeral relay so patient's phone mic → provider screen ──
+  const bmaPhoneSessions = new Map<string, { messages: string[]; createdAt: number }>();
+  setInterval(() => {
+    const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+    for (const [id, session] of bmaPhoneSessions) {
+      if (session.createdAt < cutoff) bmaPhoneSessions.delete(id);
+    }
+  }, 30 * 60 * 1000);
+
+  app.post("/api/bma-phone-session", (_req, res) => {
+    const { randomUUID } = require("crypto");
+    const id: string = randomUUID();
+    bmaPhoneSessions.set(id, { messages: [], createdAt: Date.now() });
+    res.json({ sessionId: id });
+  });
+
+  app.post("/api/bma-phone-session/:id/message", (req, res) => {
+    const session = bmaPhoneSessions.get(req.params.id);
+    if (!session) return res.status(404).json({ error: "Session not found" });
+    const { text } = req.body;
+    if (!text || typeof text !== "string") return res.status(400).json({ error: "text required" });
+    session.messages.push(text.trim());
+    res.json({ ok: true });
+  });
+
+  app.get("/api/bma-phone-session/:id/messages", (req, res) => {
+    const session = bmaPhoneSessions.get(req.params.id);
+    if (!session) return res.status(404).json({ error: "Session not found" });
+    const messages = [...session.messages];
+    session.messages = [];
+    res.json({ messages });
+  });
+
+  app.delete("/api/bma-phone-session/:id", (req, res) => {
+    bmaPhoneSessions.delete(req.params.id);
+    res.json({ ok: true });
+  });
+
   // Leads
   app.post(api.leads.create.path, async (req, res) => {
     try {

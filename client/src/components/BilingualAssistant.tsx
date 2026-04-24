@@ -755,6 +755,11 @@ function BmaInteractiveChatMode() {
   const [isPatientListening, setIsPatientListening] = useState(false);
   const [isProviderListening, setIsProviderListening] = useState(false);
   const [patientSpoken, setPatientSpoken] = useState("");
+  const [phoneSessionId, setPhoneSessionId] = useState<string | null>(null);
+  const [phoneSessionUrl, setPhoneSessionUrl] = useState<string | null>(null);
+  const [isPhoneMode, setIsPhoneMode] = useState(false);
+  const [phoneNewMessage, setPhoneNewMessage] = useState(false);
+  const phonePollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const patientRecognitionRef = useRef<any>(null);
   const providerRecognitionRef = useRef<any>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -765,6 +770,54 @@ function BmaInteractiveChatMode() {
   const providerLastFinalRef = useRef(0);
   const providerShouldListenRef = useRef(false);
   const { toast } = useToast();
+
+  // ── Phone session polling ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!phoneSessionId) return;
+    phonePollingRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/bma-phone-session/${phoneSessionId}/messages`);
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.messages && data.messages.length > 0) {
+          const combined = data.messages.join(" ");
+          setPatientSpoken(combined);
+          patientTranscriptRef.current = combined;
+          setPhoneNewMessage(true);
+          toast({ title: "📱 Patient spoke!", description: "New Spanish message received from patient's phone.", duration: 3000 });
+          setTimeout(() => setPhoneNewMessage(false), 3000);
+        }
+      } catch { /* ignore polling errors */ }
+    }, 2000);
+    return () => {
+      if (phonePollingRef.current) clearInterval(phonePollingRef.current);
+    };
+  }, [phoneSessionId, toast]);
+
+  const startPhoneSession = useCallback(async () => {
+    try {
+      const r = await fetch("/api/bma-phone-session", { method: "POST" });
+      const data = await r.json();
+      const id: string = data.sessionId;
+      const url = `${window.location.origin}/bma-patient/${id}`;
+      setPhoneSessionId(id);
+      setPhoneSessionUrl(url);
+      setIsPhoneMode(true);
+    } catch {
+      toast({ title: "Error", description: "Could not start phone session.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const stopPhoneSession = useCallback(() => {
+    if (phonePollingRef.current) clearInterval(phonePollingRef.current);
+    if (phoneSessionId) {
+      fetch(`/api/bma-phone-session/${phoneSessionId}`, { method: "DELETE" }).catch(() => {});
+    }
+    setPhoneSessionId(null);
+    setPhoneSessionUrl(null);
+    setIsPhoneMode(false);
+    setPhoneNewMessage(false);
+  }, [phoneSessionId]);
 
   useEffect(() => {
     const el = chatContainerRef.current;
@@ -1252,50 +1305,115 @@ function BmaInteractiveChatMode() {
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="rounded-lg border-2 border-green-500 bg-gray-900 p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-green-400">
-                🎤 Patient — Type or speak in Spanish
-              </span>
-              {patientSpoken && (
-                <button
-                  type="button"
-                  onClick={() => { setPatientSpoken(""); patientTranscriptRef.current = ""; }}
-                  className="text-[10px] text-red-400 hover:text-red-300 underline"
-                  data-testid="btn-bma-clear-patient"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <textarea
-              value={patientSpoken}
-              onChange={(e) => { setPatientSpoken(e.target.value); patientTranscriptRef.current = e.target.value; }}
-              rows={4}
-              placeholder={isPatientListening ? "🎙 Listening… speak in Spanish now" : "Type Spanish here — or press the microphone button below"}
-              className={`w-full text-sm text-white bg-gray-800 border rounded-md px-3 py-2 resize-none outline-none placeholder:text-gray-400 ${
-                isPatientListening ? "border-green-400 ring-2 ring-green-400/40" : "border-gray-600 focus:border-green-500"
-              }`}
-              data-testid="bma-patient-spoken"
-              autoFocus={false}
-            />
+          {/* ── Mode toggle ── */}
+          <div className="flex gap-2">
             <button
               type="button"
-              onClick={togglePatientListening}
-              className={`w-full flex items-center justify-center gap-2 py-2 rounded-md border font-semibold text-sm transition-colors ${
-                isPatientListening
-                  ? "bg-red-500/30 border-red-400 text-red-300 animate-pulse"
-                  : "bg-green-600 border-green-500 text-white hover:bg-green-500"
+              onClick={() => { if (isPhoneMode) stopPhoneSession(); else startPhoneSession(); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
+                isPhoneMode
+                  ? "bg-blue-600/30 border-blue-400 text-blue-200"
+                  : "bg-blue-600 border-blue-500 text-white hover:bg-blue-500"
               }`}
-              data-testid="btn-bma-patient-mic"
+              data-testid="btn-bma-phone-mode"
             >
-              {isPatientListening ? (
-                <><MicOff className="w-4 h-4" /> Stop Listening</>
-              ) : (
-                <><Mic className="w-4 h-4" /> Press to Speak in Spanish</>
-              )}
+              📱 {isPhoneMode ? "Phone Session Active" : "Use Patient's Phone (No Permission Needed)"}
             </button>
           </div>
+
+          {/* ── Phone mode: QR code + waiting indicator ── */}
+          {isPhoneMode && phoneSessionUrl ? (
+            <div className="rounded-lg border-2 border-blue-500 bg-gray-900 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-300">📱 Patient Phone Session</span>
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-[10px] text-green-300">Live</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-300 text-center leading-relaxed">
+                Show the patient this QR code. They scan it with their phone and speak in Spanish — no computer mic needed.
+              </p>
+              <div className="flex justify-center">
+                <div className="bg-white p-2 rounded-lg">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(phoneSessionUrl)}&size=160x160&margin=2`}
+                    alt="Patient phone QR code"
+                    width={160}
+                    height={160}
+                    className="rounded"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-500 text-center break-all">{phoneSessionUrl}</p>
+              {phoneNewMessage && (
+                <div className="bg-green-500/20 border border-green-500/50 rounded-md p-2 text-center animate-pulse">
+                  <span className="text-green-300 text-xs font-bold">📩 New message received!</span>
+                </div>
+              )}
+              {patientSpoken && (
+                <div className="bg-gray-800 border border-gray-600 rounded-md p-2 space-y-1">
+                  <span className="text-[10px] text-green-400 font-semibold">Patient said (Spanish):</span>
+                  <p className="text-white text-sm">{patientSpoken}</p>
+                  <button
+                    type="button"
+                    onClick={() => { setPatientSpoken(""); patientTranscriptRef.current = ""; }}
+                    className="text-[10px] text-red-400 hover:text-red-300 underline"
+                  >Clear</button>
+                </div>
+              )}
+              {!patientSpoken && (
+                <p className="text-[11px] text-gray-500 text-center">⏳ Waiting for patient to speak…</p>
+              )}
+            </div>
+          ) : !isPhoneMode ? (
+            /* ── Fallback: Mic + type mode ── */
+            <div className="rounded-lg border-2 border-green-500 bg-gray-900 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-green-400">
+                  🎤 Patient — Type or speak in Spanish
+                </span>
+                {patientSpoken && (
+                  <button
+                    type="button"
+                    onClick={() => { setPatientSpoken(""); patientTranscriptRef.current = ""; }}
+                    className="text-[10px] text-red-400 hover:text-red-300 underline"
+                    data-testid="btn-bma-clear-patient"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={patientSpoken}
+                onChange={(e) => { setPatientSpoken(e.target.value); patientTranscriptRef.current = e.target.value; }}
+                rows={4}
+                placeholder={isPatientListening ? "🎙 Listening… speak in Spanish now" : "Type Spanish here — or press the microphone button below"}
+                className={`w-full text-sm text-white bg-gray-800 border rounded-md px-3 py-2 resize-none outline-none placeholder:text-gray-400 ${
+                  isPatientListening ? "border-green-400 ring-2 ring-green-400/40" : "border-gray-600 focus:border-green-500"
+                }`}
+                data-testid="bma-patient-spoken"
+                autoFocus={false}
+              />
+              <button
+                type="button"
+                onClick={togglePatientListening}
+                className={`w-full flex items-center justify-center gap-2 py-2 rounded-md border font-semibold text-sm transition-colors ${
+                  isPatientListening
+                    ? "bg-red-500/30 border-red-400 text-red-300 animate-pulse"
+                    : "bg-green-600 border-green-500 text-white hover:bg-green-500"
+                }`}
+                data-testid="btn-bma-patient-mic"
+              >
+                {isPatientListening ? (
+                  <><MicOff className="w-4 h-4" /> Stop Listening</>
+                ) : (
+                  <><Mic className="w-4 h-4" /> Speak in Spanish (Computer Mic)</>
+                )}
+              </button>
+            </div>
+          ) : null}
+
           <Button
             size="sm"
             variant="default"
