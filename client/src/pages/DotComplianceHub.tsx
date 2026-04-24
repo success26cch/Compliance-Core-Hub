@@ -415,7 +415,6 @@ export default function DotComplianceHub() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <p className="text-green-500 font-bold text-lg mb-2">Your Fleet Is Either Compliant or It's Not.</p>
             <Badge className="bg-accent/10 text-accent border-accent/20 mb-4">Pricing</Badge>
             <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">Simple, Transparent Pricing</h2>
             <p className="text-muted-foreground mt-3 text-lg">One missed Clearinghouse query can cost $16,000. Our platform starts at $349/mo.</p>
@@ -492,6 +491,7 @@ export default function DotComplianceHub() {
       <section id="get-started-section" className="py-20 bg-primary text-white text-center">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <ShieldCheck className="w-12 h-12 text-accent mx-auto mb-6" />
+          <h2 className="text-3xl font-display font-bold text-white mb-4">Your Fleet Is Either Compliant or It's Not.</h2>
           <p className="text-white/75 mb-8 text-lg">Let's get compliant — and stay that way — before an FMCSA auditor shows up.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/get-started">
