@@ -750,14 +750,14 @@ function BmaInteractiveChatMode() {
   const [messages, setMessages] = useState<BmaChatMessage[]>([]);
   const [providerInput, setProviderInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeSpeaker, setActiveSpeaker] = useState<"provider" | "patient">("provider");
+  const [activeSpeaker, setActiveSpeaker] = useState<"provider" | "patient">("patient");
   const [context, setContext] = useState("general");
   const [isPatientListening, setIsPatientListening] = useState(false);
   const [isProviderListening, setIsProviderListening] = useState(false);
   const [patientSpoken, setPatientSpoken] = useState("");
   const [phoneSessionId, setPhoneSessionId] = useState<string | null>(null);
   const [phoneSessionUrl, setPhoneSessionUrl] = useState<string | null>(null);
-  const [isPhoneMode, setIsPhoneMode] = useState(false);
+  const [isPhoneMode, setIsPhoneMode] = useState(true);
   const [phoneNewMessage, setPhoneNewMessage] = useState(false);
   const phonePollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const patientRecognitionRef = useRef<any>(null);
@@ -818,6 +818,24 @@ function BmaInteractiveChatMode() {
     setIsPhoneMode(false);
     setPhoneNewMessage(false);
   }, [phoneSessionId]);
+
+  // Auto-start phone session on mount so QR code is ready immediately
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/bma-phone-session", { method: "POST" })
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const id: string = data.sessionId;
+        const url = `${window.location.origin}/bma-patient/${id}`;
+        setPhoneSessionId(id);
+        setPhoneSessionUrl(url);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const el = chatContainerRef.current;
@@ -2902,7 +2920,14 @@ export default function BilingualAssistant({ prefilledName, prefilledCompany }: 
             {mode === "intake" && <NewHireIntakeMode />}
             {mode === "drugscreen" && <DrugScreenMode />}
 
-            <div className="mt-6 pt-4 border-t border-gray-700">
+            <div className="mt-6 pt-4 border-t-2 border-blue-500/50">
+              <div className="flex items-center gap-2 mb-3 bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2">
+                <span className="text-lg">📱</span>
+                <div>
+                  <p className="text-blue-300 font-bold text-sm">AI Interpreter + Patient Phone Mode</p>
+                  <p className="text-[11px] text-blue-400/70">No computer microphone needed — patient speaks on their own phone</p>
+                </div>
+              </div>
               <BmaInteractiveChatMode />
             </div>
 

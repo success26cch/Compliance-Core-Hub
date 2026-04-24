@@ -571,7 +571,6 @@ Rules:
   }, 30 * 60 * 1000);
 
   app.post("/api/bma-phone-session", (_req, res) => {
-    const { randomUUID } = require("crypto");
     const id: string = randomUUID();
     bmaPhoneSessions.set(id, { messages: [], createdAt: Date.now() });
     res.json({ sessionId: id });
