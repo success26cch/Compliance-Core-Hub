@@ -912,8 +912,8 @@ function BmaInteractiveChatMode() {
         stream.getTracks().forEach((t) => t.stop());
       } catch (_) {
         toast({
-          title: "Microphone Access Denied",
-          description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your text, then paste it here.",
+          title: "Micrófono bloqueado / Microphone Blocked",
+          description: "Spanish speech recognition requires browser mic access. Click the 🔒 lock icon in your browser's address bar → Site settings → Allow Microphone, then refresh.",
           variant: "destructive",
         });
         return;
@@ -1469,8 +1469,8 @@ function InjuryReportingMode() {
       stream.getTracks().forEach((t) => t.stop());
     } catch (_) {
       injuryToast({
-        title: "Microphone Access Denied",
-        description: "Windows: press ⊞ Win + H to use voice typing. Mac: press Fn twice for Dictation. Speak your text, then paste it here.",
+        title: "Micrófono bloqueado / Microphone Blocked",
+        description: "Spanish speech recognition requires browser mic access. Click the 🔒 lock icon in your browser's address bar → Site settings → Allow Microphone, then refresh.",
         variant: "destructive",
       });
       return;
