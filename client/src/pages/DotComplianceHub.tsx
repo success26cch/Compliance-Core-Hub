@@ -13,6 +13,7 @@ import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 import logoUrl from "@assets/7_1772719327857.png";
 import dotNavLogoUrl from "@assets/6_1777062245566.png";
 import dotVideoSrc from "@assets/DOT_regualtions_can_be_confusing_1775780745689.mp4";
+import dotDashboardImg from "@assets/DOT_VID_4_1777065344680.png";
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
@@ -384,6 +385,14 @@ export default function DotComplianceHub() {
               </motion.div>
             ))}
           </div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mt-12">
+            <img
+              src={dotDashboardImg}
+              alt="DOT Fleet HUB dashboard showing driver compliance status"
+              className="w-full rounded-2xl border border-border/60 shadow-xl"
+              data-testid="img-dot-dashboard-preview"
+            />
+          </motion.div>
         </div>
       </section>
 
