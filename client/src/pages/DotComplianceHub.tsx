@@ -270,14 +270,6 @@ export default function DotComplianceHub() {
             <motion.p variants={fadeUp} className="text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed">
               The Clearinghouse is a trap. One missed annual query, one expired medical card, one incomplete DQ file — and you're exposed. DOT Fleet HUB tracks every driver, every deadline, every document. Automatically.
             </motion.p>
-            <motion.div variants={fadeUp}>
-              <a href="#get-started-section">
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white text-base px-8 h-12" data-testid="button-hero-learn-more">
-                  See How It Works
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </a>
-            </motion.div>
           </motion.div>
         </div>
 
@@ -423,6 +415,7 @@ export default function DotComplianceHub() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
+            <p className="text-green-500 font-bold text-lg mb-2">Your Fleet Is Either Compliant or It's Not.</p>
             <Badge className="bg-accent/10 text-accent border-accent/20 mb-4">Pricing</Badge>
             <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">Simple, Transparent Pricing</h2>
             <p className="text-muted-foreground mt-3 text-lg">One missed Clearinghouse query can cost $16,000. Our platform starts at $349/mo.</p>
@@ -499,8 +492,7 @@ export default function DotComplianceHub() {
       <section id="get-started-section" className="py-20 bg-primary text-white text-center">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <ShieldCheck className="w-12 h-12 text-accent mx-auto mb-6" />
-          <h2 className="text-3xl font-display font-bold mb-4">Your Fleet Is Either Compliant or It's Not.</h2>
-          <p className="text-white/75 mb-8 text-lg">Let's find out — and fix it — before an FMCSA auditor does.</p>
+          <p className="text-white/75 mb-8 text-lg">Let's get compliant — and stay that way — before an FMCSA auditor shows up.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/get-started">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 h-12" data-testid="button-bottom-cta">
@@ -528,45 +520,6 @@ export default function DotComplianceHub() {
         </div>
       </section>
 
-      {/* ── LEAD CAPTURE ──────────────────────────────────────────────────── */}
-      <section className="py-14 px-6 border-t border-border/50 bg-muted/30">
-        <div className="max-w-xl mx-auto text-center space-y-5">
-          <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
-            <Truck className="w-6 h-6 text-accent" />
-          </div>
-          <h3 className="text-2xl font-black text-primary">Get fleet compliance updates</h3>
-          <p className="text-muted-foreground text-sm">Sign up to receive FMCSA/DOT compliance tips and be first to know when DOT Fleet HUB opens for your fleet size.</p>
-          {leadSubmitted ? (
-            <div className="flex items-center justify-center gap-2 py-4 text-emerald-600 font-semibold">
-              <CheckCircle2 className="w-5 h-5" /> You're on the list — we'll be in touch!
-            </div>
-          ) : (
-            <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Your name"
-                value={leadName}
-                onChange={e => setLeadName(e.target.value)}
-                required
-                data-testid="input-dot-lead-name"
-                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
-              />
-              <input
-                type="email"
-                placeholder="Work email"
-                value={leadEmail}
-                onChange={e => setLeadEmail(e.target.value)}
-                required
-                data-testid="input-dot-lead-email"
-                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
-              />
-              <Button type="submit" disabled={leadSubmitting} className="bg-accent hover:bg-accent/90 text-white font-bold px-6 shrink-0" data-testid="button-dot-lead-submit">
-                {leadSubmitting ? "..." : "Keep Me Posted"}
-              </Button>
-            </form>
-          )}
-        </div>
-      </section>
 
       <footer className="border-t border-border/50 bg-white py-8 text-center text-muted-foreground text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
