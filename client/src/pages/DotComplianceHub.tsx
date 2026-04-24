@@ -109,7 +109,7 @@ const FEATURES = [
 
 const PRICING = [
   {
-    tier: "DOT Fleet HUB",
+    tier: "The Fleet HUB",
     price: "$349",
     period: "/mo",
     description: "Everything you need to run a compliant fleet — Clearinghouse, DQ files, medical cards, MVR, and equipment.",
