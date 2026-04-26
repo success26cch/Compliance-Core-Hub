@@ -515,26 +515,39 @@ export default function Landing() {
   }, [speakingIdx]);
 
   const handleBotDownloadPdf = useCallback(() => {
-    const lastMsg = [...botMessages].reverse().find(m => m.role === "assistant");
-    if (!lastMsg) return;
+    let lastAssistantIndex = -1;
+    for (let i = botMessages.length - 1; i >= 0; i--) {
+      if (botMessages[i].role === "assistant") { lastAssistantIndex = i; break; }
+    }
+    if (lastAssistantIndex === -1) return;
+    const lastMsg = botMessages[lastAssistantIndex];
+    const lastUserMsg = lastAssistantIndex > 0
+      ? [...botMessages].slice(0, lastAssistantIndex).reverse().find(m => m.role === "user")
+      : null;
+    const questionText = lastUserMsg ? lastUserMsg.content : null;
     const cleanText = stripMarkdown(lastMsg.content);
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pw = doc.internal.pageSize.getWidth();
     const margin = 20;
     const uw = pw - margin * 2;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const lh = 18; const lw = (img.width / img.height) * lh;
-      doc.addImage(img, 'PNG', (pw - lw) / 2, 10, lw, lh);
-      doc.setFontSize(9); doc.setTextColor(120, 120, 120);
-      doc.text('Core Compliance Hub', pw / 2, 32, { align: 'center' });
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pw / 2, 37, { align: 'center' });
-      doc.setDrawColor(200, 160, 50); doc.setLineWidth(0.5);
-      doc.line(margin, 40, pw - margin, 40);
-      doc.setFontSize(11); doc.setTextColor(30, 30, 30);
+
+    const renderBody = (startY: number) => {
+      const ph = doc.internal.pageSize.getHeight();
+      let y = startY;
+      if (questionText) {
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 100, 25);
+        doc.text('QUESTION ASKED:', margin, y); y += 6;
+        doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
+        const qLines = doc.splitTextToSize(questionText, uw);
+        for (const line of qLines) { if (y > ph - 25) { doc.addPage(); y = 20; } doc.text(line, margin, y); y += 6; }
+        y += 4;
+        doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.3);
+        doc.line(margin, y, pw - margin, y); y += 6;
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 100, 25);
+        doc.text("COREY'S RESPONSE:", margin, y); y += 7;
+      }
+      doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
       const lines = doc.splitTextToSize(cleanText, uw);
-      let y = 48; const ph = doc.internal.pageSize.getHeight();
       for (const line of lines) {
         if (y > ph - 25) { doc.addPage(); y = 20; }
         const t = line.trim();
@@ -552,14 +565,27 @@ export default function Landing() {
       }
       doc.save(`corey-document-${new Date().toISOString().slice(0, 10)}.pdf`);
     };
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const lh = 18; const lw = (img.width / img.height) * lh;
+      doc.addImage(img, 'PNG', (pw - lw) / 2, 10, lw, lh);
+      doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+      doc.text('Core Compliance Hub', pw / 2, 32, { align: 'center' });
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pw / 2, 37, { align: 'center' });
+      doc.setDrawColor(200, 160, 50); doc.setLineWidth(0.5);
+      doc.line(margin, 40, pw - margin, 40);
+      renderBody(48);
+    };
     img.onerror = () => {
       doc.setFontSize(16); doc.setFont('helvetica', 'bold');
       doc.text('COREY — AI Compliance Expert', pw / 2, 20, { align: 'center' });
-      doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30);
-      const lines = doc.splitTextToSize(cleanText, uw);
-      let y = 35; const ph = doc.internal.pageSize.getHeight();
-      for (const line of lines) { if (y > ph - 25) { doc.addPage(); y = 20; } doc.text(line, margin, y); y += 6; }
-      doc.save(`corey-document-${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pw / 2, 28, { align: 'center' });
+      doc.setDrawColor(200, 160, 50); doc.setLineWidth(0.5);
+      doc.line(margin, 32, pw - margin, 32);
+      renderBody(40);
     };
     img.src = logoUrl;
   }, [botMessages]);
