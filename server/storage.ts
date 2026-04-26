@@ -65,6 +65,7 @@ export interface IStorage {
   getAllTrialLeads(): Promise<TrialLead[]>;
   createTrialLead(lead: InsertTrialLead): Promise<TrialLead>;
   incrementTrialQuestionCount(email: string): Promise<TrialLead | undefined>;
+  saveTrialLeadQuestion(email: string, question: string): Promise<void>;
 
   // Site Visits
   recordPageVisit(page: string): Promise<void>;
@@ -500,6 +501,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trialLeads.id, existing.id))
       .returning();
     return updated;
+  }
+
+  async saveTrialLeadQuestion(email: string, question: string): Promise<void> {
+    const existing = await this.getTrialLeadByEmail(email.toLowerCase());
+    if (!existing) return;
+    const current = existing.questions ?? [];
+    const updated = [...current, question.trim()].slice(-10);
+    await db
+      .update(trialLeads)
+      .set({ questions: updated })
+      .where(eq(trialLeads.id, existing.id));
   }
 
   async recordPageVisit(page: string): Promise<void> {

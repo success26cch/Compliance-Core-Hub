@@ -207,6 +207,7 @@ export function registerChatRoutes(app: Express): void {
         trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() });
       }
       await storage.incrementTrialQuestionCount(email);
+      await storage.saveTrialLeadQuestion(email, content.trim());
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -270,6 +271,7 @@ export function registerChatRoutes(app: Express): void {
 
       const updatedLead = await storage.incrementTrialQuestionCount(email);
       const newCount = updatedLead?.questionCount ?? (trialLead.questionCount + 1);
+      await storage.saveTrialLeadQuestion(email, content.trim());
 
       const conversationMessages = (history && Array.isArray(history) ? history : []).concat([{ role: "user", content: content.trim() }]).map((m: any) => ({
         role: m.role as "user" | "assistant",
@@ -344,6 +346,7 @@ export function registerChatRoutes(app: Express): void {
 
       const updatedLead = await storage.incrementTrialQuestionCount(email);
       const newCount = updatedLead?.questionCount ?? (trialLead.questionCount + 1);
+      await storage.saveTrialLeadQuestion(email, content.trim());
 
       const conversationMessages = (history && Array.isArray(history) ? history : []).concat([{ role: "user", content: content.trim() }]).map((m: any) => ({
         role: m.role as "user" | "assistant",
