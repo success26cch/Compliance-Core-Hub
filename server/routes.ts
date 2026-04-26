@@ -6329,6 +6329,57 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     }
   });
 
+  // ─── Audit Process Schedule (IATF 9.2.2.2) ───────────────────────────────────
+  app.get("/api/audit-schedule", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const entries = await storage.getAuditProcessSchedule(userId, isSuperadmin);
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/audit-schedule", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const entry = await storage.upsertAuditProcessSchedule(req.body, userId);
+      res.status(201).json(entry);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/audit-schedule/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const entry = await storage.upsertAuditProcessSchedule({ ...req.body, id }, userId);
+      res.json(entry);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/audit-schedule/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      await storage.deleteAuditProcessSchedule(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // ─── ISO Awareness Notices ────────────────────────────────────────────────────
   app.get("/api/iso-awareness-notices", async (req: Request, res: Response) => {
     try {

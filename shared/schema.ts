@@ -1389,6 +1389,33 @@ export const insertIsoAuditSchema = createInsertSchema(isoAudits, {
 export type IsoAudit = typeof isoAudits.$inferSelect;
 export type InsertIsoAudit = z.infer<typeof insertIsoAuditSchema>;
 
+// ─── ISO Manager: Audit Process Schedule (IATF 9.2.2.2) ──────────────────────
+export const auditProcessSchedule = pgTable("audit_process_schedule", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  processName: text("process_name").notNull(),
+  processType: text("process_type").notNull().default("COP"), // MOP | COP | SOP
+  // IATF 9.2.2.2 Risk Criteria — each scored 1 (Low) | 2 (Medium) | 3 (High)
+  riskComplexity: integer("risk_complexity").notNull().default(1),
+  riskCustomerImpact: integer("risk_customer_impact").notNull().default(1),
+  riskPreviousAudit: integer("risk_previous_audit").notNull().default(1),
+  riskPerformance: integer("risk_performance").notNull().default(1),
+  riskChangeFreq: integer("risk_change_freq").notNull().default(1),
+  riskComplaints: integer("risk_complaints").notNull().default(1),
+  riskCompliance: integer("risk_compliance").notNull().default(1),
+  recommendedFrequency: text("recommended_frequency"), // 'annual' | 'semi_annual' | 'quarterly'
+  lastAuditDate: timestamp("last_audit_date"),
+  nextAuditDate: timestamp("next_audit_date"),
+  auditorAssigned: text("auditor_assigned"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertAuditProcessScheduleSchema = createInsertSchema(auditProcessSchedule).omit({ id: true, createdAt: true, updatedAt: true });
+export type AuditProcessSchedule = typeof auditProcessSchedule.$inferSelect;
+export type InsertAuditProcessSchedule = z.infer<typeof insertAuditProcessScheduleSchema>;
+
 // ─── ISO Manager: Audit Findings ──────────────────────────────────────────────
 export const isoAuditFindings = pgTable("iso_audit_findings", {
   id: serial("id").primaryKey(),

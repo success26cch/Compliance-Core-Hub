@@ -7,8 +7,9 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type DotRoadsideInspection, type InsertDotRoadsideInspection,
   type DotDvirLog, type InsertDotDvirLog,
   isoAudits, isoAuditFindings, isoAwarenessNotices, isoAwarenessAcknowledgments,
-  isoObjectives, isoKpiActuals,
+  isoObjectives, isoKpiActuals, auditProcessSchedule,
   isoRisks, isoManagementReviews, isoReviewActionItems, isoCommunications,
+  type AuditProcessSchedule, type InsertAuditProcessSchedule,
   type IsoAudit, type InsertIsoAudit,
   type IsoAuditFinding, type InsertIsoAuditFinding,
   type IsoAwarenessNotice, type InsertIsoAwarenessNotice,
@@ -301,6 +302,9 @@ export interface IStorage {
   deleteDotDvirLog(id: number, userId: string): Promise<void>;
 
   // ISO Audits
+  getAuditProcessSchedule(userId: string, isSuperadmin?: boolean): Promise<AuditProcessSchedule[]>;
+  upsertAuditProcessSchedule(data: any, userId: string): Promise<AuditProcessSchedule>;
+  deleteAuditProcessSchedule(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
   getIsoAudits(userId: string, isSuperadmin?: boolean): Promise<IsoAudit[]>;
   getIsoAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<IsoAudit | undefined>;
   createIsoAudit(data: InsertIsoAudit): Promise<IsoAudit>;
@@ -1799,6 +1803,32 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDotDvirLog(id: number, userId: string): Promise<void> {
     await db.delete(dotDvirLogs).where(and(eq(dotDvirLogs.id, id), eq(dotDvirLogs.userId, userId)));
+  }
+
+  // ─── Audit Process Schedule (IATF 9.2.2.2) ───────────────────────────────────
+  async getAuditProcessSchedule(userId: string, isSuperadmin = false): Promise<AuditProcessSchedule[]> {
+    return db.select().from(auditProcessSchedule)
+      .where(isSuperadmin ? undefined : eq(auditProcessSchedule.userId, userId))
+      .orderBy(auditProcessSchedule.processType, auditProcessSchedule.processName);
+  }
+
+  async upsertAuditProcessSchedule(data: any, userId: string): Promise<AuditProcessSchedule> {
+    if (data.id) {
+      const { id, ...rest } = data;
+      const [updated] = await db.update(auditProcessSchedule)
+        .set({ ...rest, updatedAt: new Date() })
+        .where(and(eq(auditProcessSchedule.id, id), eq(auditProcessSchedule.userId, userId)))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(auditProcessSchedule).values({ ...data, userId }).returning();
+    return created;
+  }
+
+  async deleteAuditProcessSchedule(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(auditProcessSchedule).where(
+      isSuperadmin ? eq(auditProcessSchedule.id, id) : and(eq(auditProcessSchedule.id, id), eq(auditProcessSchedule.userId, userId))
+    );
   }
 
   // ─── ISO Audits ──────────────────────────────────────────────────────────────
