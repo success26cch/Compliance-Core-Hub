@@ -15,6 +15,33 @@ const anthropic = createAnthropicClient();
 const FREE_QUESTION_LIMIT = 3;
 const LANDING_BOT_LIMIT = 3;
 const TRIAL_QUESTION_LIMIT = 1;
+// Company-level guards — applied on top of the per-email limit
+const COMPANY_DOMAIN_LIMIT = 6;  // max questions per corporate email domain (≈2 employees)
+const IP_LIMIT = 9;              // max questions per IP address (≈3 people, catches personal emails on shared networks)
+
+// Free/personal email domains — excluded from domain-level cap (IP cap still applies)
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  "gmail.com","yahoo.com","hotmail.com","outlook.com","live.com","msn.com",
+  "icloud.com","me.com","mac.com","aol.com","protonmail.com","proton.me",
+  "zoho.com","mail.com","yandex.com","gmx.com","inbox.com","fastmail.com",
+]);
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (forwarded) {
+    const ips = (typeof forwarded === "string" ? forwarded : forwarded[0]).split(",");
+    return ips[0].trim();
+  }
+  return (req as any).ip || req.socket?.remoteAddress || "unknown";
+}
+
+function getEmailDomain(email: string): string {
+  return email.toLowerCase().split("@")[1] ?? "";
+}
+
+function isCorporateDomain(domain: string): boolean {
+  return domain.length > 0 && !PERSONAL_EMAIL_DOMAINS.has(domain);
+}
 
 // Hardcoded platform admins — always get unlimited access regardless of env vars or DB flags
 const HARDCODED_ADMIN_EMAILS = [
@@ -195,6 +222,31 @@ export function registerChatRoutes(app: Express): void {
         return res.status(400).json({ error: "Valid email is required to try Corey" });
       }
 
+      const clientIp = getClientIp(req);
+      const domain = getEmailDomain(email.trim());
+
+      // Company domain cap (corporate emails only)
+      if (isCorporateDomain(domain)) {
+        const domainTotal = await storage.getTotalQuestionsByDomain(domain);
+        if (domainTotal >= COMPANY_DOMAIN_LIMIT) {
+          return res.status(403).json({
+            error: "Your company has reached the free trial limit. Contact us to get started!",
+            limitReached: true,
+          });
+        }
+      }
+
+      // IP cap (everyone)
+      if (clientIp !== "unknown") {
+        const ipTotal = await storage.getTotalQuestionsByIp(clientIp);
+        if (ipTotal >= IP_LIMIT) {
+          return res.status(403).json({
+            error: "Too many trial questions from this network. Sign up to continue!",
+            limitReached: true,
+          });
+        }
+      }
+
       let trialLead = await storage.getTrialLeadByEmail(email);
       if (trialLead && trialLead.questionCount >= TRIAL_QUESTION_LIMIT) {
         return res.status(403).json({ 
@@ -204,7 +256,7 @@ export function registerChatRoutes(app: Express): void {
       }
 
       if (!trialLead) {
-        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() });
+        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() }, clientIp);
       }
       await storage.incrementTrialQuestionCount(email);
       await storage.saveTrialLeadQuestion(email, content.trim());
@@ -255,9 +307,34 @@ export function registerChatRoutes(app: Express): void {
         return res.status(400).json({ error: "Valid email is required to chat with Corey" });
       }
 
+      const clientIp = getClientIp(req);
+      const domain = getEmailDomain(email.trim());
+
+      // Company domain cap (corporate emails only)
+      if (isCorporateDomain(domain)) {
+        const domainTotal = await storage.getTotalQuestionsByDomain(domain);
+        if (domainTotal >= COMPANY_DOMAIN_LIMIT) {
+          return res.status(403).json({
+            error: "Your company has reached the free trial limit. Contact us to get started!",
+            limitReached: true,
+          });
+        }
+      }
+
+      // IP cap (everyone)
+      if (clientIp !== "unknown") {
+        const ipTotal = await storage.getTotalQuestionsByIp(clientIp);
+        if (ipTotal >= IP_LIMIT) {
+          return res.status(403).json({
+            error: "Too many trial questions from this network. Sign up to continue!",
+            limitReached: true,
+          });
+        }
+      }
+
       let trialLead = await storage.getTrialLeadByEmail(email);
       if (!trialLead) {
-        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() });
+        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() }, clientIp);
       }
 
       if (trialLead.questionCount >= LANDING_BOT_LIMIT) {
@@ -330,9 +407,34 @@ export function registerChatRoutes(app: Express): void {
         return res.status(400).json({ error: "Valid email is required to chat with Isa" });
       }
 
+      const clientIp = getClientIp(req);
+      const domain = getEmailDomain(email.trim());
+
+      // Company domain cap (corporate emails only)
+      if (isCorporateDomain(domain)) {
+        const domainTotal = await storage.getTotalQuestionsByDomain(domain);
+        if (domainTotal >= COMPANY_DOMAIN_LIMIT) {
+          return res.status(403).json({
+            error: "Your company has reached the free trial limit. Contact us to get started!",
+            limitReached: true,
+          });
+        }
+      }
+
+      // IP cap (everyone)
+      if (clientIp !== "unknown") {
+        const ipTotal = await storage.getTotalQuestionsByIp(clientIp);
+        if (ipTotal >= IP_LIMIT) {
+          return res.status(403).json({
+            error: "Too many trial questions from this network. Sign up to continue!",
+            limitReached: true,
+          });
+        }
+      }
+
       let trialLead = await storage.getTrialLeadByEmail(email);
       if (!trialLead) {
-        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() });
+        trialLead = await storage.createTrialLead({ name: name.trim(), email: email.trim() }, clientIp);
       }
 
       if (trialLead.questionCount >= LANDING_BOT_LIMIT) {
