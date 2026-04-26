@@ -612,104 +612,12 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
             )}
 
             {project && processes.length > 0 && (
-              <div className="bg-white border rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
-                  <p className="text-sm font-semibold text-foreground">Process Audit Schedule</p>
-                  {unassessed.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{unassessed.length} not yet assessed</span>
-                  )}
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/30 text-left">
-                      <tr>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground">Process</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-16">Type</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-32">Risk Score</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-36">Schedule</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-28">Risk Status</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Last Audit</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Next Due</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Status</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Auditor</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-20">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {processes.map(proc => {
-                        const pType = normalizeProcessType(proc.row);
-                        const entry = scheduleEntries.find(e => e.processName === proc.name);
-                        const score = entry ? calcTotalScore(entry) : null;
-                        const freqKey = score !== null ? scoreToFreq(score) : null;
-                        const freqCfg = freqKey ? FREQ_CONFIG[freqKey] : null;
-                        const schedStatus = entry ? getScheduleStatus(entry) : "not_assessed";
-                        const schedStatusInfo = SCHED_STATUS[schedStatus];
-                        const isConsultant = entry?.consultantAudit === true;
-
-                        return (
-                          <tr
-                            key={proc.name}
-                            className={`hover:bg-muted/10 ${isConsultant ? "bg-gray-50 text-gray-500" : ""}`}
-                            data-testid={`row-schedule-${proc.name}`}
-                          >
-                            <td className="px-4 py-3 font-medium flex items-center gap-1.5">
-                              {isConsultant && <HardHat className="w-3.5 h-3.5 text-gray-400 shrink-0" title="Consultant audit" />}
-                              <span className={isConsultant ? "text-gray-500" : "text-foreground"}>{proc.name}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge className={`text-xs border ${TYPE_BADGE[pType]}`}>{pType}</Badge>
-                            </td>
-                            <td className="px-4 py-3">
-                              {score !== null ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="w-16 h-1.5 rounded-full bg-gray-200">
-                                    <div
-                                      className={`h-1.5 rounded-full ${freqCfg?.barColor || "bg-gray-400"}`}
-                                      style={{ width: `${Math.min(100, ((score - 6) / 54) * 100)}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-xs font-semibold">{score}/60</span>
-                                </div>
-                              ) : <span className="text-muted-foreground text-xs">—</span>}
-                            </td>
-                            <td className="px-4 py-3">
-                              {freqCfg ? (
-                                <Badge className={`text-xs border ${freqCfg.badgeColor}`}>{freqCfg.label}</Badge>
-                              ) : <span className="text-muted-foreground text-xs">—</span>}
-                            </td>
-                            <td className="px-4 py-3">
-                              {freqCfg ? (
-                                <span className={`text-xs font-semibold ${freqCfg.statusColor}`}>{freqCfg.status}</span>
-                              ) : <span className="text-muted-foreground text-xs">—</span>}
-                            </td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground">
-                              {entry?.lastAuditDate ? new Date(entry.lastAuditDate).toLocaleDateString() : "—"}
-                            </td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground">
-                              {entry?.nextAuditDate ? new Date(entry.nextAuditDate).toLocaleDateString() : "—"}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge className={`text-xs border ${schedStatusInfo.color}`}>{schedStatusInfo.label}</Badge>
-                            </td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground truncate max-w-[96px]">
-                              {entry?.auditorAssigned || "—"}
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                className="text-xs text-accent hover:underline font-medium"
-                                onClick={() => setScheduleDialog({ processName: proc.name, processType: pType, existing: entry })}
-                                data-testid={`button-assess-${proc.name}`}
-                              >
-                                {entry ? "Edit" : "Assess"}
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <AuditMatrix
+                processes={processes}
+                scheduleEntries={scheduleEntries}
+                unassessed={unassessed}
+                onAssess={(name, type, entry) => setScheduleDialog({ processName: name, processType: type, existing: entry })}
+              />
             )}
 
             {/* Orphaned entries */}
@@ -747,6 +655,271 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
           isPending={saveSchedule.isPending}
         />
       )}
+    </div>
+  );
+}
+
+// ── Audit Matrix Component ─────────────────────────────────────────────────────
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function getAuditMonthsForEntry(entry: AuditProcessSchedule, year: number): number[] {
+  if (!entry.nextAuditDate || !entry.recommendedFrequency) return [];
+  const nextDate = new Date(entry.nextAuditDate);
+  const months: Set<number> = new Set();
+  const freqMonths = FREQ_CONFIG[entry.recommendedFrequency as FreqKey]?.months || 12;
+  // Walk through up to 4 audit occurrences to catch anything that falls in the target year
+  let current = nextDate;
+  for (let i = 0; i < 8; i++) {
+    if (current.getFullYear() === year) months.add(current.getMonth());
+    if (current.getFullYear() > year) break;
+    const next = new Date(current);
+    next.setMonth(next.getMonth() + freqMonths);
+    current = next;
+  }
+  // Also walk backwards from nextDate in case lastAuditDate gave a next that's after this year
+  current = nextDate;
+  for (let i = 0; i < 4; i++) {
+    const prev = new Date(current);
+    prev.setMonth(prev.getMonth() - freqMonths);
+    if (prev.getFullYear() < year) break;
+    if (prev.getFullYear() === year) months.add(prev.getMonth());
+    current = prev;
+  }
+  return [...months].sort((a, b) => a - b);
+}
+
+function AuditMatrix({ processes, scheduleEntries, unassessed, onAssess }: {
+  processes: Array<{ name: string; row: string }>;
+  scheduleEntries: AuditProcessSchedule[];
+  unassessed: Array<{ name: string; row: string }>;
+  onAssess: (name: string, type: "COP" | "SOP" | "MOP", entry?: AuditProcessSchedule) => void;
+}) {
+  const [year, setYear] = useState(new Date().getFullYear());
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  return (
+    <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+      {/* Matrix header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
+        <div>
+          <p className="text-sm font-bold text-primary">Audit Schedule Matrix</p>
+          <p className="text-xs text-muted-foreground">{processes.length} processes · {unassessed.length} not yet assessed</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setYear(y => y - 1)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-muted text-muted-foreground text-sm font-bold">‹</button>
+          <span className="text-sm font-bold text-foreground w-12 text-center">{year}</span>
+          <button onClick={() => setYear(y => y + 1)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-muted text-muted-foreground text-sm font-bold">›</button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs" style={{ minWidth: "900px" }}>
+          {/* Column headers */}
+          <thead>
+            <tr className="bg-muted/40">
+              {/* Fixed info columns */}
+              <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground border-r border-gray-200 w-44">Process</th>
+              <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground border-r border-gray-200 w-12">Type</th>
+              <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground border-r border-gray-200 w-28">Auditor</th>
+              <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground border-r border-gray-200 w-24">Risk Status</th>
+              <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground border-r border-gray-200 w-24">Frequency of Audit</th>
+              {/* Month columns */}
+              {MONTHS.map((m, i) => (
+                <th
+                  key={m}
+                  className={`text-center py-2.5 font-semibold w-9 ${i === currentMonth && year === currentYear ? "text-accent bg-accent/5" : "text-muted-foreground"}`}
+                >
+                  {m}
+                </th>
+              ))}
+              <th className="px-3 py-2.5 w-14 border-l border-gray-200" />
+            </tr>
+            {/* Month number sub-row */}
+            <tr className="border-b bg-muted/20">
+              <td colSpan={5} className="border-r border-gray-200" />
+              {MONTHS.map((_, i) => (
+                <td
+                  key={i}
+                  className={`text-center py-0.5 text-xs w-9 ${i === currentMonth && year === currentYear ? "font-bold text-accent" : "text-muted-foreground/50"}`}
+                >
+                  {i + 1}
+                </td>
+              ))}
+              <td className="border-l border-gray-200" />
+            </tr>
+          </thead>
+
+          <tbody className="divide-y">
+            {/* Group by type: COP first, then SOP, then MOP */}
+            {(["COP", "SOP", "MOP"] as const).map(typeGroup => {
+              const groupProcs = processes.filter(p => normalizeProcessType(p.row) === typeGroup);
+              if (groupProcs.length === 0) return null;
+              return (
+                <>
+                  {/* Type group header row */}
+                  <tr key={`group-${typeGroup}`} className="bg-muted/10">
+                    <td colSpan={5 + 12 + 1} className="px-4 py-1.5">
+                      <span className={`text-xs font-bold uppercase tracking-widest ${typeGroup === "COP" ? "text-orange-700" : typeGroup === "SOP" ? "text-emerald-700" : "text-blue-700"}`}>
+                        {typeGroup === "COP" ? "Customer-Oriented Processes (COP)" : typeGroup === "SOP" ? "Support-Oriented Processes (SOP)" : "Management-Oriented Processes (MOP)"}
+                      </span>
+                    </td>
+                  </tr>
+
+                  {groupProcs.map(proc => {
+                    const pType = normalizeProcessType(proc.row);
+                    const entry = scheduleEntries.find(e => e.processName === proc.name);
+                    const score = entry ? calcTotalScore(entry) : null;
+                    const freqKey = score !== null ? scoreToFreq(score) : null;
+                    const freqCfg = freqKey ? FREQ_CONFIG[freqKey] : null;
+                    const isConsultant = entry?.consultantAudit === true;
+                    const schedStatus = entry ? getScheduleStatus(entry) : "not_assessed";
+                    const auditMonths = entry ? getAuditMonthsForEntry(entry, year) : [];
+
+                    // Dot styles per risk + schedule status
+                    const dotBase = freqKey === "triennial" ? "bg-green-500" : freqKey === "biennial" ? "bg-amber-500" : "bg-red-500";
+                    const dotOverdue = "bg-red-600 ring-2 ring-red-300";
+
+                    return (
+                      <tr
+                        key={proc.name}
+                        className={`group hover:bg-primary/5 transition-colors ${isConsultant ? "bg-gray-50/80" : ""}`}
+                        data-testid={`row-schedule-${proc.name}`}
+                      >
+                        {/* Process name */}
+                        <td className="px-4 py-3 border-r border-gray-100">
+                          <div className="flex items-center gap-1.5">
+                            {isConsultant && (
+                              <span title="Audited by consultant">
+                                <HardHat className="w-3 h-3 text-gray-400 shrink-0" />
+                              </span>
+                            )}
+                            <span className={`font-medium leading-tight ${isConsultant ? "text-gray-400" : "text-foreground"}`}>
+                              {proc.name}
+                            </span>
+                          </div>
+                          {entry?.nextAuditDate && (
+                            <div className="text-muted-foreground/60 mt-0.5 text-xs">
+                              Next: {new Date(entry.nextAuditDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" })}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Type badge */}
+                        <td className="px-2 py-3 text-center border-r border-gray-100">
+                          <span className={`inline-flex items-center justify-center rounded px-1 py-0.5 text-xs font-bold border ${TYPE_BADGE[pType]}`}>
+                            {pType}
+                          </span>
+                        </td>
+
+                        {/* Auditor */}
+                        <td className="px-3 py-3 border-r border-gray-100">
+                          {isConsultant ? (
+                            <span className="flex items-center gap-1 text-gray-400 italic">
+                              <HardHat className="w-3 h-3" />Consultant
+                            </span>
+                          ) : entry?.auditorAssigned ? (
+                            <span className="font-medium text-foreground">{entry.auditorAssigned}</span>
+                          ) : (
+                            <span className="text-muted-foreground/50 italic">Unassigned</span>
+                          )}
+                        </td>
+
+                        {/* Risk status */}
+                        <td className="px-3 py-3 border-r border-gray-100">
+                          {freqCfg ? (
+                            <div>
+                              <span className={`font-bold text-xs ${freqCfg.statusColor}`}>
+                                {score !== null && score <= 25 ? "IN CONTROL" : score !== null && score <= 50 ? "NEEDS ATTENTION" : score !== null ? "NEEDS IMMEDIATE" : "—"}
+                              </span>
+                              {score !== null && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <div className="w-12 h-1 rounded-full bg-gray-200">
+                                    <div className={`h-1 rounded-full ${freqCfg.barColor}`} style={{ width: `${Math.min(100, ((score - 6) / 54) * 100)}%` }} />
+                                  </div>
+                                  <span className="text-muted-foreground">{score}/60</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground/50 italic text-xs">Not assessed</span>
+                          )}
+                        </td>
+
+                        {/* Frequency of audit */}
+                        <td className="px-3 py-3 border-r border-gray-100">
+                          {freqCfg ? (
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold border ${freqCfg.badgeColor}`}>
+                              {freqCfg.label}
+                            </span>
+                          ) : (
+                            <button
+                              className="text-xs text-accent hover:underline italic"
+                              onClick={() => onAssess(proc.name, pType, entry)}
+                            >
+                              Assess →
+                            </button>
+                          )}
+                        </td>
+
+                        {/* Month calendar cells */}
+                        {MONTHS.map((_, monthIdx) => {
+                          const isAuditMonth = auditMonths.includes(monthIdx);
+                          const isPast = year < currentYear || (year === currentYear && monthIdx < currentMonth);
+                          const isCurrent = year === currentYear && monthIdx === currentMonth;
+                          return (
+                            <td
+                              key={monthIdx}
+                              className={`text-center py-3 w-9 ${isCurrent ? "bg-accent/5" : ""} ${monthIdx % 3 === 0 ? "border-l border-gray-100" : ""}`}
+                            >
+                              {isAuditMonth ? (
+                                <div className="flex items-center justify-center">
+                                  {isPast && schedStatus === "overdue" ? (
+                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center ${dotOverdue} text-white`} title="Overdue">
+                                      <span className="text-xs font-black leading-none">!</span>
+                                    </span>
+                                  ) : (
+                                    <span className={`w-4 h-4 rounded-full inline-block ${dotBase} ${isPast ? "opacity-40" : "opacity-90"}`} title={freqCfg?.label} />
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground/20">·</span>
+                              )}
+                            </td>
+                          );
+                        })}
+
+                        {/* Action */}
+                        <td className="px-3 py-3 border-l border-gray-100 text-center">
+                          <button
+                            className="text-xs font-medium text-accent hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => onAssess(proc.name, pType, entry)}
+                            data-testid={`button-assess-${proc.name}`}
+                          >
+                            {entry ? "Edit" : "Assess"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-5 px-5 py-2.5 border-t bg-muted/20 flex-wrap text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground">Legend:</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" />IN CONTROL — 3-Year</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />NEEDS ATTENTION — 12–24 mo</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" />NEEDS IMMEDIATE — 6–9 mo</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded-full bg-red-600 ring-2 ring-red-300 inline-flex items-center justify-center text-white font-black text-xs leading-none">!</span>Overdue</span>
+        <span className="flex items-center gap-1.5"><HardHat className="w-3.5 h-3.5" />Consultant Audit</span>
+        <span className="ml-auto text-muted-foreground/60">Quarter markers shown by column dividers (Q1 / Q2 / Q3 / Q4)</span>
+      </div>
     </div>
   );
 }
