@@ -8,12 +8,13 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, ClipboardCheck, AlertTriangle, Trash2, ChevronRight,
   Calendar, User, BookOpen, Shield, Activity, AlertCircle,
-  BarChart3, Info, CheckCircle2, Clock,
+  BarChart3, Info, CheckCircle2, Clock, HardHat,
 } from "lucide-react";
 import type { IsoAudit, IsoAuditFinding, AuditProcessSchedule } from "@shared/schema";
 
@@ -56,16 +57,16 @@ const CLAUSES_BY_STANDARD: Record<string, Array<{ clause: string; title: string 
   ],
   "ISO 14001:2015": [
     { clause: "4.1", title: "Understanding the organization and its context" },
-    { clause: "4.2", title: "Understanding the needs and expectations of interested parties" },
-    { clause: "4.3", title: "Determining the scope of the EMS" },
+    { clause: "4.2", title: "Interested parties" },
+    { clause: "4.3", title: "Scope of the EMS" },
     { clause: "4.4", title: "Environmental management system" },
     { clause: "5.1", title: "Leadership and commitment" },
     { clause: "5.2", title: "Environmental policy" },
-    { clause: "5.3", title: "Organizational roles, responsibilities and authorities" },
+    { clause: "5.3", title: "Roles, responsibilities and authorities" },
     { clause: "6.1", title: "Actions to address risks and opportunities" },
     { clause: "6.1.2", title: "Environmental aspects" },
     { clause: "6.1.3", title: "Compliance obligations" },
-    { clause: "6.2", title: "Environmental objectives and planning to achieve them" },
+    { clause: "6.2", title: "Environmental objectives and planning" },
     { clause: "7.1", title: "Resources" },
     { clause: "7.2", title: "Competence" },
     { clause: "7.3", title: "Awareness" },
@@ -81,17 +82,17 @@ const CLAUSES_BY_STANDARD: Record<string, Array<{ clause: string; title: string 
   ],
   "ISO 45001:2018": [
     { clause: "4.1", title: "Understanding the organization and its context" },
-    { clause: "4.2", title: "Understanding the needs and expectations of workers and interested parties" },
-    { clause: "4.3", title: "Determining the scope of the OH&SMS" },
+    { clause: "4.2", title: "Needs and expectations of workers and interested parties" },
+    { clause: "4.3", title: "Scope of the OH&SMS" },
     { clause: "4.4", title: "OH&S management system" },
     { clause: "5.1", title: "Leadership and commitment" },
     { clause: "5.2", title: "OH&S policy" },
-    { clause: "5.3", title: "Organizational roles, responsibilities, and authorities" },
+    { clause: "5.3", title: "Roles, responsibilities and authorities" },
     { clause: "5.4", title: "Consultation and participation of workers" },
     { clause: "6.1", title: "Actions to address risks and opportunities" },
     { clause: "6.1.2", title: "Hazard identification; assessment of risks and opportunities" },
-    { clause: "6.1.3", title: "Determination of legal requirements and other requirements" },
-    { clause: "6.2", title: "OH&S objectives and planning to achieve them" },
+    { clause: "6.1.3", title: "Legal requirements and other requirements" },
+    { clause: "6.2", title: "OH&S objectives and planning" },
     { clause: "7.1", title: "Resources" },
     { clause: "7.2", title: "Competence" },
     { clause: "7.3", title: "Awareness" },
@@ -124,114 +125,140 @@ function getClausesForStandard(standard: string) {
   return CLAUSES_BY_STANDARD[standard] || CLAUSES_BY_STANDARD["ISO 9001:2015"];
 }
 
-// ── Schedule: Risk Criteria (IATF 9.2.2.2) ────────────────────────────────────
+// ── Risk-Ranking Framework ────────────────────────────────────────────────────
+// Per criterion: 1-3=LOW, 4-6=MEDIUM, 7-9=HIGH, 10=CRITICAL
+// Total score:  1-25=In Control (3-year), 26-50=Needs Attention (12-24 mo), >50=Needs Immediate (6-9 mo)
 
-type RiskKey = "riskComplexity" | "riskCustomerImpact" | "riskPreviousAudit" | "riskPerformance" | "riskChangeFreq" | "riskComplaints" | "riskCompliance";
+type RiskKey = "riskComplexity" | "riskCustomerImpact" | "riskPreviousAudit" | "riskPerformance" | "riskChangeFreq" | "riskComplaints";
+
+// The 4 selectable bands per criterion — click selects the representative score
+const BANDS = [
+  { label: "LOW", range: "1–3", score: 2, color: { active: "bg-green-100 border-green-500 text-green-800 ring-1 ring-green-500", inactive: "bg-white border-gray-200 text-gray-600 hover:bg-green-50" }, dot: "bg-green-500" },
+  { label: "MEDIUM", range: "4–6", score: 5, color: { active: "bg-amber-100 border-amber-500 text-amber-800 ring-1 ring-amber-500", inactive: "bg-white border-gray-200 text-gray-600 hover:bg-amber-50" }, dot: "bg-amber-500" },
+  { label: "HIGH", range: "7–9", score: 8, color: { active: "bg-orange-100 border-orange-500 text-orange-800 ring-1 ring-orange-500", inactive: "bg-white border-gray-200 text-gray-600 hover:bg-orange-50" }, dot: "bg-orange-500" },
+  { label: "CRITICAL", range: "10", score: 10, color: { active: "bg-red-100 border-red-600 text-red-900 ring-2 ring-red-600", inactive: "bg-white border-gray-200 text-gray-600 hover:bg-red-50" }, dot: "bg-red-600" },
+];
+
+function getBandForScore(score: number): typeof BANDS[number] {
+  if (score <= 3) return BANDS[0];
+  if (score <= 6) return BANDS[1];
+  if (score <= 9) return BANDS[2];
+  return BANDS[3];
+}
 
 const RISK_CRITERIA: Array<{
   key: RiskKey;
   label: string;
-  clause: string;
-  scores: { value: 1 | 2 | 3; label: string; desc: string }[];
+  subtitle: string;
+  bandDescs: [string, string, string, string]; // LOW, MEDIUM, HIGH, CRITICAL
 }> = [
   {
     key: "riskComplexity",
-    label: "Process Complexity & Significance",
-    clause: "§9.2.2.2 — Process significance",
-    scores: [
-      { value: 1, label: "Low", desc: "Simple, routine, well-controlled" },
-      { value: 2, label: "Medium", desc: "Moderate complexity or some variability" },
-      { value: 3, label: "High", desc: "Complex, high variability, or critical to quality" },
-    ],
-  },
-  {
-    key: "riskCustomerImpact",
-    label: "Customer & Product Impact",
-    clause: "§9.2.2.2 — Process significance",
-    scores: [
-      { value: 1, label: "Low", desc: "Indirect impact on customer requirements" },
-      { value: 2, label: "Medium", desc: "Moderate impact on product/service quality" },
-      { value: 3, label: "High", desc: "Directly affects customer-specific or safety requirements" },
-    ],
-  },
-  {
-    key: "riskPreviousAudit",
-    label: "Previous Audit Results",
-    clause: "§9.2.2.2b — Results of previous audits",
-    scores: [
-      { value: 1, label: "Conforming", desc: "Fully conforming — no issues found" },
-      { value: 2, label: "Observations", desc: "OFIs or minor observations only, no NCs" },
-      { value: 3, label: "Nonconformances", desc: "Major or minor NCs were raised" },
+    label: "Risk of Process Failure",
+    subtitle: "Potential consequence if this process fails",
+    bandDescs: [
+      "Failure has little to no risk of adversely affecting customer satisfaction, product quality, delivery, or profitability",
+      "Failure could have a moderate adverse effect on operations or customer expectations",
+      "Failure will most likely have a significant adverse effect on customer satisfaction, product quality, delivery, or profitability",
+      "Failure will most likely cause safety or regulatory compliance issues",
     ],
   },
   {
     key: "riskPerformance",
-    label: "Process Performance & KPIs",
-    clause: "§9.2.2.2a — Performance results & indicators",
-    scores: [
-      { value: 1, label: "On-Target", desc: "All KPIs consistently meeting targets" },
-      { value: 2, label: "Borderline", desc: "Some KPIs trending down or borderline" },
-      { value: 3, label: "Off-Target", desc: "KPIs consistently failing targets" },
+    label: "Process Performance Status",
+    subtitle: "Current state of metrics, KPIs, objectives, and complaints",
+    bandDescs: [
+      "All performance indicators (metrics, KPIs, objectives, complaints, audit results) show a stable/controlled state",
+      "Some indicators trending down, occasional issues, borderline performance",
+      "Poor performance for 6+ months, adverse trends, significant audit findings in past 12 months, or new process with major changes planned",
+      "Not addressing objectives, not meeting goals/targets — safety or regulatory compliance issues present",
+    ],
+  },
+  {
+    key: "riskPreviousAudit",
+    label: "Previous Audit Findings",
+    subtitle: "Results of the most recent internal or external audit",
+    bandDescs: [
+      "No significant findings — process was fully conforming",
+      "Minor observations or OFIs only; no nonconformances",
+      "Minor nonconformances raised; corrective actions closed but recurrence risk exists",
+      "Major NC or regulatory finding in past 12 months; actions still open or recurring",
     ],
   },
   {
     key: "riskChangeFreq",
-    label: "Change Frequency",
-    clause: "§9.2.2.2c — Changes affecting the organization",
-    scores: [
-      { value: 1, label: "Stable", desc: "No significant changes in past 12 months" },
-      { value: 2, label: "Occasional", desc: "New equipment, personnel, or method changes" },
-      { value: 3, label: "Frequent", desc: "Frequent or recent major process changes" },
+    label: "Process Change & Stability",
+    subtitle: "How stable and established is this process?",
+    bandDescs: [
+      "Well-established, no significant changes in 12+ months",
+      "Minor changes to methods, equipment, or personnel",
+      "Major changes recently implemented or planned (new products, equipment overhaul, process redesign)",
+      "New process or radical change — not yet validated or stabilized",
     ],
   },
   {
     key: "riskComplaints",
-    label: "Customer Complaints & Field Failures",
-    clause: "§9.2.2.2d — Customer complaints & field failures",
-    scores: [
-      { value: 1, label: "None", desc: "No complaints or field failures in 12 months" },
-      { value: 2, label: "Occasional", desc: "1–2 complaints per year linked to this process" },
-      { value: 3, label: "Recurring", desc: "Recurring complaints, field failures, or warranty issues" },
+    label: "Customer Complaints & External Feedback",
+    subtitle: "Complaint and field-failure history linked to this process",
+    bandDescs: [
+      "No complaints or field failures linked to this process in the past 12 months",
+      "1–2 minor complaints per year linked to this process",
+      "Recurring complaints, warranty issues, or supplier corrective action requests",
+      "Escalated customer complaints, production stops, 8D required, or field safety issues",
     ],
   },
   {
-    key: "riskCompliance",
-    label: "Regulatory & Compliance Exposure",
-    clause: "§9.2.2.2 — Risk-based approach",
-    scores: [
-      { value: 1, label: "Low", desc: "Minimal regulatory requirements" },
-      { value: 2, label: "Moderate", desc: "Subject to regulatory requirements (EHS, DOT, etc.)" },
-      { value: 3, label: "High", desc: "Direct regulatory risk, mandatory compliance, customer audits" },
+    key: "riskCustomerImpact",
+    label: "Regulatory & Compliance Risk",
+    subtitle: "Regulatory and legal exposure tied to this process",
+    bandDescs: [
+      "Minimal regulatory requirements — process is low-risk compliance-wise",
+      "Subject to standard regulatory requirements (EHS, DOT, etc.); generally in compliance",
+      "Significant regulatory oversight; compliance issues have occurred in the past",
+      "Active regulatory violations, enforcement actions, citations, or safety-critical requirements",
     ],
   },
 ];
 
-const FREQ_INFO: Record<string, { label: string; desc: string; months: number; color: string; badgeColor: string }> = {
-  annual: {
-    label: "Annual", desc: "Audit once per calendar year",
-    months: 12,
-    color: "text-green-700 bg-green-50 border-green-200",
+// ── Frequency / Status Config ─────────────────────────────────────────────────
+
+const FREQ_CONFIG = {
+  triennial: {
+    label: "3-Year Cycle",
+    sublabel: "Audit at least once every 3 years",
+    months: 36,
+    scoreRange: "1–25",
+    status: "IN CONTROL",
+    statusColor: "text-green-700",
     badgeColor: "bg-green-100 text-green-800 border-green-200",
+    barColor: "bg-green-500",
+    rangeColor: "border-green-200 bg-green-50",
   },
-  semi_annual: {
-    label: "Semi-Annual", desc: "Audit every 6 months",
-    months: 6,
-    color: "text-amber-700 bg-amber-50 border-amber-200",
+  biennial: {
+    label: "12–24 Months",
+    sublabel: "Audit within the next 12–24 months",
+    months: 18,
+    scoreRange: "26–50",
+    status: "NEEDS ATTENTION",
+    statusColor: "text-amber-700",
     badgeColor: "bg-amber-100 text-amber-800 border-amber-200",
+    barColor: "bg-amber-500",
+    rangeColor: "border-amber-200 bg-amber-50",
   },
-  quarterly: {
-    label: "Quarterly", desc: "Audit every 3 months",
-    months: 3,
-    color: "text-red-700 bg-red-50 border-red-200",
+  urgent: {
+    label: "6–9 Months",
+    sublabel: "Audit within the next 6–9 months",
+    months: 7,
+    scoreRange: ">50",
+    status: "NEEDS IMMEDIATE ATTENTION",
+    statusColor: "text-red-700",
     badgeColor: "bg-red-100 text-red-800 border-red-200",
+    barColor: "bg-red-500",
+    rangeColor: "border-red-200 bg-red-50",
   },
 };
 
-const TYPE_BADGE: Record<string, string> = {
-  COP: "bg-orange-100 text-orange-800 border-orange-200",
-  SOP: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  MOP: "bg-blue-100 text-blue-800 border-blue-200",
-};
+type FreqKey = keyof typeof FREQ_CONFIG;
 
 const SCHED_STATUS = {
   overdue:      { label: "Overdue",      color: "bg-red-100 text-red-800 border-red-200" },
@@ -240,36 +267,39 @@ const SCHED_STATUS = {
   not_assessed: { label: "Not Assessed", color: "bg-gray-100 text-gray-500 border-gray-200" },
 };
 
+const TYPE_BADGE: Record<string, string> = {
+  COP: "bg-orange-100 text-orange-800 border-orange-200",
+  SOP: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  MOP: "bg-blue-100 text-blue-800 border-blue-200",
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function calcRiskScore(entry: Partial<Record<RiskKey, number>>): number {
-  return (entry.riskComplexity || 1) + (entry.riskCustomerImpact || 1) + (entry.riskPreviousAudit || 1) +
-    (entry.riskPerformance || 1) + (entry.riskChangeFreq || 1) + (entry.riskComplaints || 1) + (entry.riskCompliance || 1);
+function calcTotalScore(entry: Partial<Record<RiskKey, number>>): number {
+  const keys: RiskKey[] = ["riskComplexity", "riskCustomerImpact", "riskPreviousAudit", "riskPerformance", "riskChangeFreq", "riskComplaints"];
+  return keys.reduce((sum, k) => sum + (entry[k] || 1), 0);
 }
 
-function calcFrequency(score: number, processType: string, prevAuditScore: number): string {
-  let freq = score <= 10 ? "annual" : score <= 15 ? "semi_annual" : "quarterly";
-  if (prevAuditScore === 3) {
-    if (freq === "annual") freq = "semi_annual";
-    else if (freq === "semi_annual") freq = "quarterly";
-  }
-  return freq;
+function scoreToFreq(total: number): FreqKey {
+  if (total <= 25) return "triennial";
+  if (total <= 50) return "biennial";
+  return "urgent";
 }
 
-function calcNextDate(lastDate: string | Date | null | undefined, freq: string): string {
+function calcNextDate(lastDate: string | Date | null | undefined, freq: FreqKey): string {
   const base = lastDate ? new Date(lastDate) : new Date();
-  const months = FREQ_INFO[freq]?.months || 12;
+  const months = FREQ_CONFIG[freq].months;
   const next = new Date(base);
   next.setMonth(next.getMonth() + months);
   return next.toISOString().slice(0, 10);
 }
 
-function getScheduleStatus(entry: AuditProcessSchedule): "overdue" | "due_soon" | "on_track" | "not_assessed" {
+function getScheduleStatus(entry: AuditProcessSchedule): keyof typeof SCHED_STATUS {
   if (!entry.recommendedFrequency) return "not_assessed";
   if (!entry.nextAuditDate) return "not_assessed";
   const diffDays = Math.ceil((new Date(entry.nextAuditDate).getTime() - Date.now()) / 86400000);
   if (diffDays < 0) return "overdue";
-  if (diffDays <= 30) return "due_soon";
+  if (diffDays <= 45) return "due_soon";
   return "on_track";
 }
 
@@ -347,21 +377,21 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
 
   const deleteSchedule = useMutation({
     mutationFn: async (id: number) => apiRequest("DELETE", `/api/audit-schedule/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/audit-schedule"] }); setScheduleDialog(null); toast({ title: "Schedule entry removed" }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/audit-schedule"] }); setScheduleDialog(null); toast({ title: "Entry removed" }); },
   });
 
   const clauses = selectedAudit ? getClausesForStandard(selectedAudit.standard) : [];
   const findingForClause = (clause: string) => findings.find(f => f.clause === clause);
   const findingCounts = findings.reduce((acc, f) => { acc[f.findingType] = (acc[f.findingType] || 0) + 1; return acc; }, {} as Record<string, number>);
 
-  // ── Audit detail view ──────────────────────────────────────────────────────────
+  // ── Audit detail ──────────────────────────────────────────────────────────────
   if (selectedAudit) {
     const pctAudited = clauses.length > 0 ? Math.round((findings.filter(f => f.findingType !== "not_audited").length / clauses.length) * 100) : 0;
     return (
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSelectedAuditId(null)} className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1">← All Audits</button>
+            <button onClick={() => setSelectedAuditId(null)} className="text-muted-foreground hover:text-foreground text-sm">← All Audits</button>
             <span className="text-muted-foreground">/</span>
             <h2 className="font-semibold text-primary">{selectedAudit.standard}</h2>
             <Badge className={`text-xs border ${STATUS_COLORS[selectedAudit.status] || STATUS_COLORS.planned}`}>{selectedAudit.status.replace("_", " ").toUpperCase()}</Badge>
@@ -431,7 +461,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
   // ── Tabbed list view ──────────────────────────────────────────────────────────
   const unassessed = processes.filter(p => !scheduleEntries.find(e => e.processName === p.name));
   const overdue = scheduleEntries.filter(e => getScheduleStatus(e) === "overdue").length;
-  const dueSoon = scheduleEntries.filter(e => getScheduleStatus(e) === "due_soon").length;
+  const immediate = scheduleEntries.filter(e => e.recommendedFrequency === "urgent").length;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -439,7 +469,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
       <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
         <div>
           <h2 className="text-lg font-bold text-primary">Internal Audits</h2>
-          <p className="text-xs text-muted-foreground">Plan, conduct, and schedule process-based internal audits.</p>
+          <p className="text-xs text-muted-foreground">Plan, conduct, and risk-rank process-based internal audits.</p>
         </div>
         {activeTab === "audits" && (
           <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1" onClick={() => setShowCreateAudit(true)} data-testid="button-create-audit">
@@ -448,8 +478,8 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
         )}
       </div>
 
-      {/* Tab bar */}
-      <div className="flex border-b bg-white px-6 gap-0">
+      {/* Tabs */}
+      <div className="flex border-b bg-white px-6">
         {(["audits", "schedule"] as const).map(tab => (
           <button
             key={tab}
@@ -462,17 +492,17 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
             ) : (
               <span className="flex items-center gap-1.5">
                 <BarChart3 className="w-4 h-4" />Audit Schedule
-                {overdue > 0 && <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{overdue}</span>}
+                {(overdue > 0 || immediate > 0) && (
+                  <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{overdue + immediate}</span>
+                )}
               </span>
             )}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === "audits" ? (
-          /* ── Audit list ── */
           isLoading ? (
             <div className="text-center text-muted-foreground py-12">Loading audits...</div>
           ) : audits.length === 0 ? (
@@ -505,16 +535,49 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
             </div>
           )
         ) : (
-          /* ── Audit Schedule ── */
+          /* ── Audit Schedule Tab ── */
           <div className="p-6 space-y-5">
-            {/* IATF compliance note */}
-            <div className="flex items-start gap-3 p-3.5 rounded-lg bg-blue-50 border border-blue-200 text-sm">
-              <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <div className="text-blue-800">
-                <span className="font-semibold">IATF 16949 §9.2.2.2 &amp; §9.2.2.3 — </span>
-                Risk criteria determine audit frequency for each process. All manufacturing (COP) processes must be audited at least annually. Nonconformances found automatically trigger increased frequency.
-              </div>
+
+            {/* Scheduling rule legend */}
+            <div className="grid grid-cols-3 gap-3">
+              {(Object.entries(FREQ_CONFIG) as [FreqKey, typeof FREQ_CONFIG[FreqKey]][]).map(([key, cfg]) => (
+                <div key={key} className={`rounded-lg border p-3.5 ${cfg.rangeColor}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-bold uppercase tracking-wide ${cfg.statusColor}`}>{cfg.status}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-white/70 rounded px-1.5 py-0.5 border">{cfg.scoreRange} pts</span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">{cfg.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{cfg.sublabel}</p>
+                </div>
+              ))}
             </div>
+
+            {/* Per-criterion ranking guide */}
+            <details className="group border rounded-lg bg-white">
+              <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+                <Shield className="w-4 h-4 text-primary" />
+                Risk Ranking Scale — per criterion (score 1–10)
+                <span className="ml-auto text-xs group-open:hidden">Show</span>
+              </summary>
+              <div className="px-4 pb-4 grid grid-cols-4 gap-2 text-xs">
+                {BANDS.map(b => (
+                  <div key={b.label} className="border rounded-lg p-2.5">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className={`w-2 h-2 rounded-full ${b.dot}`} />
+                      <span className="font-bold text-foreground">{b.label}</span>
+                      <span className="text-muted-foreground ml-auto">{b.range}</span>
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed">Score: {b.score}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 pb-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-gray-50 rounded border">
+                  <HardHat className="w-3.5 h-3.5 shrink-0 text-gray-500" />
+                  <span>Processes marked <strong>Consultant Audit</strong> (grey) are to be audited by an external consultant.</span>
+                </div>
+              </div>
+            </details>
 
             {/* Summary stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -522,7 +585,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
                 { label: "Total Processes", value: processes.length, icon: Activity, color: "text-primary" },
                 { label: "Assessed", value: scheduleEntries.length, icon: CheckCircle2, color: "text-green-600" },
                 { label: "Overdue", value: overdue, icon: AlertCircle, color: "text-red-600" },
-                { label: "Due ≤ 30 Days", value: dueSoon, icon: Clock, color: "text-amber-600" },
+                { label: "Needs Immediate", value: immediate, icon: Clock, color: "text-red-500" },
               ].map(({ label, value, icon: Icon, color }) => (
                 <div key={label} className="bg-white border rounded-lg p-3 flex items-center gap-3">
                   <Icon className={`w-5 h-5 ${color} shrink-0`} />
@@ -534,38 +597,13 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
               ))}
             </div>
 
-            {/* Risk score legend */}
-            <details className="group border rounded-lg bg-white">
-              <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
-                <Shield className="w-4 h-4" />
-                Risk Score Guide — 7 IATF §9.2.2.2 Criteria
-                <span className="ml-auto text-xs text-muted-foreground group-open:hidden">Click to expand</span>
-              </summary>
-              <div className="px-4 pb-4 grid grid-cols-3 gap-3 text-xs">
-                <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-                  <p className="font-bold text-green-800">7 – 10 pts → Annual</p>
-                  <p className="text-green-700 mt-1">Low-risk process. Minimum 1× per year (§9.2.2.3).</p>
-                </div>
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                  <p className="font-bold text-amber-800">11 – 15 pts → Semi-Annual</p>
-                  <p className="text-amber-700 mt-1">Medium-risk. Audit every 6 months.</p>
-                </div>
-                <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-                  <p className="font-bold text-red-800">16 – 21 pts → Quarterly</p>
-                  <p className="text-red-700 mt-1">High-risk. Audit every 3 months.</p>
-                </div>
-              </div>
-            </details>
-
-            {/* No iso project warning */}
             {!project && (
               <div className="text-center py-10 text-muted-foreground text-sm">
                 <Shield className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p>Connect a Process Map first in ISO Manager → Process Map.</p>
+                <p>Connect a Process Map in ISO Manager → Process Map first.</p>
               </div>
             )}
 
-            {/* Process schedule table */}
             {project && processes.length === 0 && (
               <div className="text-center py-10 text-muted-foreground text-sm">
                 <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -578,17 +616,18 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
                 <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
                   <p className="text-sm font-semibold text-foreground">Process Audit Schedule</p>
                   {unassessed.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{unassessed.length} process{unassessed.length !== 1 ? "es" : ""} not yet assessed</span>
+                    <span className="text-xs text-muted-foreground">{unassessed.length} not yet assessed</span>
                   )}
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/30">
-                      <tr className="text-left">
+                    <thead className="bg-muted/30 text-left">
+                      <tr>
                         <th className="px-4 py-2.5 font-medium text-muted-foreground">Process</th>
                         <th className="px-4 py-2.5 font-medium text-muted-foreground w-16">Type</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Risk Score</th>
-                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-28">Frequency</th>
+                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-32">Risk Score</th>
+                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-36">Schedule</th>
+                        <th className="px-4 py-2.5 font-medium text-muted-foreground w-28">Risk Status</th>
                         <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Last Audit</th>
                         <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Next Due</th>
                         <th className="px-4 py-2.5 font-medium text-muted-foreground w-24">Status</th>
@@ -600,29 +639,47 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
                       {processes.map(proc => {
                         const pType = normalizeProcessType(proc.row);
                         const entry = scheduleEntries.find(e => e.processName === proc.name);
-                        const score = entry ? calcRiskScore(entry) : null;
-                        const status = entry ? getScheduleStatus(entry) : "not_assessed";
-                        const statusInfo = SCHED_STATUS[status];
-                        const freqInfo = entry?.recommendedFrequency ? FREQ_INFO[entry.recommendedFrequency] : null;
+                        const score = entry ? calcTotalScore(entry) : null;
+                        const freqKey = score !== null ? scoreToFreq(score) : null;
+                        const freqCfg = freqKey ? FREQ_CONFIG[freqKey] : null;
+                        const schedStatus = entry ? getScheduleStatus(entry) : "not_assessed";
+                        const schedStatusInfo = SCHED_STATUS[schedStatus];
+                        const isConsultant = entry?.consultantAudit === true;
+
                         return (
-                          <tr key={proc.name} className="hover:bg-muted/10" data-testid={`row-schedule-${proc.name}`}>
-                            <td className="px-4 py-3 font-medium text-foreground">{proc.name}</td>
+                          <tr
+                            key={proc.name}
+                            className={`hover:bg-muted/10 ${isConsultant ? "bg-gray-50 text-gray-500" : ""}`}
+                            data-testid={`row-schedule-${proc.name}`}
+                          >
+                            <td className="px-4 py-3 font-medium flex items-center gap-1.5">
+                              {isConsultant && <HardHat className="w-3.5 h-3.5 text-gray-400 shrink-0" title="Consultant audit" />}
+                              <span className={isConsultant ? "text-gray-500" : "text-foreground"}>{proc.name}</span>
+                            </td>
                             <td className="px-4 py-3">
-                              <Badge className={`text-xs border ${TYPE_BADGE[pType] || TYPE_BADGE.SOP}`}>{pType}</Badge>
+                              <Badge className={`text-xs border ${TYPE_BADGE[pType]}`}>{pType}</Badge>
                             </td>
                             <td className="px-4 py-3">
                               {score !== null ? (
                                 <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-1.5 rounded bg-gray-200 w-16">
-                                    <div className={`h-1.5 rounded ${score <= 10 ? "bg-green-500" : score <= 15 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${((score - 7) / 14) * 100}%` }} />
+                                  <div className="w-16 h-1.5 rounded-full bg-gray-200">
+                                    <div
+                                      className={`h-1.5 rounded-full ${freqCfg?.barColor || "bg-gray-400"}`}
+                                      style={{ width: `${Math.min(100, ((score - 6) / 54) * 100)}%` }}
+                                    />
                                   </div>
-                                  <span className="text-xs font-semibold text-foreground">{score}/21</span>
+                                  <span className="text-xs font-semibold">{score}/60</span>
                                 </div>
                               ) : <span className="text-muted-foreground text-xs">—</span>}
                             </td>
                             <td className="px-4 py-3">
-                              {freqInfo ? (
-                                <Badge className={`text-xs border ${freqInfo.badgeColor}`}>{freqInfo.label}</Badge>
+                              {freqCfg ? (
+                                <Badge className={`text-xs border ${freqCfg.badgeColor}`}>{freqCfg.label}</Badge>
+                              ) : <span className="text-muted-foreground text-xs">—</span>}
+                            </td>
+                            <td className="px-4 py-3">
+                              {freqCfg ? (
+                                <span className={`text-xs font-semibold ${freqCfg.statusColor}`}>{freqCfg.status}</span>
                               ) : <span className="text-muted-foreground text-xs">—</span>}
                             </td>
                             <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -632,7 +689,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
                               {entry?.nextAuditDate ? new Date(entry.nextAuditDate).toLocaleDateString() : "—"}
                             </td>
                             <td className="px-4 py-3">
-                              <Badge className={`text-xs border ${statusInfo.color}`}>{statusInfo.label}</Badge>
+                              <Badge className={`text-xs border ${schedStatusInfo.color}`}>{schedStatusInfo.label}</Badge>
                             </td>
                             <td className="px-4 py-3 text-xs text-muted-foreground truncate max-w-[96px]">
                               {entry?.auditorAssigned || "—"}
@@ -655,11 +712,11 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
               </div>
             )}
 
-            {/* Orphaned schedule entries (process removed from map) */}
+            {/* Orphaned entries */}
             {scheduleEntries.filter(e => !processes.find(p => p.name === e.processName)).length > 0 && (
               <div className="bg-white border rounded-lg overflow-hidden">
                 <div className="px-4 py-3 border-b bg-muted/20">
-                  <p className="text-sm font-semibold text-muted-foreground">Archived Processes (no longer in Process Map)</p>
+                  <p className="text-sm font-semibold text-muted-foreground">Archived Processes (removed from Process Map)</p>
                 </div>
                 <div className="divide-y">
                   {scheduleEntries.filter(e => !processes.find(p => p.name === e.processName)).map(entry => (
@@ -712,7 +769,7 @@ function CreateAuditDialog({ onSave, onClose, isPending }: { onSave: (data: any)
           </div>
           <div>
             <Label>Scope <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <Input placeholder="e.g. Production processes, Clause 7-8" value={form.scope} onChange={e => setForm(f => ({ ...f, scope: e.target.value }))} data-testid="input-audit-scope" />
+            <Input placeholder="e.g. Production processes, Clauses 7–8" value={form.scope} onChange={e => setForm(f => ({ ...f, scope: e.target.value }))} data-testid="input-audit-scope" />
           </div>
           <div>
             <Label>Lead Auditor <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -792,35 +849,38 @@ function RiskAssessmentDialog({ processName, processType, existing, onSave, onDe
   processName: string; processType: "COP" | "SOP" | "MOP"; existing?: AuditProcessSchedule;
   onSave: (data: any) => void; onDelete?: () => void; onClose: () => void; isPending: boolean;
 }) {
-  const defaultScores: Record<RiskKey, number> = {
-    riskComplexity: existing?.riskComplexity || 1,
-    riskCustomerImpact: existing?.riskCustomerImpact || 1,
-    riskPreviousAudit: existing?.riskPreviousAudit || 1,
-    riskPerformance: existing?.riskPerformance || 1,
-    riskChangeFreq: existing?.riskChangeFreq || 1,
-    riskComplaints: existing?.riskComplaints || 1,
-    riskCompliance: existing?.riskCompliance || 1,
+  const defaults: Record<RiskKey, number> = {
+    riskComplexity: existing?.riskComplexity || 2,
+    riskCustomerImpact: existing?.riskCustomerImpact || 2,
+    riskPreviousAudit: existing?.riskPreviousAudit || 2,
+    riskPerformance: existing?.riskPerformance || 2,
+    riskChangeFreq: existing?.riskChangeFreq || 2,
+    riskComplaints: existing?.riskComplaints || 2,
   };
 
-  const [scores, setScores] = useState<Record<RiskKey, number>>(defaultScores);
+  const [scores, setScores] = useState<Record<RiskKey, number>>(defaults);
   const [lastAuditDate, setLastAuditDate] = useState(existing?.lastAuditDate ? new Date(existing.lastAuditDate).toISOString().slice(0, 10) : "");
+  const [nextDateOverride, setNextDateOverride] = useState(existing?.nextAuditDate ? new Date(existing.nextAuditDate).toISOString().slice(0, 10) : "");
   const [auditorAssigned, setAuditorAssigned] = useState(existing?.auditorAssigned || "");
   const [notes, setNotes] = useState(existing?.notes || "");
-  const [nextDateOverride, setNextDateOverride] = useState(existing?.nextAuditDate ? new Date(existing.nextAuditDate).toISOString().slice(0, 10) : "");
+  const [consultantAudit, setConsultantAudit] = useState(existing?.consultantAudit ?? false);
 
-  const score = calcRiskScore(scores);
-  const freq = calcFrequency(score, processType, scores.riskPreviousAudit);
-  const autoNext = calcNextDate(lastAuditDate || null, freq);
-  const freqInfo = FREQ_INFO[freq];
+  const total = calcTotalScore(scores);
+  const freqKey = scoreToFreq(total);
+  const freqCfg = FREQ_CONFIG[freqKey];
+  const autoNext = calcNextDate(lastAuditDate || null, freqKey);
 
-  const ncBump = scores.riskPreviousAudit === 3 && (freq !== (score <= 10 ? "annual" : score <= 15 ? "semi_annual" : "quarterly"));
+  // Determine overall risk status from total
+  const riskStatus = total <= 25 ? "IN CONTROL" : total <= 50 ? "NEEDS ATTENTION" : "NEEDS IMMEDIATE ATTENTION";
+  const riskStatusColor = total <= 25 ? "text-green-700" : total <= 50 ? "text-amber-700" : "text-red-700";
 
   const handleSave = () => {
     onSave({
       ...(existing?.id ? { id: existing.id } : {}),
       processName, processType,
       ...scores,
-      recommendedFrequency: freq,
+      recommendedFrequency: freqKey,
+      consultantAudit,
       lastAuditDate: lastAuditDate || null,
       nextAuditDate: nextDateOverride || autoNext,
       auditorAssigned: auditorAssigned || null,
@@ -838,85 +898,97 @@ function RiskAssessmentDialog({ processName, processType, existing, onSave, onDe
           </DialogTitle>
         </DialogHeader>
 
-        {/* Process type + live score */}
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border text-sm">
-          <Badge className={`text-xs border ${TYPE_BADGE[processType]}`}>{processType}</Badge>
-          <span className="text-muted-foreground">Process Type</span>
-          <span className="ml-auto flex items-center gap-4">
-            <span>
-              <span className="font-bold text-lg text-foreground">{score}</span>
-              <span className="text-muted-foreground text-xs">/21 pts</span>
-            </span>
-            <Badge className={`text-sm border px-3 py-1 ${freqInfo?.badgeColor || ""}`}>{freqInfo?.label || freq}</Badge>
-          </span>
-        </div>
-
-        {ncBump && (
-          <div className="flex items-center gap-2 text-xs p-2.5 rounded bg-amber-50 border border-amber-200 text-amber-800">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            NC Override applied (§9.2.2.3): previous nonconformances increase audit frequency by one level.
-          </div>
-        )}
-
-        {processType === "COP" && (
-          <div className="flex items-center gap-2 text-xs p-2.5 rounded bg-blue-50 border border-blue-200 text-blue-800">
-            <Info className="w-3.5 h-3.5 shrink-0" />
-            COP processes must be audited at least annually per IATF §9.2.2.3.
-          </div>
-        )}
-
-        {/* Risk score bar */}
-        <div>
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>7 — Low Risk (Annual)</span>
-            <span>14 — Med (Semi-Annual)</span>
-            <span>21 — High (Quarterly)</span>
-          </div>
-          <div className="h-2.5 rounded-full bg-gray-200 relative">
-            <div
-              className={`h-2.5 rounded-full transition-all ${score <= 10 ? "bg-green-500" : score <= 15 ? "bg-amber-500" : "bg-red-500"}`}
-              style={{ width: `${((score - 7) / 14) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* 7 Risk criteria */}
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-foreground">IATF §9.2.2.2 Risk Criteria</p>
-          {RISK_CRITERIA.map(criterion => (
-            <div key={criterion.key} className="border rounded-lg p-3 bg-white">
-              <div className="flex items-start justify-between gap-4 mb-2">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{criterion.label}</p>
-                  <p className="text-xs text-muted-foreground">{criterion.clause}</p>
-                </div>
-                <span className={`text-sm font-bold shrink-0 ${scores[criterion.key] === 1 ? "text-green-700" : scores[criterion.key] === 2 ? "text-amber-700" : "text-red-700"}`}>
-                  {scores[criterion.key]} pt{scores[criterion.key] > 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {criterion.scores.map(s => (
-                  <button
-                    key={s.value}
-                    onClick={() => setScores(prev => ({ ...prev, [criterion.key]: s.value }))}
-                    className={`px-2 py-2 rounded-lg text-xs border text-left transition-all ${scores[criterion.key] === s.value
-                      ? s.value === 1 ? "bg-green-100 border-green-400 text-green-800 ring-1 ring-green-400"
-                        : s.value === 2 ? "bg-amber-100 border-amber-400 text-amber-800 ring-1 ring-amber-400"
-                        : "bg-red-100 border-red-400 text-red-800 ring-1 ring-red-400"
-                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"}`}
-                    data-testid={`button-risk-${criterion.key}-${s.value}`}
-                  >
-                    <span className="font-semibold block">{s.value} — {s.label}</span>
-                    <span className="text-xs opacity-80">{s.desc}</span>
-                  </button>
-                ))}
-              </div>
+        {/* Live score summary */}
+        <div className={`rounded-lg border p-4 ${freqCfg.rangeColor}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-bold uppercase tracking-wide ${riskStatusColor}`}>{riskStatus}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{freqCfg.sublabel}</p>
             </div>
-          ))}
+            <div className="text-right">
+              <p className="text-2xl font-black text-foreground leading-none">{total} <span className="text-sm font-normal text-muted-foreground">/60 pts</span></p>
+              <Badge className={`text-sm border mt-1 ${freqCfg.badgeColor}`}>{freqCfg.label}</Badge>
+            </div>
+          </div>
+          {/* Score bar */}
+          <div className="mt-3">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>6 — All LOW</span>
+              <span className="text-green-700 font-medium">≤25 = 3-Year</span>
+              <span className="text-amber-700 font-medium">26-50 = 12-24 mo</span>
+              <span className="text-red-700 font-medium">&gt;50 = 6-9 mo</span>
+              <span>60 — All CRITICAL</span>
+            </div>
+            <div className="h-3 rounded-full bg-gray-200 relative">
+              {/* Zone markers */}
+              <div className="absolute top-0 bottom-0 border-l-2 border-green-400 border-dashed" style={{ left: `${((25-6)/54)*100}%` }} />
+              <div className="absolute top-0 bottom-0 border-l-2 border-amber-400 border-dashed" style={{ left: `${((50-6)/54)*100}%` }} />
+              <div
+                className={`h-3 rounded-full transition-all ${freqCfg.barColor}`}
+                style={{ width: `${Math.min(100, Math.max(2, ((total - 6) / 54) * 100))}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Consultant audit toggle */}
+        <div className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50">
+          <Checkbox
+            id="consultant-audit"
+            checked={consultantAudit}
+            onCheckedChange={(v) => setConsultantAudit(!!v)}
+            data-testid="checkbox-consultant-audit"
+          />
+          <div>
+            <Label htmlFor="consultant-audit" className="font-semibold text-sm cursor-pointer flex items-center gap-1.5">
+              <HardHat className="w-4 h-4 text-gray-500" />Consultant Audit
+            </Label>
+            <p className="text-xs text-muted-foreground">Check if this process is to be audited by an external consultant (shown in grey on the schedule table).</p>
+          </div>
+        </div>
+
+        {/* 6 Risk Criteria */}
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-foreground">Risk Ranking — 6 Criteria (1–10 each)</p>
+          {RISK_CRITERIA.map((criterion, idx) => {
+            const currentScore = scores[criterion.key];
+            const currentBand = getBandForScore(currentScore);
+            return (
+              <div key={criterion.key} className="border rounded-lg p-3 bg-white">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{idx + 1}. {criterion.label}</p>
+                    <p className="text-xs text-muted-foreground">{criterion.subtitle}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`w-2 h-2 rounded-full ${currentBand.dot}`} />
+                    <span className="text-sm font-bold text-foreground">{currentScore} pts</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {BANDS.map((band, bi) => (
+                    <button
+                      key={band.label}
+                      onClick={() => setScores(prev => ({ ...prev, [criterion.key]: band.score }))}
+                      className={`rounded-lg border p-2.5 text-left transition-all text-xs ${getBandForScore(currentScore) === band ? band.color.active : band.color.inactive}`}
+                      data-testid={`button-band-${criterion.key}-${band.label}`}
+                    >
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${band.dot}`} />
+                        <span className="font-bold">{band.label}</span>
+                        <span className="text-muted-foreground ml-auto">{band.range}</span>
+                      </div>
+                      <p className="text-xs opacity-80 leading-snug">{criterion.bandDescs[bi]}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Scheduling fields */}
-        <div className="grid grid-cols-2 gap-4 pt-2">
+        <div className="grid grid-cols-2 gap-4 pt-1">
           <div>
             <Label>Last Audit Date</Label>
             <Input type="date" value={lastAuditDate} onChange={e => setLastAuditDate(e.target.value)} data-testid="input-last-audit-date" />
@@ -938,13 +1010,24 @@ function RiskAssessmentDialog({ processName, processType, existing, onSave, onDe
           </div>
         </div>
 
+        {/* Reference reminder */}
+        <div className="flex items-start gap-2 text-xs p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>
+            <strong>Scoring reference: </strong>
+            Total 1–25 = In Control → 3-Year cycle &nbsp;|&nbsp;
+            26–50 = Needs Attention → 12–24 months &nbsp;|&nbsp;
+            &gt;50 = Needs Immediate Attention → 6–9 months
+          </span>
+        </div>
+
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-1">
           <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={handleSave} disabled={isPending} data-testid="button-save-schedule">
-            {isPending ? "Saving..." : existing ? "Update Schedule" : "Save Schedule"}
+            {isPending ? "Saving..." : existing ? "Update Assessment" : "Save Assessment"}
           </Button>
           {onDelete && (
-            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { if (window.confirm("Remove this schedule entry?")) onDelete(); }} data-testid="button-delete-schedule">
+            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { if (window.confirm("Remove this assessment?")) onDelete(); }} data-testid="button-delete-schedule">
               <Trash2 className="w-4 h-4" />
             </Button>
           )}

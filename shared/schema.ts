@@ -1395,16 +1395,17 @@ export const auditProcessSchedule = pgTable("audit_process_schedule", {
   userId: text("user_id").notNull(),
   isoProjectId: integer("iso_project_id"),
   processName: text("process_name").notNull(),
-  processType: text("process_type").notNull().default("COP"), // MOP | COP | SOP
-  // IATF 9.2.2.2 Risk Criteria — each scored 1 (Low) | 2 (Medium) | 3 (High)
-  riskComplexity: integer("risk_complexity").notNull().default(1),
-  riskCustomerImpact: integer("risk_customer_impact").notNull().default(1),
-  riskPreviousAudit: integer("risk_previous_audit").notNull().default(1),
-  riskPerformance: integer("risk_performance").notNull().default(1),
-  riskChangeFreq: integer("risk_change_freq").notNull().default(1),
-  riskComplaints: integer("risk_complaints").notNull().default(1),
-  riskCompliance: integer("risk_compliance").notNull().default(1),
-  recommendedFrequency: text("recommended_frequency"), // 'annual' | 'semi_annual' | 'quarterly'
+  processType: text("process_type").notNull().default("COP"), // COP | SOP | MOP
+  // Risk Criteria — each scored 1-10 (1-3=LOW, 4-6=MEDIUM, 7-9=HIGH, 10=CRITICAL)
+  // Total: 1-25=In Control (3yr), 26-50=Needs Attention (12-24mo), >50=Needs Immediate (6-9mo)
+  riskComplexity: integer("risk_complexity").notNull().default(1),        // Risk of Process Failure (impact)
+  riskCustomerImpact: integer("risk_customer_impact").notNull().default(1), // Customer & Delivery Impact
+  riskPreviousAudit: integer("risk_previous_audit").notNull().default(1),  // Previous Audit Findings
+  riskPerformance: integer("risk_performance").notNull().default(1),       // Process Performance & KPIs
+  riskChangeFreq: integer("risk_change_freq").notNull().default(1),        // Process Change & Stability
+  riskComplaints: integer("risk_complaints").notNull().default(1),         // Customer Complaints & Feedback
+  recommendedFrequency: text("recommended_frequency"), // 'triennial' | 'biennial' | 'urgent'
+  consultantAudit: boolean("consultant_audit").notNull().default(false),   // Audited by consultant (grey)
   lastAuditDate: timestamp("last_audit_date"),
   nextAuditDate: timestamp("next_audit_date"),
   auditorAssigned: text("auditor_assigned"),
