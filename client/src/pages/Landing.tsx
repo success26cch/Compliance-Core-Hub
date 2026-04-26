@@ -451,6 +451,7 @@ export default function Landing() {
   const [botLoading, setBotLoading] = useState(false);
   const [botLimitReached, setBotLimitReached] = useState(false);
   const [botRemaining, setBotRemaining] = useState(3);
+  const [lastBotQuestion, setLastBotQuestion] = useState<string>("");
   const [botTrialName, setBotTrialName] = useState(() => localStorage.getItem("cchub_trial_name") || "");
   const [botTrialEmail, setBotTrialEmail] = useState(() => localStorage.getItem("cchub_trial_email") || "");
   const [botTrialGated, setBotTrialGated] = useState(() => !localStorage.getItem("cchub_trial_email"));
@@ -521,10 +522,15 @@ export default function Landing() {
     }
     if (lastAssistantIndex === -1) return;
     const lastMsg = botMessages[lastAssistantIndex];
-    const lastUserMsg = lastAssistantIndex > 0
-      ? [...botMessages].slice(0, lastAssistantIndex).reverse().find(m => m.role === "user")
-      : null;
-    const questionText = lastUserMsg ? lastUserMsg.content : null;
+
+    // Prefer explicitly captured last question, fall back to messages array search
+    let questionText: string | null = lastBotQuestion || null;
+    if (!questionText) {
+      const lastUserMsg = lastAssistantIndex > 0
+        ? [...botMessages].slice(0, lastAssistantIndex).reverse().find(m => m.role === "user")
+        : null;
+      questionText = lastUserMsg ? lastUserMsg.content : null;
+    }
     const cleanText = stripMarkdown(lastMsg.content);
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pw = doc.internal.pageSize.getWidth();
@@ -588,13 +594,14 @@ export default function Landing() {
       renderBody(40);
     };
     img.src = logoUrl;
-  }, [botMessages]);
+  }, [botMessages, lastBotQuestion]);
 
   const handleBotSubmit = useCallback(async () => {
     if (!botInput.trim() || botLoading || botLimitReached) return;
     botStopListening();
     botUserScrolledUp.current = false;
     const userMsg = botInput.trim();
+    setLastBotQuestion(userMsg);
     setBotInput("");
     const newMessages: BotMessage[] = [...botMessages, { role: "user", content: userMsg }];
     setBotMessages(newMessages);

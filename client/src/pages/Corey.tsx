@@ -1715,6 +1715,7 @@ function CoreyChatInterface({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
+  const lastQuestionRef = useRef<string>("");
   const { toast } = useToast();
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [emailTo, setEmailTo] = useState("");
@@ -1745,6 +1746,7 @@ function CoreyChatInterface({
     const autoSend = sessionStorage.getItem("corey-auto-send");
     if (autoSend) {
       sessionStorage.removeItem("corey-auto-send");
+      lastQuestionRef.current = autoSend;
       setTimeout(() => sendMessage(autoSend), 300);
     }
   }, []);
@@ -1753,6 +1755,7 @@ function CoreyChatInterface({
     if (pendingPrompt && messages.length === 0 && !isStreaming) {
       const prompt = pendingPrompt;
       onPromptConsumed?.();
+      lastQuestionRef.current = prompt;
       setTimeout(() => {
         sendMessage(prompt);
       }, 400);
@@ -1835,9 +1838,11 @@ function CoreyChatInterface({
       const userQuestion = input.trim() || "Please review this document.";
       const apiContent = `[UPLOADED DOCUMENT: ${attachedDoc.filename}]\n\n${attachedDoc.text}\n\n---\n\n${userQuestion}`;
       const displayContent = `📎 ${attachedDoc.filename}\n\n${userQuestion}`;
+      lastQuestionRef.current = userQuestion;
       sendMessage(apiContent, displayContent);
       setAttachedDoc(null);
     } else {
+      lastQuestionRef.current = input.trim();
       sendMessage(input);
     }
 
@@ -1885,11 +1890,16 @@ function CoreyChatInterface({
       return;
     }
     const lastAssistantMsg = messages[lastAssistantIndex];
-    const lastUserMsg = lastAssistantIndex > 0
-      ? [...messages].slice(0, lastAssistantIndex).reverse().find(m => m.role === "user")
-      : null;
 
-    const questionText = lastUserMsg ? sanitizeForPdf(lastUserMsg.content) : null;
+    // Prefer the explicitly captured last question (set on send), fall back to messages search
+    let rawQuestion: string | null = lastQuestionRef.current || null;
+    if (!rawQuestion) {
+      const lastUserMsg = lastAssistantIndex > 0
+        ? [...messages].slice(0, lastAssistantIndex).reverse().find(m => m.role === "user")
+        : null;
+      rawQuestion = lastUserMsg ? lastUserMsg.content : null;
+    }
+    const questionText = rawQuestion ? sanitizeForPdf(rawQuestion) || rawQuestion : null;
     const cleanText = sanitizeForPdf(stripMarkdown(lastAssistantMsg.content));
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
