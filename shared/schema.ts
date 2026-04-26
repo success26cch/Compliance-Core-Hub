@@ -84,6 +84,7 @@ export const trialLeads = pgTable("trial_leads", {
   email: text("email").notNull().unique(),
   questionCount: integer("question_count").notNull().default(0),
   questions: text("questions").array(),
+  ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

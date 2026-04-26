@@ -63,9 +63,11 @@ export interface IStorage {
   // Trial Leads
   getTrialLeadByEmail(email: string): Promise<TrialLead | undefined>;
   getAllTrialLeads(): Promise<TrialLead[]>;
-  createTrialLead(lead: InsertTrialLead): Promise<TrialLead>;
+  createTrialLead(lead: InsertTrialLead, ipAddress?: string): Promise<TrialLead>;
   incrementTrialQuestionCount(email: string): Promise<TrialLead | undefined>;
   saveTrialLeadQuestion(email: string, question: string): Promise<void>;
+  getTotalQuestionsByDomain(domain: string): Promise<number>;
+  getTotalQuestionsByIp(ip: string): Promise<number>;
 
   // Site Visits
   recordPageVisit(page: string): Promise<void>;
@@ -487,9 +489,25 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(trialLeads).orderBy(desc(trialLeads.createdAt));
   }
 
-  async createTrialLead(lead: InsertTrialLead): Promise<TrialLead> {
-    const [newLead] = await db.insert(trialLeads).values({ ...lead, email: lead.email.toLowerCase() }).returning();
+  async createTrialLead(lead: InsertTrialLead, ipAddress?: string): Promise<TrialLead> {
+    const [newLead] = await db.insert(trialLeads).values({ ...lead, email: lead.email.toLowerCase(), ...(ipAddress ? { ipAddress } : {}) }).returning();
     return newLead;
+  }
+
+  async getTotalQuestionsByDomain(domain: string): Promise<number> {
+    const [result] = await db
+      .select({ total: sql<number>`coalesce(sum(${trialLeads.questionCount}), 0)` })
+      .from(trialLeads)
+      .where(sql`lower(${trialLeads.email}) like ${'%@' + domain.toLowerCase()}`);
+    return Number(result?.total ?? 0);
+  }
+
+  async getTotalQuestionsByIp(ip: string): Promise<number> {
+    const [result] = await db
+      .select({ total: sql<number>`coalesce(sum(${trialLeads.questionCount}), 0)` })
+      .from(trialLeads)
+      .where(eq(trialLeads.ipAddress, ip));
+    return Number(result?.total ?? 0);
   }
 
   async incrementTrialQuestionCount(email: string): Promise<TrialLead | undefined> {
