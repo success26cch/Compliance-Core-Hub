@@ -40,6 +40,9 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type IatfProductAudit, type InsertIatfProductAudit,
   type IatfMfgProcessAudit, type InsertIatfMfgProcessAudit,
   type IatfAuditSchedule, type InsertIatfAuditSchedule,
+  lpaAuditPlans, lpaRecords,
+  type LpaAuditPlan, type InsertLpaAuditPlan,
+  type LpaRecord, type InsertLpaRecord,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -344,6 +347,16 @@ export interface IStorage {
   createIatfAuditScheduleEntry(data: InsertIatfAuditSchedule): Promise<IatfAuditSchedule>;
   updateIatfAuditScheduleEntry(id: number, userId: string, data: Partial<InsertIatfAuditSchedule>, isSuperadmin?: boolean): Promise<IatfAuditSchedule | undefined>;
   deleteIatfAuditScheduleEntry(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ── Layered Process Audits (LPA) ──────────────────────────────────────────
+  getLpaAuditPlans(userId: string, isSuperadmin?: boolean): Promise<LpaAuditPlan[]>;
+  createLpaAuditPlan(data: InsertLpaAuditPlan): Promise<LpaAuditPlan>;
+  updateLpaAuditPlan(id: number, userId: string, data: Partial<InsertLpaAuditPlan>, isSuperadmin?: boolean): Promise<LpaAuditPlan | undefined>;
+  deleteLpaAuditPlan(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+  getLpaRecords(userId: string, isSuperadmin?: boolean, planId?: number): Promise<LpaRecord[]>;
+  createLpaRecord(data: InsertLpaRecord): Promise<LpaRecord>;
+  updateLpaRecord(id: number, userId: string, data: Partial<InsertLpaRecord>, isSuperadmin?: boolean): Promise<LpaRecord | undefined>;
+  deleteLpaRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Awareness Notices
   getIsoAwarenessNotices(userId: string, isSuperadmin?: boolean): Promise<IsoAwarenessNotice[]>;
@@ -2484,6 +2497,52 @@ export class DatabaseStorage implements IStorage {
       ? eq(pmRecords.id, id)
       : and(eq(pmRecords.id, id), eq(pmRecords.userId, userId));
     await db.delete(pmRecords).where(where);
+  }
+
+  // ── Layered Process Audits (LPA) ──────────────────────────────────────────
+  async getLpaAuditPlans(userId: string, isSuperadmin = false): Promise<LpaAuditPlan[]> {
+    const where = isSuperadmin ? undefined : eq(lpaAuditPlans.userId, userId);
+    return db.select().from(lpaAuditPlans).where(where).orderBy(lpaAuditPlans.processName);
+  }
+
+  async createLpaAuditPlan(data: InsertLpaAuditPlan): Promise<LpaAuditPlan> {
+    const [r] = await db.insert(lpaAuditPlans).values(data).returning();
+    return r;
+  }
+
+  async updateLpaAuditPlan(id: number, userId: string, data: Partial<InsertLpaAuditPlan>, isSuperadmin = false): Promise<LpaAuditPlan | undefined> {
+    const where = isSuperadmin ? eq(lpaAuditPlans.id, id) : and(eq(lpaAuditPlans.id, id), eq(lpaAuditPlans.userId, userId));
+    const [r] = await db.update(lpaAuditPlans).set({ ...data, updatedAt: new Date() }).where(where).returning();
+    return r;
+  }
+
+  async deleteLpaAuditPlan(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin ? eq(lpaAuditPlans.id, id) : and(eq(lpaAuditPlans.id, id), eq(lpaAuditPlans.userId, userId));
+    await db.delete(lpaAuditPlans).where(where);
+  }
+
+  async getLpaRecords(userId: string, isSuperadmin = false, planId?: number): Promise<LpaRecord[]> {
+    const conds: any[] = [];
+    if (!isSuperadmin) conds.push(eq(lpaRecords.userId, userId));
+    if (planId != null) conds.push(eq(lpaRecords.planId, planId));
+    const where = conds.length > 1 ? and(...conds) : conds[0];
+    return db.select().from(lpaRecords).where(where).orderBy(desc(lpaRecords.auditDate));
+  }
+
+  async createLpaRecord(data: InsertLpaRecord): Promise<LpaRecord> {
+    const [r] = await db.insert(lpaRecords).values(data).returning();
+    return r;
+  }
+
+  async updateLpaRecord(id: number, userId: string, data: Partial<InsertLpaRecord>, isSuperadmin = false): Promise<LpaRecord | undefined> {
+    const where = isSuperadmin ? eq(lpaRecords.id, id) : and(eq(lpaRecords.id, id), eq(lpaRecords.userId, userId));
+    const [r] = await db.update(lpaRecords).set({ ...data, updatedAt: new Date() }).where(where).returning();
+    return r;
+  }
+
+  async deleteLpaRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin ? eq(lpaRecords.id, id) : and(eq(lpaRecords.id, id), eq(lpaRecords.userId, userId));
+    await db.delete(lpaRecords).where(where);
   }
 }
 

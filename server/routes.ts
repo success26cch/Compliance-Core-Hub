@@ -6506,6 +6506,98 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (error: any) { res.status(500).json({ message: error.message }); }
   });
 
+  // ─── Layered Process Audits (LPA) ────────────────────────────────────────────
+  app.get("/api/lpa-plans", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const plans = await storage.getLpaAuditPlans(userId, isSuperadmin);
+      res.json(plans);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.post("/api/lpa-plans", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const plan = await storage.createLpaAuditPlan({ ...req.body, userId });
+      res.status(201).json(plan);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.patch("/api/lpa-plans/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const { id: _id, userId: _uid, ...data } = req.body;
+      const updated = await storage.updateLpaAuditPlan(id, userId, data, isSuperadmin);
+      if (!updated) return res.status(404).json({ message: "Not found" });
+      res.json(updated);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.delete("/api/lpa-plans/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteLpaAuditPlan(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.get("/api/lpa-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const planId = req.query.planId ? parseInt(req.query.planId as string) : undefined;
+      const records = await storage.getLpaRecords(userId, isSuperadmin, planId);
+      res.json(records);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.post("/api/lpa-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const record = await storage.createLpaRecord({ ...req.body, userId });
+      res.status(201).json(record);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.patch("/api/lpa-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const { id: _id, userId: _uid, ...data } = req.body;
+      const updated = await storage.updateLpaRecord(id, userId, data, isSuperadmin);
+      if (!updated) return res.status(404).json({ message: "Not found" });
+      res.json(updated);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.delete("/api/lpa-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteLpaRecord(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
   // ─── Audit Process Schedule (IATF 9.2.2.2) ───────────────────────────────────
   app.get("/api/audit-schedule", async (req: Request, res: Response) => {
     try {

@@ -2458,3 +2458,76 @@ export const iatfAuditSchedule = pgTable("iatf_audit_schedule", {
 export const insertIatfAuditScheduleSchema = createInsertSchema(iatfAuditSchedule).omit({ id: true, createdAt: true, updatedAt: true });
 export type IatfAuditSchedule = typeof iatfAuditSchedule.$inferSelect;
 export type InsertIatfAuditSchedule = z.infer<typeof insertIatfAuditScheduleSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYERED PROCESS AUDITS (LPA)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface LpaLayerConfig {
+  layer: string;          // "L1" | "L2" | "L3" | "L4" | "L5"
+  label: string;          // "Operator", "Team Lead / Supervisor", etc.
+  frequency: string;      // "daily" | "weekly" | "monthly" | "quarterly"
+  targetPerPeriod: number; // how many audits per period
+  active: boolean;
+}
+
+export interface LpaQuestion {
+  id: string;
+  category: string;
+  question: string;
+  isRequired: boolean;
+  appliesTo: string[]; // which layers: ["L1","L2","L3",...]
+}
+
+export interface LpaAuditItem {
+  questionId: string;
+  question: string;
+  category: string;
+  layer: string;
+  result: "yes" | "no" | "na";
+  note: string;
+}
+
+export const lpaAuditPlans = pgTable("lpa_audit_plans", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  processName: text("process_name").notNull(),
+  area: text("area"),
+  partFamily: text("part_family"),
+  status: text("status").notNull().default("active"), // "active" | "paused" | "archived"
+  layers: jsonb("layers").$type<LpaLayerConfig[]>().default([]),
+  questions: jsonb("questions").$type<LpaQuestion[]>().default([]),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertLpaAuditPlanSchema = createInsertSchema(lpaAuditPlans).omit({ id: true, createdAt: true, updatedAt: true });
+export type LpaAuditPlan = typeof lpaAuditPlans.$inferSelect;
+export type InsertLpaAuditPlan = z.infer<typeof insertLpaAuditPlanSchema>;
+
+export const lpaRecords = pgTable("lpa_records", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  planId: integer("plan_id").notNull(),
+  processName: text("process_name"),
+  area: text("area"),
+  auditDate: text("audit_date").notNull(),
+  layer: text("layer").notNull(),           // "L1" | "L2" | "L3" | "L4" | "L5"
+  layerLabel: text("layer_label"),
+  auditorName: text("auditor_name").notNull(),
+  shift: text("shift"),
+  auditItems: jsonb("audit_items").$type<LpaAuditItem[]>().default([]),
+  conformingCount: integer("conforming_count").default(0),
+  nonconformingCount: integer("nonconforming_count").default(0),
+  naCount: integer("na_count").default(0),
+  result: text("result"),                   // "pass" | "fail" | "partial"
+  overallNotes: text("overall_notes"),
+  immediateActions: text("immediate_actions"),
+  escalated: boolean("escalated").default(false),
+  escalatedTo: text("escalated_to"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertLpaRecordSchema = createInsertSchema(lpaRecords).omit({ id: true, createdAt: true, updatedAt: true });
+export type LpaRecord = typeof lpaRecords.$inferSelect;
+export type InsertLpaRecord = z.infer<typeof insertLpaRecordSchema>;
