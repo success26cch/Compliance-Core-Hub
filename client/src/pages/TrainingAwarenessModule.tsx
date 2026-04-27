@@ -12,14 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Plus, GraduationCap, CheckCircle2, Clock, Users, ChevronDown, ChevronUp,
   Trash2, ShieldCheck, BookOpen, ClipboardList, AlertTriangle, FileText,
-  Pencil, Award, Layers, BarChart2, User, ChevronRight,
+  Pencil, Award, Layers, BarChart2, User, ChevronRight, Grid3x3, X,
 } from "lucide-react";
 import type {
   IsoAwarenessNotice, IsoAwarenessAcknowledgment, Employee,
   CompetencyRequirement, EmployeeCompetencyRecord, TrainingEventRecord,
+  TrainingMatrixSkill, TrainingMatrixEntry,
 } from "@shared/schema";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -119,6 +121,7 @@ export function TrainingAwarenessModule({ onAskIsa }: { onAskIsa?: (prompt: stri
           <TabsTrigger value="matrix" className="text-xs gap-1.5"><Layers className="w-3.5 h-3.5" />Competence Matrix</TabsTrigger>
           <TabsTrigger value="records" className="text-xs gap-1.5"><User className="w-3.5 h-3.5" />Employee Records</TabsTrigger>
           <TabsTrigger value="log" className="text-xs gap-1.5"><ClipboardList className="w-3.5 h-3.5" />Training Log</TabsTrigger>
+          <TabsTrigger value="skills" className="text-xs gap-1.5"><Grid3x3 className="w-3.5 h-3.5" />Skills Matrix</TabsTrigger>
           <TabsTrigger value="awareness" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" />Awareness §7.3</TabsTrigger>
           <TabsTrigger value="special" className="text-xs gap-1.5"><ShieldCheck className="w-3.5 h-3.5" />Special Reqs</TabsTrigger>
         </TabsList>
@@ -131,6 +134,9 @@ export function TrainingAwarenessModule({ onAskIsa }: { onAskIsa?: (prompt: stri
         </TabsContent>
         <TabsContent value="log" className="flex-1 overflow-auto mt-0 p-6">
           <TrainingLogTab />
+        </TabsContent>
+        <TabsContent value="skills" className="flex-1 overflow-hidden mt-0">
+          <SkillsMatrixTab />
         </TabsContent>
         <TabsContent value="awareness" className="flex-1 overflow-auto mt-0 p-6">
           <AwarenessTab onAskIsa={onAskIsa} />
@@ -1317,6 +1323,363 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 6 — Cross-Training Skills Matrix
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Rating level helpers
+const SIMPLE_LEVELS = [
+  { value: "aware", label: "Aware", short: "Aware", cls: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  { value: "competent", label: "Competent", short: "Comp", cls: "bg-green-100 text-green-800 border-green-300" },
+  { value: "na", label: "N/A", short: "N/A", cls: "bg-gray-100 text-gray-500 border-gray-200" },
+];
+const IATF_LEVELS = [
+  { value: "i", label: "I — In Training (not yet independent)", short: "I", cls: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  { value: "l", label: "L — Works Alone (limited problem solving)", short: "L", cls: "bg-lime-100 text-lime-800 border-lime-300" },
+  { value: "u", label: "U — Expert (solves problems, cannot train)", short: "U", cls: "bg-green-100 text-green-800 border-green-300" },
+  { value: "o", label: "O — Expert Trainer (can train others)", short: "O", cls: "bg-teal-100 text-teal-800 border-teal-300" },
+  { value: "na", label: "N/A — Not Applicable", short: "N/A", cls: "bg-gray-100 text-gray-500 border-gray-200" },
+];
+
+function levelInfo(level: string | null | undefined, scale: string) {
+  const levels = scale === "iatf_4level" ? IATF_LEVELS : SIMPLE_LEVELS;
+  return levels.find(l => l.value === level);
+}
+
+function LevelCell({ level, scale, onClick }: { level?: string | null; scale: string; onClick: () => void }) {
+  const info = levelInfo(level, scale);
+  return (
+    <button
+      onClick={onClick}
+      data-testid="skills-matrix-cell"
+      className={`w-full h-full min-h-[2rem] flex items-center justify-center text-xs font-semibold border rounded transition-opacity hover:opacity-80 cursor-pointer ${info ? info.cls : "bg-white text-gray-300 border-gray-100 hover:bg-gray-50"}`}
+    >
+      {info ? info.short : "—"}
+    </button>
+  );
+}
+
+function SkillsMatrixTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [showAddSkill, setShowAddSkill] = useState(false);
+  const [newSkillName, setNewSkillName] = useState("");
+  const [newSkillCategory, setNewSkillCategory] = useState("");
+  const [newSkillScale, setNewSkillScale] = useState("simple");
+  const [newSkillRequired, setNewSkillRequired] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [deptFilter, setDeptFilter] = useState("all");
+
+  // Cell edit state
+  const [editCell, setEditCell] = useState<{ emp: Employee; skill: TrainingMatrixSkill; entry?: TrainingMatrixEntry } | null>(null);
+  const [cellLevel, setCellLevel] = useState("");
+  const [cellNotes, setCellNotes] = useState("");
+
+  const { data: employees = [] } = useQuery<Employee[]>({ queryKey: ["/api/employees"] });
+  const { data: skills = [] } = useQuery<TrainingMatrixSkill[]>({ queryKey: ["/api/training-matrix/skills"] });
+  const { data: entries = [] } = useQuery<TrainingMatrixEntry[]>({ queryKey: ["/api/training-matrix/entries"] });
+
+  const entryMap = useMemo(() => {
+    const map: Record<string, TrainingMatrixEntry> = {};
+    entries.forEach(e => { map[`${e.employeeId}-${e.skillId}`] = e; });
+    return map;
+  }, [entries]);
+
+  const categories = useMemo(() => {
+    const cats = [...new Set(skills.map(s => s.skillCategory).filter(Boolean) as string[])];
+    return cats;
+  }, [skills]);
+
+  const departments = useMemo(() => {
+    const depts = [...new Set(employees.map(e => (e as any).department).filter(Boolean) as string[])];
+    return depts;
+  }, [employees]);
+
+  const filteredSkills = useMemo(() => {
+    if (categoryFilter === "all") return skills;
+    return skills.filter(s => s.skillCategory === categoryFilter);
+  }, [skills, categoryFilter]);
+
+  const filteredEmployees = useMemo(() => {
+    if (deptFilter === "all") return employees;
+    return employees.filter(e => (e as any).department === deptFilter);
+  }, [employees, deptFilter]);
+
+  const createSkillMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/training-matrix/skills", data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/training-matrix/skills"] }); setShowAddSkill(false); setNewSkillName(""); setNewSkillCategory(""); setNewSkillScale("simple"); setNewSkillRequired(true); toast({ title: "Skill added" }); },
+    onError: () => toast({ title: "Error", description: "Failed to add skill", variant: "destructive" }),
+  });
+
+  const deleteSkillMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/training-matrix/skills/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/training-matrix/skills"] }); queryClient.invalidateQueries({ queryKey: ["/api/training-matrix/entries"] }); toast({ title: "Skill removed" }); },
+    onError: () => toast({ title: "Error", description: "Failed to remove skill", variant: "destructive" }),
+  });
+
+  const upsertEntryMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/training-matrix/entries", data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/training-matrix/entries"] }); setEditCell(null); },
+    onError: () => toast({ title: "Error", description: "Failed to save", variant: "destructive" }),
+  });
+
+  function openCell(emp: Employee, skill: TrainingMatrixSkill) {
+    const existing = entryMap[`${emp.id}-${skill.id}`];
+    setEditCell({ emp, skill, entry: existing });
+    setCellLevel(existing?.level ?? "");
+    setCellNotes(existing?.notes ?? "");
+  }
+
+  function saveCell() {
+    if (!editCell) return;
+    upsertEntryMutation.mutate({
+      employeeId: editCell.emp.id,
+      skillId: editCell.skill.id,
+      level: cellLevel || null,
+      notes: cellNotes || null,
+    });
+  }
+
+  const levels = editCell?.skill.ratingScale === "iatf_4level" ? IATF_LEVELS : SIMPLE_LEVELS;
+
+  // Count coverage
+  const totalCells = filteredEmployees.length * filteredSkills.length;
+  const competentCells = entries.filter(e => e.level === "competent" || e.level === "o" || e.level === "u").length;
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b bg-white shrink-0">
+        <Button size="sm" onClick={() => setShowAddSkill(true)} data-testid="button-add-skill">
+          <Plus className="w-3.5 h-3.5 mr-1" /> Add Skill Column
+        </Button>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="h-8 text-xs w-44" data-testid="select-category-filter">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={deptFilter} onValueChange={setDeptFilter}>
+          <SelectTrigger className="h-8 text-xs w-44" data-testid="select-dept-filter">
+            <SelectValue placeholder="All Departments" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Departments</SelectItem>
+            {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+          <span>{filteredEmployees.length} employees · {filteredSkills.length} skills</span>
+          {totalCells > 0 && <span className="text-green-700 font-medium">{Math.round((competentCells / totalCells) * 100)}% competent</span>}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-3 px-4 py-2 border-b bg-gray-50 shrink-0 text-xs overflow-x-auto">
+        <span className="font-medium text-muted-foreground shrink-0">Simple scale:</span>
+        {SIMPLE_LEVELS.map(l => <span key={l.value} className={`px-2 py-0.5 rounded border font-semibold shrink-0 ${l.cls}`}>{l.short} = {l.label}</span>)}
+        <span className="font-medium text-muted-foreground shrink-0 ml-3">IATF 4-level:</span>
+        {IATF_LEVELS.map(l => <span key={l.value} className={`px-2 py-0.5 rounded border font-semibold shrink-0 ${l.cls}`}>{l.short} = {l.label.split(" — ")[0]}</span>)}
+      </div>
+
+      {/* Matrix Table */}
+      {filteredSkills.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Grid3x3 className="w-10 h-10 opacity-30" />
+          <p className="text-sm">No skill columns yet.</p>
+          <p className="text-xs">Click <strong>Add Skill Column</strong> to define the processes or competencies your team is trained on.</p>
+        </div>
+      ) : filteredEmployees.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+          <Users className="w-10 h-10 opacity-30" />
+          <p className="text-sm">No employees found.</p>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto">
+          <table className="border-collapse text-xs min-w-max w-full" data-testid="skills-matrix-table">
+            <thead className="sticky top-0 z-20 bg-white shadow-sm">
+              <tr>
+                {/* Sticky first header */}
+                <th className="sticky left-0 z-30 bg-white border border-gray-200 px-3 py-2 text-left font-semibold min-w-[160px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
+                  Employee / Dept
+                </th>
+                {filteredSkills.map(skill => (
+                  <th key={skill.id} className="border border-gray-200 px-2 py-1 text-center font-medium min-w-[70px] max-w-[90px] bg-white">
+                    <div className="flex flex-col items-center gap-0.5">
+                      {skill.skillCategory && <span className="text-[9px] text-muted-foreground uppercase tracking-wide">{skill.skillCategory}</span>}
+                      <span className="leading-tight">{skill.skillName}</span>
+                      {skill.ratingScale === "iatf_4level" && <span className="text-[9px] text-blue-500">IATF</span>}
+                      {skill.isRequired && <span className="text-[9px] text-orange-500">★ Req</span>}
+                      <button
+                        data-testid={`button-delete-skill-${skill.id}`}
+                        onClick={() => { if (confirm(`Remove "${skill.skillName}" and all its cell data?`)) deleteSkillMutation.mutate(skill.id); }}
+                        className="text-red-300 hover:text-red-500 mt-0.5"
+                      ><X className="w-2.5 h-2.5" /></button>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEmployees.map((emp, rowIdx) => (
+                <tr key={emp.id} className={rowIdx % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                  {/* Sticky name column */}
+                  <td className="sticky left-0 z-10 border border-gray-200 px-3 py-1.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
+                    style={{ backgroundColor: rowIdx % 2 === 0 ? "white" : "#fafafa" }}>
+                    <div className="font-medium leading-tight">{(emp as any).firstName} {(emp as any).lastName}</div>
+                    {(emp as any).department && <div className="text-[10px] text-muted-foreground">{(emp as any).department}</div>}
+                    {(emp as any).jobTitle && <div className="text-[10px] text-muted-foreground italic">{(emp as any).jobTitle}</div>}
+                  </td>
+                  {filteredSkills.map(skill => {
+                    const entry = entryMap[`${emp.id}-${skill.id}`];
+                    return (
+                      <td key={skill.id} className="border border-gray-200 p-0.5">
+                        <LevelCell level={entry?.level} scale={skill.ratingScale} onClick={() => openCell(emp, skill)} />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add Skill Dialog */}
+      <Dialog open={showAddSkill} onOpenChange={setShowAddSkill}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Add Skill / Process Column</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Skill / Process Name <span className="text-red-500">*</span></Label>
+              <Input
+                data-testid="input-skill-name"
+                value={newSkillName}
+                onChange={e => setNewSkillName(e.target.value)}
+                placeholder="e.g. Welding, Assembly, Blueprint Reading"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Category / Area (optional grouping)</Label>
+              <Input
+                data-testid="input-skill-category"
+                value={newSkillCategory}
+                onChange={e => setNewSkillCategory(e.target.value)}
+                placeholder="e.g. Machining, Assembly, Quality"
+                className="mt-1"
+                list="existing-categories"
+              />
+              <datalist id="existing-categories">
+                {categories.map(c => <option key={c} value={c} />)}
+              </datalist>
+            </div>
+            <div>
+              <Label className="text-xs">Rating Scale</Label>
+              <Select value={newSkillScale} onValueChange={setNewSkillScale}>
+                <SelectTrigger className="mt-1 text-xs" data-testid="select-rating-scale">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="simple">Simple (Aware / Competent)</SelectItem>
+                  <SelectItem value="iatf_4level">IATF 4-Level (I / L / U / O)</SelectItem>
+                </SelectContent>
+              </Select>
+              {newSkillScale === "iatf_4level" && (
+                <p className="text-[10px] text-muted-foreground mt-1">I=In Training · L=Works Alone · U=Expert · O=Can Train Others</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="skill-required"
+                checked={newSkillRequired}
+                onCheckedChange={v => setNewSkillRequired(!!v)}
+                data-testid="checkbox-skill-required"
+              />
+              <Label htmlFor="skill-required" className="text-xs">Mark as required (★) for all roles</Label>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" variant="outline" onClick={() => setShowAddSkill(false)} className="flex-1">Cancel</Button>
+              <Button
+                size="sm"
+                className="flex-1"
+                data-testid="button-save-skill"
+                disabled={!newSkillName.trim() || createSkillMutation.isPending}
+                onClick={() => createSkillMutation.mutate({ skillName: newSkillName.trim(), skillCategory: newSkillCategory.trim() || null, ratingScale: newSkillScale, isRequired: newSkillRequired, sortOrder: skills.length })}
+              >
+                {createSkillMutation.isPending ? "Saving…" : "Add Column"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cell Editor Dialog */}
+      <Dialog open={!!editCell} onOpenChange={open => !open && setEditCell(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">
+              {editCell ? `${(editCell.emp as any).firstName} ${(editCell.emp as any).lastName}` : ""}
+              <span className="text-muted-foreground font-normal"> · {editCell?.skill.skillName}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {editCell && (
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Competency Level</Label>
+                <Select value={cellLevel} onValueChange={setCellLevel}>
+                  <SelectTrigger className="mt-1 text-xs" data-testid="select-cell-level">
+                    <SelectValue placeholder="— Not assessed —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">— Not assessed —</SelectItem>
+                    {levels.map(l => (
+                      <SelectItem key={l.value} value={l.value}>
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold mr-2 ${l.cls}`}>{l.short}</span>
+                        {l.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Notes (optional — e.g. "Missing TL sign-off", "Cert expires 2026-06")</Label>
+                <Textarea
+                  data-testid="textarea-cell-notes"
+                  value={cellNotes}
+                  onChange={e => setCellNotes(e.target.value)}
+                  rows={2}
+                  className="mt-1 text-xs resize-none"
+                  placeholder="Any gaps, expiry dates, or training notes…"
+                />
+              </div>
+              {editCell.entry?.notes && !cellNotes && (
+                <p className="text-xs text-muted-foreground">Current note: {editCell.entry.notes}</p>
+              )}
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" variant="outline" onClick={() => setEditCell(null)} className="flex-1">Cancel</Button>
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  data-testid="button-save-cell"
+                  disabled={upsertEntryMutation.isPending}
+                  onClick={saveCell}
+                >
+                  {upsertEntryMutation.isPending ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

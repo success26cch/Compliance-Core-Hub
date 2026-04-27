@@ -47,6 +47,9 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type CompetencyRequirement, type InsertCompetencyRequirement,
   type EmployeeCompetencyRecord, type InsertEmployeeCompetencyRecord,
   type TrainingEventRecord, type InsertTrainingEventRecord,
+  trainingMatrixSkills, trainingMatrixEntries,
+  type TrainingMatrixSkill, type InsertTrainingMatrixSkill,
+  type TrainingMatrixEntry, type InsertTrainingMatrixEntry,
 } from "@shared/schema";
 import { db } from "./rls";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -389,6 +392,15 @@ export interface IStorage {
   createTrainingEventRecord(data: InsertTrainingEventRecord): Promise<TrainingEventRecord>;
   updateTrainingEventRecord(id: number, userId: string, data: Partial<InsertTrainingEventRecord>, isSuperadmin?: boolean): Promise<TrainingEventRecord | undefined>;
   deleteTrainingEventRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // Cross-Training / Skills Matrix
+  getTrainingMatrixSkills(userId: string, isSuperadmin?: boolean): Promise<TrainingMatrixSkill[]>;
+  createTrainingMatrixSkill(data: InsertTrainingMatrixSkill): Promise<TrainingMatrixSkill>;
+  updateTrainingMatrixSkill(id: number, userId: string, data: Partial<InsertTrainingMatrixSkill>, isSuperadmin?: boolean): Promise<TrainingMatrixSkill | undefined>;
+  deleteTrainingMatrixSkill(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+  getTrainingMatrixEntries(userId: string, isSuperadmin?: boolean): Promise<TrainingMatrixEntry[]>;
+  upsertTrainingMatrixEntry(data: InsertTrainingMatrixEntry): Promise<TrainingMatrixEntry>;
+  deleteTrainingMatrixEntry(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Objectives (KPI tracking — shared by Process Maps, Measurement, Management Review)
   getIsoObjectives(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoObjective[]>;
@@ -2101,6 +2113,47 @@ export class DatabaseStorage implements IStorage {
   async deleteTrainingEventRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
     const cond = isSuperadmin ? eq(trainingEventRecords.id, id) : and(eq(trainingEventRecords.id, id), eq(trainingEventRecords.userId, userId));
     await db.delete(trainingEventRecords).where(cond);
+  }
+
+  // ─── Cross-Training / Skills Matrix ──────────────────────────────────────────
+  async getTrainingMatrixSkills(userId: string, isSuperadmin = false): Promise<TrainingMatrixSkill[]> {
+    const cond = isSuperadmin ? undefined : eq(trainingMatrixSkills.userId, userId);
+    return db.select().from(trainingMatrixSkills).where(cond).orderBy(trainingMatrixSkills.sortOrder, trainingMatrixSkills.skillName);
+  }
+  async createTrainingMatrixSkill(data: InsertTrainingMatrixSkill): Promise<TrainingMatrixSkill> {
+    const [rec] = await db.insert(trainingMatrixSkills).values(data).returning();
+    return rec;
+  }
+  async updateTrainingMatrixSkill(id: number, userId: string, data: Partial<InsertTrainingMatrixSkill>, isSuperadmin = false): Promise<TrainingMatrixSkill | undefined> {
+    const cond = isSuperadmin ? eq(trainingMatrixSkills.id, id) : and(eq(trainingMatrixSkills.id, id), eq(trainingMatrixSkills.userId, userId));
+    const [rec] = await db.update(trainingMatrixSkills).set(data).where(cond).returning();
+    return rec;
+  }
+  async deleteTrainingMatrixSkill(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const cond = isSuperadmin ? eq(trainingMatrixSkills.id, id) : and(eq(trainingMatrixSkills.id, id), eq(trainingMatrixSkills.userId, userId));
+    await db.delete(trainingMatrixSkills).where(cond);
+    await db.delete(trainingMatrixEntries).where(and(eq(trainingMatrixEntries.skillId, id), eq(trainingMatrixEntries.userId, userId)));
+  }
+  async getTrainingMatrixEntries(userId: string, isSuperadmin = false): Promise<TrainingMatrixEntry[]> {
+    const cond = isSuperadmin ? undefined : eq(trainingMatrixEntries.userId, userId);
+    return db.select().from(trainingMatrixEntries).where(cond);
+  }
+  async upsertTrainingMatrixEntry(data: InsertTrainingMatrixEntry): Promise<TrainingMatrixEntry> {
+    const existing = await db.select().from(trainingMatrixEntries)
+      .where(and(eq(trainingMatrixEntries.userId, data.userId), eq(trainingMatrixEntries.employeeId, data.employeeId), eq(trainingMatrixEntries.skillId, data.skillId)))
+      .limit(1);
+    if (existing.length > 0) {
+      const [rec] = await db.update(trainingMatrixEntries)
+        .set({ level: data.level, notes: data.notes, updatedAt: new Date() })
+        .where(eq(trainingMatrixEntries.id, existing[0].id)).returning();
+      return rec;
+    }
+    const [rec] = await db.insert(trainingMatrixEntries).values(data).returning();
+    return rec;
+  }
+  async deleteTrainingMatrixEntry(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const cond = isSuperadmin ? eq(trainingMatrixEntries.id, id) : and(eq(trainingMatrixEntries.id, id), eq(trainingMatrixEntries.userId, userId));
+    await db.delete(trainingMatrixEntries).where(cond);
   }
 
   // ─── ISO Objectives ───────────────────────────────────────────────────────────

@@ -2594,3 +2594,36 @@ export const trainingEventRecords = pgTable("training_event_records", {
 export const insertTrainingEventRecordSchema = createInsertSchema(trainingEventRecords).omit({ id: true, createdAt: true });
 export type TrainingEventRecord = typeof trainingEventRecords.$inferSelect;
 export type InsertTrainingEventRecord = z.infer<typeof insertTrainingEventRecordSchema>;
+
+// ─── Cross-Training / Skills Matrix ──────────────────────────────────────────
+
+// Column definitions for the skills matrix (one row = one skill/process)
+export const trainingMatrixSkills = pgTable("training_matrix_skills", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  skillName: text("skill_name").notNull(),
+  skillCategory: text("skill_category"),  // grouping header e.g. "Machining", "Assembly"
+  ratingScale: text("rating_scale").notNull().default("simple"), // 'simple' | 'iatf_4level'
+  isRequired: boolean("is_required").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertTrainingMatrixSkillSchema = createInsertSchema(trainingMatrixSkills).omit({ id: true, createdAt: true });
+export type TrainingMatrixSkill = typeof trainingMatrixSkills.$inferSelect;
+export type InsertTrainingMatrixSkill = z.infer<typeof insertTrainingMatrixSkillSchema>;
+
+// Cell values — one row per employee × skill intersection
+export const trainingMatrixEntries = pgTable("training_matrix_entries", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  employeeId: integer("employee_id").notNull(),
+  skillId: integer("skill_id").notNull(),
+  // Simple scale: 'aware' | 'competent' | 'na'
+  // IATF 4-level:  'i'=in-training | 'l'=works-alone | 'u'=expert | 'o'=can-train | 'na'
+  level: text("level"),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertTrainingMatrixEntrySchema = createInsertSchema(trainingMatrixEntries).omit({ id: true, updatedAt: true });
+export type TrainingMatrixEntry = typeof trainingMatrixEntries.$inferSelect;
+export type InsertTrainingMatrixEntry = z.infer<typeof insertTrainingMatrixEntrySchema>;

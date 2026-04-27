@@ -6867,6 +6867,82 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (error: any) { res.status(500).json({ message: error.message }); }
   });
 
+  // ─── Cross-Training / Skills Matrix ──────────────────────────────────────────
+  app.get("/api/training-matrix/skills", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const skills = await storage.getTrainingMatrixSkills(userId, isSuperadmin);
+      res.json(skills);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.post("/api/training-matrix/skills", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const skill = await storage.createTrainingMatrixSkill({ ...req.body, userId });
+      res.status(201).json(skill);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.patch("/api/training-matrix/skills/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const skill = await storage.updateTrainingMatrixSkill(id, userId, req.body, isSuperadmin);
+      if (!skill) return res.status(404).json({ message: "Not found" });
+      res.json(skill);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.delete("/api/training-matrix/skills/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteTrainingMatrixSkill(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.get("/api/training-matrix/entries", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const entries = await storage.getTrainingMatrixEntries(userId, isSuperadmin);
+      res.json(entries);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.post("/api/training-matrix/entries", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const entry = await storage.upsertTrainingMatrixEntry({ ...req.body, userId });
+      res.status(201).json(entry);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.delete("/api/training-matrix/entries/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteTrainingMatrixEntry(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
   app.post("/api/corrective-actions/:id/notify-sms", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
