@@ -36,9 +36,10 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   pmEquipment, pmRecords,
   type PmEquipment, type InsertPmEquipment,
   type PmRecord, type InsertPmRecord,
-  iatfProductAudits, iatfMfgProcessAudits,
+  iatfProductAudits, iatfMfgProcessAudits, iatfAuditSchedule,
   type IatfProductAudit, type InsertIatfProductAudit,
   type IatfMfgProcessAudit, type InsertIatfMfgProcessAudit,
+  type IatfAuditSchedule, type InsertIatfAuditSchedule,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -337,6 +338,12 @@ export interface IStorage {
   createIatfMfgProcessAudit(data: InsertIatfMfgProcessAudit): Promise<IatfMfgProcessAudit>;
   updateIatfMfgProcessAudit(id: number, userId: string, data: Partial<InsertIatfMfgProcessAudit>, isSuperadmin?: boolean): Promise<IatfMfgProcessAudit | undefined>;
   deleteIatfMfgProcessAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // IATF Audit Schedule (§9.2.2.3 & §9.2.2.4)
+  getIatfAuditSchedule(userId: string, isSuperadmin?: boolean): Promise<IatfAuditSchedule[]>;
+  createIatfAuditScheduleEntry(data: InsertIatfAuditSchedule): Promise<IatfAuditSchedule>;
+  updateIatfAuditScheduleEntry(id: number, userId: string, data: Partial<InsertIatfAuditSchedule>, isSuperadmin?: boolean): Promise<IatfAuditSchedule | undefined>;
+  deleteIatfAuditScheduleEntry(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Awareness Notices
   getIsoAwarenessNotices(userId: string, isSuperadmin?: boolean): Promise<IsoAwarenessNotice[]>;
@@ -1950,6 +1957,22 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteIatfMfgProcessAudit(id: number, userId: string, isSuperadmin = false): Promise<void> {
     await db.delete(iatfMfgProcessAudits).where(isSuperadmin ? eq(iatfMfgProcessAudits.id, id) : and(eq(iatfMfgProcessAudits.id, id), eq(iatfMfgProcessAudits.userId, userId)));
+  }
+
+  // ─── IATF Audit Schedule ──────────────────────────────────────────────────────
+  async getIatfAuditSchedule(userId: string, isSuperadmin = false): Promise<IatfAuditSchedule[]> {
+    return db.select().from(iatfAuditSchedule).where(isSuperadmin ? undefined : eq(iatfAuditSchedule.userId, userId)).orderBy(iatfAuditSchedule.nextDueDate);
+  }
+  async createIatfAuditScheduleEntry(data: InsertIatfAuditSchedule): Promise<IatfAuditSchedule> {
+    const [rec] = await db.insert(iatfAuditSchedule).values(data).returning();
+    return rec;
+  }
+  async updateIatfAuditScheduleEntry(id: number, userId: string, data: Partial<InsertIatfAuditSchedule>, isSuperadmin = false): Promise<IatfAuditSchedule | undefined> {
+    const [rec] = await db.update(iatfAuditSchedule).set({ ...data, updatedAt: new Date() }).where(isSuperadmin ? eq(iatfAuditSchedule.id, id) : and(eq(iatfAuditSchedule.id, id), eq(iatfAuditSchedule.userId, userId))).returning();
+    return rec;
+  }
+  async deleteIatfAuditScheduleEntry(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(iatfAuditSchedule).where(isSuperadmin ? eq(iatfAuditSchedule.id, id) : and(eq(iatfAuditSchedule.id, id), eq(iatfAuditSchedule.userId, userId)));
   }
 
   // ─── ISO Awareness Notices ────────────────────────────────────────────────────

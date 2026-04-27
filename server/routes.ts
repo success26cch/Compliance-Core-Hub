@@ -6461,6 +6461,51 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (error: any) { res.status(500).json({ message: error.message }); }
   });
 
+  // ─── IATF Audit Schedule (§9.2.2.3 & §9.2.2.4) ──────────────────────────────
+  app.get("/api/iatf-audit-schedule", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const entries = await storage.getIatfAuditSchedule(userId, isSuperadmin);
+      res.json(entries);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.post("/api/iatf-audit-schedule", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const entry = await storage.createIatfAuditScheduleEntry({ ...req.body, userId });
+      res.json(entry);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.patch("/api/iatf-audit-schedule/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const entry = await storage.updateIatfAuditScheduleEntry(id, userId, req.body, isSuperadmin);
+      if (!entry) return res.status(404).json({ message: "Not found" });
+      res.json(entry);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.delete("/api/iatf-audit-schedule/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIatfAuditScheduleEntry(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
   // ─── Audit Process Schedule (IATF 9.2.2.2) ───────────────────────────────────
   app.get("/api/audit-schedule", async (req: Request, res: Response) => {
     try {

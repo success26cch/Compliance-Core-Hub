@@ -18,7 +18,7 @@ import {
   Users, ListChecks, Target, Search, Lightbulb, Edit3,
   Package, Factory, Bell, CheckSquare,
 } from "lucide-react";
-import type { IsoAudit, IsoAuditFinding, IsoAuditProcessNote, AuditProcessSchedule, IatfProductAudit, IatfMfgProcessAudit, ProductAuditChecklistItem, MfgProcessAuditChecklistItem } from "@shared/schema";
+import type { IsoAudit, IsoAuditFinding, IsoAuditProcessNote, AuditProcessSchedule, IatfProductAudit, IatfMfgProcessAudit, ProductAuditChecklistItem, MfgProcessAuditChecklistItem, IatfAuditSchedule } from "@shared/schema";
 import type { ProcessEntry } from "./ProcessMapModule";
 
 // ── Standards & Clauses ────────────────────────────────────────────────────────
@@ -407,12 +407,14 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
   const [summaryEdit, setSummaryEdit] = useState<string | null>(null);
   const [productAuditDialog, setProductAuditDialog] = useState<IatfProductAudit | null | "new">(null);
   const [processAuditDialog, setProcessAuditDialog] = useState<IatfMfgProcessAudit | null | "new">(null);
+  const [iatfScheduleDialog, setIatfScheduleDialog] = useState<IatfAuditSchedule | null | { auditType: "product" | "process" }>(null);
 
   const { data: audits = [], isLoading } = useQuery<IsoAudit[]>({ queryKey: ["/api/iso-audits"] });
   const { data: project } = useQuery<any>({ queryKey: ["/api/iso-projects"] });
   const { data: scheduleEntries = [] } = useQuery<AuditProcessSchedule[]>({ queryKey: ["/api/audit-schedule"] });
   const { data: productAudits = [] } = useQuery<IatfProductAudit[]>({ queryKey: ["/api/iatf-product-audits"] });
   const { data: mfgProcessAudits = [] } = useQuery<IatfMfgProcessAudit[]>({ queryKey: ["/api/iatf-mfg-process-audits"] });
+  const { data: iatfScheduleEntries = [] } = useQuery<IatfAuditSchedule[]>({ queryKey: ["/api/iatf-audit-schedule"] });
 
   const isIATF = project?.standard === "IATF 16949";
 
@@ -516,6 +518,18 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
   const deleteMfgProcessAudit = useMutation({
     mutationFn: async (id: number) => apiRequest("DELETE", `/api/iatf-mfg-process-audits/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iatf-mfg-process-audits"] }); setProcessAuditDialog(null); toast({ title: "Deleted" }); },
+  });
+
+  const saveIatfSchedule = useMutation({
+    mutationFn: async (data: any) => {
+      if (data.id) return (await apiRequest("PATCH", `/api/iatf-audit-schedule/${data.id}`, data)).json();
+      return (await apiRequest("POST", "/api/iatf-audit-schedule", data)).json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iatf-audit-schedule"] }); setIatfScheduleDialog(null); toast({ title: "Schedule saved" }); },
+  });
+  const deleteIatfSchedule = useMutation({
+    mutationFn: async (id: number) => apiRequest("DELETE", `/api/iatf-audit-schedule/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iatf-audit-schedule"] }); setIatfScheduleDialog(null); toast({ title: "Schedule entry removed" }); },
   });
 
   const clauses = selectedAudit ? getClausesForStandard(selectedAudit.standard) : [];
@@ -1081,7 +1095,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
           </div>
         ) : activeTab === "product-audit" ? (
           /* ── §9.2.2.3 Product Audits Tab ── */
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-5">
             {/* Header info */}
             <div className="flex items-start gap-3 p-4 rounded-xl border bg-blue-50 border-blue-200">
               <Package className="w-5 h-5 text-blue-700 mt-0.5 shrink-0" />
@@ -1090,52 +1104,93 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
                 <p className="text-xs text-blue-700 mt-0.5">Audit products at appropriate production and delivery stages to verify conformance to all specified requirements, including customer-specific requirements and applicable technical standards.</p>
               </div>
             </div>
-            {/* New button */}
-            <div className="flex justify-end">
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1" onClick={() => setProductAuditDialog("new")} data-testid="button-new-product-audit">
-                <Plus className="w-4 h-4" /> New Product Audit
-              </Button>
-            </div>
-            {/* List */}
-            {productAudits.length === 0 ? (
-              <div className="text-center py-16 space-y-3">
-                <Package className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-                <p className="font-medium text-muted-foreground">No product audits recorded</p>
-                <p className="text-sm text-muted-foreground/70">Record a product audit to verify product conformance at production or delivery stages.</p>
+
+            {/* ── Schedule Section ── */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-600" />Audit Schedule</h3>
+                <Button size="sm" variant="outline" className="gap-1 text-xs h-7" onClick={() => setIatfScheduleDialog({ auditType: "product" })} data-testid="button-add-product-schedule">
+                  <Plus className="w-3 h-3" /> Add Schedule
+                </Button>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {productAudits.map(pa => {
-                  const rc = PRODUCT_AUDIT_RESULT_CFG[pa.result || ""] || null;
-                  return (
-                    <Card key={pa.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer border" onClick={() => setProductAuditDialog(pa)} data-testid={`card-product-audit-${pa.id}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Package className="w-5 h-5 text-primary shrink-0" />
-                          <div>
-                            <p className="font-semibold text-primary">{pa.partName || pa.partNumber || "—"} {pa.partNumber && pa.partName ? <span className="text-muted-foreground font-normal">({pa.partNumber})</span> : ""}</p>
+              {iatfScheduleEntries.filter(e => e.auditType === "product").length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3 border rounded-lg bg-muted/20">No scheduled product audits — click "Add Schedule" to set up recurring audit schedules.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {iatfScheduleEntries.filter(e => e.auditType === "product").map(entry => {
+                    const isOverdue = entry.nextDueDate ? new Date(entry.nextDueDate) < new Date() : false;
+                    return (
+                      <div key={entry.id} className={`flex items-center justify-between px-3 py-2 rounded-lg border text-sm ${isOverdue ? "bg-red-50 border-red-200" : "bg-white border-border"}`} data-testid={`row-product-schedule-${entry.id}`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Calendar className={`w-4 h-4 shrink-0 ${isOverdue ? "text-red-500" : "text-blue-500"}`} />
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{entry.title} {entry.partNumber && <span className="text-muted-foreground font-normal text-xs">({entry.partNumber})</span>}</p>
                             <p className="text-xs text-muted-foreground">
-                              {pa.auditDate && new Date(pa.auditDate).toLocaleDateString()}
-                              {pa.shift && ` · ${pa.shift} Shift`}
-                              {pa.lotNumber && ` · Lot: ${pa.lotNumber}`}
-                              {pa.auditor && ` · ${pa.auditor}`}
+                              {entry.frequency.replace("_", " ")} · Next: {entry.nextDueDate ? new Date(entry.nextDueDate).toLocaleDateString() : "—"}
+                              {entry.auditorAssigned && ` · ${entry.auditorAssigned}`}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {rc && <Badge className={`text-xs border ${rc.cls}`}>{rc.label}</Badge>}
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          {isOverdue && <Badge className="text-[10px] border bg-red-100 text-red-700 border-red-200">Overdue</Badge>}
+                          {entry.status === "paused" && <Badge className="text-[10px] border bg-gray-100 text-gray-600 border-gray-200">Paused</Badge>}
+                          <button className="text-muted-foreground hover:text-foreground" onClick={() => setIatfScheduleDialog(entry)} data-testid={`button-edit-product-schedule-${entry.id}`}><Edit3 className="w-3.5 h-3.5" /></button>
                         </div>
                       </div>
-                    </Card>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ── Audit Records ── */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5"><ClipboardCheck className="w-4 h-4 text-primary" />Audit Records</h3>
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1 text-xs h-7" onClick={() => setProductAuditDialog("new")} data-testid="button-new-product-audit">
+                  <Plus className="w-3 h-3" /> New Audit
+                </Button>
               </div>
-            )}
+              {productAudits.length === 0 ? (
+                <div className="text-center py-10 space-y-2">
+                  <Package className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                  <p className="font-medium text-muted-foreground text-sm">No product audits recorded</p>
+                  <p className="text-xs text-muted-foreground/70">Record a product audit to verify product conformance at production or delivery stages.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {productAudits.map(pa => {
+                    const rc = PRODUCT_AUDIT_RESULT_CFG[pa.result || ""] || null;
+                    return (
+                      <Card key={pa.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer border" onClick={() => setProductAuditDialog(pa)} data-testid={`card-product-audit-${pa.id}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Package className="w-5 h-5 text-primary shrink-0" />
+                            <div>
+                              <p className="font-semibold text-primary">{pa.partName || pa.partNumber || "—"} {pa.partNumber && pa.partName ? <span className="text-muted-foreground font-normal">({pa.partNumber})</span> : ""}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {pa.auditDate && new Date(pa.auditDate).toLocaleDateString()}
+                                {pa.shift && ` · ${pa.shift} Shift`}
+                                {pa.lotNumber && ` · Lot: ${pa.lotNumber}`}
+                                {pa.auditor && ` · ${pa.auditor}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {rc && <Badge className={`text-xs border ${rc.cls}`}>{rc.label}</Badge>}
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           /* ── §9.2.2.4 Manufacturing Process Audits Tab ── */
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-5">
             {/* Header info */}
             <div className="flex items-start gap-3 p-4 rounded-xl border bg-orange-50 border-orange-200">
               <Factory className="w-5 h-5 text-orange-700 mt-0.5 shrink-0" />
@@ -1144,48 +1199,89 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
                 <p className="text-xs text-orange-700 mt-0.5">Audit each manufacturing process during each production shift (or at appropriate frequency) to assess implementation and effectiveness of all process-related requirements, including control plan conformance using a process/turtle approach.</p>
               </div>
             </div>
-            {/* New button */}
-            <div className="flex justify-end">
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1" onClick={() => setProcessAuditDialog("new")} data-testid="button-new-process-audit">
-                <Plus className="w-4 h-4" /> New Process Audit
-              </Button>
-            </div>
-            {/* List */}
-            {mfgProcessAudits.length === 0 ? (
-              <div className="text-center py-16 space-y-3">
-                <Factory className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-                <p className="font-medium text-muted-foreground">No process audits recorded</p>
-                <p className="text-sm text-muted-foreground/70">Record a manufacturing process audit to verify conformance to control plan requirements.</p>
+
+            {/* ── Schedule Section ── */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5"><Calendar className="w-4 h-4 text-orange-600" />Audit Schedule</h3>
+                <Button size="sm" variant="outline" className="gap-1 text-xs h-7" onClick={() => setIatfScheduleDialog({ auditType: "process" })} data-testid="button-add-process-schedule">
+                  <Plus className="w-3 h-3" /> Add Schedule
+                </Button>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {mfgProcessAudits.map(mpa => {
-                  const rc = PROCESS_AUDIT_RESULT_CFG[mpa.result || ""] || null;
-                  return (
-                    <Card key={mpa.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer border" onClick={() => setProcessAuditDialog(mpa)} data-testid={`card-process-audit-${mpa.id}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Factory className="w-5 h-5 text-primary shrink-0" />
-                          <div>
-                            <p className="font-semibold text-primary">{mpa.processName || "—"} {mpa.workstation ? <span className="text-muted-foreground font-normal">— {mpa.workstation}</span> : ""}</p>
+              {iatfScheduleEntries.filter(e => e.auditType === "process").length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3 border rounded-lg bg-muted/20">No scheduled process audits — click "Add Schedule" to set up recurring audit schedules.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {iatfScheduleEntries.filter(e => e.auditType === "process").map(entry => {
+                    const isOverdue = entry.nextDueDate ? new Date(entry.nextDueDate) < new Date() : false;
+                    return (
+                      <div key={entry.id} className={`flex items-center justify-between px-3 py-2 rounded-lg border text-sm ${isOverdue ? "bg-red-50 border-red-200" : "bg-white border-border"}`} data-testid={`row-process-schedule-${entry.id}`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Calendar className={`w-4 h-4 shrink-0 ${isOverdue ? "text-red-500" : "text-orange-500"}`} />
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{entry.title} {entry.workstation && <span className="text-muted-foreground font-normal text-xs">— {entry.workstation}</span>}</p>
                             <p className="text-xs text-muted-foreground">
-                              {mpa.auditDate && new Date(mpa.auditDate).toLocaleDateString()}
-                              {mpa.shift && ` · ${mpa.shift} Shift`}
-                              {mpa.partNumber && ` · P/N: ${mpa.partNumber}`}
-                              {mpa.auditor && ` · ${mpa.auditor}`}
+                              {entry.frequency.replace("_", " ")} · Next: {entry.nextDueDate ? new Date(entry.nextDueDate).toLocaleDateString() : "—"}
+                              {entry.auditorAssigned && ` · ${entry.auditorAssigned}`}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {rc && <Badge className={`text-xs border ${rc.cls}`}>{rc.label}</Badge>}
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          {isOverdue && <Badge className="text-[10px] border bg-red-100 text-red-700 border-red-200">Overdue</Badge>}
+                          {entry.status === "paused" && <Badge className="text-[10px] border bg-gray-100 text-gray-600 border-gray-200">Paused</Badge>}
+                          <button className="text-muted-foreground hover:text-foreground" onClick={() => setIatfScheduleDialog(entry)} data-testid={`button-edit-process-schedule-${entry.id}`}><Edit3 className="w-3.5 h-3.5" /></button>
                         </div>
                       </div>
-                    </Card>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ── Audit Records ── */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5"><ClipboardCheck className="w-4 h-4 text-primary" />Audit Records</h3>
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1 text-xs h-7" onClick={() => setProcessAuditDialog("new")} data-testid="button-new-process-audit">
+                  <Plus className="w-3 h-3" /> New Audit
+                </Button>
               </div>
-            )}
+              {mfgProcessAudits.length === 0 ? (
+                <div className="text-center py-10 space-y-2">
+                  <Factory className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                  <p className="font-medium text-muted-foreground text-sm">No process audits recorded</p>
+                  <p className="text-xs text-muted-foreground/70">Record a manufacturing process audit to verify conformance to control plan requirements.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {mfgProcessAudits.map(mpa => {
+                    const rc = PROCESS_AUDIT_RESULT_CFG[mpa.result || ""] || null;
+                    return (
+                      <Card key={mpa.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer border" onClick={() => setProcessAuditDialog(mpa)} data-testid={`card-process-audit-${mpa.id}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Factory className="w-5 h-5 text-primary shrink-0" />
+                            <div>
+                              <p className="font-semibold text-primary">{mpa.processName || "—"} {mpa.workstation ? <span className="text-muted-foreground font-normal">— {mpa.workstation}</span> : ""}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {mpa.auditDate && new Date(mpa.auditDate).toLocaleDateString()}
+                                {mpa.shift && ` · ${mpa.shift} Shift`}
+                                {mpa.partNumber && ` · P/N: ${mpa.partNumber}`}
+                                {mpa.auditor && ` · ${mpa.auditor}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {rc && <Badge className={`text-xs border ${rc.cls}`}>{rc.label}</Badge>}
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1210,6 +1306,19 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
           onDelete={processAuditDialog !== "new" && processAuditDialog ? () => deleteMfgProcessAudit.mutate((processAuditDialog as IatfMfgProcessAudit).id) : undefined}
           onClose={() => setProcessAuditDialog(null)}
           isPending={saveMfgProcessAudit.isPending || deleteMfgProcessAudit.isPending}
+        />
+      )}
+
+      {/* ── IATF Audit Schedule Dialog ── */}
+      {iatfScheduleDialog !== null && (
+        <IatfScheduleDialog
+          existing={"id" in iatfScheduleDialog ? iatfScheduleDialog as IatfAuditSchedule : undefined}
+          defaultType={"auditType" in iatfScheduleDialog ? (iatfScheduleDialog as { auditType: "product" | "process" }).auditType : undefined}
+          processes={processes}
+          onSave={data => saveIatfSchedule.mutate(data)}
+          onDelete={"id" in iatfScheduleDialog ? () => deleteIatfSchedule.mutate((iatfScheduleDialog as IatfAuditSchedule).id) : undefined}
+          onClose={() => setIatfScheduleDialog(null)}
+          isPending={saveIatfSchedule.isPending || deleteIatfSchedule.isPending}
         />
       )}
 
@@ -2420,6 +2529,148 @@ function MfgProcessAuditDialog({
           </Button>
           {onDelete && (
             <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { if (window.confirm("Delete this process audit record?")) onDelete(); }} data-testid="button-delete-process-audit">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── IATF Audit Schedule Dialog ────────────────────────────────────────────────
+function IatfScheduleDialog({
+  existing,
+  defaultType,
+  processes,
+  onSave,
+  onDelete,
+  onClose,
+  isPending,
+}: {
+  existing?: IatfAuditSchedule;
+  defaultType?: "product" | "process";
+  processes: ProcessEntry[];
+  onSave: (data: any) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+  isPending: boolean;
+}) {
+  const auditType = existing?.auditType || defaultType || "product";
+  const [form, setForm] = useState({
+    auditType,
+    title: existing?.title || "",
+    partNumber: existing?.partNumber || "",
+    processName: existing?.processName || "",
+    workstation: existing?.workstation || "",
+    auditorAssigned: existing?.auditorAssigned || "",
+    frequency: existing?.frequency || "monthly",
+    nextDueDate: existing?.nextDueDate || "",
+    lastCompletedDate: existing?.lastCompletedDate || "",
+    status: existing?.status || "active",
+    notes: existing?.notes || "",
+  });
+  const set = (k: string, v: string) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const handleSave = () => {
+    if (!form.title.trim()) return;
+    onSave(existing ? { id: existing.id, ...form } : form);
+  };
+
+  return (
+    <Dialog open onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            {existing ? "Edit" : "Add"} Audit Schedule
+            <Badge className={`text-[10px] font-bold border ml-1 ${auditType === "product" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-orange-50 text-orange-700 border-orange-200"}`}>
+              {auditType === "product" ? "§9.2.2.3 Product" : "§9.2.2.4 Process"}
+            </Badge>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 px-1 py-2 max-h-[65vh] overflow-y-auto">
+          <div className="space-y-1">
+            <Label className="text-xs">{auditType === "product" ? "Part / Product Name *" : "Process Name *"}</Label>
+            {auditType === "process" && processes.length > 0 ? (
+              <Select value={form.title} onValueChange={v => { set("title", v); set("processName", v); }}>
+                <SelectTrigger data-testid="select-schedule-title"><SelectValue placeholder="Select process…" /></SelectTrigger>
+                <SelectContent>{processes.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+              </Select>
+            ) : (
+              <Input placeholder={auditType === "product" ? "e.g. Polyurethane Coating, CCI-2240" : "e.g. Chemical Blending"} value={form.title} onChange={e => set("title", e.target.value)} data-testid="input-schedule-title" />
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {auditType === "product" && (
+              <div className="space-y-1">
+                <Label className="text-xs">Part Number</Label>
+                <Input placeholder="e.g. CCI-2240" value={form.partNumber} onChange={e => set("partNumber", e.target.value)} data-testid="input-schedule-part-number" />
+              </div>
+            )}
+            {auditType === "process" && (
+              <div className="space-y-1">
+                <Label className="text-xs">Workstation / Line</Label>
+                <Input placeholder="e.g. Blending Bay 1" value={form.workstation} onChange={e => set("workstation", e.target.value)} data-testid="input-schedule-workstation" />
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label className="text-xs">Auditor Assigned</Label>
+              <Input placeholder="Name" value={form.auditorAssigned} onChange={e => set("auditorAssigned", e.target.value)} data-testid="input-schedule-auditor" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Frequency *</Label>
+              <Select value={form.frequency} onValueChange={v => set("frequency", v)}>
+                <SelectTrigger data-testid="select-schedule-frequency"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="per_shift">Per Shift</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
+              <Select value={form.status} onValueChange={v => set("status", v)}>
+                <SelectTrigger data-testid="select-schedule-status"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Next Due Date</Label>
+              <Input type="date" value={form.nextDueDate} onChange={e => set("nextDueDate", e.target.value)} data-testid="input-schedule-next-due" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Last Completed</Label>
+              <Input type="date" value={form.lastCompletedDate} onChange={e => set("lastCompletedDate", e.target.value)} data-testid="input-schedule-last-completed" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Notes</Label>
+            <Textarea placeholder="Any special instructions, scope notes, or reminders…" rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} data-testid="textarea-schedule-notes" />
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-2 border-t">
+          <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={handleSave} disabled={isPending || !form.title.trim()} data-testid="button-save-iatf-schedule">
+            {isPending ? "Saving…" : existing ? "Update Schedule" : "Add to Schedule"}
+          </Button>
+          {onDelete && (
+            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { if (window.confirm("Remove this schedule entry?")) onDelete!(); }} data-testid="button-delete-iatf-schedule">
               <Trash2 className="w-4 h-4" />
             </Button>
           )}

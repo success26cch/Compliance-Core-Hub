@@ -2436,3 +2436,25 @@ export const iatfMfgProcessAudits = pgTable("iatf_mfg_process_audits", {
 export const insertIatfMfgProcessAuditSchema = createInsertSchema(iatfMfgProcessAudits).omit({ id: true, createdAt: true });
 export type IatfMfgProcessAudit = typeof iatfMfgProcessAudits.$inferSelect;
 export type InsertIatfMfgProcessAudit = z.infer<typeof insertIatfMfgProcessAuditSchema>;
+
+// ─── IATF Audit Schedule (§9.2.2.3 & §9.2.2.4) ───────────────────────────────
+export const iatfAuditSchedule = pgTable("iatf_audit_schedule", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  auditType: text("audit_type").notNull(),   // "product" | "process"
+  title: text("title").notNull(),            // Part name (product) or Process name (process)
+  partNumber: text("part_number"),           // for product audits
+  processName: text("process_name"),         // for process audits
+  workstation: text("workstation"),          // for process audits
+  auditorAssigned: text("auditor_assigned"),
+  frequency: text("frequency").notNull(),    // "daily" | "per_shift" | "weekly" | "monthly" | "quarterly"
+  nextDueDate: text("next_due_date"),
+  lastCompletedDate: text("last_completed_date"),
+  status: text("status").notNull().default("active"), // "active" | "paused"
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertIatfAuditScheduleSchema = createInsertSchema(iatfAuditSchedule).omit({ id: true, createdAt: true, updatedAt: true });
+export type IatfAuditSchedule = typeof iatfAuditSchedule.$inferSelect;
+export type InsertIatfAuditSchedule = z.infer<typeof insertIatfAuditScheduleSchema>;
