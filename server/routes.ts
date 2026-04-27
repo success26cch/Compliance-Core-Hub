@@ -6329,6 +6329,52 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     }
   });
 
+  // ─── ISO Audit Process Notes (process-approach) ────────────────────────────────
+  app.get("/api/iso-audits/:auditId/process-notes", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const auditId = parseInt(req.params.auditId);
+      if (isNaN(auditId)) return res.status(400).json({ message: "Invalid ID" });
+      const notes = await storage.getIsoAuditProcessNotes(auditId, userId, isSuperadmin);
+      res.json(notes);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/iso-audits/:auditId/process-notes", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const auditId = parseInt(req.params.auditId);
+      if (isNaN(auditId)) return res.status(400).json({ message: "Invalid ID" });
+      const { insertIsoAuditProcessNotesSchema } = await import("@shared/schema");
+      const parsed = insertIsoAuditProcessNotesSchema.safeParse({ ...req.body, userId, auditId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const note = await storage.upsertIsoAuditProcessNote(parsed.data, userId, isSuperadmin);
+      res.json(note);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/iso-audit-process-notes/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIsoAuditProcessNote(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // ─── Audit Process Schedule (IATF 9.2.2.2) ───────────────────────────────────
   app.get("/api/audit-schedule", async (req: Request, res: Response) => {
     try {

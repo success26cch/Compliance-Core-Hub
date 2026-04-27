@@ -1364,12 +1364,20 @@ export const isoAudits = pgTable("iso_audits", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
   isoProjectId: integer("iso_project_id"),
-  standard: text("standard").notNull().default("ISO 9001:2015"), // e.g. 'ISO 9001:2015', 'ISO 14001:2015'
+  standard: text("standard").notNull().default("ISO 9001:2015"),
   scope: text("scope"),
+  exclusions: text("exclusions"),          // e.g. "Product Design"
   leadAuditor: text("lead_auditor"),
+  contact: text("contact"),               // auditee contact person
+  objective: text("objective"),           // audit objective statement
   scheduledDate: timestamp("scheduled_date"),
   completedDate: timestamp("completed_date"),
   status: text("status").notNull().default("planned"), // 'planned' | 'in_progress' | 'complete'
+  openingMeetingDate: timestamp("opening_meeting_date"),
+  openingMeetingAttendees: text("opening_meeting_attendees"),
+  closingMeetingDate: timestamp("closing_meeting_date"),
+  closingMeetingAttendees: text("closing_meeting_attendees"),
+  executiveSummary: text("executive_summary"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1435,6 +1443,34 @@ export const isoAuditFindings = pgTable("iso_audit_findings", {
 export const insertIsoAuditFindingSchema = createInsertSchema(isoAuditFindings).omit({ id: true, createdAt: true, updatedAt: true });
 export type IsoAuditFinding = typeof isoAuditFindings.$inferSelect;
 export type InsertIsoAuditFinding = z.infer<typeof insertIsoAuditFindingSchema>;
+
+// ─── ISO Manager: Process-Approach Audit Process Notes ────────────────────────
+export const isoAuditProcessNotes = pgTable("iso_audit_process_notes", {
+  id: serial("id").primaryKey(),
+  auditId: integer("audit_id").notNull(),
+  userId: text("user_id").notNull(),
+  processName: text("process_name").notNull(),
+  // Process Objective section
+  processObjectives: text("process_objectives"),          // KPI targets / stated objectives
+  isObjectiveMet: text("is_objective_met"),               // 'yes' | 'partial' | 'no'
+  objectiveMetNotes: text("objective_met_notes"),         // "Process appears to be effective..."
+  // Inputs / Outputs / Interactions
+  processInputs: text("process_inputs"),
+  processOutputs: text("process_outputs"),
+  processInteractions: text("process_interactions"),       // which other processes interact
+  // People & Description
+  personnelInterviewed: text("personnel_interviewed"),
+  processDescription: text("process_description"),        // narrative of how process works
+  // Evidence & Findings
+  objectiveEvidence: text("objective_evidence"),          // newline-delimited bullet list
+  nonconformances: text("nonconformances"),               // newline-delimited NC descriptions
+  opportunities: text("opportunities"),                   // newline-delimited OFI descriptions
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertIsoAuditProcessNotesSchema = createInsertSchema(isoAuditProcessNotes).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoAuditProcessNote = typeof isoAuditProcessNotes.$inferSelect;
+export type InsertIsoAuditProcessNote = z.infer<typeof insertIsoAuditProcessNotesSchema>;
 
 // ─── ISO Manager: Training Awareness Notices ──────────────────────────────────
 export const isoAwarenessNotices = pgTable("iso_awareness_notices", {

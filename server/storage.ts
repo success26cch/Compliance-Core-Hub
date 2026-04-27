@@ -6,12 +6,13 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type DotAccident, type InsertDotAccident,
   type DotRoadsideInspection, type InsertDotRoadsideInspection,
   type DotDvirLog, type InsertDotDvirLog,
-  isoAudits, isoAuditFindings, isoAwarenessNotices, isoAwarenessAcknowledgments,
+  isoAudits, isoAuditFindings, isoAuditProcessNotes, isoAwarenessNotices, isoAwarenessAcknowledgments,
   isoObjectives, isoKpiActuals, auditProcessSchedule,
   isoRisks, isoManagementReviews, isoReviewActionItems, isoCommunications,
   type AuditProcessSchedule, type InsertAuditProcessSchedule,
   type IsoAudit, type InsertIsoAudit,
   type IsoAuditFinding, type InsertIsoAuditFinding,
+  type IsoAuditProcessNote, type InsertIsoAuditProcessNote,
   type IsoAwarenessNotice, type InsertIsoAwarenessNotice,
   type IsoAwarenessAcknowledgment, type InsertIsoAwarenessAcknowledgment,
   type IsoObjective, type InsertIsoObjective,
@@ -316,6 +317,11 @@ export interface IStorage {
   createIsoAuditFinding(data: InsertIsoAuditFinding): Promise<IsoAuditFinding>;
   updateIsoAuditFinding(id: number, userId: string, data: Partial<InsertIsoAuditFinding>, isSuperadmin?: boolean): Promise<IsoAuditFinding | undefined>;
   deleteIsoAuditFinding(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ISO Audit Process Notes (process-approach)
+  getIsoAuditProcessNotes(auditId: number, userId: string, isSuperadmin?: boolean): Promise<IsoAuditProcessNote[]>;
+  upsertIsoAuditProcessNote(data: InsertIsoAuditProcessNote, userId: string, isSuperadmin?: boolean): Promise<IsoAuditProcessNote>;
+  deleteIsoAuditProcessNote(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Awareness Notices
   getIsoAwarenessNotices(userId: string, isSuperadmin?: boolean): Promise<IsoAwarenessNotice[]>;
@@ -1872,6 +1878,31 @@ export class DatabaseStorage implements IStorage {
 
   async deleteIsoAuditFinding(id: number, userId: string, isSuperadmin = false): Promise<void> {
     await db.delete(isoAuditFindings).where(isSuperadmin ? eq(isoAuditFindings.id, id) : and(eq(isoAuditFindings.id, id), eq(isoAuditFindings.userId, userId)));
+  }
+
+  // ─── ISO Audit Process Notes ──────────────────────────────────────────────────
+  async getIsoAuditProcessNotes(auditId: number, userId: string, isSuperadmin = false): Promise<IsoAuditProcessNote[]> {
+    return db.select().from(isoAuditProcessNotes).where(
+      isSuperadmin ? eq(isoAuditProcessNotes.auditId, auditId) : and(eq(isoAuditProcessNotes.auditId, auditId), eq(isoAuditProcessNotes.userId, userId))
+    ).orderBy(isoAuditProcessNotes.processName);
+  }
+
+  async upsertIsoAuditProcessNote(data: InsertIsoAuditProcessNote, userId: string, isSuperadmin = false): Promise<IsoAuditProcessNote> {
+    const existing = await db.select().from(isoAuditProcessNotes).where(
+      isSuperadmin
+        ? and(eq(isoAuditProcessNotes.auditId, data.auditId), eq(isoAuditProcessNotes.processName, data.processName))
+        : and(eq(isoAuditProcessNotes.auditId, data.auditId), eq(isoAuditProcessNotes.processName, data.processName), eq(isoAuditProcessNotes.userId, userId))
+    );
+    if (existing.length > 0) {
+      const [rec] = await db.update(isoAuditProcessNotes).set({ ...data, updatedAt: new Date() }).where(eq(isoAuditProcessNotes.id, existing[0].id)).returning();
+      return rec;
+    }
+    const [rec] = await db.insert(isoAuditProcessNotes).values(data).returning();
+    return rec;
+  }
+
+  async deleteIsoAuditProcessNote(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoAuditProcessNotes).where(isSuperadmin ? eq(isoAuditProcessNotes.id, id) : and(eq(isoAuditProcessNotes.id, id), eq(isoAuditProcessNotes.userId, userId)));
   }
 
   // ─── ISO Awareness Notices ────────────────────────────────────────────────────
