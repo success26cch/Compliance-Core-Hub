@@ -717,11 +717,9 @@ function AuditMatrix({ processes, scheduleEntries, unassessed, onAssess }: {
               <th className="py-3 px-2 font-semibold border-r border-white/20 w-20">Audit Type</th>
               <th className="py-3 px-3 font-semibold border-r border-white/20 w-28">Auditor</th>
               <th className="py-3 px-2 font-semibold border-r border-white/20 w-20">Freq / Year</th>
-              <th className="py-3 px-2 font-semibold border-r border-white/20 w-14">Risk</th>
-              <th className="py-3 px-3 font-semibold border-r border-white/20 w-36">Status</th>
+              <th className="py-3 px-3 font-semibold border-r border-white/20 w-52">Risk Level</th>
               <th className="py-3 px-3 font-semibold border-r border-white/20 w-48">Related Clauses</th>
               <th className="py-3 px-3 font-semibold border-r border-white/20">Notes / Reason for Revision</th>
-              <th className="py-3 px-2 font-semibold border-r border-white/20 w-16">Score</th>
               <th className="py-3 px-3 font-semibold border-r border-white/20 w-28">Last Audit Date</th>
               <th className="py-3 px-3 font-semibold border-r border-white/20 w-24">Next Audit Date</th>
               <th className="py-3 px-2 font-semibold w-14" />
@@ -737,7 +735,7 @@ function AuditMatrix({ processes, scheduleEntries, unassessed, onAssess }: {
                 <>
                   {/* Group section header */}
                   <tr key={`grp-${typeGroup}`}>
-                    <td colSpan={13} className={`${style.headerBg} ${style.headerText} px-4 py-1.5`}>
+                    <td colSpan={11} className={`${style.headerBg} ${style.headerText} px-4 py-1.5`}>
                       <span className="text-xs font-bold uppercase tracking-widest">{style.label}</span>
                     </td>
                   </tr>
@@ -802,24 +800,36 @@ function AuditMatrix({ processes, scheduleEntries, unassessed, onAssess }: {
                           ) : <span className="text-muted-foreground/40">—</span>}
                         </td>
 
-                        {/* Risk score (raw /60) */}
-                        <td className="py-3 px-2 text-center border-r border-gray-100">
-                          {score !== null ? (
-                            <span className={`text-sm font-black ${freqCfg?.statusColor || "text-gray-500"}`}>{score}</span>
-                          ) : <span className="text-muted-foreground/30">—</span>}
-                        </td>
-
-                        {/* Status */}
+                        {/* Risk Level — badge + score + bar */}
                         <td className="py-3 px-3 border-r border-gray-100">
-                          {statusLabel ? (
-                            <span className={`font-bold text-xs ${statusColor}`}>{statusLabel}</span>
-                          ) : (
-                            <span className="text-muted-foreground/40 italic text-xs">Not assessed</span>
-                          )}
-                          {freqCfg && (
-                            <div className="mt-1 w-full h-1 rounded-full bg-gray-200">
-                              <div className={`h-1 rounded-full ${freqCfg.barColor}`} style={{ width: `${Math.min(100, ((score! - 6) / 54) * 100)}%` }} />
+                          {score !== null && freqCfg ? (
+                            <div className="space-y-1.5">
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold border ${
+                                freqKey === "triennial"
+                                  ? "bg-green-50 text-green-800 border-green-300"
+                                  : freqKey === "biennial"
+                                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                                  : "bg-red-50 text-red-800 border-red-300"
+                              }`}>
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                  freqKey === "triennial" ? "bg-green-500" : freqKey === "biennial" ? "bg-amber-500" : "bg-red-500"
+                                }`} />
+                                {statusLabel}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex-1 h-1.5 rounded-full bg-gray-200">
+                                  <div className={`h-1.5 rounded-full ${freqCfg.barColor}`} style={{ width: `${Math.min(100, ((score - 6) / 54) * 100)}%` }} />
+                                </div>
+                                <span className={`text-xs font-bold tabular-nums ${freqCfg.statusColor}`}>{score}<span className="font-normal text-muted-foreground">/60</span></span>
+                              </div>
                             </div>
+                          ) : (
+                            <button
+                              className="text-xs text-accent hover:underline italic"
+                              onClick={() => onAssess(proc.name, pType, entry)}
+                            >
+                              Click to assess →
+                            </button>
                           )}
                         </td>
 
@@ -844,16 +854,6 @@ function AuditMatrix({ processes, scheduleEntries, unassessed, onAssess }: {
                         {/* Notes / Reason */}
                         <td className="py-3 px-3 border-r border-gray-100 text-muted-foreground max-w-[200px]">
                           <span className="line-clamp-2 leading-snug">{entry?.notes || <span className="italic opacity-40">—</span>}</span>
-                        </td>
-
-                        {/* Total score /60 */}
-                        <td className="py-3 px-2 text-center border-r border-gray-100">
-                          {score !== null ? (
-                            <div>
-                              <span className="font-bold text-foreground text-sm">{score}</span>
-                              <span className="text-muted-foreground">/60</span>
-                            </div>
-                          ) : <span className="text-muted-foreground/30">—</span>}
                         </td>
 
                         {/* Last Audit Date */}
@@ -899,14 +899,18 @@ function AuditMatrix({ processes, scheduleEntries, unassessed, onAssess }: {
       </div>
 
       {/* Footer legend */}
-      <div className="flex items-center flex-wrap gap-4 px-5 py-2.5 bg-[#1a2744]/5 border-t text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Next Audit Date:</span>
+      <div className="flex items-center flex-wrap gap-5 px-5 py-3 bg-[#1a2744]/5 border-t text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground">Risk Level:</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /><span className="font-semibold text-green-800">IN CONTROL</span> — score 6–25 · audit every 3 years</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /><span className="font-semibold text-amber-800">NEEDS ATTENTION</span> — score 26–50 · audit every 12–24 months</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /><span className="font-semibold text-red-800">NEEDS IMMEDIATE ATTENTION</span> — score 51–60 · audit every 6–9 months</span>
+        <span className="mx-2 text-gray-300">|</span>
+        <span className="font-semibold text-foreground">Next Audit:</span>
         <span className="flex items-center gap-1.5"><span className="w-5 h-3 rounded bg-red-600 inline-block" />Overdue</span>
-        <span className="flex items-center gap-1.5"><span className="w-5 h-3 rounded bg-orange-400 inline-block" />Due ≤ 3 months</span>
-        <span className="flex items-center gap-1.5"><span className="w-5 h-3 rounded bg-yellow-300 inline-block" />Due ≤ 12 months</span>
-        <span className="flex items-center gap-1.5"><span className="w-5 h-3 rounded bg-yellow-100 border inline-block" />Due ≤ 18 months</span>
+        <span className="flex items-center gap-1.5"><span className="w-5 h-3 rounded bg-orange-400 inline-block" />≤ 3 months</span>
+        <span className="flex items-center gap-1.5"><span className="w-5 h-3 rounded bg-yellow-300 inline-block" />≤ 12 months</span>
         <span className="flex items-center gap-1.5"><span className="w-5 h-3 rounded bg-green-50 border inline-block" />On Track</span>
-        <span className="ml-auto flex items-center gap-1.5"><HardHat className="w-3.5 h-3.5" />Grey row = Consultant Audit</span>
+        <span className="ml-auto flex items-center gap-1.5"><HardHat className="w-3.5 h-3.5" />Grey = Consultant Audit</span>
       </div>
     </div>
   );
