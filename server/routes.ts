@@ -7,7 +7,7 @@ import { registerChatRoutes } from "./replit_integrations/chat";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { db } from "./db";
+import { db, rlsMiddleware } from "./rls";
 import { auditLogs } from "@shared/schema";
 import { buildQmPartAPrompt, buildQmPartBPrompt } from "./qm-prompts";
 import { createAnthropicClient } from "./anthropicClient";
@@ -135,6 +135,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // Auth Setup
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // ── RLS context middleware — must run after session/auth so req.session.userId is available
+  app.use(rlsMiddleware);
 
   // ── ONE-TIME: Ebeni prod account init (remove after first successful call) ──
   app.post("/api/admin/init-ebeni", async (req: Request, res: Response) => {

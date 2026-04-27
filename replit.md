@@ -30,6 +30,18 @@ The CCHUB platform utilizes a modern web stack: React, Vite, TailwindCSS, and sh
 -   **Progressive Web App (PWA):** A standalone Corey application offering an installable, dark-themed, offline-capable experience.
 -   **Branded Divisions:** Integrates BrandNSwag and ACSI Mentorship Program.
 
+## Multi-Tenancy & Data Isolation
+CCHUB is enterprise multi-tenant. Every client's data is strictly isolated through two independent enforcement layers:
+
+1. **Application-layer isolation (existing):** Every query in `server/storage.ts` and `server/routes.ts` filters by `userId` (the owner's account ID). 767+ explicit user-scoping references ensure Client A's data is never returned to Client B in normal operation.
+
+2. **Database-layer RLS (added):** PostgreSQL Row-Level Security policies enforced on all 83 user-scoped tables. Even if a route bug omits a `WHERE user_id=?` clause, PostgreSQL returns zero rows for the wrong tenant.
+   - **How it works:** `server/rls.ts` contains an Express middleware (`rlsMiddleware`) that checks out a dedicated pool connection per authenticated request and sets `SET SESSION app.current_user_id = userId` and `app.is_superadmin` before any queries run. All storage methods automatically use this scoped connection via `AsyncLocalStorage`.
+   - **Policies:** Each table has a `tenant_isolation` policy: `USING (user_id = current_setting('app.current_user_id', true) OR current_setting('app.is_superadmin', true) = 'true')`
+   - **Superadmin bypass:** Sessions with `isSuperadmin=true` set `app.is_superadmin='true'`, allowing full access for CCHUB internal operations.
+   - **Re-apply policies:** Run `npx tsx scripts/apply-rls.ts` to reapply all policies after schema changes.
+   - **Special tables:** `corey_teams` uses `admin_user_id`; `corey_team_members` and team tables use cross-table subquery policies; `training_assignments` / `new_hire_completions` use `employer_user_id`. Shared-catalog and pre-auth tables are intentionally excluded.
+
 ## External Dependencies
 -   **Frontend Frameworks:** React, Vite, TailwindCSS, shadcn/ui
 -   **Backend Framework:** Express.js (with Node.js)

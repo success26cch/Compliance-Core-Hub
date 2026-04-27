@@ -44,7 +44,7 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type LpaAuditPlan, type InsertLpaAuditPlan,
   type LpaRecord, type InsertLpaRecord,
 } from "@shared/schema";
-import { db } from "./db";
+import { db } from "./rls";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
 
 export interface IStorage {
