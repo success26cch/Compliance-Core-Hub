@@ -74,8 +74,12 @@ export function rlsMiddleware(req: Request, res: Response, next: NextFunction) {
   pool.connect().then((client) => {
     const rlsDb = drizzle(client, { schema });
 
+    let released = false;
     const release = () => {
-      client.release();
+      if (!released) {
+        released = true;
+        client.release();
+      }
     };
 
     res.on("finish", release);

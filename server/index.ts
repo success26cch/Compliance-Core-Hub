@@ -97,6 +97,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // ─── Auto-enforce RLS on every startup ────────────────────────────────────
+  // Discovers any new table with a user_id / employer_user_id column that is
+  // missing a tenant_isolation policy and applies it automatically. This means
+  // every new table we build is protected without any manual steps.
+  try {
+    const { enforceRlsOnStartup } = await import("./autoRls");
+    await enforceRlsOnStartup();
+  } catch (err) {
+    console.error("[RLS] Auto-enforce failed (non-fatal):", err);
+  }
+
   await registerRoutes(httpServer, app);
 
   // Auto-seed BrandNSwag new hire safety courses on startup

@@ -39,7 +39,8 @@ CCHUB is enterprise multi-tenant. Every client's data is strictly isolated throu
    - **How it works:** `server/rls.ts` contains an Express middleware (`rlsMiddleware`) that checks out a dedicated pool connection per authenticated request and sets `SET SESSION app.current_user_id = userId` and `app.is_superadmin` before any queries run. All storage methods automatically use this scoped connection via `AsyncLocalStorage`.
    - **Policies:** Each table has a `tenant_isolation` policy: `USING (user_id = current_setting('app.current_user_id', true) OR current_setting('app.is_superadmin', true) = 'true')`
    - **Superadmin bypass:** Sessions with `isSuperadmin=true` set `app.is_superadmin='true'`, allowing full access for CCHUB internal operations.
-   - **Re-apply policies:** Run `npx tsx scripts/apply-rls.ts` to reapply all policies after schema changes.
+   - **Auto-enforcement on startup:** `server/autoRls.ts` (`enforceRlsOnStartup()`) runs on every server start. It auto-discovers any new table with a `user_id` or `employer_user_id` column that is missing the policy and applies it automatically. New tables are protected without any manual steps.
+   - **Manual re-apply (special tables):** Run `npx tsx scripts/apply-rls.ts` to re-apply the custom cross-join policies for team tables after schema changes.
    - **Special tables:** `corey_teams` uses `admin_user_id`; `corey_team_members` and team tables use cross-table subquery policies; `training_assignments` / `new_hire_completions` use `employer_user_id`. Shared-catalog and pre-auth tables are intentionally excluded.
 
 ## External Dependencies
