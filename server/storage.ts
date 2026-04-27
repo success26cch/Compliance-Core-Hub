@@ -36,6 +36,9 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   pmEquipment, pmRecords,
   type PmEquipment, type InsertPmEquipment,
   type PmRecord, type InsertPmRecord,
+  iatfProductAudits, iatfMfgProcessAudits,
+  type IatfProductAudit, type InsertIatfProductAudit,
+  type IatfMfgProcessAudit, type InsertIatfMfgProcessAudit,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -322,6 +325,18 @@ export interface IStorage {
   getIsoAuditProcessNotes(auditId: number, userId: string, isSuperadmin?: boolean): Promise<IsoAuditProcessNote[]>;
   upsertIsoAuditProcessNote(data: InsertIsoAuditProcessNote, userId: string, isSuperadmin?: boolean): Promise<IsoAuditProcessNote>;
   deleteIsoAuditProcessNote(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // IATF §9.2.2.3 — Product Audits
+  getIatfProductAudits(userId: string, isSuperadmin?: boolean): Promise<IatfProductAudit[]>;
+  createIatfProductAudit(data: InsertIatfProductAudit): Promise<IatfProductAudit>;
+  updateIatfProductAudit(id: number, userId: string, data: Partial<InsertIatfProductAudit>, isSuperadmin?: boolean): Promise<IatfProductAudit | undefined>;
+  deleteIatfProductAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // IATF §9.2.2.4 — Manufacturing Process Audits
+  getIatfMfgProcessAudits(userId: string, isSuperadmin?: boolean): Promise<IatfMfgProcessAudit[]>;
+  createIatfMfgProcessAudit(data: InsertIatfMfgProcessAudit): Promise<IatfMfgProcessAudit>;
+  updateIatfMfgProcessAudit(id: number, userId: string, data: Partial<InsertIatfMfgProcessAudit>, isSuperadmin?: boolean): Promise<IatfMfgProcessAudit | undefined>;
+  deleteIatfMfgProcessAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Awareness Notices
   getIsoAwarenessNotices(userId: string, isSuperadmin?: boolean): Promise<IsoAwarenessNotice[]>;
@@ -1903,6 +1918,38 @@ export class DatabaseStorage implements IStorage {
 
   async deleteIsoAuditProcessNote(id: number, userId: string, isSuperadmin = false): Promise<void> {
     await db.delete(isoAuditProcessNotes).where(isSuperadmin ? eq(isoAuditProcessNotes.id, id) : and(eq(isoAuditProcessNotes.id, id), eq(isoAuditProcessNotes.userId, userId)));
+  }
+
+  // ─── IATF §9.2.2.3 — Product Audits ─────────────────────────────────────────
+  async getIatfProductAudits(userId: string, isSuperadmin = false): Promise<IatfProductAudit[]> {
+    return db.select().from(iatfProductAudits).where(isSuperadmin ? undefined : eq(iatfProductAudits.userId, userId)).orderBy(desc(iatfProductAudits.createdAt));
+  }
+  async createIatfProductAudit(data: InsertIatfProductAudit): Promise<IatfProductAudit> {
+    const [rec] = await db.insert(iatfProductAudits).values(data).returning();
+    return rec;
+  }
+  async updateIatfProductAudit(id: number, userId: string, data: Partial<InsertIatfProductAudit>, isSuperadmin = false): Promise<IatfProductAudit | undefined> {
+    const [rec] = await db.update(iatfProductAudits).set(data).where(isSuperadmin ? eq(iatfProductAudits.id, id) : and(eq(iatfProductAudits.id, id), eq(iatfProductAudits.userId, userId))).returning();
+    return rec;
+  }
+  async deleteIatfProductAudit(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(iatfProductAudits).where(isSuperadmin ? eq(iatfProductAudits.id, id) : and(eq(iatfProductAudits.id, id), eq(iatfProductAudits.userId, userId)));
+  }
+
+  // ─── IATF §9.2.2.4 — Manufacturing Process Audits ───────────────────────────
+  async getIatfMfgProcessAudits(userId: string, isSuperadmin = false): Promise<IatfMfgProcessAudit[]> {
+    return db.select().from(iatfMfgProcessAudits).where(isSuperadmin ? undefined : eq(iatfMfgProcessAudits.userId, userId)).orderBy(desc(iatfMfgProcessAudits.createdAt));
+  }
+  async createIatfMfgProcessAudit(data: InsertIatfMfgProcessAudit): Promise<IatfMfgProcessAudit> {
+    const [rec] = await db.insert(iatfMfgProcessAudits).values(data).returning();
+    return rec;
+  }
+  async updateIatfMfgProcessAudit(id: number, userId: string, data: Partial<InsertIatfMfgProcessAudit>, isSuperadmin = false): Promise<IatfMfgProcessAudit | undefined> {
+    const [rec] = await db.update(iatfMfgProcessAudits).set(data).where(isSuperadmin ? eq(iatfMfgProcessAudits.id, id) : and(eq(iatfMfgProcessAudits.id, id), eq(iatfMfgProcessAudits.userId, userId))).returning();
+    return rec;
+  }
+  async deleteIatfMfgProcessAudit(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(iatfMfgProcessAudits).where(isSuperadmin ? eq(iatfMfgProcessAudits.id, id) : and(eq(iatfMfgProcessAudits.id, id), eq(iatfMfgProcessAudits.userId, userId)));
   }
 
   // ─── ISO Awareness Notices ────────────────────────────────────────────────────

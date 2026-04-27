@@ -16,8 +16,9 @@ import {
   Calendar, User, BookOpen, Shield, Activity, AlertCircle,
   BarChart3, Info, CheckCircle2, Clock, HardHat, FileText,
   Users, ListChecks, Target, Search, Lightbulb, Edit3,
+  Package, Factory, Bell, CheckSquare,
 } from "lucide-react";
-import type { IsoAudit, IsoAuditFinding, IsoAuditProcessNote, AuditProcessSchedule } from "@shared/schema";
+import type { IsoAudit, IsoAuditFinding, IsoAuditProcessNote, AuditProcessSchedule, IatfProductAudit, IatfMfgProcessAudit, ProductAuditChecklistItem, MfgProcessAuditChecklistItem } from "@shared/schema";
 import type { ProcessEntry } from "./ProcessMapModule";
 
 // ── Standards & Clauses ────────────────────────────────────────────────────────
@@ -307,13 +308,96 @@ function ObjectiveMetBadge({ value }: { value: string | null | undefined }) {
   return <Badge className={`text-xs border ${cfg.cls}`}>{cfg.label}</Badge>;
 }
 
+// ── IATF §9.2.2.3 Default Product Audit Checklist ────────────────────────────
+const DEFAULT_PRODUCT_CHECKLIST: Omit<ProductAuditChecklistItem, "result" | "note">[] = [
+  { id: "pi1", category: "Product Identification & Traceability", item: "Part number matches job traveler / production order" },
+  { id: "pi2", category: "Product Identification & Traceability", item: "Lot / batch number correctly identified and traceable" },
+  { id: "pi3", category: "Product Identification & Traceability", item: "Revision level matches current approved drawing or specification" },
+  { id: "pi4", category: "Product Identification & Traceability", item: "Quantity sampled per sampling plan requirements" },
+  { id: "dc1", category: "Dimensional / Physical Characteristics", item: "Critical characteristics (CTQ) within drawing tolerance" },
+  { id: "dc2", category: "Dimensional / Physical Characteristics", item: "Non-critical dimensions within tolerance (spot check)" },
+  { id: "dc3", category: "Dimensional / Physical Characteristics", item: "Physical form, fit, and function as specified" },
+  { id: "vc1", category: "Visual / Cosmetic", item: "No cracks, chips, scratches, contamination, or foreign material" },
+  { id: "vc2", category: "Visual / Cosmetic", item: "Color / appearance matches approved standard or limit sample" },
+  { id: "fp1", category: "Functional / Performance", item: "Functional test / performance check completed per approved test method" },
+  { id: "fp2", category: "Functional / Performance", item: "All test results meet specification limits" },
+  { id: "lm1", category: "Labeling & Marking", item: "Label information correct: P/N, Rev, Lot, Qty, Date, and applicable hazard information" },
+  { id: "lm2", category: "Labeling & Marking", item: "Label legibility and placement per specification" },
+  { id: "pk1", category: "Packaging & Preservation", item: "Packaging type and condition meets customer / internal specification" },
+  { id: "pk2", category: "Packaging & Preservation", item: "Quantity per container is correct" },
+  { id: "pk3", category: "Packaging & Preservation", item: "Special preservation requirements met (desiccant, ESD, etc.) if applicable" },
+  { id: "dr1", category: "Documentation & Records", item: "Certificate of Analysis / test record on file and matches product" },
+  { id: "dr2", category: "Documentation & Records", item: "All required records completed and legible" },
+  { id: "dr3", category: "Documentation & Records", item: "Customer-specific requirements checklist verified" },
+];
+
+function makeDefaultProductChecklist(): ProductAuditChecklistItem[] {
+  return DEFAULT_PRODUCT_CHECKLIST.map(i => ({ ...i, result: "na" as const, note: "" }));
+}
+
+// ── IATF §9.2.2.4 Default Manufacturing Process Audit Checklist ───────────────
+const DEFAULT_PROCESS_CHECKLIST: Omit<MfgProcessAuditChecklistItem, "result" | "note">[] = [
+  { id: "sa1", category: "Setup & Job Authorization", question: "Production order / work order released and current at workstation" },
+  { id: "sa2", category: "Setup & Job Authorization", question: "Setup sheet posted at workstation and current revision" },
+  { id: "sa3", category: "Setup & Job Authorization", question: "First-off inspection / setup approval completed before run" },
+  { id: "sa4", category: "Setup & Job Authorization", question: "Setup performed by qualified / authorized personnel" },
+  { id: "pp1", category: "Process Parameters & Controls", question: "Process parameters (speed, temp, pressure, etc.) set per control plan" },
+  { id: "pp2", category: "Process Parameters & Controls", question: "In-process controls being performed at required frequency" },
+  { id: "pp3", category: "Process Parameters & Controls", question: "Reaction plan posted and understood by operator" },
+  { id: "cp1", category: "Control Plan Conformance", question: "All control plan characteristics being monitored" },
+  { id: "cp2", category: "Control Plan Conformance", question: "Monitoring method and frequency matches control plan" },
+  { id: "cp3", category: "Control Plan Conformance", question: "Control plan revision matches current PFMEA revision" },
+  { id: "oq1", category: "Operator Qualification & Awareness", question: "Operator trained and qualified for this operation (training records current)" },
+  { id: "oq2", category: "Operator Qualification & Awareness", question: "Operator can identify the critical quality characteristics for this process" },
+  { id: "oq3", category: "Operator Qualification & Awareness", question: "Operator knows escape criteria (when to stop and notify supervisor)" },
+  { id: "wi1", category: "Work Instructions & Documentation", question: "Approved work instruction / SOP is available at workstation" },
+  { id: "wi2", category: "Work Instructions & Documentation", question: "Work instruction revision matches Document Control master" },
+  { id: "wi3", category: "Work Instructions & Documentation", question: "Records being completed accurately and legibly in real time" },
+  { id: "mm1", category: "Monitoring & Measurement", question: "All gages / instruments calibrated and within due date" },
+  { id: "mm2", category: "Monitoring & Measurement", question: "Calibration tags visible and legible on all gages used" },
+  { id: "mm3", category: "Monitoring & Measurement", question: "MSA (Gage R&R or attribute study) completed for key measurements" },
+  { id: "nc1", category: "Non-Conforming Product Control", question: "Quarantine / red bin zone clearly identified and labeled" },
+  { id: "nc2", category: "Non-Conforming Product Control", question: "Any non-conforming material segregated and tagged with a hold tag" },
+  { id: "nc3", category: "Non-Conforming Product Control", question: "No untagged suspect material present at workstation or WIP area" },
+  { id: "et1", category: "Equipment & Tooling", question: "Preventive maintenance current on all production equipment in use" },
+  { id: "et2", category: "Equipment & Tooling", question: "Equipment in normal operating condition (no active alerts or alarms)" },
+  { id: "et3", category: "Equipment & Tooling", question: "Tooling change record current (if tooling was recently changed)" },
+];
+
+function makeDefaultProcessChecklist(): MfgProcessAuditChecklistItem[] {
+  return DEFAULT_PROCESS_CHECKLIST.map(i => ({ ...i, result: "na" as const, note: "" }));
+}
+
+const PRODUCT_AUDIT_RESULT_CFG: Record<string, { label: string; cls: string }> = {
+  pass:        { label: "PASS",        cls: "bg-green-100 text-green-800 border-green-300" },
+  fail:        { label: "FAIL",        cls: "bg-red-100 text-red-800 border-red-300" },
+  conditional: { label: "CONDITIONAL", cls: "bg-amber-100 text-amber-800 border-amber-300" },
+};
+const PROCESS_AUDIT_RESULT_CFG: Record<string, { label: string; cls: string }> = {
+  conforming:    { label: "CONFORMING",    cls: "bg-green-100 text-green-800 border-green-300" },
+  nonconforming: { label: "NONCONFORMING", cls: "bg-red-100 text-red-800 border-red-300" },
+  conditional:   { label: "CONDITIONAL",   cls: "bg-amber-100 text-amber-800 border-amber-300" },
+};
+
+const PRODUCT_CHECKLIST_RESULT_OPTS: { value: ProductAuditChecklistItem["result"]; label: string; cls: string }[] = [
+  { value: "pass", label: "Pass", cls: "bg-green-100 text-green-700 border-green-300" },
+  { value: "fail", label: "Fail", cls: "bg-red-100 text-red-700 border-red-300" },
+  { value: "na",   label: "N/A",  cls: "bg-gray-100 text-gray-600 border-gray-300" },
+];
+const PROCESS_CHECKLIST_RESULT_OPTS: { value: MfgProcessAuditChecklistItem["result"]; label: string; cls: string }[] = [
+  { value: "yes",     label: "Yes",     cls: "bg-green-100 text-green-700 border-green-300" },
+  { value: "no",      label: "No",      cls: "bg-red-100 text-red-700 border-red-300" },
+  { value: "partial", label: "Partial", cls: "bg-amber-100 text-amber-700 border-amber-300" },
+  { value: "na",      label: "N/A",     cls: "bg-gray-100 text-gray-600 border-gray-300" },
+];
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<"audits" | "schedule">("audits");
+  const [activeTab, setActiveTab] = useState<"audits" | "schedule" | "product-audit" | "process-audit">("audits");
   const [selectedAuditId, setSelectedAuditId] = useState<number | null>(null);
   const [showCreateAudit, setShowCreateAudit] = useState(false);
   const [findingDialog, setFindingDialog] = useState<{ open: boolean; clause: string; clauseTitle: string; existing?: IsoAuditFinding } | null>(null);
@@ -321,10 +405,16 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
   const [scheduleDialog, setScheduleDialog] = useState<{ processName: string; processType: "COP" | "SOP" | "MOP"; existing?: AuditProcessSchedule } | null>(null);
   const [expandedProcesses, setExpandedProcesses] = useState<Set<string>>(new Set());
   const [summaryEdit, setSummaryEdit] = useState<string | null>(null);
+  const [productAuditDialog, setProductAuditDialog] = useState<IatfProductAudit | null | "new">(null);
+  const [processAuditDialog, setProcessAuditDialog] = useState<IatfMfgProcessAudit | null | "new">(null);
 
   const { data: audits = [], isLoading } = useQuery<IsoAudit[]>({ queryKey: ["/api/iso-audits"] });
   const { data: project } = useQuery<any>({ queryKey: ["/api/iso-projects"] });
   const { data: scheduleEntries = [] } = useQuery<AuditProcessSchedule[]>({ queryKey: ["/api/audit-schedule"] });
+  const { data: productAudits = [] } = useQuery<IatfProductAudit[]>({ queryKey: ["/api/iatf-product-audits"] });
+  const { data: mfgProcessAudits = [] } = useQuery<IatfMfgProcessAudit[]>({ queryKey: ["/api/iatf-mfg-process-audits"] });
+
+  const isIATF = project?.standard === "IATF 16949";
 
   const selectedAudit = audits.find(a => a.id === selectedAuditId);
   const processes: ProcessEntry[] = (project?.processes || []) as ProcessEntry[];
@@ -402,6 +492,30 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
   const deleteSchedule = useMutation({
     mutationFn: async (id: number) => apiRequest("DELETE", `/api/audit-schedule/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/audit-schedule"] }); setScheduleDialog(null); toast({ title: "Entry removed" }); },
+  });
+
+  const saveProductAudit = useMutation({
+    mutationFn: async (data: any) => {
+      if (data.id) return (await apiRequest("PATCH", `/api/iatf-product-audits/${data.id}`, data)).json();
+      return (await apiRequest("POST", "/api/iatf-product-audits", data)).json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iatf-product-audits"] }); setProductAuditDialog(null); toast({ title: "Product audit saved" }); },
+  });
+  const deleteProductAudit = useMutation({
+    mutationFn: async (id: number) => apiRequest("DELETE", `/api/iatf-product-audits/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iatf-product-audits"] }); setProductAuditDialog(null); toast({ title: "Deleted" }); },
+  });
+
+  const saveMfgProcessAudit = useMutation({
+    mutationFn: async (data: any) => {
+      if (data.id) return (await apiRequest("PATCH", `/api/iatf-mfg-process-audits/${data.id}`, data)).json();
+      return (await apiRequest("POST", "/api/iatf-mfg-process-audits", data)).json();
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iatf-mfg-process-audits"] }); setProcessAuditDialog(null); toast({ title: "Process audit saved" }); },
+  });
+  const deleteMfgProcessAudit = useMutation({
+    mutationFn: async (id: number) => apiRequest("DELETE", `/api/iatf-mfg-process-audits/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iatf-mfg-process-audits"] }); setProcessAuditDialog(null); toast({ title: "Deleted" }); },
   });
 
   const clauses = selectedAudit ? getClausesForStandard(selectedAudit.standard) : [];
@@ -801,26 +915,28 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b bg-white px-6">
-        {(["audits", "schedule"] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-            data-testid={`tab-${tab}`}
-          >
-            {tab === "audits" ? (
-              <span className="flex items-center gap-1.5"><ClipboardCheck className="w-4 h-4" />Audit Log</span>
-            ) : (
-              <span className="flex items-center gap-1.5">
-                <BarChart3 className="w-4 h-4" />Audit Schedule
-                {(overdue > 0 || immediate > 0) && (
-                  <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{overdue + immediate}</span>
-                )}
-              </span>
+      <div className="flex border-b bg-white px-6 overflow-x-auto">
+        <button onClick={() => setActiveTab("audits")} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors shrink-0 ${activeTab === "audits" ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`} data-testid="tab-audits">
+          <span className="flex items-center gap-1.5"><ClipboardCheck className="w-4 h-4" />Audit Log</span>
+        </button>
+        <button onClick={() => setActiveTab("schedule")} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors shrink-0 ${activeTab === "schedule" ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`} data-testid="tab-schedule">
+          <span className="flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4" />Audit Schedule
+            {(overdue > 0 || immediate > 0) && (
+              <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{overdue + immediate}</span>
             )}
-          </button>
-        ))}
+          </span>
+        </button>
+        {isIATF && (
+          <>
+            <button onClick={() => setActiveTab("product-audit")} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors shrink-0 ${activeTab === "product-audit" ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`} data-testid="tab-product-audit">
+              <span className="flex items-center gap-1.5"><Package className="w-4 h-4" />Product Audits <span className="text-[10px] font-bold opacity-60">§9.2.2.3</span></span>
+            </button>
+            <button onClick={() => setActiveTab("process-audit")} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors shrink-0 ${activeTab === "process-audit" ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`} data-testid="tab-process-audit">
+              <span className="flex items-center gap-1.5"><Factory className="w-4 h-4" />Process Audits <span className="text-[10px] font-bold opacity-60">§9.2.2.4</span></span>
+            </button>
+          </>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -860,7 +976,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
               ))}
             </div>
           )
-        ) : (
+        ) : activeTab === "schedule" ? (
           /* ── Audit Schedule Tab ── */
           <div className="p-6 space-y-5">
 
@@ -963,8 +1079,139 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
               </div>
             )}
           </div>
+        ) : activeTab === "product-audit" ? (
+          /* ── §9.2.2.3 Product Audits Tab ── */
+          <div className="p-6 space-y-4">
+            {/* Header info */}
+            <div className="flex items-start gap-3 p-4 rounded-xl border bg-blue-50 border-blue-200">
+              <Package className="w-5 h-5 text-blue-700 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-blue-800">IATF 16949:2016 — Clause 9.2.2.3 Product Audits</p>
+                <p className="text-xs text-blue-700 mt-0.5">Audit products at appropriate production and delivery stages to verify conformance to all specified requirements, including customer-specific requirements and applicable technical standards.</p>
+              </div>
+            </div>
+            {/* New button */}
+            <div className="flex justify-end">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1" onClick={() => setProductAuditDialog("new")} data-testid="button-new-product-audit">
+                <Plus className="w-4 h-4" /> New Product Audit
+              </Button>
+            </div>
+            {/* List */}
+            {productAudits.length === 0 ? (
+              <div className="text-center py-16 space-y-3">
+                <Package className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+                <p className="font-medium text-muted-foreground">No product audits recorded</p>
+                <p className="text-sm text-muted-foreground/70">Record a product audit to verify product conformance at production or delivery stages.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {productAudits.map(pa => {
+                  const rc = PRODUCT_AUDIT_RESULT_CFG[pa.result || ""] || null;
+                  return (
+                    <Card key={pa.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer border" onClick={() => setProductAuditDialog(pa)} data-testid={`card-product-audit-${pa.id}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Package className="w-5 h-5 text-primary shrink-0" />
+                          <div>
+                            <p className="font-semibold text-primary">{pa.partName || pa.partNumber || "—"} {pa.partNumber && pa.partName ? <span className="text-muted-foreground font-normal">({pa.partNumber})</span> : ""}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {pa.auditDate && new Date(pa.auditDate).toLocaleDateString()}
+                              {pa.shift && ` · ${pa.shift} Shift`}
+                              {pa.lotNumber && ` · Lot: ${pa.lotNumber}`}
+                              {pa.auditor && ` · ${pa.auditor}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {rc && <Badge className={`text-xs border ${rc.cls}`}>{rc.label}</Badge>}
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── §9.2.2.4 Manufacturing Process Audits Tab ── */
+          <div className="p-6 space-y-4">
+            {/* Header info */}
+            <div className="flex items-start gap-3 p-4 rounded-xl border bg-orange-50 border-orange-200">
+              <Factory className="w-5 h-5 text-orange-700 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-orange-800">IATF 16949:2016 — Clause 9.2.2.4 Manufacturing Process Audits</p>
+                <p className="text-xs text-orange-700 mt-0.5">Audit each manufacturing process during each production shift (or at appropriate frequency) to assess implementation and effectiveness of all process-related requirements, including control plan conformance using a process/turtle approach.</p>
+              </div>
+            </div>
+            {/* New button */}
+            <div className="flex justify-end">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1" onClick={() => setProcessAuditDialog("new")} data-testid="button-new-process-audit">
+                <Plus className="w-4 h-4" /> New Process Audit
+              </Button>
+            </div>
+            {/* List */}
+            {mfgProcessAudits.length === 0 ? (
+              <div className="text-center py-16 space-y-3">
+                <Factory className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+                <p className="font-medium text-muted-foreground">No process audits recorded</p>
+                <p className="text-sm text-muted-foreground/70">Record a manufacturing process audit to verify conformance to control plan requirements.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {mfgProcessAudits.map(mpa => {
+                  const rc = PROCESS_AUDIT_RESULT_CFG[mpa.result || ""] || null;
+                  return (
+                    <Card key={mpa.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer border" onClick={() => setProcessAuditDialog(mpa)} data-testid={`card-process-audit-${mpa.id}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Factory className="w-5 h-5 text-primary shrink-0" />
+                          <div>
+                            <p className="font-semibold text-primary">{mpa.processName || "—"} {mpa.workstation ? <span className="text-muted-foreground font-normal">— {mpa.workstation}</span> : ""}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {mpa.auditDate && new Date(mpa.auditDate).toLocaleDateString()}
+                              {mpa.shift && ` · ${mpa.shift} Shift`}
+                              {mpa.partNumber && ` · P/N: ${mpa.partNumber}`}
+                              {mpa.auditor && ` · ${mpa.auditor}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {rc && <Badge className={`text-xs border ${rc.cls}`}>{rc.label}</Badge>}
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
+
+      {/* ── IATF Product Audit Dialog ── */}
+      {productAuditDialog !== null && (
+        <ProductAuditDialog
+          existing={productAuditDialog === "new" ? undefined : productAuditDialog}
+          onSave={data => saveProductAudit.mutate(data)}
+          onDelete={productAuditDialog !== "new" && productAuditDialog ? () => deleteProductAudit.mutate((productAuditDialog as IatfProductAudit).id) : undefined}
+          onClose={() => setProductAuditDialog(null)}
+          isPending={saveProductAudit.isPending || deleteProductAudit.isPending}
+        />
+      )}
+
+      {/* ── IATF Process Audit Dialog ── */}
+      {processAuditDialog !== null && (
+        <MfgProcessAuditDialog
+          processes={processes}
+          existing={processAuditDialog === "new" ? undefined : processAuditDialog}
+          onSave={data => saveMfgProcessAudit.mutate(data)}
+          onDelete={processAuditDialog !== "new" && processAuditDialog ? () => deleteMfgProcessAudit.mutate((processAuditDialog as IatfMfgProcessAudit).id) : undefined}
+          onClose={() => setProcessAuditDialog(null)}
+          isPending={saveMfgProcessAudit.isPending || deleteMfgProcessAudit.isPending}
+        />
+      )}
 
       {showCreateAudit && (
         <CreateAuditDialog onSave={(data) => createAudit.mutate(data)} onClose={() => setShowCreateAudit(false)} isPending={createAudit.isPending} />
@@ -1736,6 +1983,443 @@ function RiskAssessmentDialog({ processName, processType, existing, onSave, onDe
           </Button>
           {onDelete && (
             <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { if (window.confirm("Remove this assessment?")) onDelete(); }} data-testid="button-delete-schedule">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── §9.2.2.3 Product Audit Dialog ─────────────────────────────────────────────
+
+function ProductAuditDialog({
+  existing, onSave, onDelete, onClose, isPending,
+}: {
+  existing?: IatfProductAudit;
+  onSave: (data: any) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+  isPending: boolean;
+}) {
+  const [activeSection, setActiveSection] = useState<"info" | "checklist" | "findings">("info");
+  const [auditDate, setAuditDate] = useState(existing?.auditDate || new Date().toISOString().split("T")[0]);
+  const [shift, setShift] = useState(existing?.shift || "");
+  const [auditor, setAuditor] = useState(existing?.auditor || "");
+  const [partNumber, setPartNumber] = useState(existing?.partNumber || "");
+  const [partName, setPartName] = useState(existing?.partName || "");
+  const [lotNumber, setLotNumber] = useState(existing?.lotNumber || "");
+  const [revisionLevel, setRevisionLevel] = useState(existing?.revisionLevel || "");
+  const [quantitySampled, setQuantitySampled] = useState(existing?.quantitySampled?.toString() || "");
+  const [customerName, setCustomerName] = useState(existing?.customerName || "");
+  const [controlPlanRef, setControlPlanRef] = useState(existing?.controlPlanRef || "");
+  const [result, setResult] = useState(existing?.result || "");
+  const [checklistItems, setChecklistItems] = useState<ProductAuditChecklistItem[]>(
+    existing?.checklistItems?.length ? (existing.checklistItems as ProductAuditChecklistItem[]) : makeDefaultProductChecklist()
+  );
+  const [findings, setFindings] = useState(existing?.findings || "");
+  const [nonconformances, setNonconformances] = useState(existing?.nonconformances || "");
+  const [disposition, setDisposition] = useState(existing?.disposition || "");
+  const [correctiveActionRef, setCorrectiveActionRef] = useState(existing?.correctiveActionRef || "");
+  const [managementNotified, setManagementNotified] = useState(existing?.managementNotified || false);
+  const [notifiedBy, setNotifiedBy] = useState(existing?.notifiedBy || "");
+
+  const categories = [...new Set(checklistItems.map(i => i.category))];
+  const fails = checklistItems.filter(i => i.result === "fail").length;
+  const passes = checklistItems.filter(i => i.result === "pass").length;
+  const naCount = checklistItems.filter(i => i.result === "na").length;
+
+  const updateItem = (id: string, field: "result" | "note", value: string) => {
+    setChecklistItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const handleSave = () => {
+    onSave({
+      ...(existing?.id ? { id: existing.id } : {}),
+      auditDate, shift, auditor, partNumber, partName, lotNumber, revisionLevel,
+      quantitySampled: quantitySampled ? parseInt(quantitySampled) : null,
+      customerName, controlPlanRef, result, checklistItems,
+      findings, nonconformances, disposition, correctiveActionRef, managementNotified, notifiedBy,
+    });
+  };
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <div className="px-6 pt-5 pb-0 shrink-0">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Package className="w-5 h-5 text-primary" />
+              {existing ? "Edit" : "New"} Product Audit
+              <Badge className="text-[10px] font-bold border bg-blue-50 text-blue-700 border-blue-200 ml-1">§9.2.2.3</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-1 border-b mt-4 -mx-6 px-6">
+            {(["info", "checklist", "findings"] as const).map(s => (
+              <button key={s} onClick={() => setActiveSection(s)}
+                className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeSection === s ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                data-testid={`pa-tab-${s}`}>
+                {s === "info" ? "Product Info" : s === "checklist" ? (<span>Checklist {fails > 0 && <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{fails}</span>}</span>) : "Findings & Result"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          {activeSection === "info" && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Audit Date</Label><Input type="date" value={auditDate} onChange={e => setAuditDate(e.target.value)} data-testid="input-pa-date" /></div>
+                <div>
+                  <Label className="text-xs">Shift</Label>
+                  <Select value={shift} onValueChange={setShift}>
+                    <SelectTrigger data-testid="select-pa-shift"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      {["Day","Afternoon","Night","All Shifts"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div><Label className="text-xs">Auditor</Label><Input placeholder="Name of auditor" value={auditor} onChange={e => setAuditor(e.target.value)} data-testid="input-pa-auditor" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Part Number</Label><Input placeholder="e.g. CCI-4502-B" value={partNumber} onChange={e => setPartNumber(e.target.value)} data-testid="input-pa-partnum" /></div>
+                <div><Label className="text-xs">Revision Level</Label><Input placeholder="e.g. Rev C" value={revisionLevel} onChange={e => setRevisionLevel(e.target.value)} data-testid="input-pa-rev" /></div>
+              </div>
+              <div><Label className="text-xs">Part / Product Name</Label><Input placeholder="e.g. Lubricant Base Oil 15W-40" value={partName} onChange={e => setPartName(e.target.value)} data-testid="input-pa-partname" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Lot / Batch Number</Label><Input placeholder="e.g. BL-2026-0052" value={lotNumber} onChange={e => setLotNumber(e.target.value)} data-testid="input-pa-lot" /></div>
+                <div><Label className="text-xs">Qty Sampled</Label><Input type="number" min={1} placeholder="e.g. 5" value={quantitySampled} onChange={e => setQuantitySampled(e.target.value)} data-testid="input-pa-qty" /></div>
+              </div>
+              <div><Label className="text-xs">Customer Name <span className="text-muted-foreground">(optional)</span></Label><Input placeholder="e.g. Ford Motor Company" value={customerName} onChange={e => setCustomerName(e.target.value)} data-testid="input-pa-customer" /></div>
+              <div><Label className="text-xs">Control Plan Reference <span className="text-muted-foreground">(optional)</span></Label><Input placeholder="e.g. CP-2026-01 Rev B" value={controlPlanRef} onChange={e => setControlPlanRef(e.target.value)} data-testid="input-pa-cp" /></div>
+            </div>
+          )}
+
+          {activeSection === "checklist" && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 text-xs font-medium">
+                <span className="text-green-700">{passes} Pass</span>
+                <span className="text-red-700">{fails} Fail</span>
+                <span className="text-gray-500">{naCount} N/A</span>
+                <span className="text-gray-400 ml-auto">{checklistItems.length} items total</span>
+              </div>
+              {categories.map(cat => (
+                <div key={cat} className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted/60 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{cat}</div>
+                  <div className="divide-y">
+                    {checklistItems.filter(i => i.category === cat).map(item => (
+                      <div key={item.id} className="px-4 py-3 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm text-foreground leading-relaxed flex-1">{item.item}</p>
+                          <div className="flex gap-1 shrink-0">
+                            {PRODUCT_CHECKLIST_RESULT_OPTS.map(opt => (
+                              <button key={opt.value} onClick={() => updateItem(item.id, "result", opt.value)}
+                                className={`px-2.5 py-1 text-xs font-semibold rounded border transition-colors ${item.result === opt.value ? opt.cls : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"}`}
+                                data-testid={`pa-item-${item.id}-${opt.value}`}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {(item.result === "fail" || item.note) && (
+                          <Input className="text-xs h-7" placeholder="Note / evidence..." value={item.note} onChange={e => updateItem(item.id, "note", e.target.value)} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeSection === "findings" && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs">Overall Result</Label>
+                <div className="flex gap-2 mt-1.5">
+                  {Object.entries(PRODUCT_AUDIT_RESULT_CFG).map(([val, cfg]) => (
+                    <button key={val} onClick={() => setResult(val)}
+                      className={`flex-1 py-2 text-xs font-bold rounded border transition-colors ${result === val ? cfg.cls : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"}`}
+                      data-testid={`pa-result-${val}`}>
+                      {cfg.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div><Label className="text-xs">Findings / Observations</Label><Textarea rows={3} placeholder="Observations, positive findings, or areas of concern..." value={findings} onChange={e => setFindings(e.target.value)} data-testid="input-pa-findings" /></div>
+              <div><Label className="text-xs">Nonconformances</Label><Textarea rows={3} placeholder="Describe any nonconformances found..." value={nonconformances} onChange={e => setNonconformances(e.target.value)} data-testid="input-pa-ncs" /></div>
+              <div>
+                <Label className="text-xs">Product Disposition</Label>
+                <Select value={disposition} onValueChange={setDisposition}>
+                  <SelectTrigger data-testid="select-pa-disposition"><SelectValue placeholder="Select disposition..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="accept">Accept — Released to Next Operation</SelectItem>
+                    <SelectItem value="hold">Hold — Pending Disposition</SelectItem>
+                    <SelectItem value="rework">Rework Required</SelectItem>
+                    <SelectItem value="scrap">Scrap</SelectItem>
+                    <SelectItem value="conditional">Conditional Release</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Corrective Action Reference <span className="text-muted-foreground">(if applicable)</span></Label><Input placeholder="e.g. CAR-2026-008" value={correctiveActionRef} onChange={e => setCorrectiveActionRef(e.target.value)} data-testid="input-pa-car" /></div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-amber-50 border-amber-200">
+                <Checkbox id="pa-mgmt" checked={managementNotified} onCheckedChange={v => setManagementNotified(!!v)} data-testid="checkbox-pa-mgmt" />
+                <div>
+                  <Label htmlFor="pa-mgmt" className="text-sm font-semibold cursor-pointer flex items-center gap-1.5"><Bell className="w-3.5 h-3.5 text-amber-600" />Management Notified of Results</Label>
+                  <p className="text-xs text-muted-foreground">IATF §9.2.2.3 requires audit results be communicated to responsible management.</p>
+                </div>
+              </div>
+              {managementNotified && (
+                <div><Label className="text-xs">Notified By</Label><Input placeholder="Name and role of person who notified management" value={notifiedBy} onChange={e => setNotifiedBy(e.target.value)} data-testid="input-pa-notified-by" /></div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 px-6 py-4 border-t shrink-0">
+          <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={handleSave} disabled={isPending} data-testid="button-save-product-audit">
+            {isPending ? "Saving..." : existing ? "Update Audit" : "Save Audit"}
+          </Button>
+          {onDelete && (
+            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { if (window.confirm("Delete this product audit record?")) onDelete(); }} data-testid="button-delete-product-audit">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── §9.2.2.4 Manufacturing Process Audit Dialog ───────────────────────────────
+
+function MfgProcessAuditDialog({
+  processes, existing, onSave, onDelete, onClose, isPending,
+}: {
+  processes: ProcessEntry[];
+  existing?: IatfMfgProcessAudit;
+  onSave: (data: any) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+  isPending: boolean;
+}) {
+  const [activeSection, setActiveSection] = useState<"info" | "turtle" | "checklist" | "findings">("info");
+  const [auditDate, setAuditDate] = useState(existing?.auditDate || new Date().toISOString().split("T")[0]);
+  const [shift, setShift] = useState(existing?.shift || "");
+  const [processName, setProcessName] = useState(existing?.processName || "");
+  const [workstation, setWorkstation] = useState(existing?.workstation || "");
+  const [auditor, setAuditor] = useState(existing?.auditor || "");
+  const [controlPlanRef, setControlPlanRef] = useState(existing?.controlPlanRef || "");
+  const [productionOrder, setProductionOrder] = useState(existing?.productionOrder || "");
+  const [partNumber, setPartNumber] = useState(existing?.partNumber || "");
+  const [result, setResult] = useState(existing?.result || "");
+  const [turtleInputs, setTurtleInputs] = useState(existing?.turtleInputs || "");
+  const [turtleOutputs, setTurtleOutputs] = useState(existing?.turtleOutputs || "");
+  const [turtleEquipment, setTurtleEquipment] = useState(existing?.turtleEquipment || "");
+  const [turtlePersonnel, setTurtlePersonnel] = useState(existing?.turtlePersonnel || "");
+  const [turtleMethods, setTurtleMethods] = useState(existing?.turtleMethods || "");
+  const [turtleMeasures, setTurtleMeasures] = useState(existing?.turtleMeasures || "");
+  const [turtleEnvironment, setTurtleEnvironment] = useState(existing?.turtleEnvironment || "");
+  const [checklistItems, setChecklistItems] = useState<MfgProcessAuditChecklistItem[]>(
+    existing?.checklistItems?.length ? (existing.checklistItems as MfgProcessAuditChecklistItem[]) : makeDefaultProcessChecklist()
+  );
+  const [findings, setFindings] = useState(existing?.findings || "");
+  const [nonconformances, setNonconformances] = useState(existing?.nonconformances || "");
+  const [correctiveActionRef, setCorrectiveActionRef] = useState(existing?.correctiveActionRef || "");
+  const [managementNotified, setManagementNotified] = useState(existing?.managementNotified || false);
+  const [notifiedBy, setNotifiedBy] = useState(existing?.notifiedBy || "");
+
+  const categories = [...new Set(checklistItems.map(i => i.category))];
+  const nos = checklistItems.filter(i => i.result === "no").length;
+  const yeses = checklistItems.filter(i => i.result === "yes").length;
+  const partials = checklistItems.filter(i => i.result === "partial").length;
+
+  const updateItem = (id: string, field: "result" | "note", value: string) => {
+    setChecklistItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const handleSave = () => {
+    onSave({
+      ...(existing?.id ? { id: existing.id } : {}),
+      auditDate, shift, processName, workstation, auditor, controlPlanRef, productionOrder, partNumber, result,
+      turtleInputs, turtleOutputs, turtleEquipment, turtlePersonnel, turtleMethods, turtleMeasures, turtleEnvironment,
+      checklistItems, findings, nonconformances, correctiveActionRef, managementNotified, notifiedBy,
+    });
+  };
+
+  const TURTLE_FIELDS = [
+    { key: "inputs",      label: "Inputs",          icon: "→", placeholder: "Materials, information, orders received by this process", value: turtleInputs,      set: setTurtleInputs },
+    { key: "outputs",     label: "Outputs",         icon: "→", placeholder: "Products, records, decisions produced by this process",  value: turtleOutputs,     set: setTurtleOutputs },
+    { key: "equipment",   label: "Equipment",       icon: "⚙", placeholder: "Machines, tools, fixtures, software used",             value: turtleEquipment,   set: setTurtleEquipment },
+    { key: "personnel",   label: "Personnel",       icon: "👤", placeholder: "Roles, qualifications, competency requirements",       value: turtlePersonnel,   set: setTurtlePersonnel },
+    { key: "methods",     label: "Methods (How)",   icon: "📋", placeholder: "WIs, SOPs, standards, procedures, control plan steps",  value: turtleMethods,     set: setTurtleMethods },
+    { key: "measures",    label: "Measures (KPIs)", icon: "📊", placeholder: "Performance measures, process KPIs, targets",          value: turtleMeasures,    set: setTurtleMeasures },
+    { key: "environment", label: "Environment",     icon: "🏭", placeholder: "Temperature, cleanliness, safety requirements, 5S",   value: turtleEnvironment, set: setTurtleEnvironment },
+  ] as const;
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <div className="px-6 pt-5 pb-0 shrink-0">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Factory className="w-5 h-5 text-primary" />
+              {existing ? "Edit" : "New"} Manufacturing Process Audit
+              <Badge className="text-[10px] font-bold border bg-orange-50 text-orange-700 border-orange-200 ml-1">§9.2.2.4</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-1 border-b mt-4 -mx-6 px-6">
+            {(["info", "turtle", "checklist", "findings"] as const).map(s => (
+              <button key={s} onClick={() => setActiveSection(s)}
+                className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeSection === s ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                data-testid={`mpa-tab-${s}`}>
+                {s === "info" ? "Process Info" : s === "turtle" ? "Turtle Diagram" : s === "checklist" ? (<span>Checklist {nos > 0 && <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{nos}</span>}</span>) : "Findings & Result"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          {activeSection === "info" && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Audit Date</Label><Input type="date" value={auditDate} onChange={e => setAuditDate(e.target.value)} data-testid="input-mpa-date" /></div>
+                <div>
+                  <Label className="text-xs">Shift</Label>
+                  <Select value={shift} onValueChange={setShift}>
+                    <SelectTrigger data-testid="select-mpa-shift"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      {["Day","Afternoon","Night","All Shifts"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Process Being Audited</Label>
+                <Select value={processName} onValueChange={setProcessName}>
+                  <SelectTrigger data-testid="select-mpa-process"><SelectValue placeholder="Select process..." /></SelectTrigger>
+                  <SelectContent>
+                    {processes.filter(p => p.row === "COP" || (p as any).row === "CORE").map(p => (
+                      <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>
+                    ))}
+                    {processes.filter(p => p.row !== "COP" && (p as any).row !== "CORE" && p.row !== "MOP" && (p as any).row !== "MANAGEMENT").map(p => (
+                      <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!processName && (
+                  <Input className="mt-1.5" placeholder="Or type process name manually..." value={processName} onChange={e => setProcessName(e.target.value)} data-testid="input-mpa-process-manual" />
+                )}
+              </div>
+              <div><Label className="text-xs">Workstation / Cell / Line</Label><Input placeholder="e.g. Blending Reactor #2 / Filling Line A" value={workstation} onChange={e => setWorkstation(e.target.value)} data-testid="input-mpa-workstation" /></div>
+              <div><Label className="text-xs">Auditor</Label><Input placeholder="Name of auditor" value={auditor} onChange={e => setAuditor(e.target.value)} data-testid="input-mpa-auditor" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Control Plan Reference</Label><Input placeholder="e.g. CP-2026-01 Rev B" value={controlPlanRef} onChange={e => setControlPlanRef(e.target.value)} data-testid="input-mpa-cp" /></div>
+                <div><Label className="text-xs">Production Order</Label><Input placeholder="e.g. PO-2026-0144" value={productionOrder} onChange={e => setProductionOrder(e.target.value)} data-testid="input-mpa-order" /></div>
+              </div>
+              <div><Label className="text-xs">Part / Product Number Being Produced</Label><Input placeholder="e.g. CCI-4502-B" value={partNumber} onChange={e => setPartNumber(e.target.value)} data-testid="input-mpa-partnum" /></div>
+            </div>
+          )}
+
+          {activeSection === "turtle" && (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-orange-50 border border-orange-200 text-xs text-orange-800">
+                <CheckSquare className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Document the turtle diagram elements for this manufacturing process. These form the basis of the process audit assessment per the process approach framework.</span>
+              </div>
+              {TURTLE_FIELDS.map(f => (
+                <div key={f.key}>
+                  <Label className="text-xs font-semibold">{f.label}</Label>
+                  <Textarea
+                    rows={2}
+                    placeholder={f.placeholder}
+                    value={f.value}
+                    onChange={e => f.set(e.target.value)}
+                    className="text-sm mt-1"
+                    data-testid={`input-mpa-turtle-${f.key}`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeSection === "checklist" && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 text-xs font-medium">
+                <span className="text-green-700">{yeses} Yes</span>
+                <span className="text-red-700">{nos} No</span>
+                <span className="text-amber-700">{partials} Partial</span>
+                <span className="text-gray-400 ml-auto">{checklistItems.length} questions</span>
+              </div>
+              {categories.map(cat => (
+                <div key={cat} className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted/60 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{cat}</div>
+                  <div className="divide-y">
+                    {checklistItems.filter(i => i.category === cat).map(item => (
+                      <div key={item.id} className="px-4 py-3 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm text-foreground leading-relaxed flex-1">{item.question}</p>
+                          <div className="flex gap-1 shrink-0">
+                            {PROCESS_CHECKLIST_RESULT_OPTS.map(opt => (
+                              <button key={opt.value} onClick={() => updateItem(item.id, "result", opt.value)}
+                                className={`px-2 py-1 text-xs font-semibold rounded border transition-colors ${item.result === opt.value ? opt.cls : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"}`}
+                                data-testid={`mpa-item-${item.id}-${opt.value}`}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {(item.result === "no" || item.result === "partial" || item.note) && (
+                          <Input className="text-xs h-7" placeholder="Note / evidence / action needed..." value={item.note} onChange={e => updateItem(item.id, "note", e.target.value)} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeSection === "findings" && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs">Overall Audit Result</Label>
+                <div className="flex gap-2 mt-1.5">
+                  {Object.entries(PROCESS_AUDIT_RESULT_CFG).map(([val, cfg]) => (
+                    <button key={val} onClick={() => setResult(val)}
+                      className={`flex-1 py-2 text-xs font-bold rounded border transition-colors ${result === val ? cfg.cls : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"}`}
+                      data-testid={`mpa-result-${val}`}>
+                      {cfg.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div><Label className="text-xs">Findings / Observations</Label><Textarea rows={3} placeholder="Summarize what was observed during the audit..." value={findings} onChange={e => setFindings(e.target.value)} data-testid="input-mpa-findings" /></div>
+              <div><Label className="text-xs">Nonconformances</Label><Textarea rows={3} placeholder="Detail any nonconformances against the control plan or requirements..." value={nonconformances} onChange={e => setNonconformances(e.target.value)} data-testid="input-mpa-ncs" /></div>
+              <div><Label className="text-xs">Corrective Action Reference <span className="text-muted-foreground">(if applicable)</span></Label><Input placeholder="e.g. CAR-2026-009" value={correctiveActionRef} onChange={e => setCorrectiveActionRef(e.target.value)} data-testid="input-mpa-car" /></div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-amber-50 border-amber-200">
+                <Checkbox id="mpa-mgmt" checked={managementNotified} onCheckedChange={v => setManagementNotified(!!v)} data-testid="checkbox-mpa-mgmt" />
+                <div>
+                  <Label htmlFor="mpa-mgmt" className="text-sm font-semibold cursor-pointer flex items-center gap-1.5"><Bell className="w-3.5 h-3.5 text-amber-600" />Management Notified of Results</Label>
+                  <p className="text-xs text-muted-foreground">IATF §9.2.2.4 requires results communicated to responsible management for each process audit.</p>
+                </div>
+              </div>
+              {managementNotified && (
+                <div><Label className="text-xs">Notified By</Label><Input placeholder="Name and role of person who notified management" value={notifiedBy} onChange={e => setNotifiedBy(e.target.value)} data-testid="input-mpa-notified-by" /></div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 px-6 py-4 border-t shrink-0">
+          <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={handleSave} disabled={isPending} data-testid="button-save-process-audit">
+            {isPending ? "Saving..." : existing ? "Update Audit" : "Save Audit"}
+          </Button>
+          {onDelete && (
+            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { if (window.confirm("Delete this process audit record?")) onDelete(); }} data-testid="button-delete-process-audit">
               <Trash2 className="w-4 h-4" />
             </Button>
           )}

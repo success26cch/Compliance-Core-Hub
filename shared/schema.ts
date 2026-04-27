@@ -2358,3 +2358,81 @@ export const auditLogs = pgTable("audit_logs", {
 });
 
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// ─── IATF §9.2.2.3 — Product Audits ──────────────────────────────────────────
+export interface ProductAuditChecklistItem {
+  id: string;
+  category: string;
+  item: string;
+  result: "pass" | "fail" | "na";
+  note: string;
+}
+
+export const iatfProductAudits = pgTable("iatf_product_audits", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  auditDate: text("audit_date"),
+  shift: text("shift"),                        // "Day" | "Afternoon" | "Night" | "All"
+  auditor: text("auditor"),
+  partNumber: text("part_number"),
+  partName: text("part_name"),
+  lotNumber: text("lot_number"),
+  revisionLevel: text("revision_level"),
+  quantitySampled: integer("quantity_sampled"),
+  customerName: text("customer_name"),
+  controlPlanRef: text("control_plan_ref"),
+  result: text("result"),                      // "pass" | "fail" | "conditional"
+  checklistItems: jsonb("checklist_items").$type<ProductAuditChecklistItem[]>().default([]),
+  findings: text("findings"),
+  nonconformances: text("nonconformances"),
+  disposition: text("disposition"),
+  correctiveActionRef: text("corrective_action_ref"),
+  managementNotified: boolean("management_notified").default(false),
+  notifiedBy: text("notified_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertIatfProductAuditSchema = createInsertSchema(iatfProductAudits).omit({ id: true, createdAt: true });
+export type IatfProductAudit = typeof iatfProductAudits.$inferSelect;
+export type InsertIatfProductAudit = z.infer<typeof insertIatfProductAuditSchema>;
+
+// ─── IATF §9.2.2.4 — Manufacturing Process Audits ────────────────────────────
+export interface MfgProcessAuditChecklistItem {
+  id: string;
+  category: string;
+  question: string;
+  result: "yes" | "no" | "partial" | "na";
+  note: string;
+}
+
+export const iatfMfgProcessAudits = pgTable("iatf_mfg_process_audits", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  auditDate: text("audit_date"),
+  shift: text("shift"),
+  processName: text("process_name"),
+  workstation: text("workstation"),
+  auditor: text("auditor"),
+  controlPlanRef: text("control_plan_ref"),
+  productionOrder: text("production_order"),
+  partNumber: text("part_number"),
+  result: text("result"),                      // "conforming" | "nonconforming" | "conditional"
+  // Turtle Diagram elements
+  turtleInputs: text("turtle_inputs"),
+  turtleOutputs: text("turtle_outputs"),
+  turtleEquipment: text("turtle_equipment"),
+  turtlePersonnel: text("turtle_personnel"),
+  turtleMethods: text("turtle_methods"),
+  turtleMeasures: text("turtle_measures"),
+  turtleEnvironment: text("turtle_environment"),
+  // Audit checklist & findings
+  checklistItems: jsonb("checklist_items").$type<MfgProcessAuditChecklistItem[]>().default([]),
+  findings: text("findings"),
+  nonconformances: text("nonconformances"),
+  correctiveActionRef: text("corrective_action_ref"),
+  managementNotified: boolean("management_notified").default(false),
+  notifiedBy: text("notified_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertIatfMfgProcessAuditSchema = createInsertSchema(iatfMfgProcessAudits).omit({ id: true, createdAt: true });
+export type IatfMfgProcessAudit = typeof iatfMfgProcessAudits.$inferSelect;
+export type InsertIatfMfgProcessAudit = z.infer<typeof insertIatfMfgProcessAuditSchema>;

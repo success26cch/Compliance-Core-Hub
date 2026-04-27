@@ -6375,6 +6375,92 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     }
   });
 
+  // ─── IATF §9.2.2.3 — Product Audits ─────────────────────────────────────────
+  app.get("/api/iatf-product-audits", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      res.json(await storage.getIatfProductAudits(userId, isSuperadmin));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.post("/api/iatf-product-audits", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const { insertIatfProductAuditSchema } = await import("@shared/schema");
+      const parsed = insertIatfProductAuditSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      res.status(201).json(await storage.createIatfProductAudit(parsed.data));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.patch("/api/iatf-product-audits/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const rec = await storage.updateIatfProductAudit(id, userId, req.body, isSuperadmin);
+      if (!rec) return res.status(404).json({ message: "Not found" });
+      res.json(rec);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.delete("/api/iatf-product-audits/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIatfProductAudit(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  // ─── IATF §9.2.2.4 — Manufacturing Process Audits ───────────────────────────
+  app.get("/api/iatf-mfg-process-audits", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      res.json(await storage.getIatfMfgProcessAudits(userId, isSuperadmin));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.post("/api/iatf-mfg-process-audits", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const { insertIatfMfgProcessAuditSchema } = await import("@shared/schema");
+      const parsed = insertIatfMfgProcessAuditSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      res.status(201).json(await storage.createIatfMfgProcessAudit(parsed.data));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.patch("/api/iatf-mfg-process-audits/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const rec = await storage.updateIatfMfgProcessAudit(id, userId, req.body, isSuperadmin);
+      if (!rec) return res.status(404).json({ message: "Not found" });
+      res.json(rec);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.delete("/api/iatf-mfg-process-audits/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteIatfMfgProcessAudit(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
   // ─── Audit Process Schedule (IATF 9.2.2.2) ───────────────────────────────────
   app.get("/api/audit-schedule", async (req: Request, res: Response) => {
     try {
