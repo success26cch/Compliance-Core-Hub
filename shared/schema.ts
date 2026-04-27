@@ -2531,3 +2531,66 @@ export const lpaRecords = pgTable("lpa_records", {
 export const insertLpaRecordSchema = createInsertSchema(lpaRecords).omit({ id: true, createdAt: true, updatedAt: true });
 export type LpaRecord = typeof lpaRecords.$inferSelect;
 export type InsertLpaRecord = z.infer<typeof insertLpaRecordSchema>;
+
+// ─── ISO 7.2 / 7.3 Competence & Training System ──────────────────────────────
+
+// Competency requirement definitions — what is required for each job title
+export const competencyRequirements = pgTable("competency_requirements", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  jobTitle: text("job_title").notNull(),
+  competencyName: text("competency_name").notNull(),
+  competencyType: text("competency_type").notNull(), // 'education' | 'training' | 'skill' | 'experience'
+  description: text("description"),
+  standard: text("standard"),   // e.g. 'ISO 9001:2015', 'IATF 16949:2016'
+  clause: text("clause"),       // e.g. '7.2', '7.2.2'
+  isRequired: boolean("is_required").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertCompetencyRequirementSchema = createInsertSchema(competencyRequirements).omit({ id: true, createdAt: true });
+export type CompetencyRequirement = typeof competencyRequirements.$inferSelect;
+export type InsertCompetencyRequirement = z.infer<typeof insertCompetencyRequirementSchema>;
+
+// Per-employee competency evidence — what an employee has demonstrated
+export const employeeCompetencyRecords = pgTable("employee_competency_records", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  employeeId: integer("employee_id").notNull(),
+  requirementId: integer("requirement_id"),  // optional link to competency_requirements
+  competencyName: text("competency_name").notNull(),
+  evidenceType: text("evidence_type").notNull(), // 'diploma' | 'certificate' | 'ojt' | 'test' | 'observation' | 'experience'
+  provider: text("provider"),      // training provider, institution, supervisor
+  completedDate: text("completed_date"),
+  expiryDate: text("expiry_date"),
+  status: text("status").notNull().default("active"), // 'active' | 'expired' | 'pending_review'
+  isOjt: boolean("is_ojt").notNull().default(false),  // IATF §7.2.2 on-the-job training flag
+  effectivenessVerified: boolean("effectiveness_verified").notNull().default(false),
+  effectivenessNotes: text("effectiveness_notes"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertEmployeeCompetencyRecordSchema = createInsertSchema(employeeCompetencyRecords).omit({ id: true, createdAt: true });
+export type EmployeeCompetencyRecord = typeof employeeCompetencyRecords.$inferSelect;
+export type InsertEmployeeCompetencyRecord = z.infer<typeof insertEmployeeCompetencyRecordSchema>;
+
+// Training event log — records of any training conducted (classroom, OJT, external, etc.)
+export const trainingEventRecords = pgTable("training_event_records", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull(),
+  trainingType: text("training_type").notNull(), // 'classroom' | 'ojt' | 'external' | 'online' | 'toolbox_talk' | 'safety_briefing' | 'mentoring'
+  standard: text("standard"),   // ISO standard addressed
+  clause: text("clause"),       // specific clause (e.g. '7.2', '7.2.2')
+  trainer: text("trainer"),
+  provider: text("provider"),
+  trainingDate: text("training_date"),
+  durationHours: text("duration_hours"),
+  location: text("location"),
+  participants: jsonb("participants").$type<string[]>().default([]),
+  passed: boolean("passed"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertTrainingEventRecordSchema = createInsertSchema(trainingEventRecords).omit({ id: true, createdAt: true });
+export type TrainingEventRecord = typeof trainingEventRecords.$inferSelect;
+export type InsertTrainingEventRecord = z.infer<typeof insertTrainingEventRecordSchema>;

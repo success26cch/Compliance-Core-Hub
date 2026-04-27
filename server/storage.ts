@@ -43,6 +43,10 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   lpaAuditPlans, lpaRecords,
   type LpaAuditPlan, type InsertLpaAuditPlan,
   type LpaRecord, type InsertLpaRecord,
+  competencyRequirements, employeeCompetencyRecords, trainingEventRecords,
+  type CompetencyRequirement, type InsertCompetencyRequirement,
+  type EmployeeCompetencyRecord, type InsertEmployeeCompetencyRecord,
+  type TrainingEventRecord, type InsertTrainingEventRecord,
 } from "@shared/schema";
 import { db } from "./rls";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -367,6 +371,24 @@ export interface IStorage {
   // ISO Awareness Acknowledgments
   getIsoAwarenessAcknowledgments(noticeId: number): Promise<IsoAwarenessAcknowledgment[]>;
   createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment>;
+
+  // §7.2 Competency Requirements (per job title)
+  getCompetencyRequirements(userId: string, isSuperadmin?: boolean): Promise<CompetencyRequirement[]>;
+  createCompetencyRequirement(data: InsertCompetencyRequirement): Promise<CompetencyRequirement>;
+  updateCompetencyRequirement(id: number, userId: string, data: Partial<InsertCompetencyRequirement>, isSuperadmin?: boolean): Promise<CompetencyRequirement | undefined>;
+  deleteCompetencyRequirement(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // §7.2 Employee Competency Records (evidence per employee)
+  getEmployeeCompetencyRecords(userId: string, employeeId?: number, isSuperadmin?: boolean): Promise<EmployeeCompetencyRecord[]>;
+  createEmployeeCompetencyRecord(data: InsertEmployeeCompetencyRecord): Promise<EmployeeCompetencyRecord>;
+  updateEmployeeCompetencyRecord(id: number, userId: string, data: Partial<InsertEmployeeCompetencyRecord>, isSuperadmin?: boolean): Promise<EmployeeCompetencyRecord | undefined>;
+  deleteEmployeeCompetencyRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // Training Event Log (classroom, OJT, external, toolbox talks)
+  getTrainingEventRecords(userId: string, isSuperadmin?: boolean): Promise<TrainingEventRecord[]>;
+  createTrainingEventRecord(data: InsertTrainingEventRecord): Promise<TrainingEventRecord>;
+  updateTrainingEventRecord(id: number, userId: string, data: Partial<InsertTrainingEventRecord>, isSuperadmin?: boolean): Promise<TrainingEventRecord | undefined>;
+  deleteTrainingEventRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Objectives (KPI tracking — shared by Process Maps, Measurement, Management Review)
   getIsoObjectives(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoObjective[]>;
@@ -2015,6 +2037,70 @@ export class DatabaseStorage implements IStorage {
   async createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment> {
     const [rec] = await db.insert(isoAwarenessAcknowledgments).values(data).returning();
     return rec;
+  }
+
+  // ─── §7.2 Competency Requirements ────────────────────────────────────────────
+  async getCompetencyRequirements(userId: string, isSuperadmin = false): Promise<CompetencyRequirement[]> {
+    const cond = isSuperadmin ? undefined : eq(competencyRequirements.userId, userId);
+    return db.select().from(competencyRequirements).where(cond).orderBy(competencyRequirements.jobTitle, competencyRequirements.competencyName);
+  }
+  async createCompetencyRequirement(data: InsertCompetencyRequirement): Promise<CompetencyRequirement> {
+    const [rec] = await db.insert(competencyRequirements).values(data).returning();
+    return rec;
+  }
+  async updateCompetencyRequirement(id: number, userId: string, data: Partial<InsertCompetencyRequirement>, isSuperadmin = false): Promise<CompetencyRequirement | undefined> {
+    const cond = isSuperadmin ? eq(competencyRequirements.id, id) : and(eq(competencyRequirements.id, id), eq(competencyRequirements.userId, userId));
+    const [rec] = await db.update(competencyRequirements).set(data).where(cond).returning();
+    return rec;
+  }
+  async deleteCompetencyRequirement(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const cond = isSuperadmin ? eq(competencyRequirements.id, id) : and(eq(competencyRequirements.id, id), eq(competencyRequirements.userId, userId));
+    await db.delete(competencyRequirements).where(cond);
+  }
+
+  // ─── §7.2 Employee Competency Records ────────────────────────────────────────
+  async getEmployeeCompetencyRecords(userId: string, employeeId?: number, isSuperadmin = false): Promise<EmployeeCompetencyRecord[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = employeeId != null ? eq(employeeCompetencyRecords.employeeId, employeeId) : undefined;
+    } else {
+      cond = employeeId != null
+        ? and(eq(employeeCompetencyRecords.userId, userId), eq(employeeCompetencyRecords.employeeId, employeeId))
+        : eq(employeeCompetencyRecords.userId, userId);
+    }
+    return db.select().from(employeeCompetencyRecords).where(cond).orderBy(desc(employeeCompetencyRecords.createdAt));
+  }
+  async createEmployeeCompetencyRecord(data: InsertEmployeeCompetencyRecord): Promise<EmployeeCompetencyRecord> {
+    const [rec] = await db.insert(employeeCompetencyRecords).values(data).returning();
+    return rec;
+  }
+  async updateEmployeeCompetencyRecord(id: number, userId: string, data: Partial<InsertEmployeeCompetencyRecord>, isSuperadmin = false): Promise<EmployeeCompetencyRecord | undefined> {
+    const cond = isSuperadmin ? eq(employeeCompetencyRecords.id, id) : and(eq(employeeCompetencyRecords.id, id), eq(employeeCompetencyRecords.userId, userId));
+    const [rec] = await db.update(employeeCompetencyRecords).set(data).where(cond).returning();
+    return rec;
+  }
+  async deleteEmployeeCompetencyRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const cond = isSuperadmin ? eq(employeeCompetencyRecords.id, id) : and(eq(employeeCompetencyRecords.id, id), eq(employeeCompetencyRecords.userId, userId));
+    await db.delete(employeeCompetencyRecords).where(cond);
+  }
+
+  // ─── Training Event Log ───────────────────────────────────────────────────────
+  async getTrainingEventRecords(userId: string, isSuperadmin = false): Promise<TrainingEventRecord[]> {
+    const cond = isSuperadmin ? undefined : eq(trainingEventRecords.userId, userId);
+    return db.select().from(trainingEventRecords).where(cond).orderBy(desc(trainingEventRecords.trainingDate));
+  }
+  async createTrainingEventRecord(data: InsertTrainingEventRecord): Promise<TrainingEventRecord> {
+    const [rec] = await db.insert(trainingEventRecords).values(data).returning();
+    return rec;
+  }
+  async updateTrainingEventRecord(id: number, userId: string, data: Partial<InsertTrainingEventRecord>, isSuperadmin = false): Promise<TrainingEventRecord | undefined> {
+    const cond = isSuperadmin ? eq(trainingEventRecords.id, id) : and(eq(trainingEventRecords.id, id), eq(trainingEventRecords.userId, userId));
+    const [rec] = await db.update(trainingEventRecords).set(data).where(cond).returning();
+    return rec;
+  }
+  async deleteTrainingEventRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const cond = isSuperadmin ? eq(trainingEventRecords.id, id) : and(eq(trainingEventRecords.id, id), eq(trainingEventRecords.userId, userId));
+    await db.delete(trainingEventRecords).where(cond);
   }
 
   // ─── ISO Objectives ───────────────────────────────────────────────────────────

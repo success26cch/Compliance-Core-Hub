@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,200 +8,1034 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, GraduationCap, CheckCircle2, Clock, Users, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
-import type { IsoAwarenessNotice, IsoAwarenessAcknowledgment } from "@shared/schema";
+import {
+  Plus, GraduationCap, CheckCircle2, Clock, Users, ChevronDown, ChevronUp,
+  Trash2, ShieldCheck, BookOpen, ClipboardList, AlertTriangle, FileText,
+  Pencil, Award, Layers, BarChart2, User, ChevronRight,
+} from "lucide-react";
+import type {
+  IsoAwarenessNotice, IsoAwarenessAcknowledgment, Employee,
+  CompetencyRequirement, EmployeeCompetencyRecord, TrainingEventRecord,
+} from "@shared/schema";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ISO_STANDARDS = [
   "ISO 9001:2015",
+  "IATF 16949:2016",
   "ISO 14001:2015",
   "ISO 45001:2018",
   "ISO 13485:2016",
-  "IATF 16949:2016",
   "AS9100 Rev D",
+  "ISO/IEC 17025:2017",
+  "General / Company",
 ];
 
+const COMPETENCY_TYPES = ["education", "training", "skill", "experience"];
+const COMPETENCY_TYPE_LABELS: Record<string, string> = {
+  education: "Education / Degree",
+  training: "Formal Training",
+  skill: "Demonstrated Skill",
+  experience: "Work Experience",
+};
+const EVIDENCE_TYPES = ["diploma", "certificate", "ojt", "test", "observation", "experience"];
+const EVIDENCE_TYPE_LABELS: Record<string, string> = {
+  diploma: "Diploma / Degree",
+  certificate: "Certificate",
+  ojt: "OJT Sign-off",
+  test: "Written Test",
+  observation: "Observed Competency",
+  experience: "Verified Experience",
+};
+const TRAINING_TYPES = ["classroom", "ojt", "external", "online", "toolbox_talk", "safety_briefing", "mentoring"];
+const TRAINING_TYPE_LABELS: Record<string, string> = {
+  classroom: "Classroom",
+  ojt: "On-the-Job (OJT)",
+  external: "External Training",
+  online: "Online / e-Learning",
+  toolbox_talk: "Toolbox Talk",
+  safety_briefing: "Safety Briefing",
+  mentoring: "Mentoring / Coaching",
+};
 const PROCESS_AREAS = [
-  "Quality",
-  "Production",
-  "Engineering",
-  "Purchasing / Supply Chain",
-  "Shipping / Receiving",
-  "Management",
-  "Human Resources",
-  "Maintenance",
-  "Sales / Customer Service",
-  "Document Control",
-  "All Departments",
+  "Quality", "Production", "Engineering", "Purchasing / Supply Chain",
+  "Shipping / Receiving", "Management", "Human Resources", "Maintenance",
+  "Sales / Customer Service", "Document Control", "All Departments",
 ];
+
+// ─── Color helpers ────────────────────────────────────────────────────────────
+function competencyTypeBadge(t: string) {
+  const map: Record<string, string> = {
+    education: "bg-blue-50 text-blue-700 border-blue-200",
+    training: "bg-orange-50 text-orange-700 border-orange-200",
+    skill: "bg-purple-50 text-purple-700 border-purple-200",
+    experience: "bg-green-50 text-green-700 border-green-200",
+  };
+  return map[t] ?? "bg-muted text-muted-foreground";
+}
+function evidenceBadge(t: string) {
+  const map: Record<string, string> = {
+    diploma: "bg-blue-50 text-blue-700",
+    certificate: "bg-green-50 text-green-700",
+    ojt: "bg-orange-50 text-orange-700",
+    test: "bg-purple-50 text-purple-700",
+    observation: "bg-teal-50 text-teal-700",
+    experience: "bg-slate-50 text-slate-700",
+  };
+  return map[t] ?? "bg-muted text-muted-foreground";
+}
+function statusBadge(s: string) {
+  if (s === "active") return "bg-green-50 text-green-700 border-green-200";
+  if (s === "expired") return "bg-red-50 text-red-700 border-red-200";
+  return "bg-yellow-50 text-yellow-700 border-yellow-200";
+}
+
+// ─── Main Module ──────────────────────────────────────────────────────────────
 
 export function TrainingAwarenessModule({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-3 border-b bg-white shrink-0">
+        <div>
+          <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+            <GraduationCap className="w-5 h-5" /> Training & Awareness
+          </h2>
+          <p className="text-xs text-muted-foreground">ISO 9001 §7.2 Competence · §7.3 Awareness · IATF 16949 §7.2.2 – 7.2.4</p>
+        </div>
+        {onAskIsa && (
+          <Button size="sm" variant="outline" onClick={() => onAskIsa("What are the full competence and awareness requirements under ISO 9001 §7.2 and §7.3, and how do IATF 16949 §7.2.2 OJT requirements apply to production operators?")}>
+            Ask Isa
+          </Button>
+        )}
+      </div>
+
+      <Tabs defaultValue="matrix" className="flex flex-col flex-1 overflow-hidden">
+        <TabsList className="mx-6 mt-3 shrink-0 w-fit">
+          <TabsTrigger value="matrix" className="text-xs gap-1.5"><Layers className="w-3.5 h-3.5" />Competence Matrix</TabsTrigger>
+          <TabsTrigger value="records" className="text-xs gap-1.5"><User className="w-3.5 h-3.5" />Employee Records</TabsTrigger>
+          <TabsTrigger value="log" className="text-xs gap-1.5"><ClipboardList className="w-3.5 h-3.5" />Training Log</TabsTrigger>
+          <TabsTrigger value="awareness" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" />Awareness §7.3</TabsTrigger>
+          <TabsTrigger value="special" className="text-xs gap-1.5"><ShieldCheck className="w-3.5 h-3.5" />Special Reqs</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="matrix" className="flex-1 overflow-auto mt-0 p-6">
+          <CompetenceMatrixTab onAskIsa={onAskIsa} />
+        </TabsContent>
+        <TabsContent value="records" className="flex-1 overflow-auto mt-0 p-6">
+          <EmployeeRecordsTab />
+        </TabsContent>
+        <TabsContent value="log" className="flex-1 overflow-auto mt-0 p-6">
+          <TrainingLogTab />
+        </TabsContent>
+        <TabsContent value="awareness" className="flex-1 overflow-auto mt-0 p-6">
+          <AwarenessTab onAskIsa={onAskIsa} />
+        </TabsContent>
+        <TabsContent value="special" className="flex-1 overflow-auto mt-0 p-6">
+          <SpecialReqsTab onAskIsa={onAskIsa} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 1 — Competence Matrix (§7.2)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function CompetenceMatrixTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editItem, setEditItem] = useState<CompetencyRequirement | null>(null);
+  const [newRole, setNewRole] = useState("");
+  const [showNewRole, setShowNewRole] = useState(false);
+
+  const { data: requirements = [], isLoading } = useQuery<CompetencyRequirement[]>({
+    queryKey: ["/api/competency-requirements"],
+  });
+
+  const roles = useMemo(() => {
+    const set = new Set(requirements.map(r => r.jobTitle));
+    return Array.from(set).sort();
+  }, [requirements]);
+
+  const roleReqs = useMemo(
+    () => requirements.filter(r => r.jobTitle === selectedRole),
+    [requirements, selectedRole],
+  );
+
+  const createMut = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/competency-requirements", data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/competency-requirements"] }); setShowAdd(false); toast({ title: "Competency requirement added" }); },
+  });
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: any) => apiRequest("PATCH", `/api/competency-requirements/${id}`, data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/competency-requirements"] }); setEditItem(null); toast({ title: "Updated" }); },
+  });
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/competency-requirements/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/competency-requirements"] }); toast({ title: "Removed" }); },
+  });
+
+  const addRole = () => {
+    if (!newRole.trim()) return;
+    setSelectedRole(newRole.trim());
+    setShowNewRole(false);
+    setNewRole("");
+    setShowAdd(true);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-sm">Competence Matrix — ISO 9001 §7.2 / IATF §7.2.1</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Define what each job title must know, be trained in, or be able to demonstrate.</p>
+        </div>
+        <Button size="sm" className="bg-primary text-white gap-1" onClick={() => setShowNewRole(true)} data-testid="button-add-role">
+          <Plus className="w-3.5 h-3.5" /> Add Role
+        </Button>
+      </div>
+
+      {showNewRole && (
+        <Card className="p-3 border-dashed flex items-center gap-2">
+          <Input placeholder="Job title (e.g. Quality Engineer, Production Operator)" value={newRole} onChange={e => setNewRole(e.target.value)} className="flex-1 h-8 text-sm" data-testid="input-new-role" autoFocus onKeyDown={e => e.key === "Enter" && addRole()} />
+          <Button size="sm" onClick={addRole} className="bg-primary text-white">Add</Button>
+          <Button size="sm" variant="outline" onClick={() => setShowNewRole(false)}>Cancel</Button>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-12 gap-4">
+        {/* Role list */}
+        <div className="col-span-4 space-y-1.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Job Roles ({roles.length})</p>
+          {isLoading ? <p className="text-xs text-muted-foreground">Loading...</p> : roles.length === 0 ? (
+            <Card className="p-6 text-center border-dashed">
+              <Layers className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">No roles yet. Add a role to start defining competency requirements.</p>
+            </Card>
+          ) : roles.map(role => (
+            <button
+              key={role}
+              onClick={() => setSelectedRole(role)}
+              className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors flex items-center justify-between ${selectedRole === role ? "bg-primary text-white border-primary" : "bg-white hover:bg-muted/30 border-border"}`}
+              data-testid={`button-role-${role}`}
+            >
+              <span>{role}</span>
+              <span className={`text-xs rounded-full px-1.5 py-0.5 ${selectedRole === role ? "bg-white/20" : "bg-muted"}`}>
+                {requirements.filter(r => r.jobTitle === role).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Requirements for selected role */}
+        <div className="col-span-8">
+          {!selectedRole ? (
+            <Card className="p-10 text-center border-dashed h-full flex flex-col items-center justify-center">
+              <ChevronRight className="w-8 h-8 text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">Select a job role to view and manage its competency requirements.</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">{selectedRole} <span className="text-muted-foreground font-normal">— Required Competencies</span></p>
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAdd(true)} data-testid="button-add-competency">
+                  <Plus className="w-3.5 h-3.5" /> Add Competency
+                </Button>
+              </div>
+              {roleReqs.length === 0 ? (
+                <Card className="p-6 border-dashed text-center">
+                  <p className="text-xs text-muted-foreground">No requirements defined for this role yet.</p>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  {roleReqs.map(req => (
+                    <Card key={req.id} className="px-4 py-3 flex items-start justify-between" data-testid={`card-req-${req.id}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{req.competencyName}</span>
+                          <Badge variant="outline" className={`text-xs ${competencyTypeBadge(req.competencyType)}`}>
+                            {COMPETENCY_TYPE_LABELS[req.competencyType] ?? req.competencyType}
+                          </Badge>
+                          {!req.isRequired && <Badge variant="outline" className="text-xs text-muted-foreground">Preferred</Badge>}
+                          {req.standard && <Badge variant="outline" className="text-xs font-mono">{req.standard}{req.clause ? ` §${req.clause}` : ""}</Badge>}
+                        </div>
+                        {req.description && <p className="text-xs text-muted-foreground mt-1">{req.description}</p>}
+                      </div>
+                      <div className="flex items-center gap-1 ml-2 shrink-0">
+                        <button className="text-muted-foreground hover:text-foreground p-1" onClick={() => setEditItem(req)} data-testid={`button-edit-req-${req.id}`}><Pencil className="w-3.5 h-3.5" /></button>
+                        <button className="text-red-400 hover:text-red-600 p-1" onClick={() => deleteMut.mutate(req.id)} data-testid={`button-delete-req-${req.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {(showAdd || editItem) && (
+        <CompetencyReqDialog
+          jobTitle={editItem?.jobTitle ?? selectedRole ?? ""}
+          initial={editItem}
+          onSave={data => editItem ? updateMut.mutate({ id: editItem.id, data }) : createMut.mutate({ ...data, jobTitle: selectedRole })}
+          onClose={() => { setShowAdd(false); setEditItem(null); }}
+          isPending={createMut.isPending || updateMut.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+function CompetencyReqDialog({ jobTitle, initial, onSave, onClose, isPending }: {
+  jobTitle: string; initial?: CompetencyRequirement | null;
+  onSave: (d: any) => void; onClose: () => void; isPending: boolean;
+}) {
+  const [form, setForm] = useState({
+    competencyName: initial?.competencyName ?? "",
+    competencyType: initial?.competencyType ?? "training",
+    description: initial?.description ?? "",
+    standard: initial?.standard ?? "",
+    clause: initial?.clause ?? "",
+    isRequired: initial?.isRequired ?? true,
+  });
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>{initial ? "Edit" : "Add"} Competency Requirement — {jobTitle}</DialogTitle></DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <Label>Competency Name *</Label>
+            <Input placeholder="e.g. Statistical Process Control, APQP Fundamentals, Blueprint Reading" value={form.competencyName} onChange={e => setForm(f => ({ ...f, competencyName: e.target.value }))} data-testid="input-competency-name" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Type *</Label>
+              <Select value={form.competencyType} onValueChange={v => setForm(f => ({ ...f, competencyType: v }))}>
+                <SelectTrigger data-testid="select-competency-type"><SelectValue /></SelectTrigger>
+                <SelectContent>{COMPETENCY_TYPES.map(t => <SelectItem key={t} value={t}>{COMPETENCY_TYPE_LABELS[t]}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <Checkbox checked={form.isRequired} onCheckedChange={v => setForm(f => ({ ...f, isRequired: !!v }))} data-testid="checkbox-required" />
+                Required (not just preferred)
+              </label>
+            </div>
+          </div>
+          <div>
+            <Label>Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Textarea placeholder="What does this mean for this role? What evidence is acceptable?" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} data-testid="textarea-competency-desc" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Standard <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Select value={form.standard} onValueChange={v => setForm(f => ({ ...f, standard: v }))}>
+                <SelectTrigger data-testid="select-req-standard"><SelectValue placeholder="Link to standard" /></SelectTrigger>
+                <SelectContent><SelectItem value="">None</SelectItem>{ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Clause <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input placeholder="e.g. 7.2, 7.2.2" value={form.clause} onChange={e => setForm(f => ({ ...f, clause: e.target.value }))} data-testid="input-req-clause" />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button className="flex-1 bg-primary text-white" onClick={() => onSave(form)} disabled={isPending || !form.competencyName} data-testid="button-save-req">
+              {isPending ? "Saving..." : initial ? "Update" : "Add Requirement"}
+            </Button>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 2 — Employee Competency Records & Gap Analysis
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function EmployeeRecordsTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedEmpId, setSelectedEmpId] = useState<number | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editItem, setEditItem] = useState<EmployeeCompetencyRecord | null>(null);
+  const [activeView, setActiveView] = useState<"records" | "gaps">("records");
+
+  const { data: employees = [] } = useQuery<Employee[]>({ queryKey: ["/api/employees"] });
+  const { data: requirements = [] } = useQuery<CompetencyRequirement[]>({ queryKey: ["/api/competency-requirements"] });
+  const { data: allRecords = [] } = useQuery<EmployeeCompetencyRecord[]>({ queryKey: ["/api/employee-competency-records"] });
+
+  const selectedEmp = employees.find(e => e.id === selectedEmpId);
+  const empRecords = allRecords.filter(r => r.employeeId === selectedEmpId);
+
+  // Gap analysis: requirements for employee's position vs. what they have
+  const roleReqs = useMemo(() => {
+    if (!selectedEmp?.position) return [];
+    return requirements.filter(r => r.jobTitle.toLowerCase() === selectedEmp.position?.toLowerCase() && r.isRequired);
+  }, [requirements, selectedEmp]);
+
+  const gaps = useMemo(() => {
+    return roleReqs.filter(req => {
+      const hasEvidence = empRecords.some(rec =>
+        rec.competencyName.toLowerCase().includes(req.competencyName.toLowerCase()) ||
+        (rec.requirementId === req.id),
+      );
+      return !hasEvidence;
+    });
+  }, [roleReqs, empRecords]);
+
+  const createMut = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/employee-competency-records", data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/employee-competency-records"] }); setShowAdd(false); toast({ title: "Evidence recorded" }); },
+  });
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: any) => apiRequest("PATCH", `/api/employee-competency-records/${id}`, data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/employee-competency-records"] }); setEditItem(null); toast({ title: "Updated" }); },
+  });
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/employee-competency-records/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/employee-competency-records"] }); toast({ title: "Removed" }); },
+  });
+
+  const coveragePercent = roleReqs.length > 0 ? Math.round(((roleReqs.length - gaps.length) / roleReqs.length) * 100) : 100;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-sm">Employee Competency Records — ISO 9001 §7.2</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Record evidence of competence and identify gaps against role requirements.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        {/* Employee selector */}
+        <div className="col-span-4 space-y-1.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Employees ({employees.length})</p>
+          {employees.length === 0 ? (
+            <Card className="p-4 border-dashed text-center"><p className="text-xs text-muted-foreground">No employees added yet.</p></Card>
+          ) : employees.map(emp => {
+            const empRecs = allRecords.filter(r => r.employeeId === emp.id);
+            return (
+              <button
+                key={emp.id}
+                onClick={() => setSelectedEmpId(emp.id)}
+                className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors flex items-center justify-between ${selectedEmpId === emp.id ? "bg-primary text-white border-primary" : "bg-white hover:bg-muted/30 border-border"}`}
+                data-testid={`button-employee-${emp.id}`}
+              >
+                <div>
+                  <p>{emp.firstName} {emp.lastName}</p>
+                  {emp.position && <p className={`text-xs ${selectedEmpId === emp.id ? "text-white/70" : "text-muted-foreground"}`}>{emp.position}</p>}
+                </div>
+                <span className={`text-xs rounded-full px-1.5 py-0.5 shrink-0 ml-1 ${selectedEmpId === emp.id ? "bg-white/20" : "bg-muted"}`}>{empRecs.length}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Employee detail */}
+        <div className="col-span-8">
+          {!selectedEmpId ? (
+            <Card className="p-10 text-center border-dashed h-full flex flex-col items-center justify-center">
+              <User className="w-8 h-8 text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">Select an employee to view their competency profile.</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-sm">{selectedEmp?.firstName} {selectedEmp?.lastName}</p>
+                  <p className="text-xs text-muted-foreground">{selectedEmp?.position ?? "No position set"} · {selectedEmp?.department ?? "No department"}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {roleReqs.length > 0 && (
+                    <div className="text-xs text-right">
+                      <span className={`font-semibold ${coveragePercent === 100 ? "text-green-600" : coveragePercent >= 70 ? "text-orange-500" : "text-red-600"}`}>{coveragePercent}%</span>
+                      <span className="text-muted-foreground"> competency coverage</span>
+                    </div>
+                  )}
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAdd(true)} data-testid="button-add-evidence">
+                    <Plus className="w-3.5 h-3.5" /> Add Evidence
+                  </Button>
+                </div>
+              </div>
+
+              {/* Gap banner */}
+              {gaps.length > 0 && (
+                <Card className="px-4 py-3 border-orange-200 bg-orange-50 flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-orange-700">{gaps.length} competency gap{gaps.length > 1 ? "s" : ""} identified</p>
+                    <p className="text-xs text-orange-600 mt-0.5">{gaps.map(g => g.competencyName).join(" · ")}</p>
+                  </div>
+                </Card>
+              )}
+              {roleReqs.length > 0 && gaps.length === 0 && (
+                <Card className="px-4 py-2 border-green-200 bg-green-50 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                  <p className="text-sm text-green-700 font-medium">All required competencies for this role are covered.</p>
+                </Card>
+              )}
+
+              {/* Tab switcher */}
+              <div className="flex gap-1 border-b">
+                {["records", "gaps"].map(v => (
+                  <button key={v} onClick={() => setActiveView(v as any)} className={`text-xs px-3 py-1.5 font-medium border-b-2 -mb-px transition-colors ${activeView === v ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                    {v === "records" ? `All Records (${empRecords.length})` : `Role Gaps (${gaps.length})`}
+                  </button>
+                ))}
+              </div>
+
+              {activeView === "records" && (
+                empRecords.length === 0 ? (
+                  <Card className="p-6 border-dashed text-center"><p className="text-xs text-muted-foreground">No competency evidence recorded for this employee yet.</p></Card>
+                ) : (
+                  <div className="space-y-2">
+                    {empRecords.map(rec => (
+                      <Card key={rec.id} className="px-4 py-3 flex items-start justify-between" data-testid={`card-emp-rec-${rec.id}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-sm">{rec.competencyName}</span>
+                            <Badge variant="outline" className={`text-xs ${evidenceBadge(rec.evidenceType)}`}>{EVIDENCE_TYPE_LABELS[rec.evidenceType] ?? rec.evidenceType}</Badge>
+                            <Badge variant="outline" className={`text-xs ${statusBadge(rec.status)}`}>{rec.status}</Badge>
+                            {rec.isOjt && <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT §7.2.2</Badge>}
+                            {rec.effectivenessVerified && <Badge variant="outline" className="text-xs bg-green-50 text-green-700"><CheckCircle2 className="w-3 h-3 mr-0.5" />Effectiveness Verified</Badge>}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            {rec.provider && <span>Provider: {rec.provider}</span>}
+                            {rec.completedDate && <span>Completed: {rec.completedDate}</span>}
+                            {rec.expiryDate && <span>Expires: {rec.expiryDate}</span>}
+                          </div>
+                          {rec.notes && <p className="text-xs text-muted-foreground mt-1 italic">{rec.notes}</p>}
+                        </div>
+                        <div className="flex items-center gap-1 ml-2 shrink-0">
+                          <button className="text-muted-foreground hover:text-foreground p-1" onClick={() => setEditItem(rec)}><Pencil className="w-3.5 h-3.5" /></button>
+                          <button className="text-red-400 hover:text-red-600 p-1" onClick={() => deleteMut.mutate(rec.id)}><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {activeView === "gaps" && (
+                gaps.length === 0 ? (
+                  <Card className="p-6 border-dashed text-center"><p className="text-xs text-muted-foreground">No gaps — or no role requirements defined for "{selectedEmp?.position}".</p></Card>
+                ) : (
+                  <div className="space-y-2">
+                    {gaps.map(gap => (
+                      <Card key={gap.id} className="px-4 py-3 border-orange-200 flex items-start justify-between" data-testid={`card-gap-${gap.id}`}>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <AlertTriangle className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                            <span className="font-medium text-sm">{gap.competencyName}</span>
+                            <Badge variant="outline" className={`text-xs ${competencyTypeBadge(gap.competencyType)}`}>{COMPETENCY_TYPE_LABELS[gap.competencyType]}</Badge>
+                          </div>
+                          {gap.description && <p className="text-xs text-muted-foreground mt-1 ml-5">{gap.description}</p>}
+                        </div>
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1 shrink-0 ml-2" onClick={() => { setShowAdd(true); }}>
+                          <Plus className="w-3 h-3" /> Add Evidence
+                        </Button>
+                      </Card>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {(showAdd || editItem) && selectedEmpId && (
+        <EvidenceDialog
+          employeeId={selectedEmpId}
+          initial={editItem}
+          onSave={data => editItem ? updateMut.mutate({ id: editItem.id, data }) : createMut.mutate({ ...data, employeeId: selectedEmpId })}
+          onClose={() => { setShowAdd(false); setEditItem(null); }}
+          isPending={createMut.isPending || updateMut.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+function EvidenceDialog({ employeeId, initial, onSave, onClose, isPending }: {
+  employeeId: number; initial?: EmployeeCompetencyRecord | null;
+  onSave: (d: any) => void; onClose: () => void; isPending: boolean;
+}) {
+  const [form, setForm] = useState({
+    competencyName: initial?.competencyName ?? "",
+    evidenceType: initial?.evidenceType ?? "certificate",
+    provider: initial?.provider ?? "",
+    completedDate: initial?.completedDate ?? "",
+    expiryDate: initial?.expiryDate ?? "",
+    status: initial?.status ?? "active",
+    isOjt: initial?.isOjt ?? false,
+    effectivenessVerified: initial?.effectivenessVerified ?? false,
+    effectivenessNotes: initial?.effectivenessNotes ?? "",
+    notes: initial?.notes ?? "",
+  });
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>{initial ? "Edit" : "Add"} Competency Evidence</DialogTitle></DialogHeader>
+        <div className="space-y-3 pt-2">
+          <div>
+            <Label>Competency / Qualification *</Label>
+            <Input placeholder="e.g. ISO 9001 Internal Auditor, Forklift Certification, SPC Training" value={form.competencyName} onChange={e => setForm(f => ({ ...f, competencyName: e.target.value }))} data-testid="input-evidence-name" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Evidence Type *</Label>
+              <Select value={form.evidenceType} onValueChange={v => setForm(f => ({ ...f, evidenceType: v }))}>
+                <SelectTrigger data-testid="select-evidence-type"><SelectValue /></SelectTrigger>
+                <SelectContent>{EVIDENCE_TYPES.map(t => <SelectItem key={t} value={t}>{EVIDENCE_TYPE_LABELS[t]}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger data-testid="select-evidence-status"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                  <SelectItem value="pending_review">Pending Review</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Provider / Institution <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input placeholder="Training company, university, supervisor name" value={form.provider} onChange={e => setForm(f => ({ ...f, provider: e.target.value }))} data-testid="input-evidence-provider" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Completed Date</Label>
+              <Input type="date" value={form.completedDate} onChange={e => setForm(f => ({ ...f, completedDate: e.target.value }))} data-testid="input-evidence-completed" />
+            </div>
+            <div>
+              <Label>Expiry Date <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input type="date" value={form.expiryDate} onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))} data-testid="input-evidence-expiry" />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={form.isOjt} onCheckedChange={v => setForm(f => ({ ...f, isOjt: !!v }))} data-testid="checkbox-ojt" />
+              OJT (IATF §7.2.2)
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={form.effectivenessVerified} onCheckedChange={v => setForm(f => ({ ...f, effectivenessVerified: !!v }))} data-testid="checkbox-effectiveness" />
+              Effectiveness Verified
+            </label>
+          </div>
+          {form.effectivenessVerified && (
+            <div>
+              <Label>Effectiveness Notes</Label>
+              <Input placeholder="How was effectiveness confirmed?" value={form.effectivenessNotes} onChange={e => setForm(f => ({ ...f, effectivenessNotes: e.target.value }))} data-testid="input-effectiveness-notes" />
+            </div>
+          )}
+          <div>
+            <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input placeholder="Additional context, file reference, etc." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} data-testid="input-evidence-notes" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button className="flex-1 bg-primary text-white" onClick={() => onSave(form)} disabled={isPending || !form.competencyName} data-testid="button-save-evidence">
+              {isPending ? "Saving..." : initial ? "Update" : "Add Evidence"}
+            </Button>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 3 — Training Event Log
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function TrainingLogTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showAdd, setShowAdd] = useState(false);
+  const [editItem, setEditItem] = useState<TrainingEventRecord | null>(null);
+  const [filterType, setFilterType] = useState("all");
+  const [filterStd, setFilterStd] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const { data: events = [], isLoading } = useQuery<TrainingEventRecord[]>({ queryKey: ["/api/training-event-records"] });
+
+  const filtered = useMemo(() => events.filter(e => {
+    if (filterType !== "all" && e.trainingType !== filterType) return false;
+    if (filterStd !== "all" && e.standard !== filterStd) return false;
+    if (search && !e.title.toLowerCase().includes(search.toLowerCase()) && !(e.trainer ?? "").toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  }), [events, filterType, filterStd, search]);
+
+  const createMut = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/training-event-records", data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/training-event-records"] }); setShowAdd(false); toast({ title: "Training event logged" }); },
+  });
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: any) => apiRequest("PATCH", `/api/training-event-records/${id}`, data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/training-event-records"] }); setEditItem(null); toast({ title: "Updated" }); },
+  });
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/training-event-records/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/training-event-records"] }); toast({ title: "Removed" }); },
+  });
+
+  const trainingTypeBg = (t: string) => {
+    const map: Record<string, string> = {
+      classroom: "bg-blue-50 text-blue-700",
+      ojt: "bg-orange-50 text-orange-700",
+      external: "bg-purple-50 text-purple-700",
+      online: "bg-cyan-50 text-cyan-700",
+      toolbox_talk: "bg-yellow-50 text-yellow-700",
+      safety_briefing: "bg-red-50 text-red-700",
+      mentoring: "bg-green-50 text-green-700",
+    };
+    return map[t] ?? "bg-muted text-muted-foreground";
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-sm">Training Event Log — ISO 9001 §7.2 / IATF §7.2.2</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Record all training conducted — classroom, OJT, external, toolbox talks, and more.</p>
+        </div>
+        <Button size="sm" className="bg-primary text-white gap-1" onClick={() => setShowAdd(true)} data-testid="button-log-training">
+          <Plus className="w-3.5 h-3.5" /> Log Training
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Input placeholder="Search title or trainer..." className="h-8 text-sm max-w-48" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-training-search" />
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="h-8 text-xs w-40" data-testid="select-filter-type"><SelectValue placeholder="All types" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            {TRAINING_TYPES.map(t => <SelectItem key={t} value={t}>{TRAINING_TYPE_LABELS[t]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStd} onValueChange={setFilterStd}>
+          <SelectTrigger className="h-8 text-xs w-44" data-testid="select-filter-std"><SelectValue placeholder="All standards" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Standards</SelectItem>
+            {ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {filtered.length !== events.length && <span className="text-xs text-muted-foreground">{filtered.length} of {events.length} events</span>}
+      </div>
+
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : filtered.length === 0 ? (
+        <Card className="p-10 text-center border-dashed">
+          <ClipboardList className="w-9 h-9 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No training events logged yet</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">Record all training activities — this creates an audit-ready log covering both §7.2 competence actions and §7.2.2 OJT requirements.</p>
+          <Button size="sm" variant="outline" className="mt-3" onClick={() => setShowAdd(true)}>Log First Event</Button>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(ev => (
+            <Card key={ev.id} className="px-4 py-3 flex items-start justify-between" data-testid={`card-event-${ev.id}`}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-sm">{ev.title}</span>
+                  <Badge variant="outline" className={`text-xs ${trainingTypeBg(ev.trainingType)}`}>{TRAINING_TYPE_LABELS[ev.trainingType] ?? ev.trainingType}</Badge>
+                  {ev.standard && <Badge variant="outline" className="text-xs font-mono">{ev.standard}{ev.clause ? ` §${ev.clause}` : ""}</Badge>}
+                  {ev.passed === true && <Badge variant="outline" className="text-xs bg-green-50 text-green-700">Passed</Badge>}
+                  {ev.passed === false && <Badge variant="outline" className="text-xs bg-red-50 text-red-700">Did Not Pass</Badge>}
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                  {ev.trainingDate && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{ev.trainingDate}</span>}
+                  {ev.trainer && <span>Trainer: {ev.trainer}</span>}
+                  {ev.provider && <span>Provider: {ev.provider}</span>}
+                  {ev.durationHours && <span>{ev.durationHours} hrs</span>}
+                  {ev.location && <span>{ev.location}</span>}
+                  {ev.participants && ev.participants.length > 0 && (
+                    <span className="flex items-center gap-1"><Users className="w-3 h-3" />{ev.participants.length} participant{ev.participants.length !== 1 ? "s" : ""}</span>
+                  )}
+                </div>
+                {ev.notes && <p className="text-xs text-muted-foreground mt-1 italic">{ev.notes}</p>}
+              </div>
+              <div className="flex items-center gap-1 ml-2 shrink-0">
+                <button className="text-muted-foreground hover:text-foreground p-1" onClick={() => setEditItem(ev)}><Pencil className="w-3.5 h-3.5" /></button>
+                <button className="text-red-400 hover:text-red-600 p-1" onClick={() => deleteMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5" /></button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {(showAdd || editItem) && (
+        <TrainingEventDialog
+          initial={editItem}
+          onSave={data => editItem ? updateMut.mutate({ id: editItem.id, data }) : createMut.mutate(data)}
+          onClose={() => { setShowAdd(false); setEditItem(null); }}
+          isPending={createMut.isPending || updateMut.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+function TrainingEventDialog({ initial, onSave, onClose, isPending }: {
+  initial?: TrainingEventRecord | null;
+  onSave: (d: any) => void; onClose: () => void; isPending: boolean;
+}) {
+  const [form, setForm] = useState({
+    title: initial?.title ?? "",
+    trainingType: initial?.trainingType ?? "classroom",
+    standard: initial?.standard ?? "",
+    clause: initial?.clause ?? "",
+    trainer: initial?.trainer ?? "",
+    provider: initial?.provider ?? "",
+    trainingDate: initial?.trainingDate ?? "",
+    durationHours: initial?.durationHours ?? "",
+    location: initial?.location ?? "",
+    participants: initial?.participants?.join(", ") ?? "",
+    passed: initial?.passed ?? null as boolean | null,
+    notes: initial?.notes ?? "",
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{initial ? "Edit" : "Log"} Training Event</DialogTitle></DialogHeader>
+        <div className="space-y-3 pt-2">
+          <div>
+            <Label>Training Title *</Label>
+            <Input placeholder="e.g. IATF 16949 §7.2.2 OJT — Press Operator Qualification" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} data-testid="input-event-title" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Training Type *</Label>
+              <Select value={form.trainingType} onValueChange={v => setForm(f => ({ ...f, trainingType: v }))}>
+                <SelectTrigger data-testid="select-training-type"><SelectValue /></SelectTrigger>
+                <SelectContent>{TRAINING_TYPES.map(t => <SelectItem key={t} value={t}>{TRAINING_TYPE_LABELS[t]}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Standard <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Select value={form.standard} onValueChange={v => setForm(f => ({ ...f, standard: v }))}>
+                <SelectTrigger data-testid="select-event-standard"><SelectValue placeholder="Select standard" /></SelectTrigger>
+                <SelectContent><SelectItem value="">None</SelectItem>{ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Clause <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input placeholder="e.g. 7.2, 7.2.2" value={form.clause} onChange={e => setForm(f => ({ ...f, clause: e.target.value }))} data-testid="input-event-clause" />
+            </div>
+            <div>
+              <Label>Date</Label>
+              <Input type="date" value={form.trainingDate} onChange={e => setForm(f => ({ ...f, trainingDate: e.target.value }))} data-testid="input-event-date" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Trainer / Instructor</Label>
+              <Input placeholder="Name of trainer" value={form.trainer} onChange={e => setForm(f => ({ ...f, trainer: e.target.value }))} data-testid="input-event-trainer" />
+            </div>
+            <div>
+              <Label>Provider / Organization</Label>
+              <Input placeholder="Company or institution" value={form.provider} onChange={e => setForm(f => ({ ...f, provider: e.target.value }))} data-testid="input-event-provider" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Duration (hours)</Label>
+              <Input placeholder="e.g. 2, 8, 0.5" value={form.durationHours} onChange={e => setForm(f => ({ ...f, durationHours: e.target.value }))} data-testid="input-event-duration" />
+            </div>
+            <div>
+              <Label>Location</Label>
+              <Input placeholder="Room, building, or virtual" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} data-testid="input-event-location" />
+            </div>
+          </div>
+          <div>
+            <Label>Participants <span className="text-muted-foreground font-normal">(comma-separated names)</span></Label>
+            <Input placeholder="John Smith, Maria Garcia, Carlos Rivera" value={form.participants} onChange={e => setForm(f => ({ ...f, participants: e.target.value }))} data-testid="input-event-participants" />
+          </div>
+          <div>
+            <Label>Result</Label>
+            <Select value={form.passed === null ? "na" : form.passed ? "pass" : "fail"} onValueChange={v => setForm(f => ({ ...f, passed: v === "na" ? null : v === "pass" }))}>
+              <SelectTrigger data-testid="select-event-result"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="na">N/A (informational)</SelectItem>
+                <SelectItem value="pass">Passed</SelectItem>
+                <SelectItem value="fail">Did Not Pass</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Notes</Label>
+            <Textarea placeholder="Topics covered, actions taken, follow-up required..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} data-testid="textarea-event-notes" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button className="flex-1 bg-primary text-white" onClick={() => onSave({
+              ...form,
+              participants: form.participants ? form.participants.split(",").map(s => s.trim()).filter(Boolean) : [],
+            })} disabled={isPending || !form.title} data-testid="button-save-event">
+              {isPending ? "Saving..." : initial ? "Update" : "Log Event"}
+            </Button>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 4 — Awareness (§7.3) — enhanced existing + §7.3 topic tracker
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const AWARENESS_TOPICS_73 = [
+  { key: "quality_policy", label: "Quality Policy (§7.3a)", desc: "Employees are aware of the quality policy and its relevance to their work." },
+  { key: "quality_objectives", label: "Quality Objectives (§7.3b)", desc: "Relevant quality objectives have been communicated to the process area." },
+  { key: "contribution", label: "Contribution to QMS (§7.3c)", desc: "Employees understand how their activities contribute to QMS effectiveness and product/service conformity." },
+  { key: "nc_consequences", label: "NC Consequences (§7.3d)", desc: "Employees understand the implications of not conforming to QMS requirements." },
+];
+
+function AwarenessTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [ackDialog, setAckDialog] = useState<{ noticeId: number; noticeTitle: string } | null>(null);
 
-  const { data: notices = [], isLoading } = useQuery<IsoAwarenessNotice[]>({
-    queryKey: ["/api/iso-awareness-notices"],
-  });
-
+  const { data: notices = [], isLoading } = useQuery<IsoAwarenessNotice[]>({ queryKey: ["/api/iso-awareness-notices"] });
   const { data: acknowledgments = [] } = useQuery<IsoAwarenessAcknowledgment[]>({
     queryKey: ["/api/iso-awareness-notices", expandedId, "acknowledgments"],
     queryFn: async () => {
       if (!expandedId) return [];
-      const res = await fetch(`/api/iso-awareness-notices/${expandedId}/acknowledgments`);
-      return res.json();
+      return fetch(`/api/iso-awareness-notices/${expandedId}/acknowledgments`).then(r => r.json());
     },
     enabled: !!expandedId,
   });
 
   const createNotice = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/iso-awareness-notices", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices"] });
-      setShowCreate(false);
-      toast({ title: "Awareness notice sent" });
-    },
+    mutationFn: (data: any) => apiRequest("POST", "/api/iso-awareness-notices", data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices"] }); setShowCreate(false); toast({ title: "Awareness notice sent" }); },
   });
-
   const deleteNotice = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/iso-awareness-notices/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices"] });
-      toast({ title: "Notice removed" });
-    },
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/iso-awareness-notices/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices"] }); toast({ title: "Notice removed" }); },
   });
-
   const createAck = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", `/api/iso-awareness-notices/${data.noticeId}/acknowledgments`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices", expandedId, "acknowledgments"] });
-      setAckDialog(null);
-      toast({ title: "Acknowledgment recorded" });
-    },
+    mutationFn: (data: any) => apiRequest("POST", `/api/iso-awareness-notices/${data.noticeId}/acknowledgments`, data).then(r => r.json()),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/iso-awareness-notices", expandedId, "acknowledgments"] }); setAckDialog(null); toast({ title: "Acknowledgment recorded" }); },
   });
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
-        <div>
-          <h2 className="text-lg font-bold text-primary">Training & Awareness</h2>
-          <p className="text-xs text-muted-foreground">Push clause-specific requirements to process owners and track acknowledgment.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {onAskIsa && (
-            <Button size="sm" variant="outline" onClick={() => onAskIsa("What does ISO 9001:2015 Clause 7.3 require for awareness, and how should we communicate quality objectives to our process owners?")}>
-              Ask Isa
-            </Button>
-          )}
-          <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1" onClick={() => setShowCreate(true)} data-testid="button-create-notice">
-            <Plus className="w-4 h-4" /> New Notice
-          </Button>
+    <div className="space-y-5">
+      {/* §7.3 Topic Tracker */}
+      <div>
+        <h3 className="font-semibold text-sm mb-1">§7.3 Awareness Requirements Tracker</h3>
+        <p className="text-xs text-muted-foreground mb-3">Create awareness notices for each required topic below. Each notice can collect employee acknowledgments as audit evidence.</p>
+        <div className="grid grid-cols-2 gap-3">
+          {AWARENESS_TOPICS_73.map(topic => {
+            const related = notices.filter(n => n.clause === topic.key || n.title.toLowerCase().includes(topic.label.toLowerCase().split("(")[0].trim().toLowerCase()));
+            return (
+              <Card key={topic.key} className="p-4 flex items-start justify-between gap-3" data-testid={`card-topic-${topic.key}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {related.length > 0
+                      ? <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                      : <AlertTriangle className="w-4 h-4 text-orange-400 shrink-0" />}
+                    <p className="text-sm font-semibold">{topic.label}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{topic.desc}</p>
+                  {related.length > 0 && <p className="text-xs text-green-600 mt-1">{related.length} notice{related.length > 1 ? "s" : ""} created</p>}
+                </div>
+                <Button size="sm" variant="outline" className="h-7 text-xs shrink-0 gap-1" onClick={() => setShowCreate(true)}>
+                  <Plus className="w-3 h-3" /> Notice
+                </Button>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
-      {/* Notice list */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {isLoading ? (
-          <div className="text-center text-muted-foreground py-12">Loading notices...</div>
-        ) : notices.length === 0 ? (
-          <div className="text-center py-16 space-y-3">
-            <GraduationCap className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-            <p className="font-medium text-muted-foreground">No awareness notices yet</p>
-            <p className="text-sm text-muted-foreground/70 max-w-sm mx-auto">
-              Use awareness notices to push specific clause requirements or procedure changes to the right process owners and capture their acknowledgment as audit evidence.
-            </p>
-            <Button size="sm" variant="outline" onClick={() => setShowCreate(true)}>Create First Notice</Button>
+      {/* Notices list */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-sm">Awareness Notices ({notices.length})</h3>
+          <div className="flex items-center gap-2">
+            {onAskIsa && (
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAskIsa("What does ISO 9001:2015 Clause 7.3 require for awareness, and how should we communicate quality objectives to our process owners?")}>
+                Ask Isa
+              </Button>
+            )}
+            <Button size="sm" className="bg-primary text-white gap-1 h-7 text-xs" onClick={() => setShowCreate(true)} data-testid="button-create-notice">
+              <Plus className="w-3.5 h-3.5" /> New Notice
+            </Button>
           </div>
+        </div>
+
+        {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : notices.length === 0 ? (
+          <Card className="p-8 text-center border-dashed">
+            <GraduationCap className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No awareness notices yet. Create notices for each §7.3 topic above to build your audit evidence.</p>
+          </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {notices.map(notice => (
               <Card key={notice.id} className="border overflow-hidden" data-testid={`card-notice-${notice.id}`}>
-                {/* Notice header */}
-                <div
-                  className="flex items-start justify-between p-4 cursor-pointer hover:bg-muted/20 transition-colors"
-                  onClick={() => {
-                    setExpandedId(expandedId === notice.id ? null : notice.id);
-                  }}
-                >
+                <div className="flex items-start justify-between p-4 cursor-pointer hover:bg-muted/10 transition-colors" onClick={() => setExpandedId(expandedId === notice.id ? null : notice.id)}>
                   <div className="flex items-start gap-3">
                     <GraduationCap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-primary">{notice.title}</p>
+                      <p className="font-semibold text-sm text-primary">{notice.title}</p>
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-xs">{notice.standard}</Badge>
-                        {notice.clause && <Badge variant="outline" className="text-xs font-mono">Clause {notice.clause}</Badge>}
+                        {notice.clause && <Badge variant="outline" className="text-xs font-mono">§{notice.clause}</Badge>}
                         {notice.processArea && <Badge variant="outline" className="text-xs">{notice.processArea}</Badge>}
+                        {notice.dueDate && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />Due {new Date(notice.dueDate).toLocaleDateString()}</span>}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <button
-                      className="text-red-400 hover:text-red-600 p-1"
-                      onClick={e => { e.stopPropagation(); deleteNotice.mutate(notice.id); }}
-                      data-testid={`button-delete-notice-${notice.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div className="flex items-center gap-1 ml-2">
+                    <button className="text-red-400 hover:text-red-600 p-1" onClick={e => { e.stopPropagation(); deleteNotice.mutate(notice.id); }} data-testid={`button-delete-notice-${notice.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
                     {expandedId === notice.id ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </div>
                 </div>
-
-                {/* Expanded detail */}
                 {expandedId === notice.id && (
-                  <div className="border-t px-4 pb-4 pt-3 bg-muted/10 space-y-3">
-                    <p className="text-sm text-foreground leading-relaxed">{notice.message}</p>
-
-                    {notice.dueDate && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        Due by {new Date(notice.dueDate).toLocaleDateString()}
-                      </p>
-                    )}
-
-                    {/* Acknowledgments */}
-                    <div className="pt-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5" /> Acknowledgments ({acknowledgments.length})
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs gap-1"
-                          onClick={() => setAckDialog({ noticeId: notice.id, noticeTitle: notice.title })}
-                          data-testid={`button-add-ack-${notice.id}`}
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Record Acknowledgment
-                        </Button>
-                      </div>
-                      {acknowledgments.length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic">No acknowledgments recorded yet.</p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {acknowledgments.map(ack => (
-                            <div key={ack.id} className="flex items-center justify-between text-sm bg-white border rounded-lg px-3 py-2" data-testid={`row-ack-${ack.id}`}>
-                              <span className="flex items-center gap-2">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                                <span className="font-medium">{ack.acknowledgedBy}</span>
-                              </span>
-                              <span className="text-xs text-muted-foreground">{ack.acknowledgedAt ? new Date(ack.acknowledgedAt).toLocaleDateString() : ""}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                  <div className="border-t px-4 pb-4 pt-3 bg-muted/5 space-y-3">
+                    <p className="text-sm">{notice.message}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Acknowledgments ({acknowledgments.length})</p>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setAckDialog({ noticeId: notice.id, noticeTitle: notice.title })} data-testid={`button-add-ack-${notice.id}`}>
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Record
+                      </Button>
                     </div>
+                    {acknowledgments.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">No acknowledgments recorded yet.</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {acknowledgments.map(ack => (
+                          <div key={ack.id} className="flex items-center justify-between text-sm bg-white border rounded-lg px-3 py-2" data-testid={`row-ack-${ack.id}`}>
+                            <span className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /><span className="font-medium">{ack.acknowledgedBy}</span></span>
+                            <span className="text-xs text-muted-foreground">{ack.acknowledgedAt ? new Date(ack.acknowledgedAt).toLocaleDateString() : ""}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
@@ -210,83 +1044,46 @@ export function TrainingAwarenessModule({ onAskIsa }: { onAskIsa?: (prompt: stri
         )}
       </div>
 
-      {/* Create notice dialog */}
-      {showCreate && (
-        <CreateNoticeDialog
-          onSave={(data) => createNotice.mutate(data)}
-          onClose={() => setShowCreate(false)}
-          isPending={createNotice.isPending}
-        />
-      )}
-
-      {/* Acknowledgment dialog */}
-      {ackDialog && (
-        <AckDialog
-          noticeId={ackDialog.noticeId}
-          noticeTitle={ackDialog.noticeTitle}
-          onSave={(data) => createAck.mutate(data)}
-          onClose={() => setAckDialog(null)}
-          isPending={createAck.isPending}
-        />
-      )}
+      {showCreate && <CreateNoticeDialog onSave={d => createNotice.mutate(d)} onClose={() => setShowCreate(false)} isPending={createNotice.isPending} />}
+      {ackDialog && <AckDialog noticeId={ackDialog.noticeId} noticeTitle={ackDialog.noticeTitle} onSave={d => createAck.mutate(d)} onClose={() => setAckDialog(null)} isPending={createAck.isPending} />}
     </div>
   );
 }
 
-function CreateNoticeDialog({ onSave, onClose, isPending }: { onSave: (data: any) => void; onClose: () => void; isPending: boolean }) {
-  const [form, setForm] = useState({
-    standard: "ISO 9001:2015",
-    clause: "",
-    title: "",
-    message: "",
-    processArea: "",
-    dueDate: "",
-  });
-
+function CreateNoticeDialog({ onSave, onClose, isPending }: { onSave: (d: any) => void; onClose: () => void; isPending: boolean }) {
+  const [form, setForm] = useState({ standard: "ISO 9001:2015", clause: "", title: "", message: "", processArea: "", dueDate: "" });
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>New Awareness Notice</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>New Awareness Notice</DialogTitle></DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Standard</Label>
               <Select value={form.standard} onValueChange={v => setForm(f => ({ ...f, standard: v }))}>
                 <SelectTrigger data-testid="select-notice-standard"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>Clause <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input placeholder="e.g. 7.3" value={form.clause} onChange={e => setForm(f => ({ ...f, clause: e.target.value }))} data-testid="input-notice-clause" />
+              <Input placeholder="e.g. 7.3, 7.3a" value={form.clause} onChange={e => setForm(f => ({ ...f, clause: e.target.value }))} data-testid="input-notice-clause" />
             </div>
           </div>
           <div>
-            <Label>Title</Label>
+            <Label>Title *</Label>
             <Input placeholder="e.g. Awareness of Quality Objectives — Production Team" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} data-testid="input-notice-title" />
           </div>
           <div>
-            <Label>Message</Label>
-            <Textarea
-              placeholder="Describe the requirement, what it means for this process area, and what the team needs to know or do..."
-              value={form.message}
-              onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-              rows={4}
-              data-testid="textarea-notice-message"
-            />
+            <Label>Message *</Label>
+            <Textarea placeholder="Describe the requirement, what it means for this process area, and what the team needs to know or do..." value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={4} data-testid="textarea-notice-message" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Process Area <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Label>Process Area</Label>
               <Select value={form.processArea} onValueChange={v => setForm(f => ({ ...f, processArea: v }))}>
                 <SelectTrigger data-testid="select-process-area"><SelectValue placeholder="Select area" /></SelectTrigger>
-                <SelectContent>
-                  {PROCESS_AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{PROCESS_AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
@@ -295,7 +1092,7 @@ function CreateNoticeDialog({ onSave, onClose, isPending }: { onSave: (data: any
             </div>
           </div>
           <div className="flex gap-2 pt-1">
-            <Button className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={() => onSave(form)} disabled={isPending || !form.title || !form.message} data-testid="button-save-notice">
+            <Button className="flex-1 bg-primary text-white" onClick={() => onSave(form)} disabled={isPending || !form.title || !form.message} data-testid="button-save-notice">
               {isPending ? "Sending..." : "Send Notice"}
             </Button>
             <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -306,23 +1103,17 @@ function CreateNoticeDialog({ onSave, onClose, isPending }: { onSave: (data: any
   );
 }
 
-function AckDialog({ noticeId, noticeTitle, onSave, onClose, isPending }: {
-  noticeId: number; noticeTitle: string;
-  onSave: (data: any) => void; onClose: () => void; isPending: boolean;
-}) {
+function AckDialog({ noticeId, noticeTitle, onSave, onClose, isPending }: { noticeId: number; noticeTitle: string; onSave: (d: any) => void; onClose: () => void; isPending: boolean }) {
   const [form, setForm] = useState({ acknowledgedBy: "", notes: "" });
-
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Record Acknowledgment</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>Record Acknowledgment</DialogTitle></DialogHeader>
         <div className="space-y-4 pt-2">
           <p className="text-sm text-muted-foreground">"{noticeTitle}"</p>
           <div>
-            <Label>Name</Label>
-            <Input placeholder="Process owner name" value={form.acknowledgedBy} onChange={e => setForm(f => ({ ...f, acknowledgedBy: e.target.value }))} data-testid="input-ack-name" />
+            <Label>Name *</Label>
+            <Input placeholder="Process owner / employee name" value={form.acknowledgedBy} onChange={e => setForm(f => ({ ...f, acknowledgedBy: e.target.value }))} data-testid="input-ack-name" />
           </div>
           <div>
             <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -337,5 +1128,195 @@ function AckDialog({ noticeId, noticeTitle, onSave, onClose, isPending }: {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TAB 5 — Special Requirements (IATF §7.2.2 OJT, Auditor Competency, AS9100D, etc.)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
+  const [activeStd, setActiveStd] = useState("iatf");
+  const { data: allRecords = [] } = useQuery<EmployeeCompetencyRecord[]>({ queryKey: ["/api/employee-competency-records"] });
+  const { data: employees = [] } = useQuery<Employee[]>({ queryKey: ["/api/employees"] });
+  const { data: requirements = [] } = useQuery<CompetencyRequirement[]>({ queryKey: ["/api/competency-requirements"] });
+
+  const ojtRecords = allRecords.filter(r => r.isOjt);
+  const auditorReqs = requirements.filter(r =>
+    r.clause?.startsWith("7.2.3") || r.clause?.startsWith("7.2.4") ||
+    r.competencyName.toLowerCase().includes("auditor") ||
+    r.competencyName.toLowerCase().includes("audit")
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-sm">Standard-Specific Requirements</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Additional training and competency requirements beyond the base ISO 9001 §7.2/7.3 requirements.</p>
+        </div>
+        {onAskIsa && (
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAskIsa("What are the IATF 16949 §7.2.2 on-the-job training requirements for production operators, and how do §7.2.3 internal auditor competency requirements differ from ISO 9001?")}>
+            Ask Isa
+          </Button>
+        )}
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        {[
+          { key: "iatf", label: "IATF 16949" },
+          { key: "as9100", label: "AS9100 Rev D" },
+          { key: "iso13485", label: "ISO 13485" },
+          { key: "iso14001", label: "ISO 14001" },
+        ].map(s => (
+          <button
+            key={s.key}
+            onClick={() => setActiveStd(s.key)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${activeStd === s.key ? "bg-primary text-white border-primary" : "bg-white border-border text-muted-foreground hover:text-foreground hover:bg-muted/30"}`}
+            data-testid={`button-std-${s.key}`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {activeStd === "iatf" && (
+        <div className="space-y-5">
+          {/* §7.2.2 OJT Register */}
+          <div>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
+              <Award className="w-4 h-4 text-orange-500" />
+              IATF 16949 §7.2.2 — On-the-Job Training (OJT) Register
+            </h4>
+            <p className="text-xs text-muted-foreground mb-3">
+              IATF 16949 §7.2.2 requires on-the-job training for personnel in any role that affects product quality conformance,
+              including temporary and contract staff. Evidence must be retained for all positions.
+            </p>
+            {ojtRecords.length === 0 ? (
+              <Card className="p-6 border-dashed text-center">
+                <p className="text-xs text-muted-foreground">No OJT records yet. Add competency evidence and check "OJT (IATF §7.2.2)" in the Employee Records tab.</p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {ojtRecords.map(rec => {
+                  const emp = employees.find(e => e.id === rec.employeeId);
+                  return (
+                    <Card key={rec.id} className="px-4 py-3 flex items-start justify-between" data-testid={`card-ojt-${rec.id}`}>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{emp ? `${emp.firstName} ${emp.lastName}` : `Employee #${rec.employeeId}`}</span>
+                          {emp?.position && <span className="text-xs text-muted-foreground">· {emp.position}</span>}
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT §7.2.2</Badge>
+                          <Badge variant="outline" className={`text-xs ${statusBadge(rec.status)}`}>{rec.status}</Badge>
+                          {rec.effectivenessVerified && <Badge variant="outline" className="text-xs bg-green-50 text-green-700"><CheckCircle2 className="w-3 h-3 mr-0.5" />Effectiveness Verified</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{rec.competencyName}</p>
+                        <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
+                          {rec.provider && <span>Trainer/Supervisor: {rec.provider}</span>}
+                          {rec.completedDate && <span>Date: {rec.completedDate}</span>}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* §7.2.3 Internal Auditor Competency */}
+          <div>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-500" />
+              IATF 16949 §7.2.3 — Internal Auditor Competency
+            </h4>
+            <p className="text-xs text-muted-foreground mb-3">
+              Internal auditors must demonstrate specific competency in: (a) the standard being audited,
+              (b) process approach auditing, (c) risk-based thinking, and (d) customer-specific requirements for IATF.
+              Define these as competency requirements in the Competence Matrix tab for your auditor roles.
+            </p>
+            {auditorReqs.length === 0 ? (
+              <Card className="p-4 border-dashed text-center">
+                <p className="text-xs text-muted-foreground">No auditor competency requirements defined yet. Go to the Competence Matrix tab → Add a role like "Internal Auditor" and add requirements linked to clause 7.2.3.</p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {auditorReqs.map(req => (
+                  <Card key={req.id} className="px-4 py-2 flex items-center justify-between" data-testid={`card-auditor-req-${req.id}`}>
+                    <div>
+                      <span className="text-sm font-medium">{req.competencyName}</span>
+                      <span className="text-xs text-muted-foreground ml-2">({req.jobTitle})</span>
+                    </div>
+                    <Badge variant="outline" className={`text-xs ${competencyTypeBadge(req.competencyType)}`}>{COMPETENCY_TYPE_LABELS[req.competencyType]}</Badge>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* §7.2.4 */}
+          <Card className="p-4 border-l-4 border-l-blue-400 bg-blue-50/50">
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><FileText className="w-4 h-4 text-blue-600" />IATF 16949 §7.2.4 — Second-Party Auditor Competency</h4>
+            <p className="text-xs text-muted-foreground">Personnel conducting supplier audits must demonstrate competency in the applicable requirements. Add "Supplier / Second-Party Auditor" as a job role in the Competence Matrix with requirements linked to clause 7.2.4.</p>
+          </Card>
+
+          {/* §7.3.1 */}
+          <Card className="p-4 border-l-4 border-l-orange-400 bg-orange-50/50">
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-orange-600" />IATF 16949 §7.3.1 — Product / Process NC Awareness</h4>
+            <p className="text-xs text-muted-foreground">Employees must be aware of consequences of departures from product / process standards. Create a specific awareness notice in the §7.3 Awareness tab covering product/process nonconformance consequences.</p>
+          </Card>
+        </div>
+      )}
+
+      {activeStd === "as9100" && (
+        <div className="space-y-4">
+          <Card className="p-4 border-l-4 border-l-blue-400 bg-blue-50/50">
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-blue-600" />AS9100 Rev D §7.2 — Safety-Critical Role Identification</h4>
+            <p className="text-xs text-muted-foreground mb-2">AS9100 Rev D requires specific competency for roles whose work affects product safety, including counterfeit parts awareness and ethical behavior. Add roles such as "Safety-Critical Process Operator" and "Product Inspection" to the Competence Matrix with safety-specific competency requirements.</p>
+            <div className="text-xs space-y-1 text-blue-700">
+              <p>• Employees in safety-critical roles must be identified</p>
+              <p>• Counterfeit part awareness training required</p>
+              <p>• Ethical behavior awareness and authority to stop production required</p>
+              <p>• Human factors training for roles affecting product safety</p>
+            </div>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-purple-400 bg-purple-50/50">
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><BarChart2 className="w-4 h-4 text-purple-600" />AS9100 Rev D §7.3 — Contribution to Product Safety</h4>
+            <p className="text-xs text-muted-foreground">Employees must be aware of their contribution to product safety. Create awareness notices covering product safety awareness and the consequences of not following safety-critical requirements.</p>
+          </Card>
+        </div>
+      )}
+
+      {activeStd === "iso13485" && (
+        <div className="space-y-4">
+          <Card className="p-4 border-l-4 border-l-teal-400 bg-teal-50/50">
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-teal-600" />ISO 13485:2016 §7.2 — Medical Device Competency</h4>
+            <p className="text-xs text-muted-foreground mb-2">ISO 13485 requires competency documentation that is tightly tied to regulatory requirements. Key additions beyond ISO 9001:</p>
+            <div className="text-xs space-y-1 text-teal-700">
+              <p>• Training must address regulatory requirements applicable to each role</p>
+              <p>• Records must include education, training, skills, and experience</p>
+              <p>• Personnel involved in sterile medical devices need specific training evidence</p>
+              <p>• Training effectiveness evaluation must be documented</p>
+              <p>• Competency records retained per regulatory retention requirements</p>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {activeStd === "iso14001" && (
+        <div className="space-y-4">
+          <Card className="p-4 border-l-4 border-l-green-400 bg-green-50/50">
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-green-600" />ISO 14001:2015 §7.2 — Environmental Competency</h4>
+            <p className="text-xs text-muted-foreground mb-2">Persons doing work that affects environmental performance or compliance obligations must be competent. Key areas:</p>
+            <div className="text-xs space-y-1 text-green-700">
+              <p>• Environmental aspects and impacts related to their role</p>
+              <p>• Emergency procedures (spill response, waste handling)</p>
+              <p>• Significant environmental aspects awareness</p>
+              <p>• Hazardous waste handling qualifications</p>
+              <p>• SPCC / stormwater compliance training</p>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }

@@ -6737,6 +6737,136 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     }
   });
 
+  // ─── §7.2 Competency Requirements ───────────────────────────────────────────
+  app.get("/api/competency-requirements", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      res.json(await storage.getCompetencyRequirements(userId, isSuperadmin));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.post("/api/competency-requirements", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const { insertCompetencyRequirementSchema } = await import("@shared/schema");
+      const parsed = insertCompetencyRequirementSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      res.status(201).json(await storage.createCompetencyRequirement(parsed.data));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.patch("/api/competency-requirements/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const rec = await storage.updateCompetencyRequirement(id, userId, req.body, isSuperadmin);
+      if (!rec) return res.status(404).json({ message: "Not found" });
+      res.json(rec);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.delete("/api/competency-requirements/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteCompetencyRequirement(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  // ─── §7.2 Employee Competency Records ────────────────────────────────────────
+  app.get("/api/employee-competency-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const employeeId = req.query.employeeId ? parseInt(req.query.employeeId as string) : undefined;
+      res.json(await storage.getEmployeeCompetencyRecords(userId, employeeId, isSuperadmin));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.post("/api/employee-competency-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const { insertEmployeeCompetencyRecordSchema } = await import("@shared/schema");
+      const parsed = insertEmployeeCompetencyRecordSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      res.status(201).json(await storage.createEmployeeCompetencyRecord(parsed.data));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.patch("/api/employee-competency-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const rec = await storage.updateEmployeeCompetencyRecord(id, userId, req.body, isSuperadmin);
+      if (!rec) return res.status(404).json({ message: "Not found" });
+      res.json(rec);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.delete("/api/employee-competency-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteEmployeeCompetencyRecord(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  // ─── Training Event Log ───────────────────────────────────────────────────────
+  app.get("/api/training-event-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      res.json(await storage.getTrainingEventRecords(userId, isSuperadmin));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.post("/api/training-event-records", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const { insertTrainingEventRecordSchema } = await import("@shared/schema");
+      const parsed = insertTrainingEventRecordSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      res.status(201).json(await storage.createTrainingEventRecord(parsed.data));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.patch("/api/training-event-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const rec = await storage.updateTrainingEventRecord(id, userId, req.body, isSuperadmin);
+      if (!rec) return res.status(404).json({ message: "Not found" });
+      res.json(rec);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+  app.delete("/api/training-event-records/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteTrainingEventRecord(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
   app.post("/api/corrective-actions/:id/notify-sms", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
