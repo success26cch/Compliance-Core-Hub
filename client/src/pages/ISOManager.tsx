@@ -1912,8 +1912,8 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               <Compass className="w-4.5 h-4.5 text-primary" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-primary">Context of the Organization</h2>
-              <p className="text-xs text-muted-foreground">ISO Clause 4.1 (Internal & External Issues) · Clause 4.2 (Interested Parties)</p>
+              <h2 className="text-base font-black text-primary">Context of the Organization</h2>
+              <p className="text-sm text-muted-foreground">ISO Clause 4.1 (Internal & External Issues) · Clause 4.2 (Interested Parties)</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1951,7 +1951,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               key={t.id}
               onClick={() => setActiveTab(t.id)}
               data-testid={`tab-context-${t.id}`}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
                 activeTab === t.id
                   ? 'bg-primary/10 text-primary border border-primary/20'
                   : 'text-muted-foreground hover:text-primary hover:bg-muted/60'
@@ -1973,7 +1973,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed flex items-start justify-between gap-4">
                 <div>
                   <span className="font-bold text-primary">ISO 4.1 — External Issues:</span> Identify external factors relevant to your organization's purpose and strategic direction. Tag each factor as a <span className="font-bold text-red-600">Risk</span> or <span className="font-bold text-green-600">Opportunity</span> — these feed directly into Clause 6.1 Risk Planning.
-                  <p className="text-[11px] mt-2 text-muted-foreground">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 · ISO 27001</p>
+                  <p className="text-xs mt-2 text-muted-foreground">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 · ISO 27001</p>
                 </div>
                 <button
                   onClick={() => setPrintDoc('pestle')}
@@ -1992,20 +1992,20 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                     <div key={cfg.key} className="bg-white dark:bg-card rounded-xl border border-border/60 p-4" data-testid={`pestle-card-${cfg.key}`}>
                       <div className="flex items-center gap-2 mb-1">
                         <cfg.icon className={`w-4 h-4 ${cfg.color}`} />
-                        <p className="text-sm font-black text-primary">{cfg.label}</p>
+                        <p className="text-base font-black text-primary">{cfg.label}</p>
                         <div className="ml-auto flex items-center gap-1">
-                          {rCount > 0 && <span className="text-[9px] font-bold bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:border-red-700/40 px-1.5 py-0.5 rounded-full">{rCount}R</span>}
-                          {oCount > 0 && <span className="text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:border-green-700/40 px-1.5 py-0.5 rounded-full">{oCount}O</span>}
+                          {rCount > 0 && <span className="text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:border-red-700/40 px-1.5 py-0.5 rounded-full">{rCount}R</span>}
+                          {oCount > 0 && <span className="text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:border-green-700/40 px-1.5 py-0.5 rounded-full">{oCount}O</span>}
                         </div>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
+                      <p className="text-xs text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
                       <div className="space-y-1.5 mb-2">
                         {items.map((item, idx) => (
                           <div key={idx} className="flex items-start gap-2 group">
-                            <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border mt-0.5 ${item.type === 'risk' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-700/40' : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-700/40'}`}>
+                            <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border mt-0.5 ${item.type === 'risk' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-700/40' : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-700/40'}`}>
                               {item.type === 'risk' ? 'RISK' : 'OPP'}
                             </span>
-                            <span className="text-xs text-primary flex-1 leading-tight">{item.text}</span>
+                            <span className="text-sm text-primary flex-1 leading-tight">{item.text}</span>
                             <button onClick={() => removePestle(cfg.key, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0" data-testid={`btn-remove-pestle-${cfg.key}-${idx}`}>
                               <X className="w-3 h-3" />
                             </button>
@@ -2024,15 +2024,15 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                             data-testid={`input-pestle-${cfg.key}`}
                           />
                           <div className="flex gap-1.5 items-center">
-                            <span className="text-[10px] font-bold text-muted-foreground">Type:</span>
+                            <span className="text-xs font-bold text-muted-foreground">Type:</span>
                             <button
                               onClick={() => setPestleType('risk')}
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${pestleType === 'risk' ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:border-red-600' : 'text-muted-foreground border-border/50 hover:border-red-300'}`}
+                              className={`text-xs font-bold px-2 py-0.5 rounded-full border transition-colors ${pestleType === 'risk' ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:border-red-600' : 'text-muted-foreground border-border/50 hover:border-red-300'}`}
                               data-testid={`btn-type-risk-${cfg.key}`}
                             >Risk</button>
                             <button
                               onClick={() => setPestleType('opportunity')}
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${pestleType === 'opportunity' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:border-green-600' : 'text-muted-foreground border-border/50 hover:border-green-300'}`}
+                              className={`text-xs font-bold px-2 py-0.5 rounded-full border transition-colors ${pestleType === 'opportunity' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:border-green-600' : 'text-muted-foreground border-border/50 hover:border-green-300'}`}
                               data-testid={`btn-type-opp-${cfg.key}`}
                             >Opportunity</button>
                             <div className="ml-auto flex gap-1">
@@ -2074,17 +2074,17 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                   <div key={cfg.key} className={`rounded-xl border p-4 ${cfg.bg}`} data-testid={`swot-card-${cfg.key}`}>
                     <div className="flex items-center gap-2 mb-1">
                       <cfg.icon className={`w-4 h-4 ${cfg.color}`} />
-                      <p className={`text-sm font-black ${cfg.color}`}>{cfg.label}</p>
+                      <p className={`text-base font-black ${cfg.color}`}>{cfg.label}</p>
                       {swot[cfg.key].length > 0 && (
-                        <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-black/20 ${cfg.color}`}>{swot[cfg.key].length}</span>
+                        <span className={`ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-black/20 ${cfg.color}`}>{swot[cfg.key].length}</span>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
+                    <p className="text-xs text-muted-foreground mb-3 leading-tight">{cfg.desc}</p>
                     <div className="space-y-1.5 mb-2">
                       {swot[cfg.key].map((item, idx) => (
                         <div key={idx} className="flex items-start gap-2 group">
-                          <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-white/70 dark:bg-black/20 text-muted-foreground border-border/50 mt-0.5">→ 6.1</span>
-                          <span className="text-xs text-primary flex-1 leading-tight">{item}</span>
+                          <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border bg-white/70 dark:bg-black/20 text-muted-foreground border-border/50 mt-0.5">→ 6.1</span>
+                          <span className="text-sm text-primary flex-1 leading-tight">{item}</span>
                           <button onClick={() => removeSwot(cfg.key, idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive" data-testid={`btn-remove-swot-${cfg.key}-${idx}`}>
                             <X className="w-3 h-3" />
                           </button>
@@ -2138,10 +2138,10 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                 return (
                   <div key={grp} className="space-y-2" data-testid={`party-group-${grp}`}>
                     <div className="flex items-center gap-2 px-1">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${grp === 'external' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700/40' : 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700/40'}`}>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${grp === 'external' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700/40' : 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700/40'}`}>
                         {grp === 'external' ? 'EXTERNAL' : 'INTERNAL'}
                       </span>
-                      <span className="text-xs text-muted-foreground">{grpRelevant} relevant of {grpParties.length}</span>
+                      <span className="text-sm text-muted-foreground">{grpRelevant} relevant of {grpParties.length}</span>
                     </div>
 
                     {grpParties.map((p) => {
@@ -2159,14 +2159,14 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                             >
                               {p.relevant && <CheckCircle2 className="w-2.5 h-2.5 text-primary-foreground" />}
                             </button>
-                            <p className="text-xs font-bold text-primary flex-1">{p.party || <span className="text-muted-foreground italic">Unnamed party</span>}</p>
+                            <p className="text-sm font-bold text-primary flex-1">{p.party || <span className="text-muted-foreground italic">Unnamed party</span>}</p>
                             <div className="flex items-center gap-1.5 mr-1">
                               {p.relevant
-                                ? <span className="text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5">RELEVANT</span>
-                                : <span className="text-[9px] font-bold text-muted-foreground bg-muted border border-border/60 rounded-full px-1.5 py-0.5">NOT RELEVANT</span>
+                                ? <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5">RELEVANT</span>
+                                : <span className="text-[10px] font-bold text-muted-foreground bg-muted border border-border/60 rounded-full px-1.5 py-0.5">NOT RELEVANT</span>
                               }
                               {pir && (
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${pir.bg} ${pir.color}`}>{pir.label}</span>
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${pir.bg} ${pir.color}`}>{pir.label}</span>
                               )}
                             </div>
                             <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
@@ -2180,19 +2180,19 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                             <div className="px-4 pb-4 pt-1 border-t border-border/40 space-y-3">
                               {/* Party name */}
                               <div>
-                                <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Party Name</label>
+                                <label className="text-xs font-bold text-muted-foreground block mb-0.5">Party Name</label>
                                 <Input value={p.party} onChange={e => updateParty(globalIdx, { party: e.target.value })} placeholder="e.g. Certification Body, Insurance Provider" className="h-7 text-xs" data-testid={`input-party-name-${globalIdx}`} />
                               </div>
 
                               {/* Group Toggle */}
                               <div>
-                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">Group</label>
+                                <label className="text-xs font-bold text-muted-foreground block mb-1">Group</label>
                                 <div className="flex gap-1.5">
                                   {(['internal', 'external'] as const).map(g => (
                                     <button
                                       key={g}
                                       onClick={() => updateParty(globalIdx, { group: g })}
-                                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border transition-colors ${p.group === g ? (g === 'internal' ? 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:border-purple-700/50' : 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700/50') : 'text-muted-foreground border-border/50 hover:border-primary/30'}`}
+                                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full border transition-colors ${p.group === g ? (g === 'internal' ? 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:border-purple-700/50' : 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700/50') : 'text-muted-foreground border-border/50 hover:border-primary/30'}`}
                                       data-testid={`btn-party-group-${g}-${globalIdx}`}
                                     >
                                       {g === 'internal' ? 'Internal' : 'External'}
@@ -2203,13 +2203,13 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
 
                               {/* PI-R Selector */}
                               <div>
-                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">Power &amp; Interest Ranking (PI-R)</label>
+                                <label className="text-xs font-bold text-muted-foreground block mb-1">Power &amp; Interest Ranking (PI-R)</label>
                                 <div className="flex flex-wrap gap-1.5">
                                   {PI_RANKING_CONFIG.map(r => (
                                     <button
                                       key={r.value}
                                       onClick={() => updateParty(globalIdx, { piRanking: p.piRanking === r.value ? '' : r.value })}
-                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${p.piRanking === r.value ? `${r.bg} ${r.color}` : 'text-muted-foreground border-border/50 hover:border-primary/30'}`}
+                                      className={`text-xs font-bold px-2 py-0.5 rounded-full border transition-colors ${p.piRanking === r.value ? `${r.bg} ${r.color}` : 'text-muted-foreground border-border/50 hover:border-primary/30'}`}
                                       data-testid={`btn-pir-${r.value}-${globalIdx}`}
                                     >
                                       {r.label}
@@ -2220,27 +2220,27 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
 
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Needs</label>
+                                  <label className="text-xs font-bold text-muted-foreground block mb-0.5">Needs</label>
                                   <Input value={p.needs} onChange={e => updateParty(globalIdx, { needs: e.target.value })} placeholder="What do they need from us?" className="h-7 text-xs" data-testid={`input-party-needs-${globalIdx}`} />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Expectations</label>
+                                  <label className="text-xs font-bold text-muted-foreground block mb-0.5">Expectations</label>
                                   <Input value={p.expectations} onChange={e => updateParty(globalIdx, { expectations: e.target.value })} placeholder="What are their expectations?" className="h-7 text-xs" data-testid={`input-party-expectations-${globalIdx}`} />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Actions to Meet Needs</label>
+                                  <label className="text-xs font-bold text-muted-foreground block mb-0.5">Actions to Meet Needs</label>
                                   <Input value={p.actions} onChange={e => updateParty(globalIdx, { actions: e.target.value })} placeholder="How do we meet their needs?" className="h-7 text-xs" data-testid={`input-party-actions-${globalIdx}`} />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Monitoring Method</label>
+                                  <label className="text-xs font-bold text-muted-foreground block mb-0.5">Monitoring Method</label>
                                   <Input value={p.monitoringMethod} onChange={e => updateParty(globalIdx, { monitoringMethod: e.target.value })} placeholder="Surveys, audits, reviews…" className="h-7 text-xs" data-testid={`input-party-monitoring-${globalIdx}`} />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Associated Risks</label>
+                                  <label className="text-xs font-bold text-muted-foreground block mb-0.5">Associated Risks</label>
                                   <Input value={p.risks} onChange={e => updateParty(globalIdx, { risks: e.target.value })} placeholder="Risks from this party" className="h-7 text-xs" data-testid={`input-party-risks-${globalIdx}`} />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Associated Opportunities</label>
+                                  <label className="text-xs font-bold text-muted-foreground block mb-0.5">Associated Opportunities</label>
                                   <Input value={p.opportunities} onChange={e => updateParty(globalIdx, { opportunities: e.target.value })} placeholder="Opportunities from this party" className="h-7 text-xs" data-testid={`input-party-opps-${globalIdx}`} />
                                 </div>
                               </div>
@@ -2272,7 +2272,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               </div>
 
               {/* Summary strip */}
-              <div className="bg-muted/40 border border-border/50 rounded-xl p-3 flex gap-4 text-xs text-muted-foreground">
+              <div className="bg-muted/40 border border-border/50 rounded-xl p-3 flex gap-4 text-sm text-muted-foreground">
                 <span><span className="font-bold text-primary">{relevantParties}</span> relevant parties total</span>
                 <span>·</span>
                 <span><span className="font-bold text-blue-700">{externalParties}</span> external</span>
@@ -2290,42 +2290,42 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                 <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
                   ISO standards require that the outputs of Clause 4.1 (internal &amp; external issues) and Clause 4.2 (interested parties) are used as inputs when determining risks and opportunities under <span className="font-bold">Clause 6.1</span>. This summary shows how much context data you have captured and where it needs to go.
                 </p>
-                <p className="text-[10px] text-amber-600 dark:text-amber-500 mt-2 font-semibold">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 D · ISO 27001</p>
+                <p className="text-xs text-amber-600 dark:text-amber-500 mt-2 font-semibold">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 D · ISO 27001</p>
               </div>
 
               {/* Count cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 text-center">
                   <p className="text-2xl font-black text-primary">{pestleCount}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">PESTLE Factors</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-0.5">PESTLE Factors</p>
                   <div className="flex justify-center gap-1.5 mt-1.5">
-                    <span className="text-[9px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/40 px-1.5 py-0.5 rounded-full">{pestleRisks}R</span>
-                    <span className="text-[9px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/40 px-1.5 py-0.5 rounded-full">{pestleOpps}O</span>
+                    <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/40 px-1.5 py-0.5 rounded-full">{pestleRisks}R</span>
+                    <span className="text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/40 px-1.5 py-0.5 rounded-full">{pestleOpps}O</span>
                   </div>
                 </div>
                 <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 text-center">
                   <p className="text-2xl font-black text-primary">{swotCount}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">SWOT Items</p>
-                  <p className="text-[9px] text-muted-foreground mt-1.5">All feed → 6.1</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-0.5">SWOT Items</p>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">All feed → 6.1</p>
                 </div>
                 <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 text-center">
                   <p className="text-2xl font-black text-primary">{relevantParties}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Relevant Parties</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-0.5">Relevant Parties</p>
                   <div className="flex justify-center gap-1.5 mt-1.5">
-                    <span className="text-[9px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 px-1.5 py-0.5 rounded-full">{externalParties}E</span>
-                    <span className="text-[9px] font-bold text-purple-600 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/40 px-1.5 py-0.5 rounded-full">{internalParties}I</span>
+                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 px-1.5 py-0.5 rounded-full">{externalParties}E</span>
+                    <span className="text-[10px] font-bold text-purple-600 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/40 px-1.5 py-0.5 rounded-full">{internalParties}I</span>
                   </div>
                 </div>
                 <div className={`rounded-xl border p-4 text-center ${(pestleCount + swotCount + relevantParties) > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40' : 'bg-muted border-border/60'}`}>
                   <p className={`text-2xl font-black ${(pestleCount + swotCount + relevantParties) > 0 ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}>{pestleCount + swotCount + relevantParties}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Total Inputs to 6.1</p>
-                  <p className={`text-[9px] mt-1.5 font-semibold ${(pestleCount + swotCount + relevantParties) > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>{(pestleCount + swotCount + relevantParties) > 0 ? 'Ready for risk planning' : 'Add context data first'}</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-0.5">Total Inputs to 6.1</p>
+                  <p className={`text-[10px] mt-1.5 font-semibold ${(pestleCount + swotCount + relevantParties) > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>{(pestleCount + swotCount + relevantParties) > 0 ? 'Ready for risk planning' : 'Add context data first'}</p>
                 </div>
               </div>
 
               {/* Standards reference */}
               <div className="bg-white dark:bg-card rounded-xl border border-border/60 p-4 space-y-2.5">
-                <p className="text-sm font-black text-primary">Standard Requirements: 4.1/4.2 → 6.1</p>
+                <p className="text-base font-black text-primary">Standard Requirements: 4.1/4.2 → 6.1</p>
                 {[
                   { std: 'ISO 9001:2015',    clause: '6.1.1', req: 'Actions to address risks and opportunities must consider internal/external issues (4.1) and relevant interested parties (4.2).' },
                   { std: 'ISO 14001:2015',   clause: '6.1.1', req: 'Environmental aspects, compliance obligations, and risks/opportunities must consider context (4.1) and interested parties (4.2).' },
@@ -2336,9 +2336,9 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                   { std: 'ISO 27001:2022',   clause: '6.1.1', req: 'Information security risks must be assessed in the context of organizational issues (4.1) and interested parties (4.2).' },
                 ].map(row => (
                   <div key={row.std} className="flex items-start gap-3 py-1.5 border-b border-border/40 last:border-0">
-                    <span className="shrink-0 text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">{row.std}</span>
-                    <span className="text-[9px] font-bold text-muted-foreground shrink-0 mt-0.5">§{row.clause}</span>
-                    <p className="text-xs text-muted-foreground leading-snug">{row.req}</p>
+                    <span className="shrink-0 text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">{row.std}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">§{row.clause}</span>
+                    <p className="text-sm text-muted-foreground leading-snug">{row.req}</p>
                   </div>
                 ))}
               </div>
