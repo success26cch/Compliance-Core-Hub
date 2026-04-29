@@ -67,7 +67,7 @@ export default function IsoActionItemsModule({ isoProjectId }: { isoProjectId?: 
 
   const { data: items = [], isLoading } = useQuery<IsoActionItem[]>({
     queryKey: qKey,
-    queryFn: () => apiRequest("GET", isoProjectId ? `/api/iso-action-items?isoProjectId=${isoProjectId}` : "/api/iso-action-items"),
+    queryFn: () => apiRequest("GET", isoProjectId ? `/api/iso-action-items?isoProjectId=${isoProjectId}` : "/api/iso-action-items").then(r => r.json()),
   });
 
   const createMutation = useMutation({
