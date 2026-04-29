@@ -129,7 +129,7 @@ const ISO_PRO_CAPABILITIES = [
 
 /* ─── ISO TIER CARD ───────────────────────────────────── */
 function ISOTierCard({
-  "data-testid": testId, delay, badge, title, subtitle, price, annual, setup,
+  "data-testid": testId, delay, badge, title, subtitle,
   capabilities, cardClass, topBarClass, capIconClass, picker, badges, coreBadges, dark, cta,
 }: {
   "data-testid": string;
@@ -137,9 +137,6 @@ function ISOTierCard({
   badge: string;
   title: string;
   subtitle: string;
-  price: string;
-  annual: string;
-  setup: string;
   capabilities: string[];
   cardClass: string;
   topBarClass: string;
@@ -186,12 +183,7 @@ function ISOTierCard({
         </div>
 
         <div className={`mb-4 pb-3 border-b ${borderMuted}`}>
-          <div className="flex items-baseline gap-1">
-            <p className={`font-black text-accent text-3xl leading-none`}>{price}</p>
-            <span className={`text-sm font-medium ${textMuted}`}>/mo</span>
-          </div>
-          <p className={`text-xs mt-0.5 ${textMuted}`}>{annual}</p>
-          <p className={`text-[10px] font-semibold mt-1 ${dark ? "text-white/50" : "text-muted-foreground"}`}>{setup}</p>
+          <p className={`text-xs font-semibold ${dark ? "text-white/60" : "text-muted-foreground"}`}>Pricing coming soon — contact us for details</p>
         </div>
 
         {/* Fixed badges (Integrated — all 3 included) */}
@@ -963,7 +955,6 @@ export default function ISOManager() {
                         <Award className="w-4 h-4 text-accent mb-2" />
                         <p className="font-bold text-primary text-sm">Isa</p>
                         <p className="text-xs text-muted-foreground mb-2">9001 · 14001 · 45001</p>
-                        <p className="text-accent font-black text-lg mb-3">$99<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
                         <Link href="/settings">
                           <Button size="sm" className="w-full bg-accent hover:bg-accent/90 text-white text-xs" data-testid="button-upgrade-isa">Get Isa</Button>
                         </Link>
@@ -973,7 +964,6 @@ export default function ISOManager() {
                         <Star className="w-4 h-4 text-primary dark:text-accent mb-2" />
                         <p className="font-bold text-primary text-sm">Isa Pro</p>
                         <p className="text-xs text-muted-foreground mb-2">All 7 standards</p>
-                        <p className="text-primary font-black text-lg mb-3 dark:text-accent">$199<span className="text-xs text-muted-foreground font-normal">/mo</span></p>
                         <Link href="/settings">
                           <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs" data-testid="button-upgrade-isa-pro">Get Isa Pro</Button>
                         </Link>
@@ -3692,9 +3682,6 @@ function IsaEmptyState({
                   badge="TIER 1"
                   title="ISO Manager Core"
                   subtitle="Isa Included"
-                  price="$299"
-                  annual="billed annually · $3,588/yr"
-                  setup="+ $1,000–$1,500 one-time setup fee"
                   capabilities={ISO_CORE_CAPABILITIES}
                   cardClass="border-border/60 bg-white dark:bg-card"
                   topBarClass="bg-accent"
@@ -3710,9 +3697,6 @@ function IsaEmptyState({
                   badge="TIER 2 · MOST POPULAR"
                   title="ISO Manager Integrated"
                   subtitle="Isa Included"
-                  price="$499"
-                  annual="billed annually · $5,988/yr"
-                  setup="+ $1,500 one-time setup fee"
                   capabilities={ISO_INTEGRATED_CAPABILITIES}
                   cardClass="border-2 border-primary/25 bg-white dark:bg-card"
                   topBarClass="bg-primary"
@@ -3728,9 +3712,6 @@ function IsaEmptyState({
                   badge="TIER 3"
                   title="ISO Manager Specialist"
                   subtitle="Isa Pro Included"
-                  price="$699"
-                  annual="billed annually · $8,388/yr"
-                  setup="+ $2,500–$5,000 one-time setup fee"
                   capabilities={ISO_SPECIALIST_CAPABILITIES}
                   cardClass="border border-accent/30 bg-white dark:bg-card"
                   topBarClass="bg-accent"
@@ -3746,9 +3727,6 @@ function IsaEmptyState({
                   badge="TIER 4 · FULL PLATFORM"
                   title="ISO Manager PRO"
                   subtitle="Isa Pro Included"
-                  price="$899"
-                  annual="billed annually · $10,788/yr"
-                  setup="+ $5,000 one-time setup fee"
                   capabilities={ISO_PRO_CAPABILITIES}
                   cardClass="bg-primary"
                   topBarClass="bg-accent"
@@ -3903,12 +3881,12 @@ function ISOChatInterface({
                 <div className="flex gap-3 justify-center">
                   <Link href="/settings">
                     <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-upgrade-from-chat">
-                      Get Isa — $99/mo
+                      Get Isa
                     </Button>
                   </Link>
                   <Link href="/settings">
                     <Button size="sm" variant="outline" className="border-primary/20 text-primary hover:bg-primary/5 text-xs font-semibold">
-                      Isa Pro — $199/mo
+                      Get Isa Pro
                     </Button>
                   </Link>
                 </div>
