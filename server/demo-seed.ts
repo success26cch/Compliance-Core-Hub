@@ -16,6 +16,21 @@ const CCI_PESTLE = {"political":{"factors":"Trade policies affecting chemical im
 
 const CCI_SWOT = {"strengths":["IATF 16949 certified — preferred supplier status with Tier 1 automotive customers","Long-term OEM-approved formulations (DOT 3, DOT 4, DEX-COOL) reducing qualification risk","Vertically integrated analytical lab with NIST-traceable calibration","Experienced formulation team with 15+ years automotive fluid chemistry expertise","Dedicated APQP/PPAP capability for new program launches"],"weaknesses":["Single manufacturing site — no backup production capacity for surge or disaster recovery","Limited ERP integration — manual data entry between production, QC, and shipping","Aging filling line equipment with increasing downtime frequency","Narrow product portfolio — limited exposure to EV/hybrid thermal management fluids","Key-man dependency: formulation knowledge concentrated in senior chemist"],"opportunities":["EV thermal management fluid development — growing market with few qualified IATF suppliers","Expansion of OEM-direct supply relationships (bypass Tier 1 intermediaries)","Sustainability-driven product line (bio-based glycols, reduced-VOC formulations)","Capacity expansion to capture reshored automotive manufacturing growth in Midwest","Digital PPAP and customer portal integration to reduce approval cycle time"],"threats":["Raw material cost volatility (glycol ethers, borate esters sourced from 2-3 suppliers)","OEM production volume uncertainty affecting demand planning accuracy","Competitive pressure from larger chemical companies with broader portfolios","Increasing IATF surveillance audit requirements and customer-specific requirements burden","Regulatory changes to FMVSS 116 requiring reformulation investment"]};
 
+const CCI_STRATEGIC_RISKS = [
+  { id: 'sr-demo-001', source: '4.1 PESTLE – Political', description: 'FMCSA/DOT regulation changes affecting brake fluid classification', type: 'risk', impact: 'H', likelihood: 'M', rating: 'High', owner: 'Elena Vasquez, Quality Manager', response: 'Monitor FMCSA rulemaking; maintain regulatory watch through STLE and ASTM membership. Annual compliance review.', status: 'open' },
+  { id: 'sr-demo-002', source: '4.1 PESTLE – Political', description: 'Reshoring incentives for automotive chemical suppliers', type: 'opportunity', impact: 'M', likelihood: 'M', rating: 'Medium', owner: 'Greg Torres, Sales Director', response: 'Engage MEMA and regional economic development to qualify for reshoring grants.', status: 'in_progress' },
+  { id: 'sr-demo-003', source: '4.1 PESTLE – Economic', description: 'Raw material price volatility (glycol ethers, corrosion inhibitors)', type: 'risk', impact: 'H', likelihood: 'H', rating: 'Critical', owner: 'Marcus Webb, Production Supervisor', response: 'Hedge glycol ether pricing via 6-month forward contracts; identify two qualified alternate suppliers.', status: 'in_progress' },
+  { id: 'sr-demo-004', source: '4.1 PESTLE – Economic', description: 'Growth in EV platform programs requiring new fluid specifications', type: 'opportunity', impact: 'H', likelihood: 'M', rating: 'High', owner: 'Greg Torres, Sales Director', response: 'Initiate R&D project to develop EV-compatible thermal management fluid. Target Ford EV platform qualification by Q4 2026.', status: 'open' },
+  { id: 'sr-demo-005', source: '4.1 PESTLE – Social', description: 'Aging skilled workforce in chemical blending operations', type: 'risk', impact: 'M', likelihood: 'H', rating: 'High', owner: 'HR Director', response: 'Launch apprenticeship program with local community college; document 100% of critical blending SOPs by Q2 2026.', status: 'in_progress' },
+  { id: 'sr-demo-006', source: '4.1 PESTLE – Legal', description: 'REACH/RoHS compliance for export to European automotive customers', type: 'risk', impact: 'H', likelihood: 'M', rating: 'High', owner: 'Elena Vasquez, Quality Manager', response: 'Commission REACH SVHC screening for all formulations. Engage EU Authorized Representative.', status: 'open' },
+  { id: 'sr-demo-007', source: '4.1 PESTLE – Environmental', description: 'Glycol-based wastewater disposal and POTW compliance', type: 'risk', impact: 'M', likelihood: 'M', rating: 'Medium', owner: 'EHS Coordinator', response: 'Quarterly POTW permit review; install inline glycol monitoring on discharge point.', status: 'open' },
+  { id: 'sr-demo-008', source: '4.1 PESTLE – Technological', description: 'Customer ERP portal integration requirements (Ford GPDS, GM GQTS)', type: 'risk', impact: 'M', likelihood: 'H', rating: 'High', owner: 'IT Manager', response: 'Budget for EDI/API middleware in FY2026 capital plan.', status: 'open' },
+  { id: 'sr-demo-009', source: '4.1 SWOT – Threat', description: 'Tier 1 consolidation — customers reducing approved supplier lists', type: 'risk', impact: 'H', likelihood: 'H', rating: 'Critical', owner: 'Greg Torres, Sales Director', response: 'Accelerate IATF 16949 scope expansion. Annual customer satisfaction surveys and executive relationship reviews with top 5 OEM buyers.', status: 'in_progress' },
+  { id: 'sr-demo-010', source: '4.1 SWOT – Threat', description: 'Asian imports of DOT-equivalent brake fluids at 20% lower price point', type: 'risk', impact: 'H', likelihood: 'M', rating: 'High', owner: 'Greg Torres, Sales Director', response: 'Differentiate on IATF certification, traceability, and US-sourced formulation. Explore value-added services.', status: 'open' },
+  { id: 'sr-demo-011', source: '4.1 SWOT – Weakness', description: 'Single-source dependency for DMSO additive (1 supplier)', type: 'risk', impact: 'H', likelihood: 'M', rating: 'High', owner: 'Marcus Webb, Production Supervisor', response: 'Qualify second DMSO supplier within 90 days. Increase safety stock to 60-day supply.', status: 'in_progress' },
+  { id: 'sr-demo-012', source: '4.1 SWOT – Strength', description: '30+ year OEM-approved supplier relationships', type: 'opportunity', impact: 'H', likelihood: 'H', rating: 'Critical', owner: 'Greg Torres, Sales Director', response: 'Leverage long-term relationships to secure multi-year supply agreements and preferred supplier status for EV platform programs.', status: 'open' },
+];
+
 const CCI_INTERESTED_PARTIES = [{"name":"Ford Motor Company","type":"Customer","needs":"IATF 16949 certification, PPAP Level 3 submissions, Q1 portal compliance, 8D response within 24 hours for field issues","expectations":"Zero defect delivery, OTD ≥ 98%, advance shipping notice (ASN) via EDI, annual supplier scorecard review"},{"name":"General Motors","type":"Customer","needs":"GM-specific CSR compliance, BIQS scorecard performance, Covisint portal submissions","expectations":"IATF 16949 certification, supplier development toward GM standards, corrective action response within 5 business days"},{"name":"Stellantis","type":"Customer","needs":"Supplier Quality Manual compliance, PPAP submissions, AIAG FMEA methodology","expectations":"Zero customer disruptions, containment within 24 hours of quality escape"},{"name":"Tier 1 Automotive Suppliers","type":"Customer","needs":"Consistent product quality (COA with every lot), reliable delivery, technical support for application questions","expectations":"Competitive pricing, flexible order quantities, SDS/TDS documentation"},{"name":"Chemical Raw Material Suppliers","type":"Supplier","needs":"Long-term purchase agreements, timely payment, clear specifications","expectations":"Forecasting information, specification changes with adequate lead time"},{"name":"IATF Certification Body (BSI)","type":"Regulatory","needs":"Compliance with IATF 16949:2016 standard and IATF rules","expectations":"Transparent audit access, corrective action closure within agreed timelines, no major nonconformances at surveillance"},{"name":"Ohio EPA / US EPA","type":"Regulatory","needs":"RCRA compliance (hazardous waste), wastewater permit compliance, air emissions reporting","expectations":"Accurate and timely regulatory reporting, spill response capability (SPCC plan)"},{"name":"OSHA","type":"Regulatory","needs":"Workplace safety compliance (HazCom, PPE, emergency response)","expectations":"Injury recordkeeping (OSHA 300 log), prompt incident investigation and corrective action"},{"name":"CCI Employees","type":"Internal","needs":"Safe working conditions, competitive compensation, career development, clear job expectations","expectations":"Management communication, training investment, ergonomic workplace design"},{"name":"CCI Leadership / Owners","type":"Internal","needs":"Financial performance, business growth, customer retention, regulatory compliance","expectations":"Quality metrics transparency, risk visibility, strategic planning participation"}];
 
 export async function seedDemoDataIfEmpty(): Promise<void> {
@@ -24,6 +39,17 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
     const [{ value: projCount }] = await db.select({ value: count() }).from(isoProjects);
     if (Number(projCount) > 0) {
       console.log(`[demo-seed] iso_projects already has ${projCount} row(s) — skipping seed.`);
+      // Backfill strategic_risks if missing on the CCI Chemical demo account
+      const checkResult = await db.execute(sql`
+        SELECT id FROM iso_projects WHERE user_id = ${EBENI_USER_ID} AND strategic_risks IS NULL LIMIT 1
+      `);
+      if (checkResult.rows.length > 0) {
+        const strategicJson = JSON.stringify(CCI_STRATEGIC_RISKS);
+        await db.execute(sql`
+          UPDATE iso_projects SET strategic_risks = ${strategicJson}::jsonb WHERE user_id = ${EBENI_USER_ID} AND strategic_risks IS NULL
+        `);
+        console.log("[demo-seed] Backfilled strategic_risks for CCI Chemical demo account.");
+      }
       return;
     }
 
@@ -46,15 +72,16 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
     const pestleJson    = JSON.stringify(CCI_PESTLE);
     const swotJson      = JSON.stringify(CCI_SWOT);
     const partiesJson   = JSON.stringify(CCI_INTERESTED_PARTIES);
+    const strategicJson = JSON.stringify(CCI_STRATEGIC_RISKS);
 
     const result = await db.execute(sql`
       INSERT INTO iso_projects (
         user_id, standard, phase, status, org_name,
-        processes, pestle_data, swot_data, interested_parties,
+        processes, pestle_data, swot_data, interested_parties, strategic_risks,
         created_at, updated_at
       ) VALUES (
         ${ownerUserId}, ${standard}, 3, ${statusVal}, ${orgName},
-        ${processesJson}::jsonb, ${pestleJson}::jsonb, ${swotJson}::jsonb, ${partiesJson}::jsonb,
+        ${processesJson}::jsonb, ${pestleJson}::jsonb, ${swotJson}::jsonb, ${partiesJson}::jsonb, ${strategicJson}::jsonb,
         NOW(), NOW()
       ) RETURNING id
     `);
