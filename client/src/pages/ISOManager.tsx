@@ -1773,30 +1773,50 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   const [activeTab, setActiveTab] = useState<'pestle' | 'swot' | 'interested' | 'bridge'>('pestle');
 
   // ── PESTLE state (normalizes old string[] format to PestleItem[])
-  const [pestle, setPestle] = useState<Record<PestleKey, PestleItem[]>>(() => {
-    const d = (project as any)?.pestleData;
-    if (!d) return { political: [], economic: [], social: [], technological: [], legal: [], environmental: [] };
-    return {
-      political:     normalizePestleItems(d.political),
-      economic:      normalizePestleItems(d.economic),
-      social:        normalizePestleItems(d.social),
-      technological: normalizePestleItems(d.technological),
-      legal:         normalizePestleItems(d.legal),
-      environmental: normalizePestleItems(d.environmental),
-    };
-  });
+  const [pestle, setPestle] = useState<Record<PestleKey, PestleItem[]>>(
+    { political: [], economic: [], social: [], technological: [], legal: [], environmental: [] }
+  );
 
   // ── SWOT state
-  const [swot, setSwot] = useState<Record<SwotKey, string[]>>(() => {
-    const d = (project as any)?.swotData;
-    return d || { strengths: [], weaknesses: [], opportunities: [], threats: [] };
-  });
+  const [swot, setSwot] = useState<Record<SwotKey, string[]>>(
+    { strengths: [], weaknesses: [], opportunities: [], threats: [] }
+  );
 
   // ── Interested Parties state (normalizes old format)
-  const [parties, setParties] = useState<InterestedParty[]>(() => {
-    const d = (project as any)?.interestedParties;
-    return d && d.length > 0 ? d.map(normalizeParty) : DEFAULT_INTERESTED_PARTIES;
-  });
+  const [parties, setParties] = useState<InterestedParty[]>(DEFAULT_INTERESTED_PARTIES);
+
+  // ── Track which project ID has been loaded into local state so we only
+  //    hydrate once per project (avoids wiping user edits on re-renders).
+  const [loadedProjectId, setLoadedProjectId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const proj = project as any;
+    if (!proj || proj.id === loadedProjectId) return;
+
+    const d = proj.pestleData;
+    if (d) {
+      setPestle({
+        political:     normalizePestleItems(d.political),
+        economic:      normalizePestleItems(d.economic),
+        social:        normalizePestleItems(d.social),
+        technological: normalizePestleItems(d.technological),
+        legal:         normalizePestleItems(d.legal),
+        environmental: normalizePestleItems(d.environmental),
+      });
+    }
+
+    const s = proj.swotData;
+    if (s) {
+      setSwot(s);
+    }
+
+    const ip = proj.interestedParties;
+    if (ip && ip.length > 0) {
+      setParties(ip.map(normalizeParty));
+    }
+
+    setLoadedProjectId(proj.id);
+  }, [project, loadedProjectId]);
 
   // ── PESTLE add form state
   const [editingPestle, setEditingPestle] = useState<PestleKey | null>(null);
