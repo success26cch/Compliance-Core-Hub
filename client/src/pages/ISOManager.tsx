@@ -2249,14 +2249,44 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed flex items-start justify-between gap-4">
                 <div>
                   <span className="font-bold text-primary">ISO 4.2 — Interested Parties:</span> Determine relevant internal and external parties, their needs/expectations, how you will meet those needs, how you will monitor them, and their associated risks and opportunities. Use the Power &amp; Interest Ranking (PI-R) to prioritize engagement.
+                  <p className="text-xs mt-1.5 text-muted-foreground flex items-center gap-1"><ArrowRight className="w-3 h-3" /> Risks and opportunities documented per party flow into the Strategic Risk Register.</p>
                 </div>
-                <button
-                  onClick={() => setPrintDoc('parties')}
-                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
-                  data-testid="button-print-parties"
-                >
-                  <Printer className="w-3.5 h-3.5" /> Print
-                </button>
+                <div className="shrink-0 flex flex-col gap-1.5">
+                  <button
+                    onClick={() => setPrintDoc('parties')}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                    data-testid="button-print-parties"
+                  >
+                    <Printer className="w-3.5 h-3.5" /> Print
+                  </button>
+                  <button
+                    onClick={() => {
+                      const items: { source: string; description: string; type: 'risk' | 'opportunity' }[] = [];
+                      parties
+                        .filter(p => p.relevant)
+                        .forEach(p => {
+                          const partyName = p.party || 'Unnamed Party';
+                          const source = `4.2 – ${partyName}`;
+                          if (p.risks?.trim()) {
+                            p.risks.split(/\n|;/).map(r => r.trim()).filter(Boolean).forEach(r =>
+                              items.push({ source, description: r, type: 'risk' })
+                            );
+                          }
+                          if (p.opportunities?.trim()) {
+                            p.opportunities.split(/\n|;/).map(o => o.trim()).filter(Boolean).forEach(o =>
+                              items.push({ source, description: o, type: 'opportunity' })
+                            );
+                          }
+                        });
+                      exportToStrategicRegister(items);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 border border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 px-3 py-1.5 rounded-lg transition-colors"
+                    data-testid="button-export-parties-strategic"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    → Strategic Register
+                  </button>
+                </div>
               </div>
 
               {(['external', 'internal'] as const).map(grp => {
