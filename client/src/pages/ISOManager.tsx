@@ -2059,7 +2059,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary/80 leading-relaxed flex items-start justify-between gap-4">
                 <div>
                   <span className="font-bold text-primary">ISO 4.1 — Internal Issues:</span> Document strengths, weaknesses, opportunities, and threats within your organization. Each item feeds into Clause 6.1 Risk &amp; Opportunity planning.
-                  <p className="text-[11px] mt-1.5 text-muted-foreground flex items-center gap-1"><ArrowRight className="w-3 h-3" /> All SWOT items link to 6.1 — indicated by the badge on each entry.</p>
+                  <p className="text-xs mt-1.5 text-muted-foreground flex items-center gap-1"><ArrowRight className="w-3 h-3" /> All SWOT items link to 6.1 — indicated by the badge on each entry.</p>
                 </div>
                 <button
                   onClick={() => setPrintDoc('swot')}
