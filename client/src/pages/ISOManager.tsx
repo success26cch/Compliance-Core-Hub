@@ -1878,16 +1878,20 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
     return matrix[`${impact}-${likelihood}`] || 'Medium';
   };
 
-  // ── Add items to Strategic Risk Register (from PESTLE/SWOT export buttons)
-  const exportToStrategicRegister = (
+  // ── Deduplication prompt state
+  type DedupeChoice = 'replace' | 'skip' | 'add_all';
+  const [dedupePrompt, setDedupePrompt] = useState<{
+    incoming: { source: string; description: string; type: 'risk' | 'opportunity' }[];
+    sourcePrefix: string;
+    existingCount: number;
+    crossSourceCount: number;
+  } | null>(null);
+
+  const makeStrategicItems = (
     items: { source: string; description: string; type: 'risk' | 'opportunity' }[]
-  ) => {
-    if (!items.length) {
-      toast({ title: "Nothing to export", description: "No risk or opportunity items found.", variant: "destructive" });
-      return;
-    }
-    const newItems: StrategicRisk[] = items.map(i => ({
-      id: `sr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  ): StrategicRisk[] =>
+    items.map(i => ({
+      id: `sr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       source: i.source,
       description: i.description,
       type: i.type,
@@ -1898,9 +1902,84 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
       response: '',
       status: 'open' as const,
     }));
-    setStrategicRisks(prev => [...prev, ...newItems]);
+
+  const applyDedupeChoice = (
+    choice: DedupeChoice,
+    incoming: { source: string; description: string; type: 'risk' | 'opportunity' }[],
+    sourcePrefix: string
+  ) => {
+    setDedupePrompt(null);
+    let toAdd = incoming;
+
+    if (choice === 'replace') {
+      // Remove all existing entries from this source prefix, then add all incoming
+      setStrategicRisks(prev => {
+        const kept = prev.filter(r => !r.source.startsWith(sourcePrefix));
+        const newItems = makeStrategicItems(toAdd);
+        toast({
+          title: `Replaced with ${newItems.length} item${newItems.length !== 1 ? 's' : ''} from ${sourcePrefix}`,
+          description: "Existing entries from this source were removed and replaced.",
+        });
+        return [...kept, ...newItems];
+      });
+    } else if (choice === 'skip') {
+      // Only add items whose description doesn't already exist in the register
+      setStrategicRisks(prev => {
+        const existingDescs = new Set(prev.map(r => r.description.toLowerCase().trim()));
+        const filtered = toAdd.filter(i => !existingDescs.has(i.description.toLowerCase().trim()));
+        const newItems = makeStrategicItems(filtered);
+        const skipped = toAdd.length - filtered.length;
+        toast({
+          title: `${newItems.length} new item${newItems.length !== 1 ? 's' : ''} added${skipped ? `, ${skipped} duplicate${skipped !== 1 ? 's' : ''} skipped` : ''}`,
+          description: "Existing descriptions were not duplicated.",
+        });
+        return [...prev, ...newItems];
+      });
+    } else {
+      // Add all, even if duplicates
+      setStrategicRisks(prev => {
+        const newItems = makeStrategicItems(toAdd);
+        toast({
+          title: `${newItems.length} item${newItems.length !== 1 ? 's' : ''} added to Strategic Risk Register`,
+          description: "Review the register to consolidate any overlapping entries.",
+        });
+        return [...prev, ...newItems];
+      });
+    }
+    setActiveTab('strategic');
+  };
+
+  // ── Add items to Strategic Risk Register — with overlap detection
+  const exportToStrategicRegister = (
+    items: { source: string; description: string; type: 'risk' | 'opportunity' }[]
+  ) => {
+    if (!items.length) {
+      toast({ title: "Nothing to export", description: "No risk or opportunity items found.", variant: "destructive" });
+      return;
+    }
+    // Detect source prefix (e.g. "4.1 PESTLE", "4.1 SWOT", "4.2")
+    const firstSource = items[0].source;
+    const sourcePrefix = firstSource.startsWith('4.1 PESTLE') ? '4.1 PESTLE'
+      : firstSource.startsWith('4.1 SWOT') ? '4.1 SWOT'
+      : firstSource.startsWith('4.2') ? '4.2'
+      : firstSource.split('–')[0].trim();
+
+    const existingFromSource = strategicRisks.filter(r => r.source.startsWith(sourcePrefix)).length;
+    const existingDescs = new Set(strategicRisks.map(r => r.description.toLowerCase().trim()));
+    const crossSourceDupes = items.filter(i =>
+      existingDescs.has(i.description.toLowerCase().trim()) &&
+      !strategicRisks.some(r => r.source.startsWith(sourcePrefix) && r.description.toLowerCase().trim() === i.description.toLowerCase().trim())
+    ).length;
+
+    if (existingFromSource > 0 || crossSourceDupes > 0) {
+      setDedupePrompt({ incoming: items, sourcePrefix, existingCount: existingFromSource, crossSourceCount: crossSourceDupes });
+      return;
+    }
+
+    // No overlaps — just add
+    setStrategicRisks(prev => [...prev, ...makeStrategicItems(items)]);
     toast({
-      title: `${newItems.length} item${newItems.length !== 1 ? 's' : ''} added to Strategic Risk Register`,
+      title: `${items.length} item${items.length !== 1 ? 's' : ''} added to Strategic Risk Register`,
       description: "Review the Strategic Risk Register tab to set impact, likelihood, and assign owners.",
     });
     setActiveTab('strategic');
@@ -1994,6 +2073,63 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
         swot={swot}
         parties={parties}
       />
+
+      {/* Deduplication prompt dialog */}
+      <Dialog open={!!dedupePrompt} onOpenChange={() => setDedupePrompt(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-700">
+              <ShieldAlert className="w-4 h-4" /> Overlap Detected
+            </DialogTitle>
+          </DialogHeader>
+          {dedupePrompt && (
+            <div className="space-y-4 pt-1">
+              <div className="space-y-1.5 text-sm text-muted-foreground">
+                {dedupePrompt.existingCount > 0 && (
+                  <p>
+                    <span className="font-semibold text-foreground">{dedupePrompt.existingCount}</span> existing {dedupePrompt.existingCount === 1 ? 'entry' : 'entries'} in the register already come from <span className="font-semibold text-foreground">{dedupePrompt.sourcePrefix}</span>.
+                  </p>
+                )}
+                {dedupePrompt.crossSourceCount > 0 && (
+                  <p>
+                    <span className="font-semibold text-foreground">{dedupePrompt.crossSourceCount}</span> item{dedupePrompt.crossSourceCount !== 1 ? 's' : ''} from a <em>different</em> source already share the same description text.
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground pt-1">This is common when PESTLE, SWOT, and Interested Parties capture the same underlying risk. Choose how to proceed:</p>
+              </div>
+              <div className="space-y-2">
+                <button
+                  onClick={() => applyDedupeChoice('replace', dedupePrompt.incoming, dedupePrompt.sourcePrefix)}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/15 dark:border-orange-700/40 hover:bg-orange-100 dark:hover:bg-orange-900/25 transition-colors"
+                  data-testid="dedupe-replace"
+                >
+                  <p className="text-sm font-bold text-orange-800 dark:text-orange-300">Replace existing ({dedupePrompt.sourcePrefix})</p>
+                  <p className="text-xs text-orange-700/80 dark:text-orange-400">Remove old entries from this source and import fresh. Scored entries will be lost.</p>
+                </button>
+                <button
+                  onClick={() => applyDedupeChoice('skip', dedupePrompt.incoming, dedupePrompt.sourcePrefix)}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+                  data-testid="dedupe-skip"
+                >
+                  <p className="text-sm font-bold text-primary">Skip duplicates — add new only</p>
+                  <p className="text-xs text-muted-foreground">Only import items whose description doesn't already appear in the register.</p>
+                </button>
+                <button
+                  onClick={() => applyDedupeChoice('add_all', dedupePrompt.incoming, dedupePrompt.sourcePrefix)}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-border/50 hover:bg-muted/40 transition-colors"
+                  data-testid="dedupe-add-all"
+                >
+                  <p className="text-sm font-bold">Add all (keep duplicates)</p>
+                  <p className="text-xs text-muted-foreground">Import everything. You can manually merge or delete duplicates in the register.</p>
+                </button>
+              </div>
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={() => setDedupePrompt(null)} data-testid="dedupe-cancel">Cancel</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Header */}
       <div className="shrink-0 px-6 py-4 border-b border-border/60 bg-white dark:bg-card">
