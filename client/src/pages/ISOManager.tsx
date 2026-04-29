@@ -1776,6 +1776,25 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<'pestle' | 'swot' | 'interested' | 'strategic' | 'bridge'>('pestle');
 
+  const [activeTools, setActiveTools] = useState<{ pestle: boolean; swot: boolean }>(() => {
+    try {
+      const stored = localStorage.getItem(`cchub-context-tools-${project?.id}`);
+      return stored ? JSON.parse(stored) : { pestle: true, swot: true };
+    } catch { return { pestle: true, swot: true }; }
+  });
+
+  const toggleTool = (tool: 'pestle' | 'swot') => {
+    setActiveTools(prev => {
+      const next = { ...prev, [tool]: !prev[tool] };
+      if (project?.id) localStorage.setItem(`cchub-context-tools-${project.id}`, JSON.stringify(next));
+      if (activeTab === tool && !next[tool]) {
+        const fallback = tool === 'pestle' ? (next.swot ? 'swot' : 'interested') : (next.pestle ? 'pestle' : 'interested');
+        setActiveTab(fallback);
+      }
+      return next;
+    });
+  };
+
   // ── PESTLE state (normalizes old string[] format to PestleItem[])
   const [pestle, setPestle] = useState<Record<PestleKey, PestleItem[]>>(
     { political: [], economic: [], social: [], technological: [], legal: [], environmental: [] }
@@ -2166,15 +2185,50 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
           </div>
         </div>
 
+        {/* Analysis Tools selector */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/40">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Analysis Tools:</span>
+          <div className="flex gap-2">
+            {([
+              { key: 'pestle' as const, label: 'PESTLE', icon: Globe, desc: 'External Issues' },
+              { key: 'swot'   as const, label: 'SWOT',   icon: TrendingUp, desc: 'Internal Issues' },
+            ]).map(({ key, label, icon: Icon, desc }) => (
+              <button
+                key={key}
+                onClick={() => toggleTool(key)}
+                data-testid={`toggle-tool-${key}`}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  activeTools[key]
+                    ? 'bg-primary/10 text-primary border-primary/30'
+                    : 'bg-muted/40 text-muted-foreground border-border/50 hover:border-primary/20 hover:text-primary/70'
+                }`}
+              >
+                <Icon className="w-3 h-3" />
+                {label}
+                <span className={`text-[10px] font-normal ${activeTools[key] ? 'text-primary/60' : 'text-muted-foreground/60'}`}>
+                  {desc}
+                </span>
+                {activeTools[key]
+                  ? <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                  : <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/30 inline-block" />
+                }
+              </button>
+            ))}
+          </div>
+          {!activeTools.pestle && !activeTools.swot && (
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Enable at least one tool to identify §4.1 issues</span>
+          )}
+        </div>
+
         {/* Tab bar */}
-        <div className="flex flex-wrap gap-1 mt-4">
+        <div className="flex flex-wrap gap-1 mt-3">
           {([
-            { id: 'pestle',    label: 'PESTLE (4.1 External)',  icon: Globe },
-            { id: 'swot',      label: 'SWOT (4.1 Internal)',    icon: TrendingUp },
-            { id: 'interested',label: 'Interested Parties (4.2)', icon: UserCheck },
-            { id: 'strategic', label: 'Strategic Risk Register', icon: ShieldAlert },
-            { id: 'bridge',    label: '4.1 → 6.1 Summary',     icon: ArrowRight },
-          ] as const).map(t => (
+            { id: 'pestle',    label: 'PESTLE (4.1 External)',     icon: Globe,       hidden: !activeTools.pestle },
+            { id: 'swot',      label: 'SWOT (4.1 Internal)',       icon: TrendingUp,  hidden: !activeTools.swot },
+            { id: 'interested',label: 'Interested Parties (4.2)',  icon: UserCheck,   hidden: false },
+            { id: 'strategic', label: 'Strategic Risk Register',   icon: ShieldAlert, hidden: false },
+            { id: 'bridge',    label: '4.1 → 6.1 Summary',        icon: ArrowRight,  hidden: false },
+          ] as const).filter(t => !t.hidden).map(t => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
