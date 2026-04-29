@@ -8,7 +8,7 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type DotDvirLog, type InsertDotDvirLog,
   isoAudits, isoAuditFindings, isoAuditProcessNotes, isoAwarenessNotices, isoAwarenessAcknowledgments,
   isoObjectives, isoKpiActuals, auditProcessSchedule,
-  isoRisks, isoManagementReviews, isoReviewActionItems, isoCommunications,
+  isoRisks, isoManagementReviews, isoReviewActionItems, isoActionItems, isoCommunications,
   type AuditProcessSchedule, type InsertAuditProcessSchedule,
   type IsoAudit, type InsertIsoAudit,
   type IsoAuditFinding, type InsertIsoAuditFinding,
@@ -20,6 +20,7 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type IsoRisk, type InsertIsoRisk,
   type IsoManagementReview, type InsertIsoManagementReview,
   type IsoReviewActionItem, type InsertIsoReviewActionItem,
+  type IsoActionItem, type InsertIsoActionItem,
   type IsoCommunication, type InsertIsoCommunication,
   suppliers, supplierCriteria, supplierCandidateAssessments, supplierEvaluations, supplierAudits,
   type Supplier, type InsertSupplier,
@@ -434,6 +435,12 @@ export interface IStorage {
   createIsoReviewActionItem(data: InsertIsoReviewActionItem): Promise<IsoReviewActionItem>;
   updateIsoReviewActionItem(id: number, userId: string, data: Partial<InsertIsoReviewActionItem>, isSuperadmin?: boolean): Promise<IsoReviewActionItem | undefined>;
   deleteIsoReviewActionItem(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ISO Action Items (cross-source tracker)
+  getIsoActionItems(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoActionItem[]>;
+  createIsoActionItem(data: InsertIsoActionItem): Promise<IsoActionItem>;
+  updateIsoActionItem(id: number, userId: string, data: Partial<InsertIsoActionItem>, isSuperadmin?: boolean): Promise<IsoActionItem | undefined>;
+  deleteIsoActionItem(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Communications
   getIsoCommunications(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoCommunication[]>;
@@ -2305,6 +2312,34 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteIsoReviewActionItem(id: number, userId: string, isSuperadmin = false): Promise<void> {
     await db.delete(isoReviewActionItems).where(isSuperadmin ? eq(isoReviewActionItems.id, id) : and(eq(isoReviewActionItems.id, id), eq(isoReviewActionItems.userId, userId)));
+  }
+
+  // ─── ISO Action Items (cross-source tracker) ─────────────────────────────────
+  async getIsoActionItems(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoActionItem[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(isoActionItems.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(isoActionItems.userId, userId), eq(isoActionItems.isoProjectId, isoProjectId))
+        : eq(isoActionItems.userId, userId);
+    }
+    return db.select().from(isoActionItems).where(cond).orderBy(desc(isoActionItems.createdAt));
+  }
+  async createIsoActionItem(data: InsertIsoActionItem): Promise<IsoActionItem> {
+    const [item] = await db.insert(isoActionItems).values(data).returning();
+    return item;
+  }
+  async updateIsoActionItem(id: number, userId: string, data: Partial<InsertIsoActionItem>, isSuperadmin = false): Promise<IsoActionItem | undefined> {
+    const cond = isSuperadmin ? eq(isoActionItems.id, id) : and(eq(isoActionItems.id, id), eq(isoActionItems.userId, userId));
+    const updateData: any = { ...data, updatedAt: new Date() };
+    if (data.status === 'completed' && !data.closedAt) updateData.closedAt = new Date();
+    if (data.status && data.status !== 'completed') updateData.closedAt = null;
+    const [item] = await db.update(isoActionItems).set(updateData).where(cond).returning();
+    return item;
+  }
+  async deleteIsoActionItem(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    await db.delete(isoActionItems).where(isSuperadmin ? eq(isoActionItems.id, id) : and(eq(isoActionItems.id, id), eq(isoActionItems.userId, userId)));
   }
 
   // ─── ISO Communications ───────────────────────────────────────────────────────

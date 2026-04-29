@@ -8439,6 +8439,55 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── ISO Action Items (cross-source tracker) ───────────────────────────────────
+  app.get("/api/iso-action-items", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const items = await storage.getIsoActionItems(userId, isoProjectId, isSuperadmin);
+      res.json(items);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-action-items", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertIsoActionItemSchema } = await import("@shared/schema");
+      const parsed = insertIsoActionItemSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.createIsoActionItem(parsed.data);
+      res.status(201).json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-action-items/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { insertIsoActionItemSchema } = await import("@shared/schema");
+      const patchSchema = insertIsoActionItemSchema.omit({ userId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.updateIsoActionItem(parseInt(req.params.id), userId, parsed.data, isSuperadmin);
+      if (!item) return res.status(404).json({ message: "Not found" });
+      res.json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-action-items/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      await storage.deleteIsoActionItem(parseInt(req.params.id), userId, isSuperadmin);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   // ─── ISO Communications ────────────────────────────────────────────────────────
   app.get("/api/iso-communications", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });

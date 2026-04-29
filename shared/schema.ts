@@ -1620,6 +1620,31 @@ export const insertIsoReviewActionItemSchema = createInsertSchema(isoReviewActio
 export type IsoReviewActionItem = typeof isoReviewActionItems.$inferSelect;
 export type InsertIsoReviewActionItem = z.infer<typeof insertIsoReviewActionItemSchema>;
 
+// ─── ISO Manager: Action Items (cross-source tracker) ─────────────────────────
+export const isoActionItems = pgTable("iso_action_items", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  sourceType: text("source_type").notNull().default("other"), // 'management_review' | 'risk_assessment' | 'kpi' | 'audit' | 'corrective_action' | 'other'
+  sourceRef: text("source_ref"),       // Human-readable reference, e.g. "Mgmt Review Q1 2026"
+  assignedTo: text("assigned_to"),
+  dueDate: timestamp("due_date"),
+  priority: text("priority").notNull().default("medium"), // 'critical' | 'high' | 'medium' | 'low'
+  status: text("status").notNull().default("open"), // 'open' | 'in_progress' | 'completed' | 'cancelled'
+  notes: text("notes"),
+  closedAt: timestamp("closed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertIsoActionItemSchema = createInsertSchema(isoActionItems, {
+  dueDate: isoDateOrString,
+}).omit({ id: true, createdAt: true, updatedAt: true, closedAt: true });
+export type IsoActionItem = typeof isoActionItems.$inferSelect;
+export type InsertIsoActionItem = z.infer<typeof insertIsoActionItemSchema>;
+
 // ─── ISO Manager: Communication Log (ISO 7.4) ─────────────────────────────────
 export const isoCommunications = pgTable("iso_communications", {
   id: serial("id").primaryKey(),

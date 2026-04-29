@@ -26,7 +26,7 @@ import {
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
-  Gauge, Wrench, ShieldAlert, Pencil,
+  Gauge, Wrench, ShieldAlert, Pencil, ClipboardList,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -42,6 +42,7 @@ import MeasurementModule from "./MeasurementModule";
 import { CalibrationModule } from "./CalibrationModule";
 import { PreventiveMaintenanceModule } from "./PreventiveMaintenanceModule";
 import ManagementReviewModule from "./ManagementReviewModule";
+import IsoActionItemsModule from "./IsoActionItemsModule";
 import CommunicationModule from "./CommunicationModule";
 import RolesRaciModule from "./RolesRaciModule";
 import APQPModule from "./APQPModule";
@@ -279,7 +280,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -293,6 +294,7 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   training:          [null, undefined, 'trainer', 'auditor'],
   risk:              [null, undefined, 'auditor'],
   management_review: [null, undefined, 'auditor'],
+  action_items:      [null, undefined, 'auditor'],
   internal_audit:    [null, undefined, 'auditor'],
   lpa:               [null, undefined, 'auditor'],
   measurement:          [null, undefined, 'auditor'],
@@ -311,6 +313,7 @@ const ROLE_UPGRADE_MSG: Partial<Record<SectionKey, string>> = {
   training:      "Training & Awareness requires the Trainer tier or above.",
   risk:          "Risk Assessment requires the Auditor tier.",
   management_review: "Management Review requires the Auditor tier.",
+  action_items:      "Action Item Tracker requires the Auditor tier.",
   internal_audit:    "Internal Audits requires the Auditor tier.",
   lpa:               "Layered Process Audits requires the Auditor tier.",
   measurement:       "Measurement & Monitoring requires the Auditor tier.",
@@ -662,7 +665,7 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["context_org","process_map","nc","documentation","roles_raci","communication","risk","management_review","internal_audit","lpa","training","measurement"] as SectionKey[]).map((section) => {
+              {(["context_org","process_map","nc","documentation","roles_raci","communication","risk","management_review","action_items","internal_audit","lpa","training","measurement"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
                   context_org:        { icon: Compass,       label: "Context of the Org" },
                   process_map:        { icon: MapPin,        label: "Process Maps" },
@@ -672,6 +675,7 @@ export default function ISOManager() {
                   communication:      { icon: Mail,          label: "Communication" },
                   risk:               { icon: AlertTriangle, label: "Risk Assessment" },
                   management_review:  { icon: BarChart2,     label: "Management Review" },
+                  action_items:       { icon: ClipboardList, label: "Action Items" },
                   internal_audit:     { icon: ClipboardCheck,label: "Internal Audits" },
                   lpa:                { icon: Layers,        label: "Layered Process Audits" },
                   training:           { icon: GraduationCap, label: "Training" },
@@ -892,6 +896,12 @@ export default function ISOManager() {
                 {canAccessSection('management_review', isoRole, isSuperadmin)
                   ? <ManagementReviewModule isoProjectId={project?.id} standard={project?.standard} onGoToMeasurement={() => setActiveSection('measurement')} />
                   : <LockedModuleView section="management_review" />}
+              </div>
+            ) : activeSection === 'action_items' ? (
+              <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6">
+                {canAccessSection('action_items', isoRole, isSuperadmin)
+                  ? <IsoActionItemsModule isoProjectId={project?.id} />
+                  : <LockedModuleView section="action_items" />}
               </div>
             ) : activeSection === 'internal_audit' ? (
               <div className="flex-1 min-h-0 overflow-hidden">
