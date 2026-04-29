@@ -1,10 +1,13 @@
-import { useState, useRef, useEffect, FormEvent, ReactNode } from "react";
+import { useState, useRef, useEffect, Fragment, FormEvent, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from "@/hooks/use-isa-chat";
 import { useToast } from "@/hooks/use-toast";
 import { useQuestionUsage, useSubscriptionStatus } from "@/hooks/use-subscriptions";
@@ -23,7 +26,7 @@ import {
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
-  Gauge, Wrench, ShieldAlert,
+  Gauge, Wrench, ShieldAlert, Pencil,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -1771,7 +1774,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   onNavigate?: (section: SectionKey) => void;
 }) {
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'pestle' | 'swot' | 'interested' | 'bridge'>('pestle');
+  const [activeTab, setActiveTab] = useState<'pestle' | 'swot' | 'interested' | 'strategic' | 'bridge'>('pestle');
 
   // ── PESTLE state (normalizes old string[] format to PestleItem[])
   const [pestle, setPestle] = useState<Record<PestleKey, PestleItem[]>>(
@@ -1782,6 +1785,26 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   const [swot, setSwot] = useState<Record<SwotKey, string[]>>(
     { strengths: [], weaknesses: [], opportunities: [], threats: [] }
   );
+
+  // ── Strategic Risk Register state
+  type StrategicRisk = {
+    id: string;
+    source: string;
+    description: string;
+    type: 'risk' | 'opportunity';
+    impact: 'H' | 'M' | 'L';
+    likelihood: 'H' | 'M' | 'L';
+    rating: 'Critical' | 'High' | 'Medium' | 'Low';
+    owner: string;
+    response: string;
+    status: 'open' | 'in_progress' | 'closed';
+  };
+  const [strategicRisks, setStrategicRisks] = useState<StrategicRisk[]>([]);
+  const [srDialog, setSrDialog] = useState<{ mode: 'add' | 'edit'; item?: StrategicRisk } | null>(null);
+  const [srForm, setSrForm] = useState<Omit<StrategicRisk, 'id' | 'rating'>>({
+    source: '', description: '', type: 'risk', impact: 'M', likelihood: 'M',
+    owner: '', response: '', status: 'open',
+  });
 
   // ── Interested Parties state (normalizes old format)
   const [parties, setParties] = useState<InterestedParty[]>(DEFAULT_INTERESTED_PARTIES);
@@ -1816,6 +1839,11 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
       setParties(ip.map(normalizeParty));
     }
 
+    const sr = proj.strategicRisks;
+    if (sr && sr.length > 0) {
+      setStrategicRisks(sr);
+    }
+
     setLoadedProjectId(proj.id);
   }, [project, loadedProjectId]);
 
@@ -1840,40 +1868,42 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
 
-  const exportToRiskRegister = async (
-    items: { processArea: string; description: string }[]
+  // ── Compute strategic risk rating from H/M/L impact × likelihood
+  const computeRating = (impact: 'H' | 'M' | 'L', likelihood: 'H' | 'M' | 'L'): 'Critical' | 'High' | 'Medium' | 'Low' => {
+    const matrix: Record<string, 'Critical' | 'High' | 'Medium' | 'Low'> = {
+      'H-H': 'Critical', 'H-M': 'High',   'H-L': 'Medium',
+      'M-H': 'High',     'M-M': 'Medium', 'M-L': 'Low',
+      'L-H': 'Medium',   'L-M': 'Low',    'L-L': 'Low',
+    };
+    return matrix[`${impact}-${likelihood}`] || 'Medium';
+  };
+
+  // ── Add items to Strategic Risk Register (from PESTLE/SWOT export buttons)
+  const exportToStrategicRegister = (
+    items: { source: string; description: string; type: 'risk' | 'opportunity' }[]
   ) => {
     if (!items.length) {
-      toast({ title: "Nothing to export", description: "No risk-tagged items found to send.", variant: "destructive" });
+      toast({ title: "Nothing to export", description: "No risk or opportunity items found.", variant: "destructive" });
       return;
     }
-    setExporting(true);
-    let added = 0;
-    try {
-      for (const item of items) {
-        await apiRequest("POST", "/api/iso-risks", {
-          processArea: item.processArea,
-          description: item.description,
-          likelihood: 1,
-          severity: 1,
-          riskScore: 1,
-          linkedProcess: "4.1 Context of the Organization",
-          status: "open",
-          isoProjectId: (project as any)?.id,
-        });
-        added++;
-      }
-      await qc.invalidateQueries({ queryKey: ["/api/iso-risks"] });
-      toast({
-        title: `${added} item${added !== 1 ? 's' : ''} sent to Risk Register`,
-        description: "Open Risk Assessment (§6.1) to score likelihood, severity, and add controls.",
-      });
-      if (onNavigate) onNavigate('risk');
-    } catch {
-      toast({ title: "Export failed", description: "Could not send items to the Risk Register.", variant: "destructive" });
-    } finally {
-      setExporting(false);
-    }
+    const newItems: StrategicRisk[] = items.map(i => ({
+      id: `sr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      source: i.source,
+      description: i.description,
+      type: i.type,
+      impact: 'M' as const,
+      likelihood: 'M' as const,
+      rating: 'Medium' as const,
+      owner: '',
+      response: '',
+      status: 'open' as const,
+    }));
+    setStrategicRisks(prev => [...prev, ...newItems]);
+    toast({
+      title: `${newItems.length} item${newItems.length !== 1 ? 's' : ''} added to Strategic Risk Register`,
+      description: "Review the Strategic Risk Register tab to set impact, likelihood, and assign owners.",
+    });
+    setActiveTab('strategic');
   };
 
   const save = async () => {
@@ -1884,6 +1914,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
         pestleData: pestle,
         swotData: swot,
         interestedParties: parties,
+        strategicRisks,
       });
       await qc.invalidateQueries({ queryKey: ["/api/iso-projects"] });
       setSaved(true);
@@ -2005,6 +2036,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
             { id: 'pestle',    label: 'PESTLE (4.1 External)',  icon: Globe },
             { id: 'swot',      label: 'SWOT (4.1 Internal)',    icon: TrendingUp },
             { id: 'interested',label: 'Interested Parties (4.2)', icon: UserCheck },
+            { id: 'strategic', label: 'Strategic Risk Register', icon: ShieldAlert },
             { id: 'bridge',    label: '4.1 → 6.1 Summary',     icon: ArrowRight },
           ] as const).map(t => (
             <button
@@ -2044,21 +2076,20 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                     <Printer className="w-3.5 h-3.5" /> Print
                   </button>
                   <button
-                    disabled={exporting}
                     onClick={() => {
-                      const items: { processArea: string; description: string }[] = [];
+                      const items: { source: string; description: string; type: 'risk' | 'opportunity' }[] = [];
                       PESTLE_CONFIG.forEach(cfg => {
-                        pestle[cfg.key]
-                          .filter(i => i.type === 'risk')
-                          .forEach(i => items.push({ processArea: `4.1 PESTLE – ${cfg.label}`, description: i.text }));
+                        pestle[cfg.key].forEach(i =>
+                          items.push({ source: `4.1 PESTLE – ${cfg.label}`, description: i.text, type: i.type })
+                        );
                       });
-                      exportToRiskRegister(items);
+                      exportToStrategicRegister(items);
                     }}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-red-700 border border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                    data-testid="button-export-pestle-risks"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 border border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 px-3 py-1.5 rounded-lg transition-colors"
+                    data-testid="button-export-pestle-strategic"
                   >
-                    {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-                    Send Risks → §6.1
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    → Strategic Register
                   </button>
                 </div>
               </div>
@@ -2149,18 +2180,19 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                     <Printer className="w-3.5 h-3.5" /> Print
                   </button>
                   <button
-                    disabled={exporting}
                     onClick={() => {
-                      const items: { processArea: string; description: string }[] = [];
-                      swot.weaknesses.forEach(t => items.push({ processArea: '4.1 SWOT – Weakness', description: t }));
-                      swot.threats.forEach(t => items.push({ processArea: '4.1 SWOT – Threat', description: t }));
-                      exportToRiskRegister(items);
+                      const items: { source: string; description: string; type: 'risk' | 'opportunity' }[] = [];
+                      swot.strengths.forEach(t => items.push({ source: '4.1 SWOT – Strength', description: t, type: 'opportunity' }));
+                      swot.weaknesses.forEach(t => items.push({ source: '4.1 SWOT – Weakness', description: t, type: 'risk' }));
+                      swot.opportunities.forEach(t => items.push({ source: '4.1 SWOT – Opportunity', description: t, type: 'opportunity' }));
+                      swot.threats.forEach(t => items.push({ source: '4.1 SWOT – Threat', description: t, type: 'risk' }));
+                      exportToStrategicRegister(items);
                     }}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-red-700 border border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                    data-testid="button-export-swot-risks"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 border border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 px-3 py-1.5 rounded-lg transition-colors"
+                    data-testid="button-export-swot-strategic"
                   >
-                    {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-                    Send Risks → §6.1
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    → Strategic Register
                   </button>
                 </div>
               </div>
@@ -2374,6 +2406,249 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                 <span>·</span>
                 <span><span className="font-bold text-purple-700">{internalParties}</span> internal</span>
               </div>
+            </div>
+          )}
+
+          {/* ── Strategic Risk Register Tab ────────────────────────── */}
+          {activeTab === 'strategic' && (
+            <div className="space-y-4" data-testid="strategic-risk-panel">
+
+              {/* ── Info banner */}
+              <div className="bg-orange-50 dark:bg-orange-900/15 border border-orange-200 dark:border-orange-700/40 rounded-xl p-4 text-sm text-orange-900 dark:text-orange-200 flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-bold text-orange-800 dark:text-orange-300 mb-0.5">ISO §4.1 Strategic Risk Register</p>
+                  <p className="text-xs text-orange-700/80 dark:text-orange-400 leading-relaxed">
+                    Strategic risks and opportunities are rated on a 3×3 matrix: <strong>Impact (H/M/L)</strong> × <strong>Likelihood (H/M/L)</strong>. This is separate from the §6.1 operational process risk register.
+                    Use the PESTLE and SWOT export buttons to auto-populate this register, then assign owners and responses here.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSrForm({ source: '', description: '', type: 'risk', impact: 'M', likelihood: 'M', owner: '', response: '', status: 'open' });
+                    setSrDialog({ mode: 'add' });
+                  }}
+                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                  data-testid="button-add-strategic-risk"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Risk / Opportunity
+                </button>
+              </div>
+
+              {/* ── 3×3 Matrix legend */}
+              <div className="grid grid-cols-4 gap-1 text-center text-[10px] font-bold max-w-xs">
+                <div />
+                {(['L','M','H'] as const).map(lh => (
+                  <div key={lh} className="bg-muted/60 rounded px-1 py-0.5 text-muted-foreground">Like: {lh}</div>
+                ))}
+                {(['H','M','L'] as const).map(imp => (
+                  <Fragment key={imp}>
+                    <div className="bg-muted/60 rounded px-1 py-0.5 text-muted-foreground text-left pl-2">Impact: {imp}</div>
+                    {(['L','M','H'] as const).map(lh => {
+                      const r = computeRating(imp, lh);
+                      const cls = r === 'Critical' ? 'bg-red-500 text-white' : r === 'High' ? 'bg-orange-400 text-white' : r === 'Medium' ? 'bg-yellow-300 text-yellow-900' : 'bg-green-200 text-green-800';
+                      return <div key={`${imp}-${lh}`} className={`rounded px-1 py-0.5 ${cls}`}>{r}</div>;
+                    })}
+                  </Fragment>
+                ))}
+              </div>
+
+              {/* ── Register table */}
+              {strategicRisks.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground text-sm">
+                  <ShieldAlert className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p>No strategic risks or opportunities registered yet.</p>
+                  <p className="text-xs mt-1">Use the PESTLE or SWOT "→ Strategic Register" buttons, or add one manually above.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-border/60">
+                  <table className="w-full text-sm" data-testid="strategic-risk-table">
+                    <thead className="bg-muted/40 text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Source</th>
+                        <th className="px-3 py-2 text-left">Description</th>
+                        <th className="px-3 py-2 text-center">Type</th>
+                        <th className="px-3 py-2 text-center">Impact</th>
+                        <th className="px-3 py-2 text-center">Likelihood</th>
+                        <th className="px-3 py-2 text-center">Rating</th>
+                        <th className="px-3 py-2 text-left">Owner</th>
+                        <th className="px-3 py-2 text-center">Status</th>
+                        <th className="px-3 py-2 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {strategicRisks.map((r) => {
+                        const ratingCls = r.rating === 'Critical' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' : r.rating === 'High' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' : r.rating === 'Medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+                        const statusCls = r.status === 'open' ? 'text-red-600' : r.status === 'in_progress' ? 'text-yellow-600' : 'text-green-600';
+                        return (
+                          <tr key={r.id} className="hover:bg-muted/20 transition-colors" data-testid={`strategic-risk-row-${r.id}`}>
+                            <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{r.source}</td>
+                            <td className="px-3 py-2 max-w-xs">
+                              <p className="text-sm leading-tight">{r.description}</p>
+                              {r.response && <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">↳ {r.response}</p>}
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${r.type === 'risk' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-700/40' : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-700/40'}`}>
+                                {r.type === 'risk' ? 'RISK' : 'OPP'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-center font-bold text-sm">{r.impact}</td>
+                            <td className="px-3 py-2 text-center font-bold text-sm">{r.likelihood}</td>
+                            <td className="px-3 py-2 text-center">
+                              <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded ${ratingCls}`}>{r.rating}</span>
+                            </td>
+                            <td className="px-3 py-2 text-sm text-muted-foreground">{r.owner || <span className="italic opacity-50">Unassigned</span>}</td>
+                            <td className="px-3 py-2 text-center">
+                              <span className={`text-xs font-semibold ${statusCls}`}>{r.status.replace('_', ' ')}</span>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => {
+                                    setSrForm({ source: r.source, description: r.description, type: r.type, impact: r.impact, likelihood: r.likelihood, owner: r.owner, response: r.response, status: r.status });
+                                    setSrDialog({ mode: 'edit', item: r });
+                                  }}
+                                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+                                  data-testid={`btn-edit-strategic-${r.id}`}
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => setStrategicRisks(prev => prev.filter(x => x.id !== r.id))}
+                                  className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-muted-foreground hover:text-destructive transition-colors"
+                                  data-testid={`btn-delete-strategic-${r.id}`}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* ── Add / Edit Dialog */}
+              <Dialog open={!!srDialog} onOpenChange={() => setSrDialog(null)}>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-orange-600" />
+                      {srDialog?.mode === 'edit' ? 'Edit Strategic Risk' : 'Add Strategic Risk / Opportunity'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 pt-1">
+                    <div>
+                      <Label className="text-xs font-semibold">Source</Label>
+                      <Input value={srForm.source} onChange={e => setSrForm(f => ({ ...f, source: e.target.value }))} placeholder="e.g. 4.1 PESTLE – Political" className="mt-1 text-sm" data-testid="input-sr-source" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold">Description</Label>
+                      <Textarea value={srForm.description} onChange={e => setSrForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the risk or opportunity..." rows={3} className="mt-1 text-sm resize-none" data-testid="input-sr-description" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-xs font-semibold">Type</Label>
+                        <Select value={srForm.type} onValueChange={(v: 'risk' | 'opportunity') => setSrForm(f => ({ ...f, type: v }))}>
+                          <SelectTrigger className="mt-1 text-sm h-9" data-testid="select-sr-type"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="risk">Risk</SelectItem>
+                            <SelectItem value="opportunity">Opportunity</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold">Impact</Label>
+                        <Select value={srForm.impact} onValueChange={(v: 'H' | 'M' | 'L') => setSrForm(f => ({ ...f, impact: v }))}>
+                          <SelectTrigger className="mt-1 text-sm h-9" data-testid="select-sr-impact"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="H">H — High</SelectItem>
+                            <SelectItem value="M">M — Medium</SelectItem>
+                            <SelectItem value="L">L — Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold">Likelihood</Label>
+                        <Select value={srForm.likelihood} onValueChange={(v: 'H' | 'M' | 'L') => setSrForm(f => ({ ...f, likelihood: v }))}>
+                          <SelectTrigger className="mt-1 text-sm h-9" data-testid="select-sr-likelihood"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="H">H — High</SelectItem>
+                            <SelectItem value="M">M — Medium</SelectItem>
+                            <SelectItem value="L">L — Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/40">
+                      <span className="text-xs text-muted-foreground">Computed Rating:</span>
+                      {(() => {
+                        const r = computeRating(srForm.impact, srForm.likelihood);
+                        const cls = r === 'Critical' ? 'bg-red-500 text-white' : r === 'High' ? 'bg-orange-400 text-white' : r === 'Medium' ? 'bg-yellow-300 text-yellow-900' : 'bg-green-200 text-green-800';
+                        return <span className={`text-xs font-bold px-2 py-0.5 rounded ${cls}`}>{r}</span>;
+                      })()}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs font-semibold">Owner</Label>
+                        <Input value={srForm.owner} onChange={e => setSrForm(f => ({ ...f, owner: e.target.value }))} placeholder="Name or role" className="mt-1 text-sm" data-testid="input-sr-owner" />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold">Status</Label>
+                        <Select value={srForm.status} onValueChange={(v: 'open' | 'in_progress' | 'closed') => setSrForm(f => ({ ...f, status: v }))}>
+                          <SelectTrigger className="mt-1 text-sm h-9" data-testid="select-sr-status"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="open">Open</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="closed">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold">Response / Mitigation</Label>
+                      <Textarea value={srForm.response} onChange={e => setSrForm(f => ({ ...f, response: e.target.value }))} placeholder="Describe the planned response or mitigation..." rows={2} className="mt-1 text-sm resize-none" data-testid="input-sr-response" />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <Button variant="outline" size="sm" onClick={() => setSrDialog(null)}>Cancel</Button>
+                      <Button
+                        size="sm"
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        data-testid="button-save-strategic-risk"
+                        onClick={() => {
+                          const rating = computeRating(srForm.impact, srForm.likelihood);
+                          if (srDialog?.mode === 'edit' && srDialog.item) {
+                            setStrategicRisks(prev => prev.map(x => x.id === srDialog.item!.id ? { ...x, ...srForm, rating } : x));
+                          } else {
+                            const newItem: StrategicRisk = {
+                              id: `sr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                              ...srForm,
+                              rating,
+                            };
+                            setStrategicRisks(prev => [...prev, newItem]);
+                          }
+                          setSrDialog(null);
+                        }}
+                      >
+                        {srDialog?.mode === 'edit' ? 'Update' : 'Add to Register'}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* ── Save reminder */}
+              {strategicRisks.length > 0 && (
+                <div className="flex items-center justify-between bg-muted/30 border border-border/40 rounded-lg px-4 py-2.5 text-xs text-muted-foreground">
+                  <span>Remember to <strong>Save</strong> to persist your strategic risk register.</span>
+                  <Button size="sm" onClick={save} disabled={saving} className="h-7 text-xs gap-1" data-testid="button-save-strategic">
+                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : null}
+                    {saved ? 'Saved' : 'Save'}
+                  </Button>
+                </div>
+              )}
+
             </div>
           )}
 

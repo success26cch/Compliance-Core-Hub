@@ -613,6 +613,18 @@ export const isoProjects = pgTable("iso_projects", {
     approvalThreshold: number;
     conditionalThreshold: number;
   }>(),
+  strategicRisks: jsonb("strategic_risks").$type<Array<{
+    id: string;
+    source: string;
+    description: string;
+    type: 'risk' | 'opportunity';
+    impact: 'H' | 'M' | 'L';
+    likelihood: 'H' | 'M' | 'L';
+    rating: 'Critical' | 'High' | 'Medium' | 'Low';
+    owner: string;
+    response: string;
+    status: 'open' | 'in_progress' | 'closed';
+  }>>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
