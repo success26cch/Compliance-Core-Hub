@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, ShieldAlert, Bot, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, ShieldAlert, Bot, ChevronDown, ChevronUp, Link2 } from "lucide-react";
 import type { IsoRisk, InsertIsoRisk } from "@shared/schema";
 
 const riskColor = (score: number) => {
@@ -313,7 +313,13 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
                         <td className="px-3 py-2 font-medium whitespace-nowrap">{r.processArea}</td>
                         <td className="px-3 py-2 max-w-xs">
                           <p className="line-clamp-2">{r.description}</p>
-                          {r.linkedProcess && <span className="text-xs text-muted-foreground">({r.linkedProcess})</span>}
+                          {r.linkedProcess === "4.1 Context of the Organization" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full mt-0.5">
+                              <Link2 className="w-2.5 h-2.5" /> 4.1 Context
+                            </span>
+                          ) : r.linkedProcess ? (
+                            <span className="text-xs text-muted-foreground">({r.linkedProcess})</span>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2 text-center">{r.likelihood}</td>
                         <td className="px-3 py-2 text-center">{r.severity}</td>

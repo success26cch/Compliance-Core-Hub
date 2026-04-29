@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsaConversations, useCreateIsaConversation, useIsaChatStream } from "@/hooks/use-isa-chat";
+import { useToast } from "@/hooks/use-toast";
 import { useQuestionUsage, useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { useAuth } from "@/hooks/use-auth";
 import { ProductGate, PRODUCT_CONFIGS } from "@/components/ProductGate";
@@ -22,7 +23,7 @@ import {
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
-  Gauge, Wrench,
+  Gauge, Wrench, ShieldAlert,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -1836,6 +1837,45 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const { toast } = useToast();
+  const [exporting, setExporting] = useState(false);
+
+  const exportToRiskRegister = async (
+    items: { processArea: string; description: string }[]
+  ) => {
+    if (!items.length) {
+      toast({ title: "Nothing to export", description: "No risk-tagged items found to send.", variant: "destructive" });
+      return;
+    }
+    setExporting(true);
+    let added = 0;
+    try {
+      for (const item of items) {
+        await apiRequest("POST", "/api/iso-risks", {
+          processArea: item.processArea,
+          description: item.description,
+          likelihood: 1,
+          severity: 1,
+          riskScore: 1,
+          linkedProcess: "4.1 Context of the Organization",
+          status: "open",
+          isoProjectId: (project as any)?.id,
+        });
+        added++;
+      }
+      await qc.invalidateQueries({ queryKey: ["/api/iso-risks"] });
+      toast({
+        title: `${added} item${added !== 1 ? 's' : ''} sent to Risk Register`,
+        description: "Open Risk Assessment (§6.1) to score likelihood, severity, and add controls.",
+      });
+      if (onNavigate) onNavigate('risk');
+    } catch {
+      toast({ title: "Export failed", description: "Could not send items to the Risk Register.", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const save = async () => {
     if (!project) return;
     setSaving(true);
@@ -1995,13 +2035,32 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                   <span className="font-bold text-primary">ISO 4.1 — External Issues:</span> Identify external factors relevant to your organization's purpose and strategic direction. Tag each factor as a <span className="font-bold text-red-600">Risk</span> or <span className="font-bold text-green-600">Opportunity</span> — these feed directly into Clause 6.1 Risk Planning.
                   <p className="text-xs mt-2 text-muted-foreground">Applies to: ISO 9001 · ISO 14001 · ISO 45001 · IATF 16949 · ISO 13485 · AS9100 · ISO 27001</p>
                 </div>
-                <button
-                  onClick={() => setPrintDoc('pestle')}
-                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
-                  data-testid="button-print-pestle"
-                >
-                  <Printer className="w-3.5 h-3.5" /> Print
-                </button>
+                <div className="shrink-0 flex flex-col gap-1.5">
+                  <button
+                    onClick={() => setPrintDoc('pestle')}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                    data-testid="button-print-pestle"
+                  >
+                    <Printer className="w-3.5 h-3.5" /> Print
+                  </button>
+                  <button
+                    disabled={exporting}
+                    onClick={() => {
+                      const items: { processArea: string; description: string }[] = [];
+                      PESTLE_CONFIG.forEach(cfg => {
+                        pestle[cfg.key]
+                          .filter(i => i.type === 'risk')
+                          .forEach(i => items.push({ processArea: `4.1 PESTLE – ${cfg.label}`, description: i.text }));
+                      });
+                      exportToRiskRegister(items);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-red-700 border border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    data-testid="button-export-pestle-risks"
+                  >
+                    {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+                    Send Risks → §6.1
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {PESTLE_CONFIG.map(cfg => {
@@ -2081,13 +2140,29 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                   <span className="font-bold text-primary">ISO 4.1 — Internal Issues:</span> Document strengths, weaknesses, opportunities, and threats within your organization. Each item feeds into Clause 6.1 Risk &amp; Opportunity planning.
                   <p className="text-xs mt-1.5 text-muted-foreground flex items-center gap-1"><ArrowRight className="w-3 h-3" /> All SWOT items link to 6.1 — indicated by the badge on each entry.</p>
                 </div>
-                <button
-                  onClick={() => setPrintDoc('swot')}
-                  className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
-                  data-testid="button-print-swot"
-                >
-                  <Printer className="w-3.5 h-3.5" /> Print
-                </button>
+                <div className="shrink-0 flex flex-col gap-1.5">
+                  <button
+                    onClick={() => setPrintDoc('swot')}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                    data-testid="button-print-swot"
+                  >
+                    <Printer className="w-3.5 h-3.5" /> Print
+                  </button>
+                  <button
+                    disabled={exporting}
+                    onClick={() => {
+                      const items: { processArea: string; description: string }[] = [];
+                      swot.weaknesses.forEach(t => items.push({ processArea: '4.1 SWOT – Weakness', description: t }));
+                      swot.threats.forEach(t => items.push({ processArea: '4.1 SWOT – Threat', description: t }));
+                      exportToRiskRegister(items);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-red-700 border border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    data-testid="button-export-swot-risks"
+                  >
+                    {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+                    Send Risks → §6.1
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {SWOT_CONFIG.map(cfg => (
