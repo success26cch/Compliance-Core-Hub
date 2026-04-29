@@ -588,7 +588,7 @@ export default function MeetIsa() {
                     </div>
                     <div>
                       <p className="font-black text-white text-base">ISO Manager — The Platform</p>
-                      <p className="text-xs text-white/45">Full IMS workspace · $299–$899/mo</p>
+                      <p className="text-xs text-white/45">Full IMS workspace · contact us for pricing</p>
                     </div>
                   </div>
                   <p className="text-sm text-white/65 leading-relaxed mb-4">

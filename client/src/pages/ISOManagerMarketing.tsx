@@ -91,7 +91,7 @@ const FAQS = [
   },
   {
     q: "Can I manage multiple ISO standards in one workspace?",
-    a: "Yes. The Integrated tier ($499/mo) supports all three core standards (ISO 9001, 14001, 45001) in one Integrated Management System. The PRO tier adds a specialist standard (IATF 16949, AS9100, or ISO 13485) on top.",
+    a: "Yes. The Integrated tier supports all three core standards (ISO 9001, 14001, 45001) in one Integrated Management System. The PRO tier adds a specialist standard (IATF 16949, AS9100, or ISO 13485) on top.",
   },
   {
     q: "What is a one-time setup fee for?",
@@ -105,12 +105,11 @@ const FAQS = [
 
 /* ─── TIER CARD ────────────────────────────────────────── */
 function TierCard({
-  delay, badge, title, subtitle, price, annual, setup,
+  delay, badge, title, subtitle,
   capabilities, cardClass, topBarClass, capIconClass,
   picker, badges, coreBadges, dark, cta, testId,
 }: {
   delay: number; badge: string; title: string; subtitle: string;
-  price: string; annual: string; setup: string;
   capabilities: string[]; cardClass: string; topBarClass: string;
   capIconClass: string; picker?: { options: string[]; label: string };
   badges?: string[]; coreBadges?: string[]; dark?: boolean;
@@ -143,12 +142,7 @@ function TierCard({
           <p className="text-[10px] text-accent font-semibold mt-0.5">{subtitle}</p>
         </div>
         <div className={`mb-4 pb-3 border-b ${borderMuted}`}>
-          <div className="flex items-baseline gap-1">
-            <p className="font-black text-accent text-3xl leading-none">{price}</p>
-            <span className={`text-sm font-medium ${textMuted}`}>/mo</span>
-          </div>
-          <p className={`text-xs mt-0.5 ${textMuted}`}>{annual}</p>
-          <p className={`text-[10px] font-semibold mt-1 ${dark ? "text-white/50" : "text-muted-foreground"}`}>{setup}</p>
+          <p className={`text-xs font-semibold ${dark ? "text-white/60" : "text-muted-foreground"}`}>Pricing coming soon — contact us for details</p>
         </div>
         {badges && (
           <div className="mb-3">
@@ -285,7 +279,7 @@ export default function ISOManagerMarketing() {
               { icon: Layers, label: "9 Modules", sub: "3 live · 6 coming soon" },
               { icon: Target, label: "7 Standards", sub: "Core + Specialist tiers" },
               { icon: Sparkles, label: "Isa AI", sub: "Built into every module" },
-              { icon: Vault, label: "4 Pricing Tiers", sub: "$299 – $899/mo" },
+              { icon: Vault, label: "4 Pricing Tiers", sub: "Contact us for pricing" },
             ].map(s => (
               <div key={s.label} className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center">
@@ -473,9 +467,6 @@ export default function ISOManagerMarketing() {
                     badge="TIER 1"
                     title="ISO Manager Core"
                     subtitle="Isa Included"
-                    price="$299"
-                    annual="billed annually · $3,588/yr"
-                    setup="+ $1,000–$1,500 one-time setup fee"
                     capabilities={ISO_CORE_CAPABILITIES}
                     cardClass="border-border/60 bg-white dark:bg-card"
                     topBarClass="bg-accent"
@@ -489,9 +480,6 @@ export default function ISOManagerMarketing() {
                     badge="TIER 2 · MOST POPULAR"
                     title="ISO Manager Integrated"
                     subtitle="Isa Included"
-                    price="$499"
-                    annual="billed annually · $5,988/yr"
-                    setup="+ $1,500 one-time setup fee"
                     capabilities={ISO_INTEGRATED_CAPABILITIES}
                     cardClass="border-2 border-primary/25 bg-white dark:bg-card"
                     topBarClass="bg-primary"
@@ -505,9 +493,6 @@ export default function ISOManagerMarketing() {
                     badge="TIER 3"
                     title="ISO Manager Specialist"
                     subtitle="Isa Pro Included"
-                    price="$699"
-                    annual="billed annually · $8,388/yr"
-                    setup="+ $2,500–$5,000 one-time setup fee"
                     capabilities={ISO_SPECIALIST_CAPABILITIES}
                     cardClass="border border-accent/30 bg-white dark:bg-card"
                     topBarClass="bg-accent"
@@ -521,9 +506,6 @@ export default function ISOManagerMarketing() {
                     badge="TIER 4 · FULL PLATFORM"
                     title="ISO Manager PRO"
                     subtitle="Isa Pro Included"
-                    price="$899"
-                    annual="billed annually · $10,788/yr"
-                    setup="+ $5,000 one-time setup fee"
                     capabilities={ISO_PRO_CAPABILITIES}
                     cardClass="bg-primary"
                     topBarClass="bg-accent"
