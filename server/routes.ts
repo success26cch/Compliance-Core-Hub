@@ -2649,6 +2649,12 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
         targetDate: req.body.targetDate ? new Date(req.body.targetDate) : null,
         completionDate: req.body.completionDate ? new Date(req.body.completionDate) : null,
         verificationDate: req.body.verificationDate ? new Date(req.body.verificationDate) : null,
+        containmentDate: req.body.containmentDate ? new Date(req.body.containmentDate) : null,
+        caActionDueDate: req.body.caActionDueDate ? new Date(req.body.caActionDueDate) : null,
+        caCompletionDate: req.body.caCompletionDate ? new Date(req.body.caCompletionDate) : null,
+        paActionDueDate: req.body.paActionDueDate ? new Date(req.body.paActionDueDate) : null,
+        paCompletionDate: req.body.paCompletionDate ? new Date(req.body.paCompletionDate) : null,
+        implementationVerifiedDate: req.body.implementationVerifiedDate ? new Date(req.body.implementationVerifiedDate) : null,
       });
       const action = await storage.createCorrectiveAction({
         ...validated,
@@ -2701,6 +2707,12 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (updates.targetDate) updates.targetDate = new Date(updates.targetDate);
       if (updates.completionDate) updates.completionDate = new Date(updates.completionDate);
       if (updates.verificationDate) updates.verificationDate = new Date(updates.verificationDate);
+      if (updates.containmentDate) updates.containmentDate = new Date(updates.containmentDate);
+      if (updates.caActionDueDate) updates.caActionDueDate = new Date(updates.caActionDueDate);
+      if (updates.caCompletionDate) updates.caCompletionDate = new Date(updates.caCompletionDate);
+      if (updates.paActionDueDate) updates.paActionDueDate = new Date(updates.paActionDueDate);
+      if (updates.paCompletionDate) updates.paCompletionDate = new Date(updates.paCompletionDate);
+      if (updates.implementationVerifiedDate) updates.implementationVerifiedDate = new Date(updates.implementationVerifiedDate);
       
       const updated = await storage.updateCorrectiveAction(id, userId, updates);
       if (!updated) {

@@ -346,16 +346,33 @@ export const correctiveActions = pgTable("corrective_actions", {
   incidentId: integer("incident_id"), // Optional link to related incident
   title: text("title").notNull(),
   problemStatement: text("problem_statement").notNull(), // What happened
-  rootCause: text("root_cause"), // Why it happened
+  // Root Cause Analysis
+  rootCause: text("root_cause"), // Why it happened (manual or summary)
+  rcaType: text("rca_type"), // 'manual' | '5why' | '3x5why' | 'fishbone'
+  rcaData: jsonb("rca_data"), // Structured RCA data (whys, fishbone categories, etc.)
+  // Phase 1 – Containment
   immediateActions: text("immediate_actions"), // Actions taken immediately
+  containmentDate: timestamp("containment_date"), // Date containment was completed
+  // Phase 2 – Corrective Action
   correctiveActions: text("corrective_actions"), // Long-term fixes
+  caActionDueDate: timestamp("ca_action_due_date"), // Due date for CA implementation
+  caCompletionDate: timestamp("ca_completion_date"), // Actual CA completion date
+  // Phase 3 – Preventive Action
   preventiveActions: text("preventive_actions"), // Prevent recurrence
+  paActionDueDate: timestamp("pa_action_due_date"), // Due date for PA implementation
+  paCompletionDate: timestamp("pa_completion_date"), // Actual PA completion date
   responsiblePerson: text("responsible_person"),
   responsiblePhone: text("responsible_phone"), // phone number of responsible person for SMS
   responsibleEmail: text("responsible_email"), // email of responsible person for email notifications
   responsibleDepartment: text("responsible_department"),
   targetDate: timestamp("target_date"),
   completionDate: timestamp("completion_date"),
+  // Verification of Implementation
+  implementationStatus: text("implementation_status").default("pending"), // 'pending' | 'verified' | 'not_verified'
+  implementationVerifiedDate: timestamp("implementation_verified_date"),
+  implementationVerifiedBy: text("implementation_verified_by"),
+  implementationVerificationNotes: text("implementation_verification_notes"),
+  // Verification of Effectiveness
   verificationMethod: text("verification_method"), // How to verify effectiveness
   verificationDate: timestamp("verification_date"),
   verificationNotes: text("verification_notes"),
@@ -371,6 +388,12 @@ export const insertCorrectiveActionSchema = createInsertSchema(correctiveActions
   targetDate: dateOrStringToDate,
   completionDate: dateOrStringToDate,
   verificationDate: dateOrStringToDate,
+  containmentDate: dateOrStringToDate,
+  caActionDueDate: dateOrStringToDate,
+  caCompletionDate: dateOrStringToDate,
+  paActionDueDate: dateOrStringToDate,
+  paCompletionDate: dateOrStringToDate,
+  implementationVerifiedDate: dateOrStringToDate,
 }).omit({
   id: true,
   createdAt: true,

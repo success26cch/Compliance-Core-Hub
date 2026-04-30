@@ -146,20 +146,40 @@ const OBJECTS_SOURCES = [
   "PPE Failure or Absence", "Environmental Condition", "Other",
 ];
 
+// RCA data structures
+type FiveWhyData = { whys: string[]; rootCauseStatement: string };
+type ThreeByFiveWhyData = { strands: { problem: string; whys: string[] }[]; rootCauseStatement: string };
+type FishboneData = {
+  categories: { man: string; machine: string; material: string; method: string; measurement: string; environment: string };
+  rootCauseStatement: string;
+};
+type RcaData = FiveWhyData | ThreeByFiveWhyData | FishboneData | null;
+
 type CorrectiveAction = {
   id: number;
   incidentId: number | null;
   title: string;
   problemStatement: string;
   rootCause: string | null;
+  rcaType: string | null;
+  rcaData: RcaData;
   immediateActions: string | null;
+  containmentDate: string | null;
   correctiveActions: string | null;
+  caActionDueDate: string | null;
+  caCompletionDate: string | null;
   preventiveActions: string | null;
+  paActionDueDate: string | null;
+  paCompletionDate: string | null;
   responsiblePerson: string | null;
   responsiblePhone: string | null;
   responsibleDepartment: string | null;
   targetDate: string | null;
   completionDate: string | null;
+  implementationStatus: string | null;
+  implementationVerifiedDate: string | null;
+  implementationVerifiedBy: string | null;
+  implementationVerificationNotes: string | null;
   verificationMethod: string | null;
   verificationDate: string | null;
   verificationNotes: string | null;
@@ -174,14 +194,24 @@ type CAPAFormData = {
   title: string;
   problemStatement: string;
   rootCause: string;
+  rcaType: string;
   immediateActions: string;
+  containmentDate: string;
   correctiveActions: string;
+  caActionDueDate: string;
+  caCompletionDate: string;
   preventiveActions: string;
+  paActionDueDate: string;
+  paCompletionDate: string;
   responsiblePerson: string;
   responsiblePhone: string;
   responsibleEmail: string;
   responsibleDepartment: string;
   targetDate: string;
+  implementationStatus: string;
+  implementationVerifiedDate: string;
+  implementationVerifiedBy: string;
+  implementationVerificationNotes: string;
   verificationMethod: string;
   priority: string;
   status: string;
@@ -192,14 +222,24 @@ const defaultCAPAFormData: CAPAFormData = {
   title: '',
   problemStatement: '',
   rootCause: '',
+  rcaType: 'manual',
   immediateActions: '',
+  containmentDate: '',
   correctiveActions: '',
+  caActionDueDate: '',
+  caCompletionDate: '',
   preventiveActions: '',
+  paActionDueDate: '',
+  paCompletionDate: '',
   responsiblePerson: '',
   responsiblePhone: '',
   responsibleEmail: '',
   responsibleDepartment: '',
   targetDate: '',
+  implementationStatus: 'pending',
+  implementationVerifiedDate: '',
+  implementationVerifiedBy: '',
+  implementationVerificationNotes: '',
   verificationMethod: '',
   priority: 'medium',
   status: 'open',
@@ -1506,11 +1546,39 @@ function CAPAFormDialog({
   const [rcaExpanded, setRcaExpanded] = useState(true);
   const { toast } = useToast();
 
+  // Structured RCA tool state
+  const [fiveWhyData, setFiveWhyData] = useState<FiveWhyData>({ whys: ['','','','',''], rootCauseStatement: '' });
+  const [threeFiveData, setThreeFiveData] = useState<ThreeByFiveWhyData>({
+    strands: [
+      { problem: '', whys: ['','','','',''] },
+      { problem: '', whys: ['','','','',''] },
+      { problem: '', whys: ['','','','',''] },
+    ],
+    rootCauseStatement: '',
+  });
+  const [fishboneData, setFishboneData] = useState<FishboneData>({
+    categories: { man: '', machine: '', material: '', method: '', measurement: '', environment: '' },
+    rootCauseStatement: '',
+  });
+
   useEffect(() => {
     if (open) {
       setRcaData(null);
       setRcaError(null);
       setRcaExpanded(true);
+      setFiveWhyData({ whys: ['','','','',''], rootCauseStatement: '' });
+      setThreeFiveData({
+        strands: [
+          { problem: '', whys: ['','','','',''] },
+          { problem: '', whys: ['','','','',''] },
+          { problem: '', whys: ['','','','',''] },
+        ],
+        rootCauseStatement: '',
+      });
+      setFishboneData({
+        categories: { man: '', machine: '', material: '', method: '', measurement: '', environment: '' },
+        rootCauseStatement: '',
+      });
       if (incidentId) {
         const incident = incidents.find(i => i.id === incidentId);
         setFormData({ 
@@ -1524,9 +1592,34 @@ function CAPAFormDialog({
     }
   }, [open, incidentId, incidents]);
 
+  const getRcaDataForSave = (): RcaData => {
+    if (formData.rcaType === '5why') return fiveWhyData;
+    if (formData.rcaType === '3x5why') return threeFiveData;
+    if (formData.rcaType === 'fishbone') return fishboneData;
+    return null;
+  };
+
+  const getRcaSummary = (): string => {
+    if (formData.rcaType === '5why') {
+      return fiveWhyData.whys.filter(Boolean).map((w, i) => `Why ${i+1}: ${w}`).join('\n') + (fiveWhyData.rootCauseStatement ? `\n\nRoot Cause: ${fiveWhyData.rootCauseStatement}` : '');
+    }
+    if (formData.rcaType === '3x5why') {
+      return threeFiveData.strands.map((s, si) =>
+        `Strand ${si+1}: ${s.problem}\n` + s.whys.filter(Boolean).map((w, i) => `  Why ${i+1}: ${w}`).join('\n')
+      ).join('\n\n') + (threeFiveData.rootCauseStatement ? `\n\nRoot Cause: ${threeFiveData.rootCauseStatement}` : '');
+    }
+    if (formData.rcaType === 'fishbone') {
+      const cats = fishboneData.categories;
+      const lines = Object.entries(cats).filter(([,v]) => v).map(([k, v]) => `${k.charAt(0).toUpperCase()+k.slice(1)}: ${v}`);
+      return lines.join('\n') + (fishboneData.rootCauseStatement ? `\n\nRoot Cause: ${fishboneData.rootCauseStatement}` : '');
+    }
+    return formData.rootCause;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const rcaSummary = getRcaSummary();
+    onSave({ ...formData, rootCause: rcaSummary || formData.rootCause });
     setFormData(defaultCAPAFormData);
     setRcaData(null);
   };
@@ -1795,56 +1888,281 @@ function CAPAFormDialog({
                 data-testid="input-problem-statement"
               />
             </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="rootCause">Root Cause Analysis</Label>
+            {/* Root Cause Analysis Tool Selector */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Root Cause Analysis Method</Label>
               </div>
-              <Textarea 
-                id="rootCause"
-                value={formData.rootCause}
-                onChange={(e) => setFormData({...formData, rootCause: e.target.value})}
-                placeholder="What is the underlying cause of this problem? (Use 5 Whys, Fishbone, etc.)"
-                rows={3}
-                data-testid="input-root-cause"
-              />
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { key: 'manual', label: 'Manual / Freeform', icon: '✏️' },
+                  { key: '5why', label: '5-Why', icon: '❓' },
+                  { key: '3x5why', label: '3×5 Why', icon: '🔀' },
+                  { key: 'fishbone', label: 'Fishbone (Ishikawa)', icon: '🐟' },
+                ] as const).map(({ key, label, icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFormData(f => ({ ...f, rcaType: key }))}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                      formData.rcaType === key
+                        ? 'bg-accent text-white border-accent shadow-sm'
+                        : 'bg-muted/40 text-muted-foreground border-border hover:border-accent/50 hover:text-foreground'
+                    }`}
+                    data-testid={`button-rca-${key}`}
+                  >
+                    {icon} {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Manual */}
+              {formData.rcaType === 'manual' && (
+                <Textarea
+                  id="rootCause"
+                  value={formData.rootCause}
+                  onChange={(e) => setFormData({...formData, rootCause: e.target.value})}
+                  placeholder="Describe the root cause in your own words…"
+                  rows={3}
+                  data-testid="input-root-cause"
+                />
+              )}
+
+              {/* 5-Why */}
+              {formData.rcaType === '5why' && (
+                <div className="space-y-2 p-4 bg-muted/30 rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">Ask "why" five times — each answer becomes the next question.</p>
+                  {fiveWhyData.whys.map((why, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="mt-2 w-14 shrink-0 text-xs font-bold text-accent">Why {i+1}?</span>
+                      <Input
+                        value={why}
+                        onChange={e => {
+                          const updated = [...fiveWhyData.whys];
+                          updated[i] = e.target.value;
+                          setFiveWhyData(d => ({ ...d, whys: updated }));
+                        }}
+                        placeholder={i === 0 ? `Why did the problem occur?` : `Why did "${fiveWhyData.whys[i-1] || '...'}" happen?`}
+                        data-testid={`input-5why-${i}`}
+                      />
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-border">
+                    <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">Root Cause Statement</Label>
+                    <Textarea
+                      value={fiveWhyData.rootCauseStatement}
+                      onChange={e => setFiveWhyData(d => ({ ...d, rootCauseStatement: e.target.value }))}
+                      placeholder="Summarize the verified root cause…"
+                      rows={2}
+                      className="mt-1"
+                      data-testid="input-5why-root-cause"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 3×5 Why */}
+              {formData.rcaType === '3x5why' && (
+                <div className="space-y-4 p-4 bg-muted/30 rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Three problem strands — each with its own 5-Why chain.</p>
+                  {threeFiveData.strands.map((strand, si) => (
+                    <div key={si} className="space-y-2 p-3 bg-background rounded-lg border border-border">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-primary w-16 shrink-0">Strand {si+1}</span>
+                        <Input
+                          value={strand.problem}
+                          onChange={e => {
+                            const updated = [...threeFiveData.strands];
+                            updated[si] = { ...updated[si], problem: e.target.value };
+                            setThreeFiveData(d => ({ ...d, strands: updated }));
+                          }}
+                          placeholder={`Problem area ${si+1} (e.g., "Machine failure", "Human error")`}
+                          data-testid={`input-3x5-strand-${si}`}
+                        />
+                      </div>
+                      {strand.whys.map((why, wi) => (
+                        <div key={wi} className="flex items-start gap-2 pl-4">
+                          <span className="mt-2 w-12 shrink-0 text-xs font-medium text-muted-foreground">Why {wi+1}?</span>
+                          <Input
+                            value={why}
+                            onChange={e => {
+                              const updated = [...threeFiveData.strands];
+                              const newWhys = [...updated[si].whys];
+                              newWhys[wi] = e.target.value;
+                              updated[si] = { ...updated[si], whys: newWhys };
+                              setThreeFiveData(d => ({ ...d, strands: updated }));
+                            }}
+                            placeholder={`Why ${wi+1} for strand ${si+1}?`}
+                            data-testid={`input-3x5-${si}-why-${wi}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-border">
+                    <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">Combined Root Cause Statement</Label>
+                    <Textarea
+                      value={threeFiveData.rootCauseStatement}
+                      onChange={e => setThreeFiveData(d => ({ ...d, rootCauseStatement: e.target.value }))}
+                      placeholder="Synthesize findings from all three strands into a root cause statement…"
+                      rows={2}
+                      className="mt-1"
+                      data-testid="input-3x5-root-cause"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Fishbone (Ishikawa) */}
+              {formData.rcaType === 'fishbone' && (
+                <div className="space-y-3 p-4 bg-muted/30 rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Identify contributing causes across the 6M categories.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      { key: 'man', label: '👤 Man (People)', color: 'text-blue-600 dark:text-blue-400' },
+                      { key: 'machine', label: '⚙️ Machine', color: 'text-gray-600 dark:text-gray-400' },
+                      { key: 'material', label: '📦 Material', color: 'text-orange-600 dark:text-orange-400' },
+                      { key: 'method', label: '📋 Method (Process)', color: 'text-purple-600 dark:text-purple-400' },
+                      { key: 'measurement', label: '📏 Measurement', color: 'text-teal-600 dark:text-teal-400' },
+                      { key: 'environment', label: '🌿 Environment', color: 'text-green-600 dark:text-green-400' },
+                    ] as const).map(({ key, label, color }) => (
+                      <div key={key} className="space-y-1 p-3 bg-background rounded-lg border border-border">
+                        <Label className={`text-xs font-semibold ${color}`}>{label}</Label>
+                        <Textarea
+                          value={fishboneData.categories[key]}
+                          onChange={e => setFishboneData(d => ({ ...d, categories: { ...d.categories, [key]: e.target.value } }))}
+                          placeholder={`Contributing causes from ${key}…`}
+                          rows={2}
+                          className="text-sm"
+                          data-testid={`input-fishbone-${key}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-2 border-t border-border">
+                    <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">Root Cause Statement</Label>
+                    <Textarea
+                      value={fishboneData.rootCauseStatement}
+                      onChange={e => setFishboneData(d => ({ ...d, rootCauseStatement: e.target.value }))}
+                      placeholder="State the confirmed root cause based on your fishbone analysis…"
+                      rows={2}
+                      className="mt-1"
+                      data-testid="input-fishbone-root-cause"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Phase 1 – Containment */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Actions</h3>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold shrink-0">1</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-blue-700 dark:text-blue-400">Containment Actions</h3>
+            </div>
             <div>
-              <Label htmlFor="immediateActions">Immediate Actions Taken</Label>
-              <Textarea 
+              <Label htmlFor="immediateActions">Immediate Containment Actions Taken</Label>
+              <Textarea
                 id="immediateActions"
                 value={formData.immediateActions}
                 onChange={(e) => setFormData({...formData, immediateActions: e.target.value})}
-                placeholder="What actions were taken immediately to address the issue?"
+                placeholder="What was done immediately to contain the problem and prevent further impact?"
                 rows={2}
                 data-testid="input-immediate-actions"
               />
             </div>
+            <div className="w-52">
+              <Label htmlFor="containmentDate">Containment Completed Date</Label>
+              <Input
+                id="containmentDate"
+                type="date"
+                value={formData.containmentDate}
+                onChange={(e) => setFormData({...formData, containmentDate: e.target.value})}
+                data-testid="input-containment-date"
+              />
+            </div>
+          </div>
+
+          {/* Phase 2 – Corrective Action */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-bold shrink-0">2</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-orange-700 dark:text-orange-400">Corrective Actions (Long-term Fix)</h3>
+            </div>
             <div>
-              <Label htmlFor="correctiveActions">Corrective Actions (Long-term Fixes)</Label>
-              <Textarea 
+              <Label htmlFor="correctiveActions">Corrective Actions to Implement</Label>
+              <Textarea
                 id="correctiveActions"
                 value={formData.correctiveActions}
                 onChange={(e) => setFormData({...formData, correctiveActions: e.target.value})}
-                placeholder="What long-term changes will be implemented to fix the problem?"
+                placeholder="What long-term changes will be implemented to eliminate the root cause?"
                 rows={3}
                 data-testid="input-corrective-actions"
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="caActionDueDate">CA Due Date</Label>
+                <Input
+                  id="caActionDueDate"
+                  type="date"
+                  value={formData.caActionDueDate}
+                  onChange={(e) => setFormData({...formData, caActionDueDate: e.target.value})}
+                  data-testid="input-ca-due-date"
+                />
+              </div>
+              <div>
+                <Label htmlFor="caCompletionDate">CA Actual Completion Date</Label>
+                <Input
+                  id="caCompletionDate"
+                  type="date"
+                  value={formData.caCompletionDate}
+                  onChange={(e) => setFormData({...formData, caCompletionDate: e.target.value})}
+                  data-testid="input-ca-completion-date"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Phase 3 – Preventive Action */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold shrink-0">3</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Preventive Actions (Avoid Recurrence)</h3>
+            </div>
             <div>
-              <Label htmlFor="preventiveActions">Preventive Actions (Avoid Recurrence)</Label>
-              <Textarea 
+              <Label htmlFor="preventiveActions">Preventive Actions</Label>
+              <Textarea
                 id="preventiveActions"
                 value={formData.preventiveActions}
                 onChange={(e) => setFormData({...formData, preventiveActions: e.target.value})}
-                placeholder="What measures will prevent this from happening again?"
+                placeholder="What systemic measures will prevent this from happening again?"
                 rows={3}
                 data-testid="input-preventive-actions"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="paActionDueDate">PA Due Date</Label>
+                <Input
+                  id="paActionDueDate"
+                  type="date"
+                  value={formData.paActionDueDate}
+                  onChange={(e) => setFormData({...formData, paActionDueDate: e.target.value})}
+                  data-testid="input-pa-due-date"
+                />
+              </div>
+              <div>
+                <Label htmlFor="paCompletionDate">PA Actual Completion Date</Label>
+                <Input
+                  id="paCompletionDate"
+                  type="date"
+                  value={formData.paCompletionDate}
+                  onChange={(e) => setFormData({...formData, paCompletionDate: e.target.value})}
+                  data-testid="input-pa-completion-date"
+                />
+              </div>
             </div>
           </div>
 
@@ -1925,16 +2243,75 @@ function CAPAFormDialog({
             </div>
           </div>
 
-          {/* Verification */}
+          {/* Verification of Implementation */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Verification</h3>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold shrink-0">✓</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-indigo-700 dark:text-indigo-400">Verification of Implementation</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">Confirm that the planned containment, corrective, and preventive actions were actually put in place before assessing effectiveness.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="implementationStatus">Implementation Status</Label>
+                <Select value={formData.implementationStatus} onValueChange={v => setFormData({...formData, implementationStatus: v})}>
+                  <SelectTrigger data-testid="select-implementation-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="verified">Verified — Actions Implemented</SelectItem>
+                    <SelectItem value="not_verified">Not Verified</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="implementationVerifiedDate">Verification Date</Label>
+                <Input
+                  id="implementationVerifiedDate"
+                  type="date"
+                  value={formData.implementationVerifiedDate}
+                  onChange={e => setFormData({...formData, implementationVerifiedDate: e.target.value})}
+                  data-testid="input-impl-verified-date"
+                />
+              </div>
+            </div>
             <div>
-              <Label htmlFor="verificationMethod">How Will Effectiveness Be Verified?</Label>
-              <Textarea 
+              <Label htmlFor="implementationVerifiedBy">Verified By</Label>
+              <Input
+                id="implementationVerifiedBy"
+                value={formData.implementationVerifiedBy}
+                onChange={e => setFormData({...formData, implementationVerifiedBy: e.target.value})}
+                placeholder="Name / title of person who verified implementation"
+                data-testid="input-impl-verified-by"
+              />
+            </div>
+            <div>
+              <Label htmlFor="implementationVerificationNotes">Implementation Verification Notes</Label>
+              <Textarea
+                id="implementationVerificationNotes"
+                value={formData.implementationVerificationNotes}
+                onChange={e => setFormData({...formData, implementationVerificationNotes: e.target.value})}
+                placeholder="Describe what was observed or reviewed to confirm actions were implemented…"
+                rows={2}
+                data-testid="input-impl-verification-notes"
+              />
+            </div>
+          </div>
+
+          {/* Verification of Effectiveness */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-bold shrink-0">★</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-teal-700 dark:text-teal-400">Verification of Effectiveness</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">After sufficient time has passed, confirm the actions actually eliminated the root cause and the problem has not recurred.</p>
+            <div>
+              <Label htmlFor="verificationMethod">Effectiveness Criteria / Verification Method</Label>
+              <Textarea
                 id="verificationMethod"
                 value={formData.verificationMethod}
                 onChange={(e) => setFormData({...formData, verificationMethod: e.target.value})}
-                placeholder="Describe how you will verify that the corrective actions are effective..."
+                placeholder="How will you verify the actions were effective? (e.g., 30-day incident-free observation, audit re-check, KPI trend…)"
                 rows={2}
                 data-testid="input-verification-method"
               />
@@ -2821,42 +3198,57 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
                 </div>
               )}
 
+              {/* Phase 1 – Containment */}
               {selectedCAPA.immediateActions && (
-                <div>
-                  <h4 className="font-semibold text-sm mb-1">Immediate Actions</h4>
-                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold shrink-0">1</div>
+                    <h4 className="font-semibold text-sm text-blue-700 dark:text-blue-400">Containment Actions</h4>
+                    {selectedCAPA.containmentDate && (
+                      <span className="text-xs text-muted-foreground ml-auto">Completed: {new Date(selectedCAPA.containmentDate).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded border-l-4 border-blue-400">
                     {selectedCAPA.immediateActions}
                   </p>
                 </div>
               )}
 
+              {/* Phase 2 – Corrective Action */}
               {selectedCAPA.correctiveActions && (
-                <div>
-                  <h4 className="font-semibold text-sm mb-1">Corrective Actions</h4>
-                  <p className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded border-l-4 border-blue-500">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-5 h-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-bold shrink-0">2</div>
+                    <h4 className="font-semibold text-sm text-orange-700 dark:text-orange-400">Corrective Actions</h4>
+                    <div className="ml-auto flex gap-3 text-xs text-muted-foreground">
+                      {selectedCAPA.caActionDueDate && <span>Due: {new Date(selectedCAPA.caActionDueDate).toLocaleDateString()}</span>}
+                      {selectedCAPA.caCompletionDate && <span className="text-accent font-medium">Done: {new Date(selectedCAPA.caCompletionDate).toLocaleDateString()}</span>}
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground bg-orange-50 dark:bg-orange-950/20 p-3 rounded border-l-4 border-orange-400">
                     {selectedCAPA.correctiveActions}
                   </p>
                 </div>
               )}
 
+              {/* Phase 3 – Preventive Action */}
               {selectedCAPA.preventiveActions && (
-                <div>
-                  <h4 className="font-semibold text-sm mb-1">Preventive Actions</h4>
-                  <p className="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded border-l-4 border-green-500">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold shrink-0">3</div>
+                    <h4 className="font-semibold text-sm text-emerald-700 dark:text-emerald-400">Preventive Actions</h4>
+                    <div className="ml-auto flex gap-3 text-xs text-muted-foreground">
+                      {selectedCAPA.paActionDueDate && <span>Due: {new Date(selectedCAPA.paActionDueDate).toLocaleDateString()}</span>}
+                      {selectedCAPA.paCompletionDate && <span className="text-accent font-medium">Done: {new Date(selectedCAPA.paCompletionDate).toLocaleDateString()}</span>}
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground bg-emerald-50 dark:bg-emerald-950/20 p-3 rounded border-l-4 border-emerald-500">
                     {selectedCAPA.preventiveActions}
                   </p>
                 </div>
               )}
 
-              {selectedCAPA.verificationMethod && (
-                <div>
-                  <h4 className="font-semibold text-sm mb-1">Verification Method</h4>
-                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
-                    {selectedCAPA.verificationMethod}
-                  </p>
-                </div>
-              )}
-
+              {/* Responsible & Target Date */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <p className="text-xs text-muted-foreground">Responsible</p>
@@ -2865,71 +3257,144 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
                   {selectedCAPA.responsiblePhone && <p className="text-xs text-muted-foreground">{selectedCAPA.responsiblePhone}</p>}
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Target Date</p>
+                  <p className="text-xs text-muted-foreground">Overall Target Date</p>
                   <p className="font-medium">
                     {selectedCAPA.targetDate ? new Date(selectedCAPA.targetDate).toLocaleDateString() : '—'}
                   </p>
                 </div>
               </div>
 
-              {(selectedCAPA.status === 'completed' || selectedCAPA.status === 'verified') && (
-                <div className="mt-6 border-t pt-4 space-y-4">
-                  <h4 className="font-bold flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-accent" />
-                    Effectiveness Verification
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Effectiveness Result</Label>
-                      <Select 
-                        defaultValue={selectedCAPA.effectivenessResult || 'pending'}
-                        onValueChange={async (val) => {
-                          await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { effectivenessResult: val });
-                          queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
-                        }}
-                      >
-                        <SelectTrigger data-testid="select-effectiveness-result">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="effective">Effective</SelectItem>
-                          <SelectItem value="not_effective">Not Effective</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Verification Notes</Label>
-                      <Textarea 
-                        placeholder="Enter verification details..."
-                        defaultValue={selectedCAPA.verificationNotes || ''}
-                        onBlur={async (e) => {
-                          await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { verificationNotes: e.target.value });
-                          queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
-                        }}
-                        data-testid="textarea-verification-notes"
-                      />
-                    </div>
-                  </div>
-                  {selectedCAPA.status !== 'verified' && (
-                    <Button 
-                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                      onClick={async () => {
-                        await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { 
-                          status: 'verified',
-                          completionDate: new Date().toISOString()
-                        });
-                        queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
-                        setSelectedCAPA(null);
-                        toast({ title: "CAPA Verified", description: "The action plan has been marked as verified and completed." });
-                      }}
-                      data-testid="button-mark-verified"
-                    >
-                      Mark Verified & Close
-                    </Button>
+              {/* Verification of Implementation */}
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="font-bold text-sm flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">✓</span>
+                  <span className="text-indigo-700 dark:text-indigo-400">Verification of Implementation</span>
+                  {selectedCAPA.implementationStatus === 'verified' && (
+                    <Badge className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs ml-auto">Implemented</Badge>
                   )}
+                  {selectedCAPA.implementationStatus === 'not_verified' && (
+                    <Badge variant="destructive" className="text-xs ml-auto">Not Verified</Badge>
+                  )}
+                  {(!selectedCAPA.implementationStatus || selectedCAPA.implementationStatus === 'pending') && (
+                    <Badge variant="secondary" className="text-xs ml-auto">Pending</Badge>
+                  )}
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Implementation Status</Label>
+                    <Select
+                      defaultValue={selectedCAPA.implementationStatus || 'pending'}
+                      onValueChange={async (val) => {
+                        await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { implementationStatus: val });
+                        queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-sm" data-testid="select-impl-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="verified">Verified — Implemented</SelectItem>
+                        <SelectItem value="not_verified">Not Verified</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Verified Date</Label>
+                    <Input
+                      type="date"
+                      className="h-8 text-sm"
+                      defaultValue={selectedCAPA.implementationVerifiedDate ? selectedCAPA.implementationVerifiedDate.substring(0,10) : ''}
+                      onBlur={async (e) => {
+                        if (e.target.value) {
+                          await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { implementationVerifiedDate: e.target.value });
+                          queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                        }
+                      }}
+                      data-testid="input-detail-impl-verified-date"
+                    />
+                  </div>
                 </div>
-              )}
+                <div>
+                  <Label className="text-xs">Verified By</Label>
+                  <Input
+                    className="h-8 text-sm"
+                    defaultValue={selectedCAPA.implementationVerifiedBy || ''}
+                    placeholder="Name / title…"
+                    onBlur={async (e) => {
+                      await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { implementationVerifiedBy: e.target.value });
+                      queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                    }}
+                    data-testid="input-detail-impl-verified-by"
+                  />
+                </div>
+                {selectedCAPA.implementationVerificationNotes && (
+                  <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">{selectedCAPA.implementationVerificationNotes}</p>
+                )}
+              </div>
+
+              {/* Verification of Effectiveness */}
+              <div className="border-t pt-4 space-y-4">
+                <h4 className="font-bold flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-bold">★</span>
+                  <span className="text-teal-700 dark:text-teal-400">Verification of Effectiveness</span>
+                </h4>
+                {selectedCAPA.verificationMethod && (
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                    <span className="font-medium text-foreground">Criteria: </span>{selectedCAPA.verificationMethod}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Effectiveness Result</Label>
+                    <Select 
+                      defaultValue={selectedCAPA.effectivenessResult || 'pending'}
+                      onValueChange={async (val) => {
+                        await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { effectivenessResult: val });
+                        queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-effectiveness-result">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="effective">Effective</SelectItem>
+                        <SelectItem value="not_effective">Not Effective</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Verification Notes</Label>
+                    <Textarea 
+                      placeholder="Enter verification details..."
+                      defaultValue={selectedCAPA.verificationNotes || ''}
+                      onBlur={async (e) => {
+                        await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { verificationNotes: e.target.value });
+                        queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                      }}
+                      data-testid="textarea-verification-notes"
+                    />
+                  </div>
+                </div>
+                {selectedCAPA.status !== 'verified' && (
+                  <Button 
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                    onClick={async () => {
+                      await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { 
+                        status: 'verified',
+                        completionDate: new Date().toISOString()
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                      setSelectedCAPA(null);
+                      toast({ title: "CAPA Verified", description: "The action plan has been marked as verified and completed." });
+                    }}
+                    data-testid="button-mark-verified"
+                  >
+                    Mark Verified & Close
+                  </Button>
+                )}
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedCAPA(null)}>
