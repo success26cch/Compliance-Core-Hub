@@ -565,45 +565,6 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   </div>
                 </section>
 
-                {/* ── Phase Dates ── */}
-                <section className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> Phase Dates
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Containment Date</Label>
-                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.containmentDate)}
-                        onBlur={e => { if (e.target.value) onUpdate({ containmentDate: new Date(e.target.value) } as any); }}
-                        data-testid="input-nc-containment-date" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">CA Due Date</Label>
-                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.caActionDueDate)}
-                        onBlur={e => { if (e.target.value) onUpdate({ caActionDueDate: new Date(e.target.value) } as any); }}
-                        data-testid="input-nc-ca-due" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">CA Completion Date</Label>
-                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.caCompletionDate)}
-                        onBlur={e => { if (e.target.value) onUpdate({ caCompletionDate: new Date(e.target.value) } as any); }}
-                        data-testid="input-nc-ca-completion" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">PA Due Date</Label>
-                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.paActionDueDate)}
-                        onBlur={e => { if (e.target.value) onUpdate({ paActionDueDate: new Date(e.target.value) } as any); }}
-                        data-testid="input-nc-pa-due" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">PA Completion Date</Label>
-                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.paCompletionDate)}
-                        onBlur={e => { if (e.target.value) onUpdate({ paCompletionDate: new Date(e.target.value) } as any); }}
-                        data-testid="input-nc-pa-completion" />
-                    </div>
-                  </div>
-                </section>
-
                 {/* ── Root Cause Analysis ── */}
                 <section className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -767,34 +728,91 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" /> Corrective & Preventive Actions
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-5">
+
+                    {/* Immediate Containment + date */}
                     <div className="space-y-2">
-                      <Label className="text-xs">Immediate Containment</Label>
-                      <Textarea 
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold">Immediate Containment</Label>
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3 text-muted-foreground" />
+                          <Label className="text-[10px] text-muted-foreground">Containment Date</Label>
+                          <Input type="date" className="h-6 text-xs w-36 py-0"
+                            defaultValue={toInputDate(ncAny.containmentDate)}
+                            onBlur={e => { if (e.target.value) onUpdate({ containmentDate: new Date(e.target.value) } as any); }}
+                            data-testid="input-nc-containment-date" />
+                        </div>
+                      </div>
+                      <Textarea
                         defaultValue={nc.immediateContainment || ""}
                         onBlur={e => onUpdate({ immediateContainment: e.target.value })}
                         placeholder="What was done immediately to contain the issue?"
                         className="min-h-[80px]"
                       />
                     </div>
+
+                    {/* Corrective Action + due/completion dates */}
                     <div className="space-y-2">
-                      <Label className="text-xs">Corrective Action</Label>
-                      <Textarea 
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <Label className="text-xs font-bold">Corrective Action</Label>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3 h-3 text-muted-foreground" />
+                            <Label className="text-[10px] text-muted-foreground">Due</Label>
+                            <Input type="date" className="h-6 text-xs w-32 py-0"
+                              defaultValue={toInputDate(ncAny.caActionDueDate)}
+                              onBlur={e => { if (e.target.value) onUpdate({ caActionDueDate: new Date(e.target.value) } as any); }}
+                              data-testid="input-nc-ca-due" />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
+                            <Label className="text-[10px] text-muted-foreground">Completed</Label>
+                            <Input type="date" className="h-6 text-xs w-32 py-0"
+                              defaultValue={toInputDate(ncAny.caCompletionDate)}
+                              onBlur={e => { if (e.target.value) onUpdate({ caCompletionDate: new Date(e.target.value) } as any); }}
+                              data-testid="input-nc-ca-completion" />
+                          </div>
+                        </div>
+                      </div>
+                      <Textarea
                         defaultValue={nc.correctiveAction || ""}
                         onBlur={e => onUpdate({ correctiveAction: e.target.value })}
                         placeholder="What actions are being taken to eliminate the cause?"
                         className="min-h-[80px]"
                       />
                     </div>
+
+                    {/* Preventive Action + due/completion dates */}
                     <div className="space-y-2">
-                      <Label className="text-xs">Preventive Action</Label>
-                      <Textarea 
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <Label className="text-xs font-bold">Preventive Action</Label>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3 h-3 text-muted-foreground" />
+                            <Label className="text-[10px] text-muted-foreground">Due</Label>
+                            <Input type="date" className="h-6 text-xs w-32 py-0"
+                              defaultValue={toInputDate(ncAny.paActionDueDate)}
+                              onBlur={e => { if (e.target.value) onUpdate({ paActionDueDate: new Date(e.target.value) } as any); }}
+                              data-testid="input-nc-pa-due" />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
+                            <Label className="text-[10px] text-muted-foreground">Completed</Label>
+                            <Input type="date" className="h-6 text-xs w-32 py-0"
+                              defaultValue={toInputDate(ncAny.paCompletionDate)}
+                              onBlur={e => { if (e.target.value) onUpdate({ paCompletionDate: new Date(e.target.value) } as any); }}
+                              data-testid="input-nc-pa-completion" />
+                          </div>
+                        </div>
+                      </div>
+                      <Textarea
                         defaultValue={nc.preventiveAction || ""}
                         onBlur={e => onUpdate({ preventiveAction: e.target.value })}
                         placeholder="How will we prevent this from happening again?"
                         className="min-h-[80px]"
                       />
                     </div>
+
                   </div>
                   {nc.status === 'root_cause_identified' && (
                     <Button size="sm" onClick={() => handleStatusChange('action_in_progress')} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-nc-action-start">
