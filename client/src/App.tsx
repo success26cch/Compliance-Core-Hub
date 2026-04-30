@@ -11,6 +11,7 @@ import { ThemeProvider } from "next-themes";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import BotPage from "@/pages/Bot";
@@ -170,7 +171,11 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     return <SubscriptionWall />;
   }
 
-  return <Component />;
+  return (
+    <PageErrorBoundary pageName={Component.displayName ?? Component.name}>
+      <Component />
+    </PageErrorBoundary>
+  );
 }
 
 function Router() {
@@ -260,7 +265,9 @@ function App() {
               <Toaster />
               <CartDrawer />
               <PageTracker />
-              <Router />
+              <PageErrorBoundary>
+                <Router />
+              </PageErrorBoundary>
             </AdminViewProvider>
           </CartProvider>
         </TooltipProvider>
