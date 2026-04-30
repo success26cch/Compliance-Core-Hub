@@ -320,12 +320,12 @@ export default function Contact() {
             <Card className="bg-muted/30">
               <CardContent className="pt-6 space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
                     <Mail className="w-5 h-5 text-primary" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">team@corecompliancehub.com</p>
+                    <p className="font-medium break-all">team@corecompliancehub.com</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
