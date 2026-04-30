@@ -106,7 +106,7 @@ export function useIsaChatStream(conversationId: number, onMessageSent?: () => v
             toast({
               title: errorData.orgLimitReached ? "Organization Trial Limit Reached" : "Free Trial Limit Reached",
               description: errorData.orgLimitReached
-                ? "Your organization has used all 3 free trial questions. Subscribe to get unlimited access."
+                ? "Your organization has used all 3 free trial questions. Each user can subscribe individually to get unlimited Isa access."
                 : "You've reached your 3-question free trial. Upgrade to continue with Isa.",
               variant: "destructive",
             });

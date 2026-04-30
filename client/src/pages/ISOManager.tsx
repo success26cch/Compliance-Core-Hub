@@ -3881,7 +3881,7 @@ function ISOChatInterface({
                 </p>
                 <p className="text-xs text-muted-foreground mb-4">
                   {orgLimitReached
-                    ? "Your organization has used all 3 free trial questions. Subscribe to give your whole team unlimited Isa access."
+                    ? "Your organization has used all 3 free trial questions. Each user can subscribe individually to unlock unlimited Isa access."
                     : "Upgrade to continue your ISO consultation with Isa"}
                 </p>
                 <div className="flex gap-3 justify-center">
