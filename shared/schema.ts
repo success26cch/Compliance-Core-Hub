@@ -450,6 +450,11 @@ export const nonconformances = pgTable("nonconformances", {
   docUpdateNotes: text("doc_update_notes"),
   docUpdateVerifiedBy: text("doc_update_verified_by"),
   docUpdateVerifiedDate: timestamp("doc_update_verified_date"),
+  // Verification of Implementation
+  implementationStatus: text("implementation_status"), // 'pending' | 'verified' | 'not_verified'
+  implementationVerifiedDate: timestamp("implementation_verified_date"),
+  implementationVerifiedBy: text("implementation_verified_by"),
+  implementationVerificationNotes: text("implementation_verification_notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -463,6 +468,7 @@ export const insertNonconformanceSchema = createInsertSchema(nonconformances, {
   paActionDueDate: dateOrStringToDate,
   paCompletionDate: dateOrStringToDate,
   docUpdateVerifiedDate: dateOrStringToDate,
+  implementationVerifiedDate: dateOrStringToDate,
 }).omit({
   id: true,
   createdAt: true,

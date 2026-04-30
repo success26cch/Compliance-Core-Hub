@@ -538,15 +538,17 @@ Please coach me through a root cause analysis and help me develop an appropriate
         <div className="px-6 pb-6">
           <div className="space-y-8 py-4">
             {/* Workflow Progress */}
-            <div className="flex items-center justify-between bg-muted/50 rounded-xl p-4 border border-border/60">
+            <div className="flex items-center justify-between bg-muted/50 rounded-xl p-4 border border-border/60 overflow-x-auto gap-1">
               <WorkflowStep label="Open" active={nc.status === 'open'} completed={['root_cause_identified', 'action_in_progress', 'effectiveness_pending', 'closed'].includes(nc.status)} />
-              <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
+              <ArrowRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
               <WorkflowStep label="Root Cause" active={nc.status === 'root_cause_identified'} completed={['action_in_progress', 'effectiveness_pending', 'closed'].includes(nc.status)} />
-              <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
+              <ArrowRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
               <WorkflowStep label="Action" active={nc.status === 'action_in_progress'} completed={['effectiveness_pending', 'closed'].includes(nc.status)} />
-              <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
-              <WorkflowStep label="Verification" active={nc.status === 'effectiveness_pending'} completed={['closed'].includes(nc.status)} />
-              <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
+              <ArrowRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
+              <WorkflowStep label="Impl. Verified" active={nc.status === 'action_in_progress' && ncAny.implementationStatus === 'verified'} completed={ncAny.implementationStatus === 'verified' && ['effectiveness_pending', 'closed'].includes(nc.status)} />
+              <ArrowRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
+              <WorkflowStep label="Effectiveness" active={nc.status === 'effectiveness_pending'} completed={['closed'].includes(nc.status)} />
+              <ArrowRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
               <WorkflowStep label="Closed" active={nc.status === 'closed'} completed={nc.status === 'closed'} />
             </div>
 
@@ -799,11 +801,6 @@ Please coach me through a root cause analysis and help me develop an appropriate
                       Move to Action in Progress
                     </Button>
                   )}
-                  {nc.status === 'action_in_progress' && (
-                    <Button size="sm" onClick={() => handleStatusChange('effectiveness_pending')} className="bg-yellow-600 hover:bg-yellow-700 text-white" data-testid="button-nc-action-complete">
-                      Actions Completed — Move to Verification
-                    </Button>
-                  )}
                 </section>
 
                 {/* ── Documentation Update Verification ── */}
@@ -925,6 +922,89 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   )}
                 </section>
 
+                {/* ── Verification of Implementation ── */}
+                <section className="space-y-3">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                    <span className="text-indigo-700 dark:text-indigo-400">Verification of Implementation</span>
+                    {ncAny.implementationStatus === 'verified' && (
+                      <Badge className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs ml-auto">Implemented ✓</Badge>
+                    )}
+                    {ncAny.implementationStatus === 'not_verified' && (
+                      <Badge variant="destructive" className="text-xs ml-auto">Not Verified</Badge>
+                    )}
+                    {(!ncAny.implementationStatus || ncAny.implementationStatus === 'pending') && (
+                      <Badge variant="secondary" className="text-xs ml-auto">Pending</Badge>
+                    )}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Confirm that the corrective and preventive actions described above were <strong>actually carried out</strong> — not just planned. 
+                    This is separate from whether the actions were effective. 
+                    <em className="ml-1">(ISO 9001 §10.2.1(e) / IATF 16949 §10.2.3)</em>
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Implementation Status</Label>
+                      <Select
+                        defaultValue={ncAny.implementationStatus || 'pending'}
+                        onValueChange={v => onUpdate({ implementationStatus: v } as any)}
+                      >
+                        <SelectTrigger className="h-8 text-sm" data-testid="select-nc-impl-status">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="verified">Verified — Actions Confirmed Complete</SelectItem>
+                          <SelectItem value="not_verified">Not Verified — Actions Incomplete</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Verified By (name / title)</Label>
+                      <Input
+                        defaultValue={ncAny.implementationVerifiedBy || ''}
+                        placeholder="e.g., QA Manager, Lead Auditor"
+                        onBlur={e => onUpdate({ implementationVerifiedBy: e.target.value } as any)}
+                        className="h-8 text-sm"
+                        data-testid="input-nc-impl-verified-by"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Verification Date</Label>
+                      <Input
+                        type="date"
+                        defaultValue={toInputDate(ncAny.implementationVerifiedDate)}
+                        onBlur={e => { if (e.target.value) onUpdate({ implementationVerifiedDate: new Date(e.target.value) } as any); }}
+                        className="h-8 text-sm"
+                        data-testid="input-nc-impl-verified-date"
+                      />
+                    </div>
+                    <div />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Implementation Verification Notes</Label>
+                    <Textarea
+                      defaultValue={ncAny.implementationVerificationNotes || ''}
+                      onBlur={e => onUpdate({ implementationVerificationNotes: e.target.value } as any)}
+                      placeholder="Describe what was physically observed or reviewed to confirm the actions were completed — e.g., walk-through, document review, system check..."
+                      className="min-h-[80px] text-sm"
+                      data-testid="textarea-nc-impl-notes"
+                    />
+                  </div>
+                  {ncAny.implementationStatus === 'verified' && nc.status === 'action_in_progress' && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleStatusChange('effectiveness_pending')}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                      data-testid="button-nc-move-to-effectiveness"
+                    >
+                      Implementation Confirmed — Begin Effectiveness Monitoring
+                    </Button>
+                  )}
+                </section>
+
                 {/* ── Effectiveness Verification ── */}
                 <section className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -995,6 +1075,14 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     {ncAny.caCompletionDate && <DetailItem label="CA Completed" value={fmtDate(ncAny.caCompletionDate)} />}
                     {ncAny.paActionDueDate && <DetailItem label="PA Due" value={fmtDate(ncAny.paActionDueDate)} />}
                     {ncAny.paCompletionDate && <DetailItem label="PA Completed" value={fmtDate(ncAny.paCompletionDate)} />}
+                    {ncAny.implementationStatus && (
+                      <DetailItem label="Impl. Status" value={
+                        ncAny.implementationStatus === 'verified' ? '✓ Verified' :
+                        ncAny.implementationStatus === 'not_verified' ? '✗ Not Verified' : 'Pending'
+                      } />
+                    )}
+                    {ncAny.implementationVerifiedDate && <DetailItem label="Impl. Verified Date" value={fmtDate(ncAny.implementationVerifiedDate)} />}
+                    {ncAny.implementationVerifiedBy && <DetailItem label="Impl. Verified By" value={ncAny.implementationVerifiedBy} />}
                     {nc.responsiblePhone && (
                       <Button 
                         variant="outline" 

@@ -5960,6 +5960,7 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (updates.paActionDueDate) updates.paActionDueDate = new Date(updates.paActionDueDate);
       if (updates.paCompletionDate) updates.paCompletionDate = new Date(updates.paCompletionDate);
       if (updates.docUpdateVerifiedDate) updates.docUpdateVerifiedDate = new Date(updates.docUpdateVerifiedDate);
+      if (updates.implementationVerifiedDate) updates.implementationVerifiedDate = new Date(updates.implementationVerifiedDate);
       const nc = await storage.updateNonconformance(id, userId, updates, isSuperadmin);
       if (!nc) return res.status(404).json({ message: "Nonconformance not found" });
       res.json(nc);
