@@ -636,7 +636,7 @@ export default function EmployerDashboard() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
 
             {/* ── TIER 1: Corey AI Only ── */}
             <div className="flex flex-col rounded-2xl border border-border/60 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -771,7 +771,6 @@ export default function EmployerDashboard() {
                     { text: "Corey's Daily Brief (morning AI rundown)", ok: true },
                     { text: "Audit Mode + Team Meeting Mode", ok: true },
                     { text: "Private conversations per seat", ok: true },
-                    { text: "ISO Manager (available as add-on)", ok: false },
                   ].map((item, i) => (
                     <div key={i} className={`flex items-start gap-2 text-sm ${item.ok ? 'text-primary' : 'text-muted-foreground/60'}`}>
                       {item.ok
@@ -792,53 +791,6 @@ export default function EmployerDashboard() {
               </div>
             </div>
 
-            {/* ── TIER 4: ISO Manager ── */}
-            <div className="flex flex-col rounded-2xl border border-border/60 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="h-1.5 w-full bg-gradient-to-r from-purple-600 to-purple-400" />
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-purple-600/10 flex items-center justify-center shrink-0">
-                    <Award className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tier 4</p>
-                    <h3 className="text-base font-black text-primary leading-tight">ISO Manager</h3>
-                  </div>
-                </div>
-                <div className="mb-1">
-                  <span className="text-3xl font-black text-primary">$299</span>
-                  <span className="text-sm text-muted-foreground">/mo Core</span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">Scales to $899/mo for ISO Manager PRO</p>
-                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                  Purpose-built for ISO-certified or pursuing organizations. Standalone or stacked on top of your Employer Platform — Isa AI handles 7 major standards with full audit logic.
-                </p>
-                <div className="space-y-2 flex-1">
-                  {[
-                    { text: "Isa AI — Lead ISO Auditor on demand", ok: true },
-                    { text: "ISO 9001, 14001, 45001, 13485, 27001", ok: true },
-                    { text: "AS9100 & IATF 16949 (PRO)", ok: true },
-                    { text: "NC & CAPA tracking (ISO-aligned)", ok: true },
-                    { text: "Documentation library + clause mapping", ok: true },
-                    { text: "Guided setup wizard (3-phase onboarding)", ok: true },
-                    { text: "CESAR — Customer Specific Requirements", ok: true },
-                    { text: "Stacks with any Employer tier above", ok: true },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-primary">
-                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                      {item.text}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5">
-                  <Link href="/meet-iso-manager">
-                    <Button variant="outline" className="w-full border-purple-400/40 text-purple-700 hover:bg-purple-600 hover:text-white font-semibold">
-                      Explore ISO Manager
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Bottom note */}
