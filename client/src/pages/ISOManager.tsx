@@ -3781,7 +3781,7 @@ function ISOChatInterface({
   isPro: boolean;
   initialPrompt?: string;
 }) {
-  const { messages, sendMessage, isStreaming, limitReached } = useIsaChatStream(conversationId, onMessageSent);
+  const { messages, sendMessage, isStreaming, limitReached, orgLimitReached } = useIsaChatStream(conversationId, onMessageSent);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastSentPromptRef = useRef<string | null>(null);
@@ -3876,8 +3876,14 @@ function ISOChatInterface({
                 <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-accent/20">
                   <Lock className="w-5 h-5 text-accent" />
                 </div>
-                <p className="text-sm font-bold text-primary mb-1">Preview complete</p>
-                <p className="text-xs text-muted-foreground mb-4">Upgrade to continue your ISO consultation with Isa</p>
+                <p className="text-sm font-bold text-primary mb-1">
+                  {orgLimitReached ? "Organization trial complete" : "Preview complete"}
+                </p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {orgLimitReached
+                    ? "Your organization has used all 3 free trial questions. Subscribe to give your whole team unlimited Isa access."
+                    : "Upgrade to continue your ISO consultation with Isa"}
+                </p>
                 <div className="flex gap-3 justify-center">
                   <Link href="/settings">
                     <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-semibold text-xs" data-testid="button-upgrade-from-chat">

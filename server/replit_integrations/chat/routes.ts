@@ -16,8 +16,9 @@ const FREE_QUESTION_LIMIT = 3;
 const LANDING_BOT_LIMIT = 3;
 const TRIAL_QUESTION_LIMIT = 1;
 // Company-level guards — applied on top of the per-email limit
-const COMPANY_DOMAIN_LIMIT = 6;  // max questions per corporate email domain (≈2 employees)
+const COMPANY_DOMAIN_LIMIT = 6;  // max questions per corporate email domain (≈2 employees) for public landing trial
 const IP_LIMIT = 9;              // max questions per IP address (≈3 people, catches personal emails on shared networks)
+const ORG_QUESTION_LIMIT = 3;   // max FREE in-app Isa questions shared across all users from the same org domain
 
 // Free/personal email domains — excluded from domain-level cap (IP cap still applies)
 const PERSONAL_EMAIL_DOMAINS = new Set([
@@ -820,6 +821,7 @@ export function registerChatRoutes(app: Express): void {
       const hasAccess = isPro || userIsAdmin || isTeamMember;
 
       if (!hasAccess) {
+        // Per-user limit
         const usage = await storage.getQuestionUsage(userId);
         if ((usage?.questionCount || 0) >= FREE_QUESTION_LIMIT) {
           return res.status(403).json({
@@ -828,6 +830,20 @@ export function registerChatRoutes(app: Express): void {
             questionCount: usage?.questionCount || 0,
             freeLimit: FREE_QUESTION_LIMIT
           });
+        }
+
+        // Org-level domain cap — prevents colleagues from creating separate accounts to bypass the trial limit
+        const userEmail = ((req.user as any).claims.email || "").toLowerCase();
+        const userDomain = getEmailDomain(userEmail);
+        if (isCorporateDomain(userDomain)) {
+          const orgTotal = await storage.getOrgQuestionTotal(userDomain);
+          if (orgTotal >= ORG_QUESTION_LIMIT) {
+            return res.status(403).json({
+              error: "Your organization has used all available free trial questions. Contact us to subscribe and get unlimited access.",
+              limitReached: true,
+              orgLimitReached: true,
+            });
+          }
         }
       }
 

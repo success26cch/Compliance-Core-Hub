@@ -69,6 +69,7 @@ export function useIsaChatStream(conversationId: number, onMessageSent?: () => v
   const [messages, setMessages] = useState<any[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
+  const [orgLimitReached, setOrgLimitReached] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -100,10 +101,13 @@ export function useIsaChatStream(conversationId: number, onMessageSent?: () => v
           const errorData = await response.json();
           if (errorData.limitReached) {
             setLimitReached(true);
+            if (errorData.orgLimitReached) setOrgLimitReached(true);
             setMessages((prev) => prev.slice(0, -1));
             toast({
-              title: "Free Limit Reached",
-              description: "You've reached your free question limit. Upgrade to access Isa's full ISO guidance.",
+              title: errorData.orgLimitReached ? "Organization Trial Limit Reached" : "Free Trial Limit Reached",
+              description: errorData.orgLimitReached
+                ? "Your organization has used all 3 free trial questions. Subscribe to get unlimited access."
+                : "You've reached your 3-question free trial. Upgrade to continue with Isa.",
               variant: "destructive",
             });
             return;
@@ -168,5 +172,5 @@ export function useIsaChatStream(conversationId: number, onMessageSent?: () => v
     }
   };
 
-  return { messages, sendMessage, isStreaming, limitReached };
+  return { messages, sendMessage, isStreaming, limitReached, orgLimitReached };
 }

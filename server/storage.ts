@@ -85,6 +85,7 @@ export interface IStorage {
   saveTrialLeadQuestion(email: string, question: string): Promise<void>;
   getTotalQuestionsByDomain(domain: string): Promise<number>;
   getTotalQuestionsByIp(ip: string): Promise<number>;
+  getOrgQuestionTotal(domain: string): Promise<number>;
 
   // Site Visits
   recordPageVisit(page: string): Promise<void>;
@@ -593,6 +594,16 @@ export class DatabaseStorage implements IStorage {
       .select({ total: sql<number>`coalesce(sum(${trialLeads.questionCount}), 0)` })
       .from(trialLeads)
       .where(eq(trialLeads.ipAddress, ip));
+    return Number(result?.total ?? 0);
+  }
+
+  async getOrgQuestionTotal(domain: string): Promise<number> {
+    // Sum all in-app free question usage for authenticated users sharing the same email domain
+    const [result] = await db
+      .select({ total: sql<number>`coalesce(sum(${questionUsage.questionCount}), 0)` })
+      .from(questionUsage)
+      .innerJoin(users, eq(questionUsage.userId, users.id))
+      .where(sql`lower(${users.email}) like ${'%@' + domain.toLowerCase()}`);
     return Number(result?.total ?? 0);
   }
 
