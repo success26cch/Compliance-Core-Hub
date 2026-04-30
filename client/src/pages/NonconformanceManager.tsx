@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Plus, 
@@ -12,7 +12,9 @@ import {
   FileText,
   ShieldAlert,
   ArrowRight,
-  Info
+  Info,
+  Trash2,
+  Calendar
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,12 +24,12 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { 
   Select, 
   SelectContent, 
@@ -54,6 +56,21 @@ interface NonconformanceManagerProps {
   onAskIsa: (prompt: string) => void;
 }
 
+type DocUpdateItem = {
+  docType: string;
+  docName: string;
+  status: 'pending' | 'updated' | 'not_required';
+  updatedBy: string;
+  updatedDate: string;
+};
+
+const DOC_TYPE_PRESETS = [
+  'Control Plan', 'Process FMEA (PFMEA)', 'Work Instructions', 'SOP / Procedure',
+  'Process Flow Diagram', 'Operator Instructions', 'Inspection / Test Plan', 'Reaction Plan',
+  'Quality Manual', 'Training Materials', 'Customer-Specific Requirements (CSR)',
+  'Design FMEA (DFMEA)', 'Emergency Response Plan', 'Other'
+];
+
 export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) {
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [selectedNC, setSelectedNC] = useState<Nonconformance | null>(null);
@@ -64,11 +81,6 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
     queryKey: ["/api/nonconformances"],
   });
 
-  const { data: projects } = useQuery<IsoProject[]>({
-    queryKey: ["/api/iso-projects-list"], // Assuming there's a list endpoint or we use the single one
-  });
-  
-  // Actually, based on ISOManager.tsx, project is a single object or null for the user
   const { data: project } = useQuery<IsoProject | null>({
     queryKey: ["/api/iso-projects"],
   });
@@ -90,9 +102,9 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
       const res = await apiRequest("PATCH", `/api/nonconformances/${id}`, data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ["/api/nonconformances"] });
-      toast({ title: "Success", description: "Nonconformance updated." });
+      setSelectedNC(updated);
     },
   });
 
@@ -204,7 +216,7 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
         onClose={() => setIsLogDialogOpen(false)} 
         onSubmit={(data) => createMutation.mutate(data)}
         isPending={createMutation.isPending}
-        project={project}
+        project={project ?? null}
       />
 
       {selectedNC && (
@@ -411,7 +423,60 @@ function NCDetailDialog({ nc, isOpen, onClose, onUpdate, onAskIsa, isUpdating }:
   isUpdating: boolean;
 }) {
   const { toast } = useToast();
-  
+  const ncAny = nc as any;
+
+  // RCA local state
+  const [rcaType, setRcaType] = useState<string>(ncAny.rcaType || 'manual');
+  const [whys, setWhys] = useState<string[]>(() => {
+    const data = ncAny.rcaData as any;
+    return data?.whys || ['', '', '', '', ''];
+  });
+  const [fishbone, setFishbone] = useState<Record<string, string>>(() => {
+    const data = ncAny.rcaData as any;
+    return data?.categories || { man: '', machine: '', material: '', method: '', measurement: '', environment: '' };
+  });
+  const [rootCauseStatement, setRootCauseStatement] = useState<string>(() => {
+    const data = ncAny.rcaData as any;
+    return data?.rootCauseStatement || '';
+  });
+
+  // Doc update local state
+  const [docItems, setDocItems] = useState<DocUpdateItem[]>(() => {
+    return (ncAny.docUpdateItems as DocUpdateItem[]) || [];
+  });
+
+  useEffect(() => {
+    setRcaType(ncAny.rcaType || 'manual');
+    const data = ncAny.rcaData as any;
+    setWhys(data?.whys || ['', '', '', '', '']);
+    setFishbone(data?.categories || { man: '', machine: '', material: '', method: '', measurement: '', environment: '' });
+    setRootCauseStatement(data?.rootCauseStatement || '');
+    setDocItems((ncAny.docUpdateItems as DocUpdateItem[]) || []);
+  }, [nc.id]);
+
+  const saveRca = (type: string, data: any) => {
+    onUpdate({ rcaType: type, rcaData: data } as any);
+  };
+
+  const addDocItem = (docType: string) => {
+    const newItem: DocUpdateItem = { docType, docName: '', status: 'pending', updatedBy: '', updatedDate: '' };
+    const updated = [...docItems, newItem];
+    setDocItems(updated);
+    onUpdate({ docUpdateItems: updated } as any);
+  };
+
+  const updateDocItem = (idx: number, field: keyof DocUpdateItem, value: string) => {
+    const updated = docItems.map((item, i) => i === idx ? { ...item, [field]: value } : item);
+    setDocItems(updated);
+    onUpdate({ docUpdateItems: updated } as any);
+  };
+
+  const removeDocItem = (idx: number) => {
+    const updated = docItems.filter((_, i) => i !== idx);
+    setDocItems(updated);
+    onUpdate({ docUpdateItems: updated } as any);
+  };
+
   const handleStatusChange = (newStatus: string) => {
     onUpdate({ status: newStatus });
   };
@@ -422,7 +487,6 @@ function NCDetailDialog({ nc, isOpen, onClose, onUpdate, onAskIsa, isUpdating }:
       return;
     }
     try {
-      // Reusing the CAPA SMS pattern if possible, or assuming there's an endpoint
       await apiRequest("POST", `/api/nonconformances/${nc.id}/notify-sms`);
       toast({ title: "Success", description: "SMS notification sent." });
     } catch (e) {
@@ -441,6 +505,12 @@ Description: ${nc.description}
 Please coach me through a root cause analysis and help me develop an appropriate corrective action plan aligned with the relevant ISO standard.`;
     onAskIsa(contextPrompt);
     onClose();
+  };
+
+  const fmtDate = (d: any) => d ? format(new Date(d), 'MMM d, yyyy') : '—';
+  const toInputDate = (d: any) => {
+    if (!d) return '';
+    try { return format(new Date(d), 'yyyy-MM-dd'); } catch { return ''; }
   };
 
   return (
@@ -469,39 +539,21 @@ Please coach me through a root cause analysis and help me develop an appropriate
           <div className="space-y-8 py-4">
             {/* Workflow Progress */}
             <div className="flex items-center justify-between bg-muted/50 rounded-xl p-4 border border-border/60">
-              <WorkflowStep 
-                label="Open" 
-                active={nc.status === 'open'} 
-                completed={['root_cause_identified', 'action_in_progress', 'effectiveness_pending', 'closed'].includes(nc.status)} 
-              />
+              <WorkflowStep label="Open" active={nc.status === 'open'} completed={['root_cause_identified', 'action_in_progress', 'effectiveness_pending', 'closed'].includes(nc.status)} />
               <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
-              <WorkflowStep 
-                label="Root Cause" 
-                active={nc.status === 'root_cause_identified'} 
-                completed={['action_in_progress', 'effectiveness_pending', 'closed'].includes(nc.status)} 
-              />
+              <WorkflowStep label="Root Cause" active={nc.status === 'root_cause_identified'} completed={['action_in_progress', 'effectiveness_pending', 'closed'].includes(nc.status)} />
               <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
-              <WorkflowStep 
-                label="Action" 
-                active={nc.status === 'action_in_progress'} 
-                completed={['effectiveness_pending', 'closed'].includes(nc.status)} 
-              />
+              <WorkflowStep label="Action" active={nc.status === 'action_in_progress'} completed={['effectiveness_pending', 'closed'].includes(nc.status)} />
               <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
-              <WorkflowStep 
-                label="Verification" 
-                active={nc.status === 'effectiveness_pending'} 
-                completed={['closed'].includes(nc.status)} 
-              />
+              <WorkflowStep label="Verification" active={nc.status === 'effectiveness_pending'} completed={['closed'].includes(nc.status)} />
               <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
-              <WorkflowStep 
-                label="Closed" 
-                active={nc.status === 'closed'} 
-                completed={nc.status === 'closed'} 
-              />
+              <WorkflowStep label="Closed" active={nc.status === 'closed'} completed={nc.status === 'closed'} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
+
+                {/* Description */}
                 <section className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <FileText className="w-4 h-4" /> Description
@@ -511,17 +563,191 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   </div>
                 </section>
 
+                {/* ── Phase Dates ── */}
+                <section className="space-y-3">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4" /> Phase Dates
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Containment Date</Label>
+                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.containmentDate)}
+                        onBlur={e => { if (e.target.value) onUpdate({ containmentDate: new Date(e.target.value) } as any); }}
+                        data-testid="input-nc-containment-date" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">CA Due Date</Label>
+                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.caActionDueDate)}
+                        onBlur={e => { if (e.target.value) onUpdate({ caActionDueDate: new Date(e.target.value) } as any); }}
+                        data-testid="input-nc-ca-due" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">CA Completion Date</Label>
+                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.caCompletionDate)}
+                        onBlur={e => { if (e.target.value) onUpdate({ caCompletionDate: new Date(e.target.value) } as any); }}
+                        data-testid="input-nc-ca-completion" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">PA Due Date</Label>
+                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.paActionDueDate)}
+                        onBlur={e => { if (e.target.value) onUpdate({ paActionDueDate: new Date(e.target.value) } as any); }}
+                        data-testid="input-nc-pa-due" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">PA Completion Date</Label>
+                      <Input type="date" className="h-8 text-sm" defaultValue={toInputDate(ncAny.paCompletionDate)}
+                        onBlur={e => { if (e.target.value) onUpdate({ paCompletionDate: new Date(e.target.value) } as any); }}
+                        data-testid="input-nc-pa-completion" />
+                    </div>
+                  </div>
+                </section>
+
+                {/* ── Root Cause Analysis ── */}
                 <section className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <ShieldAlert className="w-4 h-4" /> Root Cause Analysis
                   </h3>
-                  <Textarea 
-                    value={nc.rootCause || ""} 
-                    onChange={e => onUpdate({ rootCause: e.target.value })}
-                    placeholder="Identify the underlying cause of the nonconformance..."
-                    className="min-h-[100px]"
-                    data-testid="textarea-nc-root-cause"
-                  />
+
+                  {/* RCA tool selector */}
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { key: 'manual', label: 'Manual / Narrative' },
+                      { key: '5why', label: '5-Why' },
+                      { key: '3x5why', label: '3×5 Why' },
+                      { key: 'fishbone', label: 'Fishbone (6M)' },
+                    ].map(t => (
+                      <Button
+                        key={t.key}
+                        type="button"
+                        size="sm"
+                        variant={rcaType === t.key ? 'default' : 'outline'}
+                        className={rcaType === t.key ? 'bg-blue-600 text-white hover:bg-blue-700 text-xs' : 'text-xs'}
+                        onClick={() => {
+                          setRcaType(t.key);
+                          onUpdate({ rcaType: t.key } as any);
+                        }}
+                        data-testid={`button-nc-rca-${t.key}`}
+                      >
+                        {t.label}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Manual/narrative */}
+                  {rcaType === 'manual' && (
+                    <Textarea
+                      defaultValue={nc.rootCause || ''}
+                      onBlur={e => onUpdate({ rootCause: e.target.value })}
+                      placeholder="Describe the underlying root cause of the nonconformance..."
+                      className="min-h-[120px]"
+                      data-testid="textarea-nc-root-cause"
+                    />
+                  )}
+
+                  {/* 5-Why */}
+                  {rcaType === '5why' && (
+                    <div className="space-y-2">
+                      {whys.map((why, i) => (
+                        <div key={i} className="flex gap-2 items-start">
+                          <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-1">{i + 1}</span>
+                          <Input
+                            value={why}
+                            onChange={e => setWhys(whys.map((w, j) => j === i ? e.target.value : w))}
+                            onBlur={() => saveRca('5why', { whys, rootCauseStatement })}
+                            placeholder={`Why ${i + 1}${i === 0 ? ' — Why did this happen?' : i === 4 ? ' — Root cause' : ''}`}
+                            className="h-8 text-sm"
+                            data-testid={`input-nc-why-${i + 1}`}
+                          />
+                        </div>
+                      ))}
+                      <div className="pt-1">
+                        <Label className="text-xs">Root Cause Statement</Label>
+                        <Textarea
+                          value={rootCauseStatement}
+                          onChange={e => setRootCauseStatement(e.target.value)}
+                          onBlur={() => saveRca('5why', { whys, rootCauseStatement })}
+                          placeholder="Summarize the confirmed root cause..."
+                          className="min-h-[60px] text-sm mt-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3×5 Why */}
+                  {rcaType === '3x5why' && (
+                    <div className="space-y-4">
+                      {[0, 1, 2].map(strand => (
+                        <div key={strand} className="border rounded-lg p-3 space-y-2">
+                          <p className="text-xs font-bold text-muted-foreground">Strand {strand + 1}</p>
+                          {[0, 1, 2, 3, 4].map(i => (
+                            <div key={i} className="flex gap-2 items-start">
+                              <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-1">{i + 1}</span>
+                              <Input
+                                value={(ncAny.rcaData as any)?.strands?.[strand]?.whys?.[i] || ''}
+                                onChange={e => {
+                                  const data = (ncAny.rcaData as any) || { strands: [{}, {}, {}] };
+                                  const strands = data.strands || [{}, {}, {}];
+                                  const s = { ...strands[strand], whys: [...(strands[strand]?.whys || ['', '', '', '', ''])] };
+                                  s.whys[i] = e.target.value;
+                                  const newStrands = strands.map((st: any, si: number) => si === strand ? s : st);
+                                  onUpdate({ rcaData: { ...data, strands: newStrands } } as any);
+                                }}
+                                placeholder={`Strand ${strand + 1} — Why ${i + 1}`}
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                      <div>
+                        <Label className="text-xs">Root Cause Statement</Label>
+                        <Textarea
+                          defaultValue={(ncAny.rcaData as any)?.rootCauseStatement || ''}
+                          onBlur={e => onUpdate({ rcaData: { ...(ncAny.rcaData as any), rootCauseStatement: e.target.value } } as any)}
+                          placeholder="Common root cause across all strands..."
+                          className="min-h-[60px] text-sm mt-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fishbone */}
+                  {rcaType === 'fishbone' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { key: 'man', label: 'Man (People)' },
+                          { key: 'machine', label: 'Machine / Equipment' },
+                          { key: 'material', label: 'Material' },
+                          { key: 'method', label: 'Method / Process' },
+                          { key: 'measurement', label: 'Measurement' },
+                          { key: 'environment', label: 'Environment' },
+                        ].map(cat => (
+                          <div key={cat.key} className="space-y-1">
+                            <Label className="text-xs font-bold">{cat.label}</Label>
+                            <Textarea
+                              value={fishbone[cat.key] || ''}
+                              onChange={e => setFishbone({ ...fishbone, [cat.key]: e.target.value })}
+                              onBlur={() => saveRca('fishbone', { categories: fishbone, rootCauseStatement })}
+                              placeholder={`Contributing causes — ${cat.label}`}
+                              className="min-h-[70px] text-xs resize-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div>
+                        <Label className="text-xs">Root Cause Statement</Label>
+                        <Textarea
+                          value={rootCauseStatement}
+                          onChange={e => setRootCauseStatement(e.target.value)}
+                          onBlur={() => saveRca('fishbone', { categories: fishbone, rootCauseStatement })}
+                          placeholder="Confirmed root cause based on fishbone analysis..."
+                          className="min-h-[60px] text-sm mt-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {nc.status === 'open' && (
                     <Button 
                       size="sm" 
@@ -534,6 +760,7 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   )}
                 </section>
 
+                {/* ── Corrective & Preventive Actions ── */}
                 <section className="space-y-4">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" /> Corrective & Preventive Actions
@@ -542,8 +769,8 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     <div className="space-y-2">
                       <Label className="text-xs">Immediate Containment</Label>
                       <Textarea 
-                        value={nc.immediateContainment || ""} 
-                        onChange={e => onUpdate({ immediateContainment: e.target.value })}
+                        defaultValue={nc.immediateContainment || ""}
+                        onBlur={e => onUpdate({ immediateContainment: e.target.value })}
                         placeholder="What was done immediately to contain the issue?"
                         className="min-h-[80px]"
                       />
@@ -551,8 +778,8 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     <div className="space-y-2">
                       <Label className="text-xs">Corrective Action</Label>
                       <Textarea 
-                        value={nc.correctiveAction || ""} 
-                        onChange={e => onUpdate({ correctiveAction: e.target.value })}
+                        defaultValue={nc.correctiveAction || ""}
+                        onBlur={e => onUpdate({ correctiveAction: e.target.value })}
                         placeholder="What actions are being taken to eliminate the cause?"
                         className="min-h-[80px]"
                       />
@@ -560,35 +787,145 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     <div className="space-y-2">
                       <Label className="text-xs">Preventive Action</Label>
                       <Textarea 
-                        value={nc.preventiveAction || ""} 
-                        onChange={e => onUpdate({ preventiveAction: e.target.value })}
+                        defaultValue={nc.preventiveAction || ""}
+                        onBlur={e => onUpdate({ preventiveAction: e.target.value })}
                         placeholder="How will we prevent this from happening again?"
                         className="min-h-[80px]"
                       />
                     </div>
                   </div>
                   {nc.status === 'root_cause_identified' && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleStatusChange('action_in_progress')}
-                      className="bg-accent hover:bg-accent/90 text-white"
-                      data-testid="button-nc-action-start"
-                    >
+                    <Button size="sm" onClick={() => handleStatusChange('action_in_progress')} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-nc-action-start">
                       Move to Action in Progress
                     </Button>
                   )}
                   {nc.status === 'action_in_progress' && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleStatusChange('effectiveness_pending')}
-                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                      data-testid="button-nc-action-complete"
-                    >
-                      Actions Completed - Move to Verification
+                    <Button size="sm" onClick={() => handleStatusChange('effectiveness_pending')} className="bg-yellow-600 hover:bg-yellow-700 text-white" data-testid="button-nc-action-complete">
+                      Actions Completed — Move to Verification
                     </Button>
                   )}
                 </section>
 
+                {/* ── Documentation Update Verification ── */}
+                <section className="space-y-3">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-violet-600" />
+                    <span className="text-violet-700 dark:text-violet-400">Documentation Update Verification</span>
+                    {ncAny.docUpdateRequired && ncAny.docUpdateStatus === 'completed' && (
+                      <Badge className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs ml-auto">All Updated ✓</Badge>
+                    )}
+                    {ncAny.docUpdateRequired && ncAny.docUpdateStatus === 'in_progress' && (
+                      <Badge className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs ml-auto">In Progress</Badge>
+                    )}
+                    {!ncAny.docUpdateRequired && (
+                      <Badge variant="outline" className="text-xs ml-auto text-muted-foreground">Not Required</Badge>
+                    )}
+                  </h3>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                    <Switch
+                      checked={!!ncAny.docUpdateRequired}
+                      onCheckedChange={val => onUpdate({ docUpdateRequired: val } as any)}
+                      data-testid="switch-nc-doc-update"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{ncAny.docUpdateRequired ? 'Documentation updates required' : 'No documentation updates needed'}</p>
+                      <p className="text-xs text-muted-foreground">ISO 9001 §7.5 / IATF 16949 / AS9100D / ISO 13485</p>
+                    </div>
+                  </div>
+
+                  {ncAny.docUpdateRequired && (
+                    <div className="space-y-3">
+                      {/* Preset quick-add buttons */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Quick-add document type:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {DOC_TYPE_PRESETS.map(type => (
+                            <Button key={type} type="button" variant="outline" size="sm"
+                              className="text-[10px] h-6 px-2 py-0"
+                              onClick={() => addDocItem(type)}
+                              data-testid={`button-nc-add-doc-${type.replace(/\s+/g, '-').toLowerCase()}`}
+                            >
+                              + {type}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Doc items */}
+                      {docItems.length > 0 && (
+                        <div className="space-y-2">
+                          {docItems.map((item, idx) => (
+                            <div key={idx} className="border rounded-lg p-3 space-y-2 bg-background">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold">{item.docType}</span>
+                                <div className="flex items-center gap-2">
+                                  <Select value={item.status} onValueChange={v => updateDocItem(idx, 'status', v)}>
+                                    <SelectTrigger className="h-6 text-xs w-32" data-testid={`select-nc-doc-status-${idx}`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pending">Pending</SelectItem>
+                                      <SelectItem value="updated">Updated ✓</SelectItem>
+                                      <SelectItem value="not_required">N/A</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeDocItem(idx)} data-testid={`button-nc-remove-doc-${idx}`}>
+                                    <Trash2 className="w-3 h-3 text-destructive" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                <Input value={item.docName} onChange={e => updateDocItem(idx, 'docName', e.target.value)}
+                                  placeholder="Doc name / rev #" className="h-7 text-xs col-span-2"
+                                  data-testid={`input-nc-doc-name-${idx}`} />
+                                <Input type="date" value={item.updatedDate} onChange={e => updateDocItem(idx, 'updatedDate', e.target.value)}
+                                  className="h-7 text-xs" data-testid={`input-nc-doc-date-${idx}`} />
+                              </div>
+                              {item.status === 'updated' && (
+                                <Input value={item.updatedBy} onChange={e => updateDocItem(idx, 'updatedBy', e.target.value)}
+                                  placeholder="Updated by (name / title)" className="h-7 text-xs"
+                                  data-testid={`input-nc-doc-updated-by-${idx}`} />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Overall status and verified by */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Overall Status</Label>
+                          <Select defaultValue={ncAny.docUpdateStatus || 'pending'} onValueChange={v => onUpdate({ docUpdateStatus: v } as any)}>
+                            <SelectTrigger className="h-8 text-sm" data-testid="select-nc-doc-overall-status">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="completed">All Updated ✓</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Verified By</Label>
+                          <Input defaultValue={ncAny.docUpdateVerifiedBy || ''} placeholder="Name / title"
+                            onBlur={e => onUpdate({ docUpdateVerifiedBy: e.target.value } as any)}
+                            className="h-8 text-sm" data-testid="input-nc-doc-verified-by" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs">Notes</Label>
+                        <Textarea defaultValue={ncAny.docUpdateNotes || ''} placeholder="Notes about the documentation update..."
+                          onBlur={e => onUpdate({ docUpdateNotes: e.target.value } as any)}
+                          className="min-h-[60px] text-sm" data-testid="textarea-nc-doc-notes" />
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* ── Effectiveness Verification ── */}
                 <section className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <Search className="w-4 h-4" /> Effectiveness Verification
@@ -597,10 +934,10 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     <div className="space-y-2">
                       <Label className="text-xs">Effectiveness Result</Label>
                       <Select 
-                        value={nc.effectivenessResult || "pending"} 
+                        defaultValue={nc.effectivenessResult || "pending"} 
                         onValueChange={v => onUpdate({ effectivenessResult: v })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger data-testid="select-nc-effectiveness">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -613,17 +950,17 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     <div className="space-y-2">
                       <Label className="text-xs">Verification Method</Label>
                       <Input 
-                        value={nc.verificationMethod || ""} 
-                        onChange={e => onUpdate({ verificationMethod: e.target.value })}
-                        placeholder="e.g., Follow-up audit"
+                        defaultValue={nc.verificationMethod || ""}
+                        onBlur={e => onUpdate({ verificationMethod: e.target.value })}
+                        placeholder="e.g., Follow-up audit, 30-day check"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs">Closure Notes</Label>
                     <Textarea 
-                      value={nc.closureNotes || ""} 
-                      onChange={e => onUpdate({ closureNotes: e.target.value })}
+                      defaultValue={nc.closureNotes || ""}
+                      onBlur={e => onUpdate({ closureNotes: e.target.value })}
                       placeholder="Final notes before closing..."
                     />
                   </div>
@@ -640,6 +977,7 @@ Please coach me through a root cause analysis and help me develop an appropriate
                 </section>
               </div>
 
+              {/* Sidebar */}
               <div className="space-y-6">
                 <Card>
                   <CardHeader className="pb-2">
@@ -649,9 +987,14 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     <DetailItem label="Severity" value={nc.severity} badge />
                     <DetailItem label="Source" value={nc.sourceType.replace(/_/g, ' ')} badge />
                     <DetailItem label="Detected By" value={nc.detectedBy} />
-                    <DetailItem label="Detected Date" value={nc.detectedDate ? format(new Date(nc.detectedDate), 'MMM d, yyyy') : "—"} />
+                    <DetailItem label="Detected Date" value={nc.detectedDate ? fmtDate(nc.detectedDate) : "—"} />
                     <DetailItem label="Responsible" value={nc.responsiblePerson} />
-                    <DetailItem label="Target Date" value={nc.targetDate ? format(new Date(nc.targetDate), 'MMM d, yyyy') : "—"} />
+                    <DetailItem label="Target Date" value={nc.targetDate ? fmtDate(nc.targetDate) : "—"} />
+                    {ncAny.containmentDate && <DetailItem label="Containment Date" value={fmtDate(ncAny.containmentDate)} />}
+                    {ncAny.caActionDueDate && <DetailItem label="CA Due" value={fmtDate(ncAny.caActionDueDate)} />}
+                    {ncAny.caCompletionDate && <DetailItem label="CA Completed" value={fmtDate(ncAny.caCompletionDate)} />}
+                    {ncAny.paActionDueDate && <DetailItem label="PA Due" value={fmtDate(ncAny.paActionDueDate)} />}
+                    {ncAny.paCompletionDate && <DetailItem label="PA Completed" value={fmtDate(ncAny.paCompletionDate)} />}
                     {nc.responsiblePhone && (
                       <Button 
                         variant="outline" 
@@ -666,6 +1009,18 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   </CardContent>
                 </Card>
 
+                {/* RCA type badge */}
+                {ncAny.rcaType && ncAny.rcaType !== 'manual' && (
+                  <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/20">
+                    <CardContent className="p-3">
+                      <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-1">RCA Method</p>
+                      <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs">
+                        {ncAny.rcaType === '5why' ? '5-Why' : ncAny.rcaType === '3x5why' ? '3×5 Why' : ncAny.rcaType === 'fishbone' ? 'Fishbone (6M)' : ncAny.rcaType}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-700 dark:text-blue-400">
@@ -674,8 +1029,8 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-blue-600 dark:text-blue-500 leading-relaxed">
-                      Nonconformances must be addressed according to ISO requirements (e.g., Clause 10.2 of ISO 9001:2015). 
-                      Ensure root cause analysis is performed to prevent recurrence.
+                      Nonconformances must be addressed per ISO 9001:2015 §10.2 / IATF 16949 §10.2.3. 
+                      Perform RCA to prevent recurrence and update affected documents per §7.5.
                     </p>
                   </CardContent>
                 </Card>
@@ -696,7 +1051,6 @@ function WorkflowStep({ label, active, completed }: { label: string; active: boo
       }`}>
         {completed ? <CheckCircle2 className="w-4 h-4" /> : null}
         {!completed && active ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" /> : null}
-        {!completed && !active ? "" : null}
       </div>
       <span className={`text-[10px] font-bold uppercase tracking-tighter ${
         active ? "text-accent" : completed ? "text-green-600" : "text-muted-foreground"
@@ -705,7 +1059,7 @@ function WorkflowStep({ label, active, completed }: { label: string; active: boo
   );
 }
 
-function DetailItem({ label, value, badge }: { label: string; value: string | null; badge?: boolean }) {
+function DetailItem({ label, value, badge }: { label: string; value: string | null | undefined; badge?: boolean }) {
   return (
     <div className="space-y-1">
       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</p>

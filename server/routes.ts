@@ -5950,7 +5950,17 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-      const nc = await storage.updateNonconformance(id, userId, req.body, isSuperadmin);
+      const updates: any = { ...req.body };
+      if (updates.targetDate) updates.targetDate = new Date(updates.targetDate);
+      if (updates.closureDate) updates.closureDate = new Date(updates.closureDate);
+      if (updates.detectedDate) updates.detectedDate = new Date(updates.detectedDate);
+      if (updates.containmentDate) updates.containmentDate = new Date(updates.containmentDate);
+      if (updates.caActionDueDate) updates.caActionDueDate = new Date(updates.caActionDueDate);
+      if (updates.caCompletionDate) updates.caCompletionDate = new Date(updates.caCompletionDate);
+      if (updates.paActionDueDate) updates.paActionDueDate = new Date(updates.paActionDueDate);
+      if (updates.paCompletionDate) updates.paCompletionDate = new Date(updates.paCompletionDate);
+      if (updates.docUpdateVerifiedDate) updates.docUpdateVerifiedDate = new Date(updates.docUpdateVerifiedDate);
+      const nc = await storage.updateNonconformance(id, userId, updates, isSuperadmin);
       if (!nc) return res.status(404).json({ message: "Nonconformance not found" });
       res.json(nc);
     } catch (error: any) {

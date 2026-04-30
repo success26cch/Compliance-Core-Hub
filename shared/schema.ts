@@ -434,6 +434,22 @@ export const nonconformances = pgTable("nonconformances", {
   closureDate: timestamp("closure_date"),
   closureNotes: text("closure_notes"),
   effectivenessResult: text("effectiveness_result"), // 'pending', 'effective', 'not_effective'
+  // RCA tool fields
+  rcaType: text("rca_type"), // 'manual' | '5why' | '3x5why' | 'fishbone'
+  rcaData: jsonb("rca_data"), // structured RCA output
+  // Phase dates
+  containmentDate: timestamp("containment_date"),
+  caActionDueDate: timestamp("ca_action_due_date"),
+  caCompletionDate: timestamp("ca_completion_date"),
+  paActionDueDate: timestamp("pa_action_due_date"),
+  paCompletionDate: timestamp("pa_completion_date"),
+  // Documentation Update Verification
+  docUpdateRequired: boolean("doc_update_required").default(false),
+  docUpdateStatus: text("doc_update_status"), // 'pending' | 'in_progress' | 'completed'
+  docUpdateItems: jsonb("doc_update_items"), // DocUpdateItem[]
+  docUpdateNotes: text("doc_update_notes"),
+  docUpdateVerifiedBy: text("doc_update_verified_by"),
+  docUpdateVerifiedDate: timestamp("doc_update_verified_date"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -441,6 +457,12 @@ export const insertNonconformanceSchema = createInsertSchema(nonconformances, {
   detectedDate: dateOrStringToDate,
   targetDate: dateOrStringToDate,
   closureDate: dateOrStringToDate,
+  containmentDate: dateOrStringToDate,
+  caActionDueDate: dateOrStringToDate,
+  caCompletionDate: dateOrStringToDate,
+  paActionDueDate: dateOrStringToDate,
+  paCompletionDate: dateOrStringToDate,
+  docUpdateVerifiedDate: dateOrStringToDate,
 }).omit({
   id: true,
   createdAt: true,
