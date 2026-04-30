@@ -2723,3 +2723,39 @@ export const trainingMatrixEntries = pgTable("training_matrix_entries", {
 export const insertTrainingMatrixEntrySchema = createInsertSchema(trainingMatrixEntries).omit({ id: true, updatedAt: true });
 export type TrainingMatrixEntry = typeof trainingMatrixEntries.$inferSelect;
 export type InsertTrainingMatrixEntry = z.infer<typeof insertTrainingMatrixEntrySchema>;
+
+// ─── Training Evidence Files ──────────────────────────────────────────────────
+// Stores uploaded evidence documents linked to employee competency records.
+// Supports: certificates, sign-off sheets, work instructions, inspection/
+// calibration procedures, SOPs, test results, photos, and future video modules.
+export const trainingEvidenceFiles = pgTable("training_evidence_files", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  employeeId: integer("employee_id").notNull(),
+  competencyRecordId: integer("competency_record_id"), // optional FK → employee_competency_records
+  trainingEventId: integer("training_event_id"),       // optional FK → training_event_records
+  // Document classification
+  documentCategory: text("document_category").notNull().default("certificate"),
+  // 'certificate' | 'sign_off_sheet' | 'work_instruction' | 'inspection_instruction'
+  // | 'calibration_procedure' | 'sop' | 'test_result' | 'photo' | 'video' | 'other'
+  title: text("title").notNull(),
+  description: text("description"),
+  // Controlled-document metadata (for WIs, procedures, etc.)
+  documentNumber: text("document_number"),  // e.g. "WI-001-Assembly"
+  revision: text("revision"),               // e.g. "Rev 3" or "C"
+  operationName: text("operation_name"),    // e.g. "Station 5 – Torque Application"
+  department: text("department"),
+  // File storage
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),    // MIME type
+  fileSize: integer("file_size").notNull(), // bytes
+  fileData: text("file_data").notNull(),    // base64 data URL
+  // Lifecycle
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  uploadedBy: text("uploaded_by"),          // name of person who uploaded
+  expiresAt: text("expires_at"),            // optional expiry (e.g. certs)
+  isActive: boolean("is_active").notNull().default(true),
+});
+export const insertTrainingEvidenceFileSchema = createInsertSchema(trainingEvidenceFiles).omit({ id: true, uploadedAt: true });
+export type TrainingEvidenceFile = typeof trainingEvidenceFiles.$inferSelect;
+export type InsertTrainingEvidenceFile = z.infer<typeof insertTrainingEvidenceFileSchema>;

@@ -6848,6 +6848,46 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (error: any) { res.status(500).json({ message: error.message }); }
   });
 
+  // ─── Training Evidence Files ──────────────────────────────────────────────────
+  app.get("/api/training-evidence", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const filters: { employeeId?: number; competencyRecordId?: number; trainingEventId?: number } = {};
+      if (req.query.employeeId) filters.employeeId = parseInt(req.query.employeeId as string);
+      if (req.query.competencyRecordId) filters.competencyRecordId = parseInt(req.query.competencyRecordId as string);
+      if (req.query.trainingEventId) filters.trainingEventId = parseInt(req.query.trainingEventId as string);
+      res.json(await storage.getTrainingEvidenceFiles(userId, filters, isSuperadmin));
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.post("/api/training-evidence", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      // Enforce file size limit (10 MB base64 ≈ ~13.3 MB encoded)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (req.body.fileSize && req.body.fileSize > MAX_FILE_SIZE) {
+        return res.status(413).json({ message: "File exceeds 10 MB limit" });
+      }
+      const rec = await storage.createTrainingEvidenceFile({ ...req.body, userId });
+      res.status(201).json(rec);
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
+  app.delete("/api/training-evidence/:id", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteTrainingEvidenceFile(id, userId, isSuperadmin);
+      res.status(204).send();
+    } catch (error: any) { res.status(500).json({ message: error.message }); }
+  });
+
   // ─── Training Event Log ───────────────────────────────────────────────────────
   app.get("/api/training-event-records", async (req: Request, res: Response) => {
     try {

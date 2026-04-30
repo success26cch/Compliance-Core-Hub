@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,11 +18,13 @@ import {
   Plus, GraduationCap, CheckCircle2, Clock, Users, ChevronDown, ChevronUp,
   Trash2, ShieldCheck, BookOpen, ClipboardList, AlertTriangle, FileText,
   Pencil, Award, Layers, BarChart2, User, ChevronRight, Grid3x3, X,
+  Upload, Download, Paperclip, FileCheck, FilePlus, Image, Video,
+  BookMarked, Wrench, FlaskConical, ScrollText, FileSignature,
 } from "lucide-react";
 import type {
   IsoAwarenessNotice, IsoAwarenessAcknowledgment, Employee,
   CompetencyRequirement, EmployeeCompetencyRecord, TrainingEventRecord,
-  TrainingMatrixSkill, TrainingMatrixEntry,
+  TrainingMatrixSkill, TrainingMatrixEntry, TrainingEvidenceFile,
 } from "@shared/schema";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -68,6 +71,55 @@ const PROCESS_AREAS = [
   "Shipping / Receiving", "Management", "Human Resources", "Maintenance",
   "Sales / Customer Service", "Document Control", "All Departments",
 ];
+
+// ─── Evidence File Document Categories ────────────────────────────────────────
+export const DOC_CATEGORIES: { value: string; label: string; description: string }[] = [
+  { value: "certificate",            label: "Certificate / Diploma",           description: "External or internal certification, degree, or credential" },
+  { value: "sign_off_sheet",         label: "Sign-Off Sheet",                  description: "Supervisor or trainer sign-off confirming competency" },
+  { value: "work_instruction",       label: "Work Instruction (WI)",           description: "Controlled WI for a specific production operation or process" },
+  { value: "inspection_instruction", label: "Inspection Instruction",          description: "Controlled inspection or quality check procedure" },
+  { value: "calibration_procedure",  label: "Calibration Procedure",           description: "Gage or instrument calibration instruction" },
+  { value: "sop",                    label: "Standard Operating Procedure",    description: "SOP, procedure, or process instruction" },
+  { value: "test_result",            label: "Written Test / Exam Result",      description: "Scored test or quiz demonstrating knowledge" },
+  { value: "photo",                  label: "Photo Evidence",                  description: "Photograph demonstrating task completion or condition" },
+  { value: "video",                  label: "Video (Future)",                  description: "Reserved — video training content (coming soon)" },
+  { value: "other",                  label: "Other",                           description: "Any other supporting document" },
+];
+const DOC_CAT_LABELS: Record<string, string> = Object.fromEntries(DOC_CATEGORIES.map(c => [c.value, c.label]));
+const DOC_CAT_COLORS: Record<string, string> = {
+  certificate:            "bg-green-50 text-green-700 border-green-200",
+  sign_off_sheet:         "bg-blue-50 text-blue-700 border-blue-200",
+  work_instruction:       "bg-orange-50 text-orange-700 border-orange-200",
+  inspection_instruction: "bg-purple-50 text-purple-700 border-purple-200",
+  calibration_procedure:  "bg-teal-50 text-teal-700 border-teal-200",
+  sop:                    "bg-yellow-50 text-yellow-700 border-yellow-200",
+  test_result:            "bg-indigo-50 text-indigo-700 border-indigo-200",
+  photo:                  "bg-pink-50 text-pink-700 border-pink-200",
+  video:                  "bg-slate-100 text-slate-600 border-slate-200",
+  other:                  "bg-gray-50 text-gray-600 border-gray-200",
+};
+
+function docCatIcon(cat: string) {
+  const map: Record<string, any> = {
+    certificate:            Award,
+    sign_off_sheet:         FileSignature,
+    work_instruction:       Wrench,
+    inspection_instruction: FlaskConical,
+    calibration_procedure:  BookMarked,
+    sop:                    ScrollText,
+    test_result:            FileCheck,
+    photo:                  Image,
+    video:                  Video,
+    other:                  FileText,
+  };
+  return map[cat] ?? FileText;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 // ─── Color helpers ────────────────────────────────────────────────────────────
 function competencyTypeBadge(t: string) {
@@ -377,10 +429,17 @@ function EmployeeRecordsTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState<EmployeeCompetencyRecord | null>(null);
   const [activeView, setActiveView] = useState<"records" | "gaps">("records");
+  const [uploadTargetRecId, setUploadTargetRecId] = useState<number | null>(null);
+  const [expandedFileRecs, setExpandedFileRecs] = useState<Set<number>>(new Set());
 
   const { data: employees = [] } = useQuery<Employee[]>({ queryKey: ["/api/employees"] });
   const { data: requirements = [] } = useQuery<CompetencyRequirement[]>({ queryKey: ["/api/competency-requirements"] });
   const { data: allRecords = [] } = useQuery<EmployeeCompetencyRecord[]>({ queryKey: ["/api/employee-competency-records"] });
+  const { data: empEvidenceFiles = [] } = useQuery<TrainingEvidenceFile[]>({
+    queryKey: ["/api/training-evidence", selectedEmpId],
+    enabled: selectedEmpId != null,
+    queryFn: () => fetch(`/api/training-evidence?employeeId=${selectedEmpId}`).then(r => r.json()),
+  });
 
   const selectedEmp = employees.find(e => e.id === selectedEmpId);
   const empRecords = allRecords.filter(r => r.employeeId === selectedEmpId);
@@ -413,6 +472,21 @@ function EmployeeRecordsTab() {
     mutationFn: (id: number) => apiRequest("DELETE", `/api/employee-competency-records/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/employee-competency-records"] }); toast({ title: "Removed" }); },
   });
+  const deleteFileMut = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/training-evidence/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/training-evidence", selectedEmpId] });
+      toast({ title: "File removed" });
+    },
+  });
+
+  const toggleFileExpand = (recId: number) => {
+    setExpandedFileRecs(prev => {
+      const next = new Set(prev);
+      if (next.has(recId)) next.delete(recId); else next.add(recId);
+      return next;
+    });
+  };
 
   const coveragePercent = roleReqs.length > 0 ? Math.round(((roleReqs.length - gaps.length) / roleReqs.length) * 100) : 100;
 
@@ -508,29 +582,107 @@ function EmployeeRecordsTab() {
                   <Card className="p-6 border-dashed text-center"><p className="text-xs text-muted-foreground">No competency evidence recorded for this employee yet.</p></Card>
                 ) : (
                   <div className="space-y-2">
-                    {empRecords.map(rec => (
-                      <Card key={rec.id} className="px-4 py-3 flex items-start justify-between" data-testid={`card-emp-rec-${rec.id}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-sm">{rec.competencyName}</span>
-                            <Badge variant="outline" className={`text-xs ${evidenceBadge(rec.evidenceType)}`}>{EVIDENCE_TYPE_LABELS[rec.evidenceType] ?? rec.evidenceType}</Badge>
-                            <Badge variant="outline" className={`text-xs ${statusBadge(rec.status)}`}>{rec.status}</Badge>
-                            {rec.isOjt && <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT §7.2.2</Badge>}
-                            {rec.effectivenessVerified && <Badge variant="outline" className="text-xs bg-green-50 text-green-700"><CheckCircle2 className="w-3 h-3 mr-0.5" />Effectiveness Verified</Badge>}
+                    {empRecords.map(rec => {
+                      const recFiles = empEvidenceFiles.filter(f => f.competencyRecordId === rec.id);
+                      const isExpanded = expandedFileRecs.has(rec.id);
+                      return (
+                        <Card key={rec.id} className="border" data-testid={`card-emp-rec-${rec.id}`}>
+                          <div className="px-4 py-3 flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-sm">{rec.competencyName}</span>
+                                <Badge variant="outline" className={`text-xs ${evidenceBadge(rec.evidenceType)}`}>{EVIDENCE_TYPE_LABELS[rec.evidenceType] ?? rec.evidenceType}</Badge>
+                                <Badge variant="outline" className={`text-xs ${statusBadge(rec.status)}`}>{rec.status}</Badge>
+                                {rec.isOjt && <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT §7.2.2</Badge>}
+                                {rec.effectivenessVerified && <Badge variant="outline" className="text-xs bg-green-50 text-green-700"><CheckCircle2 className="w-3 h-3 mr-0.5" />Effectiveness Verified</Badge>}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                {rec.provider && <span>Provider: {rec.provider}</span>}
+                                {rec.completedDate && <span>Completed: {rec.completedDate}</span>}
+                                {rec.expiryDate && <span>Expires: {rec.expiryDate}</span>}
+                              </div>
+                              {rec.notes && <p className="text-xs text-muted-foreground mt-1 italic">{rec.notes}</p>}
+                            </div>
+                            <div className="flex items-center gap-1 ml-2 shrink-0">
+                              <button className="text-muted-foreground hover:text-foreground p-1" onClick={() => setEditItem(rec)}><Pencil className="w-3.5 h-3.5" /></button>
+                              <button className="text-red-400 hover:text-red-600 p-1" onClick={() => deleteMut.mutate(rec.id)}><Trash2 className="w-3.5 h-3.5" /></button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            {rec.provider && <span>Provider: {rec.provider}</span>}
-                            {rec.completedDate && <span>Completed: {rec.completedDate}</span>}
-                            {rec.expiryDate && <span>Expires: {rec.expiryDate}</span>}
+                          {/* ── Evidence file strip ── */}
+                          <div className="border-t bg-slate-50/70 px-4 py-2 flex items-center justify-between gap-2">
+                            <button
+                              onClick={() => toggleFileExpand(rec.id)}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                              data-testid={`button-files-toggle-${rec.id}`}
+                            >
+                              <Paperclip className="w-3.5 h-3.5" />
+                              <span className="font-medium">{recFiles.length} file{recFiles.length !== 1 ? "s" : ""}</span>
+                              {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            </button>
+                            <Button
+                              size="sm" variant="ghost"
+                              className="h-6 text-xs gap-1 text-primary hover:bg-primary/10"
+                              onClick={() => { setUploadTargetRecId(rec.id); }}
+                              data-testid={`button-upload-file-${rec.id}`}
+                            >
+                              <FilePlus className="w-3.5 h-3.5" /> Upload File
+                            </Button>
                           </div>
-                          {rec.notes && <p className="text-xs text-muted-foreground mt-1 italic">{rec.notes}</p>}
-                        </div>
-                        <div className="flex items-center gap-1 ml-2 shrink-0">
-                          <button className="text-muted-foreground hover:text-foreground p-1" onClick={() => setEditItem(rec)}><Pencil className="w-3.5 h-3.5" /></button>
-                          <button className="text-red-400 hover:text-red-600 p-1" onClick={() => deleteMut.mutate(rec.id)}><Trash2 className="w-3.5 h-3.5" /></button>
-                        </div>
-                      </Card>
-                    ))}
+                          {/* ── Expanded file list ── */}
+                          {isExpanded && (
+                            <div className="border-t px-4 py-3 space-y-2">
+                              {recFiles.length === 0 ? (
+                                <p className="text-xs text-muted-foreground text-center py-2">No files attached yet. Click "Upload File" to add evidence documents.</p>
+                              ) : recFiles.map(f => {
+                                const Icon = docCatIcon(f.documentCategory);
+                                return (
+                                  <div key={f.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-white border" data-testid={`file-card-${f.id}`}>
+                                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                                      <Icon className="w-4 h-4 text-slate-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start gap-2 flex-wrap">
+                                        <span className="font-medium text-sm leading-tight">{f.title}</span>
+                                        <Badge variant="outline" className={`text-xs ${DOC_CAT_COLORS[f.documentCategory] ?? ""}`}>
+                                          {DOC_CAT_LABELS[f.documentCategory] ?? f.documentCategory}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                                        {f.documentNumber && <span className="text-xs text-muted-foreground font-mono">{f.documentNumber}</span>}
+                                        {f.revision && <span className="text-xs text-muted-foreground">{f.revision}</span>}
+                                        {f.operationName && <span className="text-xs text-slate-600 font-medium">Op: {f.operationName}</span>}
+                                        <span className="text-xs text-muted-foreground">{formatBytes(f.fileSize)}</span>
+                                        {f.expiresAt && <span className="text-xs text-orange-600">Exp: {f.expiresAt}</span>}
+                                      </div>
+                                      {f.description && <p className="text-xs text-muted-foreground mt-0.5 italic">{f.description}</p>}
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <a
+                                        href={f.fileData}
+                                        download={f.fileName}
+                                        className="p-1.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                        title="Download"
+                                        data-testid={`button-download-file-${f.id}`}
+                                      >
+                                        <Download className="w-3.5 h-3.5" />
+                                      </a>
+                                      <button
+                                        className="p-1.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                        onClick={() => deleteFileMut.mutate(f.id)}
+                                        title="Delete file"
+                                        data-testid={`button-delete-file-${f.id}`}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
                   </div>
                 )
               )}
@@ -570,6 +722,18 @@ function EmployeeRecordsTab() {
           onSave={data => editItem ? updateMut.mutate({ id: editItem.id, data }) : createMut.mutate({ ...data, employeeId: selectedEmpId })}
           onClose={() => { setShowAdd(false); setEditItem(null); }}
           isPending={createMut.isPending || updateMut.isPending}
+        />
+      )}
+      {uploadTargetRecId != null && selectedEmpId != null && (
+        <EvidenceFileUploadDialog
+          employeeId={selectedEmpId}
+          competencyRecordId={uploadTargetRecId}
+          onClose={() => setUploadTargetRecId(null)}
+          onUploaded={() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/training-evidence", selectedEmpId] });
+            setExpandedFileRecs(prev => new Set([...prev, uploadTargetRecId!]));
+            setUploadTargetRecId(null);
+          }}
         />
       )}
     </div>
@@ -660,6 +824,274 @@ function EvidenceDialog({ employeeId, initial, onSave, onClose, isPending }: {
               {isPending ? "Saving..." : initial ? "Update" : "Add Evidence"}
             </Button>
             <Button variant="outline" onClick={onClose}>Cancel</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Evidence File Upload Dialog
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const ACCEPTED_FILE_TYPES = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv";
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+function EvidenceFileUploadDialog({
+  employeeId, competencyRecordId, onClose, onUploaded,
+}: {
+  employeeId: number;
+  competencyRecordId: number;
+  onClose: () => void;
+  onUploaded: () => void;
+}) {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [form, setForm] = useState({
+    documentCategory: "certificate",
+    title: "",
+    description: "",
+    documentNumber: "",
+    revision: "",
+    operationName: "",
+    department: "",
+    uploadedBy: "",
+    expiresAt: "",
+  });
+
+  const needsWiFields = ["work_instruction", "inspection_instruction", "calibration_procedure", "sop"].includes(form.documentCategory);
+
+  const handleFile = useCallback((file: File) => {
+    if (file.size > MAX_FILE_BYTES) {
+      toast({ title: "File too large", description: "Maximum file size is 10 MB.", variant: "destructive" });
+      return;
+    }
+    setSelectedFile(file);
+    if (!form.title) {
+      const nameWithoutExt = file.name.replace(/\.[^.]+$/, "");
+      setForm(f => ({ ...f, title: nameWithoutExt }));
+    }
+  }, [form.title, toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }, [handleFile]);
+
+  const handleUpload = async () => {
+    if (!selectedFile || !form.title) return;
+    setIsUploading(true);
+    setUploadProgress(10);
+    try {
+      const fileData: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+      setUploadProgress(50);
+      const payload = {
+        employeeId,
+        competencyRecordId,
+        ...form,
+        fileName: selectedFile.name,
+        fileType: selectedFile.type,
+        fileSize: selectedFile.size,
+        fileData,
+        isActive: true,
+      };
+      const res = await apiRequest("POST", "/api/training-evidence", payload);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Upload failed" }));
+        throw new Error(err.message ?? "Upload failed");
+      }
+      setUploadProgress(100);
+      toast({ title: "File uploaded", description: `${selectedFile.name} attached successfully.` });
+      onUploaded();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const selectedCat = DOC_CATEGORIES.find(c => c.value === form.documentCategory);
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="w-4 h-4 text-primary" />
+            Upload Training Evidence
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-1">
+          {/* ── File Drop Zone ── */}
+          <div
+            className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${isDragging ? "border-primary bg-primary/5" : selectedFile ? "border-green-400 bg-green-50" : "border-border hover:border-primary/40 hover:bg-muted/30"}`}
+            onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            data-testid="dropzone-evidence"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPTED_FILE_TYPES}
+              className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              data-testid="input-evidence-file"
+            />
+            {selectedFile ? (
+              <div className="flex items-center justify-center gap-3">
+                <FileCheck className="w-8 h-8 text-green-600" />
+                <div className="text-left">
+                  <p className="font-medium text-sm text-green-700">{selectedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">{formatBytes(selectedFile.size)} · Click to change</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                <p className="text-sm font-medium text-muted-foreground">Drop file here or click to browse</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">PDF, DOC, DOCX, XLS, PNG, JPG — max 10 MB</p>
+              </>
+            )}
+          </div>
+
+          {/* ── Document Category ── */}
+          <div>
+            <Label>Document Type *</Label>
+            <Select value={form.documentCategory} onValueChange={v => setForm(f => ({ ...f, documentCategory: v }))} data-testid="select-doc-category">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {DOC_CATEGORIES.map(c => (
+                  <SelectItem key={c.value} value={c.value}>
+                    <div className="flex flex-col">
+                      <span>{c.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedCat && <p className="text-xs text-muted-foreground mt-1">{selectedCat.description}</p>}
+          </div>
+
+          {/* ── Title ── */}
+          <div>
+            <Label>Title *</Label>
+            <Input
+              placeholder={form.documentCategory === "work_instruction" ? "e.g. WI-001 Torque Application – Station 5" : "e.g. ISO 9001 Lead Auditor Certificate"}
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              data-testid="input-file-title"
+            />
+          </div>
+
+          {/* ── Controlled Document Fields (WI, SOP, etc.) ── */}
+          {needsWiFields && (
+            <div className="rounded-lg border border-orange-200 bg-orange-50/50 p-3 space-y-3">
+              <p className="text-xs font-semibold text-orange-700 flex items-center gap-1.5">
+                <Wrench className="w-3.5 h-3.5" /> Controlled Document Details
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Document Number</Label>
+                  <Input
+                    placeholder="e.g. WI-001, QP-003"
+                    value={form.documentNumber}
+                    onChange={e => setForm(f => ({ ...f, documentNumber: e.target.value }))}
+                    data-testid="input-doc-number"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Revision</Label>
+                  <Input
+                    placeholder="e.g. Rev 3, Rev C"
+                    value={form.revision}
+                    onChange={e => setForm(f => ({ ...f, revision: e.target.value }))}
+                    data-testid="input-doc-revision"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Operation / Process Name</Label>
+                <Input
+                  placeholder="e.g. Station 5 – Torque Application, Final Inspection, CMM Programming"
+                  value={form.operationName}
+                  onChange={e => setForm(f => ({ ...f, operationName: e.target.value }))}
+                  data-testid="input-operation-name"
+                />
+                <p className="text-xs text-muted-foreground mt-1">The specific operation or process this employee was trained on</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Optional Fields ── */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Department <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Input placeholder="e.g. Production, Quality" value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} data-testid="input-dept" />
+            </div>
+            <div>
+              <Label className="text-xs">Uploaded By <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Input placeholder="Trainer or supervisor name" value={form.uploadedBy} onChange={e => setForm(f => ({ ...f, uploadedBy: e.target.value }))} data-testid="input-uploaded-by" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {!needsWiFields && (
+              <div>
+                <Label className="text-xs">Document Number <span className="font-normal text-muted-foreground">(optional)</span></Label>
+                <Input placeholder="e.g. CERT-2025-001" value={form.documentNumber} onChange={e => setForm(f => ({ ...f, documentNumber: e.target.value }))} data-testid="input-doc-number-2" />
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">Expires <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))} data-testid="input-file-expiry" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Description <span className="font-normal text-muted-foreground">(optional)</span></Label>
+            <Textarea
+              placeholder="Any additional context about this file..."
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              rows={2}
+              data-testid="textarea-file-desc"
+            />
+          </div>
+
+          {/* ── Upload Progress ── */}
+          {isUploading && (
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Uploading...</span><span>{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-1.5" />
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <Button
+              className="flex-1 bg-primary text-white gap-2"
+              onClick={handleUpload}
+              disabled={!selectedFile || !form.title || isUploading}
+              data-testid="button-confirm-upload"
+            >
+              <Upload className="w-4 h-4" />
+              {isUploading ? "Uploading..." : "Upload File"}
+            </Button>
+            <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
           </div>
         </div>
       </DialogContent>

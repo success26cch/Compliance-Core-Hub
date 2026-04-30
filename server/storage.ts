@@ -51,6 +51,8 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   trainingMatrixSkills, trainingMatrixEntries,
   type TrainingMatrixSkill, type InsertTrainingMatrixSkill,
   type TrainingMatrixEntry, type InsertTrainingMatrixEntry,
+  trainingEvidenceFiles,
+  type TrainingEvidenceFile, type InsertTrainingEvidenceFile,
 } from "@shared/schema";
 import { db } from "./rls";
 import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -403,6 +405,10 @@ export interface IStorage {
   getTrainingMatrixEntries(userId: string, isSuperadmin?: boolean): Promise<TrainingMatrixEntry[]>;
   upsertTrainingMatrixEntry(data: InsertTrainingMatrixEntry): Promise<TrainingMatrixEntry>;
   deleteTrainingMatrixEntry(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+  // Training Evidence Files
+  getTrainingEvidenceFiles(userId: string, filters: { employeeId?: number; competencyRecordId?: number; trainingEventId?: number }, isSuperadmin?: boolean): Promise<TrainingEvidenceFile[]>;
+  createTrainingEvidenceFile(data: InsertTrainingEvidenceFile): Promise<TrainingEvidenceFile>;
+  deleteTrainingEvidenceFile(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ISO Objectives (KPI tracking — shared by Process Maps, Measurement, Management Review)
   getIsoObjectives(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoObjective[]>;
@@ -2172,6 +2178,25 @@ export class DatabaseStorage implements IStorage {
   async deleteTrainingMatrixEntry(id: number, userId: string, isSuperadmin = false): Promise<void> {
     const cond = isSuperadmin ? eq(trainingMatrixEntries.id, id) : and(eq(trainingMatrixEntries.id, id), eq(trainingMatrixEntries.userId, userId));
     await db.delete(trainingMatrixEntries).where(cond);
+  }
+
+  // ─── Training Evidence Files ──────────────────────────────────────────────────
+  async getTrainingEvidenceFiles(userId: string, filters: { employeeId?: number; competencyRecordId?: number; trainingEventId?: number } = {}, isSuperadmin = false): Promise<TrainingEvidenceFile[]> {
+    const conditions: any[] = [];
+    if (!isSuperadmin) conditions.push(eq(trainingEvidenceFiles.userId, userId));
+    if (filters.employeeId != null) conditions.push(eq(trainingEvidenceFiles.employeeId, filters.employeeId));
+    if (filters.competencyRecordId != null) conditions.push(eq(trainingEvidenceFiles.competencyRecordId, filters.competencyRecordId));
+    if (filters.trainingEventId != null) conditions.push(eq(trainingEvidenceFiles.trainingEventId, filters.trainingEventId));
+    const cond = conditions.length > 0 ? and(...conditions) : undefined;
+    return db.select().from(trainingEvidenceFiles).where(cond).orderBy(desc(trainingEvidenceFiles.uploadedAt));
+  }
+  async createTrainingEvidenceFile(data: InsertTrainingEvidenceFile): Promise<TrainingEvidenceFile> {
+    const [rec] = await db.insert(trainingEvidenceFiles).values(data).returning();
+    return rec;
+  }
+  async deleteTrainingEvidenceFile(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const cond = isSuperadmin ? eq(trainingEvidenceFiles.id, id) : and(eq(trainingEvidenceFiles.id, id), eq(trainingEvidenceFiles.userId, userId));
+    await db.delete(trainingEvidenceFiles).where(cond);
   }
 
   // ─── ISO Objectives ───────────────────────────────────────────────────────────
