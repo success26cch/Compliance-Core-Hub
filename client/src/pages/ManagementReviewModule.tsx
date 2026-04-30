@@ -800,6 +800,39 @@ function ReviewDetail({
     saveTrendThreshold(n);
   };
 
+  const prefillAction = useCallback((description: string, owner: string) => {
+    setActionForm(f => ({ ...f, description, owner }));
+    setShowActionForm(true);
+    setTimeout(() => {
+      actionRegisterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }, []);
+
+  const { data: actions = [] } = useQuery<IsoReviewActionItem[]>({
+    queryKey: ["/api/iso-management-reviews", review.id, "actions"],
+    queryFn: () => fetch(`/api/iso-management-reviews/${review.id}/actions`).then(r => r.json()),
+  });
+  const { data: objectives = [] } = useQuery<IsoObjective[]>({
+    queryKey: ["/api/iso-objectives", isoProjectId],
+    queryFn: () => fetch(`/api/iso-objectives${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
+  const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({
+    queryKey: ["/api/iso-kpi-actuals", isoProjectId],
+    queryFn: () => fetch(`/api/iso-kpi-actuals${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
+  });
+
+  const previousReview = [...allReviews]
+    .filter(r => r.id !== review.id && new Date(r.meetingDate) < new Date(review.meetingDate))
+    .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime())[0];
+
+  const { data: prevActions = [] } = useQuery<IsoReviewActionItem[]>({
+    queryKey: ["/api/iso-management-reviews", previousReview?.id, "actions"],
+    queryFn: () => previousReview ? fetch(`/api/iso-management-reviews/${previousReview.id}/actions`).then(r => r.json()) : Promise.resolve([]),
+    enabled: !!previousReview,
+  });
+  const openPrevActions = prevActions.filter(a => a.status === "open" || a.status === "in_progress");
+
+  // ── PowerPoint export — placed here so all deps (actions, objectives, allActuals, openPrevActions) are defined ──
   const handleGeneratePptx = useCallback(async () => {
     setGeneratingPptx(true);
     try {
@@ -846,38 +879,6 @@ function ReviewDetail({
       setGeneratingPptx(false);
     }
   }, [review, agenda, objectives, allActuals, actions, openPrevActions, trendThreshold, standardLabel, kpiResponsesAnchorClause, toast]);
-
-  const prefillAction = useCallback((description: string, owner: string) => {
-    setActionForm(f => ({ ...f, description, owner }));
-    setShowActionForm(true);
-    setTimeout(() => {
-      actionRegisterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
-  }, []);
-
-  const { data: actions = [] } = useQuery<IsoReviewActionItem[]>({
-    queryKey: ["/api/iso-management-reviews", review.id, "actions"],
-    queryFn: () => fetch(`/api/iso-management-reviews/${review.id}/actions`).then(r => r.json()),
-  });
-  const { data: objectives = [] } = useQuery<IsoObjective[]>({
-    queryKey: ["/api/iso-objectives", isoProjectId],
-    queryFn: () => fetch(`/api/iso-objectives${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
-  });
-  const { data: allActuals = [] } = useQuery<IsoKpiActual[]>({
-    queryKey: ["/api/iso-kpi-actuals", isoProjectId],
-    queryFn: () => fetch(`/api/iso-kpi-actuals${isoProjectId ? `?isoProjectId=${isoProjectId}` : ""}`).then(r => r.json()),
-  });
-
-  const previousReview = [...allReviews]
-    .filter(r => r.id !== review.id && new Date(r.meetingDate) < new Date(review.meetingDate))
-    .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime())[0];
-
-  const { data: prevActions = [] } = useQuery<IsoReviewActionItem[]>({
-    queryKey: ["/api/iso-management-reviews", previousReview?.id, "actions"],
-    queryFn: () => previousReview ? fetch(`/api/iso-management-reviews/${previousReview.id}/actions`).then(r => r.json()) : Promise.resolve([]),
-    enabled: !!previousReview,
-  });
-  const openPrevActions = prevActions.filter(a => a.status === "open" || a.status === "in_progress");
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Omit<InsertIsoManagementReview, 'userId'>>) => apiRequest("PATCH", `/api/iso-management-reviews/${review.id}`, data).then(r => r.json()),
