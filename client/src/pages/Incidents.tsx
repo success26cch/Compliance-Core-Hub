@@ -146,6 +146,15 @@ const OBJECTS_SOURCES = [
   "PPE Failure or Absence", "Environmental Condition", "Other",
 ];
 
+// Documentation update item
+type DocUpdateItem = {
+  docType: string;
+  docName: string;
+  status: 'pending' | 'updated' | 'not_required';
+  updatedBy: string;
+  updatedDate: string;
+};
+
 // RCA data structures
 type FiveWhyData = { whys: string[]; rootCauseStatement: string };
 type ThreeByFiveWhyData = { strands: { problem: string; whys: string[] }[]; rootCauseStatement: string };
@@ -176,6 +185,12 @@ type CorrectiveAction = {
   responsibleDepartment: string | null;
   targetDate: string | null;
   completionDate: string | null;
+  docUpdateRequired: boolean | null;
+  docUpdateStatus: string | null;
+  docUpdateItems: DocUpdateItem[] | null;
+  docUpdateNotes: string | null;
+  docUpdateVerifiedBy: string | null;
+  docUpdateVerifiedDate: string | null;
   implementationStatus: string | null;
   implementationVerifiedDate: string | null;
   implementationVerifiedBy: string | null;
@@ -208,6 +223,11 @@ type CAPAFormData = {
   responsibleEmail: string;
   responsibleDepartment: string;
   targetDate: string;
+  docUpdateRequired: boolean;
+  docUpdateStatus: string;
+  docUpdateNotes: string;
+  docUpdateVerifiedBy: string;
+  docUpdateVerifiedDate: string;
   implementationStatus: string;
   implementationVerifiedDate: string;
   implementationVerifiedBy: string;
@@ -236,6 +256,11 @@ const defaultCAPAFormData: CAPAFormData = {
   responsibleEmail: '',
   responsibleDepartment: '',
   targetDate: '',
+  docUpdateRequired: false,
+  docUpdateStatus: 'not_required',
+  docUpdateNotes: '',
+  docUpdateVerifiedBy: '',
+  docUpdateVerifiedDate: '',
   implementationStatus: 'pending',
   implementationVerifiedDate: '',
   implementationVerifiedBy: '',
@@ -1534,7 +1559,7 @@ function CAPAFormDialog({
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void;
-  onSave: (data: CAPAFormData) => void;
+  onSave: (data: CAPAFormData, docItems: DocUpdateItem[]) => void;
   incidents: Incident[];
   incidentId?: number;
   isPending?: boolean;
@@ -1560,12 +1585,14 @@ function CAPAFormDialog({
     categories: { man: '', machine: '', material: '', method: '', measurement: '', environment: '' },
     rootCauseStatement: '',
   });
+  const [docItems, setDocItems] = useState<DocUpdateItem[]>([]);
 
   useEffect(() => {
     if (open) {
       setRcaData(null);
       setRcaError(null);
       setRcaExpanded(true);
+      setDocItems([]);
       setFiveWhyData({ whys: ['','','','',''], rootCauseStatement: '' });
       setThreeFiveData({
         strands: [
@@ -1619,8 +1646,9 @@ function CAPAFormDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const rcaSummary = getRcaSummary();
-    onSave({ ...formData, rootCause: rcaSummary || formData.rootCause });
+    onSave({ ...formData, rootCause: rcaSummary || formData.rootCause } as any, docItems);
     setFormData(defaultCAPAFormData);
+    setDocItems([]);
     setRcaData(null);
   };
 
@@ -2241,6 +2269,159 @@ function CAPAFormDialog({
                 </Select>
               </div>
             </div>
+          </div>
+
+          {/* Documentation Update Verification */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center font-bold shrink-0">📄</div>
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-violet-700 dark:text-violet-400">Documentation Update Verification</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ISO 9001 §7.5, IATF 16949, AS9100D, and ISO 13485 require that affected documents (Control Plans, PFMEAs, Work Instructions, SOPs, etc.) are updated when corrective or preventive actions change a process or product.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={formData.docUpdateRequired}
+                onClick={() => setFormData(f => ({ ...f, docUpdateRequired: !f.docUpdateRequired, docUpdateStatus: !f.docUpdateRequired ? 'pending' : 'not_required' }))}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.docUpdateRequired ? 'bg-violet-600' : 'bg-muted'}`}
+                data-testid="toggle-doc-update-required"
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.docUpdateRequired ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm font-medium">
+                {formData.docUpdateRequired ? 'Documentation updates required' : 'No documentation updates needed'}
+              </span>
+            </div>
+
+            {formData.docUpdateRequired && (
+              <div className="space-y-4 p-4 bg-violet-50 dark:bg-violet-950/20 rounded-xl border border-violet-200 dark:border-violet-800">
+                {/* Quick-add preset doc types */}
+                <div>
+                  <p className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide mb-2">Add affected documents (tap to add):</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Control Plan', 'Process FMEA (PFMEA)', 'Work Instructions', 'SOP / Procedure',
+                      'Process Flow Diagram', 'Operator Instructions', 'Inspection / Test Plan',
+                      'Reaction Plan', 'Quality Manual', 'Training Materials',
+                      'Customer-Specific Requirements (CSR)', 'Design FMEA (DFMEA)',
+                      'Emergency Response Plan', 'Other',
+                    ].map(docType => {
+                      const already = docItems.some(d => d.docType === docType);
+                      return (
+                        <button
+                          key={docType}
+                          type="button"
+                          onClick={() => {
+                            if (!already) {
+                              setDocItems(items => [...items, { docType, docName: '', status: 'pending', updatedBy: '', updatedDate: '' }]);
+                            }
+                          }}
+                          className={`px-2 py-1 rounded text-xs border transition-all ${already ? 'bg-violet-600 text-white border-violet-600' : 'bg-background text-muted-foreground border-border hover:border-violet-400 hover:text-violet-700'}`}
+                          data-testid={`button-add-doc-${docType.replace(/\s+/g, '-').toLowerCase()}`}
+                        >
+                          {already ? '✓ ' : '+ '}{docType}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Doc items list */}
+                {docItems.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">Documents to update:</p>
+                    {docItems.map((item, idx) => (
+                      <div key={idx} className="grid grid-cols-12 gap-2 items-center p-2 bg-background rounded-lg border border-border">
+                        <div className="col-span-4">
+                          <p className="text-xs font-medium text-foreground">{item.docType}</p>
+                          <Input
+                            value={item.docName}
+                            onChange={e => setDocItems(items => items.map((d, i) => i === idx ? { ...d, docName: e.target.value } : d))}
+                            placeholder="Document name / number (optional)"
+                            className="h-7 text-xs mt-1"
+                            data-testid={`input-doc-name-${idx}`}
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <Select value={item.status} onValueChange={v => setDocItems(items => items.map((d, i) => i === idx ? { ...d, status: v as DocUpdateItem['status'] } : d))}>
+                            <SelectTrigger className="h-7 text-xs" data-testid={`select-doc-status-${idx}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="updated">Updated ✓</SelectItem>
+                              <SelectItem value="not_required">N/A</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-3">
+                          <Input
+                            type="date"
+                            value={item.updatedDate}
+                            onChange={e => setDocItems(items => items.map((d, i) => i === idx ? { ...d, updatedDate: e.target.value } : d))}
+                            className="h-7 text-xs"
+                            data-testid={`input-doc-date-${idx}`}
+                          />
+                        </div>
+                        <div className="col-span-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setDocItems(items => items.filter((_, i) => i !== idx))}
+                            className="text-destructive hover:text-destructive/80 text-xs px-2 py-1 rounded"
+                            data-testid={`button-remove-doc-${idx}`}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Overall doc update status */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="docUpdateStatus" className="text-xs">Overall Update Status</Label>
+                    <Select value={formData.docUpdateStatus} onValueChange={v => setFormData(f => ({ ...f, docUpdateStatus: v }))}>
+                      <SelectTrigger className="h-8 text-sm" data-testid="select-doc-update-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">All Updated ✓</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="docUpdateVerifiedBy" className="text-xs">Verified By</Label>
+                    <Input
+                      id="docUpdateVerifiedBy"
+                      value={formData.docUpdateVerifiedBy}
+                      onChange={e => setFormData(f => ({ ...f, docUpdateVerifiedBy: e.target.value }))}
+                      placeholder="Name / title"
+                      className="h-8 text-sm"
+                      data-testid="input-doc-update-verified-by"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="docUpdateNotes" className="text-xs">Documentation Update Notes</Label>
+                  <Textarea
+                    id="docUpdateNotes"
+                    value={formData.docUpdateNotes}
+                    onChange={e => setFormData(f => ({ ...f, docUpdateNotes: e.target.value }))}
+                    placeholder="Any additional context about document changes made, revision levels, or distribution…"
+                    rows={2}
+                    className="text-sm"
+                    data-testid="input-doc-update-notes"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Verification of Implementation */}
@@ -2932,8 +3113,8 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: CAPAFormData) => {
-      return apiRequest('POST', '/api/corrective-actions', data);
+    mutationFn: async ({ data, docItems }: { data: CAPAFormData; docItems: DocUpdateItem[] }) => {
+      return apiRequest('POST', '/api/corrective-actions', { ...data, docUpdateItems: docItems });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
@@ -3264,6 +3445,91 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
                 </div>
               </div>
 
+              {/* Documentation Update Verification */}
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="font-bold text-sm flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center font-bold">📄</span>
+                  <span className="text-violet-700 dark:text-violet-400">Documentation Update Verification</span>
+                  {selectedCAPA.docUpdateRequired && selectedCAPA.docUpdateStatus === 'completed' && (
+                    <Badge className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs ml-auto">All Updated ✓</Badge>
+                  )}
+                  {selectedCAPA.docUpdateRequired && selectedCAPA.docUpdateStatus === 'in_progress' && (
+                    <Badge className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs ml-auto">In Progress</Badge>
+                  )}
+                  {selectedCAPA.docUpdateRequired && (!selectedCAPA.docUpdateStatus || selectedCAPA.docUpdateStatus === 'pending') && (
+                    <Badge variant="secondary" className="text-xs ml-auto">Pending</Badge>
+                  )}
+                  {!selectedCAPA.docUpdateRequired && (
+                    <Badge variant="outline" className="text-xs ml-auto text-muted-foreground">Not Required</Badge>
+                  )}
+                </h4>
+                {selectedCAPA.docUpdateRequired ? (
+                  <div className="space-y-3">
+                    {/* Doc items list */}
+                    {selectedCAPA.docUpdateItems && selectedCAPA.docUpdateItems.length > 0 && (
+                      <div className="space-y-2">
+                        {selectedCAPA.docUpdateItems.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded border border-border text-sm">
+                            <div>
+                              <span className="font-medium">{item.docType}</span>
+                              {item.docName && <span className="text-xs text-muted-foreground ml-2">({item.docName})</span>}
+                              {item.updatedDate && <span className="text-xs text-muted-foreground ml-2">{new Date(item.updatedDate).toLocaleDateString()}</span>}
+                            </div>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              item.status === 'updated' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' :
+                              item.status === 'not_required' ? 'bg-muted text-muted-foreground' :
+                              'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300'
+                            }`}>
+                              {item.status === 'updated' ? '✓ Updated' : item.status === 'not_required' ? 'N/A' : 'Pending'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Inline status edit */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Overall Status</Label>
+                        <Select
+                          defaultValue={selectedCAPA.docUpdateStatus || 'pending'}
+                          onValueChange={async (val) => {
+                            await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { docUpdateStatus: val });
+                            queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-sm" data-testid="select-detail-doc-status">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="completed">All Updated ✓</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Verified By</Label>
+                        <Input
+                          className="h-8 text-sm"
+                          defaultValue={selectedCAPA.docUpdateVerifiedBy || ''}
+                          placeholder="Name / title…"
+                          onBlur={async (e) => {
+                            await apiRequest('PATCH', `/api/corrective-actions/${selectedCAPA.id}`, { docUpdateVerifiedBy: e.target.value });
+                            queryClient.invalidateQueries({ queryKey: ['/api/corrective-actions'] });
+                          }}
+                          data-testid="input-detail-doc-verified-by"
+                        />
+                      </div>
+                    </div>
+                    {selectedCAPA.docUpdateNotes && (
+                      <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">{selectedCAPA.docUpdateNotes}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No documentation updates were required for this corrective action.</p>
+                )}
+              </div>
+
               {/* Verification of Implementation */}
               <div className="border-t pt-4 space-y-3">
                 <h4 className="font-bold text-sm flex items-center gap-2">
@@ -3408,7 +3674,7 @@ function CorrectiveActionPlans({ incidents, autoOpen = false }: { incidents: Inc
       <CAPAFormDialog
         open={capaDialogOpen}
         onOpenChange={setCAPADialogOpen}
-        onSave={(data) => createMutation.mutate(data)}
+        onSave={(data, docItems) => createMutation.mutate({ data, docItems })}
         incidents={incidents}
         isPending={createMutation.isPending}
       />

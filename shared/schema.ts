@@ -367,6 +367,13 @@ export const correctiveActions = pgTable("corrective_actions", {
   responsibleDepartment: text("responsible_department"),
   targetDate: timestamp("target_date"),
   completionDate: timestamp("completion_date"),
+  // Documentation Update Verification
+  docUpdateRequired: boolean("doc_update_required").default(false),
+  docUpdateStatus: text("doc_update_status").default("not_required"), // 'not_required' | 'pending' | 'in_progress' | 'completed'
+  docUpdateItems: jsonb("doc_update_items"), // [{docType, docName, status, updatedBy, updatedDate}]
+  docUpdateNotes: text("doc_update_notes"),
+  docUpdateVerifiedBy: text("doc_update_verified_by"),
+  docUpdateVerifiedDate: timestamp("doc_update_verified_date"),
   // Verification of Implementation
   implementationStatus: text("implementation_status").default("pending"), // 'pending' | 'verified' | 'not_verified'
   implementationVerifiedDate: timestamp("implementation_verified_date"),
@@ -394,6 +401,7 @@ export const insertCorrectiveActionSchema = createInsertSchema(correctiveActions
   paActionDueDate: dateOrStringToDate,
   paCompletionDate: dateOrStringToDate,
   implementationVerifiedDate: dateOrStringToDate,
+  docUpdateVerifiedDate: dateOrStringToDate,
 }).omit({
   id: true,
   createdAt: true,
