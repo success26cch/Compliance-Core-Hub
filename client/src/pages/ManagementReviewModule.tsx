@@ -13,8 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardList, Plus, Trash2, Bot, ChevronRight, ArrowLeft,
   CheckCircle, Clock, AlertTriangle, AlertCircle, Circle, Loader2, Calendar, Users,
-  BarChart2, ChevronDown, ChevronUp, ExternalLink,
+  BarChart2, ChevronDown, ChevronUp, ExternalLink, Presentation,
 } from "lucide-react";
+import { generateMgmtReviewPptx } from "@/lib/mgmtReviewPptx";
 import type { IsoManagementReview, IsoReviewActionItem, IsoObjective, IsoKpiActual, InsertIsoManagementReview, InsertIsoReviewActionItem } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
@@ -791,12 +792,60 @@ function ReviewDetail({
   const [showActionForm, setShowActionForm] = useState(false);
   const [kpiExpanded, setKpiExpanded] = useState(false);
   const [trendThreshold, setTrendThreshold] = useState<number>(loadTrendThreshold);
+  const [generatingPptx, setGeneratingPptx] = useState(false);
   const actionRegisterRef = useRef<HTMLDivElement>(null);
 
   const handleTrendThresholdChange = (n: number) => {
     setTrendThreshold(n);
     saveTrendThreshold(n);
   };
+
+  const handleGeneratePptx = useCallback(async () => {
+    setGeneratingPptx(true);
+    try {
+      const kpiResponsesMap = agenda.find(a => a.clause === kpiResponsesAnchorClause)?.kpiResponses ?? {};
+      const pptxKpis = objectives.map(obj => {
+        const acts = allActuals.filter(a => a.objectiveId === obj.id);
+        const sorted = [...acts].sort((a, b) => a.period.localeCompare(b.period));
+        const latest = sorted[sorted.length - 1];
+        const targetVal = parseFloat(obj.target ?? "0");
+        return {
+          name: obj.name,
+          processName: obj.processName,
+          target: obj.target ?? "0",
+          unit: obj.unit ?? "",
+          status: obj.status,
+          frequency: obj.frequency ?? "",
+          latestVal: latest ? parseFloat(latest.actual) : null,
+          latestPeriod: latest?.period ?? null,
+          streak: offTrackStreakCount(acts, targetVal),
+          explanation: kpiResponsesMap[String(obj.id)] ?? "",
+          actuals: sorted.map(a => ({ period: a.period, actual: parseFloat(a.actual) })),
+        };
+      });
+
+      await generateMgmtReviewPptx({
+        title: review.title,
+        meetingDate: String(review.meetingDate),
+        attendees: review.attendees,
+        standard: standardLabel,
+        status: review.status,
+        kpis: pptxKpis,
+        flaggedKpis: pptxKpis.filter(k => k.streak >= trendThreshold),
+        trendThreshold,
+        agendaItems: agenda.map(a => ({ clause: a.clause, title: a.title, covered: a.covered, notes: a.notes })),
+        actions: actions.map(a => ({ description: a.description, owner: a.owner, dueDate: a.dueDate ? String(a.dueDate) : null, status: a.status })),
+        carryoverActions: openPrevActions.map(a => ({ description: a.description, owner: a.owner, dueDate: a.dueDate ? String(a.dueDate) : null, status: a.status })),
+        previousReviewTitle: previousReview?.title,
+      });
+
+      toast({ title: "PowerPoint downloaded", description: "Your management review presentation is ready." });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setGeneratingPptx(false);
+    }
+  }, [review, agenda, objectives, allActuals, actions, openPrevActions, trendThreshold, standardLabel, kpiResponsesAnchorClause, toast]);
 
   const prefillAction = useCallback((description: string, owner: string) => {
     setActionForm(f => ({ ...f, description, owner }));
@@ -902,6 +951,18 @@ function ReviewDetail({
         <Badge variant={review.status === "complete" ? "default" : "outline"}>
           {review.status === "complete" ? "Complete" : "Draft"}
         </Badge>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleGeneratePptx}
+          disabled={generatingPptx}
+          className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/30"
+          data-testid="button-export-pptx"
+        >
+          {generatingPptx
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+            : <><Presentation className="w-3.5 h-3.5" /> Export .pptx</>}
+        </Button>
         <Button size="sm" onClick={() => updateMutation.mutate({ status: review.status === "complete" ? "draft" : "complete" })} variant="outline">
           {review.status === "complete" ? "Reopen" : "Mark Complete"}
         </Button>
