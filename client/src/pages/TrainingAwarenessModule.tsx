@@ -344,9 +344,9 @@ function CompetencyReqDialog({ jobTitle, initial, onSave, onClose, isPending }: 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Standard <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Select value={form.standard} onValueChange={v => setForm(f => ({ ...f, standard: v }))}>
+              <Select value={form.standard || "_none"} onValueChange={v => setForm(f => ({ ...f, standard: v === "_none" ? "" : v }))}>
                 <SelectTrigger data-testid="select-req-standard"><SelectValue placeholder="Link to standard" /></SelectTrigger>
-                <SelectContent><SelectItem value="">None</SelectItem>{ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="_none">None</SelectItem>{ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
@@ -837,9 +837,9 @@ function TrainingEventDialog({ initial, onSave, onClose, isPending }: {
             </div>
             <div>
               <Label>Standard <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Select value={form.standard} onValueChange={v => setForm(f => ({ ...f, standard: v }))}>
+              <Select value={form.standard || "_none"} onValueChange={v => setForm(f => ({ ...f, standard: v === "_none" ? "" : v }))}>
                 <SelectTrigger data-testid="select-event-standard"><SelectValue placeholder="Select standard" /></SelectTrigger>
-                <SelectContent><SelectItem value="">None</SelectItem>{ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="_none">None</SelectItem>{ISO_STANDARDS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
@@ -1635,12 +1635,12 @@ function SkillsMatrixTab() {
             <div className="space-y-3">
               <div>
                 <Label className="text-xs">Competency Level</Label>
-                <Select value={cellLevel} onValueChange={setCellLevel}>
+                <Select value={cellLevel || "_none_level"} onValueChange={v => setCellLevel(v === "_none_level" ? "" : v)}>
                   <SelectTrigger className="mt-1 text-xs" data-testid="select-cell-level">
                     <SelectValue placeholder="— Not assessed —" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">— Not assessed —</SelectItem>
+                    <SelectItem value="_none_level">— Not assessed —</SelectItem>
                     {levels.map(l => (
                       <SelectItem key={l.value} value={l.value}>
                         <span className={`px-1.5 py-0.5 rounded text-xs font-semibold mr-2 ${l.cls}`}>{l.short}</span>

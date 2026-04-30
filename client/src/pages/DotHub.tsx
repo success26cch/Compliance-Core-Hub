@@ -917,9 +917,9 @@ function AccidentDialog({ open, onClose, existing, drivers }: { open: boolean; o
         <div className="grid grid-cols-2 gap-3 py-1">
           <div><Label>Accident Date *</Label><Input type="date" value={form.accidentDate} onChange={e => s("accidentDate", e.target.value)} /></div>
           <div><Label>Driver (optional)</Label>
-            <Select value={form.driverId} onValueChange={v => s("driverId", v)}>
+            <Select value={form.driverId || "_none"} onValueChange={v => s("driverId", v === "_none" ? "" : v)}>
               <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
-              <SelectContent><SelectItem value="">Unknown / Not Applicable</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="_none">Unknown / Not Applicable</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div><Label>City</Label><Input value={form.city} onChange={e => s("city", e.target.value)} /></div>
@@ -1011,9 +1011,9 @@ function InspectionDialog({ open, onClose, existing, drivers }: { open: boolean;
             </Select>
           </div>
           <div><Label>Driver</Label>
-            <Select value={form.driverId} onValueChange={v => s("driverId", v)}>
+            <Select value={form.driverId || "_none"} onValueChange={v => s("driverId", v === "_none" ? "" : v)}>
               <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
-              <SelectContent><SelectItem value="">Unknown</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="_none">Unknown</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div><Label>Vehicle Unit #</Label><Input value={form.vehicleUnitNumber} onChange={e => s("vehicleUnitNumber", e.target.value)} /></div>
@@ -1112,9 +1112,9 @@ function DvirDialog({ open, onClose, existing, drivers }: { open: boolean; onClo
             </Select>
           </div>
           <div><Label>Driver</Label>
-            <Select value={form.driverId} onValueChange={v => { s("driverId", v); if (v) { const d = drivers.find(dr => String(dr.id) === v); if (d) s("driverName", `${d.firstName} ${d.lastName}`); } }}>
+            <Select value={form.driverId || "_none"} onValueChange={v => { const val = v === "_none" ? "" : v; s("driverId", val); if (val) { const d = drivers.find(dr => String(dr.id) === val); if (d) s("driverName", `${d.firstName} ${d.lastName}`); } }}>
               <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
-              <SelectContent><SelectItem value="">Select…</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="_none">Select…</SelectItem>{drivers.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.firstName} {d.lastName}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div><Label>Vehicle Unit # *</Label><Input value={form.vehicleUnitNumber} onChange={e => s("vehicleUnitNumber", e.target.value)} /></div>

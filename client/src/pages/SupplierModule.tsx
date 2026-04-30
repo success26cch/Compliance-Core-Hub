@@ -2120,12 +2120,12 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex-1 min-w-[200px] max-w-xs">
           <Label className="text-sm font-semibold text-muted-foreground">Filter by Supplier</Label>
-          <Select value={filterSupplierId ? String(filterSupplierId) : ""} onValueChange={v => { setFilterSupplierId(v ? parseInt(v) : null); setExpandedEvalId(null); setSendingId(null); }}>
+          <Select value={filterSupplierId ? String(filterSupplierId) : "_all"} onValueChange={v => { setFilterSupplierId(v === "_all" ? null : parseInt(v)); setExpandedEvalId(null); setSendingId(null); }}>
             <SelectTrigger className="mt-1 h-9" data-testid="select-filter-supplier">
               <SelectValue placeholder="All suppliers" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All suppliers</SelectItem>
+              <SelectItem value="_all">All suppliers</SelectItem>
               {suppliers.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
