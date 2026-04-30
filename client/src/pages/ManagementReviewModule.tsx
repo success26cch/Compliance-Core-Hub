@@ -437,6 +437,15 @@ function offTrackStreakCount(actuals: IsoKpiActual[], targetVal: number): number
   return streak;
 }
 
+const TREND_THRESHOLD_KEY = "cchub_kpi_trend_threshold";
+function loadTrendThreshold(): number {
+  try { const v = parseInt(localStorage.getItem(TREND_THRESHOLD_KEY) ?? "3"); return [1, 2, 3].includes(v) ? v : 3; }
+  catch { return 3; }
+}
+function saveTrendThreshold(n: number) {
+  try { localStorage.setItem(TREND_THRESHOLD_KEY, String(n)); } catch { /* noop */ }
+}
+
 const ACTION_STATUS_CYCLE: Record<string, string> = { open: "in_progress", in_progress: "closed", closed: "open" };
 const ACTION_STATUS_ICON = {
   open: <Circle className="w-4 h-4 text-muted-foreground" />,
@@ -461,7 +470,7 @@ function FrequencyBadge({ frequency }: { frequency: string }) {
   return <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${cls}`}>{frequency}</span>;
 }
 
-function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpiActual[] }) {
+function KpiSparklineCard({ obj, actuals, trendThreshold = 3 }: { obj: IsoObjective; actuals: IsoKpiActual[]; trendThreshold?: number }) {
   const sorted = [...actuals].sort((a, b) => a.period.localeCompare(b.period));
   const targetVal = parseFloat(obj.target ?? "0");
   const latest = sorted[sorted.length - 1];
@@ -469,7 +478,7 @@ function KpiSparklineCard({ obj, actuals }: { obj: IsoObjective; actuals: IsoKpi
   const pct = latestVal !== null && targetVal > 0 ? Math.min((latestVal / targetVal) * 100, 150) : null;
   const displayPct = pct !== null ? Math.min(pct, 100) : null;
   const streak = offTrackStreakCount(actuals, targetVal);
-  const flagged = streak >= 2;
+  const flagged = streak >= trendThreshold;
   const chartData = sorted.slice(-8).map(a => ({ period: a.period.slice(-7), actual: parseFloat(a.actual), target: targetVal }));
   const statusBorder = obj.status === "on_track" ? "border-green-400" : obj.status === "at_risk" ? "border-yellow-400" : "border-red-500";
   const statusBg = obj.status === "on_track" ? "bg-green-50 dark:bg-green-900/10" : obj.status === "at_risk" ? "bg-yellow-50 dark:bg-yellow-900/10" : "bg-red-50 dark:bg-red-900/10";
@@ -555,12 +564,13 @@ function isLiveDataSection(section: string): boolean {
 }
 
 // ─── KPI Attention Strip ──────────────────────────────────────────────────────
-// Shows at_risk / off_track objectives within a live data section, with
-// collapsible explanation textareas and "Add to Action Register" shortcuts.
-// kpiResponses are stored under anchorClause (template's first clause) — review-scoped,
-// not section-scoped, so explanations are consistent across all live-data sections.
+// Shows at_risk / off_track objectives within a live data section.
+// Two-tier response:
+//   • Amber tier  — at_risk/off_track but streak < trendThreshold → explanation encouraged
+//   • Red tier    — streak >= trendThreshold (negative trend confirmed) → explanation REQUIRED
+//                   + corrective action REQUIRED (auto-prefills action register)
 function KpiAttentionStrip({
-  objectives, getActuals, agenda, setAgenda, onAddAction, anchorClause,
+  objectives, getActuals, agenda, setAgenda, onAddAction, anchorClause, trendThreshold = 3,
 }: {
   objectives: IsoObjective[];
   getActuals: (id: number) => IsoKpiActual[];
@@ -568,14 +578,15 @@ function KpiAttentionStrip({
   setAgenda: (updater: (prev: AgendaItem[]) => AgendaItem[]) => void;
   onAddAction: (description: string, owner: string) => void;
   anchorClause: string;
+  trendThreshold?: number;
 }) {
   const [expandedKpi, setExpandedKpi] = useState<number | null>(null);
+  const [initiatedCa, setInitiatedCa] = useState<Set<number>>(new Set());
 
   const attention = objectives.filter(obj =>
     (obj.status === "at_risk" || obj.status === "off_track") && getActuals(obj.id).length > 0
   );
 
-  // Read/write kpiResponses from the template's first clause item — deterministic, review-scoped
   const kpiResponses = agenda.find(a => a.clause === anchorClause)?.kpiResponses ?? {};
 
   const setKpiResponse = useCallback((objId: number, text: string) => {
@@ -596,89 +607,171 @@ function KpiAttentionStrip({
     );
   }
 
-  return (
-    <div className="border-b border-amber-200/60 dark:border-amber-800/30">
-      <div className="px-3 py-1.5 bg-amber-50/70 dark:bg-amber-950/25 flex items-center gap-1.5">
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-        <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-          {attention.length} KPI{attention.length > 1 ? "s" : ""} Require Attention — explanation &amp; corrective action needed
-        </span>
-      </div>
-      <div className="divide-y divide-border/40">
-        {attention.map(obj => {
-          const acts = getActuals(obj.id);
-          const sorted = [...acts].sort((a, b) => a.period.localeCompare(b.period));
-          const latest = sorted[sorted.length - 1];
-          const prev = sorted[sorted.length - 2];
-          const latestVal = latest ? parseFloat(latest.actual) : null;
-          const prevVal = prev ? parseFloat(prev.actual) : null;
-          const targetVal = parseFloat(obj.target ?? "0");
-          const pct = latestVal !== null && targetVal > 0 ? (latestVal / targetVal) * 100 : null;
-          const trend = latestVal === null || prevVal === null ? "none"
-            : latestVal > prevVal ? "up" : latestVal < prevVal ? "down" : "flat";
-          const isExpanded = expandedKpi === obj.id;
-          const explanation = kpiResponses[String(obj.id)] ?? "";
+  // Separate trend-triggered (CA required) from general attention
+  const trendTriggered = attention.filter(obj => offTrackStreakCount(getActuals(obj.id), parseFloat(obj.target ?? "0")) >= trendThreshold);
+  const generalAttention = attention.filter(obj => offTrackStreakCount(getActuals(obj.id), parseFloat(obj.target ?? "0")) < trendThreshold);
 
-          return (
-            <div key={obj.id} className="bg-background">
-              <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/30 transition-colors"
-                onClick={() => setExpandedKpi(isExpanded ? null : obj.id)}
-                data-testid={`button-kpi-attention-${obj.id}`}
-              >
-                <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${obj.status === "at_risk" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
-                  {obj.status === "at_risk" ? "At Risk" : "Off Track"}
-                </span>
-                <span className="flex-1 text-xs font-medium text-foreground truncate">{obj.name}</span>
-                {latestVal !== null && (
-                  <span className="shrink-0 text-[10px] text-muted-foreground">
-                    {latestVal} {obj.unit} / {obj.target} {obj.unit}
-                    {pct !== null && (
-                      <span className={`ml-1 font-semibold ${pct >= 80 ? "text-yellow-600" : "text-red-600"}`}>
-                        ({pct.toFixed(0)}%)
-                      </span>
-                    )}
-                  </span>
-                )}
-                {trend === "up" && <span className="shrink-0 text-green-600 text-sm font-bold" title="Trending up vs prior period">↑</span>}
-                {trend === "down" && <span className="shrink-0 text-red-500 text-sm font-bold" title="Trending down vs prior period">↓</span>}
-                {trend === "flat" && <span className="shrink-0 text-muted-foreground text-sm" title="No change vs prior period">→</span>}
-                <span className="shrink-0 text-muted-foreground">
-                  {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </span>
-              </button>
+  const renderKpiRow = (obj: IsoObjective, isTrend: boolean) => {
+    const acts = getActuals(obj.id);
+    const sorted = [...acts].sort((a, b) => a.period.localeCompare(b.period));
+    const latest = sorted[sorted.length - 1];
+    const prev = sorted[sorted.length - 2];
+    const latestVal = latest ? parseFloat(latest.actual) : null;
+    const prevVal = prev ? parseFloat(prev.actual) : null;
+    const targetVal = parseFloat(obj.target ?? "0");
+    const pct = latestVal !== null && targetVal > 0 ? (latestVal / targetVal) * 100 : null;
+    const streak = offTrackStreakCount(acts, targetVal);
+    const trend = latestVal === null || prevVal === null ? "none"
+      : latestVal > prevVal ? "up" : latestVal < prevVal ? "down" : "flat";
+    const isExpanded = expandedKpi === obj.id;
+    const explanation = kpiResponses[String(obj.id)] ?? "";
+    const caInitiated = initiatedCa.has(obj.id);
+    const explanationMissing = isTrend && explanation.trim().length === 0;
 
-              {isExpanded && (
-                <div className="px-3 pb-3 pt-1 space-y-2 bg-amber-50/40 dark:bg-amber-950/15">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Why is <span className="text-accent">{obj.name}</span> not meeting its target this period?
-                  </Label>
-                  <Textarea
-                    value={explanation}
-                    onChange={e => setKpiResponse(obj.id, e.target.value)}
-                    placeholder={`Root cause, contributing factors, or explanation for missing target…`}
-                    rows={2}
-                    className="text-xs"
-                    data-testid={`textarea-kpi-explanation-${obj.id}`}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 h-7 text-xs border-accent text-accent hover:bg-accent/10"
-                    onClick={() => onAddAction(
-                      `Corrective action for ${obj.name}${latestVal !== null ? ` — ${latestVal} ${obj.unit} vs ${obj.target} ${obj.unit} target` : ""}`,
-                      obj.responsible ?? ""
-                    )}
-                    data-testid={`button-kpi-add-action-${obj.id}`}
-                  >
-                    <Plus className="w-3 h-3" /> Add to Action Register
-                  </Button>
-                </div>
+    return (
+      <div key={obj.id} className={`bg-background ${isTrend ? "border-l-2 border-red-500" : ""}`}>
+        <button
+          className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/30 transition-colors ${isTrend ? "hover:bg-red-50/30 dark:hover:bg-red-950/20" : ""}`}
+          onClick={() => setExpandedKpi(isExpanded ? null : obj.id)}
+          data-testid={`button-kpi-attention-${obj.id}`}
+        >
+          {isTrend ? (
+            <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+              <AlertTriangle className="w-2.5 h-2.5" /> {streak} neg. periods
+            </span>
+          ) : (
+            <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${obj.status === "at_risk" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+              {obj.status === "at_risk" ? "At Risk" : "Off Track"}
+            </span>
+          )}
+          <span className="flex-1 text-xs font-medium text-foreground truncate">{obj.name}</span>
+          {latestVal !== null && (
+            <span className="shrink-0 text-[10px] text-muted-foreground">
+              {latestVal} {obj.unit} / {obj.target} {obj.unit}
+              {pct !== null && (
+                <span className={`ml-1 font-semibold ${pct >= 80 ? "text-yellow-600" : "text-red-600"}`}>
+                  ({pct.toFixed(0)}%)
+                </span>
               )}
+            </span>
+          )}
+          {trend === "up" && <span className="shrink-0 text-green-600 text-sm font-bold" title="Trending up vs prior period">↑</span>}
+          {trend === "down" && <span className="shrink-0 text-red-500 text-sm font-bold" title="Trending down vs prior period">↓</span>}
+          {trend === "flat" && <span className="shrink-0 text-muted-foreground text-sm" title="No change vs prior period">→</span>}
+          {isTrend && explanationMissing && !isExpanded && (
+            <span className="shrink-0 text-[9px] text-red-600 font-semibold bg-red-50 dark:bg-red-950/30 px-1 py-0.5 rounded">Required</span>
+          )}
+          <span className="shrink-0 text-muted-foreground">
+            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </span>
+        </button>
+
+        {isExpanded && (
+          <div className={`px-3 pb-3 pt-1 space-y-2 ${isTrend ? "bg-red-50/40 dark:bg-red-950/15" : "bg-amber-50/40 dark:bg-amber-950/15"}`}>
+            {isTrend && (
+              <div className="flex items-start gap-1.5 text-[11px] text-red-700 dark:text-red-300 bg-red-100/60 dark:bg-red-900/30 rounded px-2 py-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Negative Trend Detected</strong> — {streak} consecutive periods below target ({trendThreshold} required to trigger).
+                  An explanation and corrective action are <strong>required</strong>.
+                </span>
+              </div>
+            )}
+            <div>
+              <Label className={`text-xs font-semibold ${isTrend ? "text-red-700 dark:text-red-400" : "text-foreground"}`}>
+                {isTrend ? "Required: " : ""}Why is <span className="text-accent">{obj.name}</span> not meeting its target?
+                {isTrend && explanationMissing && <span className="ml-1 text-red-500">*</span>}
+              </Label>
+              <Textarea
+                value={explanation}
+                onChange={e => setKpiResponse(obj.id, e.target.value)}
+                placeholder={isTrend
+                  ? "Required: Describe the root cause and contributing factors for this negative trend…"
+                  : "Root cause, contributing factors, or explanation for missing target…"}
+                rows={isTrend ? 3 : 2}
+                className={`text-xs mt-1 ${isTrend && explanationMissing ? "border-red-400 focus-visible:ring-red-300" : ""}`}
+                data-testid={`textarea-kpi-explanation-${obj.id}`}
+              />
             </div>
-          );
-        })}
+            {isTrend ? (
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  className={`gap-1.5 h-7 text-xs ${caInitiated ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}
+                  onClick={() => {
+                    onAddAction(
+                      `[TREND ALERT] Corrective action required — ${obj.name} missed target for ${streak} consecutive periods${latestVal !== null ? ` (latest: ${latestVal} ${obj.unit} vs ${obj.target} ${obj.unit} target)` : ""}`,
+                      obj.responsible ?? ""
+                    );
+                    setInitiatedCa(prev => new Set([...prev, obj.id]));
+                  }}
+                  data-testid={`button-kpi-initiate-ca-${obj.id}`}
+                >
+                  {caInitiated ? <><CheckCircle className="w-3 h-3" /> CA Initiated ✓</> : <><Plus className="w-3 h-3" /> Initiate Corrective Action</>}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 h-7 text-xs"
+                  onClick={() => onAddAction(
+                    `Corrective action for ${obj.name}${latestVal !== null ? ` — ${latestVal} ${obj.unit} vs ${obj.target} ${obj.unit} target` : ""}`,
+                    obj.responsible ?? ""
+                  )}
+                  data-testid={`button-kpi-add-action-${obj.id}`}
+                >
+                  <Plus className="w-3 h-3" /> Add to Action Register
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-7 text-xs border-accent text-accent hover:bg-accent/10"
+                onClick={() => onAddAction(
+                  `Corrective action for ${obj.name}${latestVal !== null ? ` — ${latestVal} ${obj.unit} vs ${obj.target} ${obj.unit} target` : ""}`,
+                  obj.responsible ?? ""
+                )}
+                data-testid={`button-kpi-add-action-${obj.id}`}
+              >
+                <Plus className="w-3 h-3" /> Add to Action Register
+              </Button>
+            )}
+          </div>
+        )}
       </div>
+    );
+  };
+
+  return (
+    <div className="border-b border-border/60">
+      {/* Trend-triggered (CA required) */}
+      {trendTriggered.length > 0 && (
+        <>
+          <div className="px-3 py-1.5 bg-red-50/80 dark:bg-red-950/30 flex items-center gap-1.5 border-b border-red-200/60 dark:border-red-800/40">
+            <AlertTriangle className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+            <span className="text-[11px] font-bold text-red-700 dark:text-red-300">
+              {trendTriggered.length} KPI{trendTriggered.length > 1 ? "s" : ""} — Negative Trend Confirmed ({trendThreshold}+ consecutive periods) — Corrective Action Required
+            </span>
+          </div>
+          <div className="divide-y divide-border/40">
+            {trendTriggered.map(obj => renderKpiRow(obj, true))}
+          </div>
+        </>
+      )}
+      {/* General attention (amber) */}
+      {generalAttention.length > 0 && (
+        <>
+          <div className="px-3 py-1.5 bg-amber-50/70 dark:bg-amber-950/25 flex items-center gap-1.5 border-b border-amber-200/60 dark:border-amber-800/30">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+              {generalAttention.length} KPI{generalAttention.length > 1 ? "s" : ""} Require Attention — explanation &amp; action recommended
+            </span>
+          </div>
+          <div className="divide-y divide-border/40">
+            {generalAttention.map(obj => renderKpiRow(obj, false))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -697,7 +790,13 @@ function ReviewDetail({
   const [actionForm, setActionForm] = useState({ description: "", owner: "", dueDate: "" });
   const [showActionForm, setShowActionForm] = useState(false);
   const [kpiExpanded, setKpiExpanded] = useState(false);
+  const [trendThreshold, setTrendThreshold] = useState<number>(loadTrendThreshold);
   const actionRegisterRef = useRef<HTMLDivElement>(null);
+
+  const handleTrendThresholdChange = (n: number) => {
+    setTrendThreshold(n);
+    saveTrendThreshold(n);
+  };
 
   const prefillAction = useCallback((description: string, owner: string) => {
     setActionForm(f => ({ ...f, description, owner }));
@@ -773,7 +872,7 @@ function ReviewDetail({
 
   const coveredCount = agenda.filter(a => a.covered).length;
   const getActuals = (objId: number) => allActuals.filter(a => a.objectiveId === objId);
-  const flaggedObjectives = objectives.filter(obj => offTrackStreakCount(getActuals(obj.id), parseFloat(obj.target ?? "0")) >= 2);
+  const flaggedObjectives = objectives.filter(obj => offTrackStreakCount(getActuals(obj.id), parseFloat(obj.target ?? "0")) >= trendThreshold);
 
   const inputItems = template.filter(i => i.group === "input");
   const outputItems = template.filter(i => i.group === "output");
@@ -834,16 +933,36 @@ function ReviewDetail({
         </Card>
       )}
 
-      {/* Flagged KPIs */}
-      {flaggedObjectives.length > 0 && (
-        <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
+      {/* Flagged KPIs — Negative Trend Alert */}
+      <Card className={flaggedObjectives.length > 0 ? "border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10" : "border-border"}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className={`text-sm font-semibold flex items-center gap-2 ${flaggedObjectives.length > 0 ? "text-red-700 dark:text-red-400" : "text-muted-foreground"}`}>
               <AlertTriangle className="w-4 h-4" />
-              {flaggedObjectives.length} KPI{flaggedObjectives.length > 1 ? "s" : ""} Off-Track for 2+ Consecutive Periods
+              {flaggedObjectives.length > 0
+                ? `${flaggedObjectives.length} KPI${flaggedObjectives.length > 1 ? "s" : ""} — Negative Trend Confirmed (${trendThreshold}+ consecutive periods)`
+                : `No KPIs with confirmed negative trend (threshold: ${trendThreshold} consecutive periods)`}
             </CardTitle>
-          </CardHeader>
-          <CardContent>
+            {/* Threshold selector */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground font-medium">CA trigger after</span>
+              {[1, 2, 3].map(n => (
+                <button
+                  key={n}
+                  onClick={() => handleTrendThresholdChange(n)}
+                  className={`w-6 h-6 text-xs rounded font-bold transition-colors ${trendThreshold === n ? "bg-red-600 text-white" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+                  title={`Set trend threshold to ${n} consecutive negative period${n > 1 ? "s" : ""}`}
+                  data-testid={`button-trend-threshold-${n}`}
+                >
+                  {n}
+                </button>
+              ))}
+              <span className="text-[10px] text-muted-foreground font-medium">period{trendThreshold > 1 ? "s" : ""}</span>
+            </div>
+          </div>
+        </CardHeader>
+        {flaggedObjectives.length > 0 && (
+          <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
               {flaggedObjectives.map(obj => (
                 <Badge key={obj.id} variant="outline" className="text-xs border-red-400 text-red-700 dark:text-red-400">
@@ -851,9 +970,12 @@ function ReviewDetail({
                 </Badge>
               ))}
             </div>
+            <p className="text-[11px] text-red-600 dark:text-red-400 mt-2 font-medium">
+              ⚠ Corrective actions are required for all flagged KPIs. Open each KPI in the agenda section below to document and initiate.
+            </p>
           </CardContent>
-        </Card>
-      )}
+        )}
+      </Card>
 
       {/* ══════════════════════════════════════════════════════════════════════
           AGENDA CHECKLIST — FIRST: All required inputs per standard §9.3
@@ -926,6 +1048,7 @@ function ReviewDetail({
                     setAgenda={setAgenda}
                     onAddAction={prefillAction}
                     anchorClause={kpiResponsesAnchorClause}
+                    trendThreshold={trendThreshold}
                   />
                 )}
 
@@ -1039,7 +1162,7 @@ function ReviewDetail({
             <CardContent className="pt-0 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {objectives.map(obj => (
-                  <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} />
+                  <KpiSparklineCard key={obj.id} obj={obj} actuals={getActuals(obj.id)} trendThreshold={trendThreshold} />
                 ))}
               </div>
               <div className="overflow-auto">
@@ -1063,7 +1186,7 @@ function ReviewDetail({
                       const streak = offTrackStreakCount(acts, targetVal);
                       return (
                         <tr key={obj.id} className="hover:bg-muted/20">
-                          <td className="px-3 py-2 font-medium">{obj.name}{streak >= 2 && <AlertTriangle className="w-3 h-3 text-red-500 inline ml-1" />}</td>
+                          <td className="px-3 py-2 font-medium">{obj.name}{streak >= trendThreshold && <AlertTriangle className="w-3 h-3 text-red-500 inline ml-1" title={`${streak} consecutive negative periods`} />}</td>
                           <td className="px-3 py-2 text-muted-foreground">{obj.processName ?? "—"}</td>
                           <td className="px-3 py-2">{obj.target} {obj.unit}</td>
                           <td className="px-3 py-2 font-medium">{latestVal !== null ? `${latestVal} ${obj.unit}` : "—"}</td>
