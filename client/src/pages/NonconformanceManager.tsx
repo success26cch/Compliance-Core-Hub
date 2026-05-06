@@ -1229,11 +1229,18 @@ Keep each item under 20 words. No lengthy explanation.`;
                     <div className="space-y-2">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <Label className="text-xs font-bold">Corrective Action</Label>
-                        {isaSuggestions?.correctiveActions?.length > 0 && (
-                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3" /> Isa suggestions below
-                          </span>
-                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-6 px-2 text-[10px] border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 gap-1"
+                          onClick={handleGetIsaSuggestions}
+                          disabled={isaLoading}
+                          data-testid="btn-isa-ca-guidance"
+                        >
+                          <Lightbulb className="w-3 h-3" />
+                          {isaLoading ? 'Isa thinking…' : 'Ask Isa'}
+                        </Button>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3 h-3 text-muted-foreground" />
@@ -1253,23 +1260,17 @@ Keep each item under 20 words. No lengthy explanation.`;
                           </div>
                         </div>
                       </div>
-                      <Textarea
-                        defaultValue={nc.correctiveAction || ""}
-                        onBlur={e => onUpdate({ correctiveAction: e.target.value })}
-                        placeholder="What actions are being taken to eliminate the cause?"
-                        className="min-h-[80px]"
-                      />
-                      {/* Isa CA suggestions */}
+                      {/* Isa CA suggestions — shown ABOVE the textarea */}
                       {isaSuggestions?.correctiveActions?.length > 0 && (
                         <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10 p-2.5 space-y-1.5">
                           <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3" /> Isa's Corrective Action Recommendations
+                            <Lightbulb className="w-3 h-3" /> Isa's Corrective Action Recommendations — click Use to fill
                           </p>
                           {isaSuggestions.correctiveActions.map((ca, i) => (
                             <div key={i} className="flex items-start gap-2 group">
                               <span className="text-blue-400 text-xs shrink-0 mt-0.5">•</span>
                               <p className="text-xs flex-1 text-foreground/80">{ca}</p>
-                              <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 hover:bg-blue-100 shrink-0"
+                              <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-blue-600 hover:bg-blue-100 shrink-0 border border-blue-200 dark:border-blue-800"
                                 onClick={() => applySuggestion('correctiveAction', ca)} data-testid={`btn-apply-ca-${i}`}>
                                 <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
                               </Button>
@@ -1277,17 +1278,30 @@ Keep each item under 20 words. No lengthy explanation.`;
                           ))}
                         </div>
                       )}
+                      <Textarea
+                        defaultValue={nc.correctiveAction || ""}
+                        onBlur={e => onUpdate({ correctiveAction: e.target.value })}
+                        placeholder="What actions are being taken to eliminate the cause?"
+                        className="min-h-[80px]"
+                      />
                     </div>
 
                     {/* Preventive Action + due/completion dates */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <Label className="text-xs font-bold">Preventive Action</Label>
-                        {isaSuggestions?.preventiveActions?.length > 0 && (
-                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3" /> Isa suggestions below
-                          </span>
-                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-6 px-2 text-[10px] border-green-300 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 gap-1"
+                          onClick={handleGetIsaSuggestions}
+                          disabled={isaLoading}
+                          data-testid="btn-isa-pa-guidance"
+                        >
+                          <Lightbulb className="w-3 h-3" />
+                          {isaLoading ? 'Isa thinking…' : 'Ask Isa'}
+                        </Button>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3 h-3 text-muted-foreground" />
@@ -1307,23 +1321,17 @@ Keep each item under 20 words. No lengthy explanation.`;
                           </div>
                         </div>
                       </div>
-                      <Textarea
-                        defaultValue={nc.preventiveAction || ""}
-                        onBlur={e => onUpdate({ preventiveAction: e.target.value })}
-                        placeholder="How will we prevent this from happening again?"
-                        className="min-h-[80px]"
-                      />
-                      {/* Isa PA suggestions */}
+                      {/* Isa PA suggestions — shown ABOVE the textarea */}
                       {isaSuggestions?.preventiveActions?.length > 0 && (
                         <div className="rounded-md border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10 p-2.5 space-y-1.5">
                           <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3" /> Isa's Preventive Action Recommendations
+                            <Lightbulb className="w-3 h-3" /> Isa's Preventive Action Recommendations — click Use to fill
                           </p>
                           {isaSuggestions.preventiveActions.map((pa, i) => (
                             <div key={i} className="flex items-start gap-2 group">
                               <span className="text-green-400 text-xs shrink-0 mt-0.5">•</span>
                               <p className="text-xs flex-1 text-foreground/80">{pa}</p>
-                              <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-green-600 hover:bg-green-100 shrink-0"
+                              <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-100 shrink-0 border border-green-200 dark:border-green-800"
                                 onClick={() => applySuggestion('preventiveAction', pa)} data-testid={`btn-apply-pa-${i}`}>
                                 <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
                               </Button>
@@ -1331,6 +1339,12 @@ Keep each item under 20 words. No lengthy explanation.`;
                           ))}
                         </div>
                       )}
+                      <Textarea
+                        defaultValue={nc.preventiveAction || ""}
+                        onBlur={e => onUpdate({ preventiveAction: e.target.value })}
+                        placeholder="How will we prevent this from happening again?"
+                        className="min-h-[80px]"
+                      />
                     </div>
 
                   </div>
