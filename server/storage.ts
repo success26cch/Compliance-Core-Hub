@@ -55,7 +55,7 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type TrainingEvidenceFile, type InsertTrainingEvidenceFile,
 } from "@shared/schema";
 import { db } from "./rls";
-import { eq, desc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Corey Profiles
@@ -1702,7 +1702,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNonconformances(userId: string, isSuperadmin = false): Promise<Nonconformance[]> {
-    return db.select().from(nonconformances).where(isSuperadmin ? undefined : eq(nonconformances.userId, userId)).orderBy(desc(nonconformances.createdAt));
+    return db.select().from(nonconformances).where(isSuperadmin ? undefined : eq(nonconformances.userId, userId)).orderBy(asc(nonconformances.id));
   }
 
   async createNonconformance(data: InsertNonconformance): Promise<Nonconformance> {

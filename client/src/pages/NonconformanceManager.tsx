@@ -101,6 +101,7 @@ const TRAINING_TRIGGER_DOC_TYPES = new Set([
 export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) {
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [selectedNC, setSelectedNC] = useState<Nonconformance | null>(null);
+  const [activeLogTab, setActiveLogTab] = useState<'nc' | 'capa'>('nc');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -191,17 +192,49 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
         <StatsCard title="Closed This Year" value={stats.closedThisYear} icon={CheckCircle2} color="text-green-500" />
       </div>
 
+      {/* ── Log Tabs ── */}
+      <div className="flex gap-1 border-b border-border/60">
+        <button
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeLogTab === 'nc' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          onClick={() => setActiveLogTab('nc')}
+          data-testid="tab-nc-log"
+        >
+          NC Log
+          <span className="ml-2 text-xs bg-muted text-muted-foreground rounded-full px-1.5 py-0.5">{nonconformances?.length ?? 0}</span>
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeLogTab === 'capa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          onClick={() => setActiveLogTab('capa')}
+          data-testid="tab-capa-log"
+        >
+          CAPA Log
+          <span className="ml-2 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full px-1.5 py-0.5">{nonconformances?.filter(n => (n as any).capaRequired === true).length ?? 0}</span>
+        </button>
+      </div>
+
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Nonconformance Log</CardTitle>
-          <CardDescription>Records of all identified nonconformances</CardDescription>
+          {activeLogTab === 'nc' ? (
+            <>
+              <CardTitle className="text-lg">Nonconformance Log</CardTitle>
+              <CardDescription>All identified nonconformances in sequential order</CardDescription>
+            </>
+          ) : (
+            <>
+              <CardTitle className="text-lg text-blue-700 dark:text-blue-400">CAPA Log — Corrective Action Requests</CardTitle>
+              <CardDescription>Nonconformances that require a full Corrective Action Request (CAR)</CardDescription>
+            </>
+          )}
         </CardHeader>
         <CardContent className="p-0">
+
+          {/* ── NC Log ── */}
+          {activeLogTab === 'nc' && (
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[110px]">NC #</TableHead>
                 <TableHead>Title</TableHead>
-                <TableHead>NC #</TableHead>
                 <TableHead>CAPA #</TableHead>
                 <TableHead>Source</TableHead>
                 <TableHead>Severity</TableHead>
@@ -222,8 +255,6 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
                   const ncAny = nc as any;
                   return (
                   <TableRow key={nc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedNC(nc)}>
-                    <TableCell className="font-medium">{nc.title}</TableCell>
-                    {/* NC # */}
                     <TableCell>
                       {ncAny.ncNumber ? (
                         <Badge variant="outline" className="text-xs font-mono border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-400">{ncAny.ncNumber}</Badge>
@@ -231,7 +262,7 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
                         <span className="text-xs text-muted-foreground/50">—</span>
                       )}
                     </TableCell>
-                    {/* CAPA # */}
+                    <TableCell className="font-medium">{nc.title}</TableCell>
                     <TableCell>
                       {ncAny.capaNumber ? (
                         <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-mono">{ncAny.capaNumber}</Badge>
@@ -260,6 +291,75 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
               )}
             </TableBody>
           </Table>
+          )}
+
+          {/* ── CAPA Log ── */}
+          {activeLogTab === 'capa' && (() => {
+            const capaRows = (nonconformances ?? []).filter(n => (n as any).capaRequired === true);
+            return (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[120px]">CAR #</TableHead>
+                  <TableHead className="w-[100px]">NC #</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Severity</TableHead>
+                  <TableHead>Responsible</TableHead>
+                  <TableHead>Target Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow><TableCell colSpan={9} className="text-center py-10">Loading...</TableCell></TableRow>
+                ) : capaRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-12">
+                      <p className="text-muted-foreground text-sm">No corrective action requests yet.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Open an NC and click "CAPA Required" to issue a CAR.</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  capaRows.map((nc) => {
+                    const ncAny = nc as any;
+                    return (
+                    <TableRow key={nc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedNC(nc)}>
+                      <TableCell>
+                        {ncAny.capaNumber ? (
+                          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-mono">{ncAny.capaNumber}</Badge>
+                        ) : (
+                          <span className="text-xs text-amber-600">Pending #</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {ncAny.ncNumber ? (
+                          <Badge variant="outline" className="text-xs font-mono border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-400">{ncAny.ncNumber}</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/50">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">{nc.title}</TableCell>
+                      <TableCell>{getSourceBadge(nc.sourceType)}</TableCell>
+                      <TableCell>{getSeverityBadge(nc.severity)}</TableCell>
+                      <TableCell>{nc.responsiblePerson || "—"}</TableCell>
+                      <TableCell>{nc.targetDate ? format(new Date(nc.targetDate), 'MMM d, yyyy') : "—"}</TableCell>
+                      <TableCell>{getStatusBadge(nc.status)}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+            );
+          })()}
+
         </CardContent>
       </Card>
 
