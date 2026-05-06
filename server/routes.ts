@@ -6000,30 +6000,49 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const nc = ncs.find((n: any) => n.id === id);
       if (!nc) return res.status(404).json({ message: "Nonconformance not found" });
 
+      const rcaType: string = req.body.rcaType || 'manual';
+
+      // Build tool-specific RCA schema for the prompt
+      let rcaSchema = '';
+      if (rcaType === 'manual') {
+        rcaSchema = `"rca": { "type": "manual", "rootCause": "1-3 sentence root cause narrative" }`;
+      } else if (rcaType === '5why') {
+        rcaSchema = `"rca": { "type": "5why", "whys": ["Why 1 answer (≤15 words)", "Why 2 answer", "Why 3 answer", "Why 4 answer", "Why 5 — root cause (≤15 words)"], "rootCauseStatement": "Confirmed root cause in 1 sentence" }`;
+      } else if (rcaType === '3x5why') {
+        rcaSchema = `"rca": { "type": "3x5why", "strands": [{"whys": ["W1","W2","W3","W4","W5 root cause"],"conclusion": "Root cause for this strand"},{"whys": ["W1","W2","W3","W4","W5 root cause"],"conclusion": "Root cause for this strand"},{"whys": ["W1","W2","W3","W4","W5 root cause"],"conclusion": "Root cause for this strand"}], "rootCauseStatement": "Common root cause across all strands" }`;
+      } else if (rcaType === 'fishbone') {
+        rcaSchema = `"rca": { "type": "fishbone", "categories": { "man": "contributing people/training factors", "machine": "equipment/tooling factors", "material": "material/component factors", "method": "process/procedure factors", "measurement": "inspection/measurement factors", "environment": "workplace/environmental factors" }, "rootCauseStatement": "Confirmed root cause from fishbone analysis" }`;
+      }
+
       const anthropic = createAnthropicClient();
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-5",
-        max_tokens: 900,
-        system: `You are Isa, a Lead ISO Auditor and CAPA Expert. Respond ONLY with valid JSON — no markdown, no preamble, no explanation.
+        max_tokens: 1400,
+        system: `You are Isa, a Lead ISO Auditor and CAPA Expert helping complete a ${rcaType === 'manual' ? 'Manual/Narrative' : rcaType === '5why' ? '5-Why' : rcaType === '3x5why' ? '3×5 Why' : 'Fishbone (6M)'} Root Cause Analysis.
+
+Respond ONLY with valid JSON — no markdown, no preamble, no explanation.
 Return this exact structure:
 {
-  "rootCauses": ["short specific cause", "short specific cause", "short specific cause"],
-  "correctiveActions": ["specific action", "specific action", "specific action"],
-  "preventiveActions": ["specific action", "specific action", "specific action"]
+  ${rcaSchema},
+  "correctiveActions": ["specific action ≤20 words", "specific action ≤20 words", "specific action ≤20 words"],
+  "preventiveActions": ["systemic action ≤20 words", "systemic action ≤20 words", "systemic action ≤20 words"]
 }
+
 Rules:
-- Each item: 1 sentence, ≤ 20 words, specific and actionable
-- rootCauses: 3–4 probable root causes based on the NC context
-- correctiveActions: 3–4 actions to fix this specific nonconformance
-- preventiveActions: 3–4 systemic actions to prevent recurrence
-- Do NOT write paragraphs or explanations`,
+- All content must be specific to this NC's context — no generic filler
+- correctiveActions: 3 actions to fix THIS specific nonconformance
+- preventiveActions: 3 systemic actions to prevent recurrence across the system
+- For 5-why: each "Why" answer leads logically to the next
+- For fishbone: each category gets 1-2 concise contributing factors (or "N/A — not a factor")
+- For 3x5why: each strand investigates a different angle of the problem
+- Do NOT add explanations outside the JSON`,
         messages: [{
           role: "user",
           content: `NC Title: ${nc.title}
 ISO Clause: ${nc.isoClause || "Not specified"}
 Severity: ${nc.severity}
 Source: ${nc.sourceType}
-Description: ${nc.description}${(nc as any).rootCause ? `\nRoot cause noted: ${(nc as any).rootCause}` : ""}`,
+Description: ${nc.description}${(nc as any).rootCause ? `\nPartial root cause on file: ${(nc as any).rootCause}` : ""}`,
         }],
       });
 

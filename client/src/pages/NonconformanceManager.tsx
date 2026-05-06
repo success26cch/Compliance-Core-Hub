@@ -606,7 +606,12 @@ function NCDetailDialog({ nc, isOpen, onClose, onUpdate, onAskIsa, isUpdating }:
   const qaImageInputRef = useRef<HTMLInputElement>(null);
 
   // Inline Isa CAPA suggestions state
-  type IsaSuggestions = { rootCauses: string[]; correctiveActions: string[]; preventiveActions: string[] };
+  type IsaRca =
+    | { type: 'manual'; rootCause: string }
+    | { type: '5why'; whys: string[]; rootCauseStatement: string }
+    | { type: '3x5why'; strands: { whys: string[]; conclusion: string }[]; rootCauseStatement: string }
+    | { type: 'fishbone'; categories: Record<string, string>; rootCauseStatement: string };
+  type IsaSuggestions = { rca: IsaRca; correctiveActions: string[]; preventiveActions: string[] };
   const [isaLoading, setIsaLoading] = useState(false);
   const [isaSuggestions, setIsaSuggestions] = useState<IsaSuggestions | null>(null);
   const [isaError, setIsaError] = useState<string | null>(null);
@@ -716,7 +721,7 @@ Keep each item under 20 words. No lengthy explanation.`;
     setIsaError(null);
     setIsaSuggestions(null);
     try {
-      const res = await apiRequest("POST", `/api/nonconformances/${nc.id}/ai-capa-suggestions`, {});
+      const res = await apiRequest("POST", `/api/nonconformances/${nc.id}/ai-capa-suggestions`, { rcaType });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setIsaSuggestions(data);
@@ -727,9 +732,30 @@ Keep each item under 20 words. No lengthy explanation.`;
     }
   };
 
-  const applySuggestion = (field: 'rootCause' | 'correctiveAction' | 'preventiveAction', text: string) => {
+  const applyRcaSuggestion = () => {
+    if (!isaSuggestions?.rca) return;
+    const rca = isaSuggestions.rca;
+    if (rca.type === 'manual') {
+      onUpdate({ rootCause: rca.rootCause });
+    } else if (rca.type === '5why') {
+      setWhys(rca.whys);
+      setRootCauseStatement(rca.rootCauseStatement);
+      saveRca('5why', { whys: rca.whys, rootCauseStatement: rca.rootCauseStatement });
+    } else if (rca.type === 'fishbone') {
+      setFishbone(rca.categories as any);
+      setRootCauseStatement(rca.rootCauseStatement);
+      saveRca('fishbone', { categories: rca.categories, rootCauseStatement: rca.rootCauseStatement });
+    } else if (rca.type === '3x5why') {
+      const strands = rca.strands.map(s => ({ whys: s.whys }));
+      onUpdate({ rcaData: { strands, rootCauseStatement: rca.rootCauseStatement } } as any);
+      setRootCauseStatement(rca.rootCauseStatement);
+    }
+    toast({ title: "Isa's RCA applied", description: "Root cause analysis fields filled in." });
+  };
+
+  const applySuggestion = (field: 'correctiveAction' | 'preventiveAction', text: string) => {
     onUpdate({ [field]: text });
-    toast({ title: "Suggestion applied", description: `${field === 'rootCause' ? 'Root cause' : field === 'correctiveAction' ? 'Corrective action' : 'Preventive action'} field updated.` });
+    toast({ title: "Suggestion applied", description: `${field === 'correctiveAction' ? 'Corrective action' : 'Preventive action'} field updated.` });
   };
 
   const fmtDate = (d: any) => d ? format(new Date(d), 'MMM d, yyyy') : '—';
@@ -931,98 +957,15 @@ Keep each item under 20 words. No lengthy explanation.`;
                     </Button>
                   </h3>
 
-                  {/* Isa inline suggestions card */}
-                  {(isaLoading || isaSuggestions || isaError) && (
-                    <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10 p-4 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Lightbulb className="w-4 h-4 text-violet-600 shrink-0" />
-                        <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider">Isa's CAPA Guidance</p>
-                        {isaSuggestions && (
-                          <Button size="sm" variant="ghost" className="ml-auto h-6 w-6 p-0 text-muted-foreground" onClick={() => setIsaSuggestions(null)}>
-                            <X className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </div>
-
-                      {isaLoading && (
-                        <div className="flex items-center gap-2 py-2">
-                          <div className="w-4 h-4 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
-                          <p className="text-xs text-muted-foreground">Analyzing NC details…</p>
-                        </div>
-                      )}
-
-                      {isaError && <p className="text-xs text-destructive">{isaError}</p>}
-
-                      {isaSuggestions && (
-                        <div className="space-y-3">
-                          {/* Root Causes */}
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Probable Root Causes</p>
-                            <div className="space-y-1">
-                              {isaSuggestions.rootCauses.map((rc, i) => (
-                                <div key={i} className="flex items-start gap-2 group">
-                                  <span className="text-violet-500 text-xs shrink-0 mt-0.5">•</span>
-                                  <p className="text-xs flex-1">{rc}</p>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-violet-600 hover:bg-violet-100"
-                                    onClick={() => applySuggestion('rootCause', rc)}
-                                    data-testid={`btn-apply-rc-${i}`}
-                                  >
-                                    <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Corrective Actions */}
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Recommended Corrective Actions</p>
-                            <div className="space-y-1">
-                              {isaSuggestions.correctiveActions.map((ca, i) => (
-                                <div key={i} className="flex items-start gap-2 group">
-                                  <span className="text-blue-500 text-xs shrink-0 mt-0.5">•</span>
-                                  <p className="text-xs flex-1">{ca}</p>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 hover:bg-blue-100"
-                                    onClick={() => applySuggestion('correctiveAction', ca)}
-                                    data-testid={`btn-apply-ca-${i}`}
-                                  >
-                                    <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Preventive Actions */}
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Recommended Preventive Actions</p>
-                            <div className="space-y-1">
-                              {isaSuggestions.preventiveActions.map((pa, i) => (
-                                <div key={i} className="flex items-start gap-2 group">
-                                  <span className="text-green-500 text-xs shrink-0 mt-0.5">•</span>
-                                  <p className="text-xs flex-1">{pa}</p>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-green-600 hover:bg-green-100"
-                                    onClick={() => applySuggestion('preventiveAction', pa)}
-                                    data-testid={`btn-apply-pa-${i}`}
-                                  >
-                                    <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                  {/* Loading / error strip */}
+                  {isaLoading && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800">
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-violet-400 border-t-transparent animate-spin shrink-0" />
+                      <p className="text-xs text-violet-700 dark:text-violet-400">Isa is analyzing this NC for {rcaType === 'manual' ? 'narrative root cause' : rcaType === '5why' ? '5-Why answers' : rcaType === '3x5why' ? '3×5 Why strands' : 'Fishbone categories'}…</p>
                     </div>
+                  )}
+                  {isaError && (
+                    <p className="text-xs text-destructive px-1">{isaError}</p>
                   )}
 
                   {/* RCA tool selector */}
@@ -1049,6 +992,82 @@ Keep each item under 20 words. No lengthy explanation.`;
                       </Button>
                     ))}
                   </div>
+
+                  {/* ── Isa RCA suggestion panel (tool-specific) ── */}
+                  {isaSuggestions?.rca && (() => {
+                    const rca = isaSuggestions.rca;
+                    return (
+                    <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50/40 dark:bg-violet-900/10 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="w-3.5 h-3.5 text-violet-600 shrink-0" />
+                        <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider flex-1">
+                          Isa's {rca.type === 'manual' ? 'Root Cause Narrative' : rca.type === '5why' ? '5-Why Analysis' : rca.type === '3x5why' ? '3×5 Why Strands' : 'Fishbone Analysis'}
+                        </p>
+                        <Button size="sm" className="h-6 px-2 text-[10px] bg-violet-600 hover:bg-violet-700 text-white gap-1" onClick={applyRcaSuggestion} data-testid="btn-apply-rca-all">
+                          <Zap className="w-2.5 h-2.5" /> Apply All
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground" onClick={() => setIsaSuggestions(null)}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+
+                      {rca.type === 'manual' && (
+                        <p className="text-xs text-foreground/80 leading-relaxed bg-white dark:bg-background/40 rounded p-2 border">{rca.rootCause}</p>
+                      )}
+
+                      {rca.type === '5why' && (
+                        <div className="space-y-1">
+                          {rca.whys.map((w, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-800/60 text-violet-700 dark:text-violet-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                              <p className="text-xs text-foreground/80">{w}</p>
+                            </div>
+                          ))}
+                          <div className="pt-1 border-t border-violet-100 dark:border-violet-800">
+                            <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-0.5">Root Cause Statement</p>
+                            <p className="text-xs text-foreground/80">{rca.rootCauseStatement}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {rca.type === '3x5why' && (
+                        <div className="space-y-2">
+                          {rca.strands.map((strand, si) => (
+                            <div key={si} className="space-y-1">
+                              <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider">Strand {si + 1}</p>
+                              {strand.whys.map((w, i) => (
+                                <div key={i} className="flex items-start gap-2">
+                                  <span className="w-4 h-4 rounded-full bg-violet-100 dark:bg-violet-800/60 text-violet-700 dark:text-violet-300 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                                  <p className="text-xs text-foreground/80">{w}</p>
+                                </div>
+                              ))}
+                              <p className="text-[10px] text-violet-700 dark:text-violet-400 italic pl-6">→ {strand.conclusion}</p>
+                            </div>
+                          ))}
+                          <div className="pt-1 border-t border-violet-100 dark:border-violet-800">
+                            <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-0.5">Common Root Cause</p>
+                            <p className="text-xs text-foreground/80">{rca.rootCauseStatement}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {rca.type === 'fishbone' && (
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {Object.entries(rca.categories).map(([key, val]) => (
+                            <div key={key} className="bg-white dark:bg-background/40 rounded border p-2">
+                              <p className="text-[10px] font-bold text-violet-700 dark:text-violet-400 capitalize mb-0.5">{key === 'man' ? 'Man (People)' : key === 'machine' ? 'Machine' : key === 'material' ? 'Material' : key === 'method' ? 'Method' : key === 'measurement' ? 'Measurement' : 'Environment'}</p>
+                              <p className="text-xs text-foreground/80">{val}</p>
+                            </div>
+                          ))}
+                          <div className="col-span-2 pt-1 border-t border-violet-100 dark:border-violet-800">
+                            <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-0.5">Root Cause Statement</p>
+                            <p className="text-xs text-foreground/80">{rca.rootCauseStatement}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    );
+                  })()}
 
                   {/* Manual/narrative */}
                   {rcaType === 'manual' && (
@@ -1210,6 +1229,11 @@ Keep each item under 20 words. No lengthy explanation.`;
                     <div className="space-y-2">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <Label className="text-xs font-bold">Corrective Action</Label>
+                        {isaSuggestions?.correctiveActions?.length > 0 && (
+                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3" /> Isa suggestions below
+                          </span>
+                        )}
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3 h-3 text-muted-foreground" />
@@ -1235,12 +1259,35 @@ Keep each item under 20 words. No lengthy explanation.`;
                         placeholder="What actions are being taken to eliminate the cause?"
                         className="min-h-[80px]"
                       />
+                      {/* Isa CA suggestions */}
+                      {isaSuggestions?.correctiveActions?.length > 0 && (
+                        <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10 p-2.5 space-y-1.5">
+                          <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3" /> Isa's Corrective Action Recommendations
+                          </p>
+                          {isaSuggestions.correctiveActions.map((ca, i) => (
+                            <div key={i} className="flex items-start gap-2 group">
+                              <span className="text-blue-400 text-xs shrink-0 mt-0.5">•</span>
+                              <p className="text-xs flex-1 text-foreground/80">{ca}</p>
+                              <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 hover:bg-blue-100 shrink-0"
+                                onClick={() => applySuggestion('correctiveAction', ca)} data-testid={`btn-apply-ca-${i}`}>
+                                <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Preventive Action + due/completion dates */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <Label className="text-xs font-bold">Preventive Action</Label>
+                        {isaSuggestions?.preventiveActions?.length > 0 && (
+                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3" /> Isa suggestions below
+                          </span>
+                        )}
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3 h-3 text-muted-foreground" />
@@ -1266,6 +1313,24 @@ Keep each item under 20 words. No lengthy explanation.`;
                         placeholder="How will we prevent this from happening again?"
                         className="min-h-[80px]"
                       />
+                      {/* Isa PA suggestions */}
+                      {isaSuggestions?.preventiveActions?.length > 0 && (
+                        <div className="rounded-md border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10 p-2.5 space-y-1.5">
+                          <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3" /> Isa's Preventive Action Recommendations
+                          </p>
+                          {isaSuggestions.preventiveActions.map((pa, i) => (
+                            <div key={i} className="flex items-start gap-2 group">
+                              <span className="text-green-400 text-xs shrink-0 mt-0.5">•</span>
+                              <p className="text-xs flex-1 text-foreground/80">{pa}</p>
+                              <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-green-600 hover:bg-green-100 shrink-0"
+                                onClick={() => applySuggestion('preventiveAction', pa)} data-testid={`btn-apply-pa-${i}`}>
+                                <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                   </div>
