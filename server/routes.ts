@@ -5961,9 +5961,78 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       if (updates.paCompletionDate) updates.paCompletionDate = new Date(updates.paCompletionDate);
       if (updates.docUpdateVerifiedDate) updates.docUpdateVerifiedDate = new Date(updates.docUpdateVerifiedDate);
       if (updates.implementationVerifiedDate) updates.implementationVerifiedDate = new Date(updates.implementationVerifiedDate);
+      if (updates.capaDecisionDate) updates.capaDecisionDate = new Date(updates.capaDecisionDate);
+
+      // Auto-assign CAR number when CAPA is first required
+      if (updates.capaRequired === true) {
+        const existing = await storage.getNonconformances(userId, isSuperadmin);
+        const current = existing.find((n: any) => n.id === id);
+        if (current && !(current as any).capaNumber) {
+          const year = new Date().getFullYear();
+          const seq = String(id).padStart(4, '0');
+          updates.capaNumber = `CAR-${year}-${seq}`;
+        }
+      }
+
       const nc = await storage.updateNonconformance(id, userId, updates, isSuperadmin);
       if (!nc) return res.status(404).json({ message: "Nonconformance not found" });
       res.json(nc);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // AI CAPA Suggestions — concise root cause + CA + PA guidance
+  app.post("/api/nonconformances/:id/ai-capa-suggestions", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      const userId = (req.user as any).claims.sub;
+      const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      const ncs = await storage.getNonconformances(userId, isSuperadmin);
+      const nc = ncs.find((n: any) => n.id === id);
+      if (!nc) return res.status(404).json({ message: "Nonconformance not found" });
+
+      const anthropic = createAnthropicClient();
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 900,
+        system: `You are Isa, a Lead ISO Auditor and CAPA Expert. Respond ONLY with valid JSON — no markdown, no preamble, no explanation.
+Return this exact structure:
+{
+  "rootCauses": ["short specific cause", "short specific cause", "short specific cause"],
+  "correctiveActions": ["specific action", "specific action", "specific action"],
+  "preventiveActions": ["specific action", "specific action", "specific action"]
+}
+Rules:
+- Each item: 1 sentence, ≤ 20 words, specific and actionable
+- rootCauses: 3–4 probable root causes based on the NC context
+- correctiveActions: 3–4 actions to fix this specific nonconformance
+- preventiveActions: 3–4 systemic actions to prevent recurrence
+- Do NOT write paragraphs or explanations`,
+        messages: [{
+          role: "user",
+          content: `NC Title: ${nc.title}
+ISO Clause: ${nc.isoClause || "Not specified"}
+Severity: ${nc.severity}
+Source: ${nc.sourceType}
+Description: ${nc.description}${(nc as any).rootCause ? `\nRoot cause noted: ${(nc as any).rootCause}` : ""}`,
+        }],
+      });
+
+      const rawText = response.content[0].type === "text" ? response.content[0].text.trim() : "";
+      let cleanText = rawText;
+      if (cleanText.startsWith("```")) {
+        cleanText = cleanText.replace(/^```[a-z]*\n?/i, "").replace(/\n?```\s*$/, "").trim();
+      }
+      try {
+        const parsed = JSON.parse(cleanText);
+        res.json(parsed);
+      } catch {
+        res.status(500).json({ message: "AI returned an unexpected format. Please try again." });
+      }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

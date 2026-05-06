@@ -22,7 +22,11 @@ import {
   UserCheck,
   ExternalLink,
   X,
-  Users
+  Users,
+  Lightbulb,
+  ClipboardList,
+  Zap,
+  Copy
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -197,6 +201,7 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
+                <TableHead>CAR #</TableHead>
                 <TableHead>Source</TableHead>
                 <TableHead>Severity</TableHead>
                 <TableHead>ISO Clause</TableHead>
@@ -208,13 +213,26 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-10">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-10">Loading...</TableCell></TableRow>
               ) : nonconformances?.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-10">No nonconformances found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-10">No nonconformances found.</TableCell></TableRow>
               ) : (
-                nonconformances?.map((nc) => (
+                nonconformances?.map((nc) => {
+                  const ncAny = nc as any;
+                  return (
                   <TableRow key={nc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedNC(nc)}>
                     <TableCell className="font-medium">{nc.title}</TableCell>
+                    <TableCell>
+                      {ncAny.capaNumber ? (
+                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-mono">{ncAny.capaNumber}</Badge>
+                      ) : ncAny.capaRequired === false ? (
+                        <span className="text-xs text-muted-foreground">No CAPA</span>
+                      ) : ncAny.capaRequired === true ? (
+                        <span className="text-xs text-amber-600">Pending #</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>{getSourceBadge(nc.sourceType)}</TableCell>
                     <TableCell>{getSeverityBadge(nc.severity)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{nc.isoClause || "—"}</TableCell>
@@ -227,7 +245,8 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -476,6 +495,12 @@ function NCDetailDialog({ nc, isOpen, onClose, onUpdate, onAskIsa, isUpdating }:
   const [showCreateTrainingEvent, setShowCreateTrainingEvent] = useState(false);
   const qaImageInputRef = useRef<HTMLInputElement>(null);
 
+  // Inline Isa CAPA suggestions state
+  type IsaSuggestions = { rootCauses: string[]; correctiveActions: string[]; preventiveActions: string[] };
+  const [isaLoading, setIsaLoading] = useState(false);
+  const [isaSuggestions, setIsaSuggestions] = useState<IsaSuggestions | null>(null);
+  const [isaError, setIsaError] = useState<string | null>(null);
+
   // Employees for sign-off selection
   const { data: employees } = useQuery<Employee[]>({ queryKey: ["/api/employees"] });
 
@@ -564,16 +589,37 @@ function NCDetailDialog({ nc, isOpen, onClose, onUpdate, onAskIsa, isUpdating }:
   };
 
   const handleAskIsa = () => {
-    const contextPrompt = `I have a nonconformance to work through. Here are the details: 
-Title: ${nc.title}
-Source: ${nc.sourceType}
-Clause: ${nc.isoClause || "Not specified"}
-Severity: ${nc.severity}
-Description: ${nc.description}
+    const contextPrompt = `NC: ${nc.title} | Clause: ${nc.isoClause || "N/A"} | Severity: ${nc.severity} | Source: ${nc.sourceType}
+Description: ${nc.description}${(nc as any).rootCause ? `\nRoot cause on file: ${(nc as any).rootCause}` : ''}
 
-Please coach me through a root cause analysis and help me develop an appropriate corrective action plan aligned with the relevant ISO standard.`;
+Give me ONLY:
+1. Top 3 probable root causes (bullet points, one line each)
+2. Top 3 corrective actions (specific, one line each)
+3. Top 3 preventive actions (specific, one line each)
+Keep each item under 20 words. No lengthy explanation.`;
     onAskIsa(contextPrompt);
     onClose();
+  };
+
+  const handleGetIsaSuggestions = async () => {
+    setIsaLoading(true);
+    setIsaError(null);
+    setIsaSuggestions(null);
+    try {
+      const res = await apiRequest("POST", `/api/nonconformances/${nc.id}/ai-capa-suggestions`, {});
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setIsaSuggestions(data);
+    } catch (err: any) {
+      setIsaError("Isa could not generate suggestions. Please try again.");
+    } finally {
+      setIsaLoading(false);
+    }
+  };
+
+  const applySuggestion = (field: 'rootCause' | 'correctiveAction' | 'preventiveAction', text: string) => {
+    onUpdate({ [field]: text });
+    toast({ title: "Suggestion applied", description: `${field === 'rootCause' ? 'Root cause' : field === 'correctiveAction' ? 'Corrective action' : 'Preventive action'} field updated.` });
   };
 
   const fmtDate = (d: any) => d ? format(new Date(d), 'MMM d, yyyy') : '—';
@@ -588,18 +634,24 @@ Please coach me through a root cause analysis and help me develop an appropriate
         <DialogHeader className="p-6 pb-2 sticky top-0 bg-background z-10 border-b border-border/40">
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <DialogTitle className="text-xl font-black">{nc.title}</DialogTitle>
                 <Badge variant="outline" className="capitalize">{nc.status.replace(/_/g, ' ')}</Badge>
+                {ncAny.capaNumber && (
+                  <Badge className="bg-blue-600 text-white font-mono text-xs">{ncAny.capaNumber}</Badge>
+                )}
+                {ncAny.capaRequired === false && (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">No CAPA Required</Badge>
+                )}
               </div>
               <p className="text-sm text-muted-foreground">{nc.isoClause || "No ISO clause tagged"}</p>
             </div>
             <Button 
               onClick={handleAskIsa}
-              className="bg-accent/10 text-accent hover:bg-accent/20 border-accent/20 gap-2 font-bold"
+              className="bg-accent/10 text-accent hover:bg-accent/20 border-accent/20 gap-2 font-bold shrink-0"
               data-testid="button-ask-isa-nc"
             >
-              <MessageSquare className="w-4 h-4" /> Ask Isa to Guide Me
+              <MessageSquare className="w-4 h-4" /> Ask Isa
             </Button>
           </div>
         </DialogHeader>
@@ -634,11 +686,229 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   </div>
                 </section>
 
-                {/* ── Root Cause Analysis ── */}
+                {/* ── CAPA Decision ── */}
+                <section className="space-y-3">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-blue-600" />
+                    <span className="text-blue-700 dark:text-blue-400">CAPA Decision</span>
+                    {ncAny.capaRequired === true && ncAny.capaNumber && (
+                      <Badge className="bg-blue-600 text-white font-mono text-xs ml-auto">{ncAny.capaNumber}</Badge>
+                    )}
+                    {ncAny.capaRequired === false && (
+                      <Badge variant="outline" className="text-xs ml-auto text-muted-foreground">No CAPA</Badge>
+                    )}
+                    {ncAny.capaRequired == null && (
+                      <Badge variant="outline" className="text-xs ml-auto text-amber-600 border-amber-300">Decision Pending</Badge>
+                    )}
+                  </h3>
+
+                  <div className="p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Not every NC requires a full Corrective Action Request (CAR). The quality manager decides based on severity, standard requirements, and risk.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={ncAny.capaRequired === true ? 'default' : 'outline'}
+                        className={ncAny.capaRequired === true ? 'bg-blue-600 hover:bg-blue-700 text-white text-xs' : 'text-xs'}
+                        onClick={() => onUpdate({ capaRequired: true } as any)}
+                        data-testid="btn-capa-required-yes"
+                      >
+                        ✓ CAPA Required (issue CAR)
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={ncAny.capaRequired === false ? 'default' : 'outline'}
+                        className={ncAny.capaRequired === false ? 'bg-slate-600 hover:bg-slate-700 text-white text-xs' : 'text-xs'}
+                        onClick={() => onUpdate({ capaRequired: false } as any)}
+                        data-testid="btn-capa-required-no"
+                      >
+                        ✗ No CAPA Needed
+                      </Button>
+                      {ncAny.capaRequired != null && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs text-muted-foreground"
+                          onClick={() => onUpdate({ capaRequired: null } as any)}
+                        >
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+
+                    {ncAny.capaRequired === true && ncAny.capaNumber && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <Badge className="bg-blue-600 text-white font-mono">{ncAny.capaNumber}</Badge>
+                        <span className="text-xs text-muted-foreground">Auto-assigned Corrective Action Request number</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Decision By</Label>
+                        <Input
+                          defaultValue={ncAny.capaDecisionBy || ''}
+                          onBlur={e => onUpdate({ capaDecisionBy: e.target.value } as any)}
+                          placeholder="Quality Manager name"
+                          className="h-8 text-sm"
+                          data-testid="input-capa-decision-by"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Decision Date</Label>
+                        <Input
+                          type="date"
+                          defaultValue={toInputDate(ncAny.capaDecisionDate)}
+                          onBlur={e => { if (e.target.value) onUpdate({ capaDecisionDate: new Date(e.target.value) } as any); }}
+                          className="h-8 text-sm"
+                          data-testid="input-capa-decision-date"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Decision Notes / Justification</Label>
+                      <Textarea
+                        defaultValue={ncAny.capaDecisionNotes || ''}
+                        onBlur={e => onUpdate({ capaDecisionNotes: e.target.value } as any)}
+                        placeholder={ncAny.capaRequired === false
+                          ? "Reason why CAPA is not required (e.g., isolated occurrence, low risk, immediate correction sufficient)..."
+                          : "Notes on why a full CAPA is required..."}
+                        className="min-h-[60px] text-sm"
+                        data-testid="textarea-capa-decision-notes"
+                      />
+                    </div>
+
+                    {/* No-CAPA fast closure */}
+                    {ncAny.capaRequired === false && nc.status !== 'closed' && (
+                      <div className="pt-1 border-t border-dashed">
+                        <Button
+                          size="sm"
+                          className="gap-2 bg-green-600 hover:bg-green-700 text-white text-xs"
+                          onClick={() => onUpdate({ status: 'closed', closureDate: new Date() })}
+                          data-testid="btn-close-nc-no-capa"
+                        >
+                          <CheckCircle2 className="w-3 h-3" /> Close NC (No CAPA)
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground mt-1">Closes this NC without going through the full CAR process.</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* ── Root Cause Analysis — only shown when CAPA required or not yet decided ── */}
+                {ncAny.capaRequired !== false && (
                 <section className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <ShieldAlert className="w-4 h-4" /> Root Cause Analysis
+
+                    {/* Inline Isa CAPA Suggestions button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-auto gap-1.5 text-xs h-7 border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20"
+                      onClick={handleGetIsaSuggestions}
+                      disabled={isaLoading}
+                      data-testid="btn-isa-capa-suggestions"
+                    >
+                      <Zap className="w-3 h-3" />
+                      {isaLoading ? 'Isa thinking…' : 'Get Isa\'s Guidance'}
+                    </Button>
                   </h3>
+
+                  {/* Isa inline suggestions card */}
+                  {(isaLoading || isaSuggestions || isaError) && (
+                    <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10 p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-violet-600 shrink-0" />
+                        <p className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider">Isa's CAPA Guidance</p>
+                        {isaSuggestions && (
+                          <Button size="sm" variant="ghost" className="ml-auto h-6 w-6 p-0 text-muted-foreground" onClick={() => setIsaSuggestions(null)}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {isaLoading && (
+                        <div className="flex items-center gap-2 py-2">
+                          <div className="w-4 h-4 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
+                          <p className="text-xs text-muted-foreground">Analyzing NC details…</p>
+                        </div>
+                      )}
+
+                      {isaError && <p className="text-xs text-destructive">{isaError}</p>}
+
+                      {isaSuggestions && (
+                        <div className="space-y-3">
+                          {/* Root Causes */}
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Probable Root Causes</p>
+                            <div className="space-y-1">
+                              {isaSuggestions.rootCauses.map((rc, i) => (
+                                <div key={i} className="flex items-start gap-2 group">
+                                  <span className="text-violet-500 text-xs shrink-0 mt-0.5">•</span>
+                                  <p className="text-xs flex-1">{rc}</p>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-violet-600 hover:bg-violet-100"
+                                    onClick={() => applySuggestion('rootCause', rc)}
+                                    data-testid={`btn-apply-rc-${i}`}
+                                  >
+                                    <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Corrective Actions */}
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Recommended Corrective Actions</p>
+                            <div className="space-y-1">
+                              {isaSuggestions.correctiveActions.map((ca, i) => (
+                                <div key={i} className="flex items-start gap-2 group">
+                                  <span className="text-blue-500 text-xs shrink-0 mt-0.5">•</span>
+                                  <p className="text-xs flex-1">{ca}</p>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 hover:bg-blue-100"
+                                    onClick={() => applySuggestion('correctiveAction', ca)}
+                                    data-testid={`btn-apply-ca-${i}`}
+                                  >
+                                    <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Preventive Actions */}
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Recommended Preventive Actions</p>
+                            <div className="space-y-1">
+                              {isaSuggestions.preventiveActions.map((pa, i) => (
+                                <div key={i} className="flex items-start gap-2 group">
+                                  <span className="text-green-500 text-xs shrink-0 mt-0.5">•</span>
+                                  <p className="text-xs flex-1">{pa}</p>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity text-green-600 hover:bg-green-100"
+                                    onClick={() => applySuggestion('preventiveAction', pa)}
+                                    data-testid={`btn-apply-pa-${i}`}
+                                  >
+                                    <Copy className="w-2.5 h-2.5 mr-0.5" /> Use
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* RCA tool selector */}
                   <div className="flex gap-2 flex-wrap">
@@ -791,6 +1061,7 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     </Button>
                   )}
                 </section>
+                )}
 
                 {/* ── Corrective & Preventive Actions ── */}
                 <section className="space-y-4">
