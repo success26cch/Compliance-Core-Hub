@@ -5936,7 +5936,12 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
       const userId = (req.user as any).claims.sub;
       const parsed = insertNonconformanceSchema.parse({ ...req.body, userId });
       const nc = await storage.createNonconformance(parsed);
-      res.status(201).json(nc);
+      // Auto-assign NC number using the record id
+      const year = new Date().getFullYear();
+      const seq = String(nc.id).padStart(4, '0');
+      const ncNumber = `NC-${year}-${seq}`;
+      const updated = await storage.updateNonconformance(nc.id, userId, { ncNumber } as any);
+      res.status(201).json(updated ?? nc);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }

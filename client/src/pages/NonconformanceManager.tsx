@@ -201,7 +201,8 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
-                <TableHead>CAR #</TableHead>
+                <TableHead>NC #</TableHead>
+                <TableHead>CAPA #</TableHead>
                 <TableHead>Source</TableHead>
                 <TableHead>Severity</TableHead>
                 <TableHead>ISO Clause</TableHead>
@@ -213,15 +214,24 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={9} className="text-center py-10">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-10">Loading...</TableCell></TableRow>
               ) : nonconformances?.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center py-10">No nonconformances found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center py-10">No nonconformances found.</TableCell></TableRow>
               ) : (
                 nonconformances?.map((nc) => {
                   const ncAny = nc as any;
                   return (
                   <TableRow key={nc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedNC(nc)}>
                     <TableCell className="font-medium">{nc.title}</TableCell>
+                    {/* NC # */}
+                    <TableCell>
+                      {ncAny.ncNumber ? (
+                        <Badge variant="outline" className="text-xs font-mono border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-400">{ncAny.ncNumber}</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
+                    {/* CAPA # */}
                     <TableCell>
                       {ncAny.capaNumber ? (
                         <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-mono">{ncAny.capaNumber}</Badge>
@@ -637,10 +647,15 @@ Keep each item under 20 words. No lengthy explanation.`;
               <div className="flex items-center gap-2 flex-wrap">
                 <DialogTitle className="text-xl font-black">{nc.title}</DialogTitle>
                 <Badge variant="outline" className="capitalize">{nc.status.replace(/_/g, ' ')}</Badge>
+                {ncAny.ncNumber && (
+                  <Badge variant="outline" className="font-mono text-xs border-slate-400 text-slate-600 dark:border-slate-500 dark:text-slate-300">
+                    {ncAny.ncNumber}
+                  </Badge>
+                )}
                 {ncAny.capaNumber && (
                   <Badge className="bg-blue-600 text-white font-mono text-xs">{ncAny.capaNumber}</Badge>
                 )}
-                {ncAny.capaRequired === false && (
+                {ncAny.capaRequired === false && !ncAny.capaNumber && (
                   <Badge variant="outline" className="text-xs text-muted-foreground">No CAPA Required</Badge>
                 )}
               </div>

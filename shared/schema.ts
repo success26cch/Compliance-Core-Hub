@@ -474,6 +474,8 @@ export const nonconformances = pgTable("nonconformances", {
   // Link to a Training Event created from this CAPA
   linkedTrainingEventId: integer("linked_training_event_id"),
   linkedTrainingEventTitle: text("linked_training_event_title"),
+  // NC tracking number — auto-assigned on creation e.g. "NC-2026-0001"
+  ncNumber: text("nc_number"),
   // CAPA Decision — quality manager decides whether a full CAR is needed
   capaRequired: boolean("capa_required"),           // null = pending, true = required, false = not required
   capaNumber: text("capa_number"),                  // auto-assigned e.g. "CAR-2024-0001"
