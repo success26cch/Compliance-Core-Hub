@@ -468,6 +468,12 @@ export const nonconformances = pgTable("nonconformances", {
   qualityAlertDate: timestamp("quality_alert_date"),
   qualityAlertIssuedBy: text("quality_alert_issued_by"),
   qualityAlertNotes: text("quality_alert_notes"),
+  qualityAlertImage: text("quality_alert_image"), // base64 encoded image attached to the alert
+  qualityAlertImageCaption: text("quality_alert_image_caption"),
+  qualityAlertSignoffs: jsonb("quality_alert_signoffs").default([]), // QaSignoff[]
+  // Link to a Training Event created from this CAPA
+  linkedTrainingEventId: integer("linked_training_event_id"),
+  linkedTrainingEventTitle: text("linked_training_event_title"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
