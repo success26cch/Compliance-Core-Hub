@@ -14,7 +14,9 @@ import {
   ArrowRight,
   Info,
   Trash2,
-  Calendar
+  Calendar,
+  GraduationCap,
+  Bell
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,6 +72,12 @@ const DOC_TYPE_PRESETS = [
   'Quality Manual', 'Training Materials', 'Customer-Specific Requirements (CSR)',
   'Design FMEA (DFMEA)', 'Emergency Response Plan', 'Other'
 ];
+
+// Document types that imply training may be needed when changed
+const TRAINING_TRIGGER_DOC_TYPES = new Set([
+  'Work Instructions', 'SOP / Procedure', 'Operator Instructions',
+  'Inspection / Test Plan', 'Training Materials', 'Control Plan', 'Reaction Plan',
+]);
 
 export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) {
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
@@ -940,6 +948,200 @@ Please coach me through a root cause analysis and help me develop an appropriate
                   )}
                 </section>
 
+                {/* ── Training Required ── */}
+                {(() => {
+                  const trainingTriggerHit = ncAny.docUpdateRequired &&
+                    (docItems as DocUpdateItem[]).some(d => TRAINING_TRIGGER_DOC_TYPES.has(d.docType));
+                  return (
+                    <section className="space-y-3">
+                      <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-emerald-600" />
+                        <span className="text-emerald-700 dark:text-emerald-400">Training Required</span>
+                        {ncAny.trainingRequired && ncAny.trainingStatus === 'completed' && (
+                          <Badge className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs ml-auto">Training Complete ✓</Badge>
+                        )}
+                        {ncAny.trainingRequired && ncAny.trainingStatus === 'in_progress' && (
+                          <Badge className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs ml-auto">In Progress</Badge>
+                        )}
+                        {ncAny.trainingRequired && (!ncAny.trainingStatus || ncAny.trainingStatus === 'pending') && (
+                          <Badge className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 text-xs ml-auto">Pending</Badge>
+                        )}
+                        {!ncAny.trainingRequired && (
+                          <Badge variant="outline" className="text-xs ml-auto text-muted-foreground">Not Required</Badge>
+                        )}
+                      </h3>
+
+                      {trainingTriggerHit && !ncAny.trainingRequired && (
+                        <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg text-xs text-amber-800 dark:text-amber-300">
+                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Heads up:</strong> This CAPA includes updates to procedures or work instructions. Consider whether affected personnel need to be re-trained on the revised documents (IATF 16949 §7.2.4 / ISO 9001 §7.2).
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                        <Switch
+                          checked={!!ncAny.trainingRequired}
+                          onCheckedChange={val => onUpdate({ trainingRequired: val } as any)}
+                          data-testid="switch-nc-training-required"
+                        />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {ncAny.trainingRequired
+                              ? 'Additional training required as a result of this CAPA'
+                              : 'No additional training required'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Enable when a procedure, work instruction, SOP, or control plan was changed
+                          </p>
+                        </div>
+                      </div>
+
+                      {ncAny.trainingRequired && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-xs">Training Scope</Label>
+                            <Textarea
+                              defaultValue={ncAny.trainingScope || ''}
+                              onBlur={e => onUpdate({ trainingScope: e.target.value } as any)}
+                              placeholder="Who needs training and on what? e.g., All blending operators — revised WI-003 batch mixing procedure. Trainer: Diana Torres."
+                              className="min-h-[80px] text-sm mt-1"
+                              data-testid="textarea-nc-training-scope"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Training Status</Label>
+                              <Select
+                                defaultValue={ncAny.trainingStatus || 'pending'}
+                                onValueChange={v => onUpdate({ trainingStatus: v } as any)}
+                              >
+                                <SelectTrigger className="h-8 text-sm" data-testid="select-nc-training-status">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="in_progress">In Progress</SelectItem>
+                                  <SelectItem value="completed">Completed ✓</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Training Due Date</Label>
+                              <Input
+                                type="date"
+                                defaultValue={toInputDate(ncAny.trainingDueDate)}
+                                onBlur={e => { if (e.target.value) onUpdate({ trainingDueDate: new Date(e.target.value) } as any); }}
+                                className="h-8 text-sm"
+                                data-testid="input-nc-training-due-date"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Completed By</Label>
+                              <Input
+                                defaultValue={ncAny.trainingCompletedBy || ''}
+                                placeholder="Name / title of trainer or HR"
+                                onBlur={e => onUpdate({ trainingCompletedBy: e.target.value } as any)}
+                                className="h-8 text-sm"
+                                data-testid="input-nc-training-completed-by"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Completion Date</Label>
+                              <Input
+                                type="date"
+                                defaultValue={toInputDate(ncAny.trainingCompletedDate)}
+                                onBlur={e => { if (e.target.value) onUpdate({ trainingCompletedDate: new Date(e.target.value) } as any); }}
+                                className="h-8 text-sm"
+                                data-testid="input-nc-training-completed-date"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })()}
+
+                {/* ── Quality Alert ── */}
+                <section className="space-y-3">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-red-500" />
+                    <span className="text-red-600 dark:text-red-400">Quality Alert</span>
+                    {ncAny.qualityAlertIssued ? (
+                      <Badge className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-xs ml-auto">Alert Issued</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs ml-auto text-muted-foreground">None Issued</Badge>
+                    )}
+                  </h3>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                    <Switch
+                      checked={!!ncAny.qualityAlertIssued}
+                      onCheckedChange={val => onUpdate({ qualityAlertIssued: val } as any)}
+                      data-testid="switch-nc-quality-alert"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {ncAny.qualityAlertIssued ? 'Quality alert was issued' : 'No quality alert issued'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Use when a formal notification was sent to customers, suppliers, or internal teams
+                      </p>
+                    </div>
+                  </div>
+
+                  {ncAny.qualityAlertIssued && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Alert Number / Reference</Label>
+                          <Input
+                            defaultValue={ncAny.qualityAlertNumber || ''}
+                            placeholder="e.g., QA-2024-007"
+                            onBlur={e => onUpdate({ qualityAlertNumber: e.target.value } as any)}
+                            className="h-8 text-sm"
+                            data-testid="input-nc-qa-number"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Date Issued</Label>
+                          <Input
+                            type="date"
+                            defaultValue={toInputDate(ncAny.qualityAlertDate)}
+                            onBlur={e => { if (e.target.value) onUpdate({ qualityAlertDate: new Date(e.target.value) } as any); }}
+                            className="h-8 text-sm"
+                            data-testid="input-nc-qa-date"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Issued By</Label>
+                        <Input
+                          defaultValue={ncAny.qualityAlertIssuedBy || ''}
+                          placeholder="Name / title of person who issued the alert"
+                          onBlur={e => onUpdate({ qualityAlertIssuedBy: e.target.value } as any)}
+                          className="h-8 text-sm"
+                          data-testid="input-nc-qa-issued-by"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Alert Notes</Label>
+                        <Textarea
+                          defaultValue={ncAny.qualityAlertNotes || ''}
+                          onBlur={e => onUpdate({ qualityAlertNotes: e.target.value } as any)}
+                          placeholder="Describe what the alert covered, who it was sent to, and any required recipient actions..."
+                          className="min-h-[70px] text-sm"
+                          data-testid="textarea-nc-qa-notes"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </section>
+
                 {/* ── Verification of Implementation ── */}
                 <section className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -1101,6 +1303,24 @@ Please coach me through a root cause analysis and help me develop an appropriate
                     )}
                     {ncAny.implementationVerifiedDate && <DetailItem label="Impl. Verified Date" value={fmtDate(ncAny.implementationVerifiedDate)} />}
                     {ncAny.implementationVerifiedBy && <DetailItem label="Impl. Verified By" value={ncAny.implementationVerifiedBy} />}
+                    {ncAny.trainingRequired && (
+                      <DetailItem label="Training" value={
+                        ncAny.trainingStatus === 'completed' ? '✓ Complete' :
+                        ncAny.trainingStatus === 'in_progress' ? 'In Progress' : 'Pending'
+                      } />
+                    )}
+                    {!ncAny.trainingRequired && (
+                      <DetailItem label="Training" value="Not Required" />
+                    )}
+                    {ncAny.qualityAlertIssued && ncAny.qualityAlertNumber && (
+                      <DetailItem label="Quality Alert" value={ncAny.qualityAlertNumber} />
+                    )}
+                    {ncAny.qualityAlertIssued && !ncAny.qualityAlertNumber && (
+                      <DetailItem label="Quality Alert" value="Issued" />
+                    )}
+                    {!ncAny.qualityAlertIssued && (
+                      <DetailItem label="Quality Alert" value="None Issued" />
+                    )}
                     {nc.responsiblePhone && (
                       <Button 
                         variant="outline" 

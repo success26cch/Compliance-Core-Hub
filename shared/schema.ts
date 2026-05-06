@@ -455,6 +455,19 @@ export const nonconformances = pgTable("nonconformances", {
   implementationVerifiedDate: timestamp("implementation_verified_date"),
   implementationVerifiedBy: text("implementation_verified_by"),
   implementationVerificationNotes: text("implementation_verification_notes"),
+  // Training Required (triggered when procedure/WI/SOP was changed as part of CAPA)
+  trainingRequired: boolean("training_required").default(false),
+  trainingScope: text("training_scope"), // who needs training and on what topics
+  trainingDueDate: timestamp("training_due_date"),
+  trainingStatus: text("training_status"), // 'pending' | 'in_progress' | 'completed'
+  trainingCompletedBy: text("training_completed_by"),
+  trainingCompletedDate: timestamp("training_completed_date"),
+  // Quality Alert
+  qualityAlertIssued: boolean("quality_alert_issued").default(false),
+  qualityAlertNumber: text("quality_alert_number"),
+  qualityAlertDate: timestamp("quality_alert_date"),
+  qualityAlertIssuedBy: text("quality_alert_issued_by"),
+  qualityAlertNotes: text("quality_alert_notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -469,6 +482,9 @@ export const insertNonconformanceSchema = createInsertSchema(nonconformances, {
   paCompletionDate: dateOrStringToDate,
   docUpdateVerifiedDate: dateOrStringToDate,
   implementationVerifiedDate: dateOrStringToDate,
+  trainingDueDate: dateOrStringToDate,
+  trainingCompletedDate: dateOrStringToDate,
+  qualityAlertDate: dateOrStringToDate,
 }).omit({
   id: true,
   createdAt: true,
