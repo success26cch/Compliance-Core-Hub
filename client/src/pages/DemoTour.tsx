@@ -58,7 +58,7 @@ const TOUR_SLIDES: TourSlide[] = [
       { label: "7 Quick Actions", detail: "Lead a Safety Meeting, Audit My OSHA 300, Mock OSHA Inspection, Weekly Safety Topic, Compliance Calendar Check, Gap Analysis (ACSI), Is This Recordable?" },
       { label: "42 Document Templates", detail: "Generate policies, permits, meeting tools, and assessments on demand — all CFR-referenced" },
       { label: "Proactive Compliance", detail: "Asks follow-up questions, suggests related actions, reminds you about deadlines" },
-      { label: "Team Meeting Mode", detail: "Choose from 25 safety topics or pick your own — Corey builds the full agenda" },
+      { label: "Team Meeting Mode", detail: "Choose from a library of safety topics or pick your own — Corey builds the full agenda" },
       { label: "Voice & Listen", detail: "Speak to Corey with the floating mic, or have responses read aloud" },
     ],
     ctaLabel: "Try Corey",
@@ -74,7 +74,7 @@ const TOUR_SLIDES: TourSlide[] = [
     iconBg: "bg-yellow-500/20",
     description: "When you open Corey, you're greeted with powerful Quick Action cards. Each one launches a specialized, guided conversation — no prompt engineering required. Just click and Corey takes the lead.",
     features: [
-      { label: "Lead a Safety Meeting", detail: "Choose from 25 topics (or type your own) — Corey builds a full agenda with discussion questions, scenarios, and action items" },
+      { label: "Lead a Safety Meeting", detail: "Choose your topic or type your own — Corey builds a full agenda with discussion questions, scenarios, and action items" },
       { label: "Audit My OSHA 300", detail: "Guided Q&A audit of your OSHA 300 Log per 29 CFR 1904 — checks for common errors, miscounts, and privacy cases" },
       { label: "Mock OSHA Inspection", detail: "Simulates a real CSHO inspection — opening conference, walk-around, document review, and closing conference with citation classifications" },
       { label: "Weekly Safety Topic", detail: "Pick a topic and get a ready-to-present 5-minute safety talk with regulatory references" },
@@ -146,11 +146,10 @@ const TOUR_SLIDES: TourSlide[] = [
     description: "A standalone tool for occupational health clinics. Bidirectional real-time interpretation between English-speaking providers and Spanish-speaking patients. Features speech-to-text for both languages, an interactive body map for injury localization, multi-step bilingual forms, and clinical command quick-buttons.",
     features: [
       { label: "Real-Time Interpretation", detail: "Provider speaks English, patient speaks Spanish — AI translates both directions with clinical precision" },
-      { label: "Listen Buttons (EN/ES)", detail: "Provider taps 'EN' to hear the English response, patient taps 'ES' to hear in Spanish — true hands-free conversation" },
-      { label: "Interactive Body Map", detail: "22 body parts with English/Spanish labels — patient taps where it hurts for accurate injury localization" },
-      { label: "Clinical Quick Commands", detail: "Pre-built bilingual commands for Vision Tests, Physical Exams, Drug Screens, Breathing/PFT, and Blood Draw" },
+      { label: "Audio Playback (EN/ES)", detail: "Responses are spoken aloud in the appropriate language — true hands-free conversation for provider and patient" },
+      { label: "Interactive Body Diagram", detail: "English/Spanish labeled body regions — patient indicates the area of discomfort for accurate injury localization" },
+      { label: "Bilingual Clinical Commands", detail: "Common clinical exam phrases instantly available in both languages — no typing required" },
       { label: "Multi-Step Forms", detail: "Bilingual injury reporting, new hire intake, and drug screen instruction forms" },
-      { label: "Visit Types", detail: "DOT Physical, Drug & Alcohol Testing, Injury Reporting, Work Restrictions, Respiratory/PFT, Blood Draw, General Visit" },
     ],
     ctaLabel: "See BMA",
     ctaLink: "/clinic-assistant",
@@ -166,9 +165,9 @@ const TOUR_SLIDES: TourSlide[] = [
     features: [
       { label: "QR Code Generation", detail: "Employers generate a unique QR passport for each employee visit — contains all authorization details" },
       { label: "Smart Authorization Forms", detail: "Digital consent forms replace paper — signed on-screen at the clinic with full audit trail" },
-      { label: "Employer Notifications", detail: "DER gets an SMS via Twilio when their employee checks in at the clinic — real-time visibility" },
+      { label: "Employer Notifications", detail: "DER is notified the moment their employee checks in at the clinic — real-time visibility" },
       { label: "Time-Away Tracking", detail: "Track when the employee left work and when they returned — automatic time-away calculations" },
-      { label: "'I'm Here' Button", detail: "Employee taps 'I'm Here' at the clinic — employer is notified instantly via SMS" },
+      { label: "Employee Arrival Confirmation", detail: "Simple one-tap check-in at the clinic — employer receives an instant notification" },
     ],
     ctaLabel: "Generate Passport",
     ctaLink: "/employee-passport",
@@ -242,7 +241,7 @@ const TOUR_SLIDES: TourSlide[] = [
     ],
     ctaLabel: "Compare Plans",
     ctaLink: "/get-started",
-    highlight: "Stripe-powered billing with credit card and PayPal support",
+    highlight: "Flexible billing with multiple payment options supported",
   },
 ];
 

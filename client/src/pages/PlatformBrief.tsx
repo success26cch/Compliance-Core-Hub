@@ -55,7 +55,7 @@ Need to prepare for an OSHA inspection? Corey runs a complete mock inspection �
 
 And when you need documents, Corey generates them.
 
-Twenty-three professional compliance documents, organized by category: policies and programs, permits and forms, meeting tools, and assessments.
+A comprehensive library of professional compliance documents, organized by category: policies and programs, permits and forms, meeting tools, and assessments.
 
 Emergency Action Plans. Confined Space Entry Permits. Hot Work Permits. Respiratory Protection Programs. Job Hazard Analysis templates. All referencing exact CFR standards. All ready to customize and use.
 
@@ -69,7 +69,7 @@ Track your employees' medical surveillance, drug screens, certifications, and wo
 
 Log workplace incidents, generate OSHA 300 and 301 reports, and build Corrective Action Plans with real accountability and follow-up tracking.
 
-Get automated DOT physical expiration alerts — at 60 days, 30 days, 15 days, and 7 days — sent directly to your phone by text.
+Get automated DOT physical expiration alerts sent directly to your phone by text — well ahead of the deadline.
 
 And with a built-in Learning Management System, assign training courses to your team, track completions, and issue professional PDF certificates with QR verification codes.
 
@@ -91,9 +91,9 @@ Compliance answers, one tap away, wherever you are.
 
 [SCENE 9 — PRICING]
 
-Corey AI is ninety-nine dollars per month, per user. No contracts. Cancel anytime.
+Corey AI is one hundred ninety-nine dollars per month, per user. No contracts. Cancel anytime.
 
-The full Employer Compliance Platform is two hundred ninety-nine dollars per month — covering up to fifty employees, with everything included.
+The full Employer Compliance Platform starts at five hundred ninety-nine dollars per month — covering up to fifty employees, with everything included.
 
 [SCENE 10 — CALL TO ACTION]
 
@@ -110,9 +110,9 @@ END OF VIDEO SCRIPT
 
 const BRIEF = `
 ==========================================================
-CORE COMPLIANCE HUB (CCHUB) — FULL PLATFORM BRIEFING
+CORE COMPLIANCE HUB (CCHUB) — PLATFORM BRIEFING
 ==========================================================
-Prepared for review — All capabilities, features, architecture, and pricing.
+Prepared for review — Platform capabilities and features.
 ==========================================================
 
 1. WHAT IS CORE COMPLIANCE HUB?
@@ -133,8 +133,6 @@ Target Market: Safety Directors, EHS Managers, HR Professionals, Plant Managers,
   
 - Bilingual Medical Assistant (BMA): Separate subscription for occupational health clinics
 
-- Deferred (not yet live): Success Manager Retainer at $499/month
-
 3. COREY AI — THE WORLD'S FIRST AI BUILT FROM THE DNA OF 29 CFR
 ----------------------------------------------------------------
 Corey is not a generic AI chatbot. Corey is a Senior Occupational Health, Safety & Compliance Expert with a zero-tolerance anti-hallucination protocol.
@@ -145,12 +143,6 @@ Anti-Hallucination Protocol:
 - If unsure about a specific CFR number, says so — never guesses
 - Always provides exact CFR section numbers when citing standards
 - If a question falls outside regulatory expertise, states that clearly
-
-Proactive Compliance Behavior:
-- Asks follow-up questions to understand industry, company size, and situation before answering
-- Proactively suggests related compliance actions ("While we're on respirators, have you updated your written Respiratory Protection Program this year?")
-- Reminds users about upcoming deadlines ("Remember, OSHA 300A must be posted by February 1st")
-- Offers to generate relevant documents after answering questions
 
 Regulatory Coverage (18+ standards):
 - 29 CFR 1904 — Recordkeeping
@@ -170,14 +162,14 @@ Regulatory Coverage (18+ standards):
 - Cranes and Derricks — 29 CFR 1926 Subpart CC
 - Electrical Safety — 29 CFR 1910 Subpart S
 
-7 Quick Actions (one-click guided conversations):
-1. Lead a Safety Meeting — Choose from 25 topics or type your own; Corey builds full agenda with discussion questions, scenarios, and action items
-2. Audit My OSHA 300 — Guided Q&A audit per 29 CFR 1904; checks for miscounted days, privacy cases, posting compliance
-3. Mock OSHA Inspection — Simulates a CSHO inspection with opening conference, walk-around, document review, citation classifications, closing conference
-4. Weekly Safety Topic — Pick a topic, get a ready-to-present 5-minute safety talk with regulatory references
-5. Compliance Calendar Check — Reviews upcoming OSHA, DOT, EPA deadlines for next 90 days tailored to industry
-6. Gap Analysis — ACSI — Explains gap analysis and connects users directly to ACSI (Assessment & Consulting Services Inc.) at acsi-quality.com
-7. Is This Recordable? — Step-by-step OSHA recordability determination per 29 CFR 1904.7; distinguishes first aid vs. medical treatment; identifies correct OSHA 300 Log column
+Quick Actions (one-click guided conversations):
+- Lead a Safety Meeting — Choose your topic; Corey builds full agenda with discussion questions, scenarios, and action items
+- Audit My OSHA 300 — Guided Q&A audit per 29 CFR 1904; checks for common errors and posting compliance
+- Mock OSHA Inspection — Simulates a CSHO inspection — opening conference, walk-around, document review, and closing conference
+- Weekly Safety Topic — Pick a topic, get a ready-to-present safety talk with regulatory references
+- Compliance Calendar Check — Reviews upcoming OSHA, DOT, and EPA deadlines tailored to your industry
+- Gap Analysis — ACSI — Explains gap analysis and connects users directly to ACSI (Assessment & Consulting Services Inc.) at acsi-quality.com
+- Is This Recordable? — Step-by-step OSHA recordability determination per 29 CFR 1904.7; distinguishes first aid vs. medical treatment
 
 42 Document Templates (organized by category):
 POLICIES & PROGRAMS (14):
@@ -231,17 +223,15 @@ ASSESSMENTS (7):
   - PPE Hazard Assessment (29 CFR 1910.132)
 
 Voice Features:
-- Floating mic button for hands-free voice input from anywhere in a conversation
-- Listen button to hear Corey's responses read aloud
-- Speech-to-text populates the chat input
+- Hands-free voice input from anywhere in a conversation
+- Listen to Corey's responses read aloud
 
 PDF Export:
 - Download any Corey response as a branded PDF with CCHUB letterhead
-- Unicode character sanitization for clean rendering (handles μg/m³, degree symbols, smart quotes, etc.)
 
 Team Meeting Mode:
-- 25 pre-built safety topics covering all major OSHA hazard categories
-- "I'll Pick My Own Topic" option for custom company-specific topics
+- A library of safety topics covering all major OSHA hazard categories
+- Custom topic option for company-specific meetings
 - Full meeting agendas with discussion questions, regulatory references, and action items
 
 4. EMPLOYER COMPLIANCE PLATFORM
@@ -277,10 +267,9 @@ Team Seats:
 - Centralized billing under the employer account
 
 DOT Notifications:
-- Automated alerts for DOT physical expirations (60, 30, 15, 7-day warnings)
+- Automated alerts for DOT physical expirations at multiple warning intervals
 - Random drug testing selection notifications
 - Medical card expiration tracking
-- SMS delivery via Twilio
 
 5. TRAINING & CERTIFICATION LMS
 --------------------------------
@@ -306,29 +295,18 @@ A standalone tool for occupational health clinics providing real-time bidirectio
 Features:
 - Provider speaks/types in English → AI translates to Spanish for patient
 - Patient speaks in Spanish → AI translates to English for provider
-- Listen buttons: EN (blue) for provider to hear English, ES (gold) for patient to hear Spanish
-- Mic buttons for both provider (English speech-to-text) and patient (Spanish speech-to-text)
-- True hands-free conversation flow
+- Audio playback in both languages — hands-free conversation flow for provider and patient
 
-Interactive Body Map:
-- 22 body parts with English/Spanish labels
-- Patient taps where it hurts for accurate injury localization
+Interactive Body Diagram:
+- English/Spanish labeled body regions — patient indicates area of discomfort for accurate injury localization
 
-Clinical Quick Commands (pre-built bilingual phrases):
-- Vision Test commands
-- Physical Exam commands
-- Drug Screen instructions
-- Breathing/PFT commands
-- Blood Draw commands
-- Temperature/vital sign commands
+Bilingual Clinical Commands:
+- Common clinical exam phrases instantly available in both languages across major exam types
 
 Multi-Step Bilingual Forms:
 - Injury Reporting Form
 - New Hire Intake Form
 - Drug Screen Instruction Form
-
-Visit Type Context:
-- DOT Physical, Drug & Alcohol Testing, Injury Reporting, Work Restrictions, Respiratory/PFT, Blood Draw, General Medical Visit
 
 7. CCHUB HANDSHAKE — DIGITAL MEDICAL PASSPORT
 --------------------------------------------
@@ -337,8 +315,8 @@ QR-based clinic check-in system replacing paper authorization forms:
 - Employers generate a unique QR passport for each employee visit
 - QR contains all authorization details (visit type, services needed, employer info)
 - Smart digital authorization forms with on-screen signature capture
-- Employer (DER) receives SMS notification via Twilio when employee checks in
-- "I'm Here" button for employee arrival confirmation
+- Employer (DER) receives an instant notification when employee checks in at the clinic
+- Simple employee arrival confirmation at the clinic
 - Time-away tracking (when employee left work, when they returned)
 - Complete visit history maintained digitally
 
@@ -388,9 +366,8 @@ Dedicated dark-themed sales page at /meet-corey:
 12. TRY COREY — QR CODE TRIAL
 ------------------------------
 - Dedicated /try-corey page for marketing materials
-- Uses the landing bot API with a 3-question limit per email
-- QR code downloadable in PNG/SVG at /qr-code
-- Server generates QR codes via the qrcode npm package
+- Limited trial experience — great for QR code handouts at events
+- QR code downloadable in PNG/SVG format at /qr-code
 
 13. ADDITIONAL TOOLS
 --------------------
@@ -402,63 +379,7 @@ Dedicated dark-themed sales page at /meet-corey:
 - About Page: Company information and mission
 - Contact Page: Inquiry form for prospects
 
-14. TECHNICAL ARCHITECTURE
---------------------------
-Frontend: React + Vite + TailwindCSS + shadcn/ui
-Backend: Express.js + Node.js
-Database: PostgreSQL with Drizzle ORM
-AI: Anthropic Claude (via Replit AI integration)
-Authentication: Replit Auth
-Payments: Stripe (credit card + PayPal)
-SMS: Twilio
-Speech: Web Speech API (browser-native)
-PWA: Progressive Web App with offline caching
-Dark Mode: Full support via next-themes with class-based toggling
-
-15. PAGES & ROUTES (COMPLETE LIST)
-----------------------------------
-/                     — Landing page (public)
-/get-started          — Plans comparison and signup
-/meet-corey           — Corey marketing/sales page
-/demo-tour            — Interactive platform tour (shareable)
-/try-corey            — Trial Corey with 3-question limit
-/qr-code              — QR code generator for Try Corey
-/decision-tree        — "Is This Recordable?" public tool
-/about                — About CCHUB
-/contact              — Contact form
-/corey                — Full Corey AI experience (requires login)
-/bot                  — Corey AI (alternate entry)
-/dashboard            — Employer compliance dashboard
-/employees            — Employee management
-/incidents            — Incident logging & OSHA 300
-/training             — Training course catalog
-/training/:id         — Individual course viewer
-/employer-training    — Employer training management
-/employee-training    — Employee training portal
-/employee-passport    — Digital medical passport generation
-/clinic-assistant     — BMA clinic interface
-/clinic-agreement     — Clinic partnership signup
-/clinic-letter        — Injury letter generator
-/bma-subscription     — BMA subscription page
-/iso-manager          — ACSI ISO management tools
-/mentorship           — ACSI mentorship program
-/brandnswag           — Employee recognition platform
-/settings             — Account settings
-/company-profile      — Company profile management
-/team-seats           — Multi-seat billing management
-/dot-notifications    — DOT notification management
-/compliance-checklists — Pre-built compliance checklists
-/audit-prep           — Audit preparation tools
-/compliance-glossary  — Compliance terminology reference
-/drug-alcohol-policy  — Policy generator
-/sms-consent          — SMS consent form
-/superadmin           — Platform admin dashboard
-/leads                — Lead/inquiry management
-/admin/inquiries      — Admin inquiry management
-/demo                 — Legacy demo page
-/resources            — Resource library
-
-16. WHAT MAKES THIS PLATFORM UNIQUE
+14. WHAT MAKES THIS PLATFORM UNIQUE
 ------------------------------------
 1. ONLY AI built from the DNA of 29 CFR — not a generic chatbot with a compliance wrapper
 2. Anti-hallucination protocol — zero tolerance for non-regulatory sources
