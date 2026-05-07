@@ -318,7 +318,7 @@ export default function EmployerDashboard() {
                     ))}
                   </div>
                   <div className="space-y-1.5">
-                    {DEMO.departments.map((dept) => (
+                    {["Operations", "Maintenance", "Warehouse", "Logistics", "Admin"].map((dept) => (
                       <div key={dept} className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-muted/30 border border-border/30 text-xs">
                         <div className="flex items-center gap-1.5">
                           <Building2 className="w-3 h-3 text-muted-foreground" />
