@@ -11,3 +11,9 @@ id = "21WI11JF7yNaQrTaig3u7"
 uri = "file://CCI_Chemical_Demo_Guidance.txt"
 type = "text"
 title = "CCI Chemical Demo Guidance — Word Ready"
+
+[[outputs]]
+id = "mtT7vzs6Q5Ww8aP91Xydb"
+uri = "file://CCHUB_Pricing_and_Tiers.md"
+type = "text"
+title = "CCHUB Pricing & Tier Reference"

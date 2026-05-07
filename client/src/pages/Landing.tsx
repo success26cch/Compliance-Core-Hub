@@ -2247,7 +2247,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Testimonials Section — hidden until real testimonials are collected
       <section className="py-24 bg-muted/30 border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -2318,6 +2318,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
+      */}
 
       {/* FAQ Section */}
       <section id="faq" className="py-24 bg-white border-t border-border/50">
