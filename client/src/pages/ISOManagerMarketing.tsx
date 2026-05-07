@@ -26,15 +26,21 @@ const stagger = {
 };
 
 const MODULES = [
-  { icon: MessageSquare, label: "AI Consultation", desc: "Isa coaches you through any ISO clause, audit scenario, or gap analysis — with your org profile as context." },
-  { icon: Shield, label: "NC & CAPA", desc: "Log nonconformances, assign owners, track root cause analysis, and verify effectiveness of corrective actions." },
-  { icon: FileText, label: "Documentation Library", desc: "Build and manage your Quality Manual, Procedures, Work Instructions, Templates, and Process Maps." },
-  { icon: AlertTriangle, label: "Risk Assessment", desc: "Clause 6.1 risk and opportunity register — identify, analyze, treat, and monitor with audit-ready records." },
-  { icon: BarChart2, label: "Management Review", desc: "Structured inputs, action tracking, and documented outputs for every review meeting ISO requires." },
-  { icon: ClipboardCheck, label: "Internal Audits", desc: "Clause-based checklists, finding management, and close-out tracking for every scheduled audit." },
-  { icon: Mail, label: "Communication", desc: "Log and track internal and external communications required by your management system standard." },
-  { icon: GraduationCap, label: "Training", desc: "Competency tracking, training records, and awareness documentation across your workforce." },
-  { icon: Activity, label: "Measurement & Monitoring", desc: "KPIs, metrics, objectives, and performance data — everything an auditor looks for in Clause 9." },
+  { icon: MessageSquare, label: "AI Consultation", desc: "Isa coaches you through any ISO clause, audit scenario, or gap analysis — personalized to your org profile, standard, and processes." },
+  { icon: Shield, label: "NC & CAPA", desc: "Log nonconformances, assign owners, track root cause analysis, link to corrective actions, and verify effectiveness with documented evidence." },
+  { icon: FileText, label: "Documentation Library", desc: "Build and manage your Quality Manual, Procedures, Work Instructions, and Forms — with revision control, AI-assisted drafting, and change control records." },
+  { icon: AlertTriangle, label: "Risk Assessment", desc: "Clause 6.1 risk and opportunity register — identify, evaluate, treat, and monitor risks with audit-ready evidence at every stage." },
+  { icon: BarChart2, label: "Management Review", desc: "Structured inputs, agenda management, action tracking, and documented outputs for every review cycle your standard requires." },
+  { icon: ClipboardCheck, label: "Internal Audits", desc: "Process-approach audit records with risk-based scheduling, finding management, and standard-specific audit types including product and process audits." },
+  { icon: Layers, label: "Layered Process Audits", desc: "Multi-tier audit program with configurable frequency, question libraries, conduct workflows, and compliance dashboards — built for automotive and high-frequency audit environments." },
+  { icon: GraduationCap, label: "Training & Awareness", desc: "Competency tracking, training records, and multi-document evidence files per employee — certificates, sign-off sheets, work instructions, and controlled documents." },
+  { icon: Activity, label: "Measurement & Monitoring", desc: "KPIs, performance metrics, and objectives — structured to satisfy Clause 9 with trend data and evidence auditors expect." },
+  { icon: Mail, label: "Communication Log", desc: "Track internal and external communications required by your management system, with records ready for audit review." },
+  { icon: Users, label: "Supplier Management", desc: "Approved supplier register, pre-qualification assessments, performance scorecards, and risk-based audit scheduling — all in one module." },
+  { icon: Target, label: "Calibration", desc: "Measurement equipment master register, calibration logs, lab registry, and internal lab scope documentation for full measurement traceability." },
+  { icon: Building2, label: "APQP", desc: "Advanced product quality planning records and phase tracking to support new product launches and customer-specific requirements." },
+  { icon: Factory, label: "Preventive Maintenance", desc: "Equipment register with PM schedules, work order tracking, and standard-specific fields — designed for IATF 16949, AS9100D, and ISO 13485 environments." },
+  { icon: Vault, label: "Action Item Tracker", desc: "A single cross-source register pulling action items from audits, risk assessments, KPI gaps, and management review outputs — with priority, assignee, due date, and overdue alerts." },
 ];
 
 const STANDARDS = [
@@ -50,9 +56,10 @@ const STANDARDS = [
 const ISO_CORE_CAPABILITIES = [
   "Pick 1 standard: 9001, 14001, or 45001",
   "Isa AI coaching (clause-by-clause)",
-  "Documentation Library (Quality Manual, Procedures, WIs)",
-  "NC & CAPA Management module",
-  "Risk Assessment module",
+  "Documentation Library with revision control",
+  "NC & CAPA module with effectiveness verification",
+  "Risk Assessment register (Clause 6.1)",
+  "Action Item Tracker included",
   "Knowledge Architecture setup included",
 ];
 const ISO_INTEGRATED_CAPABILITIES = [
@@ -60,23 +67,26 @@ const ISO_INTEGRATED_CAPABILITIES = [
   "Isa AI across all 3 standards",
   "Full Documentation Library + NC/CAPA",
   "Risk Assessment + Management Review modules",
+  "Training & Awareness with evidence file library",
   "Cross-standard Integrated Management System",
   "Knowledge Architecture setup included",
 ];
 const ISO_SPECIALIST_CAPABILITIES = [
   "Pick 1: IATF 16949, AS9100, or ISO 13485",
   "Isa Pro AI for your chosen standard",
-  "Full module suite: Docs, NC/CAPA, Audits",
+  "Full module suite including Audits & LPA",
+  "Calibration & Preventive Maintenance modules",
+  "Supplier Management with risk-based scheduling",
   "Industry-specific process mapping",
-  "Second-party audit support",
   "Knowledge Architecture setup included",
 ];
 const ISO_PRO_CAPABILITIES = [
   "9001 + 14001 + 45001 + 1 Specialist standard",
   "Isa Pro across all standards",
-  "All 8 platform modules (full suite)",
-  "Communication + Training + M&M modules",
-  "KPI tracking & audit evidence management",
+  "Full platform suite — all 15+ modules",
+  "APQP, Calibration & Supplier Management",
+  "Layered Process Audits with compliance dashboard",
+  "KPI tracking & cross-source action management",
   "Priority ACSI consulting access",
 ];
 
@@ -99,7 +109,7 @@ const FAQS = [
   },
   {
     q: "What does the platform include?",
-    a: "ISO Manager is a complete management system platform. It includes Isa AI coaching, NC & CAPA, Documentation Library, Risk Assessment, Management Review, Internal Audits, Communication, Training, and Measurement & Monitoring. Schedule a demo and we'll walk you through everything relevant to your standard and audit timeline.",
+    a: "ISO Manager is a complete management system platform with 15+ modules covering every element your standard requires — including NC & CAPA, Documentation, Risk Assessment, Internal Audits, Layered Process Audits, Supplier Management, Calibration, Preventive Maintenance, Training & Awareness with evidence files, APQP, Management Review, and a cross-source Action Item Tracker. Schedule a walkthrough and we'll focus on the modules most relevant to your standard and audit timeline.",
   },
 ];
 
@@ -276,7 +286,7 @@ export default function ISOManagerMarketing() {
           {/* Quick stats */}
           <motion.div variants={fadeUp} className="flex flex-wrap gap-6 mt-10 pt-10 border-t border-white/10">
             {[
-              { icon: Layers, label: "9 Modules", sub: "Full platform suite" },
+              { icon: Layers, label: "15+ Modules", sub: "Full platform suite" },
               { icon: Target, label: "7 Standards", sub: "Core + Specialist tiers" },
               { icon: Sparkles, label: "Isa AI", sub: "Built into every module" },
               { icon: Vault, label: "4 Pricing Tiers", sub: "Contact us for pricing" },
@@ -306,7 +316,7 @@ export default function ISOManagerMarketing() {
               <span className="text-xs font-black uppercase tracking-widest" style={{ color: ORANGE }}>Platform Modules</span>
               <h2 className="text-3xl font-black text-white mt-2">Everything your management system needs.</h2>
               <p className="text-white/50 mt-2 max-w-xl text-sm leading-relaxed">
-                9 dedicated modules covering every clause your standard requires. Isa coaching is built into every module so you're never working alone.
+                15+ dedicated modules covering every clause your standard requires — from documentation and audits to calibration, supplier management, and maintenance. Isa coaching is built in so you're never working alone.
               </p>
             </motion.div>
 
