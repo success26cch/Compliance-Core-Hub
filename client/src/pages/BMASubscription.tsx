@@ -50,22 +50,22 @@ export default function BMASubscription() {
     {
       icon: Languages,
       title: "Real-Time Spanish Translation",
-      description: "Instant text-to-speech in Spanish for common medical instructions. No interpreter needed."
+      description: "Instant Spanish translation for common medical instructions — no interpreter needed."
     },
     {
       icon: Mic,
-      title: "Bidirectional Speech-to-Text",
-      description: "Patient speaks Spanish, the system translates to English in real-time for your clinical notes."
+      title: "Two-Way Communication",
+      description: "Patients communicate in Spanish; providers receive English. No language barrier in either direction."
     },
     {
       icon: Volume2,
       title: "One-Tap Clinical Commands",
-      description: "Pre-built command buttons for MAs and Providers: 'Empty pockets', 'Deep breath', 'Provide sample' and more."
+      description: "Pre-built clinical commands covering the most common MA and provider instructions, spoken in professional Spanish."
     },
     {
       icon: Stethoscope,
       title: "Three Clinical Modes",
-      description: "Injury Reporting, New Hire Intake, and Drug Screen Instructions — all in Spanish and English."
+      description: "Injury Reporting, New Hire Intake, and Drug Screen Instructions — each designed for specific occupational health scenarios, fully bilingual."
     },
     {
       icon: FileText,
@@ -74,8 +74,8 @@ export default function BMASubscription() {
     },
     {
       icon: Printer,
-      title: "Interactive Body Map",
-      description: "Visual injury documentation with point-and-click body part selection for accurate reporting."
+      title: "Visual Injury Documentation",
+      description: "Patients identify the affected area directly — accurate injury location captured even when they can't describe it in English."
     },
   ];
 

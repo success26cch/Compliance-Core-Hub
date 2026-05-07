@@ -52,32 +52,32 @@ export default function BMA() {
     {
       icon: Languages,
       title: "Real-Time Spanish Translation",
-      description: "Instant text-to-speech in Spanish for common medical instructions. No interpreter needed — your MAs communicate clearly with every patient."
+      description: "Instant Spanish translation for common medical instructions — your MAs communicate clearly with every patient, no interpreter needed."
     },
     {
       icon: Mic,
-      title: "Bidirectional Speech-to-Text",
-      description: "Patient speaks Spanish, the system translates to English in real-time for your clinical notes. Provider speaks English, the patient hears Spanish."
+      title: "Two-Way Communication",
+      description: "Patients communicate in Spanish; providers receive English. Providers communicate in English; patients hear Spanish. No language barrier in either direction."
     },
     {
       icon: Volume2,
       title: "One-Tap Clinical Commands",
-      description: "Pre-built command buttons for MAs and Providers: 'Empty pockets', 'Deep breath', 'Provide sample' — all spoken in clear, professional Spanish."
+      description: "Pre-built clinical commands covering the most common MA and provider instructions — spoken instantly in clear, professional Spanish."
     },
     {
       icon: Stethoscope,
       title: "Three Clinical Modes",
-      description: "Injury Reporting with body maps, New Hire Intake with bilingual forms, and Drug Screen Instructions with DOT-compliant step-by-step walkthroughs."
+      description: "Injury Reporting, New Hire Intake, and Drug Screen Instructions — each designed for specific occupational health scenarios, fully bilingual."
     },
     {
       icon: FileText,
       title: "Printable Clinical Summaries",
-      description: "Generate Spanish-English bilingual visit summaries for medical records and compliance documentation — ready to print or attach to the chart."
+      description: "Generate Spanish-English bilingual visit summaries ready to print or attach to the chart — compliant documentation without extra steps."
     },
     {
       icon: Printer,
-      title: "Interactive Body Map",
-      description: "Visual injury documentation with point-and-click body part selection. Patients confirm the injury location even when they can't describe it in English."
+      title: "Visual Injury Documentation",
+      description: "Patients identify the affected area directly — no language required. Accurate injury location captured even when a patient can't describe it in English."
     },
   ];
 

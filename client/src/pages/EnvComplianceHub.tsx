@@ -50,9 +50,9 @@ const MODULES = [
     title: "Universal Waste",
     subtitle: "40 CFR Part 273",
     features: [
-      "Container log: Batteries, Lamps, Pesticides, Mercury, Aerosols",
-      "1-year storage countdown clock per container",
-      "Color-coded expiration alerts (30 / 14 / 0 days)",
+      "Container tracking: Batteries, Lamps, Pesticides, Mercury, Aerosols",
+      "Storage deadline management per container",
+      "Escalating expiration alerts as deadlines approach",
       "Aerosol cans included (added to federal UW list 2019)",
     ],
   },
@@ -64,10 +64,10 @@ const MODULES = [
     title: "Hazardous Waste (RCRA)",
     subtitle: "40 CFR Parts 260–270",
     features: [
-      "Satellite Accumulation Point (SAP) weekly inspection log",
-      "Manifest Manager with 45-day unsigned flag",
-      "Generator Status Calculator — auto-determines VSQG / SQG / LQG",
-      "90-day accumulation clock for Large Quantity Generators",
+      "Satellite Accumulation Point (SAP) weekly inspection records",
+      "Manifest tracking with unsigned manifest alerts",
+      "Generator status determination based on your monthly waste volumes",
+      "Accumulation deadline tracking for all generator categories",
     ],
   },
   {
@@ -80,8 +80,8 @@ const MODULES = [
     features: [
       "Tank & secondary containment inspection checklists",
       "Monthly and annual inspection scheduling",
-      "5-year plan re-certification reminder",
-      "Spill kit inventory tracker by location",
+      "5-year plan re-certification reminders",
+      "Spill kit readiness tracking across your facility",
     ],
   },
   {
@@ -92,10 +92,10 @@ const MODULES = [
     title: "Stormwater / SWPPP",
     subtitle: "NPDES / 40 CFR Part 122",
     features: [
-      "Quarterly visual outfall monitoring log",
-      "Rain event observation records",
-      "BMP maintenance schedule tracker",
-      "Corrective action workflow on sampling exceedances",
+      "Quarterly visual outfall monitoring records",
+      "Rain event observation documentation",
+      "BMP maintenance scheduling and records",
+      "Corrective action documentation for sampling exceedances",
     ],
   },
   {
@@ -106,8 +106,8 @@ const MODULES = [
     title: "Air Quality / CAA",
     subtitle: "40 CFR Parts 51–71",
     features: [
-      "Permit filing cabinet (Title V, Minor Source, State-only)",
-      "Renewal alerts at 180 / 90 / 30 days before expiration",
+      "Permit registry for all source categories (Title V, Minor, State)",
+      "Renewal reminders as permit expiration dates approach",
       "Method 9 Visible Emissions (Opacity) log",
       "Stack & dust collector inspection records",
     ],
