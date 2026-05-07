@@ -175,7 +175,7 @@ export default function EnvComplianceHub() {
       {/* Nav */}
       <nav className="border-b border-white/10 px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
         <Link href="/">
-          <img src={logoUrl} alt="CCHUB" className="h-10 w-auto" />
+          <img src={logoUrl} alt="CCHUB" className="h-20 w-auto" />
         </Link>
         <div className="flex items-center gap-3">
           <Link href="/dashboard">
@@ -211,7 +211,7 @@ export default function EnvComplianceHub() {
             </Button>
           </Link>
           <Link href="/contact">
-            <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8">
+            <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-8">
               Request a Demo
             </Button>
           </Link>
@@ -360,7 +360,7 @@ export default function EnvComplianceHub() {
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-10">
+              <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-10">
                 Talk to Us
               </Button>
             </Link>
