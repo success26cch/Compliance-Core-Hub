@@ -164,12 +164,10 @@ export default function GetStarted() {
                   <CardTitle className="text-xl">Complete Compliance Platform</CardTitle>
                 </div>
                 <Badge className="bg-accent text-white w-fit mx-auto">One Platform. Everything Included.</Badge>
-                <div className="flex items-baseline justify-center gap-1 mt-4">
-                  <span className="text-4xl font-bold text-primary">$599</span>
-                  <span className="text-muted-foreground">/mo</span>
+                <div className="mt-4">
+                  <span className="text-lg font-semibold text-muted-foreground">Contact us for pricing</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">Platform only &middot; Add Corey AI for $699/mo (+$129/ea additional Corey seat)</p>
-                <p className="text-sm text-muted-foreground">Up to 50 employees included &middot; +$2/employee beyond 50</p>
+                <p className="text-sm text-muted-foreground mt-1">Pricing is tailored to your team size — schedule a demo and we'll walk you through the right plan.</p>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col pt-4">
                 <div className="grid sm:grid-cols-2 gap-x-8 gap-y-1 mb-6">
@@ -200,20 +198,17 @@ export default function GetStarted() {
                   <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                     <img src={coreyImg} alt="Corey AI Assistant" className="w-48 h-48 object-contain flex-shrink-0" data-testid="img-corey-employer-card" />
                     <div>
-                      <h4 className="text-sm font-bold text-primary">Add Corey AI for $699/mo</h4>
-                      <p className="text-xs text-muted-foreground mt-1">1 Corey seat included with Platform + Corey bundle. Additional Corey seats $129/mo each. Or subscribe to Corey standalone at $199/mo per user.</p>
+                      <h4 className="text-sm font-bold text-primary">Corey AI available as an add-on</h4>
+                      <p className="text-xs text-muted-foreground mt-1">Add Corey AI to your platform subscription — or subscribe to Corey standalone at $199/mo per user. Contact us to discuss the right bundle.</p>
                     </div>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground italic mb-4 text-center">For companies serious about compliance — from startups to mid-sized firms.</p>
-                <Button className="w-full" size="lg" onClick={() => handleAddToCart("employer-platform-with-corey")} data-testid="button-add-cart-employer-platform-corey">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Platform + Corey AI — $699/mo
-                </Button>
-                <Button variant="outline" className="w-full mt-2" onClick={() => handleAddToCart("employer-platform")} data-testid="button-add-cart-employer-platform">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Platform Only — $599/mo
-                </Button>
+                <a href="mailto:teams@corecompliancehub.com?subject=Employer Platform Demo Request" className="block w-full">
+                  <Button className="w-full" size="lg" data-testid="button-add-cart-employer-platform-corey">
+                    Schedule a Demo
+                  </Button>
+                </a>
               </CardContent>
             </Card>
           </div>

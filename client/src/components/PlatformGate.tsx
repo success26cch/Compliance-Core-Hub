@@ -44,38 +44,32 @@ export function PlatformGate({ children, featureName }: { children: React.ReactN
 
         <Card className="border-2 border-accent/50 bg-accent/5 mb-6" data-testid="card-platform-upsell">
           <CardContent className="py-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Crown className="w-5 h-5 text-accent" />
-                <h3 className="font-bold text-lg">Employer Compliance Platform</h3>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-accent">$599<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
-                <div className="text-xs text-muted-foreground">+$100/mo to add Corey AI</div>
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <Crown className="w-5 h-5 text-accent" />
+              <h3 className="font-bold text-lg">Employer Compliance Platform</h3>
             </div>
-            
+
             <div className="grid sm:grid-cols-2 gap-2 mb-6 text-sm">
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Compliance Dashboard & Metrics</span></div>
-              <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Employee Management (50 incl.)</span></div>
+              <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Employee Management</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>OSHA 300 Incident Logging</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Corrective Action Plans</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Medical Passport (QR Check-in)</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>DOT Expiration Notifications</span></div>
-              <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Optional: Add Corey AI (+$100/mo)</span></div>
+              <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Corey AI available as add-on</span></div>
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority Action Queue</span></div>
             </div>
-            
-            <Link href="/settings">
+
+            <a href="mailto:teams@corecompliancehub.com?subject=Employer Platform Access Request">
               <Button className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-12 gap-2" data-testid="button-upgrade-platform">
                 <Crown className="w-5 h-5" />
-                Upgrade to Employer Platform
+                Contact Us for Pricing
                 <ArrowRight className="w-4 h-4" />
               </Button>
-            </Link>
-            
+            </a>
+
             <p className="text-xs text-center text-muted-foreground mt-3">
-              +$2/employee beyond 50. Optional $499 setup & onboarding available.
+              A compliance specialist will reach out to discuss the right plan for your team.
             </p>
           </CardContent>
         </Card>

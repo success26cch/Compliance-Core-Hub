@@ -285,7 +285,7 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
       "Unlimited conversations",
       "Custom ISO profile & standards focus",
     ],
-    price: "Starting at $99/mo",
+    price: "From $129/mo",
     learnMoreHref: "/meet-isa",
   },
   dot: {
@@ -303,8 +303,7 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
       "DOT violation alerts",
       "Audit-ready document management",
     ],
-    price: "Included in Employer Platform",
-    priceNote: "$599/mo · Employer Compliance Platform",
+    price: "Contact for pricing",
     learnMoreHref: "/settings",
   },
   env_hub: {
@@ -340,8 +339,7 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
       "Drug Screen & Medical Surveillance Tracking",
       "Priority Action Queue",
     ],
-    price: "$599/mo",
-    priceNote: "+$100/mo to add Corey AI · +$2/employee beyond 50",
+    price: "Contact for pricing",
     learnMoreHref: "/settings",
   },
 };
