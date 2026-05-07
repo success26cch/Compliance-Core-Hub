@@ -196,7 +196,7 @@ export default function EnvComplianceHub() {
         <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 mb-6 text-xs px-3 py-1">
           EPA Compliance Platform
         </Badge>
-        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
+        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6 text-white">
           Environmental Compliance,{" "}
           <span className="text-emerald-400">Audit-Ready</span>
           <br />Every Single Day
