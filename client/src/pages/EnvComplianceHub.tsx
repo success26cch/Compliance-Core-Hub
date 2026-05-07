@@ -345,6 +345,44 @@ export default function EnvComplianceHub() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section className="py-20 px-6 bg-[#0d1f0d]/60 border-t border-white/10">
+        <div className="max-w-4xl mx-auto text-center">
+          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 mb-4">Pricing</Badge>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Built for Every EHS Team</h2>
+          <p className="text-white/60 text-lg mb-10 max-w-2xl mx-auto">
+            One EPA violation notice can cost more than a year of compliance software. The Environmental Compliance Hub pays for itself the first time it keeps you out of trouble. Contact us for a quote tailored to your facility size and regulatory scope.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-6 mb-10">
+            {[
+              { label: "Starting from", value: "Contact Us", note: "", desc: "Scaled to your facility count & modules" },
+              { label: "Bundle pricing", value: "Available", note: "", desc: "Env Hub + Corey AI + Employer Platform" },
+              { label: "Setup fee", value: "One-time", note: "", desc: "Includes onboarding & system walkthrough" },
+            ].map(({ label, value, note, desc }) => (
+              <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+                <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-2">{label}</p>
+                <p className="text-2xl font-bold text-white">{value}<span className="text-base font-normal text-white/50">{note}</span></p>
+                <p className="text-sm text-white/50 mt-2">{desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/contact">
+              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 h-12" data-testid="button-env-pricing-walkthrough">
+                Schedule a Walkthrough
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/get-started">
+              <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-8 h-12" data-testid="button-env-pricing-getstarted">
+                Get Started
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-white/30 mt-6">No long-term contracts required. Month-to-month available.</p>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="max-w-4xl mx-auto px-6 py-16 text-center">
         <div className="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border border-emerald-500/20 rounded-2xl p-12">
@@ -354,14 +392,19 @@ export default function EnvComplianceHub() {
             Join the EHS professionals using the Environmental Compliance Hub to stay audit-ready, 365 days a year.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/contact">
+              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-10 gap-2" data-testid="button-env-cta-walkthrough">
+                Schedule a Walkthrough <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
             <Link href="/dashboard">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-10 gap-2">
-                Access the Hub <ArrowRight className="w-4 h-4" />
+              <Button size="lg" className="bg-black hover:bg-black/80 text-white border border-white/10 px-10 gap-2" data-testid="button-env-cta-dashboard">
+                Access the Hub
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-10">
-                Talk to Us
+              <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-10" data-testid="button-env-cta-contact">
+                Talk to a Specialist
               </Button>
             </Link>
           </div>
