@@ -349,7 +349,7 @@ export default function EnvComplianceHub() {
       <section className="max-w-4xl mx-auto px-6 py-16 text-center">
         <div className="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 border border-emerald-500/20 rounded-2xl p-12">
           <Leaf className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold mb-3">Stop Guessing. Start Complying.</h2>
+          <h2 className="text-3xl font-bold mb-3 text-white">Stop Guessing. Start Complying.</h2>
           <p className="text-white/60 max-w-xl mx-auto mb-8">
             Join the EHS professionals using the Environmental Compliance Hub to stay audit-ready, 365 days a year.
           </p>
