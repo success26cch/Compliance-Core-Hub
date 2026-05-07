@@ -1296,63 +1296,31 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Dashboard mockup */}
-          <div className="rounded-2xl overflow-hidden border border-white/10 max-w-5xl mx-auto" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)" }}>
-            <div className="bg-slate-800 px-4 py-3 flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                <div className="w-3 h-3 rounded-full bg-green-400" />
-              </div>
-              <div className="flex-1 bg-slate-700 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
-                app.corecompliancehub.com/dot-hub
-              </div>
+          {/* DOT Outcomes Panel */}
+          <div className="max-w-5xl mx-auto rounded-2xl border border-white/10 overflow-hidden" style={{ background: "hsl(222,47%,9%)", boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)" }}>
+            <div className="bg-slate-800/80 px-5 py-3 flex items-center justify-between border-b border-white/10">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">DOT Fleet HUB — What You'll Always Know</span>
+              <span className="text-[10px] text-green-400 font-semibold bg-green-400/10 border border-green-400/20 rounded-full px-2 py-0.5">● FMCSA Compliant</span>
             </div>
-            <div className="bg-[#0d1a2e] flex" style={{ minHeight: 380 }}>
-              <div className="w-40 bg-[#091422] flex-shrink-0 py-4 px-3 flex flex-col gap-1 border-r border-white/5">
-                <div className="text-white/30 text-xs font-bold uppercase tracking-widest px-2 mb-2">DOT HUB</div>
-                {["Drivers", "Equipment", "Clearinghouse", "Random Testing", "Accidents", "Inspections", "DVIR Logs", "Cal. Deadlines"].map((label, i) => (
-                  <div key={label} className={`px-2 py-1.5 rounded-md text-xs font-medium ${i === 0 ? "bg-green-600 text-white" : "text-white/40 hover:text-white/60"}`}>
-                    {label}
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { icon: Users, label: "Driver Qualification Status", desc: "Every driver's compliance posture — current, expiring, or action required", color: "text-green-400", bg: "bg-green-400/10" },
+                { icon: ShieldCheck, label: "Clearinghouse Query Tracking", desc: "Pre-employment and annual FMCSA query records, never missed", color: "text-blue-400", bg: "bg-blue-400/10" },
+                { icon: Activity, label: "Random Testing Program", desc: "Drug & alcohol rates tracked against FMCSA minimums with automated alerts", color: "text-yellow-400", bg: "bg-yellow-400/10" },
+                { icon: FileText, label: "Medical Card Deadlines", desc: "DOT physicals tracked with advance warnings before expiration", color: "text-orange-400", bg: "bg-orange-400/10" },
+                { icon: AlertTriangle, label: "Accident & Incident Register", desc: "Post-accident testing obligations and DOT-required recordkeeping", color: "text-red-400", bg: "bg-red-400/10" },
+                { icon: ClipboardList, label: "Roadside Inspection Records", desc: "Inspection outcomes and violation trends tracked per driver and vehicle", color: "text-purple-400", bg: "bg-purple-400/10" },
+              ].map(({ icon: Icon, label, desc, color, bg }) => (
+                <div key={label} className="flex flex-col gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-4 hover:bg-white/[0.06] transition-colors">
+                  <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 ${color}`} />
                   </div>
-                ))}
-              </div>
-              <div className="flex-1 p-5 overflow-hidden">
-                <div className="grid grid-cols-4 gap-3 mb-4">
-                  {[
-                    { label: "Active Drivers", value: "24", sub: "18 in random pool", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
-                    { label: "Clearinghouse", value: "2", sub: "queries overdue", color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
-                    { label: "Drug Test Rate", value: "62%", sub: "✓ Meets 50% req.", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
-                    { label: "Med Cards", value: "3", sub: "expiring in 60d", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
-                  ].map(({ label, value, sub, color, bg }) => (
-                    <div key={label} className={`rounded-lg border p-3 ${bg}`}>
-                      <p className="text-xs text-white/40 mb-1">{label}</p>
-                      <p className={`text-2xl font-black ${color}`}>{value}</p>
-                      <p className="text-xs text-white/30 mt-0.5">{sub}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-white/[0.03] rounded-lg border border-white/10 p-3">
-                  <p className="text-xs font-bold text-white/50 mb-2 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5" /> Driver Roster — Compliance Status
-                  </p>
-                  <div className="space-y-1.5">
-                    {[
-                      { name: "Michael Torres", ch: "green", med: "green", mvr: "green" },
-                      { name: "Sandra Kim", ch: "red", med: "yellow", mvr: "green" },
-                      { name: "James Rivera", ch: "green", med: "green", mvr: "yellow" },
-                      { name: "Patricia Nguyen", ch: "green", med: "green", mvr: "green" },
-                    ].map(({ name, ch, med, mvr }) => (
-                      <div key={name} className="flex items-center gap-2 text-xs py-1 border-b border-white/5 last:border-0">
-                        <span className="flex-1 font-medium text-white/80">{name}</span>
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ch === "green" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>CH</span>
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${med === "green" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>Med</span>
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${mvr === "green" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>MVR</span>
-                      </div>
-                    ))}
+                  <div>
+                    <p className="text-sm font-bold text-white/90 leading-tight mb-1">{label}</p>
+                    <p className="text-xs text-white/45 leading-relaxed">{desc}</p>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -1410,77 +1378,31 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Dashboard mockup */}
-          <div className="rounded-2xl overflow-hidden border border-white/10 max-w-5xl mx-auto" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)" }}>
-            <div className="bg-slate-800 px-4 py-3 flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                <div className="w-3 h-3 rounded-full bg-emerald-400" />
-              </div>
-              <div className="flex-1 bg-slate-700 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
-                app.corecompliancehub.com/env-hub
-              </div>
+          {/* Env Hub Outcomes Panel */}
+          <div className="max-w-5xl mx-auto rounded-2xl border border-white/10 overflow-hidden" style={{ background: "hsl(160,30%,7%)", boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)" }}>
+            <div className="bg-slate-800/80 px-5 py-3 flex items-center justify-between border-b border-white/10">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Environmental Compliance HUB — What You'll Always Know</span>
+              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">● EPA Ready</span>
             </div>
-            <div className="bg-[#071a12] flex" style={{ minHeight: 400 }}>
-              {/* Sidebar */}
-              <div className="w-44 bg-[#04110b] flex-shrink-0 py-4 px-3 flex flex-col gap-1 border-r border-white/5">
-                <div className="text-white/30 text-xs font-bold uppercase tracking-widest px-2 mb-2">ENV HUB</div>
-                {[
-                  { label: "Overview", active: false },
-                  { label: "Facility Profile", active: false },
-                  { label: "Universal Waste", active: true },
-                  { label: "Haz Waste / RCRA", active: false },
-                  { label: "SPCC / Oil Spill", active: false },
-                  { label: "Stormwater", active: false },
-                  { label: "Air Quality", active: false },
-                  { label: "Ask Corey — EPA", active: false },
-                ].map(({ label, active }) => (
-                  <div key={label} className={`px-2 py-1.5 rounded-md text-xs font-medium ${active ? "bg-emerald-700 text-white" : "text-white/40 hover:text-white/60"}`}>
-                    {label}
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { icon: Leaf, label: "Universal Waste Countdowns", desc: "1-year accumulation clocks per waste stream — flagged before they expire", color: "text-emerald-400", bg: "bg-emerald-400/10" },
+                { icon: FileText, label: "Hazardous Waste Manifests", desc: "RCRA manifest tracking with 45-day return alerts and generator status auto-calculation", color: "text-yellow-400", bg: "bg-yellow-400/10" },
+                { icon: ShieldCheck, label: "SPCC Oil Spill Prevention", desc: "Tank inventory, secondary containment inspections, and spill response plan status", color: "text-blue-400", bg: "bg-blue-400/10" },
+                { icon: Activity, label: "Stormwater Monitoring Logs", desc: "Visual inspection records, sampling schedules, and SWPPP compliance tracking", color: "text-cyan-400", bg: "bg-cyan-400/10" },
+                { icon: AlertTriangle, label: "Air Quality Permit Alerts", desc: "Permit renewal deadlines and Method 9 opacity log entries with due-date warnings", color: "text-orange-400", bg: "bg-orange-400/10" },
+                { icon: Bot, label: "Ask Corey — EPA Guidance", desc: "AI-powered answers to EPA, RCRA, and SPCC questions specific to your facility", color: "text-violet-400", bg: "bg-violet-400/10" },
+              ].map(({ icon: Icon, label, desc, color, bg }) => (
+                <div key={label} className="flex flex-col gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-4 hover:bg-white/[0.06] transition-colors">
+                  <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 ${color}`} />
                   </div>
-                ))}
-              </div>
-              {/* Main content */}
-              <div className="flex-1 p-5 overflow-hidden">
-                {/* Stat cards */}
-                <div className="grid grid-cols-4 gap-3 mb-4">
-                  {[
-                    { label: "Universal Waste", value: "4", sub: "active containers", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
-                    { label: "Manifest Overdue", value: "1", sub: "49 days — action req.", color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
-                    { label: "Generator Status", value: "SQG", sub: "Current month", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
-                    { label: "SPCC Tanks", value: "5", sub: "34,500 gal on site", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
-                  ].map(({ label, value, sub, color, bg }) => (
-                    <div key={label} className={`rounded-lg border p-3 ${bg}`}>
-                      <p className="text-xs text-white/40 mb-1">{label}</p>
-                      <p className={`text-2xl font-black ${color}`}>{value}</p>
-                      <p className="text-xs text-white/30 mt-0.5">{sub}</p>
-                    </div>
-                  ))}
-                </div>
-                {/* Universal Waste countdown table */}
-                <div className="bg-white/[0.03] rounded-lg border border-white/10 p-3">
-                  <p className="text-xs font-bold text-white/50 mb-2 flex items-center gap-1.5">
-                    <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Universal Waste — 1-Year Accumulation Countdown
-                  </p>
-                  <div className="space-y-1.5">
-                    {[
-                      { name: "Fluorescent Lamps (T8)", days: 245, status: "ok" },
-                      { name: "Lead-Acid Batteries", days: 192, status: "ok" },
-                      { name: "Aerosol Cans", days: 135, status: "warn" },
-                      { name: "Mercury Thermometers", days: 266, status: "ok" },
-                    ].map(({ name, days, status }) => (
-                      <div key={name} className="flex items-center gap-2 text-xs py-1 border-b border-white/5 last:border-0">
-                        <span className="flex-1 font-medium text-white/80">{name}</span>
-                        <span className="text-white/40">{days} days left</span>
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${status === "ok" ? "bg-emerald-500/20 text-emerald-400" : "bg-yellow-500/20 text-yellow-400"}`}>
-                          {status === "ok" ? "On Track" : "Watch"}
-                        </span>
-                      </div>
-                    ))}
+                  <div>
+                    <p className="text-sm font-bold text-white/90 leading-tight mb-1">{label}</p>
+                    <p className="text-xs text-white/45 leading-relaxed">{desc}</p>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -1522,135 +1444,33 @@ export default function Landing() {
             </p>
           </div>
 
-          {/* Dashboard Mockup */}
-          <div className="max-w-5xl mx-auto">
-            {/* Browser chrome */}
-            <div className="rounded-2xl shadow-2xl overflow-hidden border border-slate-200" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.18)" }}>
-              {/* Browser bar */}
-              <div className="bg-slate-700 px-4 py-3 flex items-center gap-3">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                </div>
-                <div className="flex-1 bg-slate-600 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
-                  app.corecompliancehub.com/dashboard
-                </div>
-              </div>
-
-              {/* Dashboard body */}
-              <div className="bg-[#f8fafc] flex" style={{ minHeight: 480 }}>
-
-                {/* Sidebar */}
-                <div className="w-44 bg-[#1e293b] flex-shrink-0 py-4 px-3 flex flex-col gap-1">
-                  <div className="text-white/40 text-xs font-bold uppercase tracking-widest px-2 mb-2">CCHUB</div>
-                  {[
-                    { icon: Activity, label: "Dashboard", active: true },
-                    { icon: AlertTriangle, label: "Incidents" },
-                    { icon: ClipboardList, label: "CAPA" },
-                    { icon: Users, label: "Employees" },
-                    { icon: FileText, label: "OSHA 300 Log" },
-                    { icon: ShieldCheck, label: "Drug Screens" },
-                    { icon: Bot, label: "Ask Corey" },
-                  ].map(({ icon: Icon, label, active }) => (
-                    <div key={label} className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium ${active ? "bg-accent text-white" : "text-white/50 hover:text-white/70"}`}>
-                      <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>{label}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Main content */}
-                <div className="flex-1 p-5 overflow-hidden">
-
-                  {/* Top stats row */}
-                  <div className="grid grid-cols-4 gap-3 mb-5">
-                    {[
-                      { label: "Compliance Score", value: "94%", sub: "+2% this month", color: "text-green-600", bg: "bg-green-50 border-green-100" },
-                      { label: "Open Incidents", value: "3", sub: "2 under review", color: "text-orange-600", bg: "bg-orange-50 border-orange-100" },
-                      { label: "CAPAs Due", value: "2", sub: "1 overdue", color: "text-red-600", bg: "bg-red-50 border-red-100" },
-                      { label: "Employees Tracked", value: "47", sub: "4 due for surveillance", color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
-                    ].map(({ label, value, sub, color, bg }) => (
-                      <div key={label} className={`rounded-lg border p-3 ${bg}`} data-testid={`card-platform-stat-${label.toLowerCase().replace(/ /g, '-')}`}>
-                        <p className="text-xs text-slate-500 mb-1">{label}</p>
-                        <p className={`text-2xl font-black ${color}`}>{value}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
-                      </div>
-                    ))}
+          {/* Employer Platform Outcomes Panel */}
+          <div className="max-w-5xl mx-auto rounded-2xl border border-slate-200 overflow-hidden shadow-xl">
+            <div className="bg-slate-700 px-5 py-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Employer Platform — What You'll Always Have Under Control</span>
+              <span className="text-[10px] text-accent font-semibold bg-accent/20 border border-accent/30 rounded-full px-2 py-0.5">● OSHA Ready</span>
+            </div>
+            <div className="bg-slate-50 p-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { icon: ShieldCheck, label: "Compliance Score & Trends", desc: "Aggregate safety health score with month-over-month trend visibility", color: "text-green-600", bg: "bg-green-100" },
+                { icon: AlertTriangle, label: "Incident Recording", desc: "Structured injury and illness capture with automatic OSHA recordability determination", color: "text-orange-600", bg: "bg-orange-100" },
+                { icon: ClipboardList, label: "CAPA Workflow", desc: "Corrective action plans from root cause through closure — with SMS follow-up", color: "text-purple-600", bg: "bg-purple-100" },
+                { icon: FileText, label: "OSHA 300 Log", desc: "Automatically populated from incident records — ready for inspection or posting", color: "text-blue-600", bg: "bg-blue-100" },
+                { icon: Stethoscope, label: "Medical Surveillance", desc: "Track exam status across your workforce — never miss a renewal", color: "text-teal-600", bg: "bg-teal-100" },
+                { icon: Syringe, label: "Drug Screen Tracking", desc: "Pre-employment, random, and post-accident results organized by employee", color: "text-indigo-600", bg: "bg-indigo-100" },
+                { icon: Bot, label: "AI Guidance — 24/7", desc: "Corey answers OSHA, FMCSA, and occupational health questions instantly", color: "text-accent", bg: "bg-accent/10" },
+                { icon: GraduationCap, label: "Training Completion", desc: "Assign, track, and document required training across your entire team", color: "text-yellow-600", bg: "bg-yellow-100" },
+              ].map(({ icon: Icon, label, desc, color, bg }) => (
+                <div key={label} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow">
+                  <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 ${color}`} />
                   </div>
-
-                  {/* Two-column body */}
-                  <div className="grid grid-cols-5 gap-3">
-
-                    {/* Recent incidents */}
-                    <div className="col-span-3 bg-white rounded-lg border border-slate-200 p-3">
-                      <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-orange-500" /> Recent Incidents
-                      </p>
-                      <div className="space-y-1.5">
-                        {[
-                          { date: "Mar 10", desc: "Laceration — right hand", dept: "Warehouse", status: "Recordable", sc: "bg-red-100 text-red-700" },
-                          { date: "Mar 08", desc: "Forklift near-miss", dept: "Shipping", status: "Under Review", sc: "bg-yellow-100 text-yellow-700" },
-                          { date: "Mar 05", desc: "Chemical splash — eye", dept: "Production", status: "First Aid", sc: "bg-green-100 text-green-700" },
-                          { date: "Mar 01", desc: "Strain — lower back", dept: "Assembly", status: "Recordable", sc: "bg-red-100 text-red-700" },
-                        ].map(({ date, desc, dept, status, sc }) => (
-                          <div key={desc} className="flex items-center gap-2 text-xs py-1 border-b border-slate-50 last:border-0">
-                            <span className="text-slate-400 w-12 flex-shrink-0">{date}</span>
-                            <span className="text-slate-700 flex-1 truncate">{desc}</span>
-                            <span className="text-slate-400 text-xs w-16 text-right flex-shrink-0 hidden sm:block">{dept}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${sc}`}>{status}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Right column */}
-                    <div className="col-span-2 flex flex-col gap-3">
-
-                      {/* OSHA 300 widget */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-3">
-                        <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
-                          <FileText className="w-3.5 h-3.5 text-blue-500" /> OSHA 300 Log — 2025
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { label: "Total Cases", val: "7" },
-                            { label: "Days Away", val: "12" },
-                            { label: "Restricted", val: "3" },
-                            { label: "Fatalities", val: "0" },
-                          ].map(({ label, val }) => (
-                            <div key={label} className="bg-slate-50 rounded p-1.5 text-center">
-                              <p className="text-sm font-black text-slate-800">{val}</p>
-                              <p className="text-xs text-slate-400">{label}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* CAPA tracker */}
-                      <div className="bg-white rounded-lg border border-slate-200 p-3 flex-1">
-                        <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
-                          <ClipboardList className="w-3.5 h-3.5 text-purple-500" /> Active CAPAs
-                        </p>
-                        <div className="space-y-1.5">
-                          {[
-                            { title: "Forklift SOP update", due: "Mar 15", status: "bg-red-100 text-red-700", label: "Overdue" },
-                            { title: "PPE audit — Dept B", due: "Mar 22", status: "bg-yellow-100 text-yellow-700", label: "In Progress" },
-                            { title: "Spill kit restock", due: "Mar 30", status: "bg-blue-100 text-blue-700", label: "Open" },
-                          ].map(({ title, due, status, label }) => (
-                            <div key={title} className="flex items-center justify-between gap-1 text-xs">
-                              <span className="text-slate-600 truncate flex-1">{title}</span>
-                              <span className={`px-1.5 py-0.5 rounded font-semibold flex-shrink-0 ${status}`}>{label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                    </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800 leading-tight mb-1">{label}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
                   </div>
-
                 </div>
-              </div>
+              ))}
             </div>
           </div>
 

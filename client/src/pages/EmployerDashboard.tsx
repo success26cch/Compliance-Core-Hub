@@ -1,106 +1,30 @@
 import { Link } from "wouter";
 import { useState } from "react";
 import {
-  Shield, Users, AlertTriangle, CheckCircle2, Clock,
-  FileWarning, Stethoscope, TestTube, ClipboardList,
-  MessageSquare, TrendingUp, Calendar, GraduationCap,
+  Shield, Users, AlertTriangle, CheckCircle2,
+  FileWarning, Stethoscope, ClipboardList,
+  MessageSquare, Calendar, GraduationCap,
   FileText, QrCode, Bot, ChevronRight, Zap, Target,
   Mail, Building2, ArrowUpRight, Award, Layers, Cpu,
-  ShieldCheck, ShieldAlert, HeartPulse, Sparkles,
+  ShieldCheck, HeartPulse, Sparkles,
   Megaphone, Activity, BarChart3, Lock, CheckSquare,
-  Star, Play, Siren, RefreshCw
+  Star, Play, RefreshCw, Syringe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link as WouterLink } from "wouter";
 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────────
 const DEMO = {
-  grade: "B",
-  score: 82,
   employees: 127,
-  daysSafe: 48,
   openActions: 3,
-  recordables6mo: 2,
-  medicalSurveillance: 89,
-  drugCleared: 124,
-  drugPending: 3,
   isoReadiness: 73,
-  departments: ["Operations", "Maintenance", "Warehouse", "Logistics", "Admin"],
   teamMembers: 14,
 };
 
-const DEMO_CHART = [
-  { month: "Oct", total: 3, recordable: 1 },
-  { month: "Nov", total: 5, recordable: 2 },
-  { month: "Dec", total: 2, recordable: 0 },
-  { month: "Jan", total: 4, recordable: 1 },
-  { month: "Feb", total: 3, recordable: 1 },
-  { month: "Mar", total: 1, recordable: 0 },
-];
-
-// ─── COMPONENTS ───────────────────────────────────────────────────────────────
-function DemoIncidentChart() {
-  const max = Math.max(...DEMO_CHART.map(d => d.total), 1);
-  return (
-    <div className="space-y-3">
-      <div className="flex items-end justify-between gap-2 h-28">
-        {DEMO_CHART.map((item, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <div className="w-full flex flex-col items-center" style={{ height: "96px" }}>
-              <div
-                className="w-full max-w-8 bg-primary/20 rounded-t relative"
-                style={{ height: `${(item.total / max) * 100}%`, minHeight: item.total > 0 ? "8px" : "2px" }}
-              >
-                {item.recordable > 0 && (
-                  <div
-                    className="absolute bottom-0 left-0 right-0 bg-destructive/80 rounded-t"
-                    style={{ height: `${(item.recordable / item.total) * 100}%` }}
-                  />
-                )}
-              </div>
-            </div>
-            <span className="text-xs text-muted-foreground">{item.month}</span>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-4 text-xs">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-primary/20 rounded" />
-          <span className="text-muted-foreground">Total Incidents</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-destructive/80 rounded" />
-          <span className="text-muted-foreground">Recordable</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DemoCircularProgress({ value, size = 100, strokeWidth = 9, label }: { value: number; size?: number; strokeWidth?: number; label: string }) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (value / 100) * circumference;
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} stroke="currentColor" fill="none" className="text-muted/20" />
-        <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} stroke="currentColor" fill="none" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} className="text-accent transition-all duration-700" />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="text-xl font-bold text-primary">{value}%</span>
-        <span className="text-[10px] text-muted-foreground">{label}</span>
-      </div>
-    </div>
-  );
-}
-
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function EmployerDashboard() {
-  const gradeColor = "text-accent";
-  const gradeBg = "bg-accent/10 border-accent/20";
   const [leadName, setLeadName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadSubmitted, setLeadSubmitted] = useState(false);
@@ -122,13 +46,6 @@ export default function EmployerDashboard() {
       setLeadSubmitting(false);
     }
   };
-
-  const statusItems = [
-    { label: "OSHA 300", ok: DEMO.recordables6mo === 0, icon: <ClipboardList className="w-3 h-3" /> },
-    { label: "Medical", ok: DEMO.medicalSurveillance >= 80, icon: <HeartPulse className="w-3 h-3" /> },
-    { label: "Drug Screen", ok: DEMO.drugPending === 0, icon: <TestTube className="w-3 h-3" /> },
-    { label: "ISO Ready", ok: DEMO.isoReadiness >= 70, icon: <Shield className="w-3 h-3" /> },
-  ];
 
   const pipelineSteps = [
     {
@@ -242,177 +159,36 @@ export default function EmployerDashboard() {
         <div className="h-8 bg-background rounded-t-[40px]" />
       </section>
 
-      {/* ── COMPLIANCE COMMAND CENTER (LIVE DEMO) ────────────────────────── */}
+      {/* ── PLATFORM CAPABILITIES ─────────────────────────────────────────── */}
       <section className="bg-background px-4 md:px-6 pb-16">
-        <div className="max-w-7xl mx-auto space-y-3">
-          <div className="text-center mb-6">
-            <Badge variant="outline" className="text-accent border-accent/30 mb-2">Live Demo Preview</Badge>
-            <h2 className="text-2xl md:text-3xl font-bold text-primary">Your Compliance Health — At a Glance</h2>
-            <p className="text-muted-foreground mt-1">This is what you see the moment you open your dashboard</p>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-10">
+            <Badge variant="outline" className="text-accent border-accent/30 mb-3">What's Inside</Badge>
+            <h2 className="text-2xl md:text-3xl font-bold text-primary">Every Tool Your Program Needs</h2>
+            <p className="text-muted-foreground mt-2 max-w-xl mx-auto">From your first incident report to your next OSHA inspection — everything is documented, tracked, and audit-ready.</p>
           </div>
-
-          {/* Demo Compliance Banner */}
-          <div className="rounded-2xl overflow-hidden border border-border/60 shadow-sm bg-white">
-            <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-emerald-500" />
-            <div className="p-5 md:p-6">
-              <div className="flex flex-col md:flex-row md:items-center gap-5">
-                {/* Grade */}
-                <div className="flex items-center gap-5">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-border/50 flex items-center justify-center shadow-sm">
-                      <Bot className="w-8 h-8 text-accent" />
-                    </div>
-                    <span className="text-xs text-muted-foreground font-medium">COREY AI</span>
-                  </div>
-                  <div className={`flex flex-col items-center justify-center w-20 h-20 rounded-2xl border-2 shadow-sm ${gradeBg}`}>
-                    <span className={`text-4xl font-black leading-none ${gradeColor}`}>{DEMO.grade}</span>
-                    <span className="text-xs text-muted-foreground mt-0.5 font-medium">{DEMO.score}%</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Compliance Health</p>
-                    <h3 className="text-xl font-bold text-primary">Good Standing</h3>
-                    <p className="text-sm text-muted-foreground">Acme Industrial Corp</p>
-                  </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: ShieldCheck, label: "Compliance Health Score", desc: "Continuously calculated safety posture score that updates as incidents are closed and actions are completed.", color: "text-green-600", bg: "bg-green-50 border-green-100" },
+              { icon: AlertTriangle, label: "Incident Management", desc: "Structured injury and illness capture with automatic OSHA recordability determination at the point of entry.", color: "text-orange-600", bg: "bg-orange-50 border-orange-100" },
+              { icon: FileText, label: "OSHA 300 / 300A Log", desc: "Auto-populated from incident records. Always ready for OSHA inspection or required annual posting.", color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
+              { icon: ClipboardList, label: "CAPA Workflow", desc: "Root cause to corrective action to closure — with automated SMS reminders so nothing gets lost.", color: "text-purple-600", bg: "bg-purple-50 border-purple-100" },
+              { icon: Stethoscope, label: "Medical Surveillance", desc: "Track DOT physicals, respiratory exams, and occupational health visits across your entire workforce.", color: "text-teal-600", bg: "bg-teal-50 border-teal-100" },
+              { icon: Syringe, label: "Drug Screen Tracking", desc: "Pre-employment, random, and post-accident results documented per employee with chain-of-custody support.", color: "text-indigo-600", bg: "bg-indigo-50 border-indigo-100" },
+              { icon: Bot, label: "Ask Corey — AI Guidance", desc: "Your AI occupational health expert answers OSHA, FMCSA, and workplace safety questions in seconds.", color: "text-accent", bg: "bg-accent/5 border-accent/20" },
+              { icon: GraduationCap, label: "Training Management", desc: "Assign required training, track completion, and maintain documented evidence per employee.", color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-100" },
+              { icon: Users, label: "Employee Records", desc: "Centralized employee profiles with medical, training, drug screen, and incident history in one place.", color: "text-slate-600", bg: "bg-slate-50 border-slate-200" },
+            ].map(({ icon: Icon, label, desc, color, bg }) => (
+              <div key={label} className={`rounded-2xl border p-5 flex flex-col gap-3 hover:shadow-md transition-shadow ${bg}`}>
+                <div className={`w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center border border-white`}>
+                  <Icon className={`w-5 h-5 ${color}`} />
                 </div>
-                {/* Stats */}
-                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { val: DEMO.employees, label: "Employees", icon: <Users className="w-3 h-3" />, color: "text-primary" },
-                    { val: DEMO.daysSafe, label: "Days Safe", icon: <ShieldCheck className="w-3 h-3" />, color: "text-accent" },
-                    { val: DEMO.openActions, label: "Open Actions", icon: <ClipboardList className="w-3 h-3" />, color: "text-yellow-500" },
-                    { val: DEMO.recordables6mo, label: "Recordables (6mo)", icon: <AlertTriangle className="w-3 h-3" />, color: "text-destructive" },
-                  ].map((s, i) => (
-                    <div key={i} className="text-center p-3 rounded-xl bg-muted/30 border border-border/40">
-                      <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
-                      <div className={`text-xs text-muted-foreground flex items-center justify-center gap-1 mt-0.5`}>
-                        {s.icon}{s.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Status strip */}
-                <div className="flex flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {statusItems.map((s) => (
-                      <div key={s.label} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border ${s.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-destructive/5 border-destructive/20 text-destructive'}`}>
-                        {s.ok ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
-                        {s.icon}{s.label}
-                      </div>
-                    ))}
-                  </div>
-                  <Button size="sm" variant="destructive" className="gap-1.5 font-semibold w-full">
-                    <Siren className="w-4 h-4" /> Emergency Guidance
-                  </Button>
+                <div>
+                  <p className={`text-base font-bold leading-tight mb-1 ${color}`}>{label}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Demo metric cards */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-accent" /> ISO Audit Readiness
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex justify-center pt-2">
-                <DemoCircularProgress value={DEMO.isoReadiness} size={100} label="Ready" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4 text-primary" /> Medical Surveillance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-primary">{DEMO.medicalSurveillance}%</div>
-                <p className="text-xs text-muted-foreground mt-1">Employees with current DOT/Respiratory exams</p>
-                <div className="w-full bg-muted rounded-full h-2 mt-2">
-                  <div className="bg-primary h-2 rounded-full" style={{ width: `${DEMO.medicalSurveillance}%` }} />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <TestTube className="w-4 h-4 text-accent" /> Drug Screen Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Cleared</span>
-                  <span className="text-lg font-bold text-green-600">{DEMO.drugCleared}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Pending</span>
-                  <span className="text-lg font-bold text-yellow-600">{DEMO.drugPending}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" /> Quick Stats
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1"><Users className="w-3 h-3" /> Employees</span>
-                  <span className="font-bold">{DEMO.employees}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Pending Actions</span>
-                  <span className="font-bold">{DEMO.openActions}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Recordables (6mo)</span>
-                  <span className="font-bold text-destructive">{DEMO.recordables6mo}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Chart + Action Queue demo */}
-          <div className="grid lg:grid-cols-2 gap-4 mt-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Activity className="w-5 h-5 text-primary" /> Incidents (Last 6 Months)
-                </CardTitle>
-                <CardDescription>Total vs. OSHA-recordable incidents</CardDescription>
-              </CardHeader>
-              <CardContent><DemoIncidentChart /></CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ClipboardList className="w-5 h-5 text-accent" /> Action Queue
-                </CardTitle>
-                <CardDescription>Prioritized tasks requiring attention</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {[
-                  { title: "DOT Physical Expiring — Marcus T.", desc: "Expires in 12 days · Click to send SMS reminder", priority: "urgent", icon: <Stethoscope className="w-4 h-4" /> },
-                  { title: "CAPA Review Overdue — Forklift Near-Miss", desc: "Due 3 days ago · Maintenance Dept", priority: "high", icon: <Target className="w-4 h-4" /> },
-                  { title: "Drug Screen Pending — 3 employees", desc: "Results not yet entered", priority: "medium", icon: <TestTube className="w-4 h-4" /> },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
-                    <div className="mt-0.5 text-muted-foreground">{item.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium text-sm">{item.title}</span>
-                        <Badge className={`text-xs ${item.priority === 'urgent' ? 'bg-destructive text-destructive-foreground' : item.priority === 'high' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-white'}`}>
-                          {item.priority}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            ))}
           </div>
         </div>
       </section>
