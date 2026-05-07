@@ -9,6 +9,7 @@ import {
 import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 import { useState } from "react";
 import logoUrl from "@assets/7_1772719327857.png";
+import { WalkthroughRequestForm, SubscribeForm } from "@/components/MarketingForms";
 
 const PAIN_POINTS = [
   {
@@ -406,45 +407,25 @@ export default function EnvComplianceHub() {
         </div>
       </section>
 
-      {/* ── LEAD CAPTURE ──────────────────────────────────────────────────── */}
-      <section className="py-14 px-6 border-t border-white/10 bg-[#0f1a0e]">
-        <div className="max-w-xl mx-auto text-center space-y-5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-            <Leaf className="w-6 h-6 text-emerald-400" />
-          </div>
-          <h3 className="text-2xl font-black text-white">Stay ahead of EPA changes</h3>
-          <p className="text-white/50 text-sm">Get environmental compliance tips and be first to know about new modules — no spam, unsubscribe anytime.</p>
-          {leadSubmitted ? (
-            <div className="flex items-center justify-center gap-2 py-4 text-emerald-400 font-semibold">
-              <CheckCircle2 className="w-5 h-5" /> You're on the list — thanks!
-            </div>
-          ) : (
-            <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Your name"
-                value={leadName}
-                onChange={e => setLeadName(e.target.value)}
-                required
-                data-testid="input-env-lead-name"
-                className="flex-1 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-              <input
-                type="email"
-                placeholder="Work email"
-                value={leadEmail}
-                onChange={e => setLeadEmail(e.target.value)}
-                required
-                data-testid="input-env-lead-email"
-                className="flex-1 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-              <Button type="submit" disabled={leadSubmitting} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 shrink-0" data-testid="button-env-lead-submit">
-                {leadSubmitting ? "..." : "Subscribe"}
-              </Button>
-            </form>
-          )}
-        </div>
-      </section>
+      <WalkthroughRequestForm
+        product="Environmental Compliance Hub"
+        accentBg="bg-emerald-600 hover:bg-emerald-500"
+        accentText="text-emerald-400"
+        accentBorder="border-emerald-500/20"
+        accentGradientFrom="from-emerald-900/20"
+        accentRing="emerald-500"
+        heading="Request a Walkthrough"
+        subtext="Tell us about your facility and we'll schedule a personalized walkthrough focused on your EPA compliance priorities."
+      />
+
+      <SubscribeForm
+        source="env_hub"
+        accentBg="bg-emerald-600 hover:bg-emerald-500"
+        accentText="text-emerald-400"
+        heading="Stay ahead of EPA changes"
+        subtext="Get environmental compliance tips and be first to know about new modules — no spam, unsubscribe anytime."
+        bgClass="bg-[#0f1a0e]"
+      />
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-8 text-center text-white/30 text-sm">

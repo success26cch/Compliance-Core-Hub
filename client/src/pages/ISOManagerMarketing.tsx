@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { WalkthroughRequestForm, SubscribeForm } from "@/components/MarketingForms";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -540,6 +541,18 @@ export default function ISOManagerMarketing() {
           </motion.div>
         </motion.div>
       </section>
+
+      <WalkthroughRequestForm
+        product="ISO Manager"
+        heading="Request a Walkthrough"
+        subtext="Tell us your standard, industry, and timeline — we'll schedule a focused walkthrough with an ACSI consultant."
+      />
+
+      <SubscribeForm
+        source="iso_manager"
+        heading="Stay ahead of ISO changes"
+        subtext="Get ISO and IATF compliance insights and platform updates — no spam, unsubscribe anytime."
+      />
 
       {/* ══════════════════════════════════════
           FINAL CTA

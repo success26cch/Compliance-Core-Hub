@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useState } from "react";
+import { WalkthroughRequestForm, SubscribeForm } from "@/components/MarketingForms";
 import {
   Shield, Users, AlertTriangle, CheckCircle2,
   FileWarning, Stethoscope, ClipboardList,
@@ -25,27 +26,6 @@ const DEMO = {
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function EmployerDashboard() {
-  const [leadName, setLeadName] = useState("");
-  const [leadEmail, setLeadEmail] = useState("");
-  const [leadSubmitted, setLeadSubmitted] = useState(false);
-  const [leadSubmitting, setLeadSubmitting] = useState(false);
-
-  const handleLeadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!leadName.trim() || !leadEmail.trim() || !leadEmail.includes("@")) return;
-    setLeadSubmitting(true);
-    try {
-      await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: leadName.trim(), email: leadEmail.trim(), source: "employer_dashboard" }),
-      });
-      setLeadSubmitted(true);
-    } catch {
-    } finally {
-      setLeadSubmitting(false);
-    }
-  };
 
   const pipelineSteps = [
     {
@@ -152,7 +132,7 @@ export default function EmployerDashboard() {
                 </Button>
               </Link>
             </div>
-            <p className="text-sm text-white/40">$599/mo · Employer Platform · All modules included</p>
+            <p className="text-sm text-white/40">Contact us for pricing tailored to your team size</p>
           </div>
         </div>
         {/* Bottom wave */}
@@ -372,7 +352,7 @@ export default function EmployerDashboard() {
             <Badge variant="outline" className="text-accent border-accent/30 mb-2">9 Modules Included</Badge>
             <h2 className="text-3xl md:text-4xl font-black text-primary">Everything Your Program Needs</h2>
             <p className="text-muted-foreground mt-2 max-w-xl mx-auto">
-              Every module is included in your $599/mo Employer Platform subscription — nothing locked behind extra fees.
+              Every module is included in your Employer Platform subscription — nothing locked behind extra fees.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -478,8 +458,7 @@ export default function EmployerDashboard() {
                   </div>
                 </div>
                 <div className="mb-4">
-                  <span className="text-3xl font-black text-primary">$599</span>
-                  <span className="text-sm text-muted-foreground">/mo</span>
+                  <span className="text-lg font-bold text-muted-foreground">Contact us for pricing</span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   The full compliance command center. All 9 modules, your whole team, and every workflow automated — without Corey AI. Great if your team already has expertise on staff.
@@ -657,45 +636,19 @@ export default function EmployerDashboard() {
         </div>
       </section>
 
-      {/* ── LEAD CAPTURE ──────────────────────────────────────────────────── */}
-      <section className="bg-muted/30 border-y border-border/50 py-14 px-4 md:px-6">
-        <div className="max-w-xl mx-auto text-center space-y-5">
-          <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
-            <Mail className="w-6 h-6 text-accent" />
-          </div>
-          <h3 className="text-2xl font-black text-primary">Want a personalized demo?</h3>
-          <p className="text-muted-foreground text-sm">Leave your info and a compliance specialist will reach out — no sales pressure, just a real look at what CCHUB can do for your team.</p>
-          {leadSubmitted ? (
-            <div className="flex items-center justify-center gap-2 py-4 text-emerald-600 font-semibold">
-              <CheckCircle2 className="w-5 h-5" /> Got it! We'll be in touch soon.
-            </div>
-          ) : (
-            <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Your name"
-                value={leadName}
-                onChange={e => setLeadName(e.target.value)}
-                required
-                data-testid="input-employer-lead-name"
-                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
-              />
-              <input
-                type="email"
-                placeholder="Work email"
-                value={leadEmail}
-                onChange={e => setLeadEmail(e.target.value)}
-                required
-                data-testid="input-employer-lead-email"
-                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
-              />
-              <Button type="submit" disabled={leadSubmitting} className="bg-accent hover:bg-accent/90 text-white font-bold px-6 shrink-0" data-testid="button-employer-lead-submit">
-                {leadSubmitting ? "..." : "Request Demo"}
-              </Button>
-            </form>
-          )}
-        </div>
-      </section>
+      <div className="bg-[#0f0f0f]">
+        <WalkthroughRequestForm
+          product="Employer Compliance Platform"
+          heading="Request a Walkthrough"
+          subtext="Tell us about your team and we'll schedule a focused walkthrough of the features most relevant to your compliance needs."
+        />
+        <SubscribeForm
+          source="employer_dashboard"
+          heading="Stay ahead of OSHA changes"
+          subtext="Get occupational health and safety compliance tips — no spam, unsubscribe anytime."
+          bgClass="bg-[#0a0a0a]"
+        />
+      </div>
 
       {/* ── FINAL CTA (DARK) ──────────────────────────────────────────────── */}
       <section className="bg-[#0f0f0f] py-20 px-4 md:px-6">
@@ -724,7 +677,7 @@ export default function EmployerDashboard() {
               </Button>
             </Link>
           </div>
-          <p className="text-white/30 text-sm">$599/mo · No setup fees · Cancel anytime</p>
+          <p className="text-white/30 text-sm">Contact us for pricing · No long-term contracts required</p>
         </div>
       </section>
 

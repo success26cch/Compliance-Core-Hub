@@ -7,6 +7,7 @@ import {
   Car, ClipboardList, Calendar, Zap, Lock, ChevronDown, Play
 } from "lucide-react";
 import { useState, useRef } from "react";
+import { WalkthroughRequestForm, SubscribeForm } from "@/components/MarketingForms";
 import { motion } from "framer-motion";
 import { CartTrigger } from "@/components/CartDrawer";
 import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
@@ -507,6 +508,20 @@ export default function DotComplianceHub() {
         </div>
       </section>
 
+
+      <div className="bg-primary">
+        <WalkthroughRequestForm
+          product="DOT Fleet HUB"
+          heading="Request a Walkthrough"
+          subtext="Tell us about your fleet and we'll schedule a personalized walkthrough focused on your FMCSA and Clearinghouse compliance needs."
+        />
+        <SubscribeForm
+          source="dot_hub"
+          heading="Stay ahead of FMCSA changes"
+          subtext="Get DOT compliance tips and regulatory updates — no spam, unsubscribe anytime."
+          bgClass="bg-primary/80"
+        />
+      </div>
 
       <footer className="border-t border-border/50 bg-white py-8 text-center text-muted-foreground text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
