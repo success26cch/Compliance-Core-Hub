@@ -384,10 +384,10 @@ export default function EmployerDashboard() {
       <section className="bg-[#faf9f7] py-16 px-4 md:px-6 border-y border-stone-200">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10 space-y-2">
-            <Badge variant="outline" className="text-accent border-accent/30">Pricing Tiers</Badge>
-            <h2 className="text-3xl md:text-4xl font-black text-primary">How Every Tier Works</h2>
+            <Badge variant="outline" className="text-accent border-accent/30">Platform Tiers</Badge>
+            <h2 className="text-3xl md:text-4xl font-black text-primary">Pick the Level You Need</h2>
             <p className="text-muted-foreground text-base max-w-2xl mx-auto">
-              Pick the level your program needs today. Every tier is designed to work standalone
+              Start with Corey AI alone or bring the full platform. Every tier is designed to work standalone
               or stack — you grow into what you need.
             </p>
           </div>
@@ -458,7 +458,7 @@ export default function EmployerDashboard() {
                   </div>
                 </div>
                 <div className="mb-4">
-                  <span className="text-lg font-bold text-muted-foreground">Contact us for pricing</span>
+                  <span className="text-base font-semibold text-muted-foreground">Schedule a demo for pricing</span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   The full compliance command center. All 9 modules, your whole team, and every workflow automated — without Corey AI. Great if your team already has expertise on staff.
@@ -469,34 +469,31 @@ export default function EmployerDashboard() {
                     { text: "Employee & medical surveillance", ok: true },
                     { text: "Incident log + OSHA 300 auto-build", ok: true },
                     { text: "CAPA tracker with SMS notifications", ok: true },
-                    { text: "Team Hub (5 seats included)", ok: true },
+                    { text: "Team Hub (multi-seat access)", ok: true },
                     { text: "Training portal + certificates", ok: true },
                     { text: "Digital Passport (QR clinic check-in)", ok: true },
-                    { text: "Corey AI add-on available (+$100)", ok: false },
+                    { text: "Corey AI available as add-on", ok: true },
                   ].map((item, i) => (
-                    <div key={i} className={`flex items-start gap-2 text-sm ${item.ok ? 'text-primary' : 'text-muted-foreground/60'}`}>
-                      {item.ok
-                        ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                        : <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />
-                      }
+                    <div key={i} className="flex items-start gap-2 text-sm text-primary">
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       {item.text}
                     </div>
                   ))}
                 </div>
                 <div className="mt-5">
-                  <Link href="/get-started">
+                  <a href="mailto:teams@corecompliancehub.com?subject=Employer Platform Demo Request">
                     <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
-                      Get the Platform
+                      Request a Demo
                     </Button>
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>
 
-            {/* ── TIER 3: Employer Platform + Corey ── (BEST VALUE) */}
+            {/* ── TIER 3: Employer Platform + Corey ── (RECOMMENDED) */}
             <div className="flex flex-col rounded-2xl border-2 border-accent bg-white overflow-hidden shadow-lg relative">
               <div className="absolute top-3 right-3 z-10">
-                <Badge className="bg-accent text-white font-bold text-xs px-2 py-0.5">Best Value</Badge>
+                <Badge className="bg-accent text-white font-bold text-xs px-2 py-0.5">Most Popular</Badge>
               </div>
               <div className="h-1.5 w-full bg-gradient-to-r from-accent via-orange-400 to-yellow-400" />
               <div className="p-5 flex-1 flex flex-col">
@@ -509,39 +506,34 @@ export default function EmployerDashboard() {
                     <h3 className="text-base font-black text-primary leading-tight">Platform + Corey AI</h3>
                   </div>
                 </div>
-                <div className="mb-1">
-                  <span className="text-3xl font-black text-primary">$699</span>
-                  <span className="text-sm text-muted-foreground">/mo</span>
+                <div className="mb-4">
+                  <span className="text-base font-semibold text-muted-foreground">Schedule a demo for pricing</span>
                 </div>
-                <p className="text-xs text-muted-foreground mb-3">+$129/mo per additional seat</p>
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   The complete package. Everything in the Employer Platform plus Corey AI answering every compliance question, drafting every document, and briefing you every morning.
                 </p>
                 <div className="space-y-2 flex-1">
                   {[
-                    { text: "Everything in Employer Platform", ok: true },
-                    { text: "Corey AI — unlimited questions", ok: true },
-                    { text: "23+ document templates", ok: true },
-                    { text: "Emergency response guidance", ok: true },
-                    { text: "Corey's Daily Brief (morning AI rundown)", ok: true },
-                    { text: "Audit Mode + Team Meeting Mode", ok: true },
-                    { text: "Private conversations per seat", ok: true },
-                  ].map((item, i) => (
-                    <div key={i} className={`flex items-start gap-2 text-sm ${item.ok ? 'text-primary' : 'text-muted-foreground/60'}`}>
-                      {item.ok
-                        ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                        : <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />
-                      }
-                      {item.text}
+                    "Everything in Employer Platform",
+                    "Corey AI — unlimited questions",
+                    "23+ document templates",
+                    "Emergency response guidance",
+                    "Corey's Daily Brief (morning AI rundown)",
+                    "Audit Mode + Team Meeting Mode",
+                    "Private conversations per seat",
+                  ].map((text, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-primary">
+                      <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                      {text}
                     </div>
                   ))}
                 </div>
                 <div className="mt-5">
-                  <Link href="/get-started">
+                  <a href="mailto:teams@corecompliancehub.com?subject=Platform + Corey AI Demo Request">
                     <Button className="w-full bg-accent hover:bg-accent/90 text-white font-bold shadow-md shadow-accent/20">
-                      Get Started — $699/mo
+                      Schedule a Demo
                     </Button>
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>
@@ -553,19 +545,19 @@ export default function EmployerDashboard() {
             <p className="text-sm font-semibold text-primary">Not sure which tier fits?</p>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto">
               Most employers with 25–500 employees find that <strong>Tier 3 (Platform + Corey)</strong> covers everything
-              they need from day one. Corey pays for itself the first time it keeps an injury off the OSHA 300 log.
+              they need from day one. We'll help you find the right fit on a quick call — no pressure.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
-              <Link href="/contact">
+              <a href="mailto:teams@corecompliancehub.com?subject=Pricing Question">
                 <Button variant="outline" size="sm" className="gap-1.5 border-border/60 text-muted-foreground hover:text-primary">
                   <MessageSquare className="w-3.5 h-3.5" /> Talk to Us
                 </Button>
-              </Link>
-              <Link href="/get-started">
+              </a>
+              <a href="mailto:teams@corecompliancehub.com?subject=Demo Request — Employer Platform">
                 <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-bold gap-1.5">
-                  Compare All Plans <ChevronRight className="w-3.5 h-3.5" />
+                  Schedule a Demo <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
