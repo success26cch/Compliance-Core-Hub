@@ -1647,7 +1647,7 @@ export default function Landing() {
                   Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
-              <Link href="/iso-manager">
+              <Link href="/meet-iso-manager">
                 <Button variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-bold px-6" data-testid="button-iso-manager-plans">
                   ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
@@ -1704,7 +1704,7 @@ export default function Landing() {
               imageSrc={acsiLogo}
               title="ACSI ISO Manager"
               description="Powered by ACSI Services Intl. — your expert partner for ISO 9001, 14001, 45001, IATF 16949 and more. From gap analysis to audit-ready preparation, ACSI brings 25+ years of real-world consulting, training, and auditing experience to help you get certified, stay certified, and keep your logs and decisions documented for any surprise inspection."
-              href="/iso-manager"
+              href="/meet-iso-manager"
               testId="link-feature-iso-manager"
             />
           </div>

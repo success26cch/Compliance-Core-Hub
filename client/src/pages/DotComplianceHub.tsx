@@ -492,11 +492,6 @@ export default function DotComplianceHub() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <Link href="/dashboard">
-              <Button size="lg" className="bg-black hover:bg-black/90 text-white px-8 h-12 border border-black/20" data-testid="button-bottom-dashboard">
-                Access Your Dashboard
-              </Button>
-            </Link>
             <Link href="/contact">
               <Button size="lg" className="bg-slate-600 hover:bg-slate-500 text-white border border-slate-500 px-8 h-12" data-testid="button-contact-dot">
                 Talk to a Specialist

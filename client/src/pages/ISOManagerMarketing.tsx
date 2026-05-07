@@ -271,11 +271,11 @@ export default function ISOManagerMarketing() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
-            <Link href="/iso-manager">
-              <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-7 py-3 text-base gap-2" data-testid="button-hero-enter-app">
-                Enter ISO Manager <ArrowRight className="w-4 h-4" />
+            <a href="mailto:info@acsi-quality.com">
+              <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-7 py-3 text-base gap-2" data-testid="button-hero-schedule-walkthrough">
+                Schedule a Walkthrough <ArrowRight className="w-4 h-4" />
               </Button>
-            </Link>
+            </a>
             <Link href="/meet-isa">
               <Button variant="outline" className="border-white/20 text-white/70 hover:text-white hover:border-white/40 bg-transparent font-bold px-7 py-3 text-base gap-2" data-testid="button-hero-meet-isa">
                 Meet Isa AI <ChevronRight className="w-4 h-4" />
@@ -476,7 +476,7 @@ export default function ISOManagerMarketing() {
                     topBarClass="bg-accent"
                     capIconClass="text-accent"
                     picker={{ options: ["ISO 9001", "ISO 14001", "ISO 45001"], label: "Choose Standard" }}
-                    cta={{ label: "Get Core", href: "/iso-manager", testId: "button-mkt-iso-core", style: "accent" }}
+                    cta={{ label: "Schedule a Walkthrough", href: "mailto:info@acsi-quality.com", testId: "button-mkt-iso-core", style: "accent", external: true }}
                   />
                   <TierCard
                     testId="card-mkt-iso-integrated"
@@ -489,7 +489,7 @@ export default function ISOManagerMarketing() {
                     topBarClass="bg-primary"
                     capIconClass="text-primary dark:text-accent"
                     badges={["ISO 9001", "ISO 14001", "ISO 45001"]}
-                    cta={{ label: "Get Integrated", href: "/iso-manager", testId: "button-mkt-iso-integrated", style: "primary" }}
+                    cta={{ label: "Schedule a Walkthrough", href: "mailto:info@acsi-quality.com", testId: "button-mkt-iso-integrated", style: "accent", external: true }}
                   />
                   <TierCard
                     testId="card-mkt-iso-specialist"
@@ -554,14 +554,14 @@ export default function ISOManagerMarketing() {
             </div>
             <h2 className="text-3xl font-black text-white mb-3">Ready to build your management system?</h2>
             <p className="text-white/55 text-sm max-w-lg mx-auto mb-7 leading-relaxed">
-              Sign in to access the ISO Manager workspace, complete your setup wizard, and start your first Isa consultation — all in one session.
+              Schedule a walkthrough with our ACSI team and we'll show you exactly how ISO Manager fits your standard, your industry, and your audit timeline.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Link href="/iso-manager">
-                <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-8 py-3 text-base gap-2" data-testid="button-cta-enter-app">
-                  Enter ISO Manager <ArrowRight className="w-4 h-4" />
+              <a href="mailto:info@acsi-quality.com">
+                <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-8 py-3 text-base gap-2" data-testid="button-cta-schedule">
+                  Schedule a Walkthrough <ArrowRight className="w-4 h-4" />
                 </Button>
-              </Link>
+              </a>
               <a href="mailto:info@acsi-quality.com">
                 <Button variant="outline" className="border-white/20 text-white/70 hover:text-white hover:border-white/40 bg-transparent font-bold px-8 py-3 text-base" data-testid="button-cta-contact">
                   Talk to ACSI

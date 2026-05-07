@@ -178,14 +178,14 @@ export default function EnvComplianceHub() {
           <img src={logoUrl} alt="CCHUB" className="h-20 w-auto" />
         </Link>
         <div className="flex items-center gap-3">
-          <Link href="/dashboard">
+          <Link href="/login">
             <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 text-sm">
               Sign In
             </Button>
           </Link>
-          <Link href="/dashboard">
+          <Link href="/contact">
             <Button className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-5">
-              Get Started
+              Request a Demo
             </Button>
           </Link>
         </div>
@@ -205,13 +205,13 @@ export default function EnvComplianceHub() {
           The first EHS platform built specifically for the cradle-to-grave compliance demands of EPA-regulated facilities. Universal Waste. RCRA. SPCC. Stormwater. Air Quality. One hub, zero excuses.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/dashboard">
-            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 gap-2">
-              Access the Hub <ArrowRight className="w-4 h-4" />
+          <Link href="/contact">
+            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 gap-2" data-testid="button-env-hero-walkthrough">
+              Schedule a Walkthrough <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
           <Link href="/contact">
-            <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-8">
+            <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-8" data-testid="button-env-hero-demo">
               Request a Demo
             </Button>
           </Link>
@@ -395,11 +395,6 @@ export default function EnvComplianceHub() {
             <Link href="/contact">
               <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-10 gap-2" data-testid="button-env-cta-walkthrough">
                 Schedule a Walkthrough <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button size="lg" className="bg-black hover:bg-black/80 text-white border border-white/10 px-10 gap-2" data-testid="button-env-cta-dashboard">
-                Access the Hub
               </Button>
             </Link>
             <Link href="/contact">
