@@ -86,7 +86,7 @@ export function WalkthroughRequestForm({
       if (!res.ok) throw new Error("Submit failed");
       setSubmitted(true);
     } catch {
-      setError("Something went wrong — please email us at team@corecompliancehub.com");
+      setError("Something went wrong — please email us at teams@corecompliancehub.com");
     } finally {
       setSubmitting(false);
     }

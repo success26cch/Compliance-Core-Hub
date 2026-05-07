@@ -73,7 +73,7 @@ const HARDCODED_ADMIN_EMAILS = [
   "raulv9471@gmail.com",
   "raul@corecompliancehub.com",
   "evillarreal@acsi-quality.com",
-  "team@corecompliancehub.com",
+  "teams@corecompliancehub.com",
 ];
 const PLATFORM_ADMIN_EMAILS = [
   ...HARDCODED_ADMIN_EMAILS,
@@ -871,7 +871,7 @@ Rules:
         </table>
         <a href="mailto:${userEmail}" style="display:inline-block;background:#ea6c19;color:#fff;font-weight:700;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;">Reply to ${userName}</a>
       `;
-      await sendEmail("team@corecompliancehub.com", `Access Request — ${productName} — ${userName}`, brandedHtml(`Access Request — ${productName}`, bodyHtml));
+      await sendEmail("teams@corecompliancehub.com", `Access Request — ${productName} — ${userName}`, brandedHtml(`Access Request — ${productName}`, bodyHtml));
       res.json({ success: true });
     } catch (err: any) {
       console.error('[request-access] Error:', err);
@@ -1348,7 +1348,7 @@ Rules:
         <p>If you'd like to learn more about bringing BMA to your clinic, reply to this email or <a href="https://corecompliancehub.com/bma">visit our BMA page</a>.</p>
         <p>— The CCHUB Team</p>
       `;
-      const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "team@corecompliancehub.com"];
+      const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "teams@corecompliancehub.com"];
       await sendEmail(ADMIN_EMAILS, `New BMA Lead: ${fullName}`, adminHtml);
       await sendEmail(email, "Your BMA demo access is unlocked — Core Compliance Hub", confirmHtml);
       res.status(201).json({ success: true });
@@ -1383,7 +1383,7 @@ Rules:
         <p>Questions or want a live walkthrough? <a href="https://corecompliancehub.com/contact">Schedule a personalized demo</a> with our team.</p>
         <p>— The CCHUB Team</p>
       `;
-      const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "team@corecompliancehub.com"];
+      const ADMIN_EMAILS = ["raulv9471@gmail.com", "evillarreal@acsi-quality.com", "teams@corecompliancehub.com"];
       await Promise.all([
         sendEmail(ADMIN_EMAILS, `New Demo Lead: ${name}`, adminHtml),
         sendEmail(email, "Your CCHUB demo is unlocked — Core Compliance Hub", confirmHtml),
@@ -1423,11 +1423,11 @@ Rules:
         <h2 style="color:#0f172a;margin:0 0 12px;">We received your request, ${firstName}.</h2>
         <p style="color:#475569;line-height:1.6;">Our team will put together a security overview package and send it to <strong>${email}</strong> within 1 business day.</p>
         <p style="color:#475569;line-height:1.6;">In the meantime, you can review our full security posture at <a href="https://app.corecompliancehub.com/security" style="color:#ea6c19;">app.corecompliancehub.com/security</a>.</p>
-        <p style="color:#475569;line-height:1.6;">If you have urgent questions, reply to this email or reach us at <a href="mailto:team@corecompliancehub.com" style="color:#ea6c19;">team@corecompliancehub.com</a>.</p>
+        <p style="color:#475569;line-height:1.6;">If you have urgent questions, reply to this email or reach us at <a href="mailto:teams@corecompliancehub.com" style="color:#ea6c19;">teams@corecompliancehub.com</a>.</p>
       `;
 
       await sendEmail(
-        ["team@corecompliancehub.com"],
+        ["teams@corecompliancehub.com"],
         `Security Package Request — ${company}`,
         brandedHtml(`Security Package Request — ${company}`, adminHtml),
       );
@@ -1442,7 +1442,7 @@ Rules:
       res.json({ success: true });
     } catch (err) {
       console.error("[Security] Package request error:", err);
-      res.status(500).json({ message: "Failed to send request. Please email team@corecompliancehub.com directly." });
+      res.status(500).json({ message: "Failed to send request. Please email teams@corecompliancehub.com directly." });
     }
   });
 
@@ -1478,7 +1478,7 @@ Rules:
           message,
         });
         const adminSubject = `[NEW INQUIRY] ${inquiryType} — ${company || "N/A"} — ${name}`;
-        await sendEmail("team@corecompliancehub.com", adminSubject, adminHtml);
+        await sendEmail("teams@corecompliancehub.com", adminSubject, adminHtml);
 
         const confirmHtml = buildContactConfirmationEmail({
           name,

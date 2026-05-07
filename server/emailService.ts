@@ -1,5 +1,5 @@
-const ADMIN_EMAILS = ["team@corecompliancehub.com"];
-const FROM_EMAIL = "team@corecompliancehub.com";
+const ADMIN_EMAILS = ["teams@corecompliancehub.com"];
+const FROM_EMAIL = "teams@corecompliancehub.com";
 const FROM_NAME = "Core Compliance Hub";
 const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 
@@ -495,7 +495,7 @@ export function buildContactConfirmationEmail(data: {
     <p style="margin:0;font-size:13px;color:#475569;">
       Best regards,<br />
       <strong>The Core Compliance Hub Team</strong><br />
-      <a href="mailto:team@corecompliancehub.com" style="color:#ea6c19;">team@corecompliancehub.com</a>
+      <a href="mailto:teams@corecompliancehub.com" style="color:#ea6c19;">teams@corecompliancehub.com</a>
     </p>
   `;
 

@@ -49,7 +49,7 @@ const HARDCODED_ADMIN_EMAILS = [
   "raulv9471@gmail.com",
   "raul@corecompliancehub.com",
   "evillarreal@acsi-quality.com",
-  "team@corecompliancehub.com",
+  "teams@corecompliancehub.com",
 ];
 
 // Admin users get unlimited access — checked against hardcoded list + optional env var
