@@ -408,8 +408,7 @@ export default function EmployerDashboard() {
                   </div>
                 </div>
                 <div className="mb-4">
-                  <span className="text-3xl font-black text-primary">$199</span>
-                  <span className="text-sm text-muted-foreground">/mo</span>
+                  <span className="text-base font-semibold text-muted-foreground">Schedule a demo for pricing</span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   Pure AI power. No dashboard. Ideal for small employers or solo safety managers who need a compliance expert on call 24/7 without the full platform overhead.
