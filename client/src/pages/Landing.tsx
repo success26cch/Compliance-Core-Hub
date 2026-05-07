@@ -1296,32 +1296,68 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* DOT Outcomes Panel */}
-          <div className="max-w-5xl mx-auto rounded-2xl border border-white/10 overflow-hidden" style={{ background: "hsl(222,47%,9%)", boxShadow: "0 25px 60px -12px rgba(0,0,0,0.5)" }}>
-            <div className="bg-slate-800/80 px-5 py-3 flex items-center justify-between border-b border-white/10">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">DOT Fleet HUB — What You'll Always Know</span>
-              <span className="text-[10px] text-green-400 font-semibold bg-green-400/10 border border-green-400/20 rounded-full px-2 py-0.5">● FMCSA Compliant</span>
-            </div>
-            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                { icon: Users, label: "Driver Qualification Status", desc: "Every driver's compliance posture — current, expiring, or action required", color: "text-green-400", bg: "bg-green-400/10" },
-                { icon: ShieldCheck, label: "Clearinghouse Query Tracking", desc: "Pre-employment and annual FMCSA query records, never missed", color: "text-blue-400", bg: "bg-blue-400/10" },
-                { icon: Activity, label: "Random Testing Program", desc: "Drug & alcohol rates tracked against FMCSA minimums with automated alerts", color: "text-yellow-400", bg: "bg-yellow-400/10" },
-                { icon: FileText, label: "Medical Card Deadlines", desc: "DOT physicals tracked with advance warnings before expiration", color: "text-orange-400", bg: "bg-orange-400/10" },
-                { icon: AlertTriangle, label: "Accident & Incident Register", desc: "Post-accident testing obligations and DOT-required recordkeeping", color: "text-red-400", bg: "bg-red-400/10" },
-                { icon: ClipboardList, label: "Roadside Inspection Records", desc: "Inspection outcomes and violation trends tracked per driver and vehicle", color: "text-purple-400", bg: "bg-purple-400/10" },
-              ].map(({ icon: Icon, label, desc, color, bg }) => (
-                <div key={label} className="flex flex-col gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-4 hover:bg-white/[0.06] transition-colors">
-                  <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>
+          {/* DOT Module Summary Blocks */}
+          <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              {
+                icon: Users,
+                label: "Driver Qualification Files",
+                desc: "Complete 49 CFR Part 391 DQ file management — licenses, MVRs, physicals, road tests, and employment history. Every record audit-ready.",
+                color: "text-green-400",
+                bg: "bg-green-400/10",
+                border: "border-green-500/20",
+              },
+              {
+                icon: ShieldCheck,
+                label: "FMCSA Clearinghouse",
+                desc: "Pre-employment and annual query tracking with status records. Stay current with all Clearinghouse obligations — no queries missed.",
+                color: "text-blue-400",
+                bg: "bg-blue-400/10",
+                border: "border-blue-500/20",
+              },
+              {
+                icon: Activity,
+                label: "Random Testing Program",
+                desc: "Drug and alcohol random selection rates tracked against FMCSA minimums. Automated alerts when your testing rate falls behind.",
+                color: "text-yellow-400",
+                bg: "bg-yellow-400/10",
+                border: "border-yellow-500/20",
+              },
+              {
+                icon: FileText,
+                label: "Medical Cards & DOT Physicals",
+                desc: "Every driver's medical card expiration tracked with advance warnings. No more surprise out-of-service violations.",
+                color: "text-orange-400",
+                bg: "bg-orange-400/10",
+                border: "border-orange-500/20",
+              },
+              {
+                icon: AlertTriangle,
+                label: "Accident & Incident Register",
+                desc: "DOT-recordable accident log with post-accident drug and alcohol testing obligations automatically flagged per 49 CFR 382.",
+                color: "text-red-400",
+                bg: "bg-red-400/10",
+                border: "border-red-500/20",
+              },
+              {
+                icon: ClipboardList,
+                label: "Roadside Inspections & DVIR",
+                desc: "Inspection outcomes, violation trends, and Driver Vehicle Inspection Reports tracked per driver and unit — always ready for audit.",
+                color: "text-purple-400",
+                bg: "bg-purple-400/10",
+                border: "border-purple-500/20",
+              },
+            ].map(({ icon: Icon, label, desc, color, bg, border }) => (
+              <div key={label} className={`flex flex-col gap-4 rounded-2xl border ${border} bg-white/[0.04] p-5 hover:bg-white/[0.07] transition-colors`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
                     <Icon className={`w-5 h-5 ${color}`} />
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-white/90 leading-tight mb-1">{label}</p>
-                    <p className="text-xs text-white/45 leading-relaxed">{desc}</p>
-                  </div>
+                  <p className="text-sm font-bold text-white/90 leading-tight">{label}</p>
                 </div>
-              ))}
-            </div>
+                <p className="text-sm text-white/55 leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
 
           {/* Feature pills */}
