@@ -65,7 +65,7 @@ export function useDeleteIsaConversation() {
   });
 }
 
-export function useIsaChatStream(conversationId: number, onMessageSent?: () => void) {
+export function useIsaChatStream(conversationId: number, onMessageSent?: () => void, onNotFound?: () => void) {
   const [messages, setMessages] = useState<any[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
@@ -73,13 +73,19 @@ export function useIsaChatStream(conversationId: number, onMessageSent?: () => v
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: conversationData } = useIsaConversation(conversationId);
+  const { data: conversationData, isError: convLoadError } = useIsaConversation(conversationId);
 
   useEffect(() => {
     if (conversationData?.messages) {
       setMessages(conversationData.messages);
     }
   }, [conversationData]);
+
+  useEffect(() => {
+    if (convLoadError && onNotFound) {
+      onNotFound();
+    }
+  }, [convLoadError]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isStreaming || limitReached) return;
@@ -116,10 +122,10 @@ export function useIsaChatStream(conversationId: number, onMessageSent?: () => v
         if (response.status === 404) {
           setMessages((prev) => prev.slice(0, -1));
           toast({
-            title: "Conversation not found",
-            description: "This conversation is no longer available. Please start a new chat.",
-            variant: "destructive",
+            title: "Session expired",
+            description: "Starting a fresh conversation for you.",
           });
+          if (onNotFound) onNotFound();
           return;
         }
         throw new Error('Failed to send message');

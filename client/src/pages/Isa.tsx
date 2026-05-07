@@ -178,7 +178,7 @@ function WelcomeModal({ open, onClose }: { open: boolean; onClose: () => void })
 }
 
 function IsaChatInterface({ conversationId, onNewChat }: { conversationId: number; onNewChat: () => void }) {
-  const { messages, sendMessage, isStreaming } = useIsaChatStream(conversationId);
+  const { messages, sendMessage, isStreaming } = useIsaChatStream(conversationId, undefined, onNewChat);
   const { toast } = useToast();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
