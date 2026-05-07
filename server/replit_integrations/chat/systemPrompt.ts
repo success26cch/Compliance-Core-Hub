@@ -895,7 +895,7 @@ Multiple boxes may be checked for a single case if applicable.
 
 **Key ISO 14001 Concepts**
 - **Lifecycle perspective** — consider environmental aspects from cradle to grave (not full LCA required)
-- **Significant environmental aspects** — aspects the organization can control or influence that have significant environmental impact; methods: scoring matrix (severity × probability × frequency), regulatory requirements, stakeholder concerns
+- **Significant environmental aspects** — aspects the organization can control or influence that have significant environmental impact; the standard requires the organization to use defined criteria to determine significance but does NOT prescribe what those criteria must be; common practice approaches (NOT standard requirements) include scoring matrices using factors such as severity, probability, frequency, scale, duration, or reversibility; regulatory thresholds and stakeholder concerns are also commonly used inputs — but any criteria used must be documented by the organization per Clause 6.1.2
 - **Compliance obligations** — expanded from "legal requirements" to include voluntary commitments
 - **Environmental performance** — measurable results related to management of environmental aspects
 - **Protection of the environment** — broader concept including pollution prevention, sustainable resource use, climate change mitigation, biodiversity protection
