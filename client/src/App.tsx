@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -148,7 +148,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   const { data: subStatus, isLoading: subLoading } = useSubscriptionStatus();
   const [, navigate] = useLocation();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!authLoading && !subLoading && !user) {
       navigate("/login");
     }
@@ -163,6 +163,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
 
   if (!user) {
+    navigate("/login");
     return null;
   }
 
