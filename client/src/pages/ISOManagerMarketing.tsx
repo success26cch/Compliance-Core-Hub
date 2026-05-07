@@ -26,15 +26,15 @@ const stagger = {
 };
 
 const MODULES = [
-  { icon: MessageSquare, label: "AI Consultation", desc: "Isa coaches you through any ISO clause, audit scenario, or gap analysis — with your org profile as context.", status: "live" },
-  { icon: Shield, label: "NC & CAPA", desc: "Log nonconformances, assign owners, track root cause analysis, and verify effectiveness of corrective actions.", status: "live" },
-  { icon: FileText, label: "Documentation Library", desc: "Build and manage your Quality Manual, Procedures, Work Instructions, Templates, and Process Maps.", status: "live" },
-  { icon: AlertTriangle, label: "Risk Assessment", desc: "Clause 6.1 risk and opportunity register — identify, analyze, treat, and monitor with audit-ready records.", status: "soon" },
-  { icon: BarChart2, label: "Management Review", desc: "Structured inputs, action tracking, and documented outputs for every review meeting ISO requires.", status: "soon" },
-  { icon: ClipboardCheck, label: "Internal Audits", desc: "Clause-based checklists, finding management, and close-out tracking for every scheduled audit.", status: "soon" },
-  { icon: Mail, label: "Communication", desc: "Log and track internal and external communications required by your management system standard.", status: "soon" },
-  { icon: GraduationCap, label: "Training", desc: "Competency tracking, training records, and awareness documentation across your workforce.", status: "soon" },
-  { icon: Activity, label: "Measurement & Monitoring", desc: "KPIs, metrics, objectives, and performance data — everything an auditor looks for in Clause 9.", status: "soon" },
+  { icon: MessageSquare, label: "AI Consultation", desc: "Isa coaches you through any ISO clause, audit scenario, or gap analysis — with your org profile as context." },
+  { icon: Shield, label: "NC & CAPA", desc: "Log nonconformances, assign owners, track root cause analysis, and verify effectiveness of corrective actions." },
+  { icon: FileText, label: "Documentation Library", desc: "Build and manage your Quality Manual, Procedures, Work Instructions, Templates, and Process Maps." },
+  { icon: AlertTriangle, label: "Risk Assessment", desc: "Clause 6.1 risk and opportunity register — identify, analyze, treat, and monitor with audit-ready records." },
+  { icon: BarChart2, label: "Management Review", desc: "Structured inputs, action tracking, and documented outputs for every review meeting ISO requires." },
+  { icon: ClipboardCheck, label: "Internal Audits", desc: "Clause-based checklists, finding management, and close-out tracking for every scheduled audit." },
+  { icon: Mail, label: "Communication", desc: "Log and track internal and external communications required by your management system standard." },
+  { icon: GraduationCap, label: "Training", desc: "Competency tracking, training records, and awareness documentation across your workforce." },
+  { icon: Activity, label: "Measurement & Monitoring", desc: "KPIs, metrics, objectives, and performance data — everything an auditor looks for in Clause 9." },
 ];
 
 const STANDARDS = [
@@ -52,7 +52,7 @@ const ISO_CORE_CAPABILITIES = [
   "Isa AI coaching (clause-by-clause)",
   "Documentation Library (Quality Manual, Procedures, WIs)",
   "NC & CAPA Management module",
-  "Risk Assessment module (coming soon)",
+  "Risk Assessment module",
   "Knowledge Architecture setup included",
 ];
 const ISO_INTEGRATED_CAPABILITIES = [
@@ -98,8 +98,8 @@ const FAQS = [
     a: "The setup fee covers ACSI's onboarding work — helping you configure your Knowledge Architecture, import your existing documentation, map your processes, and orient your team on the platform before your first audit cycle.",
   },
   {
-    q: "What modules are live today?",
-    a: "AI Consultation (Isa), NC & CAPA Management, and the Documentation Library are all live. Risk Assessment, Management Review, Internal Audits, Communication, Training, and Measurement & Monitoring are in active development and coming soon.",
+    q: "What does the platform include?",
+    a: "ISO Manager is a complete management system platform. It includes Isa AI coaching, NC & CAPA, Documentation Library, Risk Assessment, Management Review, Internal Audits, Communication, Training, and Measurement & Monitoring. Schedule a demo and we'll walk you through everything relevant to your standard and audit timeline.",
   },
 ];
 
@@ -142,7 +142,7 @@ function TierCard({
           <p className="text-[10px] text-accent font-semibold mt-0.5">{subtitle}</p>
         </div>
         <div className={`mb-4 pb-3 border-b ${borderMuted}`}>
-          <p className={`text-xs font-semibold ${dark ? "text-white/60" : "text-muted-foreground"}`}>Pricing coming soon — contact us for details</p>
+          <p className={`text-xs font-semibold ${dark ? "text-white/60" : "text-muted-foreground"}`}>Contact us for pricing tailored to your organization</p>
         </div>
         {badges && (
           <div className="mb-3">
@@ -276,7 +276,7 @@ export default function ISOManagerMarketing() {
           {/* Quick stats */}
           <motion.div variants={fadeUp} className="flex flex-wrap gap-6 mt-10 pt-10 border-t border-white/10">
             {[
-              { icon: Layers, label: "9 Modules", sub: "3 live · 6 coming soon" },
+              { icon: Layers, label: "9 Modules", sub: "Full platform suite" },
               { icon: Target, label: "7 Standards", sub: "Core + Specialist tiers" },
               { icon: Sparkles, label: "Isa AI", sub: "Built into every module" },
               { icon: Vault, label: "4 Pricing Tiers", sub: "Contact us for pricing" },
@@ -306,7 +306,7 @@ export default function ISOManagerMarketing() {
               <span className="text-xs font-black uppercase tracking-widest" style={{ color: ORANGE }}>Platform Modules</span>
               <h2 className="text-3xl font-black text-white mt-2">Everything your management system needs.</h2>
               <p className="text-white/50 mt-2 max-w-xl text-sm leading-relaxed">
-                9 dedicated modules — 3 live today, 6 in active development. Every module has Isa coaching built in so you're never working alone.
+                9 dedicated modules covering every clause your standard requires. Isa coaching is built into every module so you're never working alone.
               </p>
             </motion.div>
 
@@ -315,14 +315,8 @@ export default function ISOManagerMarketing() {
                 <motion.div key={mod.label} variants={fadeUp} transition={{ delay: i * 0.05 }}
                   className="rounded-xl p-4 border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors"
                   data-testid={`card-module-mkt-${mod.label.toLowerCase().replace(/\s+/g, "-")}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-9 h-9 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center">
-                      <mod.icon className="w-4.5 h-4.5" style={{ color: ORANGE }} />
-                    </div>
-                    {mod.status === "live"
-                      ? <span className="text-[9px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 rounded-full px-2 py-0.5">LIVE</span>
-                      : <span className="text-[9px] font-bold text-white/30 bg-white/5 border border-white/10 rounded-full px-2 py-0.5">COMING SOON</span>
-                    }
+                  <div className="w-9 h-9 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center mb-3">
+                    <mod.icon className="w-4.5 h-4.5" style={{ color: ORANGE }} />
                   </div>
                   <p className="text-sm font-black text-white mb-1">{mod.label}</p>
                   <p className="text-xs text-white/45 leading-relaxed">{mod.desc}</p>

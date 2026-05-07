@@ -37,7 +37,6 @@ import cchLogo from "@assets/1_1770683748423.png";
 import teamImageUrl from "@assets/1-8_website_picture_1767901013934.png";
 import coreyImg from "@assets/9_1771983400638.png";
 import heroVideoUrl from "@assets/CCH_BOT_VIDEO_1771359482914.mp4";
-import platformScreenshot from "@assets/image_1773264239505.png";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1655,25 +1654,39 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Real platform screenshot */}
+          {/* Platform at a glance */}
           <div className="max-w-5xl mx-auto mt-6">
-            <div className="rounded-2xl overflow-hidden border border-slate-200" style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.18)" }}>
-              <div className="bg-slate-700 px-4 py-3 flex items-center gap-3">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                </div>
-                <div className="flex-1 bg-slate-600 rounded-md px-3 py-1 text-xs text-slate-300 font-mono">
-                  app.corecompliancehub.com/dashboard
-                </div>
+            <div className="rounded-2xl overflow-hidden border border-slate-700" style={{ background: "hsl(222,47%,9%)", boxShadow: "0 25px 60px -12px rgba(0,0,0,0.35)" }}>
+              <div className="bg-slate-800 px-5 py-3 flex items-center justify-between border-b border-slate-700">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Core Compliance Hub — Platform Overview</span>
+                <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">● Live</span>
               </div>
-              <img
-                src={platformScreenshot}
-                alt="CCHUB Employer Platform — Training Portal, Ask Corey, OSHA Decision Tree, Clinic Communication Letter, and Digital Medical Passport"
-                className="w-full block"
-                data-testid="img-platform-screenshot"
-              />
+              <div className="p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {[
+                    { icon: Bot, label: "AI Compliance Expert", color: "text-blue-400", bg: "bg-blue-400/10" },
+                    { icon: ShieldCheck, label: "OSHA Recordkeeping", color: "text-emerald-400", bg: "bg-emerald-400/10" },
+                    { icon: ClipboardList, label: "Incident Management", color: "text-orange-400", bg: "bg-orange-400/10" },
+                    { icon: Activity, label: "Medical Surveillance", color: "text-violet-400", bg: "bg-violet-400/10" },
+                    { icon: GraduationCap, label: "Training & LMS", color: "text-yellow-400", bg: "bg-yellow-400/10" },
+                    { icon: FileText, label: "CAPA Management", color: "text-pink-400", bg: "bg-pink-400/10" },
+                    { icon: Shield, label: "ISO Manager", color: "text-cyan-400", bg: "bg-cyan-400/10" },
+                    { icon: Truck, label: "DOT Fleet HUB", color: "text-red-400", bg: "bg-red-400/10" },
+                    { icon: Leaf, label: "Environmental Hub", color: "text-green-400", bg: "bg-green-400/10" },
+                    { icon: Stethoscope, label: "Drug Screen Tracking", color: "text-purple-400", bg: "bg-purple-400/10" },
+                    { icon: QrCode, label: "Digital Medical Passport", color: "text-teal-400", bg: "bg-teal-400/10" },
+                    { icon: BarChart3, label: "OSHA 300 Log", color: "text-amber-400", bg: "bg-amber-400/10" },
+                  ].map(({ icon: Icon, label, color, bg }) => (
+                    <div key={label} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 hover:bg-white/[0.06] transition-colors">
+                      <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+                        <Icon className={`w-4 h-4 ${color}`} />
+                      </div>
+                      <span className="text-xs font-medium text-white/80 leading-tight">{label}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-center text-white/30 text-xs mt-5 font-medium tracking-wide">One platform. Every compliance requirement.</p>
+              </div>
             </div>
           </div>
 

@@ -13,7 +13,7 @@ import TryCoreyChatWidget from "@/components/TryCoreyChatWidget";
 import logoUrl from "@assets/7_1772719327857.png";
 import dotNavLogoUrl from "@assets/6_1777062245566.png";
 import dotVideoSrc from "@assets/DOT_regualtions_can_be_confusing_1775780745689.mp4";
-import dotDashboardImg from "@assets/DOT_VID_4_1777065344680.png";
+
 
 const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
@@ -108,72 +108,11 @@ const FEATURES = [
   },
 ];
 
-const PRICING = [
-  {
-    tier: "The Fleet HUB",
-    price: "$349",
-    period: "/mo",
-    description: "Everything you need to run a compliant fleet — Clearinghouse, DQ files, medical cards, MVR, and equipment.",
-    features: [
-      "Up to 50 active drivers",
-      "Clearinghouse 365-day countdown tracker",
-      "FMCSA bulk query CSV export",
-      "Driver Qualification (DQ) file checklist",
-      "Medical card expiration alerts (60/30/15 days)",
-      "Annual MVR reminder engine",
-      "Fleet equipment & inspection tracking",
-      "Consent form status tracking",
-      "Driver archive with removal logs",
-    ],
-    setupFee: "Onboarding setup: $299 (≤25 drivers) · $599 (26–100) · $999 (100+)",
-    cta: "Get Started",
-    href: "/get-started",
-    highlighted: false,
-  },
-  {
-    tier: "The HUB + Corey AI",
-    price: "$499",
-    period: "/mo",
-    description: "Full DOT Fleet HUB plus Corey — your AI compliance expert for OSHA, EPA, and DOT regulations. Ask anything. Get cited answers.",
-    features: [
-      "Everything in DOT Fleet HUB",
-      "Unlimited Corey AI conversations",
-      "OSHA, DOT & EPA regulatory guidance",
-      "42 document templates on demand",
-      "Mock OSHA inspection mode",
-      "Weekly safety topics",
-      "Priority support",
-    ],
-    setupFee: "Saves $49/mo vs. buying separately",
-    cta: "Best Value — Get Bundle",
-    href: "/get-started",
-    highlighted: true,
-  },
-  {
-    tier: `The HUB + Corey + The Command Center — "The Works"`,
-    price: "$999",
-    period: "/mo",
-    description: "The full Command Center. DOT Fleet HUB plus the complete OSHA employer platform — incidents, CAPA, medical surveillance, OSHA 300 log, training LMS.",
-    features: [
-      "Everything in DOT Fleet HUB",
-      "Full Employer Compliance Platform",
-      "OSHA 300 / 301 incident logging",
-      "Medical surveillance tracking (11 types)",
-      "Corrective Action Plans (CAPA)",
-      "Employee training LMS + certificates",
-      "Corey AI add-on available (+$129/seat)",
-    ],
-    setupFee: "Recommended for manufacturers with their own fleet",
-    cta: "Get Started",
-    href: "/get-started",
-    highlighted: false,
-  },
-];
 
 const FAQS = [
   {
-    q: "Does this connect directly to the FMCSA Clearinghouse portal?",
-    a: "Not via API — the FMCSA Clearinghouse API is restricted to registered Third-Party Administrators (TPAs), a licensing process that involves FMCSA approval. What we've built is the next best thing: a 'Bulk Preparation Tool' that manages your driver roster, tracks the 365-day windows, and generates a perfectly formatted CSV file that uploads directly to clearinghouse.fmcsa.dot.gov in about 30 seconds. What used to take 4 hours of manual data entry now takes one click.",
+    q: "Does this connect to the FMCSA Clearinghouse?",
+    a: "Yes — DOT Fleet HUB is built around Clearinghouse compliance. The platform tracks every driver's 365-day query window, flags upcoming deadlines, and generates the export file you need to submit queries. Contact us for a walkthrough of exactly how it fits your fleet's workflow.",
   },
   {
     q: "What is the 'Limited Consent' form and why does the tracker matter?",
@@ -386,12 +325,33 @@ export default function DotComplianceHub() {
             ))}
           </div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mt-12">
-            <img
-              src={dotDashboardImg}
-              alt="DOT Fleet HUB dashboard showing driver compliance status"
-              className="w-full rounded-2xl border border-border/60 shadow-xl"
-              data-testid="img-dot-dashboard-preview"
-            />
+            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl" style={{ background: "hsl(222,47%,9%)" }}>
+              <div className="bg-slate-800 px-5 py-3 flex items-center justify-between border-b border-white/10">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">DOT Fleet HUB — At a Glance</span>
+                <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">● Live Platform</span>
+              </div>
+              <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { icon: Clock, label: "Clearinghouse 365-Day Tracker", color: "text-red-400", bg: "bg-red-400/10" },
+                  { icon: FileText, label: "Driver Qualification Files", color: "text-blue-400", bg: "bg-blue-400/10" },
+                  { icon: ShieldCheck, label: "Medical Card Expiration Alerts", color: "text-emerald-400", bg: "bg-emerald-400/10" },
+                  { icon: Car, label: "Annual MVR Reminder Engine", color: "text-yellow-400", bg: "bg-yellow-400/10" },
+                  { icon: ClipboardList, label: "Consent Form Status Tracking", color: "text-violet-400", bg: "bg-violet-400/10" },
+                  { icon: Download, label: "FMCSA Bulk Query CSV Export", color: "text-cyan-400", bg: "bg-cyan-400/10" },
+                  { icon: Users, label: "Driver Archive & Removal Logs", color: "text-orange-400", bg: "bg-orange-400/10" },
+                  { icon: Bell, label: "60 / 30 / 15-Day Countdowns", color: "text-pink-400", bg: "bg-pink-400/10" },
+                  { icon: BarChart3, label: "Fleet Equipment Tracking", color: "text-teal-400", bg: "bg-teal-400/10" },
+                ].map(({ icon: Icon, label, color, bg }) => (
+                  <div key={label} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3">
+                    <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+                      <Icon className={`w-4 h-4 ${color}`} />
+                    </div>
+                    <span className="text-xs font-medium text-white/80 leading-tight">{label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-center text-white/30 text-xs pb-5 font-medium tracking-wide">Every driver. Every deadline. One system.</p>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -454,49 +414,40 @@ export default function DotComplianceHub() {
 
       {/* Pricing */}
       <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <Badge className="bg-accent/10 text-accent border-accent/20 mb-4">Pricing</Badge>
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground mt-3 text-lg">One missed Clearinghouse query can cost $16,000. Our platform starts at $349/mo.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {PRICING.map((p, i) => (
-              <div key={i} className={`rounded-2xl border p-7 flex flex-col ${p.highlighted ? "border-accent shadow-lg shadow-accent/10 relative" : "border-border/60"}`}>
-                {p.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-accent text-white border-none px-4 py-1">Most Popular</Badge>
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-semibold text-primary text-sm mb-1">{p.tier}</h3>
-                  <div className="flex items-end gap-1 mb-3">
-                    <span className="text-4xl font-bold text-primary">{p.price}</span>
-                    <span className="text-muted-foreground pb-1">{p.period}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-5">{p.description}</p>
-                  <ul className="space-y-2 mb-5">
-                    {p.features.map((f, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-foreground">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 mb-5">{p.setupFee}</p>
-                </div>
-                <div className="mt-auto">
-                  <Link href={p.href}>
-                    <Button className={`w-full ${p.highlighted ? "bg-accent hover:bg-accent/90 text-white" : "bg-primary hover:bg-primary/90 text-white"}`}
-                      data-testid={`button-pricing-${i}`}>
-                      {p.cta}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Badge className="bg-accent/10 text-accent border-accent/20 mb-4">Pricing</Badge>
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-primary mb-4">Built for Fleets of Every Size</h2>
+          <p className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto">
+            One missed Clearinghouse query can cost $16,000 in fines. DOT Fleet HUB pays for itself the first time it catches a gap.
+            Pricing is scaled to your fleet — contact us for a quote tailored to your driver count and compliance needs.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-6 mb-10">
+            {[
+              { label: "Starting from", value: "$349", note: "/month", desc: "Fleets under 50 active drivers" },
+              { label: "Bundle pricing", value: "Available", note: "", desc: "DOT + Corey AI + Employer Platform" },
+              { label: "Setup fee", value: "One-time", note: "", desc: "Scaled to your driver count" },
+            ].map(({ label, value, note, desc }) => (
+              <div key={label} className="rounded-2xl border border-border/60 p-6 text-center">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{label}</p>
+                <p className="text-3xl font-bold text-primary">{value}<span className="text-base font-normal text-muted-foreground">{note}</span></p>
+                <p className="text-sm text-muted-foreground mt-2">{desc}</p>
               </div>
             ))}
           </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/contact">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 h-12" data-testid="button-pricing-schedule">
+                Schedule a Walkthrough
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/get-started">
+              <Button size="lg" variant="outline" className="px-8 h-12" data-testid="button-pricing-getstarted">
+                Get Started
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-muted-foreground mt-6">No long-term contracts required. Month-to-month available.</p>
         </div>
       </section>
 
@@ -537,7 +488,7 @@ export default function DotComplianceHub() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/get-started">
               <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 h-12" data-testid="button-bottom-cta">
-                Get Started — $349/mo
+                Schedule a Walkthrough
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
