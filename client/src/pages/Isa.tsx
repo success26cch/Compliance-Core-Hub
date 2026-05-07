@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Send, Menu, X, ChevronRight, MessageSquare, Loader2,
   BookOpen, ClipboardCheck, MessageCircle, Share2, Monitor, Smartphone,
-  ArrowRight, Trash2, Paperclip, FileText, CheckCircle2,
+  ArrowRight, Trash2, Paperclip, FileText, CheckCircle2, Mic, MicOff,
 } from "lucide-react";
 import {
   useIsaConversations,
@@ -192,6 +192,62 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
   const [isExtracting, setIsExtracting] = useState(false);
   // Local-only ISA advisory notice shown when file extraction fails
   const [fileNotice, setFileNotice] = useState<string | null>(null);
+
+  // Voice input state
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: "Not supported", description: "Voice input is not supported in this browser. Try Chrome or Edge.", variant: "destructive" });
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) final += t;
+        else interim += t;
+      }
+      setInput(final || interim);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = (e: any) => {
+      setIsListening(false);
+      recognitionRef.current = null;
+      if (e.error !== "no-speech" && e.error !== "aborted") {
+        toast({ title: "Microphone error", description: "Could not access the microphone. Check your browser permissions.", variant: "destructive" });
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  };
+
+  const toggleListening = () => {
+    if (isListening) stopListening();
+    else startListening();
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -409,12 +465,31 @@ function IsaChatInterface({ conversationId, onNewChat }: { conversationId: numbe
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={attachedText ? "Add a question about this document, or send as-is for a full audit review…" : "Ask Isa a question…"}
+            placeholder={isListening ? "Listening… speak your question" : attachedText ? "Add a question about this document, or send as-is for a full audit review…" : "Ask Isa a question…"}
             rows={1}
             className="resize-none bg-white/[0.07] border-white/15 text-white placeholder:text-white/30 focus:border-orange-500 rounded-xl text-sm"
-            style={{ minHeight: "44px", maxHeight: "120px" }}
+            style={{ minHeight: "44px", maxHeight: "120px", borderColor: isListening ? "rgba(239,68,68,0.6)" : undefined }}
             data-testid="input-isa-message"
           />
+
+          {/* Mic button */}
+          <button
+            onClick={toggleListening}
+            disabled={isStreaming}
+            title={isListening ? "Stop recording" : "Speak your question"}
+            data-testid="button-isa-mic"
+            className={`shrink-0 w-11 h-11 rounded-xl border flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+              isListening
+                ? "border-red-500/70 bg-red-500/20 text-red-400"
+                : "border-white/15 bg-white/[0.07] text-white/40 hover:text-white/70 hover:bg-white/[0.10] hover:border-white/25"
+            }`}
+          >
+            {isListening
+              ? <MicOff className="w-4 h-4 animate-pulse" />
+              : <Mic className="w-4 h-4" />
+            }
+          </button>
+
           <Button
             onClick={() => handleSend()}
             disabled={!canSend}
