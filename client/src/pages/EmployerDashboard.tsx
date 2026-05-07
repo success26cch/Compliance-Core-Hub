@@ -214,7 +214,7 @@ export default function EmployerDashboard() {
               <Zap className="w-4 h-4 text-accent" />
               <span className="text-sm font-semibold text-accent uppercase tracking-wider">Employer Dashboard</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight">
+            <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight text-white">
               The Compliance Command Center
               <span className="block text-accent mt-1">Built for Employers</span>
             </h1>
