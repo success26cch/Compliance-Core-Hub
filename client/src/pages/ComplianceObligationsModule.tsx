@@ -1664,7 +1664,12 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
       qc.invalidateQueries({ queryKey: ["/api/iso-compliance-obligations"] });
       setStarterDialog(false);
       setSelectedStarters(new Set());
-      toast({ title: `${Array.isArray(data) ? data.length : "0"} requirements added to your register` });
+      const added = data?.created?.length ?? 0;
+      const skipped = data?.skipped ?? 0;
+      const msg = skipped > 0
+        ? `${added} added · ${skipped} already in register (skipped)`
+        : `${added} requirements added to your register`;
+      toast({ title: msg });
     },
     onError: () => toast({ title: "Error", description: "Could not load starter library", variant: "destructive" }),
   });
@@ -1698,6 +1703,12 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
 
   // All starter items merged
   const allStarters = [...FEDERAL_STARTER_LIBRARY, ...MICHIGAN_STARTER, ...OHIO_STARTER, ...CORPORATE_STARTER];
+
+  // Track which starter items are already in the register (by requirement name)
+  const existingObligationNames = useMemo(
+    () => new Set((obligations as IsoComplianceObligation[]).map(o => o.requirementName)),
+    [obligations]
+  );
 
   async function askCorey() {
     if (!coreyForm.state.trim()) {
@@ -1823,7 +1834,17 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             <Button size="sm" variant="outline" className="gap-1.5 text-xs border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20" onClick={() => { setCoreyResponse(""); setCoreyDialog(true); }} data-testid="button-ask-corey-identify">
               <Sparkles className="w-3.5 h-3.5" /> Ask Corey to Identify
             </Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setStarterDialog(true)} data-testid="button-load-starter-library">
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => {
+              // Auto-preselect only items NOT already in the register
+              const newIdxs = new Set(
+                allStarters
+                  .map((item, i) => ({ item, i }))
+                  .filter(({ item }) => !existingObligationNames.has(item.requirementName))
+                  .map(({ i }) => String(i))
+              );
+              setSelectedStarters(newIdxs);
+              setStarterDialog(true);
+            }} data-testid="button-load-starter-library">
               <Upload className="w-3.5 h-3.5" /> Load Starter Library
             </Button>
             <Button size="sm" className="gap-1.5 text-xs bg-accent hover:bg-accent/90 text-white" onClick={openAddObligation} data-testid="button-add-compliance-obligation">
@@ -1953,7 +1974,16 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                 <Shield className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
                 <p className="text-sm font-semibold text-muted-foreground mb-1">No requirements found</p>
                 <p className="text-xs text-muted-foreground mb-4">Add requirements manually or load the starter library to populate your register.</p>
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setStarterDialog(true)}>
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => {
+                  const newIdxs = new Set(
+                    allStarters
+                      .map((item, i) => ({ item, i }))
+                      .filter(({ item }) => !existingObligationNames.has(item.requirementName))
+                      .map(({ i }) => String(i))
+                  );
+                  setSelectedStarters(newIdxs);
+                  setStarterDialog(true);
+                }}>
                   <Upload className="w-3.5 h-3.5" /> Load Starter Library
                 </Button>
               </div>
@@ -2532,8 +2562,12 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
 
           {/* Toolbar */}
           <div className="flex items-center gap-2 py-2 border-b border-border/40 shrink-0 flex-wrap">
-            <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setSelectedStarters(new Set(allStarters.map((_, i) => String(i))))}>
-              Select All
+            <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setSelectedStarters(new Set(
+              allStarters.map((item, i) => ({ item, i }))
+                .filter(({ item }) => !existingObligationNames.has(item.requirementName))
+                .map(({ i }) => String(i))
+            ))}>
+              Select All New
             </Button>
             <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setSelectedStarters(new Set())}>
               Deselect All
@@ -2547,7 +2581,9 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                 data-testid="input-starter-search"
               />
             </div>
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{selectedStarters.size} of {allStarters.length} selected</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {selectedStarters.size} new · {existingObligationNames.size > 0 ? `${allStarters.filter(item => existingObligationNames.has(item.requirementName)).length} already imported` : ""}
+            </span>
           </div>
 
           <ScrollArea className="flex-1">
@@ -2622,32 +2658,46 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                         {/* Individual items */}
                         {entries.map(({ item, idx }) => {
                           const checked = selectedStarters.has(idx);
+                          const alreadyImported = existingObligationNames.has(item.requirementName);
                           return (
                             <label
                               key={idx}
-                              className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/10 last:border-0 ${checked ? "bg-accent/5" : ""}`}
+                              className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/10 last:border-0 ${
+                                alreadyImported
+                                  ? "opacity-50 bg-muted/20"
+                                  : checked ? "bg-accent/5" : ""
+                              }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                onChange={() => setSelectedStarters(prev => {
-                                  const n = new Set(prev);
-                                  n.has(idx) ? n.delete(idx) : n.add(idx);
-                                  return n;
-                                })}
+                                disabled={alreadyImported}
+                                onChange={() => {
+                                  if (alreadyImported) return;
+                                  setSelectedStarters(prev => {
+                                    const n = new Set(prev);
+                                    n.has(idx) ? n.delete(idx) : n.add(idx);
+                                    return n;
+                                  });
+                                }}
                                 className="mt-0.5 accent-accent shrink-0"
                                 data-testid={`checkbox-starter-${idx}`}
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="text-xs font-semibold text-primary leading-tight">{item.requirementName}</span>
-                                  {jurisdictionBadge(item.jurisdictionLevel)}
-                                  {item.permitRequired && (
+                                  {alreadyImported && (
+                                    <Badge className="text-[9px] px-1.5 py-0 h-4 border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/40">
+                                      ✓ In Register
+                                    </Badge>
+                                  )}
+                                  {!alreadyImported && jurisdictionBadge(item.jurisdictionLevel)}
+                                  {!alreadyImported && item.permitRequired && (
                                     <Badge className="text-[9px] px-1 py-0 h-4 border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300">Permit</Badge>
                                   )}
                                 </div>
                                 {item.citationSource && <p className="text-[10px] font-mono text-accent/70 mt-0.5">{item.citationSource}</p>}
-                                {item.descriptionOfRequirement && (
+                                {!alreadyImported && item.descriptionOfRequirement && (
                                   <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.descriptionOfRequirement}</p>
                                 )}
                               </div>
@@ -2663,6 +2713,11 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
           </ScrollArea>
 
           <div className="flex gap-2 justify-end pt-3 border-t border-border/40 shrink-0">
+            <div className="flex-1 text-xs text-muted-foreground flex items-center">
+              {selectedStarters.size === 0
+                ? "Select requirements to add to your register"
+                : `${selectedStarters.size} new requirement${selectedStarters.size !== 1 ? "s" : ""} will be added`}
+            </div>
             <Button variant="outline" onClick={() => setStarterDialog(false)}>Cancel</Button>
             <Button
               onClick={loadSelectedStarters}
@@ -2671,7 +2726,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               data-testid="button-load-selected-starters"
             >
               <Download className="w-3.5 h-3.5" />
-              {bulkCreateMut.isPending ? "Adding…" : `Add ${selectedStarters.size} Requirements`}
+              {bulkCreateMut.isPending ? "Adding…" : `Add ${selectedStarters.size} to Register`}
             </Button>
           </div>
         </DialogContent>

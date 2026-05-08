@@ -10735,17 +10735,31 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
     try {
-      const { insertIsoComplianceObligationSchema } = await import("@shared/schema");
+      const { insertIsoComplianceObligationSchema, isoComplianceObligations } = await import("@shared/schema");
+      const { eq, and, inArray } = await import("drizzle-orm");
+      const { db } = await import("./db");
       const items = Array.isArray(req.body) ? req.body : [];
+      if (items.length === 0) return res.status(201).json([]);
+
+      // Deduplicate: fetch existing requirement names for this user (across all projects)
+      const existing = await db
+        .select({ requirementName: isoComplianceObligations.requirementName })
+        .from(isoComplianceObligations)
+        .where(eq(isoComplianceObligations.userId, userId));
+      const existingNames = new Set(existing.map((r: { requirementName: string }) => r.requirementName));
+
       const created = [];
+      let skipped = 0;
       for (const item of items) {
+        if (existingNames.has(item.requirementName)) { skipped++; continue; }
         const parsed = insertIsoComplianceObligationSchema.safeParse({ ...item, userId });
         if (parsed.success) {
           const r = await storage.createIsoComplianceObligation(parsed.data);
           created.push(r);
+          existingNames.add(item.requirementName); // prevent same-batch dupes
         }
       }
-      res.status(201).json(created);
+      res.status(201).json({ created, skipped });
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
