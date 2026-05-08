@@ -909,6 +909,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
   // Starter library
   const [starterDialog, setStarterDialog] = useState(false);
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(new Set());
+  const [starterSearch, setStarterSearch] = useState("");
 
   const qs = isoProjectId ? `?isoProjectId=${isoProjectId}` : "";
 
@@ -1723,68 +1724,148 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
       </Dialog>
 
       {/* ── Starter Library Dialog ────────────────────────── */}
-      <Dialog open={starterDialog} onOpenChange={setStarterDialog}>
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+      <Dialog open={starterDialog} onOpenChange={open => { setStarterDialog(open); if (!open) setStarterSearch(""); }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-accent" /> Load Starter Library
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Select the requirements applicable to your organization. Federal requirements are universally applicable; state/local entries are pre-loaded for Michigan and Ohio. You can edit any entry after importing.
+              Select the requirements applicable to your organization. Federal items apply broadly; Michigan and Ohio state entries are pre-loaded for those jurisdictions. All entries are editable after import.
             </p>
           </DialogHeader>
-          <div className="flex items-center gap-2 py-2 border-b border-border/40 shrink-0">
-            <Button size="sm" variant="outline" className="text-xs" onClick={() => setSelectedStarters(new Set(allStarters.map((_, i) => String(i))))}>
+
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 py-2 border-b border-border/40 shrink-0 flex-wrap">
+            <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setSelectedStarters(new Set(allStarters.map((_, i) => String(i))))}>
               Select All
             </Button>
-            <Button size="sm" variant="outline" className="text-xs" onClick={() => setSelectedStarters(new Set())}>
+            <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setSelectedStarters(new Set())}>
               Deselect All
             </Button>
-            <span className="text-xs text-muted-foreground ml-auto">{selectedStarters.size} selected</span>
+            <div className="flex-1 min-w-[180px]">
+              <Input
+                value={starterSearch}
+                onChange={e => setStarterSearch(e.target.value)}
+                placeholder="Search requirements…"
+                className="h-7 text-xs"
+                data-testid="input-starter-search"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{selectedStarters.size} of {allStarters.length} selected</span>
           </div>
+
           <ScrollArea className="flex-1">
             {[
-              { label: "Federal Requirements", items: FEDERAL_STARTER_LIBRARY, offset: 0 },
-              { label: "Michigan State Requirements", items: MICHIGAN_STARTER, offset: FEDERAL_STARTER_LIBRARY.length },
-              { label: "Ohio State Requirements", items: OHIO_STARTER, offset: FEDERAL_STARTER_LIBRARY.length + MICHIGAN_STARTER.length },
-            ].map(group => (
-              <div key={group.label} className="mb-4">
-                <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/40">
-                  {group.label}
-                </div>
-                {group.items.map((item, i) => {
-                  const idx = String(group.offset + i);
-                  const checked = selectedStarters.has(idx);
-                  return (
-                    <label
-                      key={idx}
-                      className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer hover:bg-muted/30 transition-colors ${checked ? "bg-accent/5" : ""}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => setSelectedStarters(prev => {
-                          const n = new Set(prev);
-                          n.has(idx) ? n.delete(idx) : n.add(idx);
-                          return n;
-                        })}
-                        className="mt-0.5 accent-accent"
-                        data-testid={`checkbox-starter-${idx}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs font-semibold text-primary">{item.requirementName}</span>
-                          {jurisdictionBadge(item.jurisdictionLevel)}
-                          <span className="text-[10px] text-muted-foreground">{item.aspectCategory}</span>
+              { label: "Federal Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY, offset: 0 },
+              { label: "Michigan State Requirements", emoji: "MI", items: MICHIGAN_STARTER, offset: FEDERAL_STARTER_LIBRARY.length },
+              { label: "Ohio State Requirements", emoji: "OH", items: OHIO_STARTER, offset: FEDERAL_STARTER_LIBRARY.length + MICHIGAN_STARTER.length },
+            ].map(group => {
+              // Enrich each item with its absolute index
+              const enriched = group.items.map((item, i) => ({ item, idx: String(group.offset + i) }));
+              // Apply search filter
+              const q = starterSearch.trim().toLowerCase();
+              const filtered = q
+                ? enriched.filter(({ item }) =>
+                    item.requirementName.toLowerCase().includes(q) ||
+                    item.aspectCategory.toLowerCase().includes(q) ||
+                    (item.citationSource ?? "").toLowerCase().includes(q) ||
+                    (item.descriptionOfRequirement ?? "").toLowerCase().includes(q)
+                  )
+                : enriched;
+              if (filtered.length === 0) return null;
+
+              // Group by aspectCategory preserving insertion order
+              const byCategory = filtered.reduce<Record<string, typeof filtered>>((acc, entry) => {
+                const cat = entry.item.aspectCategory;
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(entry);
+                return acc;
+              }, {});
+
+              return (
+                <div key={group.label} className="mb-5">
+                  {/* Jurisdiction header */}
+                  <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-2 border-b border-border/60 flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-foreground">
+                      {group.label}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{filtered.length} requirement{filtered.length !== 1 ? "s" : ""}</span>
+                  </div>
+
+                  {/* Categories within this jurisdiction */}
+                  {Object.entries(byCategory).map(([category, entries]) => {
+                    const allCatSelected = entries.every(e => selectedStarters.has(e.idx));
+                    const someCatSelected = entries.some(e => selectedStarters.has(e.idx));
+                    return (
+                      <div key={category} className="mb-1">
+                        {/* Category sub-header with select-all */}
+                        <div className="flex items-center gap-2 px-4 py-1.5 bg-muted/40 border-y border-border/20">
+                          <input
+                            type="checkbox"
+                            checked={allCatSelected}
+                            ref={el => { if (el) el.indeterminate = someCatSelected && !allCatSelected; }}
+                            onChange={() => {
+                              setSelectedStarters(prev => {
+                                const n = new Set(prev);
+                                if (allCatSelected) {
+                                  entries.forEach(e => n.delete(e.idx));
+                                } else {
+                                  entries.forEach(e => n.add(e.idx));
+                                }
+                                return n;
+                              });
+                            }}
+                            className="accent-accent"
+                            data-testid={`checkbox-cat-${category.replace(/\s+/g, "-")}`}
+                          />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{category}</span>
+                          <span className="text-[10px] text-muted-foreground/60 ml-auto">{entries.length} item{entries.length !== 1 ? "s" : ""}</span>
                         </div>
-                        {item.citationSource && <p className="text-[10px] font-mono text-accent/70 mt-0.5">{item.citationSource}</p>}
+
+                        {/* Individual items */}
+                        {entries.map(({ item, idx }) => {
+                          const checked = selectedStarters.has(idx);
+                          return (
+                            <label
+                              key={idx}
+                              className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/10 last:border-0 ${checked ? "bg-accent/5" : ""}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => setSelectedStarters(prev => {
+                                  const n = new Set(prev);
+                                  n.has(idx) ? n.delete(idx) : n.add(idx);
+                                  return n;
+                                })}
+                                className="mt-0.5 accent-accent shrink-0"
+                                data-testid={`checkbox-starter-${idx}`}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-xs font-semibold text-primary leading-tight">{item.requirementName}</span>
+                                  {jurisdictionBadge(item.jurisdictionLevel)}
+                                  {item.permitRequired && (
+                                    <Badge className="text-[9px] px-1 py-0 h-4 border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300">Permit</Badge>
+                                  )}
+                                </div>
+                                {item.citationSource && <p className="text-[10px] font-mono text-accent/70 mt-0.5">{item.citationSource}</p>}
+                                {item.descriptionOfRequirement && (
+                                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.descriptionOfRequirement}</p>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
                       </div>
-                    </label>
-                  );
-                })}
-              </div>
-            ))}
+                    );
+                  })}
+                </div>
+              );
+            })}
           </ScrollArea>
+
           <div className="flex gap-2 justify-end pt-3 border-t border-border/40 shrink-0">
             <Button variant="outline" onClick={() => setStarterDialog(false)}>Cancel</Button>
             <Button
