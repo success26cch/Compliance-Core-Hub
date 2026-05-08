@@ -323,6 +323,160 @@ export default function EnvComplianceHub() {
         </div>
       </section>
 
+      {/* ── EMS Environmental Suite Bundle ── */}
+      <section className="py-20 px-6 border-t border-white/10 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-accent/10 pointer-events-none" />
+        <div className="max-w-5xl mx-auto relative">
+          <div className="text-center mb-12">
+            <span className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500/20 to-accent/20 border border-white/10 text-white/70 text-xs font-bold px-4 py-1.5 rounded-full mb-5 uppercase tracking-widest">
+              ✦ Better Together
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              The <span className="text-emerald-400">EMS Environmental Suite</span>
+            </h2>
+            <p className="text-white/60 text-lg max-w-3xl mx-auto leading-relaxed">
+              ISO 14001 tells you <em className="text-white/80 not-italic font-semibold">what</em> you must comply with. The Environmental Hub gives you the operational records that <em className="text-white/80 not-italic font-semibold">prove</em> you are. Together, they create a complete closed-loop Environmental Management System — from obligation to evidence.
+            </p>
+          </div>
+
+          {/* The two-product visual */}
+          <div className="grid md:grid-cols-[1fr_auto_1fr] gap-6 items-stretch mb-12">
+            {/* ISO Manager card */}
+            <div className="rounded-2xl border border-accent/30 bg-accent/10 p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-accent">ISO Manager</p>
+                  <p className="text-[10px] text-white/40">ISO 14001 EMS Platform</p>
+                </div>
+              </div>
+              <p className="text-sm text-white/60 mb-4 leading-relaxed">
+                Manages your ISO 14001 Environmental Management System — identifying what you must comply with and documenting your management framework.
+              </p>
+              <ul className="space-y-2 flex-1">
+                {[
+                  "§6.1.3 Compliance Obligations Register",
+                  "Environmental Aspects & Impacts (§6.1.2)",
+                  "Objectives & Targets (§6.2)",
+                  "Internal Audit Program (§9.2)",
+                  "Management Review (§9.3)",
+                  "\"Ask Corey\" Jurisdiction Requirements Identifier",
+                  "NC & CAPA Management",
+                  "Documentation Control",
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-xs text-white/60">
+                    <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 pt-4 border-t border-accent/20">
+                <p className="text-[10px] text-white/40 text-center">Identifies your obligations</p>
+              </div>
+            </div>
+
+            {/* Plus connector */}
+            <div className="flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xl font-bold text-white/60">+</div>
+                <div className="h-16 w-px bg-gradient-to-b from-accent/40 to-emerald-500/40 hidden md:block" />
+                <div className="text-[10px] text-white/30 text-center hidden md:block">closed<br />loop</div>
+                <div className="h-16 w-px bg-gradient-to-b from-emerald-500/40 to-accent/40 hidden md:block" />
+              </div>
+            </div>
+
+            {/* Env Hub card */}
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                  <Leaf className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">Environmental Hub</p>
+                  <p className="text-[10px] text-white/40">EPA Operational Records Platform</p>
+                </div>
+              </div>
+              <p className="text-sm text-white/60 mb-4 leading-relaxed">
+                Manages the day-to-day operational records and monitoring data that demonstrate you are meeting the obligations your ISO 14001 register identifies.
+              </p>
+              <ul className="space-y-2 flex-1">
+                {[
+                  "Universal Waste tracking & deadline alerts",
+                  "RCRA Hazardous Waste manifests & SAP logs",
+                  "SPCC tank inspections & spill records",
+                  "SWPPP quarterly stormwater monitoring",
+                  "Air permit registry & renewal reminders",
+                  "Opacity / visible emissions logs",
+                  "Facility Profile with SIC/NAICS & EPA ID",
+                  "\"Ask Corey\" EPA & state-specific AI answers",
+                ].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-xs text-white/60">
+                    <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-400" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 pt-4 border-t border-emerald-500/20">
+                <p className="text-[10px] text-white/40 text-center">Proves you are complying</p>
+              </div>
+            </div>
+          </div>
+
+          {/* The closed-loop explanation */}
+          <div className="grid md:grid-cols-3 gap-4 mb-10">
+            {[
+              {
+                step: "1",
+                color: "text-accent border-accent/30 bg-accent/10",
+                title: "Identify",
+                body: "Use ISO Manager's Compliance Obligations Register to log every Federal, State, and Local requirement that applies to your facility. Ask Corey to identify obligations by jurisdiction.",
+              },
+              {
+                step: "2",
+                color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
+                title: "Track",
+                body: "Use Env Hub to log the inspections, monitoring events, manifests, and audit records that demonstrate you are meeting each obligation — every day, every quarter, every year.",
+              },
+              {
+                step: "3",
+                color: "text-violet-400 border-violet-500/30 bg-violet-500/10",
+                title: "Prove",
+                body: "During ISO 14001 audits and EPA inspections, both platforms deliver the documented evidence that shows your EMS is implemented and effective — not just documented.",
+              },
+            ].map(s => (
+              <div key={s.step} className={`rounded-xl border ${s.color} p-5`}>
+                <div className={`text-xs font-black uppercase tracking-widest mb-2 ${s.color.split(" ")[0]}`}>Step {s.step} — {s.title}</div>
+                <p className="text-sm text-white/60 leading-relaxed">{s.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+            <p className="text-lg font-bold text-white mb-2">Bundle Pricing Available</p>
+            <p className="text-white/50 text-sm max-w-xl mx-auto mb-6">
+              The EMS Environmental Suite combines ISO Manager and the Environmental Hub at preferred bundle pricing. Contact us to discuss a plan scaled to your facility count, regulatory scope, and team size.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/contact">
+                <Button size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 gap-2" data-testid="button-bundle-contact">
+                  Contact for Bundle Pricing <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link href="/contact">
+                <Button size="lg" variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10 px-8" data-testid="button-bundle-demo">
+                  Schedule a Demo
+                </Button>
+              </Link>
+            </div>
+            <p className="text-xs text-white/30 mt-4">No long-term contracts required · Scales with your facility</p>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="max-w-4xl mx-auto px-6 py-16">
         <h2 className="text-3xl font-bold text-center mb-10">Common Questions</h2>

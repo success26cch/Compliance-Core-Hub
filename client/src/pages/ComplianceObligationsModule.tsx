@@ -14,6 +14,7 @@ import {
   Plus, Pencil, Trash2, CheckCircle2, AlertTriangle, XCircle,
   Clock, FileText, ChevronDown, ChevronUp, BookOpen, Shield,
   Download, Upload, Filter, Search, ClipboardCheck, Sparkles, MapPin,
+  ArrowRight, Leaf,
 } from "lucide-react";
 import type { IsoComplianceObligation, IsoComplianceEvaluation } from "@shared/schema";
 
@@ -1847,8 +1848,36 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
         </div>
       </div>
 
+      {/* ── EMS Environmental Suite Cross-Promo Banner ── */}
+      <div className="mx-6 mt-4 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-gradient-to-r from-emerald-50 via-white to-slate-50 dark:from-emerald-950/20 dark:via-card dark:to-slate-900/10 px-4 py-3 flex items-center gap-4 flex-wrap">
+        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+          <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-foreground">EMS Environmental Suite</span>
+            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Bundle</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+            This register identifies <strong>what</strong> you must comply with (§6.1.3). The <strong>Environmental Hub</strong> tracks the operational records — inspections, manifests, monitoring logs — that <strong>prove</strong> you are. Bundle both for complete ISO 14001 conformance.
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <a href="/env-compliance-hub" target="_blank" rel="noopener noreferrer">
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" data-testid="button-compliance-module-env-hub-promo">
+              <Leaf className="w-3 h-3" /> Environmental Hub
+            </Button>
+          </a>
+          <a href="mailto:team@corecompliancehub.com?subject=EMS Environmental Suite Bundle Inquiry">
+            <Button size="sm" className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" data-testid="button-compliance-module-bundle-contact">
+              <ArrowRight className="w-3 h-3" /> Bundle Pricing
+            </Button>
+          </a>
+        </div>
+      </div>
+
       {/* Tabs */}
-      <div className="border-b border-border/60 bg-white dark:bg-card px-6 shrink-0">
+      <div className="border-b border-border/60 bg-white dark:bg-card px-6 shrink-0 mt-4">
         <div className="flex gap-0">
           {[
             { key: "register", label: "Obligations Register", icon: FileText },
