@@ -10707,5 +10707,121 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.json({ success: true });
   });
 
+  // ─── ISO Compliance Obligations (§6.1.3) ──────────────────────────────────────
+  app.get("/api/iso-compliance-obligations", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const isoProjectId = req.query.isoProjectId ? parseInt(req.query.isoProjectId as string) : undefined;
+      const items = await storage.getIsoComplianceObligations(userId, isoProjectId, isSuperadmin);
+      res.json(items);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-compliance-obligations", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertIsoComplianceObligationSchema } = await import("@shared/schema");
+      const parsed = insertIsoComplianceObligationSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.createIsoComplianceObligation(parsed.data);
+      res.status(201).json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-compliance-obligations/bulk", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertIsoComplianceObligationSchema } = await import("@shared/schema");
+      const items = Array.isArray(req.body) ? req.body : [];
+      const created = [];
+      for (const item of items) {
+        const parsed = insertIsoComplianceObligationSchema.safeParse({ ...item, userId });
+        if (parsed.success) {
+          const r = await storage.createIsoComplianceObligation(parsed.data);
+          created.push(r);
+        }
+      }
+      res.status(201).json(created);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-compliance-obligations/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { insertIsoComplianceObligationSchema } = await import("@shared/schema");
+      const patchSchema = insertIsoComplianceObligationSchema.omit({ userId: true, isoProjectId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.updateIsoComplianceObligation(parseInt(req.params.id), userId, parsed.data, isSuperadmin);
+      if (!item) return res.status(404).json({ message: "Not found" });
+      res.json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-compliance-obligations/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      await storage.deleteIsoComplianceObligation(parseInt(req.params.id), userId, isSuperadmin);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // ─── ISO Compliance Evaluations (§9.1.2) ──────────────────────────────────────
+  app.get("/api/iso-compliance-evaluations", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const obligationId = req.query.obligationId ? parseInt(req.query.obligationId as string) : undefined;
+      const items = await storage.getIsoComplianceEvaluations(userId, obligationId, isSuperadmin);
+      res.json(items);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso-compliance-evaluations", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { insertIsoComplianceEvaluationSchema } = await import("@shared/schema");
+      const parsed = insertIsoComplianceEvaluationSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.createIsoComplianceEvaluation(parsed.data);
+      res.status(201).json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso-compliance-evaluations/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { insertIsoComplianceEvaluationSchema } = await import("@shared/schema");
+      const patchSchema = insertIsoComplianceEvaluationSchema.omit({ userId: true, complianceObligationId: true }).partial();
+      const parsed = patchSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const item = await storage.updateIsoComplianceEvaluation(parseInt(req.params.id), userId, parsed.data, isSuperadmin);
+      if (!item) return res.status(404).json({ message: "Not found" });
+      res.json(item);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso-compliance-evaluations/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      await storage.deleteIsoComplianceEvaluation(parseInt(req.params.id), userId, isSuperadmin);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }

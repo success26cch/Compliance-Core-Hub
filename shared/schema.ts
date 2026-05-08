@@ -2789,3 +2789,55 @@ export const trainingEvidenceFiles = pgTable("training_evidence_files", {
 export const insertTrainingEvidenceFileSchema = createInsertSchema(trainingEvidenceFiles).omit({ id: true, uploadedAt: true });
 export type TrainingEvidenceFile = typeof trainingEvidenceFiles.$inferSelect;
 export type InsertTrainingEvidenceFile = z.infer<typeof insertTrainingEvidenceFileSchema>;
+
+// ─── ISO Manager: Compliance Obligations Register (§6.1.3) ────────────────────
+// Tracks all applicable legal and other requirements (Federal, State, Local,
+// Corporate, Voluntary) mapped to environmental aspects.
+export const isoComplianceObligations = pgTable("iso_compliance_obligations", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  aspectCategory: text("aspect_category").notNull().default("Other"),
+  requirementName: text("requirement_name").notNull(),
+  citationSource: text("citation_source"),
+  jurisdictionLevel: text("jurisdiction_level").notNull().default("F"),
+  state: text("state"),
+  county: text("county"),
+  descriptionOfRequirement: text("description_of_requirement"),
+  facilityAction: text("facility_action"),
+  complianceStatus: text("compliance_status").notNull().default("compliant"),
+  permitRequired: boolean("permit_required").notNull().default(false),
+  permitRenewalFrequency: text("permit_renewal_frequency"),
+  recordsToMaintain: text("records_to_maintain"),
+  responsiblePerson: text("responsible_person"),
+  dateLastReviewed: text("date_last_reviewed"),
+  nextReviewDate: text("next_review_date"),
+  actionRequired: text("action_required"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertIsoComplianceObligationSchema = createInsertSchema(isoComplianceObligations).omit({ id: true, createdAt: true, updatedAt: true });
+export type IsoComplianceObligation = typeof isoComplianceObligations.$inferSelect;
+export type InsertIsoComplianceObligation = z.infer<typeof insertIsoComplianceObligationSchema>;
+
+// ─── ISO Manager: Compliance Evaluation Log (§9.1.2) ─────────────────────────
+// Periodic evaluations of each compliance obligation — evidence that the
+// organization systematically evaluates its compliance status.
+export const isoComplianceEvaluations = pgTable("iso_compliance_evaluations", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  complianceObligationId: integer("compliance_obligation_id").notNull(),
+  evaluationDate: text("evaluation_date").notNull(),
+  evaluatedBy: text("evaluated_by"),
+  complianceStatus: text("compliance_status").notNull().default("compliant"),
+  findings: text("findings"),
+  evidenceDescription: text("evidence_description"),
+  actionRequired: text("action_required"),
+  dueDate: text("due_date"),
+  closedDate: text("closed_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertIsoComplianceEvaluationSchema = createInsertSchema(isoComplianceEvaluations).omit({ id: true, createdAt: true });
+export type IsoComplianceEvaluation = typeof isoComplianceEvaluations.$inferSelect;
+export type InsertIsoComplianceEvaluation = z.infer<typeof insertIsoComplianceEvaluationSchema>;

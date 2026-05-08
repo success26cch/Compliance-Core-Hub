@@ -9,6 +9,7 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   isoAudits, isoAuditFindings, isoAuditProcessNotes, isoAwarenessNotices, isoAwarenessAcknowledgments,
   isoObjectives, isoKpiActuals, auditProcessSchedule,
   isoRisks, isoManagementReviews, isoReviewActionItems, isoActionItems, isoCommunications,
+  isoComplianceObligations, isoComplianceEvaluations,
   type AuditProcessSchedule, type InsertAuditProcessSchedule,
   type IsoAudit, type InsertIsoAudit,
   type IsoAuditFinding, type InsertIsoAuditFinding,
@@ -22,6 +23,8 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInq
   type IsoReviewActionItem, type InsertIsoReviewActionItem,
   type IsoActionItem, type InsertIsoActionItem,
   type IsoCommunication, type InsertIsoCommunication,
+  type IsoComplianceObligation, type InsertIsoComplianceObligation,
+  type IsoComplianceEvaluation, type InsertIsoComplianceEvaluation,
   suppliers, supplierCriteria, supplierCandidateAssessments, supplierEvaluations, supplierAudits,
   type Supplier, type InsertSupplier,
   type SupplierCriteria, type InsertSupplierCriteria,
@@ -454,6 +457,18 @@ export interface IStorage {
   createIsoCommunication(data: InsertIsoCommunication): Promise<IsoCommunication>;
   updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>, isSuperadmin?: boolean): Promise<IsoCommunication | undefined>;
   deleteIsoCommunication(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ISO Compliance Obligations (§6.1.3)
+  getIsoComplianceObligations(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoComplianceObligation[]>;
+  createIsoComplianceObligation(data: InsertIsoComplianceObligation): Promise<IsoComplianceObligation>;
+  updateIsoComplianceObligation(id: number, userId: string, data: Partial<InsertIsoComplianceObligation>, isSuperadmin?: boolean): Promise<IsoComplianceObligation | undefined>;
+  deleteIsoComplianceObligation(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ISO Compliance Evaluations (§9.1.2)
+  getIsoComplianceEvaluations(userId: string, obligationId?: number, isSuperadmin?: boolean): Promise<IsoComplianceEvaluation[]>;
+  createIsoComplianceEvaluation(data: InsertIsoComplianceEvaluation): Promise<IsoComplianceEvaluation>;
+  updateIsoComplianceEvaluation(id: number, userId: string, data: Partial<InsertIsoComplianceEvaluation>, isSuperadmin?: boolean): Promise<IsoComplianceEvaluation | undefined>;
+  deleteIsoComplianceEvaluation(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // Supplier Management
   getSuppliers(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<Supplier[]>;
@@ -2753,6 +2768,58 @@ export class DatabaseStorage implements IStorage {
   async deleteLpaRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
     const where = isSuperadmin ? eq(lpaRecords.id, id) : and(eq(lpaRecords.id, id), eq(lpaRecords.userId, userId));
     await db.delete(lpaRecords).where(where);
+  }
+
+  // ─── ISO Compliance Obligations (§6.1.3) ──────────────────────────────────
+  async getIsoComplianceObligations(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoComplianceObligation[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = isoProjectId != null ? eq(isoComplianceObligations.isoProjectId, isoProjectId) : undefined;
+    } else {
+      cond = isoProjectId != null
+        ? and(eq(isoComplianceObligations.userId, userId), eq(isoComplianceObligations.isoProjectId, isoProjectId))
+        : eq(isoComplianceObligations.userId, userId);
+    }
+    return db.select().from(isoComplianceObligations).where(cond).orderBy(isoComplianceObligations.aspectCategory, isoComplianceObligations.requirementName);
+  }
+  async createIsoComplianceObligation(data: InsertIsoComplianceObligation): Promise<IsoComplianceObligation> {
+    const [r] = await db.insert(isoComplianceObligations).values(data).returning();
+    return r;
+  }
+  async updateIsoComplianceObligation(id: number, userId: string, data: Partial<InsertIsoComplianceObligation>, isSuperadmin = false): Promise<IsoComplianceObligation | undefined> {
+    const where = isSuperadmin ? eq(isoComplianceObligations.id, id) : and(eq(isoComplianceObligations.id, id), eq(isoComplianceObligations.userId, userId));
+    const [r] = await db.update(isoComplianceObligations).set({ ...data, updatedAt: new Date() }).where(where).returning();
+    return r;
+  }
+  async deleteIsoComplianceObligation(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin ? eq(isoComplianceObligations.id, id) : and(eq(isoComplianceObligations.id, id), eq(isoComplianceObligations.userId, userId));
+    await db.delete(isoComplianceObligations).where(where);
+  }
+
+  // ─── ISO Compliance Evaluations (§9.1.2) ──────────────────────────────────
+  async getIsoComplianceEvaluations(userId: string, obligationId?: number, isSuperadmin = false): Promise<IsoComplianceEvaluation[]> {
+    let cond: any;
+    if (isSuperadmin) {
+      cond = obligationId != null ? eq(isoComplianceEvaluations.complianceObligationId, obligationId) : undefined;
+    } else {
+      cond = obligationId != null
+        ? and(eq(isoComplianceEvaluations.userId, userId), eq(isoComplianceEvaluations.complianceObligationId, obligationId))
+        : eq(isoComplianceEvaluations.userId, userId);
+    }
+    return db.select().from(isoComplianceEvaluations).where(cond).orderBy(desc(isoComplianceEvaluations.evaluationDate));
+  }
+  async createIsoComplianceEvaluation(data: InsertIsoComplianceEvaluation): Promise<IsoComplianceEvaluation> {
+    const [r] = await db.insert(isoComplianceEvaluations).values(data).returning();
+    return r;
+  }
+  async updateIsoComplianceEvaluation(id: number, userId: string, data: Partial<InsertIsoComplianceEvaluation>, isSuperadmin = false): Promise<IsoComplianceEvaluation | undefined> {
+    const where = isSuperadmin ? eq(isoComplianceEvaluations.id, id) : and(eq(isoComplianceEvaluations.id, id), eq(isoComplianceEvaluations.userId, userId));
+    const [r] = await db.update(isoComplianceEvaluations).set(data).where(where).returning();
+    return r;
+  }
+  async deleteIsoComplianceEvaluation(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin ? eq(isoComplianceEvaluations.id, id) : and(eq(isoComplianceEvaluations.id, id), eq(isoComplianceEvaluations.userId, userId));
+    await db.delete(isoComplianceEvaluations).where(where);
   }
 }
 

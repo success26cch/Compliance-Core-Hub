@@ -48,6 +48,7 @@ import RolesRaciModule from "./RolesRaciModule";
 import APQPModule from "./APQPModule";
 import SupplierModule from "./SupplierModule";
 import GlobalIsaWidget from "./GlobalIsaWidget";
+import ComplianceObligationsModule from "./ComplianceObligationsModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -272,7 +273,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -293,6 +294,7 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   supplier_management:      [null, undefined, 'auditor'],
   calibration:              [null, undefined, 'auditor'],
   preventive_maintenance:   [null, undefined, 'auditor'],
+  compliance_obligations:   [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -683,6 +685,32 @@ export default function ISOManager() {
               })}
             </div>
 
+            {/* EMS — ISO 14001 */}
+            {sidebarOpen && (
+              <div className="pt-3 pb-1">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">EMS — 14001</span>
+                  <div className="h-px flex-1 bg-border/60" />
+                </div>
+              </div>
+            )}
+            {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
+            <div className="space-y-0.5">
+              {(["compliance_obligations"] as SectionKey[]).map((section) => {
+                const META: Record<string, { icon: any; label: string }> = {
+                  compliance_obligations: { icon: ShieldAlert, label: "Compliance Obligations" },
+                };
+                const { icon, label } = META[section];
+                const locked = !canAccessSection(section, isoRole, isSuperadmin);
+                return (
+                  <ModuleNavButton key={section} active={activeSection === section}
+                    onClick={() => handleSectionChange(section)} icon={icon} label={label}
+                    testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
+                );
+              })}
+            </div>
+
             {/* Advanced Modules */}
             {sidebarOpen && (
               <div className="pt-3 pb-1">
@@ -936,6 +964,12 @@ export default function ISOManager() {
                 {canAccessSection('preventive_maintenance', isoRole, isSuperadmin)
                   ? <PreventiveMaintenanceModule project={project} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="preventive_maintenance" /></div>}
+              </div>
+            ) : activeSection === 'compliance_obligations' ? (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                {canAccessSection('compliance_obligations', isoRole, isSuperadmin)
+                  ? <ComplianceObligationsModule isoProjectId={project?.id} />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="compliance_obligations" /></div>}
               </div>
             ) : (
               <>
