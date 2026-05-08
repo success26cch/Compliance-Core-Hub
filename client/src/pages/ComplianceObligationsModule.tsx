@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import {
   Plus, Pencil, Trash2, CheckCircle2, AlertTriangle, XCircle,
   Clock, FileText, ChevronDown, ChevronUp, BookOpen, Shield,
-  Download, Upload, Filter, Search, ClipboardCheck,
+  Download, Upload, Filter, Search, ClipboardCheck, Sparkles, MapPin,
 } from "lucide-react";
 import type { IsoComplianceObligation, IsoComplianceEvaluation } from "@shared/schema";
 
@@ -21,15 +21,17 @@ import type { IsoComplianceObligation, IsoComplianceEvaluation } from "@shared/s
 const ASPECT_CATEGORIES = [
   "Material Use/Exposure",
   "Solid & Liquid Waste",
-  "Air Emissions",
-  "Water (Surface & Groundwater)",
-  "Energy",
-  "Land/Soil Contamination",
-  "Noise/Vibration",
-  "Hazardous Materials Transport",
+  "Oil Management & Spillage",
+  "Air Quality",
+  "Water Quality & Spillage Prevention",
   "Stormwater",
   "Chemical Reporting",
   "Emergency Planning",
+  "Hazardous Materials Transport",
+  "Health and Safety Requirements",
+  "Other Applicable Requirements",
+  "Energy",
+  "Land/Soil Contamination",
   "Other",
 ];
 
@@ -242,7 +244,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
   },
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "Clean Air Act — Air Emissions Inventory & Permitting",
     citationSource: "42 U.S.C. Chapter 85; State Air Permit",
     jurisdictionLevel: "F/S",
@@ -255,7 +257,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
   },
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "CFC / Refrigerant Management",
     citationSource: "40 CFR Part 82",
     jurisdictionLevel: "F",
@@ -295,7 +297,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   },
   // ── Air Quality ──────────────────────────────────────────────────────────
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "Clean Air Act — Title V Major Source Operating Permit",
     citationSource: "40 CFR Part 70; Clean Air Act Title V",
     jurisdictionLevel: "F/S",
@@ -308,7 +310,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Threshold check: ≥100 tpy any regulated pollutant; ≥10 tpy single HAP; ≥25 tpy total HAPs. Determine applicability before applying.",
   },
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "NESHAP / MACT Standards — Area/Major Source Categories",
     citationSource: "40 CFR Part 63",
     jurisdictionLevel: "F",
@@ -321,7 +323,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Common manufacturing subparts: Subpart T (halogenated solvents), Subpart KKKKKK (area source metal fabrication), Subpart MMMMMM (area source acrylic/epoxy painting). Identify all applicable subparts.",
   },
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "New Source Performance Standards (NSPS)",
     citationSource: "40 CFR Part 60",
     jurisdictionLevel: "F",
@@ -335,7 +337,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   },
   // ── Water ────────────────────────────────────────────────────────────────
   {
-    aspectCategory: "Wastewater",
+    aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "NPDES — Industrial Process/Contact Wastewater Discharge Permit",
     citationSource: "40 CFR Part 122; Clean Water Act §402",
     jurisdictionLevel: "F/S",
@@ -348,7 +350,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Separate from stormwater NPDES. Applies to any process water, cooling water, or washwater discharged directly to a waterway — not the municipal sewer.",
   },
   {
-    aspectCategory: "Wastewater",
+    aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "Industrial Pretreatment Program — POTW/Sewer Discharge",
     citationSource: "40 CFR Part 403; Clean Water Act §307(b)",
     jurisdictionLevel: "F/S/L",
@@ -374,7 +376,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Triggered when site expansion, new construction, or major grading activities disturb ≥1 acre. Obtain permit coverage before breaking ground.",
   },
   {
-    aspectCategory: "Stormwater",
+    aspectCategory: "Oil Management & Spillage",
     requirementName: "Oil Spill Prevention, Control & Countermeasure (SPCC) Plan",
     citationSource: "40 CFR Part 112; Clean Water Act §311",
     jurisdictionLevel: "F",
@@ -387,7 +389,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Threshold: aggregate aboveground oil storage >1,320 gal total OR any UST >42,000 gal. Includes lube oil, hydraulic fluid, transformer oil, fuel, waste oil. Count all containers ≥55 gal.",
   },
   {
-    aspectCategory: "Stormwater",
+    aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "Clean Water Act §404 — Wetlands Dredge & Fill Permit",
     citationSource: "40 CFR Parts 230–233; CWA §404",
     jurisdictionLevel: "F",
@@ -401,7 +403,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   },
   // ── Petroleum / UST ─────────────────────────────────────────────────────
   {
-    aspectCategory: "Material Use/Exposure",
+    aspectCategory: "Oil Management & Spillage",
     requirementName: "Underground Storage Tanks (UST) — Registration & Management",
     citationSource: "40 CFR Part 280; RCRA Subtitle I",
     jurisdictionLevel: "F/S",
@@ -496,7 +498,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   },
   // ── Greenhouse Gas ───────────────────────────────────────────────────────
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "Greenhouse Gas (GHG) Mandatory Reporting Rule",
     citationSource: "40 CFR Part 98; CAA §114",
     jurisdictionLevel: "F",
@@ -507,6 +509,296 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     permitRequired: false, permitRenewalFrequency: "Annual (by March 31)",
     recordsToMaintain: "GHG calculation methodology, emissions monitoring data, e-GGRT annual report submissions, fuel purchase/consumption records",
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Threshold: ≥25,000 MT CO2e/year. Even facilities below threshold may want to track GHG emissions voluntarily for ESG reporting. Common sources: natural gas combustion, process emissions, refrigerant leaks.",
+  },
+  // ── Mercury / Universal Waste (Specific) ────────────────────────────────
+  {
+    aspectCategory: "Material Use/Exposure",
+    requirementName: "Mercury-Containing Devices — Universal Waste",
+    citationSource: "40 CFR 273.4 / 273.9; RCRA Subtitle C",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Mercury-containing devices (thermostats, switches, relays, thermometers, blood pressure gauges, barometers) are managed as Universal Waste. Small quantity handlers may accumulate up to 11,000 lbs for up to one year before shipping to a TSDF or universal waste handler. All containers must be labeled 'Universal Waste — Mercury-Containing Equipment'.",
+    facilityAction: "Identify all mercury-containing equipment (thermostats, fluorescent lamps, switches). Label containers 'Universal Waste — Mercury-Containing Equipment.' Ship to a certified Universal Waste handler at least annually. Do not dispose of mercury devices in regular trash.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Universal waste shipment records, mercury equipment inventory, hauler certifications",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "State programs may be more stringent. Michigan prohibits disposal of mercury-containing devices in solid waste. Label and track all mercury-containing thermostats and fluorescent lamp ballasts.",
+  },
+  // ── Boiler MACT ──────────────────────────────────────────────────────────
+  {
+    aspectCategory: "Air Quality",
+    requirementName: "Boiler MACT — Industrial, Commercial & Institutional Boilers (Area Source)",
+    citationSource: "40 CFR Part 63 Subpart JJJJJJ",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "NESHAP for industrial, commercial, and institutional boilers at area sources. Applies to boilers that burn solid, liquid, or gaseous fuels. Requirements depend on boiler type and fuel: tune-up schedules (annually or every 2 years), energy assessment every 10 years, and/or emission limits. Applies to natural gas, oil, biomass, and other fuel-fired boilers.",
+    facilityAction: "Identify all boilers and classify by fuel type and heat input capacity. Determine applicable requirements: conduct initial tune-up and ongoing annual or biennial tune-ups. Complete one-time energy assessment within applicable deadline. Submit initial notification to EPA if applicable. Keep records of tune-ups and energy assessments.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual or biennial tune-up per subpart",
+    recordsToMaintain: "Boiler tune-up records, energy assessment reports, initial notifications, annual compliance certifications",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Subpart JJJJJJ covers area source boilers. Major source boilers are covered by Subpart DDDDD. Check boiler nameplate for heat input capacity and fuel type to determine applicable requirements.",
+  },
+  // ── RICE MACT (Emergency Generators / Compressors) ──────────────────────
+  {
+    aspectCategory: "Air Quality",
+    requirementName: "RICE MACT — Stationary Reciprocating Internal Combustion Engines",
+    citationSource: "40 CFR Part 63 Subpart ZZZZ",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "NESHAP for stationary reciprocating internal combustion engines (RICE) including emergency diesel generators, fire pump engines, standby generators, and compressors. Area source engines ≥500 HP must meet emission standards or perform annual maintenance. Emergency engines must use ultra-low sulfur diesel (ULSD) and comply with work practice standards. Engines must not operate as emergency engines for more than 100 hours per year for non-emergency purposes.",
+    facilityAction: "Inventory all stationary RICE (emergency generators, air compressors, pump engines). Classify by size and type. For emergency generators: use ULSD, conduct annual maintenance per manufacturer's schedule, limit non-emergency operation to 100 hours/year. Document all hours of operation, maintenance performed, and fuel type. Submit initial notification to EPA if applicable.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual maintenance and recordkeeping",
+    recordsToMaintain: "Engine inventory, operating hours log, maintenance records, fuel purchase records (ULSD), initial notifications",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Applies to emergency diesel generators, compressors, and standby engines. Track hours to ensure emergency engines do not exceed 100 hours/year for non-emergency testing/operation. Fire pump engines have specific exemptions.",
+  },
+  // ── Health & Safety Requirements (Federal OSHA) ──────────────────────────
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Compressed Gases / Natural Gas — Storage & Handling",
+    citationSource: "29 CFR 1910.101; 29 CFR 1910.110",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Defines inspection, handling, storage, and in-plant utilization requirements for compressed gases (29 CFR 1910.101) and liquefied petroleum gases (29 CFR 1910.110). Requires cylinders to be properly stored, secured to prevent tipping, and segregated by compatibility (e.g., oxidizers from flammables).",
+    facilityAction: "Store compressed gas cylinders secured upright to prevent tipping. Segregate incompatible gases (e.g., oxygen away from flammables). Cap cylinders when not in use. Provide compressed gas training to affected employees (tooling, maintenance, production): New Hire Orientation; refreshers optional annually.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Training records, cylinder inspection logs, storage procedure documentation",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Flammable & Combustible Liquids — Storage & Handling",
+    citationSource: "29 CFR 1910.106",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Defines storage and handling requirements for combustible and flammable liquids, including approved container types, bonding and grounding requirements, ventilation, and quantities stored inside and outside of approved storage cabinets. Applies to paints, solvents, fuels, coolants, and other flammable/combustible products.",
+    facilityAction: "Ensure flammable and combustible liquids are stored and handled in approved containers and cabinets. Bond and ground metal containers during transfer. Maintain ventilation in storage areas. Limit quantities stored inside facilities per OSHA table requirements.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Storage area inspection logs, training records, flammable storage cabinet inventory",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Fixed Fire Suppression Equipment — Inspection & Maintenance",
+    citationSource: "29 CFR 1910.159; 29 CFR 1910.162; 29 CFR 1910.157",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Establishes requirements for the placement, inspection, and maintenance of fixed fire suppression systems (sprinklers, deluge, CO2, dry chemical, Halon). Systems must be inspected by a licensed contractor annually. Records of all inspections, tests, and maintenance must be maintained.",
+    facilityAction: "Ensure all fixed fire suppression systems (sprinkler heads, suppression agents, detection devices) are correctly installed and maintained. Engage a licensed fire protection contractor for annual inspection and testing. Correct any deficiencies promptly.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual inspection",
+    recordsToMaintain: "Annual fire suppression system inspection reports, deficiency correction records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Portable Fire Extinguishers — Monthly Inspection & Annual Service",
+    citationSource: "29 CFR 1910.157",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Requires that portable fire extinguishers be placed throughout the facility, maintained in a fully charged and operable condition, inspected monthly, and serviced annually by a certified contractor. Annual hydrostatic testing is required per manufacturer schedule.",
+    facilityAction: "Inspect portable fire extinguishers monthly (visual inspection — pressure gauge in green, no damage, pin and tamper seal in place). Conduct annual maintenance by a certified fire extinguisher contractor. Record all inspections on the tag attached to each unit.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Monthly visual inspection; Annual professional service",
+    recordsToMaintain: "Monthly inspection tags/records, annual service certifications, hydrostatic test records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Noise Exposure / Hearing Conservation Program",
+    citationSource: "29 CFR 1910.95",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Requires hearing protection and a hearing conservation program at noise levels above the permissible exposure limit (PEL: 90 dBA 8-hr TWA) and mandatory program implementation at the action level (85 dBA 8-hr TWA). Program includes noise monitoring, audiometric testing, hearing protection, training, and recordkeeping.",
+    facilityAction: "Evaluate noise levels in all work areas. Provide appropriate hearing protection to employees in areas ≥85 dBA. Implement hearing conservation program (baseline and annual audiograms) for affected employees. Provide noise/hearing conservation training: New Hire Orientation; annually.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual audiometric testing; annual training",
+    recordsToMaintain: "Noise monitoring surveys, audiometric test records (2-year retention; 30 years for employees exposed at/above action level), hearing protection issue records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Conduct noise surveys for all manufacturing areas. Use engineering controls first, then administrative, then PPE. Affected employees: maintenance, tooling, operators.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Sanitation — Housekeeping, Water & Waste Disposal",
+    citationSource: "29 CFR 1910.141",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Defines minimum requirements for waste (garbage) disposal, general housekeeping, vermin control, potable water sources, toilet facilities, and sanitary waste disposal. Requires facilities to maintain clean and orderly work areas.",
+    facilityAction: "Maintain all work areas in a clean, orderly condition. Ensure adequate toilet facilities, potable water, and sanitary waste disposal. Conduct regular pest control inspections. Verify compliance with all sanitation requirements applicable to the facility.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Housekeeping inspection logs, pest control records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Process Safety Management (PSM) — Catastrophic Release Prevention",
+    citationSource: "29 CFR 1910.119",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Establishes requirements for preventing or minimizing the consequences of catastrophic releases of toxic, reactive, flammable, or explosive chemicals. Applies to facilities using covered chemicals above threshold quantities (e.g., anhydrous ammonia ≥10,000 lbs, chlorine ≥1,500 lbs, propane ≥10,000 lbs). Requires Process Hazard Analysis (PHA), written procedures, training, pre-startup safety reviews, and emergency response.",
+    facilityAction: "Review chemical inventory for PSM-regulated substances above threshold quantities. If applicable, develop written process safety information, conduct Process Hazard Analysis (PHA/HAZOP), implement written procedures, train operators, and establish pre-startup safety review program. If not applicable, document the basis for the exemption.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "PHA every 5 years; ongoing",
+    recordsToMaintain: "PSM applicability determination, process safety information, PHA records, training records, incident investigation reports",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Common exemption: 29 CFR 1910.119(a)(1)(ii)(B) — atmospheric storage of flammable liquids below threshold. Confirm PSM status annually when chemical inventory changes.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Bloodborne Pathogens — Exposure Control",
+    citationSource: "29 CFR 1910.1030",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Establishes requirements to protect employees from occupational exposure to blood or other potentially infectious materials (OPIM). Requires a written Exposure Control Plan, use of Universal Precautions, engineering controls, PPE, training, and post-exposure evaluation.",
+    facilityAction: "Maintain a written Bloodborne Pathogen Exposure Control Plan. Provide BBP training to all employees at initial hire and annually. Provide first aid supplies and PPE (gloves, face shields) to first responders. Ensure first aid/CPR trained responders are available on all shifts.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual training",
+    recordsToMaintain: "Exposure Control Plan, training records (New Hire Orientation + annual refresher), post-exposure records (30-year retention)",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Provide First Aid Responder Training (voluntary, various shifts): New Hire Orientation, 2-year refresher. All employees need basic BBP awareness training at hire.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Personal Protective Equipment (PPE) — Hazard Assessment & Program",
+    citationSource: "29 CFR 1910.132",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "PPE for eyes, face, head, extremities, respiratory, and body protection shall be provided, used, and maintained wherever it is necessary due to chemical, radiological, or mechanical hazards. Employers must conduct and certify a written hazard assessment to determine required PPE for each task/work area.",
+    facilityAction: "Conduct and certify a written PPE hazard assessment for all work areas and job tasks. Identify required PPE for each task. Provide required PPE at no cost to employees. Provide PPE training: initial on-the-job training, refresher as required based on work changes. Maintain signed and dated hazard assessments.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "As work conditions change",
+    recordsToMaintain: "Written PPE hazard assessments (signed and dated), training records, PPE issuance records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Lockout/Tagout (LOTO) — Control of Hazardous Energy",
+    citationSource: "29 CFR 1910.147",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "A required written program covering the control of hazardous energy (electrical, hydraulic, pneumatic, gravitational, thermal, chemical) during servicing or maintenance of machinery to prevent unexpected energization or startup. Requires machine-specific written procedures, authorized and affected employee training, and annual periodic inspections.",
+    facilityAction: "Develop written LOTO program and machine-specific energy control procedures. Provide LOTO training: New Hire Orientation (all employees as 'affected'), specific equipment training (maintenance/tooling as 'authorized'), annually for authorized employees if equipment changes. Conduct annual periodic LOTO inspections for each energy control procedure.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual periodic inspection of each procedure; annual authorized employee training",
+    recordsToMaintain: "Written LOTO program, machine-specific energy control procedures, annual inspection records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Annual periodic inspection must be documented and must certify that the energy control procedure is adequate and employees know how to use it.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Confined Space Entry — Permit-Required Program",
+    citationSource: "29 CFR 1910.146",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Confined spaces shall be identified. If a confined space poses a hazard (atmospheric, engulfment, entrapment, or other serious hazard), it is designated as a permit-required confined space. A written confined space program, entry permits, and trained entrants, attendants, and supervisors are required.",
+    facilityAction: "Identify and evaluate all confined spaces at the facility. Post 'Permit-Required Confined Space' signs at identified PRCS. Develop written confined space entry program. Provide confined space training to affected personnel (maintenance): awareness at New Hire Orientation, PRCS-specific entry training for authorized entrants and attendants, update when procedures or hazards change.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual program review; entry-specific permits",
+    recordsToMaintain: "Confined space inventory, written PRCS program, entry permits (retain for 1 year), training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Common PRCSs in manufacturing: pits, tanks, vaults, tunnels, hoppers. Any space large enough to enter bodily, with limited means of egress, and not designed for continuous occupancy must be evaluated.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Emergency Action Plan (EAP)",
+    citationSource: "29 CFR 1910.38",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "An Emergency Action Plan is required to provide direction during emergencies (fire, chemical spill, medical emergency, severe weather, active threat). The EAP must cover emergency escape routes, procedures, employee accountability, rescue duties, and alarm systems. Must be communicated to all employees.",
+    facilityAction: "Develop and maintain a written Emergency Action Plan. Provide general awareness training to all employees (New Hire Orientation). Conduct evacuation drills annually. Train emergency responders (leads and managers): annually, emergency drills annually. Post emergency egress maps at all exits.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual review; annual drill",
+    recordsToMaintain: "Written EAP, drill records, training records, emergency contact list, posted evacuation maps",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "OSHA 300 Log — Occupational Illness & Injury Recordkeeping",
+    citationSource: "29 CFR 1904",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "OSHA recordkeeping requires all recordable work-related injury, illness, or death to be recorded on the OSHA 300 Log, 300A Summary, and 301 Incident Report. The 300A Summary must be posted from February 1 to April 30 annually. Establishments with ≥20 employees in high-hazard industries must submit 300A data electronically via the Injury Tracking Application (ITA).",
+    facilityAction: "Record all OSHA recordable injuries and illnesses on Form 300. Complete Form 301 within 7 calendar days of each recordable incident. Post OSHA 300A Summary from February 1 to April 30. Submit 300A data electronically via OSHA ITA portal if applicable. Fatalities must be reported to OSHA within 8 hours; in-patient hospitalizations, amputations, and eye losses within 24 hours.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual (maintain 5 years of records)",
+    recordsToMaintain: "OSHA 300 Log, 300A Summary, 301 Incident Reports (5-year retention), ITA submission confirmations",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Severe injury reporting: fatality — report to OSHA within 8 hours. In-patient hospitalization, amputation, or eye loss — report within 24 hours. Use 1-800-321-OSHA or nearest OSHA office.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Welding, Cutting & Brazing — Fire Protection & Ventilation",
+    citationSource: "29 CFR 1910.251–1910.255",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Welding operations shall provide for fire protection, personnel protection, and ventilation. Filter lenses must meet transmission standards for radiant energy. Requirements for welding in confined spaces, near combustibles, and fume/smoke control must be addressed.",
+    facilityAction: "Control fumes/smoke in welding areas (local exhaust ventilation or dilution ventilation). Ensure filter lenses meet 29 CFR 1910.133(b)(1) standards. Provide welding PPE (gloves, face shield, appropriate clothing). Provide welding safety training to affected employees (tooling, maintenance, production): initial training, refresher as needed.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Training records, ventilation assessments, PPE inspection logs",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Powered Industrial Trucks (Fork Trucks) — Training & Inspection",
+    citationSource: "29 CFR 1910.178",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Powered industrial trucks (forklifts, order pickers, reach trucks) must be inspected before each shift, maintained per manufacturer's schedule, and operated only by trained and evaluated operators. Operator training and evaluation is required before initial use and every 3 years thereafter, or when unsafe operation is observed or a near-miss/accident occurs.",
+    facilityAction: "Conduct pre-shift inspection of all fork trucks (complete daily checklist). Remove defective trucks from service. Provide fork truck operator training: initial on-the-job training plus classroom, evaluation by a qualified trainer. Re-evaluate every 3 years. Maintain operator certification records.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Every 3 years (operator training/evaluation)",
+    recordsToMaintain: "Operator training and certification records, pre-shift inspection checklists, maintenance records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Crane & Sling Safety — Inspection & Operator Training",
+    citationSource: "29 CFR 1910.179; 29 CFR 1910.180; 29 CFR 1910.184",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Provides for the proper use, maintenance, inspection, and operator training for overhead cranes, mobile cranes, and slings. Cranes must be inspected before initial use, at each shift, and at monthly/annual intervals per regulatory and manufacturer requirements. All slings must be inspected before each use and removed from service if damaged.",
+    facilityAction: "Conduct daily pre-shift inspections of all overhead cranes. Remove defective equipment from service. Provide crane and sling safety training to affected employees (tooling, maintenance): initial on-the-job training, 3-year refresher. Conduct formal periodic inspections per 29 CFR 1910.179 and document results.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual formal inspection; monthly inspection",
+    recordsToMaintain: "Daily pre-shift inspection records, annual/monthly inspection reports, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Manlift / Aerial Work Platform — Inspection & Training",
+    citationSource: "29 CFR 1910.68",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Manlift equipment must be maintained, inspected, and operated according to safe work practices. Operators must be trained and authorized before use. Equipment must be inspected before each use and at formal periodic intervals.",
+    facilityAction: "Inspect aerial work platforms and manlifts before each use. Provide manlift/aerial platform training to authorized operators (maintenance): initial on-the-job training, 3-year refresher or when equipment changes. Keep training records.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Every 3 years (operator training)",
+    recordsToMaintain: "Operator training and authorization records, pre-use inspection logs, periodic maintenance records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Hazard Communication (HazCom) — GHS/SDS Program",
+    citationSource: "29 CFR 1910.1200",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Requires facilities to maintain Safety Data Sheets (SDS/MSDS) for every hazardous chemical used on site and ensure all employees have access. Labels on chemical containers must meet GHS (Globally Harmonized System) requirements. Facilities must have a written Hazard Communication Program, and must inform contractors of chemical hazards before they begin work.",
+    facilityAction: "Maintain SDS/MSDS for all hazardous chemicals. Ensure SDS are current when new chemicals are received. Provide HazCom training to all affected employees: New Hire Orientation, refresher required when new physical or health hazards are introduced. Provide Contractor Safety Training (Purchasing, Maintenance, Management): annually and with initial work authorization. Include PO attachments and letters to contractors regarding on-site chemical hazards.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual review; update when new chemicals added",
+    recordsToMaintain: "SDS file/electronic system, written HazCom program, training records, contractor communication records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Ensure SDS are accessible to all employees at all times, including during all work shifts. Electronic SDS systems must be accessible in the event of power failure (backup required).",
+  },
+  {
+    aspectCategory: "Hazardous Materials Transport",
+    requirementName: "Hazardous Materials Transportation Act (HMTA) — Shipping Requirements",
+    citationSource: "49 CFR 171; 49 CFR 172",
+    jurisdictionLevel: "F",
+    state: null, county: null,
+    descriptionOfRequirement: "Establishes requirements for offering hazardous materials for transportation, including proper shipping names, hazard classes, packing groups, labeling, marking, placarding, and shipping paper preparation. PHMSA aligns HazMat regulations with international standards (IATA, IMDG, ADR). Lithium battery shipping rules updated frequently.",
+    facilityAction: "Ensure compliance with DOT HazMat requirements for shipping hazardous materials. Personnel who prepare shipping papers, labels, or load/unload hazardous materials must be trained under DOT HM126F regulations every 3 years. Maintain training certificates. Verify proper shipping names, UN numbers, and packaging for all hazmat shipments.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Every 3 years (HazMat employee training)",
+    recordsToMaintain: "HazMat employee training certifications, shipping papers, packaging certifications, incident reports",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Track lithium battery shipping rule changes (frequent updates). Ensure personnel signing shipping papers are HM126F trained. Check for current exemptions and special provisions for facility-specific materials.",
   },
 ];
 
@@ -551,7 +843,7 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
   },
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "Michigan Air Emissions Permitting — Rule 336",
     citationSource: "MI Rule R 336.1942; Michigan Air Pollution Control Rules",
     jurisdictionLevel: "S",
@@ -603,20 +895,20 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
   },
   {
-    aspectCategory: "Emergency Planning",
+    aspectCategory: "Oil Management & Spillage",
     requirementName: "Michigan Pollution Incident Prevention Plan (PIPP) — Part 5",
     citationSource: "MI NREPA Part 5, Act 451 (1994); MI Rule R 324.2001 et seq.",
     jurisdictionLevel: "S",
     state: "Michigan", county: null,
-    descriptionOfRequirement: "Michigan Part 5 (Water Resources Protection) requires facilities that store or handle 'polluting materials' (petroleum products, hazardous substances) above applicable thresholds to prepare a written Pollution Incident Prevention Plan (PIPP). The PIPP must describe the facility, storage areas, spill prevention measures, emergency notification procedures, and spill response procedures. The PIPP must be updated when facility conditions change and must be available on-site for EGLE inspection.",
-    facilityAction: "Determine if petroleum or hazardous substance storage exceeds Part 5 thresholds. If yes, prepare a written PIPP covering: facility description, storage descriptions (locations, quantities, container types), spill prevention measures (secondary containment, inspections), emergency notification contacts (EGLE EMHSD hotline 800-292-4706), spill response procedures, and cleanup responsibilities. Review and update PIPP annually or when facility conditions change. Train employees on the PIPP. Keep PIPP on-site and available for EGLE inspection.",
+    descriptionOfRequirement: "Michigan Part 5 (Water Resources Protection) requires facilities that store or handle 'polluting materials' (petroleum products, hazardous substances) above applicable thresholds to prepare a written Pollution Incident Prevention Plan (PIPP). The PIPP is integrated into the SPCC Plan and must describe the facility, storage areas, spill prevention measures, emergency notification procedures, and spill response procedures. The PIPP must be updated at least every 3 years or when facility conditions change and must be available on-site for EGLE inspection.",
+    facilityAction: "Determine if petroleum or hazardous substance storage exceeds Part 5 thresholds. If yes, prepare a written PIPP covering: facility description, storage descriptions (locations, quantities, container types), spill prevention measures (secondary containment, inspections), emergency notification contacts (EGLE EMHSD hotline 800-292-4706), spill response procedures, and cleanup responsibilities. Review and update PIPP at minimum every 3 years or when facility conditions change. Train employees on the PIPP. Keep PIPP on-site and available for EGLE inspection.",
     complianceStatus: "compliant",
-    permitRequired: false, permitRenewalFrequency: "Annual review; update upon facility changes",
+    permitRequired: false, permitRenewalFrequency: "Every 3 years (minimum); update within 60 days of facility changes",
     recordsToMaintain: "Written PIPP document, employee training records on PIPP, annual review records, spill notifications to EGLE, spill incident records",
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Michigan PIPP is the state equivalent of the federal SPCC plan but may apply at lower thresholds and to a broader range of polluting materials. EGLE EMHSD spill hotline: 800-292-4706 (24-hour). Any spill that reaches or threatens waters of the state must be reported immediately.",
   },
   {
-    aspectCategory: "Stormwater",
+    aspectCategory: "Oil Management & Spillage",
     requirementName: "Michigan SPCC — Aboveground Petroleum Storage Secondary Containment",
     citationSource: "MI NREPA Part 5 (Act 451); 40 CFR Part 112",
     jurisdictionLevel: "F/S",
@@ -629,7 +921,7 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "EGLE hotline: 800-292-4706 (24-hour). Michigan's spill reporting threshold is lower than federal RQ — report any quantity that reaches or threatens waters of the state.",
   },
   {
-    aspectCategory: "Material Use/Exposure",
+    aspectCategory: "Oil Management & Spillage",
     requirementName: "Michigan Underground Storage Tanks (UST) — Part 211",
     citationSource: "MI NREPA Part 211, Act 451 (1994); MI Rule R 299.5101 et seq.",
     jurisdictionLevel: "S",
@@ -642,7 +934,7 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Michigan UST registration fees are assessed annually. EGLE performs compliance inspections. Any confirmed release must be reported and triggers corrective action under Part 213.",
   },
   {
-    aspectCategory: "Wastewater",
+    aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "Michigan NPDES Industrial Process Wastewater Permit",
     citationSource: "MI NREPA Part 31, Act 451; MI Rule R 323.2101 et seq.; EGLE NPDES",
     jurisdictionLevel: "S",
@@ -655,7 +947,7 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Includes cooling tower blowdown, boiler blowdown, and equipment wash water discharged to drains. Verify whether floor drains connect to a POTW (pretreatment) or surface water (NPDES).",
   },
   {
-    aspectCategory: "Material Use/Exposure",
+    aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "Michigan Wetlands — Part 303 Permit",
     citationSource: "MI NREPA Part 303, Act 451 (1994)",
     jurisdictionLevel: "S",
@@ -668,7 +960,7 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Michigan protects all wetlands ≥5 acres and wetlands <5 acres contiguous to lakes/streams, or if regulated by local ordinance. Consult EGLE early for any development near wetlands.",
   },
   {
-    aspectCategory: "Material Use/Exposure",
+    aspectCategory: "Land/Soil Contamination",
     requirementName: "Michigan Contaminated Site — Part 201 Baseline Environmental Assessment (BEA)",
     citationSource: "MI NREPA Part 201, Act 451 (1994)",
     jurisdictionLevel: "S",
@@ -680,11 +972,314 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     recordsToMaintain: "Phase I/II ESA reports, BEA filing confirmation, due care plan, EGLE correspondence, contamination monitoring records",
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Michigan's 'due care' obligations require current owners/operators to prevent unacceptable exposure pathways even if they didn't cause contamination. Review site history for prior industrial uses.",
   },
+  // ── Michigan Waste (Additional) ──────────────────────────────────────────
+  {
+    aspectCategory: "Solid & Liquid Waste",
+    requirementName: "Michigan Liquid Industrial Waste — Part 121",
+    citationSource: "MI NREPA Part 121, Act 451 (1994); MI Rule R 299.4101 et seq.",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan Part 121 governs the management and disposal of liquid industrial waste (LIW) — non-hazardous liquid waste generated by industrial, commercial, or governmental operations. LIW must be collected, transported, and disposed of by a licensed liquid waste hauler to a permitted facility. Manifests (Bills of Lading) are required for each shipment.",
+    facilityAction: "Identify all non-hazardous liquid waste streams (coolants, water-based process wastes, oil-water separator sludge, etc.). Use only EGLE-licensed liquid industrial waste haulers. Obtain and retain Bills of Lading/manifests for each LIW shipment. Do not discharge LIW to storm sewers, floor drains, or ground.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Bills of Lading / LIW manifests (3-year retention), hauler license verification, waste characterization documentation",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Applies to coolants, cutting fluids, water-based process wastes, and oil-water separator sludge that do not meet the definition of hazardous waste. Verify hauler EGLE license before scheduling pickups.",
+  },
+  {
+    aspectCategory: "Solid & Liquid Waste",
+    requirementName: "Medical / Biological Waste — Michigan Public Health Code PA 368",
+    citationSource: "Michigan Public Health Code, PA 368 (1978), as amended; Part 138",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan Public Health Code Part 138 regulates the management, storage, transport, and disposal of medical (biological) waste generated by healthcare providers, laboratories, research facilities, and any facility generating regulated medical waste (sharps, cultures, pathological waste, blood). Requires on-site containers, labeling, manifest tracking, and disposal at permitted facilities.",
+    facilityAction: "If facility generates any medical or biological waste (first aid sharps, contaminated dressings, culture media), designate a medical waste container (red bag or sharps container). Use only a licensed medical waste transporter for disposal. Maintain manifests for all medical waste shipments.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Medical waste manifests, transporter license verification, waste generation records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Applies when facility first aid kits or on-site clinic generate regulated medical waste (sharps, contaminated materials). Use labeled sharps containers and red bags. Never mix medical waste with regular trash.",
+  },
+  {
+    aspectCategory: "Solid & Liquid Waste",
+    requirementName: "Michigan Hazardous Waste ID — CESQG Rules (Part 2, MAC R 299.9201)",
+    citationSource: "Michigan Administrative Code R 299.9201–R 299.9230; MI NREPA Part 111",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "MAC R 299.9201–30 establishes Michigan's hazardous waste identification rules for Conditionally Exempt Small Quantity Generators (CESQGs — now VSQGs under federal rules). Michigan CESQG/VSQG facilities generate ≤100 kg hazardous waste per month and have specific storage and disposal options. Michigan rules may be more stringent than federal VSQG provisions.",
+    facilityAction: "Determine monthly hazardous waste generation quantity. If ≤100 kg/month, classify as CESQG/VSQG under Michigan rules. Ensure waste is managed per applicable options (co-disposal with solid waste, beneficial reuse, or hazardous waste disposal). Document generator status and waste determinations.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Generator status determination, monthly waste quantity records, waste disposal documentation",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Monitor monthly HW generation to track generator status (VSQG <100 kg/mo, SQG 100–999 kg/mo, LQG ≥1,000 kg/mo). Status can change monthly — track carefully.",
+  },
+  // ── Michigan Air Quality (Additional) ────────────────────────────────────
+  {
+    aspectCategory: "Air Quality",
+    requirementName: "Michigan Air Permit-to-Operate — Rule 336.1201 (Painting/Coating Operations)",
+    citationSource: "MI Air Pollution Control Rules, Rule 336.1201; MI NREPA Part 55",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan Air Pollution Control Rule 336.1201 requires a Permit to Install (PTI) and/or Renewable Operating Permit (ROP) for stationary sources of air pollution, including painting and coating operations. Applies to spray painting, powder coating, and other surface coating operations that emit VOCs, HAPs, or PM above applicable thresholds. Permit specifies emission limits, record-keeping, and operational conditions.",
+    facilityAction: "Determine if painting, coating, or other processes require a Michigan PTI or ROP under Rule 336.1201. If yes, obtain permit before installation/modification. Monitor emissions from painting operations (spray paint, powder coat, body filler). Comply with all permit conditions. Keep daily/monthly usage logs for coatings and solvents.",
+    complianceStatus: "compliant",
+    permitRequired: true, permitRenewalFrequency: "Annual ROP renewal; PTI per installation",
+    recordsToMaintain: "Michigan PTI and/or ROP, coating and solvent usage logs, VOC content records, monitoring data, permit fee payment records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Track daily and monthly VOC usage from all paint booths. If cumulative VOC emissions approach permit limits, reduce usage or modify permit. ROP may require quarterly compliance certifications.",
+  },
+  {
+    aspectCategory: "Air Quality",
+    requirementName: "Michigan MDEQ Permit Exemptions — Rule 336.1278a / Rules 280–290",
+    citationSource: "MI Air Pollution Control Rules R 336.1278a; Rules 280–290 (Exemptions from PTI requirement)",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan Air Pollution Control Rules 280–290 define exemptions from the Permit to Install (PTI) requirement for certain equipment and processes. Rule 336.1278a (Scope of Permit Exemptions) clarifies which emission sources may qualify for an exemption and the conditions that must be met. Exemptions are available for small engines, small boilers, non-production laboratory equipment, and certain surface coating operations below specified thresholds.",
+    facilityAction: "Review all emission sources against Rules 280–290 exemption criteria to determine which sources qualify for a PTI exemption. Document the basis for each exemption claim. Do not assume exemption applies without verification — thresholds are source-specific and may change if production increases.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual review of exempt status",
+    recordsToMaintain: "Exemption determination documentation, equipment list, emission calculations supporting exemption claims",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Re-evaluate exemption status when adding or modifying equipment. If production increases cause emissions to exceed exemption thresholds, a PTI must be obtained before continued operation.",
+  },
+  {
+    aspectCategory: "Air Quality",
+    requirementName: "Boiler MACT — Michigan EGLE Implementation (Subpart JJJJJJ)",
+    citationSource: "40 CFR Part 63 Subpart JJJJJJ; Michigan EGLE Air Quality Division",
+    jurisdictionLevel: "F/S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan EGLE administers the federal Boiler MACT (40 CFR Part 63 Subpart JJJJJJ) for area source industrial boilers. Michigan incorporates federal tune-up requirements and energy assessment obligations into state air operating permit conditions. Michigan-specific reporting may be required via EGLE's reporting systems.",
+    facilityAction: "Ensure all boilers meet federal Subpart JJJJJJ tune-up requirements (annually for oil-fired; every 2 years for gas-fired). Complete one-time energy assessment within applicable deadline. Submit required notifications to EGLE. Incorporate boiler MACT compliance into ROP permit conditions review.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual or biennial tune-up",
+    recordsToMaintain: "Boiler tune-up records, energy assessment report, EGLE notifications, ROP compliance documentation",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Air Quality",
+    requirementName: "RICE MACT — Michigan EGLE Implementation (Subpart ZZZZ)",
+    citationSource: "40 CFR Part 63 Subpart ZZZZ; Michigan EGLE Air Quality Division",
+    jurisdictionLevel: "F/S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan EGLE administers the federal RICE MACT (40 CFR Part 63 Subpart ZZZZ) for stationary reciprocating internal combustion engines including emergency diesel generators and fire pump engines. Michigan permits may incorporate RICE MACT requirements as permit conditions. Ultra-low sulfur diesel (ULSD) is required for all emergency diesel engines.",
+    facilityAction: "Ensure emergency generators and other RICE comply with Subpart ZZZZ requirements: use ULSD, conduct annual maintenance per manufacturer schedule, limit non-emergency operation to 100 hours/year. Include RICE MACT compliance requirements in Michigan ROP permit review. Document all hours of operation.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual maintenance",
+    recordsToMaintain: "Engine operating hours log, maintenance records, fuel purchase records (ULSD), EGLE notifications",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  // ── Michigan Water / SWPPP (Detailed) ────────────────────────────────────
+  {
+    aspectCategory: "Water Quality & Spillage Prevention",
+    requirementName: "Michigan NPDES Stormwater Permit (SWPPP) — EGLE Part 31",
+    citationSource: "MI NREPA Part 31, Act 451; MI Rule R 323.2190 et seq.; EGLE Industrial Stormwater Permit",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan EGLE administers the NPDES industrial stormwater general permit for facilities discharging stormwater associated with industrial activity. Facilities must develop and implement a Stormwater Pollution Prevention Plan (SWPPP), employ a certified stormwater operator, and conduct routine inspections. Stormwater discharges from areas of industrial activity are regulated. Annual permit fees apply. Effective for Michigan facilities with industrial stormwater permit coverage.",
+    facilityAction: "Obtain NPDES industrial stormwater permit coverage from EGLE. Develop and maintain a current SWPPP. Ensure the facility has at least one certified stormwater operator on staff. Pay annual permit fees (two permits typically apply). Provide SWPPP training to all employees (New Hire Orientation; 2–3 year refresher). Conduct monthly visual stormwater inspections. Perform quarterly stormwater inspections by the certified stormwater operator. Complete the annual stormwater report and submit to EGLE by January 10th each year.",
+    complianceStatus: "compliant",
+    permitRequired: true, permitRenewalFrequency: "Annual permit fee; annual report by January 10",
+    recordsToMaintain: "NPDES stormwater permit, SWPPP document, certified operator credentials, monthly inspection records, quarterly inspection records by certified operator, annual stormwater report, permit fee payment records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Michigan-specific requirement: annual stormwater report must be submitted to EGLE by January 10. Visual stormwater assessments from areas of industrial activity is a new permit requirement for Michigan industrial stormwater permit holders. Ensure SWPPP is updated when facility changes occur.",
+  },
+  {
+    aspectCategory: "Water Quality & Spillage Prevention",
+    requirementName: "Michigan Annual Wastewater Report (AWR) — EGLE Part 31",
+    citationSource: "MI NREPA Part 31; MI Rule R 299.9001–299.9008; EGLE Environmental Assistance Division",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan facilities with NPDES process wastewater discharge permits must submit an Annual Wastewater Report (AWR) to the EGLE Environmental Assistance Division. The AWR may be a standard or abbreviated format depending on facility size and complexity. Report must be submitted by August 1st of each year for the prior calendar year.",
+    facilityAction: "Prepare the Michigan Annual Wastewater Report (standard or abbreviated format as applicable). Submit AWR to: EGLE Environmental Assistance Division, P.O. Box 30457, Lansing, MI 48909-7959 (or submit electronically if EGLE portal is available) by August 1st of every year. Retain copies of all submitted AWRs.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual (by August 1)",
+    recordsToMaintain: "Annual Wastewater Reports (AWR), submission confirmation, wastewater monitoring data used in AWR preparation",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Annual Wastewater Report deadline is August 1st each year. Contact EGLE Environmental Assistance Division for current AWR form and submission instructions. AWR requirement applies to facilities with NPDES process wastewater permit coverage.",
+  },
+  // ── MIOSHA (Michigan-Specific H&S) ───────────────────────────────────────
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Flammable & Combustible Liquids (Part 75)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 75; MI Act 207 — Storage and Handling of Flammable and Combustible Liquids",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Establishes Michigan-specific requirements for the storage of flammable and combustible liquids for newly constructed ASTs. Defines storage and handling requirements for drums and other containers that do not exceed 60 gallons individual capacity and portable tanks that do not exceed 660 gallons individual capacity. Michigan rules may differ from federal OSHA 29 CFR 1910.106.",
+    facilityAction: "Ensure methanol tanks, solvent drums, and other flammable/combustible liquid containers comply with MIOSHA Part 75 standards. Conduct periodic inspections of storage areas. Train affected employees on proper handling procedures.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Storage inspection logs, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Michigan-specific standard. Note differences from federal OSHA requirements, particularly for AST construction standards.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Portable Fire Extinguishers (Part 8)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 8: Fire Extinguisher",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 8 establishes requirements for portable fire extinguishers, incorporating and supplementing federal OSHA requirements. Monthly visual inspection, annual maintenance, and hydrostatic testing per applicable schedule are required.",
+    facilityAction: "Inspect fire extinguishers at least monthly. Conduct annual maintenance by a certified contractor. Follow hydrostatic testing schedule. Document all inspections on the extinguisher tag.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Monthly inspection; annual service",
+    recordsToMaintain: "Monthly inspection tags, annual service certifications",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Fixed Fire Suppression Equipment (Part 9)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 9: Fixed Fire Equipment",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 9 establishes requirements for fixed fire suppression equipment, incorporating and supplementing federal OSHA requirements. Annual inspection and testing by licensed contractor required.",
+    facilityAction: "Ensure all fixed fire suppression systems are inspected annually by a licensed fire protection contractor. Correct deficiencies promptly. Document all inspections.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual inspection",
+    recordsToMaintain: "Annual fire suppression inspection reports",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Occupational Noise Exposure (Part 380)",
+    citationSource: "MIOSHA General Industry Occupational Health Standards Part 380: Occupational Noise Exposure",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Establishes Michigan standards for nuisance noise which may be generated from facility operation. Michigan Part 380 may be more stringent than federal OSHA 29 CFR 1910.95 for certain noise exposure scenarios.",
+    facilityAction: "Conduct noise monitoring in all manufacturing areas. Evaluate against both federal (29 CFR 1910.95) and MIOSHA Part 380 limits. Provide appropriate hearing protection to all affected employees. Conduct audiometric testing for employees exposed at/above action level. Provide training at New Hire Orientation and annually.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual audiometric testing",
+    recordsToMaintain: "Noise monitoring surveys, audiometric test records, training records, hearing protection issuance records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Testing required for: maintenance, tooling, operators, and select others. New Hire Orientation baseline audiogram; annual thereafter for affected employees.",
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Sanitation (Part 474)",
+    citationSource: "MIOSHA General Industry Occupational Health Standards Part 474: Sanitation",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 474 establishes sanitation requirements for industrial facilities, supplementing federal OSHA 29 CFR 1910.141.",
+    facilityAction: "Maintain all work areas, restrooms, and break areas in a clean and sanitary condition. Ensure adequate toilet facilities and potable water. Conduct regular housekeeping inspections.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Housekeeping inspection records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Process Safety Management (Part 91)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 91: Process Safety Management",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 91 mirrors federal 29 CFR 1910.119 PSM requirements for facilities handling covered chemicals above threshold quantities.",
+    facilityAction: "Review chemical inventory for MIOSHA PSM-covered substances. If applicable, develop process safety information, PHA, written procedures, and operator training. If not applicable, document the exemption basis (e.g., atmospheric storage exemption).",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "PHA every 5 years",
+    recordsToMaintain: "PSM applicability determination, process safety information, PHA records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Hazard Communication / Right to Know (Parts 92, 430)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 92 / Part 430: HazCom/Right to Know/Retention of DOT Markings",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Parts 92 and 430 establish hazard communication (Right to Know) and label retention requirements for industrial facilities. Facilities must develop a method for labeling hazardous chemicals and inform contractors of chemical hazards. Michigan requirements may supplement federal HazCom standards.",
+    facilityAction: "Maintain a written HazCom program and current SDS for all hazardous chemicals. Ensure GHS-compliant labels on all chemical containers. Retain original DOT markings, placards, and labels on containers. Provide HazCom training at New Hire Orientation; refresher when new chemical hazards are introduced.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual review",
+    recordsToMaintain: "Written HazCom program, SDS file, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Bloodborne Infectious Diseases (Part 554)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 554: Bloodborne Infectious Diseases",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 554 establishes requirements for protecting employees from occupational exposure to bloodborne pathogens, mirroring federal 29 CFR 1910.1030 with Michigan-specific provisions.",
+    facilityAction: "Maintain written Bloodborne Pathogen Exposure Control Plan. Provide BBP training at New Hire Orientation and annually. Provide first aid responder training (voluntary, various shifts): New Hire Orientation, 2-year refresher.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual training",
+    recordsToMaintain: "Exposure Control Plan, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Personal Protective Equipment (Parts 33 & 433)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 33 / Part 433: Personal Protective Equipment",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Parts 33 and 433 establish PPE requirements for general industry and specific processes. Differences from OSHA are noted and Michigan requirements may be more specific for certain hazards.",
+    facilityAction: "Conduct written PPE hazard assessments for all work areas. Provide required PPE at no cost to employees. Provide PPE training: initial on-the-job training, refresher when work conditions change. Complete and retain signed/dated hazard assessments.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Written PPE hazard assessments, training records, PPE issuance logs",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Hydraulic Power Presses (Part 23)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 23: Hydraulic Power Presses",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Requires safe operating procedures, guards, and equipment to protect employees from hazards of hydraulic power press operation. Regular inspections are required.",
+    facilityAction: "Ensure all hydraulic power presses have proper point-of-operation guarding. Conduct regular inspections per Part 23 requirements. Train press operators on safe operating procedures and guarding.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Press inspection records, operator training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Welding and Cutting (Part 12)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 12: Welding and Cutting",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 12 establishes requirements for welding operations including fire protection, personnel protection, and ventilation. Filter lenses must meet the test for transmission of radiant energy prescribed in 29 CFR 1910.133(b)(1).",
+    facilityAction: "Control welding fumes/smoke using local exhaust ventilation or dilution ventilation. Ensure filter lenses meet transmission standards. Provide welding safety PPE. Provide welding safety training to affected employees: initial training at hire, refresher as required.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Training records, ventilation inspection logs",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Crane and Sling Safety (Parts 18, 19, 20, 49)",
+    citationSource: "MIOSHA General Industry Safety Standards Parts 18, 19, 20, 49",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA standards for cranes, hoists, and slings requiring proper use, maintenance, inspection, and operator training.",
+    facilityAction: "Conduct daily pre-shift inspections of all overhead cranes and slings. Provide crane and sling safety training: initial on-the-job training, 3-year refresher. Conduct formal periodic inspections per applicable Part requirements.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual formal inspection; 3-year operator training",
+    recordsToMaintain: "Daily pre-shift inspection records, periodic inspection reports, operator training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Powered Industrial Trucks / Fork Trucks (Part 21)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 21: Powered Industrial Trucks",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 21 establishes requirements for powered industrial trucks, incorporating federal 29 CFR 1910.178 requirements and adding any Michigan-specific provisions. Pre-shift inspections, operator training, and equipment maintenance are required.",
+    facilityAction: "Conduct daily pre-shift inspections of all fork trucks. Remove defective trucks from service immediately. Provide fork truck operator training: initial on-the-job training plus evaluation, re-evaluate every 3 years. Maintain operator certification records.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Every 3 years (operator training)",
+    recordsToMaintain: "Operator training and certification records, pre-shift inspection checklists",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "MIOSHA — Confined Space Entry (Part 90)",
+    citationSource: "MIOSHA General Industry Safety Standards Part 90: Confined Space Entry",
+    jurisdictionLevel: "S",
+    state: "Michigan", county: null,
+    descriptionOfRequirement: "Michigan MIOSHA Part 90 establishes confined space entry requirements, mirroring federal 29 CFR 1910.146 with Michigan-specific provisions. Confined spaces must be identified, evaluated, and permit-required spaces must be controlled with written programs and entry permits.",
+    facilityAction: "Identify all confined spaces in the facility. Designate permit-required confined spaces (PRCS) and post required signage. Develop written confined space entry program. Provide training: general awareness at New Hire Orientation for all employees; PRCS entry training for authorized entrants and attendants (maintenance); update training when procedures or hazards change.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual program review",
+    recordsToMaintain: "Confined space inventory, written PRCS program, entry permits (1-year retention), training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
 ];
 
 const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectId" | "createdAt" | "updatedAt">[] = [
   {
-    aspectCategory: "Air Emissions",
+    aspectCategory: "Air Quality",
     requirementName: "Ohio EPA Air Permit — Emissions Inventory & Permitting",
     citationSource: "Ohio EPA Division of Air Pollution Control; Ohio Administrative Code 3745",
     jurisdictionLevel: "S",
@@ -762,7 +1357,7 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
   },
   {
-    aspectCategory: "Wastewater",
+    aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "Ohio NPDES Industrial Process Wastewater Permit",
     citationSource: "Ohio Revised Code §6111; Ohio Admin. Code 3745-33; Ohio EPA NPDES",
     jurisdictionLevel: "S",
@@ -775,7 +1370,7 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Verify whether floor drains and process water routing discharge to POTW (requires local pretreatment permit) or directly to surface waters (requires NPDES). Both may apply in the same facility.",
   },
   {
-    aspectCategory: "Material Use/Exposure",
+    aspectCategory: "Oil Management & Spillage",
     requirementName: "Ohio Underground Storage Tank (UST) Program",
     citationSource: "Ohio Revised Code §3737.87; Ohio Admin. Code 1301:7-9; Ohio State Fire Marshal",
     jurisdictionLevel: "S",
@@ -788,7 +1383,7 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Ohio BUSTR hotline for releases: (800) 224-2887. Ohio requires annual compliance certification for all registered USTs. Ensure all tanks are registered — unregistered tanks carry significant penalties.",
   },
   {
-    aspectCategory: "Stormwater",
+    aspectCategory: "Oil Management & Spillage",
     requirementName: "Ohio SPCC / Aboveground Petroleum Storage Tank Rules",
     citationSource: "Ohio Revised Code §1509.22; Ohio Admin. Code 1301:7-7 (SFMO); Ohio EPA",
     jurisdictionLevel: "S",
@@ -825,6 +1420,88 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
     permitRequired: false, permitRenewalFrequency: "Annual waste report as required",
     recordsToMaintain: "Ohio EPA registration, hazardous waste manifests, annual waste reports, TSDF records, training records",
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Ohio has some waste codes and requirements that go beyond federal RCRA. Confirm both federal and Ohio-specific requirements with Ohio EPA. Ohio requires annual hazardous waste report in lieu of EPA biennial report.",
+  },
+];
+
+/* ─── Corporate / Customer / Other Applicable Requirements ── */
+const CORPORATE_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectId" | "createdAt" | "updatedAt">[] = [
+  {
+    aspectCategory: "Other Applicable Requirements",
+    requirementName: "Environmental Management System — ISO 14001:2015 Standard",
+    citationSource: "ISO 14001:2015 Standard",
+    jurisdictionLevel: "Voluntary",
+    state: null, county: null,
+    descriptionOfRequirement: "ISO 14001:2015 defines the requirements for an Environmental Management System (EMS). The standard follows the Plan-Do-Check-Act (PDCA) cycle and requires the organization to establish an environmental policy, identify environmental aspects/impacts, evaluate compliance obligations, set objectives and targets, implement operational controls, conduct internal audits, and perform management review. ISO 14001:2015 replaced ISO 14001:2004 with the updated standard effective November 15, 2015.",
+    facilityAction: "Maintain ISO 14001:2015 certification. Provide EMS Awareness Training to all employees at New Hire Orientation and on a 6-month schedule with optional yearly review. Conduct Internal Audits (Internal Auditors): initial training, refresher as required. Conduct Management Review annually. Provide Contractor Safety Training (Purchasing, Maintenance, Management): annually, with initial work authorization.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Annual surveillance audit; 3-year recertification cycle",
+    recordsToMaintain: "ISO 14001 certificate, internal audit records, management review minutes, EMS training records, objective/target tracking records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "ISO 14001:2015 is the current standard version. Organizations accredited to ISO 14001:2004 were required to transition by September 15, 2018. Ensure all EMS documentation references the 2015 version.",
+  },
+  {
+    aspectCategory: "Other Applicable Requirements",
+    requirementName: "Customer OEM — Restricted & Regulated Substances List (IMDS / Chrysler/Stellantis CS-9003)",
+    citationSource: "Chrysler/Stellantis CS-9003; ETI-101 & ETI-102; IMDS (International Material Data System)",
+    jurisdictionLevel: "Corporate",
+    state: null, county: null,
+    descriptionOfRequirement: "Chrysler (now Stellantis) Supplier Requirements CS-9003 and ETI-101/102 define restricted and regulated substances that must not be present in supplied materials and components above specified thresholds. Suppliers must report material composition data through the International Material Data System (IMDS) and maintain compliance with the Substances of Concern list. This includes restrictions on lead, mercury, cadmium, hexavalent chromium, PBBs, PBDEs, and other regulated substances per REACH, RoHS, and Stellantis-specific requirements.",
+    facilityAction: "Ensure all supplied materials and components meet Stellantis CS-9003 substance restrictions. Submit material composition data through IMDS for all applicable components. Monitor updates to the Stellantis restricted substances list. Maintain supplier declarations of conformance for all purchased materials. Update IMDS submissions when materials change.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "As required by customer; update IMDS when material changes occur",
+    recordsToMaintain: "IMDS submissions and acceptance records, Supplier Declarations of Conformance, CS-9003 compliance evidence, material change notifications",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Template entry — update with facility-specific OEM customer requirements. IMDS is the automotive industry's web-based system for material data submission. Ensure all parts are properly submitted and accepted in IMDS before shipment.",
+  },
+  {
+    aspectCategory: "Other Applicable Requirements",
+    requirementName: "Customer OEM — Restricted & Reportable Substances (GM GMW3059)",
+    citationSource: "General Motors Worldwide Engineering Standard GMW3059 — Restricted and Reportable Substances",
+    jurisdictionLevel: "Corporate",
+    state: null, county: null,
+    descriptionOfRequirement: "GM GMW3059 defines General Motors' requirements for restricted and reportable substances in materials supplied to GM. Suppliers must comply with substance restrictions consistent with ELV Directive, RoHS, REACH, and GM-specific additions. Material composition data must be submitted through IMDS or GM's Restricted Substance Management System (RSMS). Suppliers are responsible for ensuring sub-tier suppliers also comply.",
+    facilityAction: "Ensure all materials and components supplied to GM comply with GMW3059 restrictions. Submit material composition data via IMDS. Maintain supplier declarations from sub-tier suppliers. Monitor GMW3059 updates (GM issues revisions periodically). Notify GM of any material changes that affect substance compliance.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Monitor GM updates; update IMDS upon material changes",
+    recordsToMaintain: "IMDS submissions and acceptance records, GMW3059 compliance declarations, sub-tier supplier declarations, material change documentation",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Template entry — applies to GM suppliers only. GMW3059 is updated periodically; subscribe to GM supplier portal notifications for revision updates.",
+  },
+  {
+    aspectCategory: "Other Applicable Requirements",
+    requirementName: "Customer OEM — Recyclability Guidelines (GM GMW3116)",
+    citationSource: "General Motors Worldwide Engineering Standard GMW3116 — Recyclability Guidelines",
+    jurisdictionLevel: "Corporate",
+    state: null, county: null,
+    descriptionOfRequirement: "GM GMW3116 establishes recyclability requirements for materials and components supplied to General Motors in support of GM's vehicle end-of-life recyclability targets (compliance with ELV Directive). Suppliers must demonstrate that materials are recyclable/recoverable per GMW3116 requirements and provide documentation supporting recyclability claims.",
+    facilityAction: "Review materials and components against GM GMW3116 recyclability requirements. Maintain documentation supporting recyclability claims. Submit required recyclability information through GM supplier systems. Update documentation when materials change.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Upon material changes; monitor GM portal for updates",
+    recordsToMaintain: "GMW3116 compliance documentation, material recyclability data, GM supplier portal submissions",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Template entry — applies to GM suppliers only. Coordinate recyclability data submission with engineering team to ensure accuracy of material composition reporting.",
+  },
+  {
+    aspectCategory: "Other Applicable Requirements",
+    requirementName: "Customer OEM — Toyota Supplier Environmental Requirements (TSOP / Chemical Ban List)",
+    citationSource: "Toyota Supplier Requirements; Toyota Substance of Concern List; TSOP (Toyota Supplier Operations)",
+    jurisdictionLevel: "Corporate",
+    state: null, county: null,
+    descriptionOfRequirement: "Toyota supplier requirements include compliance with Toyota's Substance of Concern (SOC) list, which restricts or prohibits certain chemical substances in supplied parts and materials. Suppliers must report material composition via the Toyota-required system (e.g., IMDS) and maintain ISO 14001 certification. Toyota periodically updates its chemical ban list in response to international regulatory changes.",
+    facilityAction: "Ensure all materials supplied to Toyota comply with Toyota's Substance of Concern list and applicable ban list. Submit material composition data through Toyota's designated reporting system (IMDS or JAMA sheet). Maintain and provide proof of ISO 14001 certification to Toyota as required. Monitor Toyota supplier portal for updates to substance restrictions.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Monitor Toyota supplier portal; update upon material changes",
+    recordsToMaintain: "IMDS/JAMA submissions, Toyota SOC compliance evidence, ISO 14001 certificate, material change notifications to Toyota",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Template entry — applies to Toyota suppliers only. Toyota requires ISO 14001 certification as a prerequisite for supplier qualification. Ensure certification is maintained and certificate is submitted to Toyota's supplier management system.",
+  },
+  {
+    aspectCategory: "Other Applicable Requirements",
+    requirementName: "Corporate Environmental Reporting — Update to Corporate Office",
+    citationSource: "Corporate Environmental Policy / Parent Company Requirements",
+    jurisdictionLevel: "Corporate",
+    state: null, county: null,
+    descriptionOfRequirement: "Corporate parent company environmental reporting requirements obligate facility to provide periodic updates on environmental compliance status, incidents, regulatory actions, permit changes, and environmental performance metrics to the Corporate Environmental, Health & Safety (EHS) function. Reporting frequency and content are defined by corporate policy.",
+    facilityAction: "Provide periodic environmental compliance updates to the Corporate EHS/Environmental function as required by corporate policy. Report any regulatory notices of violation, permit exceedances, significant spills, or enforcement actions immediately. Submit annual environmental performance data (waste generation, emissions, energy use, water use) per corporate reporting schedule.",
+    complianceStatus: "compliant",
+    permitRequired: false, permitRenewalFrequency: "Per corporate reporting schedule (typically annual or as incidents occur)",
+    recordsToMaintain: "Corporate reporting submissions, incident notifications to corporate, annual EHS performance data submissions",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Customize this entry to reflect your specific corporate parent company's reporting requirements and schedule. Include corporate contact information and reporting portal access.",
   },
 ];
 
@@ -924,6 +1601,14 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(new Set());
   const [starterSearch, setStarterSearch] = useState("");
 
+  // Ask Corey — Identify Requirements by Jurisdiction
+  const [coreyDialog, setCoreyDialog] = useState(false);
+  const [coreyForm, setCoreyForm] = useState({ state: "", county: "", city: "", industry: "", naicsCode: "", processes: "", facilitySize: "" });
+  const [coreyResponse, setCoreyResponse] = useState("");
+  const [coreyStreaming, setCoreyStreaming] = useState(false);
+  const coreyScrollRef = useRef<HTMLDivElement>(null);
+  const coreyAbortRef = useRef<AbortController | null>(null);
+
   const qs = isoProjectId ? `?isoProjectId=${isoProjectId}` : "";
 
   const { data: obligations = [], isLoading } = useQuery<IsoComplianceObligation[]>({
@@ -1011,7 +1696,58 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
   }), [obligations]);
 
   // All starter items merged
-  const allStarters = [...FEDERAL_STARTER_LIBRARY, ...MICHIGAN_STARTER, ...OHIO_STARTER];
+  const allStarters = [...FEDERAL_STARTER_LIBRARY, ...MICHIGAN_STARTER, ...OHIO_STARTER, ...CORPORATE_STARTER];
+
+  async function askCorey() {
+    if (!coreyForm.state.trim()) {
+      toast({ title: "State required", description: "Please enter your facility's state to get started.", variant: "destructive" });
+      return;
+    }
+    setCoreyResponse("");
+    setCoreyStreaming(true);
+    const abort = new AbortController();
+    coreyAbortRef.current = abort;
+    try {
+      const res = await fetch("/api/iso-compliance-obligations/identify-requirements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(coreyForm),
+        signal: abort.signal,
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            if (parsed.done) { setCoreyStreaming(false); return; }
+            if (parsed.content) {
+              setCoreyResponse(prev => {
+                const next = prev + parsed.content;
+                setTimeout(() => {
+                  if (coreyScrollRef.current) coreyScrollRef.current.scrollTop = coreyScrollRef.current.scrollHeight;
+                }, 0);
+                return next;
+              });
+            }
+          } catch {}
+        }
+      }
+    } catch (e: any) {
+      if (e.name !== "AbortError") toast({ title: "Error", description: "Corey could not generate the analysis. Please try again.", variant: "destructive" });
+    } finally {
+      setCoreyStreaming(false);
+    }
+  }
 
   function openAddObligation() {
     setEditObligation(null);
@@ -1082,7 +1818,10 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             </div>
             <p className="text-xs text-muted-foreground">Legal and other requirements — Federal, State, and Local obligations applicable to your organization's environmental aspects.</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20" onClick={() => { setCoreyResponse(""); setCoreyDialog(true); }} data-testid="button-ask-corey-identify">
+              <Sparkles className="w-3.5 h-3.5" /> Ask Corey to Identify
+            </Button>
             <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setStarterDialog(true)} data-testid="button-load-starter-library">
               <Upload className="w-3.5 h-3.5" /> Load Starter Library
             </Button>
@@ -1744,9 +2483,23 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               <BookOpen className="w-5 h-5 text-accent" /> Load Starter Library
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Select the requirements applicable to your organization. Federal items apply broadly; Michigan and Ohio state entries are pre-loaded for those jurisdictions. All entries are editable after import.
+              Select the requirements applicable to your organization. Federal items apply broadly; Michigan and Ohio state entries are pre-loaded for those jurisdictions. Corporate/Customer items reflect OEM and EMS obligations. All entries are fully editable after import.
             </p>
           </DialogHeader>
+
+          {/* Local Requirements Note */}
+          <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800/40 px-3 py-2.5 flex gap-2 items-start shrink-0 mx-0.5">
+            <span className="text-amber-500 text-sm mt-0.5 shrink-0">⚠</span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">Local Requirements Not Pre-Loaded</p>
+              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+                County, city, and municipal environmental requirements vary significantly by jurisdiction and cannot be pre-populated as fixed starters. Examples include county stormwater programs, local industrial pretreatment permits, and municipal air quality rules. Add local requirements manually using the <strong>+ Add Requirement</strong> button. The Butler County (OH) stormwater entry in the Ohio group is included as a practical example of a local requirement.
+              </p>
+              <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-1 italic">
+                Coming soon: CCHUB Environmental Hub (Env Hub) will automatically push applicable local and regional environmental requirements to your register based on your facility's zip code and industry sector when subscribed.
+              </p>
+            </div>
+          </div>
 
           {/* Toolbar */}
           <div className="flex items-center gap-2 py-2 border-b border-border/40 shrink-0 flex-wrap">
@@ -1773,6 +2526,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               { label: "Federal Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY, offset: 0 },
               { label: "Michigan State Requirements", emoji: "MI", items: MICHIGAN_STARTER, offset: FEDERAL_STARTER_LIBRARY.length },
               { label: "Ohio State Requirements", emoji: "OH", items: OHIO_STARTER, offset: FEDERAL_STARTER_LIBRARY.length + MICHIGAN_STARTER.length },
+              { label: "Corporate, Customer & Other Requirements", emoji: "🏢", items: CORPORATE_STARTER, offset: FEDERAL_STARTER_LIBRARY.length + MICHIGAN_STARTER.length + OHIO_STARTER.length },
             ].map(group => {
               // Enrich each item with its absolute index
               const enriched = group.items.map((item, i) => ({ item, idx: String(group.offset + i) }));
@@ -1890,6 +2644,200 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               <Download className="w-3.5 h-3.5" />
               {bulkCreateMut.isPending ? "Adding…" : `Add ${selectedStarters.size} Requirements`}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Ask Corey — Identify Requirements by Jurisdiction ─── */}
+      <Dialog open={coreyDialog} onOpenChange={open => {
+        if (!open && coreyAbortRef.current) coreyAbortRef.current.abort();
+        setCoreyDialog(open);
+      }}>
+        <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col gap-0 p-0 overflow-hidden">
+          {/* Header */}
+          <div className="px-6 pt-5 pb-4 border-b border-border/50 shrink-0">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-primary">Ask Corey — Identify My Compliance Requirements</h2>
+                <p className="text-[11px] text-muted-foreground">Corey will analyze your facility's jurisdiction and industry to identify applicable Federal, State, and Local environmental and H&S legal requirements for your ISO 14001 §6.1.3 register.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-1 min-h-0 divide-x divide-border/50">
+            {/* ── Left: Input Form ── */}
+            <div className="w-72 shrink-0 flex flex-col p-4 gap-3 overflow-y-auto bg-muted/20">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Facility Location</p>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-accent" /> State <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={coreyForm.state}
+                  onChange={e => setCoreyForm(f => ({ ...f, state: e.target.value }))}
+                  placeholder="e.g. Michigan, Ohio, Texas"
+                  className="h-8 text-xs"
+                  data-testid="input-corey-state"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">County / Parish</Label>
+                <Input
+                  value={coreyForm.county}
+                  onChange={e => setCoreyForm(f => ({ ...f, county: e.target.value }))}
+                  placeholder="e.g. Wayne, Butler, Harris"
+                  className="h-8 text-xs"
+                  data-testid="input-corey-county"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">City / Municipality</Label>
+                <Input
+                  value={coreyForm.city}
+                  onChange={e => setCoreyForm(f => ({ ...f, city: e.target.value }))}
+                  placeholder="e.g. Detroit, Hamilton, Houston"
+                  className="h-8 text-xs"
+                  data-testid="input-corey-city"
+                />
+              </div>
+
+              <div className="border-t border-border/40 pt-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Facility Profile</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Industry Type</Label>
+                <Input
+                  value={coreyForm.industry}
+                  onChange={e => setCoreyForm(f => ({ ...f, industry: e.target.value }))}
+                  placeholder="e.g. Automotive Tier 1, Metal Stamping"
+                  className="h-8 text-xs"
+                  data-testid="input-corey-industry"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">NAICS / SIC Code</Label>
+                <Input
+                  value={coreyForm.naicsCode}
+                  onChange={e => setCoreyForm(f => ({ ...f, naicsCode: e.target.value }))}
+                  placeholder="e.g. NAICS 336370 / SIC 3714"
+                  className="h-8 text-xs"
+                  data-testid="input-corey-naics"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Primary Processes / Operations</Label>
+                <Textarea
+                  value={coreyForm.processes}
+                  onChange={e => setCoreyForm(f => ({ ...f, processes: e.target.value }))}
+                  placeholder="e.g. Welding, painting, metal forming, heat treat, parts washing, diesel generators"
+                  className="text-xs min-h-[72px] resize-none"
+                  data-testid="input-corey-processes"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Facility Size</Label>
+                <Input
+                  value={coreyForm.facilitySize}
+                  onChange={e => setCoreyForm(f => ({ ...f, facilitySize: e.target.value }))}
+                  placeholder="e.g. 120,000 sq ft, 350 employees"
+                  className="h-8 text-xs"
+                  data-testid="input-corey-size"
+                />
+              </div>
+
+              <Button
+                onClick={askCorey}
+                disabled={coreyStreaming || !coreyForm.state.trim()}
+                className="w-full bg-violet-600 hover:bg-violet-700 text-white gap-1.5 mt-1"
+                data-testid="button-corey-analyze"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {coreyStreaming ? "Corey is analyzing…" : coreyResponse ? "Re-Analyze" : "Identify My Requirements"}
+              </Button>
+
+              {coreyStreaming && (
+                <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={() => coreyAbortRef.current?.abort()}>
+                  Stop
+                </Button>
+              )}
+            </div>
+
+            {/* ── Right: Streaming Response ── */}
+            <div className="flex-1 min-w-0 flex flex-col">
+              {!coreyResponse && !coreyStreaming && (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 text-violet-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-primary mb-1">Tell Corey where your facility is located</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
+                      Enter your state (required), county, city, industry type, and key processes — then click <strong>Identify My Requirements</strong>. Corey will generate a categorized analysis of Federal, State, and Local environmental and health &amp; safety obligations for your specific jurisdiction.
+                    </p>
+                  </div>
+                  <div className="rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 p-3 text-left max-w-xs">
+                    <p className="text-[10px] font-semibold text-amber-800 dark:text-amber-300 mb-0.5">Why local requirements matter</p>
+                    <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">County stormwater programs, city pretreatment permits, local air quality rules, and fire codes vary dramatically by jurisdiction — they can't be pre-loaded as fixed starters.</p>
+                  </div>
+                </div>
+              )}
+
+              {(coreyResponse || coreyStreaming) && (
+                <div className="flex-1 min-h-0 flex flex-col">
+                  <div
+                    ref={coreyScrollRef}
+                    className="flex-1 overflow-y-auto p-5 font-[system-ui,sans-serif] text-[13px] leading-relaxed text-foreground"
+                  >
+                    {/* Render markdown-like content with simple formatting */}
+                    {coreyResponse.split("\n").map((line, i) => {
+                      if (line.startsWith("## ")) {
+                        return <h3 key={i} className="text-sm font-black text-primary mt-5 mb-2 first:mt-0 flex items-center gap-1.5">{line.slice(3)}</h3>;
+                      }
+                      if (line.startsWith("### ")) {
+                        return <h4 key={i} className="text-xs font-bold text-foreground/80 mt-3 mb-1">{line.slice(4)}</h4>;
+                      }
+                      if (line.startsWith("- ") || line.startsWith("* ")) {
+                        return <p key={i} className="ml-4 text-[12px] text-foreground/80 mb-0.5 flex gap-1.5"><span className="text-accent shrink-0 mt-px">•</span><span>{line.slice(2)}</span></p>;
+                      }
+                      if (line.match(/^\d+\./)) {
+                        return <p key={i} className="ml-4 text-[12px] text-foreground/80 mb-0.5">{line}</p>;
+                      }
+                      if (line.startsWith("**") && line.endsWith("**")) {
+                        return <p key={i} className="text-[12px] font-semibold text-primary mt-2 mb-0.5">{line.slice(2, -2)}</p>;
+                      }
+                      if (line === "") return <div key={i} className="h-1" />;
+                      return <p key={i} className="text-[12px] text-foreground/80 mb-0.5">{line}</p>;
+                    })}
+                    {coreyStreaming && (
+                      <span className="inline-block w-2 h-3.5 bg-violet-500 animate-pulse ml-0.5 rounded-sm" />
+                    )}
+                  </div>
+
+                  {/* Disclaimer footer */}
+                  <div className="shrink-0 border-t border-border/40 px-5 py-2.5 bg-slate-50 dark:bg-slate-900/30">
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      <strong>Important:</strong> Corey provides general compliance guidance based on commonly applicable regulations. Applicable requirements are facility-specific and depend on actual processes, quantities, and activities. <strong>Final determination must be made by a licensed environmental consultant or attorney</strong> familiar with your specific facility and current local regulations.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-3 border-t border-border/40 flex justify-between items-center shrink-0">
+            <p className="text-[10px] text-muted-foreground italic">After review, use <strong>+ Add Requirement</strong> to manually add identified local/specific requirements to your register.</p>
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => setCoreyDialog(false)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>

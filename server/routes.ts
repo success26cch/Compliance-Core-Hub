@@ -10749,6 +10749,86 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── Corey: Identify Requirements by Jurisdiction (SSE streaming) ──────────────
+  app.post("/api/iso-compliance-obligations/identify-requirements", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const { state, county, city, industry, naicsCode, processes, facilitySize } = req.body;
+    if (!state) return res.status(400).json({ message: "State is required" });
+
+    const jurisdictionDesc = [
+      state && `State: ${state}`,
+      county && `County: ${county}`,
+      city && `City/Municipality: ${city}`,
+    ].filter(Boolean).join(" | ");
+
+    const facilityDesc = [
+      industry && `Industry: ${industry}`,
+      naicsCode && `NAICS/SIC Code: ${naicsCode}`,
+      processes && `Primary Processes/Operations: ${processes}`,
+      facilitySize && `Facility Size: ${facilitySize}`,
+    ].filter(Boolean).join("\n");
+
+    const systemPrompt = `You are Corey, a Senior Occupational Health & Safety and Environmental Compliance Expert with deep expertise in US federal and state-level environmental, health, and safety regulations for manufacturing and industrial facilities.
+
+A facility manager needs your expert guidance on identifying what legal and other environmental/health & safety compliance requirements likely apply to their facility. This output will seed their ISO 14001 §6.1.3 Compliance Obligations Register.
+
+FACILITY JURISDICTION & PROFILE:
+${jurisdictionDesc}
+${facilityDesc || "(No additional facility details provided)"}
+
+Please provide a thorough, categorized analysis of the types of compliance requirements this facility should evaluate. Structure your response as follows:
+
+## 🏛️ Federal Requirements to Evaluate (EPA / OSHA / DOT)
+List the key federal programs by category (Air Quality, Waste Management, Water, Chemical Reporting, Emergency Planning, Health & Safety, Transportation). For each, state the regulation citation, the threshold or trigger condition, and what the facility should do to determine applicability.
+
+## 🗺️ ${state} State-Specific Requirements
+List the key state environmental and safety agency programs unique to ${state} — permits, registrations, reporting programs, and state-specific thresholds that differ from or add to federal requirements.
+
+## 🏙️ Local / County / Municipal Requirements${county || city ? ` (${[county && county + " County", city].filter(Boolean).join(", ")})` : ""}
+Describe the types of local requirements the facility should investigate — stormwater programs, local air quality rules, industrial pretreatment permits, fire code/permit requirements, zoning/land use. Be specific about where these vary by jurisdiction and how to find out what applies (e.g., contact the county/city environmental office, check with the local POTW).
+
+## 🔧 Industry-Specific Requirements${industry ? ` (${industry})` : ""}
+List any industry-specific regulations or customer/OEM requirements that commonly apply based on the facility type and processes described (e.g., automotive OEM substance restrictions, IATF 16949 environmental requirements, sector-specific NPDES permits, industry-specific air emission rules).
+
+## 📋 How to Verify Your Complete Requirements List
+Provide 5-7 specific, actionable steps the EMS coordinator should take to confirm all applicable requirements — including contacting specific agencies, database tools (EPA Echo, state agency portals), consulting an environmental attorney, and using the CCHUB Environmental Hub when available.
+
+## ⚖️ Important Disclaimer
+Close with a clear professional disclaimer: this analysis provides general compliance guidance based on the information provided. Applicable requirements are facility-specific and depend on actual processes, quantities, emissions, and activities. Final determination of all applicable legal requirements must be made through a site-specific compliance evaluation by a licensed environmental consultant or attorney familiar with the facility and current with local regulations.
+
+Be specific, practical, and cite regulation numbers where applicable. Write as a trusted senior compliance advisor speaking directly to the ISO 14001 EMS coordinator.`;
+
+    try {
+      const anthropic = createAnthropicClient();
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = anthropic.messages.stream({
+        model: "claude-sonnet-4-5",
+        max_tokens: 3000,
+        messages: [{ role: "user", content: systemPrompt }],
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
+      }
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+    } catch (error: any) {
+      console.error("Identify requirements error:", error);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: "Failed to generate analysis" })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ message: "Failed to generate requirements analysis" });
+      }
+    }
+  });
+
   app.patch("/api/iso-compliance-obligations/:id", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
