@@ -621,6 +621,475 @@ export const QUESTION_BANK: QuestionSet[] = [
       },
     ],
   },
+
+  /* ── LOTO — Lockout/Tagout ── */
+  {
+    key: "loto",
+    label: "Control of Hazardous Energy — Lockout/Tagout (LOTO)",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["lockout", "tagout", "loto", "energy control", "hazardous energy"],
+    citationPatterns: ["29 cfr 1910.147", "1910.147"],
+    applicabilityIntro:
+      "OSHA's Lockout/Tagout (LOTO) standard (29 CFR 1910.147) applies to facilities where employees perform service or maintenance on equipment where unexpected energization or startup could cause injury.",
+    applicabilityQuestions: [
+      {
+        id: "loto_a1",
+        text: "Do employees perform any servicing or maintenance on machinery or equipment (e.g., clearing jams, cleaning, lubricating, adjusting, or repairing)?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "loto_a2",
+        text: "Could unexpected energization, startup, or release of stored energy (electrical, mechanical, pneumatic, hydraulic, thermal, or chemical) during service or maintenance cause injury?",
+        hint: "This includes electrical, mechanical, pneumatic, hydraulic, thermal, and chemical energy sources.",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your facility is meeting the OSHA Lockout/Tagout requirements under 29 CFR 1910.147.",
+    evaluationQuestions: [
+      {
+        id: "loto_e1",
+        text: "Is a written Energy Control Program (Lockout/Tagout Procedure) documented and in place for your facility?",
+        hint: "The program must cover the purpose, rules, and techniques for using energy control procedures.",
+      },
+      {
+        id: "loto_e2",
+        text: "Are machine-specific lockout/tagout procedures written for each piece of equipment with hazardous energy sources?",
+        hint: "Generic procedures are not sufficient — each machine with unique energy characteristics requires its own procedure.",
+      },
+      {
+        id: "loto_e3",
+        text: "Is adequate lockout/tagout hardware (locks, hasps, tags, lockout devices) provided and accessible to authorized employees?",
+      },
+      {
+        id: "loto_e4",
+        text: "Have all authorized employees (those who perform LOTO) and affected employees (those who work in areas where LOTO is used) received LOTO training?",
+        hint: "Training must be documented with dates and employee names.",
+      },
+      {
+        id: "loto_e5",
+        text: "Are annual periodic inspections of each energy control procedure being conducted and documented by an authorized employee?",
+        hint: "Inspections must certify that the procedure is adequate and that all employees know it.",
+      },
+    ],
+  },
+
+  /* ── Permit-Required Confined Spaces ── */
+  {
+    key: "confined_space",
+    label: "Permit-Required Confined Spaces (PRCS)",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["confined space", "permit-required confined", "prcs"],
+    citationPatterns: ["29 cfr 1910.146", "1910.146"],
+    applicabilityIntro:
+      "OSHA's Permit-Required Confined Spaces standard (29 CFR 1910.146) applies to facilities with confined spaces that have one or more serious hazards requiring a permit system before entry.",
+    applicabilityQuestions: [
+      {
+        id: "cs_a1",
+        text: "Does your facility have any spaces large enough for an employee to enter and perform assigned work (e.g., tanks, vessels, silos, hoppers, vaults, pits, manholes, tunnels)?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "cs_a2",
+        text: "Do any of those spaces have limited or restricted means of entry or exit, or are they not designed for continuous employee occupancy?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "cs_a3",
+        text: "Do any of these spaces contain or have a potential to contain a serious safety or health hazard — such as a hazardous atmosphere, engulfment hazard, or internal configuration that could trap an entrant?",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate compliance with OSHA's Permit-Required Confined Spaces standard (29 CFR 1910.146).",
+    evaluationQuestions: [
+      {
+        id: "cs_e1",
+        text: "Has your facility performed a written evaluation to identify all confined spaces and classify which are permit-required (PRCS)?",
+      },
+      {
+        id: "cs_e2",
+        text: "Is a written Permit-Required Confined Space Program in place that covers all required elements?",
+      },
+      {
+        id: "cs_e3",
+        text: "Are entry permits completed before every PRCS entry, including atmospheric testing results, required PPE, equipment, and rescue means?",
+      },
+      {
+        id: "cs_e4",
+        text: "Have all authorized entrants, attendants, and entry supervisors received PRCS training specific to their roles?",
+      },
+      {
+        id: "cs_e5",
+        text: "Are rescue and emergency services identified, equipped, and trained for confined space emergencies?",
+        hint: "Non-entry rescue (retrieval systems) must be used when feasible.",
+      },
+    ],
+  },
+
+  /* ── Machine Guarding ── */
+  {
+    key: "machine_guarding",
+    label: "Machine Guarding (General Industry)",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["machine guard", "point of operation", "machinery", "guarding", "1910.212"],
+    citationPatterns: ["29 cfr 1910.212", "1910.212", "29 cfr 1910.217", "29 cfr 1910.219"],
+    applicabilityIntro:
+      "OSHA machine guarding standards (29 CFR 1910.212-.219) apply to all facilities where employees operate, set up, or maintain machinery with moving parts that present a hazard.",
+    applicabilityQuestions: [
+      {
+        id: "mg_a1",
+        text: "Does your facility have machinery with rotating parts, cutting edges, punching actions, shearing operations, or other moving parts that could contact employees?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "mg_a2",
+        text: "Do employees operate, set up, or maintain machinery as part of their regular duties?",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your machine guarding practices meet OSHA requirements under 29 CFR 1910.212.",
+    evaluationQuestions: [
+      {
+        id: "mg_e1",
+        text: "Are all points of operation, power transmission devices, and other hazardous machine parts guarded to protect operators and other employees?",
+        hint: "Guards must prevent hands, fingers, or other body parts from contacting the danger zone.",
+      },
+      {
+        id: "mg_e2",
+        text: "Are guards sturdy, secure, and designed so they cannot be easily removed or bypassed by operators?",
+      },
+      {
+        id: "mg_e3",
+        text: "Are employees trained on the proper use of machine guards and prohibited from removing or disabling guards?",
+      },
+      {
+        id: "mg_e4",
+        text: "Are machines regularly inspected to ensure guards are present, properly installed, and in good condition?",
+      },
+    ],
+  },
+
+  /* ── PPE Program ── */
+  {
+    key: "ppe",
+    label: "Personal Protective Equipment (PPE) Program",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["ppe", "personal protective equipment", "safety glasses", "hard hat", "gloves", "face shield"],
+    citationPatterns: ["29 cfr 1910.132", "1910.132", "1910.133", "1910.135", "1910.136", "1910.138"],
+    applicabilityIntro:
+      "OSHA's PPE standards (29 CFR 1910.132-.138) apply to any facility where employees face hazards that require protective equipment for eyes, face, head, hands, feet, or body.",
+    applicabilityQuestions: [
+      {
+        id: "ppe_a1",
+        text: "Do employees face hazards at your facility from impact, penetration, compression, chemical, heat, electrical, or other sources?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "ppe_a2",
+        text: "Is PPE (such as safety glasses, hard hats, gloves, safety footwear, or face shields) required for any work tasks at your facility?",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your PPE program meets OSHA requirements under 29 CFR 1910.132.",
+    evaluationQuestions: [
+      {
+        id: "ppe_e1",
+        text: "Has a documented workplace hazard assessment been conducted to determine necessary PPE for each job task?",
+        hint: "The assessment must be certified in writing with the job location, date, and person performing it.",
+      },
+      {
+        id: "ppe_e2",
+        text: "Is appropriate PPE selected, provided to employees at no cost, and properly maintained?",
+        hint: "Employers must provide PPE at no cost to employees, with limited exceptions (safety-toe footwear, prescription safety glasses).",
+      },
+      {
+        id: "ppe_e3",
+        text: "Have all employees who are required to use PPE received training on when and what PPE is required, how to properly put on/wear/remove it, and its limitations?",
+      },
+      {
+        id: "ppe_e4",
+        text: "Is PPE training documented with employee names, dates, and the subject covered?",
+      },
+      {
+        id: "ppe_e5",
+        text: "Is PPE regularly inspected, and defective or damaged PPE removed from service immediately?",
+      },
+    ],
+  },
+
+  /* ── Respiratory Protection ── */
+  {
+    key: "respiratory",
+    label: "Respiratory Protection Program",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["respiratory", "respirator", "n95", "scba", "air purifying", "supplied air"],
+    citationPatterns: ["29 cfr 1910.134", "1910.134"],
+    applicabilityIntro:
+      "OSHA's Respiratory Protection standard (29 CFR 1910.134) applies to workplaces where respirators are required or permitted to be used to protect employees against harmful airborne contaminants.",
+    applicabilityQuestions: [
+      {
+        id: "resp_a1",
+        text: "Are employees potentially exposed to airborne contaminants (dust, mists, fumes, gases, vapors, oxygen-deficient atmospheres) that could harm their health?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "resp_a2",
+        text: "Are respirators (half-face, full-face, supplied-air, or SCBA) required or voluntarily used by any employees at your facility?",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your respiratory protection program meets OSHA requirements under 29 CFR 1910.134.",
+    evaluationQuestions: [
+      {
+        id: "resp_e1",
+        text: "Is a written Respiratory Protection Program in place, updated as needed, and administered by a trained program administrator?",
+      },
+      {
+        id: "resp_e2",
+        text: "Have employees who use required respirators received medical evaluations to determine their ability to use them?",
+        hint: "Medical evaluations must be completed before fit testing and use, using OSHA-required questionnaire or equivalent.",
+      },
+      {
+        id: "resp_e3",
+        text: "Have employees who use tight-fitting respirators been fit-tested with the specific respirator model they will use?",
+        hint: "Fit testing is required annually and when a different respirator model is used.",
+      },
+      {
+        id: "resp_e4",
+        text: "Have all respirator users received training on the proper use, care, and limitations of their specific respirator?",
+      },
+      {
+        id: "resp_e5",
+        text: "Are respirators properly cleaned, disinfected, maintained, and stored when not in use?",
+      },
+    ],
+  },
+
+  /* ── Hearing Conservation ── */
+  {
+    key: "hearing_conservation",
+    label: "Hearing Conservation Program",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["hearing conservation", "noise", "audiometric", "85 dba", "hearing loss"],
+    citationPatterns: ["29 cfr 1910.95", "1910.95"],
+    applicabilityIntro:
+      "OSHA's Hearing Conservation standard (29 CFR 1910.95) applies to facilities with noise levels that equal or exceed 85 dBA as an 8-hour time-weighted average (TWA).",
+    applicabilityQuestions: [
+      {
+        id: "hc_a1",
+        text: "Do employees work in areas with continuous or intermittent noise from machinery, equipment, or processes (e.g., stamping, grinding, compressors, pneumatic tools)?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "hc_a2",
+        text: "Has noise monitoring indicated or estimated that any employees are exposed to noise at or above 85 dBA (8-hour TWA action level)?",
+        hint: "If monitoring has not been conducted and noise is clearly significant, this should be answered Yes.",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your facility is meeting OSHA's Hearing Conservation requirements under 29 CFR 1910.95.",
+    evaluationQuestions: [
+      {
+        id: "hc_e1",
+        text: "Has noise monitoring been conducted to identify employees exposed at or above the 85 dBA action level?",
+        hint: "Monitoring must be repeated whenever changes occur that may increase exposures.",
+      },
+      {
+        id: "hc_e2",
+        text: "Have all employees exposed at or above 85 dBA been enrolled in a hearing conservation program and notified of their exposure?",
+      },
+      {
+        id: "hc_e3",
+        text: "Is a baseline audiogram on file for all at-risk employees, and are annual audiograms being conducted?",
+      },
+      {
+        id: "hc_e4",
+        text: "Is appropriate hearing protection (earplugs, earmuffs) provided at no cost to exposed employees, with a variety to choose from?",
+      },
+      {
+        id: "hc_e5",
+        text: "Have employees received annual hearing conservation training covering noise hazards, hearing protection use, and audiometric testing?",
+      },
+    ],
+  },
+
+  /* ── OSHA Recordkeeping ── */
+  {
+    key: "osha_recordkeeping",
+    label: "OSHA Injury & Illness Recordkeeping",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["osha 300", "osha 301", "osha 300a", "recordkeeping", "injury illness recording", "work-related injury"],
+    citationPatterns: ["29 cfr 1904", "1904", "osha recordkeeping"],
+    applicabilityIntro:
+      "OSHA's Recordkeeping rule (29 CFR 1904) requires most employers with 10 or more employees in covered industries to keep records of work-related injuries and illnesses.",
+    applicabilityQuestions: [
+      {
+        id: "rk_a1",
+        text: "Does your facility have 10 or more employees?",
+        yesIndicates: "applies",
+      },
+      {
+        id: "rk_a2",
+        text: "Is your facility in an industry covered by OSHA's recordkeeping requirements (most manufacturing, construction, utilities, and service industries are covered)?",
+        hint: "Low-hazard industries such as certain retail, finance, real estate, and service establishments are partially exempt.",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your facility is meeting OSHA's injury and illness recordkeeping requirements under 29 CFR 1904.",
+    evaluationQuestions: [
+      {
+        id: "rk_e1",
+        text: "Is an OSHA 300 Log being maintained to record all work-related injuries and illnesses within 7 calendar days of learning of the case?",
+      },
+      {
+        id: "rk_e2",
+        text: "Is an OSHA 301 Incident Report (or equivalent) completed for each recordable case?",
+      },
+      {
+        id: "rk_e3",
+        text: "Is the OSHA 300A Annual Summary posted in a visible location from February 1 to April 30 each year, signed by a company executive?",
+      },
+      {
+        id: "rk_e4",
+        text: "Are all records retained for at least 5 years and made available to employees, former employees, and OSHA upon request?",
+      },
+      {
+        id: "rk_e5",
+        text: "Are severe injuries (in-patient hospitalization, amputation, or loss of an eye) reported to OSHA within 24 hours, and work-related fatalities within 8 hours?",
+      },
+    ],
+  },
+
+  /* ── Emergency Action Plan ── */
+  {
+    key: "eap",
+    label: "Emergency Action Plan (EAP)",
+    categoryMatch: ["Health and Safety Requirements", "Emergency Planning"],
+    namePatterns: ["emergency action plan", "eap", "evacuation plan", "fire drill", "emergency evacuation"],
+    citationPatterns: ["29 cfr 1910.38", "1910.38", "1910.39"],
+    applicabilityIntro:
+      "OSHA requires an Emergency Action Plan (29 CFR 1910.38) for all facilities with 10 or more employees. Facilities with fewer than 10 employees may communicate the plan orally.",
+    applicabilityQuestions: [
+      {
+        id: "eap_a1",
+        text: "Does your facility employ workers who would need to evacuate or take emergency action in the event of a fire, chemical release, severe weather, or other emergency?",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your Emergency Action Plan meets OSHA requirements under 29 CFR 1910.38.",
+    evaluationQuestions: [
+      {
+        id: "eap_e1",
+        text: "Is a written Emergency Action Plan in place covering procedures for emergency evacuation, including types of evacuations and exit route assignments?",
+        hint: "Written plans are required for facilities with 10+ employees.",
+      },
+      {
+        id: "eap_e2",
+        text: "Does the EAP include procedures for employees who remain to perform critical operations, account for all employees after evacuation, and contact emergency services?",
+      },
+      {
+        id: "eap_e3",
+        text: "Are emergency escape routes posted and exit signs in place throughout the facility?",
+      },
+      {
+        id: "eap_e4",
+        text: "Have all employees received EAP training upon hire and whenever the plan changes?",
+        hint: "Employee alarm signals and evacuation procedures must be explained to each employee.",
+      },
+      {
+        id: "eap_e5",
+        text: "Are emergency drills conducted regularly to familiarize employees with evacuation procedures and routes?",
+      },
+    ],
+  },
+
+  /* ── Bloodborne Pathogens ── */
+  {
+    key: "bbp",
+    label: "Bloodborne Pathogens (BBP)",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["bloodborne", "bbp", "hiv", "hepatitis", "first aid", "1910.1030"],
+    citationPatterns: ["29 cfr 1910.1030", "1910.1030"],
+    applicabilityIntro:
+      "OSHA's Bloodborne Pathogens standard (29 CFR 1910.1030) applies to all facilities where employees are reasonably anticipated to have occupational exposure to blood or other potentially infectious materials (OPIM).",
+    applicabilityQuestions: [
+      {
+        id: "bbp_a1",
+        text: "Do any employees provide first aid or medical services, handle contaminated items, or work in environments where contact with blood or OPIM is reasonably anticipated (e.g., first responders, first aid team members)?",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate compliance with OSHA's Bloodborne Pathogens standard (29 CFR 1910.1030).",
+    evaluationQuestions: [
+      {
+        id: "bbp_e1",
+        text: "Is a written Exposure Control Plan in place, reviewed and updated at least annually and when tasks or procedures change?",
+      },
+      {
+        id: "bbp_e2",
+        text: "Are engineering controls (sharps containers, self-sheathing needles) and work practice controls implemented to minimize exposure?",
+      },
+      {
+        id: "bbp_e3",
+        text: "Is appropriate PPE (gloves, face shields, gowns) provided at no cost to employees with occupational exposure?",
+      },
+      {
+        id: "bbp_e4",
+        text: "Have all employees with occupational exposure received annual BBP training?",
+      },
+      {
+        id: "bbp_e5",
+        text: "Is hepatitis B vaccination offered to all employees with occupational exposure at no cost within 10 working days of assignment?",
+      },
+    ],
+  },
+
+  /* ── Powered Industrial Trucks (Forklifts) ── */
+  {
+    key: "pit",
+    label: "Powered Industrial Trucks — Forklift Safety",
+    categoryMatch: ["Health and Safety Requirements"],
+    namePatterns: ["forklift", "powered industrial truck", "pit", "lift truck", "pallet jack", "1910.178"],
+    citationPatterns: ["29 cfr 1910.178", "1910.178"],
+    applicabilityIntro:
+      "OSHA's Powered Industrial Trucks standard (29 CFR 1910.178) applies to any facility where forklifts, motorized hand trucks, or other powered industrial trucks are operated.",
+    applicabilityQuestions: [
+      {
+        id: "pit_a1",
+        text: "Does your facility use forklifts, electric pallet jacks, reach trucks, order pickers, or other powered industrial trucks?",
+        yesIndicates: "applies",
+      },
+    ],
+    evaluationIntro:
+      "These questions evaluate whether your facility meets OSHA's Powered Industrial Trucks requirements under 29 CFR 1910.178.",
+    evaluationQuestions: [
+      {
+        id: "pit_e1",
+        text: "Have all forklift operators been evaluated and formally certified as competent to operate each type of truck they use?",
+        hint: "Certification requires training on truck-specific topics, workplace topics, and a practical evaluation.",
+      },
+      {
+        id: "pit_e2",
+        text: "Is operator re-evaluation conducted at least every 3 years or when an operator is observed operating unsafely?",
+      },
+      {
+        id: "pit_e3",
+        text: "Are pre-shift inspections of powered industrial trucks conducted and documented before each shift?",
+      },
+      {
+        id: "pit_e4",
+        text: "Are trucks that are unsafe to operate removed from service until repaired, and are defects documented and corrected promptly?",
+      },
+    ],
+  },
 ];
 
 /* ─── Helper to find a matching question set ─────────────────────────────── */

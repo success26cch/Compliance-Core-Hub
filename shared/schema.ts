@@ -2814,6 +2814,7 @@ export const isoComplianceObligations = pgTable("iso_compliance_obligations", {
   nextReviewDate: text("next_review_date"),
   actionRequired: text("action_required"),
   notes: text("notes"),
+  standard: text("standard").notNull().default("ISO 14001"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

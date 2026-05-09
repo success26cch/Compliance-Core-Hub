@@ -62,6 +62,12 @@ const EVAL_STATUS_OPTIONS = [
   { value: "not_applicable", label: "Not Applicable", color: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400" },
 ];
 
+const STANDARD_OPTIONS = [
+  { value: "ISO 14001", label: "ISO 14001 — EMS", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300" },
+  { value: "ISO 45001", label: "ISO 45001 — OH&S", color: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300" },
+  { value: "Both", label: "Both Standards", color: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300" },
+];
+
 /* ─── Federal starter library (from examples) ─────────────── */
 const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectId" | "createdAt" | "updatedAt">[] = [
   {
@@ -1544,6 +1550,231 @@ function jurisdictionBadge(jur: string) {
   );
 }
 
+/* ─── OSHA / ISO 45001 Starter Library ──────────────────── */
+type StarterItem = Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectId" | "createdAt" | "updatedAt">;
+const OSHA_STARTER_LIBRARY: StarterItem[] = [
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Injury & Illness Recordkeeping (OSHA 300/300A/301)",
+    citationSource: "29 CFR 1904",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Employers with 10+ employees in covered industries must maintain OSHA 300 logs, OSHA 301 incident reports, and post the OSHA 300A annual summary from Feb 1 – Apr 30. Severe injuries (hospitalization, amputation, loss of eye) and fatalities must be reported to OSHA within specified timeframes.",
+    facilityAction: "Maintain OSHA 300/301 logs, post 300A, and report severe injuries/fatalities to OSHA within 24/8 hours.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "OSHA 300 Log, 300A Annual Summary, 301 Incident Reports (retained 5 years)",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Emergency Action Plan (EAP)",
+    citationSource: "29 CFR 1910.38",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Employers with 10+ employees must maintain a written Emergency Action Plan covering evacuation procedures, escape routes, employee accounting, and emergency contacts. Employers with fewer than 10 employees may communicate the plan orally.",
+    facilityAction: "Maintain written EAP, post escape routes, conduct regular drills, train all employees.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Written EAP, training records, drill records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Fire Prevention Plan",
+    citationSource: "29 CFR 1910.39",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Facilities must have a Fire Prevention Plan identifying fire hazards, fuel sources, and procedures for controlling accumulations of flammable materials. Employees must be informed of fire hazards and plan procedures.",
+    facilityAction: "Maintain written Fire Prevention Plan; train employees on fire hazards and housekeeping procedures.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Written Fire Prevention Plan, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Hazard Communication (HazCom / GHS) — OH&S",
+    citationSource: "29 CFR 1910.1200",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Employers must maintain a written Hazard Communication Program, provide GHS-compliant Safety Data Sheets for all hazardous chemicals, ensure proper container labeling, and train employees on chemical hazards. This is both an EMS and OH&S requirement.",
+    facilityAction: "Maintain written HazCom Program, SDS binder, ensure GHS labeling, document employee training.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Written HazCom program, SDS files, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Control of Hazardous Energy — Lockout/Tagout (LOTO)",
+    citationSource: "29 CFR 1910.147",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Facilities where employees service or maintain equipment must have a written Energy Control Program, machine-specific LOTO procedures, and provide LOTO hardware. Authorized and affected employees must be trained. Annual audits of each procedure are required.",
+    facilityAction: "Maintain written LOTO program, machine-specific procedures, hardware; train employees; conduct annual audits.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Written Energy Control Program, machine procedures, training records, annual audit certifications",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Permit-Required Confined Spaces (PRCS)",
+    citationSource: "29 CFR 1910.146",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Facilities with permit-required confined spaces (spaces with serious safety/health hazards) must implement a written PRCS Program, use entry permits, train entrants/attendants/supervisors, and ensure rescue capability before each entry.",
+    facilityAction: "Survey and classify confined spaces, maintain written PRCS program, use entry permits, train employees, establish rescue procedures.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Confined space inventory, PRCS program, completed entry permits (1 year), training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Machine Guarding — General Industry",
+    citationSource: "29 CFR 1910.212",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "All machinery with moving parts that present a hazard must be guarded to prevent employee contact. Guards must be secure and not create additional hazards. Employees must be trained on guard use and prohibited from bypassing guards.",
+    facilityAction: "Audit machinery for guarding adequacy, install/repair guards, train employees, conduct regular inspections.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Machine guarding inspection records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Personal Protective Equipment (PPE) Program",
+    citationSource: "29 CFR 1910.132",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Employers must conduct a written workplace hazard assessment to determine necessary PPE, provide appropriate PPE at no cost, and train employees on PPE use, care, and limitations. Training must be documented.",
+    facilityAction: "Conduct written PPE hazard assessment, provide PPE at no cost, document employee PPE training.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Written hazard assessment certification, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Respiratory Protection Program",
+    citationSource: "29 CFR 1910.134",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Facilities where respirators are required or voluntarily used must have a written Respiratory Protection Program including medical evaluations, fit testing, training, and respirator maintenance. A qualified program administrator must oversee the program.",
+    facilityAction: "Maintain written Respiratory Protection Program, conduct medical evaluations and fit testing, train respirator users, maintain records.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Written program, medical evaluation records, fit test records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Hearing Conservation Program",
+    citationSource: "29 CFR 1910.95",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Facilities with employees exposed at or above 85 dBA (8-hr TWA) must implement a Hearing Conservation Program including noise monitoring, audiometric testing, hearing protection, training, and recordkeeping.",
+    facilityAction: "Conduct noise monitoring, enroll exposed employees in HCP, provide audiometric testing, supply hearing protection, train employees annually.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Noise exposure records (2 years), audiometric test records (duration of employment + 30 years), training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Electrical Safety — General Industry",
+    citationSource: "29 CFR 1910 Subpart S (1910.302–399)",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "All electrical installations must meet the National Electrical Code (NFPA 70) requirements. Qualified electrical workers must use appropriate PPE and safe work practices. Electrical panels must be labeled and accessible. Arc flash hazards must be assessed and controlled.",
+    facilityAction: "Ensure electrical installations comply with NEC, train qualified electrical workers, label panels, post arc flash hazard analysis, provide appropriate PPE.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Electrical inspection records, arc flash study, training records for qualified electrical workers",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Powered Industrial Trucks — Forklift Safety",
+    citationSource: "29 CFR 1910.178",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Operators of powered industrial trucks (forklifts, reach trucks, pallet jacks) must be evaluated and certified as competent. Certification must include truck-specific and workplace-specific training. Pre-shift inspections are required. Re-evaluation is required at least every 3 years.",
+    facilityAction: "Train and certify all PIT operators, conduct pre-shift inspections, re-evaluate operators every 3 years or after unsafe operation observed.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Operator training/certification records, pre-shift inspection logs",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Walking-Working Surfaces — Slips, Trips & Falls",
+    citationSource: "29 CFR 1910 Subpart D (1910.21–.30)",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Floors, aisles, stairways, and elevated work surfaces must be maintained in safe condition. Floor openings must be guarded. Fixed ladders and stairs must meet OSHA specifications. Fall protection systems are required for unprotected edges and elevated work.",
+    facilityAction: "Maintain clean, dry, unobstructed walking surfaces; guard floor openings; ensure ladders/stairs meet OSHA specs; inspect and repair hazards promptly.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Inspection records, fall hazard assessments, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "First Aid & Medical Services",
+    citationSource: "29 CFR 1910.151",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "In the absence of an infirmary, clinic, or hospital near the facility, an employer must ensure that a person or persons are adequately trained to render first aid. Adequate first aid supplies must be readily available.",
+    facilityAction: "Train and maintain certified first aid/CPR responders; maintain stocked first aid kit(s); ensure AED availability where applicable.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "First aid training records (AED/CPR certifications), first aid kit inspection logs",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Portable Fire Extinguishers",
+    citationSource: "29 CFR 1910.157",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "If employees are expected to use portable fire extinguishers, they must be trained in their use annually. Extinguishers must be provided, mounted, inspected monthly, and maintained annually by a qualified person.",
+    facilityAction: "Provide and mount appropriate fire extinguishers; conduct monthly visual inspections; annual professional maintenance; train employees annually.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Monthly inspection tags/logs, annual maintenance records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Bloodborne Pathogens (BBP)",
+    citationSource: "29 CFR 1910.1030",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Facilities with employees reasonably anticipated to have occupational exposure to blood or other potentially infectious materials (OPIM) must maintain a written Exposure Control Plan, implement engineering and work practice controls, provide PPE, offer hepatitis B vaccination, and conduct annual training.",
+    facilityAction: "Maintain written Exposure Control Plan; offer Hep B vaccine; provide PPE; conduct annual BBP training for exposed employees.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Exposure Control Plan, vaccination records, medical records (30 years), training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Compressed Gas Cylinders — Storage & Handling",
+    citationSource: "29 CFR 1910.101",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Compressed gas cylinders must be handled and stored in upright position with caps on when not in use. Cylinders must be secured to prevent falling. Oxygen and fuel gas cylinders must be stored separately with at least 20 feet or a 5-foot non-combustible barrier between them.",
+    facilityAction: "Secure all compressed gas cylinders; store oxygen and fuel gas separately; train employees on safe handling procedures; inspect cylinders regularly.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Cylinder inspection records, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Welding, Cutting & Brazing Safety",
+    citationSource: "29 CFR 1910.252–255",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "Welding, cutting, and brazing operations require appropriate ventilation, fire protection, PPE (face shields, welding gloves, flame-resistant clothing), and hot work permit procedures in fire-hazardous areas. Combustible materials must be moved or shielded.",
+    facilityAction: "Implement hot work permit system; ensure proper ventilation; provide welding PPE; train welders on safe practices.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Hot work permits, training records, ventilation assessments",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "Ergonomics — Musculoskeletal Hazard Prevention",
+    citationSource: "OSH Act Section 5(a)(1) — General Duty Clause",
+    jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "While OSHA's ergonomics rule was withdrawn in 2001, employers remain responsible under the General Duty Clause for addressing recognized ergonomic hazards that cause or are likely to cause serious harm. ISO 45001 §6.1.2 specifically requires identification of musculoskeletal hazards.",
+    facilityAction: "Conduct ergonomic risk assessments for repetitive motion, heavy lifting, awkward postures; implement engineering and administrative controls; train employees.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "Ergonomic risk assessments, incident/injury records related to MSDs, training records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+  {
+    aspectCategory: "Health and Safety Requirements",
+    requirementName: "ISO 45001 OH&S Management System Certification",
+    citationSource: "ISO 45001:2018",
+    jurisdictionLevel: "Voluntary", state: null, county: null, standard: "ISO 45001",
+    descriptionOfRequirement: "ISO 45001 is a voluntary OH&S management system standard requiring hazard identification, risk assessment, legal compliance evaluation, operational controls, incident investigation, and continual improvement. Certification requires third-party audit by an accredited certification body.",
+    facilityAction: "Maintain certified ISO 45001 EMS; complete surveillance audits; address nonconformities; conduct annual management reviews.",
+    complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
+    recordsToMaintain: "ISO 45001 certificate, audit reports, management review minutes, corrective action records",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: null,
+  },
+];
+
 /* ─── Empty form helpers ─────────────────────────────────── */
 const emptyObligation = (): Partial<IsoComplianceObligation> => ({
   aspectCategory: "Other",
@@ -1563,6 +1794,7 @@ const emptyObligation = (): Partial<IsoComplianceObligation> => ({
   nextReviewDate: "",
   actionRequired: "",
   notes: "",
+  standard: "ISO 14001",
 });
 
 const emptyEvaluation = (obligationId?: number): Partial<IsoComplianceEvaluation> => ({
@@ -1587,6 +1819,8 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterStandard, setFilterStandard] = useState<string>("all");
+  const [starterLibStandard, setStarterLibStandard] = useState<"all" | "ISO 14001" | "ISO 45001">("all");
   const [searchText, setSearchText] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
@@ -1706,6 +1940,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
       if (filterCategory !== "all" && o.aspectCategory !== filterCategory) return false;
       if (filterJurisdiction !== "all" && o.jurisdictionLevel !== filterJurisdiction) return false;
       if (filterStatus !== "all" && o.complianceStatus !== filterStatus) return false;
+      if (filterStandard !== "all" && o.standard !== filterStandard) return false;
       if (searchText) {
         const q = searchText.toLowerCase();
         return (
@@ -1717,7 +1952,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
       }
       return true;
     });
-  }, [obligations, filterCategory, filterJurisdiction, filterStatus, searchText]);
+  }, [obligations, filterCategory, filterJurisdiction, filterStatus, filterStandard, searchText]);
 
   // Summary counts
   const counts = useMemo(() => ({
@@ -1729,25 +1964,26 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
 
   // Build state-filtered starter groups — only show state reqs that match the org's state
   const { groupsWithOffsets, allStarters } = useMemo(() => {
-    const base: Array<{ label: string; emoji: string; items: typeof FEDERAL_STARTER_LIBRARY }> = [
-      { label: "Federal Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY },
+    const base: Array<{ label: string; emoji: string; items: StarterItem[]; standard: "ISO 14001" | "ISO 45001" }> = [
+      { label: "Federal Environmental Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY as StarterItem[], standard: "ISO 14001" },
     ];
-    // Include Michigan starters only when org state is unknown or is Michigan
     if (orgState === null || orgState === "Michigan") {
-      base.push({ label: "Michigan State Requirements", emoji: "🗺️", items: MICHIGAN_STARTER });
+      base.push({ label: "Michigan State Requirements", emoji: "🗺️", items: MICHIGAN_STARTER as StarterItem[], standard: "ISO 14001" });
     }
-    // Include Ohio starters only when org state is unknown or is Ohio
     if (orgState === null || orgState === "Ohio") {
-      base.push({ label: "Ohio State Requirements", emoji: "🗺️", items: OHIO_STARTER });
+      base.push({ label: "Ohio State Requirements", emoji: "🗺️", items: OHIO_STARTER as StarterItem[], standard: "ISO 14001" });
     }
-    base.push({ label: "Corporate, Customer & Other Requirements", emoji: "🏢", items: CORPORATE_STARTER });
+    base.push({ label: "Corporate, Customer & Other Requirements", emoji: "🏢", items: CORPORATE_STARTER as StarterItem[], standard: "ISO 14001" });
+    base.push({ label: "OSHA Safety Requirements (ISO 45001)", emoji: "🦺", items: OSHA_STARTER_LIBRARY, standard: "ISO 45001" });
 
     let offset = 0;
-    const merged: typeof FEDERAL_STARTER_LIBRARY = [];
+    const merged: StarterItem[] = [];
     const groupsWithOffsets = base.map(g => {
-      const result = { ...g, offset };
-      merged.push(...g.items);
-      offset += g.items.length;
+      // Tag each item with the group's standard so bulk import picks it up
+      const taggedItems = g.items.map(item => ({ ...item, standard: item.standard ?? g.standard }));
+      const result = { ...g, items: taggedItems, offset };
+      merged.push(...taggedItems);
+      offset += taggedItems.length;
       return result;
     });
     return { groupsWithOffsets, allStarters: merged };
@@ -1876,9 +2112,9 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             <div className="flex items-center gap-2.5 mb-1">
               <Shield className="w-6 h-6 text-accent" />
               <h1 className="text-xl font-black text-primary">Compliance Obligations Register</h1>
-              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO 14001 §6.1.3 + §9.1.2</Badge>
+              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO §6.1.3 + §9.1.2</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">Legal and other requirements — Federal, State, and Local obligations applicable to your organization's environmental aspects.</p>
+            <p className="text-sm text-muted-foreground">Legal and other requirements — EMS obligations (ISO 14001) and OH&S obligations (ISO 45001) applicable to your organization's scope.</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             <Button size="sm" variant="outline" className="gap-1.5 text-sm border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20" onClick={() => { setCoreyResponse(""); setCoreyDialog(true); }} data-testid="button-ask-corey-identify">
@@ -2013,6 +2249,15 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                 {STATUS_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={filterStandard} onValueChange={setFilterStandard}>
+              <SelectTrigger className="h-9 text-sm w-[170px]" data-testid="select-filter-standard">
+                <SelectValue placeholder="All Standards" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Standards</SelectItem>
+                {STANDARD_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <span className="text-sm text-muted-foreground ml-auto">{filteredObligations.length} of {obligations.length}</span>
           </div>
 
@@ -2060,6 +2305,15 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                             {o.permitRequired && (
                               <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 text-xs px-1.5 py-0 font-semibold border">
                                 Permit Req.
+                              </Badge>
+                            )}
+                            {o.standard && o.standard !== "ISO 14001" && (
+                              <Badge className={`text-xs px-1.5 py-0 font-semibold border ${
+                                o.standard === "ISO 45001"
+                                  ? "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300"
+                                  : "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300"
+                              }`}>
+                                {o.standard}
                               </Badge>
                             )}
                           </div>
@@ -2319,6 +2573,17 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                   </SelectTrigger>
                   <SelectContent>
                     {ASPECT_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Management Standard</Label>
+                <Select value={obligationForm.standard ?? "ISO 14001"} onValueChange={v => setObligationForm(f => ({ ...f, standard: v }))}>
+                  <SelectTrigger className="mt-1" data-testid="select-obligation-standard">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STANDARD_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -2685,6 +2950,27 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                 data-testid="input-starter-search"
               />
             </div>
+            {/* Standard tab filter */}
+            <div className="flex items-center rounded-md border border-border/60 overflow-hidden shrink-0">
+              {(["all", "ISO 14001", "ISO 45001"] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setStarterLibStandard(v)}
+                  data-testid={`tab-starter-standard-${v.replace(/\s/g, "-")}`}
+                  className={`px-2 py-1 text-[10px] font-semibold transition-colors ${
+                    starterLibStandard === v
+                      ? v === "ISO 45001"
+                        ? "bg-orange-500 text-white"
+                        : v === "ISO 14001"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {v === "all" ? "All" : v}
+                </button>
+              ))}
+            </div>
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {selectedStarters.size} new · {existingObligationNames.size > 0 ? `${allStarters.filter(item => existingObligationNames.has(item.requirementName)).length} already imported` : ""}
             </span>
@@ -2694,6 +2980,8 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
           <div className="flex-1 overflow-y-auto min-h-0">
             {groupsWithOffsets.map(group => {
               // Enrich each item with its absolute index
+              // Apply standard tab filter — skip whole group if it doesn't match
+              if (starterLibStandard !== "all" && group.standard !== starterLibStandard) return null;
               const enriched = group.items.map((item, i) => ({ item, idx: String(group.offset + i) }));
               // Apply search filter
               const q = starterSearch.trim().toLowerCase();
