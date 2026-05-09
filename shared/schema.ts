@@ -2841,3 +2841,38 @@ export const isoComplianceEvaluations = pgTable("iso_compliance_evaluations", {
 export const insertIsoComplianceEvaluationSchema = createInsertSchema(isoComplianceEvaluations).omit({ id: true, createdAt: true });
 export type IsoComplianceEvaluation = typeof isoComplianceEvaluations.$inferSelect;
 export type InsertIsoComplianceEvaluation = z.infer<typeof insertIsoComplianceEvaluationSchema>;
+
+// ─── Integrated Compliance Calendar (§6.1.3 + §9.1.2 + ISO 45001 + OSHA) ─────
+// Unified deadline/event calendar that links back to the compliance obligations
+// register and covers ISO 14001, ISO 45001, OSHA, and regulatory training/drills.
+export const complianceCalendarEvents = pgTable("compliance_calendar_events", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  title: text("title").notNull(),
+  eventType: text("event_type").notNull().default("deadline"),
+  // 'deadline' | 'training' | 'audit' | 'drill' | 'permit_renewal' | 'report_due' | 'inspection' | 'monitoring' | 'review'
+  standardCategory: text("standard_category").notNull().default("env_legal"),
+  // 'env_legal'  — Environmental Legal Obligations (ISO 14001 §6.1.3 / §9.1.2)
+  // 'ohs_legal'  — OH&S Legal Obligations (ISO 45001 §6.1.3 / §9.1.2)
+  // 'osha'       — OSHA Regulatory Deliverables / Reports / Inspections
+  // 'training'   — Legal-Requirement-Driven Environmental & Safety Training
+  // 'drill'      — Emergency Response / Evacuation / Spill Drills
+  // 'general'    — General / Multi-standard
+  dueDate: text("due_date").notNull(),
+  reminderDays: integer("reminder_days").array().default([30, 14]),
+  sourceType: text("source_type").default("manual"), // 'obligation' | 'evaluation' | 'manual'
+  sourceId: integer("source_id"),                    // FK to iso_compliance_obligations.id
+  status: text("status").notNull().default("upcoming"),
+  // 'upcoming' | 'overdue' | 'completed' | 'cancelled'
+  responsiblePerson: text("responsible_person"),
+  description: text("description"),
+  notes: text("notes"),
+  notificationSentAt: text("notification_sent_at"),
+  completedAt: text("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertComplianceCalendarEventSchema = createInsertSchema(complianceCalendarEvents).omit({ id: true, createdAt: true, updatedAt: true });
+export type ComplianceCalendarEvent = typeof complianceCalendarEvents.$inferSelect;
+export type InsertComplianceCalendarEvent = z.infer<typeof insertComplianceCalendarEventSchema>;

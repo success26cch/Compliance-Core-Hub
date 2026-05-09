@@ -26,7 +26,7 @@ import {
   X, Tag, Target, MapPin, Trash2, FolderOpen, RotateCcw,
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
-  Gauge, Wrench, ShieldAlert, Pencil, ClipboardList,
+  Gauge, Wrench, ShieldAlert, Pencil, ClipboardList, CalendarDays,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -49,6 +49,7 @@ import APQPModule from "./APQPModule";
 import SupplierModule from "./SupplierModule";
 import GlobalIsaWidget from "./GlobalIsaWidget";
 import ComplianceObligationsModule from "./ComplianceObligationsModule";
+import ComplianceCalendarModule from "./ComplianceCalendarModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -273,7 +274,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -295,6 +296,7 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   calibration:              [null, undefined, 'auditor'],
   preventive_maintenance:   [null, undefined, 'auditor'],
   compliance_obligations:   [null, undefined, 'auditor'],
+  compliance_calendar:      [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -697,9 +699,10 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["compliance_obligations"] as SectionKey[]).map((section) => {
+              {(["compliance_obligations", "compliance_calendar"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
                   compliance_obligations: { icon: ShieldAlert, label: "Compliance Obligations" },
+                  compliance_calendar:    { icon: CalendarDays, label: "Compliance Calendar" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -970,6 +973,12 @@ export default function ISOManager() {
                 {canAccessSection('compliance_obligations', isoRole, isSuperadmin)
                   ? <ComplianceObligationsModule isoProjectId={project?.id} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="compliance_obligations" /></div>}
+              </div>
+            ) : activeSection === 'compliance_calendar' ? (
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {canAccessSection('compliance_calendar', isoRole, isSuperadmin)
+                  ? <ComplianceCalendarModule isoProjectId={project?.id} />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="compliance_calendar" /></div>}
               </div>
             ) : (
               <>

@@ -10917,5 +10917,187 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── Integrated Compliance Calendar (§6.1.3 + §9.1.2 — ISO 14001 & 45001 + OSHA) ──────
+  app.get("/api/compliance-calendar", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { complianceCalendarEvents } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const events = await db.select().from(complianceCalendarEvents)
+        .where(isSuperadmin ? undefined : eq(complianceCalendarEvents.userId, userId))
+        .orderBy(asc(complianceCalendarEvents.dueDate));
+      res.json(events);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/compliance-calendar", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { complianceCalendarEvents, insertComplianceCalendarEventSchema } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const parsed = insertComplianceCalendarEventSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const [event] = await db.insert(complianceCalendarEvents).values(parsed.data).returning();
+      res.json(event);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/compliance-calendar/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { complianceCalendarEvents } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const id = parseInt(req.params.id);
+      const updates = { ...req.body, updatedAt: new Date() };
+      delete updates.id; delete updates.userId; delete updates.createdAt;
+      const cond = isSuperadmin ? eq(complianceCalendarEvents.id, id)
+        : and(eq(complianceCalendarEvents.id, id), eq(complianceCalendarEvents.userId, userId));
+      const [updated] = await db.update(complianceCalendarEvents).set(updates).where(cond).returning();
+      if (!updated) return res.status(404).json({ message: "Not found" });
+      res.json(updated);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/compliance-calendar/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    const isSuperadmin = (req.user as any).claims.isSuperadmin === true;
+    try {
+      const { complianceCalendarEvents } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const id = parseInt(req.params.id);
+      const cond = isSuperadmin ? eq(complianceCalendarEvents.id, id)
+        : and(eq(complianceCalendarEvents.id, id), eq(complianceCalendarEvents.userId, userId));
+      await db.delete(complianceCalendarEvents).where(cond);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Auto-sync calendar events from the Compliance Obligations Register
+  app.post("/api/compliance-calendar/sync-obligations", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { complianceCalendarEvents, isoComplianceObligations } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+
+      const obligations = await db.select().from(isoComplianceObligations)
+        .where(eq(isoComplianceObligations.userId, userId));
+
+      // Fetch existing synced events to avoid duplication
+      const existing = await db.select({ sourceId: complianceCalendarEvents.sourceId })
+        .from(complianceCalendarEvents)
+        .where(and(eq(complianceCalendarEvents.userId, userId), eq(complianceCalendarEvents.sourceType, "obligation")));
+      const existingSourceIds = new Set(existing.map(e => e.sourceId));
+
+      let created = 0;
+      for (const ob of obligations) {
+        if (!ob.nextReviewDate) continue;
+        if (existingSourceIds.has(ob.id)) continue;
+
+        // Derive category: obligations with OH&S/safety keywords map to ohs_legal; rest to env_legal
+        const ohsKeywords = ["osha","45001","safety","health","noise","hearing","psa","psm","ergon","lockout","confined"];
+        const isOhs = ohsKeywords.some(k => (ob.aspectCategory + " " + ob.requirementName + " " + (ob.citationSource ?? "")).toLowerCase().includes(k));
+        const standardCategory = isOhs ? "ohs_legal" : "env_legal";
+
+        // Derive event type from context
+        const r = (ob.requirementName + " " + (ob.citationSource ?? "")).toLowerCase();
+        const eventType = r.includes("permit") ? "permit_renewal"
+          : r.includes("report") || r.includes("form r") || r.includes("tier ii") ? "report_due"
+          : r.includes("monitoring") || r.includes("sampling") ? "monitoring"
+          : r.includes("training") ? "training"
+          : r.includes("audit") ? "audit"
+          : r.includes("inspection") ? "inspection"
+          : "review";
+
+        await db.insert(complianceCalendarEvents).values({
+          userId,
+          isoProjectId: ob.isoProjectId ?? undefined,
+          title: ob.requirementName,
+          eventType,
+          standardCategory,
+          dueDate: ob.nextReviewDate,
+          reminderDays: [60, 30, 14],
+          sourceType: "obligation",
+          sourceId: ob.id,
+          status: ob.complianceStatus === "non_compliant" ? "overdue"
+            : ob.complianceStatus === "under_review" ? "upcoming" : "upcoming",
+          responsiblePerson: ob.responsiblePerson ?? undefined,
+          description: ob.descriptionOfRequirement ?? undefined,
+          notes: ob.actionRequired ?? undefined,
+        });
+        created++;
+      }
+
+      res.json({ created, skipped: obligations.filter(o => o.nextReviewDate && existingSourceIds.has(o.id)).length });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  // Send reminder email for a calendar event
+  app.post("/api/compliance-calendar/:id/notify", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req.user as any).claims.sub;
+    try {
+      const { complianceCalendarEvents } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const { sendEmail, brandedHtml } = await import("./emailService");
+      const id = parseInt(req.params.id);
+
+      const [event] = await db.select().from(complianceCalendarEvents)
+        .where(and(eq(complianceCalendarEvents.id, id), eq(complianceCalendarEvents.userId, userId)));
+      if (!event) return res.status(404).json({ message: "Event not found" });
+
+      const user = req.user as any;
+      const recipientEmail = req.body.email || user.claims?.email;
+      if (!recipientEmail) return res.status(400).json({ message: "No recipient email" });
+
+      const dueDate = new Date(event.dueDate);
+      const today = new Date();
+      const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const urgency = daysUntil < 0 ? "OVERDUE" : daysUntil <= 14 ? "URGENT" : daysUntil <= 30 ? "DUE SOON" : "UPCOMING";
+
+      const catLabel: Record<string, string> = {
+        env_legal: "Environmental Legal Obligation (ISO 14001 §6.1.3/§9.1.2)",
+        ohs_legal: "OH&S Legal Obligation (ISO 45001 §6.1.3/§9.1.2)",
+        osha: "OSHA Regulatory Requirement",
+        training: "Legal Compliance Training",
+        drill: "Emergency Drill / Exercise",
+        general: "General Compliance",
+      };
+
+      const bodyHtml = `
+        <p style="font-size:16px;font-weight:bold;color:#e55a00;">[${urgency}] Compliance Calendar Reminder</p>
+        <table style="border-collapse:collapse;width:100%;font-size:14px;">
+          <tr><td style="padding:6px 0;color:#666;width:160px;">Event</td><td style="padding:6px 0;font-weight:600;">${event.title}</td></tr>
+          <tr><td style="padding:6px 0;color:#666;">Category</td><td style="padding:6px 0;">${catLabel[event.standardCategory] ?? event.standardCategory}</td></tr>
+          <tr><td style="padding:6px 0;color:#666;">Due Date</td><td style="padding:6px 0;font-weight:600;color:${daysUntil < 0 ? '#dc2626' : '#d97706'};">${event.dueDate}${daysUntil < 0 ? ` (${Math.abs(daysUntil)} days overdue)` : daysUntil === 0 ? ' (DUE TODAY)' : ` (${daysUntil} days)`}</td></tr>
+          <tr><td style="padding:6px 0;color:#666;">Responsible</td><td style="padding:6px 0;">${event.responsiblePerson || '—'}</td></tr>
+          ${event.description ? `<tr><td style="padding:6px 0;color:#666;vertical-align:top;">Requirement</td><td style="padding:6px 0;">${event.description}</td></tr>` : ''}
+          ${event.notes ? `<tr><td style="padding:6px 0;color:#666;vertical-align:top;">Action Required</td><td style="padding:6px 0;color:#b91c1c;">${event.notes}</td></tr>` : ''}
+        </table>
+        <p style="margin-top:16px;font-size:13px;color:#666;">This reminder was sent from your CCHUB Integrated Compliance Calendar. Log in to update the status or mark this item complete.</p>
+      `;
+
+      const html = brandedHtml(`[${urgency}] ${event.title}`, bodyHtml);
+      await sendEmail(recipientEmail, `[${urgency}] Compliance Deadline: ${event.title} — ${event.dueDate}`, html);
+
+      await db.update(complianceCalendarEvents)
+        .set({ notificationSentAt: new Date().toISOString().split("T")[0] })
+        .where(eq(complianceCalendarEvents.id, id));
+
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }
