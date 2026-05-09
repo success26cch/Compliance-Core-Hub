@@ -1856,21 +1856,21 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border/60 bg-white dark:bg-card px-6 py-4 shrink-0">
+      <div className="border-b border-border/60 bg-white dark:bg-card px-6 py-5 shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <Shield className="w-5 h-5 text-accent" />
-              <h1 className="text-lg font-black text-primary">Compliance Obligations Register</h1>
-              <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px] font-bold">ISO 14001 §6.1.3 + §9.1.2</Badge>
+            <div className="flex items-center gap-2.5 mb-1">
+              <Shield className="w-6 h-6 text-accent" />
+              <h1 className="text-xl font-black text-primary">Compliance Obligations Register</h1>
+              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO 14001 §6.1.3 + §9.1.2</Badge>
             </div>
-            <p className="text-xs text-muted-foreground">Legal and other requirements — Federal, State, and Local obligations applicable to your organization's environmental aspects.</p>
+            <p className="text-sm text-muted-foreground">Legal and other requirements — Federal, State, and Local obligations applicable to your organization's environmental aspects.</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20" onClick={() => { setCoreyResponse(""); setCoreyDialog(true); }} data-testid="button-ask-corey-identify">
-              <Sparkles className="w-3.5 h-3.5" /> Ask Corey to Identify
+            <Button size="sm" variant="outline" className="gap-1.5 text-sm border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/20" onClick={() => { setCoreyResponse(""); setCoreyDialog(true); }} data-testid="button-ask-corey-identify">
+              <Sparkles className="w-4 h-4" /> Ask Corey to Identify
             </Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => {
+            <Button size="sm" variant="outline" className="gap-1.5 text-sm" onClick={() => {
               // Auto-preselect only items NOT already in the register
               const newIdxs = new Set(
                 allStarters
@@ -1881,10 +1881,10 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               setSelectedStarters(newIdxs);
               setStarterDialog(true);
             }} data-testid="button-load-starter-library">
-              <Upload className="w-3.5 h-3.5" /> Load Starter Library
+              <Upload className="w-4 h-4" /> Load Starter Library
             </Button>
-            <Button size="sm" className="gap-1.5 text-xs bg-accent hover:bg-accent/90 text-white" onClick={openAddObligation} data-testid="button-add-compliance-obligation">
-              <Plus className="w-3.5 h-3.5" /> Add Requirement
+            <Button size="sm" className="gap-1.5 text-sm bg-accent hover:bg-accent/90 text-white" onClick={openAddObligation} data-testid="button-add-compliance-obligation">
+              <Plus className="w-4 h-4" /> Add Requirement
             </Button>
           </div>
         </div>
@@ -1897,37 +1897,37 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             { label: "Non-Compliant", value: counts.nonCompliant, color: "text-red-600 dark:text-red-400" },
             { label: "Under Review", value: counts.underReview, color: "text-amber-600 dark:text-amber-400" },
           ].map(s => (
-            <div key={s.label} className="bg-muted/40 border border-border/50 rounded-lg px-3 py-2 text-center min-w-[72px]">
-              <div className={`text-xl font-black ${s.color}`}>{s.value}</div>
-              <div className="text-[10px] text-muted-foreground font-medium">{s.label}</div>
+            <div key={s.label} className="bg-muted/40 border border-border/50 rounded-lg px-4 py-3 text-center min-w-[88px]">
+              <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+              <div className="text-xs text-muted-foreground font-semibold mt-0.5">{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── EMS Environmental Suite Cross-Promo Banner ── */}
-      <div className="mx-6 mt-4 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-gradient-to-r from-emerald-50 via-white to-slate-50 dark:from-emerald-950/20 dark:via-card dark:to-slate-900/10 px-4 py-3 flex items-center gap-4 flex-wrap">
-        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-          <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+      <div className="mx-6 mt-4 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-gradient-to-r from-emerald-50 via-white to-slate-50 dark:from-emerald-950/20 dark:via-card dark:to-slate-900/10 px-5 py-4 flex items-center gap-4 flex-wrap">
+        <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+          <Leaf className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-foreground">EMS Environmental Suite</span>
-            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Bundle</span>
+            <span className="text-sm font-bold text-foreground">EMS Environmental Suite</span>
+            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Bundle</span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+          <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
             This register identifies <strong>what</strong> you must comply with (§6.1.3). The <strong>Environmental Hub</strong> tracks the operational records — inspections, manifests, monitoring logs — that <strong>prove</strong> you are. Bundle both for complete ISO 14001 conformance.
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
           <a href="/env-compliance-hub" target="_blank" rel="noopener noreferrer">
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" data-testid="button-compliance-module-env-hub-promo">
-              <Leaf className="w-3 h-3" /> Environmental Hub
+            <Button size="sm" variant="outline" className="gap-1.5 text-sm border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" data-testid="button-compliance-module-env-hub-promo">
+              <Leaf className="w-4 h-4" /> Environmental Hub
             </Button>
           </a>
           <a href="mailto:team@corecompliancehub.com?subject=EMS Environmental Suite Bundle Inquiry">
-            <Button size="sm" className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" data-testid="button-compliance-module-bundle-contact">
-              <ArrowRight className="w-3 h-3" /> Bundle Pricing
+            <Button size="sm" className="gap-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 text-white" data-testid="button-compliance-module-bundle-contact">
+              <ArrowRight className="w-4 h-4" /> Bundle Pricing
             </Button>
           </a>
         </div>
@@ -1944,13 +1944,13 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               key={key}
               onClick={() => setActiveTab(key as any)}
               data-testid={`tab-compliance-${key}`}
-              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
                 activeTab === key
                   ? "border-accent text-accent"
                   : "border-transparent text-muted-foreground hover:text-primary"
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
               {label}
             </button>
           ))}
@@ -1962,18 +1962,18 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {/* Filters */}
           <div className="px-6 py-3 border-b border-border/40 bg-muted/20 shrink-0 flex flex-wrap gap-2 items-center">
-            <div className="relative flex-1 min-w-[180px] max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
                 placeholder="Search requirements..."
-                className="h-8 pl-8 text-xs"
+                className="h-9 pl-9 text-sm"
                 data-testid="input-compliance-search"
               />
             </div>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="h-8 text-xs w-[180px]" data-testid="select-filter-category">
+              <SelectTrigger className="h-9 text-sm w-[190px]" data-testid="select-filter-category">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
@@ -1982,7 +1982,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               </SelectContent>
             </Select>
             <Select value={filterJurisdiction} onValueChange={setFilterJurisdiction}>
-              <SelectTrigger className="h-8 text-xs w-[150px]" data-testid="select-filter-jurisdiction">
+              <SelectTrigger className="h-9 text-sm w-[160px]" data-testid="select-filter-jurisdiction">
                 <SelectValue placeholder="All Jurisdictions" />
               </SelectTrigger>
               <SelectContent>
@@ -1991,7 +1991,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-8 text-xs w-[140px]" data-testid="select-filter-status">
+              <SelectTrigger className="h-9 text-sm w-[150px]" data-testid="select-filter-status">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -1999,7 +1999,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                 {STATUS_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <span className="text-xs text-muted-foreground ml-auto">{filteredObligations.length} of {obligations.length}</span>
+            <span className="text-sm text-muted-foreground ml-auto">{filteredObligations.length} of {obligations.length}</span>
           </div>
 
           <ScrollArea className="flex-1">
@@ -2030,9 +2030,9 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                   return (
                     <div key={o.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-compliance-${o.id}`}>
                       {/* Row Summary */}
-                      <div className="px-6 py-3 flex items-start gap-3">
+                      <div className="px-6 py-4 flex items-start gap-3">
                         <button
-                          className="mt-0.5 text-muted-foreground hover:text-primary transition-colors shrink-0"
+                          className="mt-1 text-muted-foreground hover:text-primary transition-colors shrink-0"
                           onClick={() => toggleRow(o.id)}
                           data-testid={`button-expand-row-${o.id}`}
                         >
@@ -2040,45 +2040,45 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                         </button>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start gap-2 flex-wrap">
-                            <span className="text-sm font-semibold text-primary leading-tight">{o.requirementName}</span>
+                            <span className="text-base font-semibold text-primary leading-tight">{o.requirementName}</span>
                             {jurisdictionBadge(o.jurisdictionLevel)}
                             {statusBadge(o.complianceStatus)}
                             {o.permitRequired && (
-                              <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 text-[10px] px-1.5 py-0 font-semibold border">
+                              <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 text-xs px-1.5 py-0 font-semibold border">
                                 Permit Req.
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 mt-1 flex-wrap">
-                            <span className="text-[11px] text-muted-foreground">{o.aspectCategory}</span>
+                          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                            <span className="text-xs text-muted-foreground">{o.aspectCategory}</span>
                             {o.citationSource && (
-                              <span className="text-[11px] font-mono text-accent/80">{o.citationSource}</span>
+                              <span className="text-xs font-mono text-accent/80">{o.citationSource}</span>
                             )}
                             {o.state && (
-                              <span className="text-[11px] text-muted-foreground">State: {o.state}{o.county ? ` — ${o.county} Co.` : ""}</span>
+                              <span className="text-xs text-muted-foreground">State: {o.state}{o.county ? ` — ${o.county} Co.` : ""}</span>
                             )}
                             {o.responsiblePerson && (
-                              <span className="text-[11px] text-muted-foreground">Owner: {o.responsiblePerson}</span>
+                              <span className="text-xs text-muted-foreground">Owner: {o.responsiblePerson}</span>
                             )}
                             {o.dateLastReviewed && (
-                              <span className="text-[11px] text-muted-foreground">Last reviewed: {o.dateLastReviewed}</span>
+                              <span className="text-xs text-muted-foreground">Last reviewed: {o.dateLastReviewed}</span>
                             )}
                           </div>
                           {o.actionRequired && (
-                            <div className="mt-1.5 flex items-center gap-1.5">
-                              <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-                              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">{o.actionRequired}</span>
+                            <div className="mt-2 flex items-center gap-1.5">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{o.actionRequired}</span>
                             </div>
                           )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => { openAddEvaluation(o.id); setActiveTab("evaluation"); }}
-                            className="text-xs text-muted-foreground hover:text-accent px-2 py-1 rounded hover:bg-accent/10 transition-colors"
+                            className="text-muted-foreground hover:text-accent p-1.5 rounded hover:bg-accent/10 transition-colors"
                             title="Log evaluation"
                             data-testid={`button-log-eval-${o.id}`}
                           >
-                            <ClipboardCheck className="w-3.5 h-3.5" />
+                            <ClipboardCheck className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => openEditObligation(o)}
@@ -2086,7 +2086,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                             title="Edit"
                             data-testid={`button-edit-obligation-${o.id}`}
                           >
-                            <Pencil className="w-3.5 h-3.5" />
+                            <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => { if (confirm("Delete this requirement?")) deleteObligationMut.mutate(o.id); }}
@@ -2101,42 +2101,42 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
 
                       {/* Expanded Detail */}
                       {expanded && (
-                        <div className="px-6 pb-4 bg-muted/10 border-t border-border/30">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 pt-3">
+                        <div className="px-6 pb-5 bg-muted/10 border-t border-border/30">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 pt-4">
                             {o.descriptionOfRequirement && (
                               <div className="sm:col-span-2">
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Description of Requirement</p>
-                                <p className="text-xs text-primary leading-relaxed">{o.descriptionOfRequirement}</p>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Description of Requirement</p>
+                                <p className="text-sm text-primary leading-relaxed">{o.descriptionOfRequirement}</p>
                               </div>
                             )}
                             {o.facilityAction && (
                               <div className="sm:col-span-2">
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Facility Action</p>
-                                <p className="text-xs text-primary leading-relaxed">{o.facilityAction}</p>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Facility Action</p>
+                                <p className="text-sm text-primary leading-relaxed">{o.facilityAction}</p>
                               </div>
                             )}
                             {o.recordsToMaintain && (
                               <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Records to Maintain</p>
-                                <p className="text-xs text-primary">{o.recordsToMaintain}</p>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Records to Maintain</p>
+                                <p className="text-sm text-primary">{o.recordsToMaintain}</p>
                               </div>
                             )}
                             {o.permitRequired && (
                               <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Permit</p>
-                                <p className="text-xs text-primary">Required — {o.permitRenewalFrequency ?? "Review frequency not set"}</p>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Permit</p>
+                                <p className="text-sm text-primary">Required — {o.permitRenewalFrequency ?? "Review frequency not set"}</p>
                               </div>
                             )}
                             {o.nextReviewDate && (
                               <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Next Review Date</p>
-                                <p className="text-xs text-primary">{o.nextReviewDate}</p>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Next Review Date</p>
+                                <p className="text-sm text-primary">{o.nextReviewDate}</p>
                               </div>
                             )}
                             {o.notes && (
                               <div className="sm:col-span-2">
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Notes</p>
-                                <p className="text-xs text-muted-foreground italic">{o.notes}</p>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Notes</p>
+                                <p className="text-sm text-muted-foreground italic">{o.notes}</p>
                               </div>
                             )}
                           </div>
@@ -2180,38 +2180,38 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             {evaluations.length === 0 ? (
               <div className="p-12 text-center">
                 <ClipboardCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-muted-foreground mb-1">No evaluations logged</p>
-                <p className="text-xs text-muted-foreground mb-4">ISO 14001 §9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your audit trail.</p>
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => openAddEvaluation()}>
-                  <Plus className="w-3.5 h-3.5" /> Log First Evaluation
+                <p className="text-base font-semibold text-muted-foreground mb-1">No evaluations logged</p>
+                <p className="text-sm text-muted-foreground mb-4">ISO 14001 §9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your audit trail.</p>
+                <Button size="sm" variant="outline" className="gap-1.5 text-sm" onClick={() => openAddEvaluation()}>
+                  <Plus className="w-4 h-4" /> Log First Evaluation
                 </Button>
               </div>
             ) : (
               <div className="divide-y divide-border/40">
                 {evaluations.map(ev => (
-                  <div key={ev.id} className="px-6 py-4 hover:bg-muted/20 transition-colors" data-testid={`row-evaluation-${ev.id}`}>
+                  <div key={ev.id} className="px-6 py-5 hover:bg-muted/20 transition-colors" data-testid={`row-evaluation-${ev.id}`}>
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="text-sm font-semibold text-primary truncate">{obligationName(ev.complianceObligationId)}</span>
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <span className="text-base font-semibold text-primary truncate">{obligationName(ev.complianceObligationId)}</span>
                           {evalStatusBadge(ev.complianceStatus)}
                         </div>
-                        <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground mb-2">
+                        <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground mb-2.5">
                           <span>Evaluated: {ev.evaluationDate}</span>
                           {ev.evaluatedBy && <span>By: {ev.evaluatedBy}</span>}
                           {ev.dueDate && <span className="text-amber-600 dark:text-amber-400">Due: {ev.dueDate}</span>}
                           {ev.closedDate && <span className="text-emerald-600 dark:text-emerald-400">Closed: {ev.closedDate}</span>}
                         </div>
                         {ev.findings && (
-                          <div className="mb-1.5">
-                            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Findings</p>
-                            <p className="text-xs text-primary">{ev.findings}</p>
+                          <div className="mb-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Findings</p>
+                            <p className="text-sm text-primary">{ev.findings}</p>
                           </div>
                         )}
                         {ev.evidenceDescription && (
-                          <div className="mb-1.5">
-                            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Evidence</p>
-                            <p className="text-xs text-primary">{ev.evidenceDescription}</p>
+                          <div className="mb-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Evidence</p>
+                            <p className="text-sm text-primary">{ev.evidenceDescription}</p>
                           </div>
                         )}
                         {ev.actionRequired && (
