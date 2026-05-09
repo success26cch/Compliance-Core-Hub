@@ -1625,6 +1625,19 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
     },
   });
 
+  const { data: companyProfile } = useQuery<any>({
+    queryKey: ["/api/company-profile"],
+    queryFn: () => fetch("/api/company-profile", { credentials: "include" }).then(r => r.json()),
+  });
+  // Normalize org state to canonical name ("Michigan" | "Ohio" | other | null)
+  const orgState: string | null = useMemo(() => {
+    const raw = (companyProfile?.state ?? "").trim().toLowerCase();
+    if (!raw) return null;
+    if (raw === "mi" || raw === "michigan") return "Michigan";
+    if (raw === "oh" || raw === "ohio") return "Ohio";
+    return raw; // some other state — will exclude all pre-built state starters
+  }, [companyProfile?.state]);
+
   const createObligationMut = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/iso-compliance-obligations", data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/iso-compliance-obligations"] }); setObligationDialog(false); toast({ title: "Requirement added" }); },
@@ -1701,8 +1714,31 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
     underReview: obligations.filter(o => o.complianceStatus === "under_review").length,
   }), [obligations]);
 
-  // All starter items merged
-  const allStarters = [...FEDERAL_STARTER_LIBRARY, ...MICHIGAN_STARTER, ...OHIO_STARTER, ...CORPORATE_STARTER];
+  // Build state-filtered starter groups — only show state reqs that match the org's state
+  const { groupsWithOffsets, allStarters } = useMemo(() => {
+    const base: Array<{ label: string; emoji: string; items: typeof FEDERAL_STARTER_LIBRARY }> = [
+      { label: "Federal Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY },
+    ];
+    // Include Michigan starters only when org state is unknown or is Michigan
+    if (orgState === null || orgState === "Michigan") {
+      base.push({ label: "Michigan State Requirements", emoji: "🗺️", items: MICHIGAN_STARTER });
+    }
+    // Include Ohio starters only when org state is unknown or is Ohio
+    if (orgState === null || orgState === "Ohio") {
+      base.push({ label: "Ohio State Requirements", emoji: "🗺️", items: OHIO_STARTER });
+    }
+    base.push({ label: "Corporate, Customer & Other Requirements", emoji: "🏢", items: CORPORATE_STARTER });
+
+    let offset = 0;
+    const merged: typeof FEDERAL_STARTER_LIBRARY = [];
+    const groupsWithOffsets = base.map(g => {
+      const result = { ...g, offset };
+      merged.push(...g.items);
+      offset += g.items.length;
+      return result;
+    });
+    return { groupsWithOffsets, allStarters: merged };
+  }, [orgState]);
 
   // Track which starter items are already in the register (by requirement name)
   const existingObligationNames = useMemo(
@@ -2544,8 +2580,27 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                 <BookOpen className="w-5 h-5 text-accent" /> Load Starter Library
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Select the requirements applicable to your organization. Federal items apply broadly; Michigan and Ohio state entries are pre-loaded for those jurisdictions. Corporate/Customer items reflect OEM and EMS obligations. All entries are fully editable after import.
+                Check only the requirements that apply to your facility — you do not need to add everything. Use the search box or category checkboxes to narrow the list. Everything is fully editable after import.
               </p>
+              {/* State detection banner */}
+              {orgState ? (
+                <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800/40 px-3 py-1.5 text-[11px]">
+                  <span className="text-blue-500 shrink-0">📍</span>
+                  <span className="text-blue-800 dark:text-blue-300">
+                    <strong>State detected: {orgState}.</strong>{" "}
+                    {(orgState === "Michigan" || orgState === "Ohio")
+                      ? `Only ${orgState}-specific state requirements are shown below — requirements from other states have been excluded.`
+                      : "No pre-built state starter library exists for your state yet. Federal and Corporate requirements are shown. Add state-specific items manually with + Add Requirement."}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 dark:bg-slate-800/30 dark:border-slate-700/40 px-3 py-1.5 text-[11px]">
+                  <span className="text-slate-400 shrink-0">📍</span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    No state set in your Company Profile — all available state libraries are shown. Set your state in Company Profile to filter to only your jurisdiction.
+                  </span>
+                </div>
+              )}
             </DialogHeader>
 
             {/* Local Requirements Note */}
@@ -2590,12 +2645,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
           </div>{/* end fixed header wrapper */}
 
           <div className="flex-1 overflow-y-auto min-h-0">
-            {[
-              { label: "Federal Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY, offset: 0 },
-              { label: "Michigan State Requirements", emoji: "MI", items: MICHIGAN_STARTER, offset: FEDERAL_STARTER_LIBRARY.length },
-              { label: "Ohio State Requirements", emoji: "OH", items: OHIO_STARTER, offset: FEDERAL_STARTER_LIBRARY.length + MICHIGAN_STARTER.length },
-              { label: "Corporate, Customer & Other Requirements", emoji: "🏢", items: CORPORATE_STARTER, offset: FEDERAL_STARTER_LIBRARY.length + MICHIGAN_STARTER.length + OHIO_STARTER.length },
-            ].map(group => {
+            {groupsWithOffsets.map(group => {
               // Enrich each item with its absolute index
               const enriched = group.items.map((item, i) => ({ item, idx: String(group.offset + i) }));
               // Apply search filter
