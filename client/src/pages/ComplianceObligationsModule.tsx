@@ -2536,32 +2536,34 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
 
       {/* ── Starter Library Dialog ────────────────────────── */}
       <Dialog open={starterDialog} onOpenChange={open => { setStarterDialog(open); if (!open) setStarterSearch(""); }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-accent" /> Load Starter Library
-            </DialogTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Select the requirements applicable to your organization. Federal items apply broadly; Michigan and Ohio state entries are pre-loaded for those jurisdictions. Corporate/Customer items reflect OEM and EMS obligations. All entries are fully editable after import.
-            </p>
-          </DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+          {/* Fixed header area */}
+          <div className="shrink-0 px-6 pt-6 pb-0 space-y-3">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-accent" /> Load Starter Library
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Select the requirements applicable to your organization. Federal items apply broadly; Michigan and Ohio state entries are pre-loaded for those jurisdictions. Corporate/Customer items reflect OEM and EMS obligations. All entries are fully editable after import.
+              </p>
+            </DialogHeader>
 
-          {/* Local Requirements Note */}
-          <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800/40 px-3 py-2.5 flex gap-2 items-start shrink-0 mx-0.5">
-            <span className="text-amber-500 text-sm mt-0.5 shrink-0">⚠</span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">Local Requirements Not Pre-Loaded</p>
-              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
-                County, city, and municipal environmental requirements vary significantly by jurisdiction and cannot be pre-populated as fixed starters. Examples include county stormwater programs, local industrial pretreatment permits, and municipal air quality rules. Add local requirements manually using the <strong>+ Add Requirement</strong> button. The Butler County (OH) stormwater entry in the Ohio group is included as a practical example of a local requirement.
-              </p>
-              <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-1 italic">
-                Coming soon: CCHUB Environmental Hub (Env Hub) will automatically push applicable local and regional environmental requirements to your register based on your facility's zip code and industry sector when subscribed.
-              </p>
+            {/* Local Requirements Note */}
+            <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800/40 px-3 py-2.5 flex gap-2 items-start">
+              <span className="text-amber-500 text-sm mt-0.5 shrink-0">⚠</span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">Local Requirements Not Pre-Loaded</p>
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+                  County, city, and municipal environmental requirements vary significantly by jurisdiction and cannot be pre-populated as fixed starters. Examples include county stormwater programs, local industrial pretreatment permits, and municipal air quality rules. Add local requirements manually using the <strong>+ Add Requirement</strong> button. The Butler County (OH) stormwater entry in the Ohio group is included as a practical example of a local requirement.
+                </p>
+                <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-1 italic">
+                  Coming soon: CCHUB Environmental Hub (Env Hub) will automatically push applicable local and regional environmental requirements to your register based on your facility's zip code and industry sector when subscribed.
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Toolbar */}
-          <div className="flex items-center gap-2 py-2 border-b border-border/40 shrink-0 flex-wrap">
+            {/* Toolbar */}
+            <div className="flex items-center gap-2 pb-2 border-b border-border/40 flex-wrap">
             <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setSelectedStarters(new Set(
               allStarters.map((item, i) => ({ item, i }))
                 .filter(({ item }) => !existingObligationNames.has(item.requirementName))
@@ -2585,8 +2587,9 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               {selectedStarters.size} new · {existingObligationNames.size > 0 ? `${allStarters.filter(item => existingObligationNames.has(item.requirementName)).length} already imported` : ""}
             </span>
           </div>
+          </div>{/* end fixed header wrapper */}
 
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {[
               { label: "Federal Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY, offset: 0 },
               { label: "Michigan State Requirements", emoji: "MI", items: MICHIGAN_STARTER, offset: FEDERAL_STARTER_LIBRARY.length },
@@ -2710,9 +2713,9 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                 </div>
               );
             })}
-          </ScrollArea>
+          </div>{/* end scrollable list */}
 
-          <div className="flex gap-2 justify-end pt-3 border-t border-border/40 shrink-0">
+          <div className="flex gap-2 justify-end px-6 py-4 border-t border-border/40 shrink-0">
             <div className="flex-1 text-xs text-muted-foreground flex items-center">
               {selectedStarters.size === 0
                 ? "Select requirements to add to your register"
