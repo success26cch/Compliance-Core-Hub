@@ -14,9 +14,11 @@ import {
   Plus, Pencil, Trash2, CheckCircle2, AlertTriangle, XCircle,
   Clock, FileText, ChevronDown, ChevronUp, BookOpen, Shield,
   Download, Upload, Filter, Search, ClipboardCheck, Sparkles, MapPin,
-  ArrowRight, Leaf,
+  ArrowRight, Leaf, Scale, HelpCircle,
 } from "lucide-react";
 import type { IsoComplianceObligation, IsoComplianceEvaluation } from "@shared/schema";
+import ComplianceApplicabilityDialog from "@/components/iso/ComplianceApplicabilityDialog";
+import ComplianceEvaluationWizard from "@/components/iso/ComplianceEvaluationWizard";
 
 /* ─── Constants ─────────────────────────────────────────── */
 const ASPECT_CATEGORIES = [
@@ -1602,6 +1604,17 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(new Set());
   const [starterSearch, setStarterSearch] = useState("");
 
+  // §6.1.3 Applicability Screener
+  const [applicabilityItem, setApplicabilityItem] = useState<{
+    requirementName: string;
+    aspectCategory: string;
+    citationSource?: string | null;
+    descriptionOfRequirement?: string | null;
+  } | null>(null);
+
+  // §9.1.2 Evaluation Wizard
+  const [evalWizardObligation, setEvalWizardObligation] = useState<IsoComplianceObligation | null>(null);
+
   // Ask Corey — Identify Requirements by Jurisdiction
   const [coreyDialog, setCoreyDialog] = useState(false);
   const [coreyForm, setCoreyForm] = useState({ state: "", county: "", city: "", industry: "", naicsCode: "", processes: "", facilitySize: "" });
@@ -1818,9 +1831,10 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
     }
   }
 
-  function openAddEvaluation(obligationId?: number) {
+  function openAddEvaluation(obligationId?: number, prefillFindings?: string) {
     setEditEvaluation(null);
-    setEvaluationForm(emptyEvaluation(obligationId));
+    const base = emptyEvaluation(obligationId);
+    setEvaluationForm(prefillFindings ? { ...base, findings: prefillFindings } : base);
     setEvaluationDialog(true);
   }
 
@@ -2139,6 +2153,39 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                                 <p className="text-sm text-muted-foreground italic">{o.notes}</p>
                               </div>
                             )}
+                          </div>
+
+                          {/* §6.1.3 / §9.1.2 Action Bar */}
+                          <div className="mt-4 pt-3 border-t border-border/30 flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1.5 mr-2">
+                              <Shield className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Compliance Tools</span>
+                            </div>
+                            <button
+                              onClick={() => setEvalWizardObligation(o)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-accent text-xs font-semibold transition-colors"
+                              data-testid={`button-eval-wizard-${o.id}`}
+                              title="ISO §9.1.2 — Evaluate whether you are meeting this requirement"
+                            >
+                              <ClipboardCheck className="w-3.5 h-3.5" />
+                              Evaluate Compliance
+                              <Badge className="text-[9px] px-1 py-0 h-4 bg-accent/10 text-accent border-accent/30 border ml-0.5">§9.1.2</Badge>
+                            </button>
+                            <button
+                              onClick={() => setApplicabilityItem({
+                                requirementName: o.requirementName,
+                                aspectCategory: o.aspectCategory,
+                                citationSource: o.citationSource,
+                                descriptionOfRequirement: o.descriptionOfRequirement,
+                              })}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-300/60 bg-blue-50/50 hover:bg-blue-100/60 dark:border-blue-700/40 dark:bg-blue-950/20 dark:hover:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-xs font-semibold transition-colors"
+                              data-testid={`button-applicability-${o.id}`}
+                              title="ISO §6.1.3 — Screen whether this requirement applies to your facility"
+                            >
+                              <Scale className="w-3.5 h-3.5" />
+                              Applicability Screen
+                              <Badge className="text-[9px] px-1 py-0 h-4 bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 border ml-0.5">§6.1.3</Badge>
+                            </button>
                           </div>
                         </div>
                       )}
@@ -2754,6 +2801,28 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                                   <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.descriptionOfRequirement}</p>
                                 )}
                               </div>
+                              {/* §6.1.3 applicability screen button — stop propagation so checkbox isn't toggled */}
+                              {!alreadyImported && (
+                                <button
+                                  type="button"
+                                  onClick={e => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setApplicabilityItem({
+                                      requirementName: item.requirementName,
+                                      aspectCategory: item.aspectCategory,
+                                      citationSource: item.citationSource,
+                                      descriptionOfRequirement: item.descriptionOfRequirement,
+                                    });
+                                  }}
+                                  className="shrink-0 flex items-center gap-1 px-2 py-1 rounded border border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-800/40 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors"
+                                  title="§6.1.3 Applicability Screen — Does this requirement apply to your facility?"
+                                  data-testid={`button-screen-${idx}`}
+                                >
+                                  <Scale className="w-3 h-3" />
+                                  <span className="text-[9px] font-semibold">§6.1.3</span>
+                                </button>
+                              )}
                             </label>
                           );
                         })}
@@ -2978,6 +3047,37 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── §6.1.3 Applicability Screener ──────────────────────────────────── */}
+      {applicabilityItem && (
+        <ComplianceApplicabilityDialog
+          open={!!applicabilityItem}
+          onOpenChange={v => { if (!v) setApplicabilityItem(null); }}
+          item={applicabilityItem}
+        />
+      )}
+
+      {/* ── §9.1.2 Compliance Evaluation Wizard ────────────────────────────── */}
+      {evalWizardObligation && (
+        <ComplianceEvaluationWizard
+          open={!!evalWizardObligation}
+          onOpenChange={v => { if (!v) setEvalWizardObligation(null); }}
+          obligation={evalWizardObligation}
+          onAccept={async ({ suggestedStatus, findingsText, updateStatus, createEvaluation }) => {
+            if (updateStatus) {
+              await updateObligationMut.mutateAsync({
+                id: evalWizardObligation.id,
+                data: { complianceStatus: suggestedStatus },
+              });
+            }
+            if (createEvaluation) {
+              openAddEvaluation(evalWizardObligation.id, findingsText);
+              setActiveTab("evaluation");
+            }
+            setEvalWizardObligation(null);
+          }}
+        />
+      )}
     </div>
   );
 }
