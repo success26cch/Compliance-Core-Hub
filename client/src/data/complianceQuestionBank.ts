@@ -630,17 +630,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["lockout", "tagout", "loto", "energy control", "hazardous energy"],
     citationPatterns: ["29 cfr 1910.147", "1910.147"],
     applicabilityIntro:
-      "OSHA's Lockout/Tagout (LOTO) standard (29 CFR 1910.147) applies to facilities where employees perform service or maintenance on equipment where unexpected energization or startup could cause injury.",
+      "OSHA's Lockout/Tagout (LOTO) standard (29 CFR 1910.147) applies to facilities where employees perform servicing or maintenance on machines or equipment and where the unexpected energization, startup, or release of stored energy could cause injury. It does NOT apply to cord-and-plug equipment that is unplugged and the plug is under exclusive control of the person performing the work, or to minor tool changes on equipment during normal production if they are routine, repetitive, and integral to production.",
     applicabilityQuestions: [
       {
         id: "loto_a1",
-        text: "Do employees perform any servicing or maintenance on machinery or equipment (e.g., clearing jams, cleaning, lubricating, adjusting, or repairing)?",
+        text: "Do employees ever perform service or maintenance on machinery — including tasks such as clearing jams or blockages, cleaning internal parts, lubricating, adjusting, setting up, changing tooling, troubleshooting, or repairing — while the machine could potentially cycle, start, or move?",
+        hint: "This is the primary trigger question. Even routine tasks like clearing a press jam or cleaning a conveyor while it is off require LOTO if re-energization would be hazardous.",
         yesIndicates: "applies",
       },
       {
         id: "loto_a2",
-        text: "Could unexpected energization, startup, or release of stored energy (electrical, mechanical, pneumatic, hydraulic, thermal, or chemical) during service or maintenance cause injury?",
-        hint: "This includes electrical, mechanical, pneumatic, hydraulic, thermal, and chemical energy sources.",
+        text: "Does any equipment at your facility have multiple energy sources — such as both electrical AND pneumatic, hydraulic, gravitational, mechanical spring tension, or thermal energy — that would need to be isolated and verified before safe servicing?",
+        hint: "Multiple energy sources are common in stamping presses, injection molding machines, conveyors, robotic cells, and HVAC systems. Each source must be addressed in a machine-specific LOTO procedure.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "loto_a3",
+        text: "Does your facility operate machinery with stored energy hazards — such as hydraulic accumulators, pneumatic cylinders, capacitors, compressed springs, suspended parts (gravity), or process chemicals under pressure — that remain hazardous even after electrical power is removed?",
+        hint: "Simply turning off a machine or pressing an E-stop does NOT eliminate stored energy. Capacitors can hold charge; cylinders can still actuate; suspended loads can drop.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "loto_a4",
+        text: "Do employees perform maintenance or servicing tasks that require reaching into or placing any part of their body into the point of operation, danger zone, or area where unexpected movement could cause injury?",
+        hint: "Reaching into a guarded area to clear a jam, replacing blades or dies inside a press, or working inside a robotic cell all require LOTO.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "loto_a5",
+        text: "Is maintenance or equipment servicing performed by outside contractors or specialized service technicians at your facility?",
+        hint: "If outside contractors service equipment at your facility, you must coordinate LOTO procedures with them. Your LOTO program must address contractor activities.",
         yesIndicates: "applies",
       },
     ],
@@ -682,21 +701,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["confined space", "permit-required confined", "prcs"],
     citationPatterns: ["29 cfr 1910.146", "1910.146"],
     applicabilityIntro:
-      "OSHA's Permit-Required Confined Spaces standard (29 CFR 1910.146) applies to facilities with confined spaces that have one or more serious hazards requiring a permit system before entry.",
+      "OSHA's Permit-Required Confined Spaces standard (29 CFR 1910.146) applies to general industry facilities with spaces that meet all three confined space criteria AND contain at least one permit-required hazard. A confined space is: (1) large enough to enter and perform work, (2) has limited or restricted means of entry/exit, and (3) is not designed for continuous employee occupancy. A PERMIT-REQUIRED confined space adds serious hazards. Note: spaces that can be reclassified as non-permit-required (by eliminating all hazards) are managed differently than those with ineliminable hazards.",
     applicabilityQuestions: [
       {
         id: "cs_a1",
-        text: "Does your facility have any spaces large enough for an employee to enter and perform assigned work (e.g., tanks, vessels, silos, hoppers, vaults, pits, manholes, tunnels)?",
+        text: "Does your facility have any physical spaces that an employee could bodily enter to perform work — such as storage tanks, vessels, silos, hoppers, bins, pits, sumps, vaults, manholes, utility tunnels, crawl spaces, ductwork, boilers, or reactor vessels?",
+        hint: "The space must be large enough for a worker to enter with their body — not just reach into. Even a small access hatch leading into a tank qualifies if the employee must enter.",
         yesIndicates: "applies",
       },
       {
         id: "cs_a2",
-        text: "Do any of those spaces have limited or restricted means of entry or exit, or are they not designed for continuous employee occupancy?",
+        text: "Do any of these spaces have a limited or restricted means of entry or exit — such as a narrow hatch, manhole, or access port — that would impede a rescue or emergency egress?",
+        hint: "A space can have a door that opens inward or a narrow opening that slows escape. 'Limited' means it is not as convenient as a normal room door — not that entry is impossible.",
         yesIndicates: "applies",
       },
       {
         id: "cs_a3",
-        text: "Do any of these spaces contain or have a potential to contain a serious safety or health hazard — such as a hazardous atmosphere, engulfment hazard, or internal configuration that could trap an entrant?",
+        text: "Do any of these spaces contain or have the potential to contain a hazardous atmosphere — such as oxygen deficiency (below 19.5% O₂), oxygen enrichment (above 23.5% O₂), flammable gases or vapors above 10% of the LEL, or airborne toxic substances above IDLH or PEL concentrations?",
+        hint: "Even a space that normally has no atmospheric hazard may become hazardous if chemical residue, biological material, or displaced oxygen is present. Vessels that held hydrocarbons, solvents, acids, or biological material are common examples.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "cs_a4",
+        text: "Do any of these spaces contain a material that could engulf an entrant — such as grain, sand, sawdust, coal, pellets, or similar bulk solid or liquid material with flowing or liquefying potential?",
+        hint: "Engulfment is the capture and burial of a person by a liquid or finely divided solid material. Grain bins, sand hoppers, and chemical slurry tanks are classic examples.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "cs_a5",
+        text: "Do any of these spaces have an internal configuration — such as inwardly converging walls, a floor that slopes downward, or internal obstructions — that could trap or asphyxiate an entrant, OR do they contain any other recognized serious safety or health hazard (e.g., energized electrical equipment, unguarded moving machinery, extreme heat)?",
+        hint: "This is the catch-all for 'any other serious safety or health hazard.' If you answer YES to questions 3, 4, or 5, the space is permit-required.",
         yesIndicates: "applies",
       },
     ],
@@ -735,16 +769,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["machine guard", "point of operation", "machinery", "guarding", "1910.212"],
     citationPatterns: ["29 cfr 1910.212", "1910.212", "29 cfr 1910.217", "29 cfr 1910.219"],
     applicabilityIntro:
-      "OSHA machine guarding standards (29 CFR 1910.212-.219) apply to all facilities where employees operate, set up, or maintain machinery with moving parts that present a hazard.",
+      "OSHA machine guarding standards (29 CFR 1910.212–.219) apply to all general industry facilities where employees operate, set up, adjust, or maintain machinery with hazardous moving parts. The standard requires that every machine with a point of operation, power transmission device, or any other moving part that presents a hazard must be guarded. There are no employee-count thresholds — even one machine operated by one employee triggers the requirement.",
     applicabilityQuestions: [
       {
         id: "mg_a1",
-        text: "Does your facility have machinery with rotating parts, cutting edges, punching actions, shearing operations, or other moving parts that could contact employees?",
+        text: "Does your facility operate any machinery with rotating shafts, spindles, or pulleys; cutting blades or edges; reciprocating or sliding parts; punching, stamping, or shearing actions; or in-running nip points (two rotating parts coming together) that could contact an employee?",
+        hint: "Common examples: lathes, mills, grinders, drill presses, stamping presses, power brakes, slitters, band saws, table saws, conveyors, mixers, fans, and any equipment with belt or chain drives.",
         yesIndicates: "applies",
       },
       {
         id: "mg_a2",
-        text: "Do employees operate, set up, or maintain machinery as part of their regular duties?",
+        text: "Do any employees work in close proximity to machinery where they could come into contact with moving parts during normal operation, setup, tooling changes, or troubleshooting?",
+        hint: "Guards are required wherever an employee could reach into, under, around, or through a barrier to contact a hazardous moving part during any foreseeable activity — not just normal operation.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "mg_a3",
+        text: "Does your facility have power transmission components — such as belts, chains, pulleys, gears, flywheels, couplings, cams, or drive shafts — that are not fully enclosed and could be contacted by employees?",
+        hint: "Power transmission apparatus must be guarded regardless of speed. A slow-moving chain drive or a belt drive at floor level still requires guarding if an employee could contact it.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "mg_a4",
+        text: "Are there any machines at your facility where guards have been removed, bypassed, or are missing — even temporarily — to facilitate setup, maintenance, or because production runs faster without them?",
+        hint: "Removing or bypassing guards is one of OSHA's most frequently cited machine guarding violations. Temporary removal for any reason still creates a citation-level hazard.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "mg_a5",
+        text: "Do employees feed stock, parts, or material into machines by hand, or must they reach into or near a danger zone to retrieve finished parts, clear scrap, or adjust the workpiece?",
+        hint: "Hand-feeding operations at punch presses, hydraulic presses, shears, and injection molding machines are prime point-of-operation guarding hazards. Presence-sensing devices, two-hand controls, or physical barrier guards are required.",
         yesIndicates: "applies",
       },
     ],
@@ -779,16 +833,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["ppe", "personal protective equipment", "safety glasses", "hard hat", "gloves", "face shield"],
     citationPatterns: ["29 cfr 1910.132", "1910.132", "1910.133", "1910.135", "1910.136", "1910.138"],
     applicabilityIntro:
-      "OSHA's PPE standards (29 CFR 1910.132-.138) apply to any facility where employees face hazards that require protective equipment for eyes, face, head, hands, feet, or body.",
+      "OSHA's PPE standards (29 CFR 1910.132–.138) apply to any facility where employees face hazards to the eyes, face, head, hands, feet, or body that cannot be fully eliminated through engineering or administrative controls alone. The employer must conduct and certify a written hazard assessment, select appropriate PPE, provide it at no cost (with limited exceptions), and train employees before use. PPE is the last line of defense in the hierarchy of controls — but it is still legally required whenever residual hazards remain.",
     applicabilityQuestions: [
       {
         id: "ppe_a1",
-        text: "Do employees face hazards at your facility from impact, penetration, compression, chemical, heat, electrical, or other sources?",
+        text: "Are employees exposed to any of the following hazards during their work: flying particles or chips, chemical splashes or mists, intense light or radiation (welding arcs, UV, lasers), electrical arc flash, heat or flames, falling objects, foot crush or puncture hazards, or laceration/abrasion risks?",
+        hint: "This covers the primary hazard categories addressed by OSHA's eye/face (1910.133), head (1910.135), foot (1910.136), and hand protection standards. If any of these hazards exist, PPE selection and a written hazard assessment are required.",
         yesIndicates: "applies",
       },
       {
         id: "ppe_a2",
-        text: "Is PPE (such as safety glasses, hard hats, gloves, safety footwear, or face shields) required for any work tasks at your facility?",
+        text: "Do employees work with or near chemicals — including acids, caustics, solvents, or other corrosive or reactive substances — where skin or eye contact is possible during normal handling, spills, or process upsets?",
+        hint: "Chemical handling almost always requires chemical-resistant gloves, and often face shields or splash goggles beyond standard safety glasses. Check the PPE section (Section 8) of each SDS for the manufacturer's PPE recommendations.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "ppe_a3",
+        text: "Does your facility have employees who perform grinding, cutting, welding, chipping, or abrasive operations that generate sparks, metal fragments, or high-velocity projectiles?",
+        hint: "These operations typically require at minimum: safety glasses with side shields, and often full-face shields, welding helmets, or impact-rated goggles. Flying particle hazards are one of OSHA's most frequently cited PPE violations.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "ppe_a4",
+        text: "Are employees required to work in areas where overhead work is performed, or where objects could fall from elevated surfaces, shelving, or equipment — creating a struck-by or head injury risk?",
+        hint: "Hard hats are required wherever there is a risk of head injury from falling objects, low overhead obstructions, or electrical hazards. This is common in warehouses, manufacturing floors with overhead cranes, and construction areas.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "ppe_a5",
+        text: "Has your facility ever formally documented a written PPE hazard assessment (certified in writing per 29 CFR 1910.132(d)(2)) covering all job tasks and work areas — OR has this assessment never been performed?",
+        hint: "If the assessment has never been done, this standard almost certainly applies. Answer Yes if you have not conducted one. The assessment is required regardless of what PPE is actually in use.",
         yesIndicates: "applies",
       },
     ],
@@ -828,16 +902,42 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["respiratory", "respirator", "n95", "scba", "air purifying", "supplied air"],
     citationPatterns: ["29 cfr 1910.134", "1910.134"],
     applicabilityIntro:
-      "OSHA's Respiratory Protection standard (29 CFR 1910.134) applies to workplaces where respirators are required or permitted to be used to protect employees against harmful airborne contaminants.",
+      "OSHA's Respiratory Protection standard (29 CFR 1910.134) applies when respirators are REQUIRED, or when employees voluntarily use respirators OTHER than simple filtering facepieces. Important: merely distributing or allowing voluntary use of disposable N95 dust masks does NOT trigger the full program — only OSHA Appendix D applies in that case. The standard is triggered by required use, hazardous airborne exposures above PELs, or voluntary use of any respirator beyond a simple filtering facepiece.",
     applicabilityQuestions: [
       {
         id: "resp_a1",
-        text: "Are employees potentially exposed to airborne contaminants (dust, mists, fumes, gases, vapors, oxygen-deficient atmospheres) that could harm their health?",
+        text: "Are any employees exposed to airborne hazards — such as chemical vapors, welding fumes, silica dust, isocyanates, spray paint overspray, lead, asbestos, or other substances with inhalation hazard potential — as part of their regular work tasks?",
+        hint: "Review Safety Data Sheets (SDS) for any chemicals used. Section 8 of the SDS will indicate if respiratory protection is recommended or required.",
         yesIndicates: "applies",
       },
       {
         id: "resp_a2",
-        text: "Are respirators (half-face, full-face, supplied-air, or SCBA) required or voluntarily used by any employees at your facility?",
+        text: "Does your facility formally REQUIRE employees to wear respirators (half-face, full-face, N95, PAPR, airline, or SCBA) as a condition of performing any job task or entering any area?",
+        hint: "This means it is a written or enforced policy requirement — not merely a recommendation. If yes, the full 1910.134 program applies regardless of contaminant level.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "resp_a3",
+        text: "Do any employees voluntarily use a respirator that is MORE than a simple disposable filtering facepiece — such as a half-face respirator, full-face respirator, powered air-purifying respirator (PAPR), supplied-air respirator, or SCBA?",
+        hint: "Voluntary use of N95/P100 disposable dust masks (filtering facepieces) alone does NOT trigger the full program — only OSHA Appendix D must be provided. However, voluntary use of any cartridge-based or supplied-air respirator DOES require the full written program, medical evaluation, and fit testing.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "resp_a4",
+        text: "Have industrial hygiene air sampling results, OSHA PEL tables, or SDS review identified that any airborne contaminant at your facility has the potential to exceed its OSHA Permissible Exposure Limit (PEL) or ACGIH Threshold Limit Value (TLV)?",
+        hint: "If you have never conducted air monitoring and have chemical processes, painting, welding, grinding, or solvent use, you likely cannot confirm exposures are below PELs.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "resp_a5",
+        text: "Do any employees enter or work in areas with potential oxygen deficiency (below 19.5% O₂), such as tanks, storage vessels, utility vaults, or spaces where CO₂ or inert gases may accumulate?",
+        hint: "Oxygen-deficient atmospheres require atmosphere-supplying respirators (SCBA or airline), which always trigger the full 1910.134 program.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "resp_a6",
+        text: "Does your facility conduct any of the following operations: spray painting or coating, thermal spraying, abrasive blasting, welding or cutting on coated or galvanized metals, mixing or dispensing concentrated chemicals, or working with materials containing silica, lead, or asbestos?",
+        hint: "These operations are among the most common triggers for a required respiratory protection program due to the airborne hazards they generate.",
         yesIndicates: "applies",
       },
     ],
@@ -877,17 +977,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["hearing conservation", "noise", "audiometric", "85 dba", "hearing loss"],
     citationPatterns: ["29 cfr 1910.95", "1910.95"],
     applicabilityIntro:
-      "OSHA's Hearing Conservation standard (29 CFR 1910.95) applies to facilities with noise levels that equal or exceed 85 dBA as an 8-hour time-weighted average (TWA).",
+      "OSHA's Hearing Conservation standard (29 CFR 1910.95) applies whenever employee noise exposures equal or exceed an 8-hour time-weighted average (TWA) of 85 dBA — the action level. The permissible exposure limit (PEL) is 90 dBA TWA. At the action level, a full Hearing Conservation Program (monitoring, audiometric testing, hearing protection, training) is required. At or above the PEL, engineering controls must be implemented. Many manufacturing, construction, and material processing operations routinely exceed these thresholds.",
     applicabilityQuestions: [
       {
         id: "hc_a1",
-        text: "Do employees work in areas with continuous or intermittent noise from machinery, equipment, or processes (e.g., stamping, grinding, compressors, pneumatic tools)?",
+        text: "Does your facility operate any of the following equipment or processes: stamping presses, punch presses, power brakes, grinders, routers, saws, air-powered tools, compressors, fans or blowers, diesel engines, conveyors with metal-on-metal contact, impact wrenches, or similar machinery that produces significant noise?",
+        hint: "As a reference point: a busy restaurant is ~70 dBA, a lawnmower is ~90 dBA, a stamping press can exceed 100 dBA. At 90 dBA employees can shout to communicate at 1 meter — this is a practical field indicator.",
         yesIndicates: "applies",
       },
       {
         id: "hc_a2",
-        text: "Has noise monitoring indicated or estimated that any employees are exposed to noise at or above 85 dBA (8-hour TWA action level)?",
-        hint: "If monitoring has not been conducted and noise is clearly significant, this should be answered Yes.",
+        text: "Must employees raise their voice significantly to communicate with someone standing 1 meter (arm's length) away in any work area at your facility?",
+        hint: "This is OSHA's practical field test for potential noise overexposure. If shouting is required to be understood at arm's length, noise levels are likely at or above 85 dBA — the action level.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "hc_a3",
+        text: "Have any employees reported temporary hearing loss, ringing in their ears (tinnitus), or muffled hearing at the end of a work shift?",
+        hint: "Temporary threshold shift (TTS) — ringing or muffled hearing after a shift — is a strong indicator of overexposure. Even occasional reports warrant a noise survey.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "hc_a4",
+        text: "Do employees work shifts of 8 hours or more in areas where noise-generating equipment operates continuously or for extended periods?",
+        hint: "The OSHA action level (85 dBA) is based on an 8-hour TWA. Shorter exposures to higher noise levels can produce the same dose — for example, 2 hours at 94 dBA equals the same dose as 8 hours at 85 dBA using OSHA's 5 dB exchange rate.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "hc_a5",
+        text: "Has your facility ever conducted a noise survey or dosimetry study that measured any employee's 8-hour TWA at or above 85 dBA, OR has formal noise monitoring NEVER been conducted in your facility?",
+        hint: "If monitoring has never been done and you have industrial equipment, you cannot confirm compliance. Presumed overexposure requires the same protections as confirmed overexposure. Answer Yes if you are unsure.",
         yesIndicates: "applies",
       },
     ],
@@ -926,17 +1045,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["osha 300", "osha 301", "osha 300a", "recordkeeping", "injury illness recording", "work-related injury"],
     citationPatterns: ["29 cfr 1904", "1904", "osha recordkeeping"],
     applicabilityIntro:
-      "OSHA's Recordkeeping rule (29 CFR 1904) requires most employers with 10 or more employees in covered industries to keep records of work-related injuries and illnesses.",
+      "OSHA's Recordkeeping rule (29 CFR 1904) requires employers with 10 or more employees in covered industries to record work-related injuries and illnesses on OSHA forms 300, 300A, and 301. Important: ALL employers — regardless of size or industry — must report to OSHA any work-related fatality within 8 hours and any in-patient hospitalization, amputation, or loss of an eye within 24 hours. Partially exempt industries (low-hazard retail, finance, insurance, real estate, and certain services) are listed in Appendix A to Subpart B of 1904.",
     applicabilityQuestions: [
       {
         id: "rk_a1",
-        text: "Does your facility have 10 or more employees?",
+        text: "Does your establishment have 10 or more employees at any point during the year?",
+        hint: "Count all employees — full-time, part-time, temporary, and seasonal. If you ever have 10 or more at the same time, the recordkeeping rule applies (assuming you are in a covered industry). Establishments with fewer than 10 employees are exempt from routine recordkeeping but must still report severe injuries and fatalities.",
         yesIndicates: "applies",
       },
       {
         id: "rk_a2",
-        text: "Is your facility in an industry covered by OSHA's recordkeeping requirements (most manufacturing, construction, utilities, and service industries are covered)?",
-        hint: "Low-hazard industries such as certain retail, finance, real estate, and service establishments are partially exempt.",
+        text: "Is your facility's primary industry classification a manufacturing, construction, agriculture, utilities, transportation, warehousing, or similar higher-hazard industry (NAICS codes not listed in OSHA's partially-exempt industry table)?",
+        hint: "Most manufacturing (NAICS 31-33), construction (23), agriculture (11), mining (21), utilities (22), transportation and warehousing (48-49), and healthcare and social assistance (62) are covered. Certain retail, finance, real estate, and professional services are partially exempt. Look up your NAICS code in OSHA's 1904 Appendix A to confirm.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "rk_a3",
+        text: "Has any employee suffered a work-related injury or illness in the past year that resulted in: days away from work, restricted duty or job transfer, medical treatment beyond first aid, loss of consciousness, diagnosis of a significant injury by a healthcare professional, or a positive occupational illness diagnosis?",
+        hint: "Any of these outcomes creates a 'recordable' case that must be entered on the OSHA 300 Log and documented on an OSHA 301 Incident Report within 7 calendar days of learning of the case.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "rk_a4",
+        text: "Has your facility ever experienced a work-related fatality, in-patient hospitalization, amputation, or loss of an eye — regardless of facility size or industry?",
+        hint: "These are 'severe injury' reportable events that must be reported directly to OSHA within 8 hours (fatality) or 24 hours (hospitalization, amputation, loss of eye). This reporting requirement applies to ALL employers — even those with fewer than 10 employees and those in partially-exempt industries.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "rk_a5",
+        text: "Is your facility subject to OSHA's electronic recordkeeping reporting requirements — either as an establishment with 250+ employees, OR as an establishment with 20–249 employees in a designated high-hazard industry?",
+        hint: "Establishments with 250+ employees must submit OSHA 300 Log, 300A Summary, and 301 forms electronically via OSHA's Injury Tracking Application (ITA). Establishments with 20–249 employees in specified high-hazard industries must submit the 300A Summary electronically. Check OSHA's ITA portal for submission deadlines (typically March 2 of the following year).",
         yesIndicates: "applies",
       },
     ],
@@ -974,11 +1112,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["emergency action plan", "eap", "evacuation plan", "fire drill", "emergency evacuation"],
     citationPatterns: ["29 cfr 1910.38", "1910.38", "1910.39"],
     applicabilityIntro:
-      "OSHA requires an Emergency Action Plan (29 CFR 1910.38) for all facilities with 10 or more employees. Facilities with fewer than 10 employees may communicate the plan orally.",
+      "OSHA's Emergency Action Plan standard (29 CFR 1910.38) applies to virtually every employer — any workplace where employees must evacuate or take emergency action. Facilities with 10 or more employees must have a written EAP. Facilities with fewer than 10 employees may communicate the plan orally. Several other OSHA standards (fire suppression, HAZWOPER, process safety management) also require EAP elements. The EAP must be tailored to the specific emergencies that could affect your facility — not just fire.",
     applicabilityQuestions: [
       {
         id: "eap_a1",
-        text: "Does your facility employ workers who would need to evacuate or take emergency action in the event of a fire, chemical release, severe weather, or other emergency?",
+        text: "Does your facility have any employees who would be required to evacuate or take emergency protective action in the event of a fire, explosion, chemical spill or release, natural gas leak, severe weather event (tornado, flood), active threat, or power outage affecting life safety systems?",
+        hint: "This covers virtually every occupied workplace. The question is not whether emergencies are likely — it is whether employees need to know what to do if one occurs.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "eap_a2",
+        text: "Does your facility store, use, or generate hazardous chemicals — including flammable liquids, compressed gases, corrosives, or toxic materials — that could create an emergency requiring evacuation or shelter-in-place?",
+        hint: "Facilities with hazardous chemicals face a broader range of emergency scenarios than fires alone: chemical spills, vapor cloud releases, and reactive chemical incidents all require specific emergency response procedures beyond a standard fire evacuation.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "eap_a3",
+        text: "Does your facility have multiple buildings, work shifts, or work areas where employees may be isolated from main exits or unaware of alarm signals — requiring specific evacuation routes, muster points, or employee accountability procedures?",
+        hint: "Facilities with shift workers, remote areas (tank farms, outlying buildings), or high ambient noise levels require more robust EAP communication systems and designated muster points with accountability procedures.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "eap_a4",
+        text: "Are there employees at your facility who would need special assistance to evacuate in an emergency — such as employees with mobility limitations, visitors unfamiliar with the layout, or contractors working in remote areas of the plant?",
+        hint: "OSHA's EAP standard requires procedures to assist employees who cannot evacuate unassisted. ADA compliance and emergency egress planning must account for all individuals who may be on-site.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "eap_a5",
+        text: "Does your facility have employees who are designated to perform critical shutdown operations, emergency response duties (fire brigade, spill response), or who must remain at their post during an evacuation to protect life or prevent escalation?",
+        hint: "The EAP must address employees with special emergency duties — they cannot simply evacuate with everyone else. Procedures for their roles, communication with emergency services, and their own safe egress must be documented.",
         yesIndicates: "applies",
       },
     ],
@@ -1018,11 +1181,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["bloodborne", "bbp", "hiv", "hepatitis", "first aid", "1910.1030"],
     citationPatterns: ["29 cfr 1910.1030", "1910.1030"],
     applicabilityIntro:
-      "OSHA's Bloodborne Pathogens standard (29 CFR 1910.1030) applies to all facilities where employees are reasonably anticipated to have occupational exposure to blood or other potentially infectious materials (OPIM).",
+      "OSHA's Bloodborne Pathogens standard (29 CFR 1910.1030) applies to all employers whose employees have 'occupational exposure' — meaning reasonably anticipated skin, eye, mucous membrane, or parenteral contact with blood or other potentially infectious materials (OPIM) as part of their job duties. OPIM includes: semen, vaginal secretions, cerebrospinal fluid, synovial fluid, pleural fluid, pericardial fluid, peritoneal fluid, amniotic fluid, saliva in dental procedures, any body fluid visibly contaminated with blood, and any unfixed human tissue. Good Samaritan acts or incidental contact are NOT covered — the exposure must be part of the employee's defined job duties.",
     applicabilityQuestions: [
       {
         id: "bbp_a1",
-        text: "Do any employees provide first aid or medical services, handle contaminated items, or work in environments where contact with blood or OPIM is reasonably anticipated (e.g., first responders, first aid team members)?",
+        text: "Does your facility have a designated first aid team, emergency responders, or employees who are specifically trained and assigned to render first aid or CPR as part of their job duties?",
+        hint: "Employees who volunteer first aid incidentally (Good Samaritans) are NOT covered. However, employees designated by the employer to render first aid as part of their job duties ARE covered — even if they work on the production floor, not in a medical setting.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "bbp_a2",
+        text: "Does your facility employ nurses, medical assistants, occupational health personnel, phlebotomists, laboratory technicians, or any other healthcare workers who handle blood specimens, needles, sharps, or patient samples?",
+        hint: "On-site occupational health clinics, employer-sponsored medical surveillance programs, and any activities involving blood draws, urinalysis, or medical specimen collection are clearly covered by 1910.1030.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "bbp_a3",
+        text: "Do any employees at your facility handle laundry, waste, or contaminated items that could contain blood or body fluids — such as contaminated workwear, used bandaging material, sharps, or biohazardous waste containers?",
+        hint: "Employees who launder potentially contaminated clothing, empty first aid kit waste, or handle biohazardous waste bags may have occupational exposure even if they never directly render first aid.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "bbp_a4",
+        text: "Has your facility experienced any incident where an employee was exposed to blood or OPIM — such as a needlestick, splash to the eyes or mouth, or contact with an open wound — whether or not it resulted in a recordable injury?",
+        hint: "Past incidents are a strong indicator that occupational exposure is 'reasonably anticipated.' Even a single prior incident suggests the standard should be applied and an Exposure Control Plan developed.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "bbp_a5",
+        text: "Does your facility's work involve human tissue, cell cultures, organ cultures, or HIV/HBV-containing culture media, blood, or organs — such as in research, quality testing, or laboratory activities?",
+        hint: "Research labs, biological testing facilities, and certain industrial hygiene labs that handle human biological material are covered regardless of whether clinical care is provided.",
         yesIndicates: "applies",
       },
     ],
@@ -1060,11 +1248,36 @@ export const QUESTION_BANK: QuestionSet[] = [
     namePatterns: ["forklift", "powered industrial truck", "pit", "lift truck", "pallet jack", "1910.178"],
     citationPatterns: ["29 cfr 1910.178", "1910.178"],
     applicabilityIntro:
-      "OSHA's Powered Industrial Trucks standard (29 CFR 1910.178) applies to any facility where forklifts, motorized hand trucks, or other powered industrial trucks are operated.",
+      "OSHA's Powered Industrial Trucks standard (29 CFR 1910.178) applies to any facility where powered industrial trucks (PITs) are operated, including counterbalanced forklifts, sit-down and stand-up riders, reach trucks, order pickers, turret trucks, motorized pallet jacks (rider type), rough terrain forklifts, and industrial tow tractors. Walk-behind hand pallet jacks that are manually propelled are generally NOT covered. The standard requires operator training and certification, pre-shift inspections, and specific traffic management and maintenance practices.",
     applicabilityQuestions: [
       {
         id: "pit_a1",
-        text: "Does your facility use forklifts, electric pallet jacks, reach trucks, order pickers, or other powered industrial trucks?",
+        text: "Does your facility use any rider-operated powered industrial trucks — such as counterbalanced forklifts, reach trucks, order pickers, turret trucks, rider pallet jacks, or rough-terrain forklifts — to lift, move, or stack materials?",
+        hint: "Manually propelled walk-behind pallet jacks are generally NOT covered by 1910.178. Rider-operated motorized pallet jacks (where the operator rides on the truck) ARE covered. If any employee drives a powered truck as part of their work, the standard applies.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "pit_a2",
+        text: "Does your facility have pedestrian traffic sharing aisles, doorways, or work areas with powered industrial truck travel paths — creating a potential struck-by hazard?",
+        hint: "Pedestrian-forklift interactions are one of the most serious hazards in warehousing and manufacturing. Even if only one forklift is used occasionally, the presence of pedestrian traffic in travel areas is a key applicability indicator and requires traffic management controls in your PIT program.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "pit_a3",
+        text: "Are powered industrial trucks used in areas with special hazards — such as near flammable liquids or vapors, combustible dust, or outdoor uneven terrain — that affect the type of truck that may safely be used?",
+        hint: "OSHA's 1910.178 requires that the type of PIT selected be appropriate for the hazardous atmosphere designation of the area. Using a non-explosion-proof truck in a classified flammable area can create a fire or explosion hazard.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "pit_a4",
+        text: "Are there employees at your facility who operate powered industrial trucks without having completed a formal OSHA-compliant operator training and evaluation — or whose last evaluation was more than 3 years ago?",
+        hint: "OSHA requires initial training before or shortly after assignment, followed by an evaluation of competency. Re-evaluation is required at least every 3 years, or sooner if the operator is observed operating unsafely, is involved in an incident, or is assigned to a different type of truck.",
+        yesIndicates: "applies",
+      },
+      {
+        id: "pit_a5",
+        text: "Are powered industrial trucks at your facility operated by more than one shift of employees, by temporary workers, staffing agency workers, or by employees who also operate the trucks at other company locations?",
+        hint: "Multi-shift operations require pre-shift inspections at the start of each shift. Temporary and staffing agency workers must be trained and evaluated before operating a PIT — the host employer cannot assume the staffing agency has done this training.",
         yesIndicates: "applies",
       },
     ],
