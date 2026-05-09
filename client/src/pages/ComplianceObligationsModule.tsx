@@ -2586,7 +2586,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             </span>
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0">
             {[
               { label: "Federal Requirements", emoji: "🇺🇸", items: FEDERAL_STARTER_LIBRARY, offset: 0 },
               { label: "Michigan State Requirements", emoji: "MI", items: MICHIGAN_STARTER, offset: FEDERAL_STARTER_LIBRARY.length },
