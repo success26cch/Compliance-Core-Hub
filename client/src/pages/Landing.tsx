@@ -918,125 +918,71 @@ export default function Landing() {
                 Stop managing paperwork and start leading your team — we give you back <span className="font-bold text-primary">10 hours a week</span> by putting your compliance on autopilot. Core Compliance Hub handles the clock so you can handle the business.
               </p>
             </div>
-            
-            {/* ── SaaS / Digital Product Identifier ── */}
-            <div className="text-center py-3 px-4">
-              <div className="inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground font-medium">
-                <span className="flex items-center gap-1.5 text-accent font-bold uppercase tracking-widest">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                  Cloud-Based SaaS Software
-                </span>
-                <span className="hidden sm:inline text-border">·</span>
-                <span>Monthly Digital Subscription</span>
-                <span className="hidden sm:inline text-border">·</span>
-                <span>Browser + Mobile App</span>
-                <span className="hidden sm:inline text-border">·</span>
-                <span>No Hardware · No Installation</span>
-                <span className="hidden sm:inline text-border">·</span>
-                <a href="#pricing" className="text-primary font-semibold underline underline-offset-2 hover:text-accent transition-colors">
-                  Plans from $199/mo ↓
-                </a>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-center gap-6 md:gap-10 py-4">
-              <div className="flex flex-col items-center gap-2 group" data-testid="logo-cch">
-                <img src={cchLogo} alt="CCHUB" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
-                <span className="text-xs md:text-sm font-semibold text-primary">CCHUB</span>
+            {/* Platform Overview — Two Pillars (directly below value prop) */}
+            <div className="max-w-4xl mx-auto w-full px-2 pt-2">
+              <div className="flex items-center gap-3 mb-5 justify-center">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent max-w-24" />
+                <p className="text-[10px] text-white/35 uppercase tracking-[0.22em] font-black">One Platform. Two Pillars of Compliance.</p>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent max-w-24" />
               </div>
-              <a href="https://acsi-quality.com/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 group cursor-pointer" data-testid="logo-acsi-link">
-                <img src={acsiLogo} alt="ACSI" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:opacity-80 transition-opacity" />
-                <span className="text-xs md:text-sm font-semibold text-primary group-hover:underline">ACSI</span>
-              </a>
-              <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 group cursor-pointer" data-testid="logo-brandnswag-link">
-                <img src={brandNSwagLogo} alt="BrandNSwag" className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:opacity-80 transition-opacity" />
-                <span className="text-xs md:text-sm font-semibold text-primary group-hover:underline">BrandNSwag</span>
-              </a>
-            </div>
-
-            {/* Two-Expert Intro Cards */}
-            <div className="max-w-3xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-              <div className="bg-black border border-accent/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-corey">
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <ShieldCheck className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-black text-lg text-accent">Corey</span>
-                    <span className="text-xs text-white/40 font-medium">OSHA · DOT · Safety · Compliance</span>
-                  </div>
-                  <p className="text-sm text-white/70 leading-snug">The world's first AI built directly from 29 CFR — not trained on opinions, not citing blogs. Corey <em>is</em> the regulation. 24/7. Every standard. Non-negotiable.</p>
-                </div>
-              </div>
-              <div className="bg-black border border-indigo-500/40 rounded-xl py-4 px-5 flex items-start gap-4" data-testid="card-expert-isa">
-                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Award className="w-5 h-5 text-indigo-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-black text-lg text-indigo-400">Isa</span>
-                    <span className="text-xs text-white/40 font-medium">ISO 9001 · 14001 · 45001 · 13485 · 27001 · AS9100 · IATF 16949</span>
-                  </div>
-                  <p className="text-sm text-white/70 leading-snug">Your Lead ISO Auditor AI — gap analysis, audit readiness, and management systems guidance.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Platform Overview — Two Pillars */}
-            <div className="max-w-4xl mx-auto w-full px-2">
-              <p className="text-center text-xs text-white/40 uppercase tracking-[0.2em] font-bold mb-3">One Platform. Two Pillars of Compliance.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 {/* Pillar 1 — Regulatory Compliance */}
-                <div className="bg-black/60 border border-accent/30 rounded-xl p-5" data-testid="card-pillar-regulatory">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-4 h-4 text-accent" />
+                <div className="relative overflow-hidden rounded-2xl border border-accent/25 bg-gradient-to-br from-black via-black to-accent/5 p-6 group" data-testid="card-pillar-regulatory">
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent/8 to-transparent pointer-events-none" />
+                  <div className="relative">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/25 flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-5 h-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="font-black text-accent text-base leading-tight">Regulatory Compliance</p>
+                        <p className="text-[11px] text-white/35 leading-tight mt-0.5">OSHA · DOT · EPA · Occupational Health</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-accent text-sm leading-tight">Regulatory Compliance</p>
-                      <p className="text-[11px] text-white/40 leading-tight">OSHA · DOT · EPA · Occupational Health</p>
-                    </div>
+                    <ul className="space-y-2.5">
+                      {[
+                        "OSHA 300 Recordability & Incident Management",
+                        "DOT Fleet Compliance Command Center",
+                        "Environmental Compliance Hub (EPA)",
+                        "Employer Occupational Health Platform",
+                        "Drug Screening & Medical Surveillance",
+                        "Spanish Bilingual Medical Assistant (BMA)",
+                      ].map((item) => (
+                        <li key={item} className="flex items-start gap-2.5 text-sm text-white/55 leading-snug">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-2">
-                    {[
-                      "OSHA 300 Recordability & Incident Management",
-                      "DOT Fleet Compliance Command Center",
-                      "Environmental Compliance Hub (EPA)",
-                      "Employer Occupational Health Platform",
-                      "Drug Screening & Medical Surveillance",
-                      "Spanish Bilingual Medical Assistant (BMA)",
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-xs text-white/60 leading-snug">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1 shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
 
                 {/* Pillar 2 — ISO Management */}
-                <div className="bg-black/60 border border-indigo-500/30 rounded-xl p-5" data-testid="card-pillar-iso">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
-                      <Award className="w-4 h-4 text-indigo-400" />
+                <div className="relative overflow-hidden rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-black via-black to-indigo-500/5 p-6 group" data-testid="card-pillar-iso">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/8 to-transparent pointer-events-none" />
+                  <div className="relative">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center shrink-0">
+                        <Award className="w-5 h-5 text-indigo-400" />
+                      </div>
+                      <div>
+                        <p className="font-black text-indigo-400 text-base leading-tight">ISO Management Platform</p>
+                        <p className="text-[11px] text-white/35 leading-tight mt-0.5">9001 · 14001 · 45001 · 13485 · 27001 · AS9100 · IATF 16949</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-indigo-400 text-sm leading-tight">ISO Management Platform</p>
-                      <p className="text-[11px] text-white/40 leading-tight">9001 · 14001 · 45001 · 13485 · 27001 · AS9100 · IATF 16949</p>
-                    </div>
-                  </div>
-                  <ul className="space-y-2">
-                    {[
-                      "AI Gap Analysis & Clause-by-Clause Guidance",
-                      "Document Generation, Vault & Version Control",
-                      "Internal Audits, NC & CAPA Management",
-                      "Risk Register, KPIs & Management Review",
-                      "Calibration, Supplier & APQP Management",
-                      "Layered Process Audits (LPA) & Action Tracker",
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-xs text-white/60 leading-snug">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1 shrink-0" />
+                    <ul className="space-y-2.5">
+                      {[
+                        "AI Gap Analysis & Clause-by-Clause Guidance",
+                        "Document Generation, Vault & Version Control",
+                        "Internal Audits, NC & CAPA Management",
+                        "Risk Register, KPIs & Management Review",
+                        "Calibration, Supplier & APQP Management",
+                        "Layered Process Audits (LPA) & Action Tracker",
+                      ].map((item) => (
+                        <li key={item} className="flex items-start gap-2.5 text-sm text-white/55 leading-snug">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
                         {item}
                       </li>
                     ))}
