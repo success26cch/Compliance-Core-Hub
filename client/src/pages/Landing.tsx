@@ -983,10 +983,11 @@ export default function Landing() {
                       ].map((item) => (
                         <li key={item} className="flex items-start gap-2.5 text-sm text-white/55 leading-snug">
                           <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
               </div>
