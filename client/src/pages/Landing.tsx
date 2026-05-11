@@ -1771,8 +1771,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* BrandNSwag Section */}
-      <section id="brandnswag" className="py-24 bg-gradient-to-br from-accent/5 via-background to-primary/5 border-t border-border/50">
+      {/* BrandNSwag Section — TEMPORARILY HIDDEN — to restore: remove the `hidden` prop from the <section> below */}
+      <section hidden id="brandnswag" className="py-24 bg-gradient-to-br from-accent/5 via-background to-primary/5 border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm mx-auto">
