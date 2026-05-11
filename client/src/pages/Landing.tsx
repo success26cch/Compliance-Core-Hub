@@ -982,6 +982,70 @@ export default function Landing() {
               </div>
             </div>
 
+            {/* Platform Overview — Two Pillars */}
+            <div className="max-w-4xl mx-auto w-full px-2">
+              <p className="text-center text-xs text-white/40 uppercase tracking-[0.2em] font-bold mb-3">One Platform. Two Pillars of Compliance.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                {/* Pillar 1 — Regulatory Compliance */}
+                <div className="bg-black/60 border border-accent/30 rounded-xl p-5" data-testid="card-pillar-regulatory">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-black text-accent text-sm leading-tight">Regulatory Compliance</p>
+                      <p className="text-[11px] text-white/40 leading-tight">OSHA · DOT · EPA · Occupational Health</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-2">
+                    {[
+                      "OSHA 300 Recordability & Incident Management",
+                      "DOT Fleet Compliance Command Center",
+                      "Environmental Compliance Hub (EPA)",
+                      "Employer Occupational Health Platform",
+                      "Drug Screening & Medical Surveillance",
+                      "Spanish Bilingual Medical Assistant (BMA)",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-xs text-white/60 leading-snug">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Pillar 2 — ISO Management */}
+                <div className="bg-black/60 border border-indigo-500/30 rounded-xl p-5" data-testid="card-pillar-iso">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
+                      <Award className="w-4 h-4 text-indigo-400" />
+                    </div>
+                    <div>
+                      <p className="font-black text-indigo-400 text-sm leading-tight">ISO Management Platform</p>
+                      <p className="text-[11px] text-white/40 leading-tight">9001 · 14001 · 45001 · 13485 · 27001 · AS9100 · IATF 16949</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-2">
+                    {[
+                      "AI Gap Analysis & Clause-by-Clause Guidance",
+                      "Document Generation, Vault & Version Control",
+                      "Internal Audits, NC & CAPA Management",
+                      "Risk Register, KPIs & Management Review",
+                      "Calibration, Supplier & APQP Management",
+                      "Layered Process Audits (LPA) & Action Tracker",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-xs text-white/60 leading-snug">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+              </div>
+            </div>
+
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 text-accent font-semibold text-sm border border-accent/30">
                 <Activity className="w-4 h-4 animate-pulse" />
