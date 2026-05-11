@@ -153,7 +153,7 @@
 |---|---|
 | **Starting price** | $349/mo (fleets under 50 active drivers) |
 | **Bundle pricing** | Available — DOT Fleet HUB + Corey AI + Employer Platform |
-| **Contact** | teams@corecompliancehub.com |
+| **Contact** | team@corecompliancehub.com |
 
 ### Key Modules
 - Clearinghouse Query Tracker — 365-day countdown per driver, color-coded alerts
@@ -173,7 +173,7 @@
 | | |
 |---|---|
 | **Pricing** | Contact for quote |
-| **Contact** | teams@corecompliancehub.com |
+| **Contact** | team@corecompliancehub.com |
 
 ### 8 Modules
 1. Universal Waste Manager
@@ -237,7 +237,7 @@
 | | |
 |---|---|
 | **Pricing** | Contact for quote |
-| **Contact** | teams@corecompliancehub.com |
+| **Contact** | team@corecompliancehub.com |
 
 ---
 
@@ -252,12 +252,12 @@
 | Platform + Corey (Tier 3) | $699/mo | +$129/mo per additional seat |
 | DOT Fleet HUB | From $349/mo | Fleet under 50 drivers |
 | ISO Manager | Contact for quote | 4 tiers, info@acsi-quality.com |
-| Env Compliance Hub | Contact for quote | teams@corecompliancehub.com |
-| BMA | Contact for quote | teams@corecompliancehub.com |
+| Env Compliance Hub | Contact for quote | team@corecompliancehub.com |
+| BMA | Contact for quote | team@corecompliancehub.com |
 | Course — DOT Medical | $199 one-time | 8 modules + consultation |
 | Course — OSHA Surveillance | $249 one-time | 8 modules + consultation |
 | Course — Drug & Alcohol | $199 one-time | 8 modules + consultation |
 
 ---
 
-*Last updated: May 2026 — teams@corecompliancehub.com · info@acsi-quality.com*
+*Last updated: May 2026 — team@corecompliancehub.com · info@acsi-quality.com*

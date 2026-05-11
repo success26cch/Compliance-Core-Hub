@@ -204,7 +204,7 @@ export default function GetStarted() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground italic mb-4 text-center">For companies serious about compliance — from startups to mid-sized firms.</p>
-                <a href="mailto:teams@corecompliancehub.com?subject=Employer Platform Demo Request" className="block w-full">
+                <a href="mailto:team@corecompliancehub.com?subject=Employer Platform Demo Request" className="block w-full">
                   <Button className="w-full" size="lg" data-testid="button-add-cart-employer-platform-corey">
                     Schedule a Demo
                   </Button>

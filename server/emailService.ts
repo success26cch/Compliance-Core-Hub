@@ -1,4 +1,4 @@
-const ADMIN_EMAILS = ["teams@corecompliancehub.com"];
+const ADMIN_EMAILS = ["team@corecompliancehub.com"];
 const FROM_NAME = "Core Compliance Hub";
 const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
 const SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send";
@@ -158,7 +158,7 @@ export async function sendEmail(
 
   // Fallback to MailerSend
   if (process.env.MAILERSEND_API_KEY) {
-    const msFrom = "teams@corecompliancehub.com";
+    const msFrom = "team@corecompliancehub.com";
     const ok = await sendViaMailerSend(msFrom, recipients, subject, html, options?.cc);
     if (ok) {
       console.log(`[EmailService] MailerSend sent "${subject}" to ${recipients.join(", ")}`);
@@ -559,7 +559,7 @@ export function buildContactConfirmationEmail(data: {
     <p style="margin:0;font-size:13px;color:#475569;">
       Best regards,<br />
       <strong>The Core Compliance Hub Team</strong><br />
-      <a href="mailto:teams@corecompliancehub.com" style="color:#ea6c19;">teams@corecompliancehub.com</a>
+      <a href="mailto:team@corecompliancehub.com" style="color:#ea6c19;">team@corecompliancehub.com</a>
     </p>
   `;
 

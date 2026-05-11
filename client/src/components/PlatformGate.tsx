@@ -60,7 +60,7 @@ export function PlatformGate({ children, featureName }: { children: React.ReactN
               <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500 shrink-0" /><span>Priority Action Queue</span></div>
             </div>
 
-            <a href="mailto:teams@corecompliancehub.com?subject=Employer Platform Access Request">
+            <a href="mailto:team@corecompliancehub.com?subject=Employer Platform Access Request">
               <Button className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-12 gap-2" data-testid="button-upgrade-platform">
                 <Crown className="w-5 h-5" />
                 Contact Us for Pricing
