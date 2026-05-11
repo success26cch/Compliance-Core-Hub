@@ -972,21 +972,47 @@ export default function Landing() {
                         <p className="text-[11px] text-white/35 leading-tight mt-0.5">9001 · 14001 · 45001 · 13485 · 27001 · AS9100 · IATF 16949</p>
                       </div>
                     </div>
-                    <ul className="space-y-2.5">
+                    <div className="space-y-3.5">
                       {[
-                        "AI Gap Analysis & Clause-by-Clause Guidance",
-                        "Document Generation, Vault & Version Control",
-                        "Internal Audits, NC & CAPA Management",
-                        "Risk Register, KPIs & Management Review",
-                        "Calibration, Supplier & APQP Management",
-                        "Layered Process Audits (LPA) & Action Tracker",
-                      ].map((item) => (
-                        <li key={item} className="flex items-start gap-2.5 text-sm text-white/55 leading-snug">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
-                          {item}
-                        </li>
+                        {
+                          label: "Foundation",
+                          items: ["Context of the Organization · Process Maps · Roles & RACI"],
+                        },
+                        {
+                          label: "Documentation",
+                          items: ["Document Vault · Version Control · AI-Drafted Documents"],
+                        },
+                        {
+                          label: "NC & Quality",
+                          items: ["NC & CAPA · Risk Assessment · Management Review · Action Items"],
+                        },
+                        {
+                          label: "Audit Program",
+                          items: ["Internal Audits · Layered Process Audits (LPA)"],
+                        },
+                        {
+                          label: "People & Performance",
+                          items: ["Training & Awareness · Measurement & Monitoring · Communication"],
+                        },
+                        {
+                          label: "EMS / OHS — 14001 · 45001",
+                          items: ["Compliance Obligations · Compliance Calendar · Aspects & Impacts ✦"],
+                          accent: true,
+                        },
+                        {
+                          label: "Advanced",
+                          items: ["Supplier Mgmt · APQP · Calibration · Preventive Maintenance"],
+                        },
+                      ].map(({ label, items, accent }) => (
+                        <div key={label}>
+                          <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${accent ? "text-indigo-300/70" : "text-white/25"}`}>{label}</p>
+                          {items.map((item) => (
+                            <p key={item} className={`text-[11px] leading-snug ${accent ? "text-indigo-200/60" : "text-white/50"}`}>{item}</p>
+                          ))}
+                        </div>
                       ))}
-                    </ul>
+                      <p className="text-[9px] text-white/20 italic pt-1">✦ Aspects &amp; Impacts Analysis — coming soon</p>
+                    </div>
                   </div>
                 </div>
 
