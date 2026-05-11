@@ -991,19 +991,38 @@ export default function Landing() {
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-primary leading-[1.1] text-center">
               Welcome to the future of compliance, welcome, to<br /><span className="text-accent">Core Compliance Hub.</span>
             </h1>
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="relative inline-block">
-                <div className="absolute inset-0 bg-gradient-to-r from-accent/30 via-accent/10 to-accent/30 blur-xl -z-10 scale-110"></div>
-                <div className="bg-black px-8 py-5 rounded-md border border-accent/40 shadow-[0_0_30px_rgba(var(--accent),0.15)]">
-                  <p className="text-xl md:text-2xl font-black text-accent leading-snug">
-                    Meet Corey: The world's first AI born from the DNA of 29 CFR.
-                  </p>
+            <div className="max-w-5xl mx-auto text-center">
+              {/* Side-by-side hero tagline cards — equal billing for Corey & ISO Manager */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+
+                {/* Corey card */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent/30 via-accent/10 to-accent/30 blur-xl -z-10 scale-110" />
+                  <div className="bg-black h-full px-7 py-6 rounded-xl border border-accent/40 shadow-[0_0_30px_rgba(var(--accent),0.15)] flex flex-col gap-3 text-left">
+                    <p className="text-xl md:text-2xl font-black text-accent leading-tight">
+                      Meet Corey — The Only AI<br />Engineered from the DNA of 29 CFR.
+                    </p>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      Not trained on opinions. Not citing blogs. Corey <em>is</em> the regulation — your 24/7 occupational health &amp; safety guardian covering OSHA, DOT, EPA, and every standard in between. Non-negotiable expertise, on demand.
+                    </p>
+                  </div>
                 </div>
+
+                {/* ISO Manager / Isa card */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/30 via-indigo-500/10 to-indigo-500/30 blur-xl -z-10 scale-110" />
+                  <div className="bg-black h-full px-7 py-6 rounded-xl border border-indigo-500/40 shadow-[0_0_30px_rgba(99,102,241,0.15)] flex flex-col gap-3 text-left">
+                    <p className="text-xl md:text-2xl font-black text-indigo-400 leading-tight">
+                      Meet Isa — The Lead ISO Auditor AI<br />Powering the ACSI ISO Manager.
+                    </p>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      7 major standards. Clause-by-clause gap analysis. AI-drafted documentation. Isa doesn't just guide your certification journey — she audits, corrects, and drives you across the finish line. The most complete ISO management platform ever built.
+                    </p>
+                  </div>
+                </div>
+
               </div>
-              <p className="text-lg font-bold text-primary leading-relaxed mt-3">
-                As the only specialist that lives and breathes occupational health and safety compliance, Corey isn't just an AI—it's your 24/7 Compliance Guardian, built from the ground up to automate, track, and protect your entire safety ecosystem.
-              </p>
-              <p className="text-xl font-black text-accent mt-4">
+              <p className="text-xl font-black text-accent mt-2">
                 Give Corey a shot, ask him anything.
               </p>
             </div>
