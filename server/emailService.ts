@@ -473,6 +473,25 @@ export function buildCapaOverdueEmail(data: {
   return brandedHtml("CAPA Overdue — Immediate Attention Required", body);
 }
 
+const INQUIRY_TYPE_LABELS: Record<string, string> = {
+  "corey-ai": "Corey AI Assistant",
+  "iso-manager": "ISO Manager",
+  "employer-platform": "Employer Platform",
+  "dot-compliance": "DOT Compliance Hub",
+  "env-hub": "Environmental Compliance Hub",
+  "bma": "Bilingual Medical Assistant (BMA)",
+  "brandnswag": "BrandNSwag Employee Recognition",
+  "training": "Training Courses",
+  "general": "General Inquiry",
+  "demo": "Demo Request",
+  "pricing": "Pricing",
+  "other": "Other",
+};
+
+function formatInquiryType(raw: string): string {
+  return INQUIRY_TYPE_LABELS[raw] ?? raw.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 export function buildContactInquiryAdminEmail(data: {
   name: string;
   email: string;
@@ -492,7 +511,7 @@ export function buildContactInquiryAdminEmail(data: {
       ${data.company ? `<p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Company:</strong>&nbsp; ${data.company}</p>` : ""}
       ${data.phone ? `<p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Phone:</strong>&nbsp; ${data.phone}</p>` : ""}
       ${data.employeeCount ? `<p style="margin:0 0 10px;font-size:14px;color:#0f172a;"><strong>Employee Count:</strong>&nbsp; ${data.employeeCount}</p>` : ""}
-      <p style="margin:0;font-size:14px;color:#0f172a;"><strong>Area of Interest:</strong>&nbsp; <span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:13px;font-weight:700;">${data.inquiryType}</span></p>
+      <p style="margin:0;font-size:14px;color:#0f172a;"><strong>Area of Interest:</strong>&nbsp; <span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:13px;font-weight:700;">${formatInquiryType(data.inquiryType)}</span></p>
     </div>
 
     <div style="background:#f0fdf4;border-left:4px solid #16a34a;padding:16px;border-radius:4px;margin-bottom:20px;">
@@ -503,7 +522,7 @@ export function buildContactInquiryAdminEmail(data: {
     <a href="mailto:${data.email}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px;">Reply to ${data.name} →</a>
   `;
 
-  return brandedHtml(`New Inquiry: ${data.inquiryType} — ${data.name}`, body);
+  return brandedHtml(`New Inquiry: ${formatInquiryType(data.inquiryType)} — ${data.name}`, body);
 }
 
 export function buildContactConfirmationEmail(data: {
@@ -536,7 +555,7 @@ export function buildContactConfirmationEmail(data: {
           ${data.employeeCount ? `<tr><td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Employee Count:</strong></td><td style="padding:6px 0;color:#0f172a;font-size:13px;">${data.employeeCount}</td></tr>` : ""}
           <tr>
             <td style="padding:6px 0;color:#475569;font-size:13px;"><strong>Area of Interest:</strong></td>
-            <td style="padding:6px 0;"><span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700;">${data.inquiryType}</span></td>
+            <td style="padding:6px 0;"><span style="background:#ea6c19;color:#fff;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700;">${formatInquiryType(data.inquiryType)}</span></td>
           </tr>
         </table>
       </td></tr>

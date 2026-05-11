@@ -1477,7 +1477,8 @@ Rules:
           inquiryType,
           message,
         });
-        const adminSubject = `[NEW INQUIRY] ${inquiryType} — ${company || "N/A"} — ${name}`;
+        const inquiryLabel = ({ "corey-ai": "Corey AI", "iso-manager": "ISO Manager", "employer-platform": "Employer Platform", "dot-compliance": "DOT Compliance Hub", "env-hub": "Environmental Hub", "bma": "BMA", "brandnswag": "BrandNSwag", "training": "Training", "general": "General Inquiry", "demo": "Demo Request", "pricing": "Pricing", "other": "Other" } as Record<string,string>)[inquiryType] ?? inquiryType.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+        const adminSubject = `[NEW INQUIRY] ${inquiryLabel} — ${company || "N/A"} — ${name}`;
         await sendEmail("team@corecompliancehub.com", adminSubject, adminHtml);
 
         const confirmHtml = buildContactConfirmationEmail({
