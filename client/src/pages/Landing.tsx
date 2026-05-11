@@ -2236,7 +2236,7 @@ export default function Landing() {
                   <th className="text-center p-4 bg-muted/50 rounded-tr-md font-semibold text-foreground">
                     <div className="flex flex-col items-center gap-1">
                       <span>Employer Platform</span>
-                      <span className="text-lg font-bold text-primary">$599<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                      <span className="text-xs font-normal text-muted-foreground">Contact us for pricing</span>
                     </div>
                   </th>
                 </tr>
@@ -2291,9 +2291,11 @@ export default function Landing() {
                     </Button>
                   </td>
                   <td className="p-4 text-center">
-                    <Button className="w-full max-w-[160px]" onClick={() => handleAddToCart("employer-platform")} data-testid="button-compare-add-employer">
-                      <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
-                    </Button>
+                    <Link href="/contact">
+                      <Button variant="outline" className="w-full max-w-[160px]" data-testid="button-compare-contact-employer">
+                        <MessageSquare className="w-4 h-4 mr-2" /> Contact Us
+                      </Button>
+                    </Link>
                   </td>
                 </tr>
               </tbody>
@@ -2336,27 +2338,42 @@ export default function Landing() {
               productId="cch-unlimited-safety"
               onAddToCart={handleAddToCart}
             />
-            <PricingCard
-              tier="Complete Compliance Platform"
-              price="$599"
-              period="/mo"
-              features={[
-                "Compliance Dashboard with real-time metrics",
-                "Employee tracking & medical surveillance (11 types)",
-                "OSHA 300 & 301 logging & incident management",
-                "DOT notifications at 60/30/15/7-day windows",
-                "CCHUB Handshake — QR-based Medical Passport",
-                "Training LMS with PDF certificates",
-                "Corrective Action Plans (CAPA)",
-                "Up to 50 employees included (+$2/ea beyond 50)",
-                "Add Corey AI for $699/mo (+$129/ea additional seat)",
-              ]}
-              bestFor="For companies serious about compliance — from startups to mid-sized firms. One platform, one price, everything you need."
-              buttonText="Get Started — $599/mo"
-              buttonHref="/get-started"
-              productId="employer-platform"
-              onAddToCart={handleAddToCart}
-            />
+            {/* Employer Platform — no public price, contact CTA */}
+            <div className="rounded-2xl border border-border/60 bg-white p-8 flex flex-col gap-4 shadow-sm">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-lg font-bold text-primary">Complete Compliance Platform</span>
+              </div>
+              <ul className="space-y-2 flex-1">
+                {[
+                  "Compliance Dashboard with real-time metrics",
+                  "Employee tracking & medical surveillance (11 types)",
+                  "OSHA 300 & 301 logging & incident management",
+                  "DOT notifications at 60/30/15/7-day windows",
+                  "CCHUB Handshake — QR-based Medical Passport",
+                  "Training LMS with PDF certificates",
+                  "Corrective Action Plans (CAPA)",
+                  "Scalable employee seat pricing",
+                  "Optional Corey AI add-on",
+                ].map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground italic border-t border-border/40 pt-3">
+                For companies serious about compliance — from startups to mid-sized firms. One platform, everything you need.
+              </p>
+              <Link href="/contact">
+                <Button className="w-full mt-1" variant="outline" data-testid="button-platform-contact-pricing">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Contact Us for Pricing
+                </Button>
+              </Link>
+            </div>
           </div>
           <div className="text-center mt-10">
             <p className="text-muted-foreground mb-3">Not sure which plan is right for you?</p>
