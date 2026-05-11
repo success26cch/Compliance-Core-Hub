@@ -1684,7 +1684,7 @@ export default function Landing() {
               {[
                 { icon: ShieldCheck, label: "Compliance Score & Trends", desc: "Aggregate safety health score with month-over-month trend visibility", color: "text-green-600", bg: "bg-green-100" },
                 { icon: AlertTriangle, label: "Incident Recording", desc: "Structured injury and illness capture with automatic OSHA recordability determination", color: "text-orange-600", bg: "bg-orange-100" },
-                { icon: ClipboardList, label: "CAPA Workflow", desc: "Corrective action plans from root cause through closure — with SMS follow-up", color: "text-purple-600", bg: "bg-purple-100" },
+                { icon: ClipboardList, label: "CAPA Workflow", desc: "Corrective action plans from root cause through closure — tracked and documented", color: "text-purple-600", bg: "bg-purple-100" },
                 { icon: FileText, label: "OSHA 300 Log", desc: "Automatically populated from incident records — ready for inspection or posting", color: "text-blue-600", bg: "bg-blue-100" },
                 { icon: Stethoscope, label: "Medical Surveillance", desc: "Track exam status across your workforce — never miss a renewal", color: "text-teal-600", bg: "bg-teal-100" },
                 { icon: Syringe, label: "Drug Screen Tracking", desc: "Pre-employment, random, and post-accident results organized by employee", color: "text-indigo-600", bg: "bg-indigo-100" },
@@ -1745,7 +1745,7 @@ export default function Landing() {
             {[
               "Incident Management",
               "OSHA 300 Reporting",
-              "CAPA Tracking + SMS Alerts",
+              "CAPA Tracking",
               "Employee Medical Surveillance",
               "Drug Screen Tracking",
               "Multi-Site Analytics",
@@ -2253,12 +2253,12 @@ export default function Landing() {
                   { feature: "Priority Support", corey: true, employer: true },
                   { feature: "Employee Management", corey: false, employer: true },
                   { feature: "Incident Logging & OSHA 300 Log", corey: false, employer: true },
-                  { feature: "CAPA Tracking + SMS Alerts", corey: false, employer: true },
+                  { feature: "CAPA Tracking", corey: false, employer: true },
                   { feature: "Medical Passport (CCHUB Handshake)", corey: false, employer: true },
                   { feature: "Drug Screen Tracking", corey: false, employer: true },
                   { feature: "Employee Medical Surveillance", corey: false, employer: true },
                   { feature: "Multi-Site Analytics", corey: false, employer: true },
-                  { feature: "DOT Random Pool Notifications", corey: false, employer: true },
+                  { feature: "DOT Compliance Notifications", corey: false, employer: true },
                   { feature: "Bilingual Medical Assistant", corey: false, employer: true },
                 ].map((row, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-muted/20" : ""} data-testid={`row-landing-feature-${idx}`}>
@@ -2349,9 +2349,9 @@ export default function Landing() {
               <ul className="space-y-2 flex-1">
                 {[
                   "Compliance Dashboard with real-time metrics",
-                  "Employee tracking & medical surveillance (11 types)",
+                  "Employee tracking & medical surveillance",
                   "OSHA 300 & 301 logging & incident management",
-                  "DOT notifications at 60/30/15/7-day windows",
+                  "DOT compliance notifications & fleet monitoring",
                   "CCHUB Handshake — QR-based Medical Passport",
                   "Training LMS with PDF certificates",
                   "Corrective Action Plans (CAPA)",
