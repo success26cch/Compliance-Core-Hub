@@ -1360,6 +1360,73 @@ export default function Landing() {
       {/* Is This Recordable? Decision Tree */}
       <RecordabilityDecisionTree />
 
+      {/* Meet Isa — ACSI ISO Manager Spotlight */}
+      <section data-testid="section-meet-isa" className="relative overflow-hidden border-t-4 border-accent py-16">
+        {/* Warm amber gradient background — distinctly different from the navy BMA section */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,16%)] via-[hsl(20,50%,10%)] to-[hsl(222,47%,10%)]" />
+        {/* Accent glow at top center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-accent/10 blur-3xl rounded-full pointer-events-none" />
+        {/* Bottom separator line */}
+        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
+        <div className="relative max-w-5xl mx-auto px-4">
+
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-bold uppercase tracking-widest mb-5">
+              <Sparkles className="w-3 h-3" />
+              ACSI ISO Management Platform
+            </div>
+            <div className="flex justify-center mb-5">
+              <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
+                <img src={acsiLogo} alt="ACSI" className="w-16 h-16 object-contain" />
+              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
+              Meet <span className="text-accent">Isa</span> &amp; the ACSI ISO Manager
+            </h2>
+            <p className="text-sm text-white/40 font-medium mb-4 tracking-wide">
+              ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
+            </p>
+            <p className="text-base text-white/60 max-w-2xl mx-auto leading-relaxed mb-7">
+              Isa is ACSI's Lead ISO Auditor AI — built for gap analysis, audit readiness, and management system guidance. The ISO Manager gives you the full platform: Isa AI, document generation, a secure vault, and KPI tracking.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link href="/meet-isa">
+                <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-6" data-testid="button-talk-to-isa">
+                  Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+              <Link href="/meet-iso-manager">
+                <Button variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-bold px-6" data-testid="button-iso-manager-plans">
+                  ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* 3-column feature highlights */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <Sparkles className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Isa AI Guidance</p>
+              <p className="text-xs text-white/40 leading-relaxed">Clause-by-clause gap analysis, internal audit checklists, and corrective action guidance across 7 major standards.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <FileText className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Document Generation</p>
+              <p className="text-xs text-white/40 leading-relaxed">AI-powered quality manuals, procedures, and an audit-ready document library built to your management system.</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+              <Shield className="w-5 h-5 text-accent mb-3" />
+              <p className="font-bold text-white text-sm mb-1.5">Secure Vault &amp; Tracking</p>
+              <p className="text-xs text-white/40 leading-relaxed">Version-controlled document storage with audit trail, KPI tracking, and evidence management for certification readiness.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* DOT Fleet Compliance Command Center */}
       <section data-testid="section-dot-hub" className="relative overflow-hidden border-t-4 border-green-500 py-16">
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,8%)] via-[hsl(140,30%,8%)] to-[hsl(222,47%,11%)]" />
@@ -1674,6 +1741,130 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* BrandNSwag Section */}
+      <section id="brandnswag" className="py-24 bg-gradient-to-br from-accent/5 via-background to-primary/5 border-t border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm mx-auto">
+              <Sparkles className="w-5 h-5" />
+              NEW: BrandNSwag Division
+            </div>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
+              <img src={brandNSwagLogo} alt="BrandNSwag" className="h-20 md:h-24 w-auto mx-auto hover:opacity-80 transition-opacity" data-testid="img-brandnswag-logo-landing" />
+            </a>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">
+              Make Safety <span className="text-accent">Fun & Rewarding</span>
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Introducing Smart Swag—QR-enabled company merchandise that turns workplace milestones into rewards. Every hoodie, hat, and shirt becomes a recognition engine.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+            <div className="space-y-8">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <QrCode className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-primary text-lg mb-2">QR-Enabled Recognition</h3>
+                  <p className="text-muted-foreground">Every piece of swag features a unique QR code linked to the employee and HR. Anyone can scan to award recognition points—managers, coworkers, or even customers.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-primary text-lg mb-2">Reward Every Milestone</h3>
+                  <p className="text-muted-foreground">Onboarding complete? Safety class passed? Perfect attendance? Friend referral? Turn every achievement into points toward premium company merchandise.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Package className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-primary text-lg mb-2">Custom Swag Stores</h3>
+                  <p className="text-muted-foreground">We set up branded swag stores for your company. New hires pick their welcome swag, top performers earn exclusive gear, and everyone feels part of the team.</p>
+                </div>
+              </div>
+            </div>
+
+            <Card className="p-8 shadow-lg" data-testid="card-smart-swag-ecosystem">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Gift className="w-8 h-8 text-accent" />
+                </div>
+                <h3 className="text-2xl font-bold text-primary mb-2">The Smart Swag Ecosystem</h3>
+                <p className="text-muted-foreground text-sm">From onboarding to ongoing recognition</p>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">1</div>
+                  <div>
+                    <div className="font-semibold text-primary">Onboarding Swag Box</div>
+                    <div className="text-sm text-muted-foreground">New hires receive branded welcome packages</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">2</div>
+                  <div>
+                    <div className="font-semibold text-primary">Earn Recognition Points</div>
+                    <div className="text-sm text-muted-foreground">QR scans from anyone = instant points</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">3</div>
+                  <div>
+                    <div className="font-semibold text-primary">Redeem at Your Store</div>
+                    <div className="text-sm text-muted-foreground">Points convert to premium company gear</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            <Card className="p-6 text-center" data-testid="swag-feature-onboarding">
+              <Shirt className="w-8 h-8 text-accent mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Onboarding Rewards</h4>
+              <p className="text-sm text-muted-foreground">Welcome kits with branded essentials</p>
+            </Card>
+            <Card className="p-6 text-center" data-testid="swag-feature-safety">
+              <Shield className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Safety Achievements</h4>
+              <p className="text-sm text-muted-foreground">Reward training completion</p>
+            </Card>
+            <Card className="p-6 text-center" data-testid="swag-feature-attendance">
+              <Star className="w-8 h-8 text-accent mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Attendance Bonuses</h4>
+              <p className="text-sm text-muted-foreground">Points for perfect attendance</p>
+            </Card>
+            <Card className="p-6 text-center" data-testid="swag-feature-referrals">
+              <Users className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h4 className="font-bold text-primary mb-1">Referral Rewards</h4>
+              <p className="text-sm text-muted-foreground">Earn when friends get hired</p>
+            </Card>
+          </div>
+
+          <div className="mt-12 text-center">
+            <div className="inline-block bg-black text-accent text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6">
+              CCHUB: The One Stop Employer Shop
+            </div>
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
+              Compliance. Training. Recognition. Everything your workforce needs, all in one platform.
+            </p>
+            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
+              <Button size="lg" data-testid="button-brandnswag-get-started">
+                Explore BrandNSwag
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Spanish Bilingual Medical Assistant — Teaser Card */}
       <section className="relative overflow-hidden py-16">
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,11%)] via-[hsl(222,47%,15%)] to-[hsl(222,47%,8%)]" />
@@ -1740,73 +1931,6 @@ export default function Landing() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Meet Isa — ACSI ISO Manager Spotlight */}
-      <section data-testid="section-meet-isa" className="relative overflow-hidden border-t-4 border-accent py-16">
-        {/* Warm amber gradient background — distinctly different from the navy BMA section */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,16%)] via-[hsl(20,50%,10%)] to-[hsl(222,47%,10%)]" />
-        {/* Accent glow at top center */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-accent/10 blur-3xl rounded-full pointer-events-none" />
-        {/* Bottom separator line */}
-        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
-
-        <div className="relative max-w-5xl mx-auto px-4">
-
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-bold uppercase tracking-widest mb-5">
-              <Sparkles className="w-3 h-3" />
-              ACSI ISO Management Platform
-            </div>
-            <div className="flex justify-center mb-5">
-              <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
-                <img src={acsiLogo} alt="ACSI" className="w-16 h-16 object-contain" />
-              </div>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">
-              Meet <span className="text-accent">Isa</span> &amp; the ACSI ISO Manager
-            </h2>
-            <p className="text-sm text-white/40 font-medium mb-4 tracking-wide">
-              ISO 9001 · ISO 14001 · ISO 45001 · ISO 13485 · ISO 27001 · AS9100 · IATF 16949
-            </p>
-            <p className="text-base text-white/60 max-w-2xl mx-auto leading-relaxed mb-7">
-              Isa is ACSI's Lead ISO Auditor AI — built for gap analysis, audit readiness, and management system guidance. The ISO Manager gives you the full platform: Isa AI, document generation, a secure vault, and KPI tracking.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Link href="/meet-isa">
-                <Button className="bg-accent hover:bg-accent/90 text-white font-bold px-6" data-testid="button-talk-to-isa">
-                  Meet Isa <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-              <Link href="/meet-iso-manager">
-                <Button variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-bold px-6" data-testid="button-iso-manager-plans">
-                  ISO Manager Plans <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* 3-column feature highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-              <Sparkles className="w-5 h-5 text-accent mb-3" />
-              <p className="font-bold text-white text-sm mb-1.5">Isa AI Guidance</p>
-              <p className="text-xs text-white/40 leading-relaxed">Clause-by-clause gap analysis, internal audit checklists, and corrective action guidance across 7 major standards.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-              <FileText className="w-5 h-5 text-accent mb-3" />
-              <p className="font-bold text-white text-sm mb-1.5">Document Generation</p>
-              <p className="text-xs text-white/40 leading-relaxed">AI-powered quality manuals, procedures, and an audit-ready document library built to your management system.</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-              <Shield className="w-5 h-5 text-accent mb-3" />
-              <p className="font-bold text-white text-sm mb-1.5">Secure Vault &amp; Tracking</p>
-              <p className="text-xs text-white/40 leading-relaxed">Version-controlled document storage with audit trail, KPI tracking, and evidence management for certification readiness.</p>
-            </div>
-          </div>
-
         </div>
       </section>
 
@@ -2255,130 +2379,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* BrandNSwag Section */}
-      <section id="brandnswag" className="py-24 bg-gradient-to-br from-accent/5 via-background to-primary/5 border-t border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-semibold text-sm mx-auto">
-              <Sparkles className="w-5 h-5" />
-              NEW: BrandNSwag Division
-            </div>
-            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer" className="inline-block cursor-pointer">
-              <img src={brandNSwagLogo} alt="BrandNSwag" className="h-20 md:h-24 w-auto mx-auto hover:opacity-80 transition-opacity" data-testid="img-brandnswag-logo-landing" />
-            </a>
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">
-              Make Safety <span className="text-accent">Fun & Rewarding</span>
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Introducing Smart Swag—QR-enabled company merchandise that turns workplace milestones into rewards. Every hoodie, hat, and shirt becomes a recognition engine.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-            <div className="space-y-8">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <QrCode className="w-6 h-6 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-primary text-lg mb-2">QR-Enabled Recognition</h3>
-                  <p className="text-muted-foreground">Every piece of swag features a unique QR code linked to the employee and HR. Anyone can scan to award recognition points—managers, coworkers, or even customers.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Trophy className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-primary text-lg mb-2">Reward Every Milestone</h3>
-                  <p className="text-muted-foreground">Onboarding complete? Safety class passed? Perfect attendance? Friend referral? Turn every achievement into points toward premium company merchandise.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Package className="w-6 h-6 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-primary text-lg mb-2">Custom Swag Stores</h3>
-                  <p className="text-muted-foreground">We set up branded swag stores for your company. New hires pick their welcome swag, top performers earn exclusive gear, and everyone feels part of the team.</p>
-                </div>
-              </div>
-            </div>
-
-            <Card className="p-8 shadow-lg" data-testid="card-smart-swag-ecosystem">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Gift className="w-8 h-8 text-accent" />
-                </div>
-                <h3 className="text-2xl font-bold text-primary mb-2">The Smart Swag Ecosystem</h3>
-                <p className="text-muted-foreground text-sm">From onboarding to ongoing recognition</p>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">1</div>
-                  <div>
-                    <div className="font-semibold text-primary">Onboarding Swag Box</div>
-                    <div className="text-sm text-muted-foreground">New hires receive branded welcome packages</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">2</div>
-                  <div>
-                    <div className="font-semibold text-primary">Earn Recognition Points</div>
-                    <div className="text-sm text-muted-foreground">QR scans from anyone = instant points</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">3</div>
-                  <div>
-                    <div className="font-semibold text-primary">Redeem at Your Store</div>
-                    <div className="text-sm text-muted-foreground">Points convert to premium company gear</div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-6">
-            <Card className="p-6 text-center" data-testid="swag-feature-onboarding">
-              <Shirt className="w-8 h-8 text-accent mx-auto mb-3" />
-              <h4 className="font-bold text-primary mb-1">Onboarding Rewards</h4>
-              <p className="text-sm text-muted-foreground">Welcome kits with branded essentials</p>
-            </Card>
-            <Card className="p-6 text-center" data-testid="swag-feature-safety">
-              <Shield className="w-8 h-8 text-primary mx-auto mb-3" />
-              <h4 className="font-bold text-primary mb-1">Safety Achievements</h4>
-              <p className="text-sm text-muted-foreground">Reward training completion</p>
-            </Card>
-            <Card className="p-6 text-center" data-testid="swag-feature-attendance">
-              <Star className="w-8 h-8 text-accent mx-auto mb-3" />
-              <h4 className="font-bold text-primary mb-1">Attendance Bonuses</h4>
-              <p className="text-sm text-muted-foreground">Points for perfect attendance</p>
-            </Card>
-            <Card className="p-6 text-center" data-testid="swag-feature-referrals">
-              <Users className="w-8 h-8 text-primary mx-auto mb-3" />
-              <h4 className="font-bold text-primary mb-1">Referral Rewards</h4>
-              <p className="text-sm text-muted-foreground">Earn when friends get hired</p>
-            </Card>
-          </div>
-
-          <div className="mt-12 text-center">
-            <div className="inline-block bg-black text-accent text-xl md:text-2xl font-bold px-8 py-4 tracking-wide uppercase mb-6">
-              CCHUB: The One Stop Employer Shop
-            </div>
-            <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
-              Compliance. Training. Recognition. Everything your workforce needs, all in one platform.
-            </p>
-            <a href="https://www.brandnswag.com/" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" data-testid="button-brandnswag-get-started">
-                Explore BrandNSwag
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </a>
-          </div>
-        </div>
-      </section>
 
       {/* Testimonials Section — hidden until real testimonials are collected
       <section className="py-24 bg-muted/30 border-t border-border/50">
