@@ -1,7 +1,7 @@
 const ADMIN_EMAILS = ["teams@corecompliancehub.com"];
-const FROM_EMAIL = "teams@corecompliancehub.com";
 const FROM_NAME = "Core Compliance Hub";
 const MAILERSEND_API_URL = "https://api.mailersend.com/v1/email";
+const SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send";
 
 export function brandedHtml(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html>
@@ -52,58 +52,128 @@ export function brandedHtml(title: string, bodyHtml: string): string {
 </html>`;
 }
 
+async function sendViaSendGrid(
+  fromEmail: string,
+  recipients: string[],
+  subject: string,
+  html: string,
+  cc?: string[]
+): Promise<boolean> {
+  const apiKey = process.env.SENDGRID_API_KEY;
+  if (!apiKey) return false;
+
+  const body: Record<string, any> = {
+    personalizations: [
+      {
+        to: recipients.map(email => ({ email })),
+        ...(cc && cc.length > 0 ? { cc: cc.map(email => ({ email })) } : {}),
+      },
+    ],
+    from: { email: fromEmail, name: FROM_NAME },
+    subject,
+    content: [{ type: "text/html", value: html }],
+  };
+
+  const res = await fetch(SENDGRID_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "(no body)");
+    console.error(`[EmailService] SendGrid error ${res.status}:`, detail);
+    return false;
+  }
+
+  return true;
+}
+
+async function sendViaMailerSend(
+  fromEmail: string,
+  recipients: string[],
+  subject: string,
+  html: string,
+  cc?: string[]
+): Promise<boolean> {
+  const apiKey = process.env.MAILERSEND_API_KEY;
+  if (!apiKey) return false;
+
+  const body: Record<string, any> = {
+    from: { email: fromEmail, name: FROM_NAME },
+    to: recipients.map(email => ({ email })),
+    subject,
+    html,
+  };
+
+  if (cc && cc.length > 0) {
+    body.cc = cc.map(email => ({ email }));
+  }
+
+  const res = await fetch(MAILERSEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "(no body)");
+    console.error(`[EmailService] MailerSend error ${res.status}:`, detail);
+    return false;
+  }
+
+  return true;
+}
+
 export async function sendEmail(
   to: string | string[],
   subject: string,
   html: string,
   options?: { cc?: string[] }
 ): Promise<boolean> {
-  const apiKey = process.env.MAILERSEND_API_KEY;
-  if (!apiKey) {
-    console.warn("[EmailService] MAILERSEND_API_KEY not set — emails will not be sent");
-    return false;
-  }
-
-  const recipients = Array.isArray(to) ? to : [to];
-  const validRecipients = recipients.filter(e => e && e.includes("@"));
-  if (validRecipients.length === 0) {
+  const recipients = (Array.isArray(to) ? to : [to]).filter(e => e && e.includes("@"));
+  if (recipients.length === 0) {
     console.warn("[EmailService] No valid recipients for email:", subject);
     return false;
   }
 
-  const body: Record<string, any> = {
-    from: { email: FROM_EMAIL, name: FROM_NAME },
-    to: validRecipients.map(email => ({ email })),
-    subject,
-    html,
-  };
-
-  if (options?.cc && options.cc.length > 0) {
-    body.cc = options.cc.map(email => ({ email }));
+  // Use the SENDGRID_FROM_EMAIL secret (must be a SendGrid-verified sender)
+  const fromEmail = (process.env.SENDGRID_FROM_EMAIL || "").trim();
+  if (!fromEmail) {
+    console.error("[EmailService] SENDGRID_FROM_EMAIL is not set — cannot send via SendGrid");
+  } else {
+    const masked = fromEmail.length > 4 ? fromEmail.slice(0, 3) + "***" + fromEmail.slice(fromEmail.indexOf("@") > 0 ? fromEmail.indexOf("@") : -4) : "***";
+    console.log(`[EmailService] Using from address: ${masked}`);
   }
 
-  try {
-    const res = await fetch(MAILERSEND_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "(no body)");
-      console.error(`[EmailService] MailerSend error ${res.status}:`, detail);
-      return false;
+  // Try SendGrid first (higher quota, more reliable)
+  if (process.env.SENDGRID_API_KEY) {
+    const ok = await sendViaSendGrid(fromEmail, recipients, subject, html, options?.cc);
+    if (ok) {
+      console.log(`[EmailService] SendGrid sent "${subject}" to ${recipients.join(", ")}`);
+      return true;
     }
-
-    console.log(`[EmailService] Sent "${subject}" to ${validRecipients.join(", ")}`);
-    return true;
-  } catch (err: any) {
-    console.error("[EmailService] Failed to send email:", err?.message || err);
-    return false;
+    console.warn("[EmailService] SendGrid failed, trying MailerSend fallback...");
   }
+
+  // Fallback to MailerSend
+  if (process.env.MAILERSEND_API_KEY) {
+    const msFrom = "teams@corecompliancehub.com";
+    const ok = await sendViaMailerSend(msFrom, recipients, subject, html, options?.cc);
+    if (ok) {
+      console.log(`[EmailService] MailerSend sent "${subject}" to ${recipients.join(", ")}`);
+      return true;
+    }
+  }
+
+  console.error("[EmailService] All email providers failed for:", subject);
+  return false;
 }
 
 export const CCHUB_ADMIN_EMAILS = ADMIN_EMAILS;
