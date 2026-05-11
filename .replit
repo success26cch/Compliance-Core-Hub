@@ -51,6 +51,7 @@ integrations = ["javascript_log_in_with_replit:2.0.0", "javascript_anthropic_ai_
 [userenv.shared]
 ADMIN_USERS = "raulv9471@gmail.com,evillarreal@acsi-quality.com"
 EBENI_INIT_TOKEN = "cchub-init-ebeni-villarreal-2026"
+SENDGRID_FROM_EMAIL_ADDRESS = "team@corecompliancehub.com"
 
 [postMerge]
 path = "scripts/post-merge.sh"

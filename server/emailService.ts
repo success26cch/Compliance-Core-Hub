@@ -143,14 +143,8 @@ export async function sendEmail(
     return false;
   }
 
-  // Use the SENDGRID_FROM_EMAIL secret (must be a SendGrid-verified sender)
-  const fromEmail = (process.env.SENDGRID_FROM_EMAIL || "").trim();
-  if (!fromEmail) {
-    console.error("[EmailService] SENDGRID_FROM_EMAIL is not set — cannot send via SendGrid");
-  } else {
-    const masked = fromEmail.length > 4 ? fromEmail.slice(0, 3) + "***" + fromEmail.slice(fromEmail.indexOf("@") > 0 ? fromEmail.indexOf("@") : -4) : "***";
-    console.log(`[EmailService] Using from address: ${masked}`);
-  }
+  // Use the verified SendGrid sender address (env var takes priority; secret is the API key, not an email)
+  const fromEmail = (process.env.SENDGRID_FROM_EMAIL_ADDRESS || "team@corecompliancehub.com").trim();
 
   // Try SendGrid first (higher quota, more reliable)
   if (process.env.SENDGRID_API_KEY) {
