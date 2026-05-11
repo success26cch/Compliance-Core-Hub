@@ -1635,17 +1635,23 @@ function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onRevis
   const prevVersions: any[] = Array.isArray(doc.previousVersions) ? doc.previousVersions : [];
 
   const canRunCheck = !!(doc.content?.trim()) && !!(doc.isoClause?.trim());
+  const hasContent = !!(doc.content?.trim());
 
   return (
-    <Card className="hover-elevate cursor-pointer group" onClick={onEdit} data-testid={`card-document-${doc.id}`}>
+    <Card className={`hover-elevate cursor-pointer group ${!hasContent ? "opacity-80 border-dashed" : ""}`} onClick={onEdit} data-testid={`card-document-${doc.id}`}>
       <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-muted rounded-lg text-accent">
+          <div className={`p-2 rounded-lg ${hasContent ? "bg-muted text-accent" : "bg-amber-50 text-amber-500"}`}>
             {getIcon(doc.docType)}
           </div>
           <div>
             <CardTitle className="text-sm font-bold group-hover:text-accent transition-colors">{doc.title}</CardTitle>
             <p className="text-[10px] text-muted-foreground mt-0.5">{doc.isoClause || "No clause reference"}</p>
+            {!hasContent && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0.5 mt-1">
+                <Sparkles className="w-2.5 h-2.5" /> Ready to Draft with Isa
+              </span>
+            )}
           </div>
         </div>
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
