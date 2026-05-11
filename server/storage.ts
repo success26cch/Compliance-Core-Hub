@@ -1,4 +1,4 @@
-import { leads, subscriptions, questionUsage, trialLeads, siteVisits, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, teamDepartments, teamAnnouncements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent, type TeamDepartment, type InsertTeamDepartment, type TeamAnnouncement, type InsertTeamAnnouncement,
+import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLogs, contactInquiries, employees, incidents, correctiveActions, actionItems, auditReadiness, auditChecklistItems, companyProfiles, users, clinicVisits, authorizationForms, clinicLocations, clinicEngagement, clinicAgreements, courses, courseModules, courseLessons, quizQuestions, courseEnrollments, lessonProgress, quizAttempts, courseCertificates, trainingAssignments, newHireCompletions, coreyTeams, coreyTeamMembers, recordabilityUsage, isoProjects, coreyProfiles, isaProfiles, nonconformances, isoDocuments, paddleEvents, teamDepartments, teamAnnouncements, type InsertLead, type Lead, type InsertSubscription, type Subscription, type QuestionUsage, type TrialLead, type InsertTrialLead, type SiteVisit, type InsertContactInquiry, type ContactInquiry, type Employee, type InsertEmployee, type Incident, type InsertIncident, type CorrectiveAction, type InsertCorrectiveAction, type ActionItem, type InsertActionItem, type AuditReadiness, type InsertAuditReadiness, type AuditChecklistItem, type CompanyProfile, type InsertCompanyProfile, type User, type ClinicVisit, type InsertClinicVisit, type AuthorizationForm, type InsertAuthorizationForm, type ClinicLocation, type InsertClinicLocation, type ClinicEngagement, type InsertClinicEngagement, type ClinicAgreement, type InsertClinicAgreement, type Course, type InsertCourse, type CourseModule, type InsertCourseModule, type CourseLesson, type InsertCourseLesson, type QuizQuestion, type InsertQuizQuestion, type CourseEnrollment, type InsertCourseEnrollment, type LessonProgress, type InsertLessonProgress, type QuizAttempt, type InsertQuizAttempt, type CourseCertificate, type InsertCourseCertificate, type TrainingAssignment, type InsertTrainingAssignment, type NewHireCompletion, type InsertNewHireCompletion, type CoreyTeam, type InsertCoreyTeam, type CoreyTeamMember, type InsertCoreyTeamMember, type IsoProject, type InsertIsoProject, type CoreyProfile, type InsertCoreyProfile, type IsaProfile, type InsertIsaProfile, type Nonconformance, type IsoDocument, type InsertIsoDocument, type InsertNonconformance, type InsertPaddleEvent, type PaddleEvent, type TeamDepartment, type InsertTeamDepartment, type TeamAnnouncement, type InsertTeamAnnouncement,
   dotDrivers, dotDqDocuments, dotEquipment,
   dotRandomTests, dotAccidents, dotRoadsideInspections, dotDvirLogs,
   type DotDriver, type InsertDotDriver, type DotDqDocument, type InsertDotDqDocument, type DotEquipment, type InsertDotEquipment,
@@ -95,6 +95,8 @@ export interface IStorage {
   // Site Visits
   recordPageVisit(page: string): Promise<void>;
   getSiteVisitStats(): Promise<{ totalVisits: number; todayVisits: number; last30Days: { date: string; count: number }[]; topPages: { page: string; count: number }[] }>;
+  logVisitor(data: { page: string; ip?: string; userAgent?: string; referrer?: string; sessionId?: string }): Promise<void>;
+  getVisitorLogs(limit?: number): Promise<{ id: number; page: string; ip: string | null; userAgent: string | null; referrer: string | null; sessionId: string | null; visitedAt: Date | null }[]>;
 
   // Contact Inquiries
   createContactInquiry(inquiry: InsertContactInquiry): Promise<ContactInquiry>;
@@ -658,6 +660,20 @@ export class DatabaseStorage implements IStorage {
     } else {
       await db.insert(siteVisits).values({ page, visitDate: today, visitCount: 1 });
     }
+  }
+
+  async logVisitor(data: { page: string; ip?: string; userAgent?: string; referrer?: string; sessionId?: string }): Promise<void> {
+    await db.insert(visitorLogs).values({
+      page: data.page,
+      ip: data.ip || null,
+      userAgent: data.userAgent || null,
+      referrer: data.referrer || null,
+      sessionId: data.sessionId || null,
+    });
+  }
+
+  async getVisitorLogs(limit = 500): Promise<{ id: number; page: string; ip: string | null; userAgent: string | null; referrer: string | null; sessionId: string | null; visitedAt: Date | null }[]> {
+    return db.select().from(visitorLogs).orderBy(desc(visitorLogs.visitedAt)).limit(limit);
   }
 
   async getSiteVisitStats(): Promise<{ totalVisits: number; todayVisits: number; last30Days: { date: string; count: number }[]; topPages: { page: string; count: number }[] }> {

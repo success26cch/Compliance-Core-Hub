@@ -72,6 +72,16 @@ type SiteVisitStats = {
   topPages: { page: string; count: number }[];
 };
 
+type VisitorLog = {
+  id: number;
+  page: string;
+  ip: string | null;
+  userAgent: string | null;
+  referrer: string | null;
+  sessionId: string | null;
+  visitedAt: string | null;
+};
+
 type CompanyUsage = {
   user_id: string;
   company_name: string;
@@ -145,6 +155,11 @@ export default function SuperAdmin() {
 
   const { data: siteVisitStats } = useQuery<SiteVisitStats>({
     queryKey: ['/api/superadmin/site-visits'],
+    enabled: checkData?.isSuperadmin === true,
+  });
+
+  const { data: visitorLogs } = useQuery<VisitorLog[]>({
+    queryKey: ['/api/superadmin/visitor-logs'],
     enabled: checkData?.isSuperadmin === true,
   });
 
@@ -866,38 +881,46 @@ export default function SuperAdmin() {
 
         {/* Site Traffic Tab */}
         <TabsContent value="traffic">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
-                Site Traffic Analytics
-              </CardTitle>
-              <CardDescription>Page visits tracked across the platform</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 md:grid-cols-2 mb-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Total Page Views</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{siteVisitStats?.totalVisits?.toLocaleString() || '0'}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Today's Views</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-blue-600">{siteVisitStats?.todayVisits?.toLocaleString() || '0'}</div>
-                  </CardContent>
-                </Card>
-              </div>
+          <div className="space-y-6">
+            {/* Summary cards */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Total Page Views</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{siteVisitStats?.totalVisits?.toLocaleString() || '0'}</div>
+                  <p className="text-xs text-muted-foreground mt-1">All time (aggregate)</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Today's Views</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600">{siteVisitStats?.todayVisits?.toLocaleString() || '0'}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Since midnight</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Detailed Log Entries</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">{visitorLogs?.length?.toLocaleString() || '0'}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Individual requests with IP data</p>
+                </CardContent>
+              </Card>
+            </div>
 
-              {siteVisitStats?.last30Days && siteVisitStats.last30Days.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium mb-3">Last 30 Days Traffic</h3>
-                  <ResponsiveContainer width="100%" height={250}>
+            {/* 30-day chart */}
+            {siteVisitStats?.last30Days && siteVisitStats.last30Days.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Last 30 Days Traffic</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
                     <LineChart data={siteVisitStats.last30Days}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
@@ -906,12 +929,17 @@ export default function SuperAdmin() {
                       <Line type="monotone" dataKey="count" stroke="hsl(var(--accent))" strokeWidth={2} name="Views" />
                     </LineChart>
                   </ResponsiveContainer>
-                </div>
-              )}
+                </CardContent>
+              </Card>
+            )}
 
-              {siteVisitStats?.topPages && siteVisitStats.topPages.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium mb-3">Top Pages</h3>
+            {/* Top pages */}
+            {siteVisitStats?.topPages && siteVisitStats.topPages.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Top Pages</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -922,16 +950,94 @@ export default function SuperAdmin() {
                     <TableBody>
                       {siteVisitStats.topPages.map((p, i) => (
                         <TableRow key={p.page} data-testid={`row-page-${i}`}>
-                          <TableCell className="font-medium">{p.page}</TableCell>
+                          <TableCell className="font-medium font-mono text-xs">{p.page}</TableCell>
                           <TableCell className="text-right">{p.count.toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Detailed IP visitor log */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-primary" />
+                      Detailed Visitor Log
+                    </CardTitle>
+                    <CardDescription>Every page load with IP address, browser, and referrer — most recent first. Showing last 500 entries.</CardDescription>
+                  </div>
+                  {visitorLogs && visitorLogs.length > 0 && (
+                    <Badge variant="secondary">{visitorLogs.length} entries</Badge>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                {!visitorLogs || visitorLogs.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8 text-sm">
+                    No visitor log entries yet. They will appear here as people browse the site.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Time</TableHead>
+                          <TableHead>IP Address</TableHead>
+                          <TableHead>Page</TableHead>
+                          <TableHead>Referrer</TableHead>
+                          <TableHead>Browser / Device</TableHead>
+                          <TableHead>Session</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {visitorLogs.map((log) => {
+                          // Parse a readable browser string from user agent
+                          const ua = log.userAgent || '';
+                          let browser = 'Unknown';
+                          if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+                          else if (ua.includes('Firefox')) browser = 'Firefox';
+                          else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+                          else if (ua.includes('Edg')) browser = 'Edge';
+                          else if (ua.includes('curl') || ua.includes('python') || ua.includes('bot') || ua.includes('Bot')) browser = 'Bot/Script';
+                          const isMobile = /Mobile|Android|iPhone|iPad/.test(ua);
+                          const device = isMobile ? 'Mobile' : (ua ? 'Desktop' : '—');
+
+                          return (
+                            <TableRow key={log.id} data-testid={`row-visitor-${log.id}`}>
+                              <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
+                                {log.visitedAt ? new Date(log.visitedAt).toLocaleString() : '—'}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs font-medium">
+                                {log.ip || '—'}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs max-w-[180px] truncate" title={log.page}>
+                                {log.page}
+                              </TableCell>
+                              <TableCell className="text-xs max-w-[160px] truncate text-muted-foreground" title={log.referrer || ''}>
+                                {log.referrer || <span className="italic">direct</span>}
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <span className="font-medium">{browser}</span>
+                                <span className="text-muted-foreground ml-1">· {device}</span>
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-muted-foreground">
+                                {log.sessionId ? log.sessionId.slice(0, 8) + '…' : '—'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

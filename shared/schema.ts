@@ -106,6 +106,19 @@ export const siteVisits = pgTable("site_visits", {
 
 export type SiteVisit = typeof siteVisits.$inferSelect;
 
+// Detailed visitor logs - captures IP address, user agent, referrer per page load
+export const visitorLogs = pgTable("visitor_logs", {
+  id: serial("id").primaryKey(),
+  page: text("page").notNull(),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  sessionId: text("session_id"),
+  visitedAt: timestamp("visited_at").defaultNow(),
+});
+
+export type VisitorLog = typeof visitorLogs.$inferSelect;
+
 // Contact inquiries (retainer, general questions, etc.)
 export const contactInquiries = pgTable("contact_inquiries", {
   id: serial("id").primaryKey(),

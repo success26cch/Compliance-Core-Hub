@@ -437,6 +437,30 @@ export default function Landing() {
   }, []);
 
 
+  useEffect(() => {
+    if (localStorage.getItem("cchub_popup_dismissed") === "true") return;
+    const timer = setTimeout(() => setShowLeadPopup(true), 12000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const dismissPopup = () => {
+    setShowLeadPopup(false);
+    localStorage.setItem("cchub_popup_dismissed", "true");
+  };
+
+  const handlePopupSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!popupName.trim()) { setPopupError("Name is required"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(popupEmail)) { setPopupError("Valid email is required"); return; }
+    setPopupError("");
+    mutate({ name: popupName, email: popupEmail }, {
+      onSuccess: () => {
+        dismissPopup();
+        window.open('/api/cheat-sheet/download', '_blank');
+      },
+    });
+  };
+
   const toggleVideoSound = () => {
     if (heroVideoRef.current) {
       heroVideoRef.current.muted = !heroVideoRef.current.muted;
@@ -454,6 +478,11 @@ export default function Landing() {
   const [botTrialName, setBotTrialName] = useState(() => localStorage.getItem("cchub_trial_name") || "");
   const [botTrialEmail, setBotTrialEmail] = useState(() => localStorage.getItem("cchub_trial_email") || "");
   const [botTrialGated, setBotTrialGated] = useState(() => !localStorage.getItem("cchub_trial_email"));
+
+  const [showLeadPopup, setShowLeadPopup] = useState(false);
+  const [popupName, setPopupName] = useState("");
+  const [popupEmail, setPopupEmail] = useState("");
+  const [popupError, setPopupError] = useState("");
   const botScrollRef = useRef<HTMLDivElement>(null);
   const botUserScrolledUp = useRef(false);
   const { isListening: botListening, speechSupported: botSpeechSupported, toggleListening: botToggleListening, stopListening: botStopListening } = useSpeechRecognition((text) => setBotInput(text));
@@ -679,6 +708,59 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
+      {/* Lead Capture Popup */}
+      {showLeadPopup && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.65)" }}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden">
+            <div className="bg-[hsl(222,47%,11%)] px-6 py-5">
+              <button onClick={dismissPopup} className="absolute top-3 right-4 text-white/60 hover:text-white text-2xl leading-none" data-testid="button-close-popup">&times;</button>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
+                  <FileDown className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 font-medium uppercase tracking-wider">Free Download</p>
+                  <h3 className="text-white font-bold text-lg leading-tight">OSHA Recordability Cheat Sheet</h3>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-muted-foreground">Stop guessing — get the comprehensive guide to OSHA 1904 recordability criteria used by safety pros nationwide.</p>
+              <form onSubmit={handlePopupSubmit} className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Your Name"
+                  value={popupName}
+                  onChange={e => { setPopupName(e.target.value); setPopupError(""); }}
+                  className="w-full h-11 px-3 rounded-md border border-input bg-muted/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  data-testid="input-popup-name"
+                />
+                <input
+                  type="email"
+                  placeholder="Work Email"
+                  value={popupEmail}
+                  onChange={e => { setPopupEmail(e.target.value); setPopupError(""); }}
+                  className="w-full h-11 px-3 rounded-md border border-input bg-muted/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  data-testid="input-popup-email"
+                />
+                {popupError && <p className="text-xs text-red-500">{popupError}</p>}
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full h-11 rounded-md bg-accent text-white font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-60"
+                  data-testid="button-popup-submit"
+                >
+                  {isPending ? "Sending..." : "Download Free Cheat Sheet →"}
+                </button>
+              </form>
+              <button onClick={dismissPopup} className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors" data-testid="button-popup-dismiss">
+                No thanks, I'll figure it out myself
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navbar */}
       <nav className="bg-[hsl(222,47%,11%)] sticky top-0 z-[9999]">
         <div className="flex items-center justify-between h-12 px-4 gap-2">
@@ -775,6 +857,21 @@ export default function Landing() {
           </div>
         </div>
       </nav>
+
+      {/* Sticky lead-capture banner */}
+      <div className="bg-accent text-white py-2.5 px-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm font-medium" data-testid="banner-lead-capture">
+        <span className="flex items-center gap-1.5">
+          <Gift className="w-4 h-4 shrink-0" />
+          <span><strong>Free Download:</strong> OSHA Recordability Cheat Sheet — used by safety professionals nationwide</span>
+        </span>
+        <button
+          onClick={() => setShowLeadPopup(true)}
+          className="shrink-0 bg-white text-accent font-bold px-4 py-1.5 rounded-full text-xs hover:bg-white/90 transition-colors"
+          data-testid="button-banner-get-cheatsheet"
+        >
+          Get It Free →
+        </button>
+      </div>
 
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 overflow-hidden">

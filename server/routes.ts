@@ -3317,15 +3317,34 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   // Track page visit (public, no auth required)
   app.post("/api/track-visit", async (req, res) => {
     try {
-      const { page } = req.body;
+      const { page, sessionId } = req.body;
       if (!page || typeof page !== "string") {
         return res.status(400).json({ message: "Page is required" });
       }
+      // Aggregate counter (existing behavior)
       await storage.recordPageVisit(page);
+      // Detailed per-request log with IP, UA, referrer
+      const rawIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket.remoteAddress || null;
+      const ip = Array.isArray(rawIp) ? rawIp[0] : (typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : null);
+      const userAgent = (req.headers['user-agent'] as string) || null;
+      const referrer = (req.headers['referer'] as string) || null;
+      await storage.logVisitor({ page, ip: ip ?? undefined, userAgent: userAgent ?? undefined, referrer: referrer ?? undefined, sessionId: sessionId ?? undefined });
       res.json({ success: true });
     } catch (error: any) {
       console.error('Error tracking visit:', error);
       res.status(500).json({ message: "Failed to track visit" });
+    }
+  });
+
+  // Get detailed visitor logs (superadmin only)
+  app.get("/api/superadmin/visitor-logs", requireSuperadmin, async (req, res) => {
+    try {
+      const limit = parseInt((req.query.limit as string) || "500", 10);
+      const logs = await storage.getVisitorLogs(limit);
+      res.json(logs);
+    } catch (error: any) {
+      console.error('Error fetching visitor logs:', error);
+      res.status(500).json({ message: "Failed to fetch visitor logs" });
     }
   });
 

@@ -93,10 +93,16 @@ function PageTracker() {
     scrollTop();
     const raf = requestAnimationFrame(scrollTop);
     const timer = setTimeout(scrollTop, 100);
+    // Generate or retrieve a session ID so visits from the same browser session can be grouped
+    let sessionId = sessionStorage.getItem("cchub_session_id");
+    if (!sessionId) {
+      sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      sessionStorage.setItem("cchub_session_id", sessionId);
+    }
     fetch("/api/track-visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ page: location }),
+      body: JSON.stringify({ page: location, sessionId }),
     }).catch(() => {});
     return () => {
       cancelAnimationFrame(raf);
