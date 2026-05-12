@@ -330,15 +330,40 @@ export default function ISOManager() {
   const [isaDrawerOpen, setIsaDrawerOpen] = useState(false);
   const [isaInitialPrompt, setIsaInitialPrompt] = useState<string | null>(null);
 
-  const { data: project } = useQuery<IsoProject | null>({
-    queryKey: ["/api/iso-projects"],
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
+  // For superadmins: load all projects so they can switch between companies
+  const { data: allProjects } = useQuery<IsoProject[]>({
+    queryKey: ["/api/iso-projects/all"],
     queryFn: async () => {
-      const res = await fetch("/api/iso-projects", { credentials: "include" });
+      const res = await fetch("/api/iso-projects/all", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user?.isSuperadmin,
+    retry: false,
+  });
+
+  // Default selectedProjectId to CCI Chemical (54320068) for superadmins who have no own project
+  useEffect(() => {
+    if (!user?.isSuperadmin || selectedProjectId !== null) return;
+    if (allProjects && allProjects.length > 0) {
+      const cci = allProjects.find(p => (p as any).userId === "54320068");
+      setSelectedProjectId(cci?.id ?? allProjects[0].id);
+    }
+  }, [allProjects, user?.isSuperadmin, selectedProjectId]);
+
+  const projectQueryParam = user?.isSuperadmin && selectedProjectId ? `?isoProjectId=${selectedProjectId}` : "";
+  const { data: project } = useQuery<IsoProject | null>({
+    queryKey: ["/api/iso-projects", selectedProjectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/iso-projects${projectQueryParam}`, { credentials: "include" });
       if (res.status === 404) return null;
       if (!res.ok) return null;
       return res.json();
     },
     retry: false,
+    enabled: !user?.isSuperadmin || selectedProjectId !== null,
   });
 
   const createProjectMut = useMutation({
@@ -825,6 +850,24 @@ export default function ISOManager() {
               <span className="text-xs text-muted-foreground hidden sm:block">· ACSI Lead ISO Auditor AI</span>
             </div>
             <div className="ml-auto flex items-center gap-2">
+              {/* Superadmin project switcher */}
+              {isSuperadmin && allProjects && allProjects.length > 1 && (
+                <Select
+                  value={selectedProjectId?.toString() ?? ""}
+                  onValueChange={(val) => setSelectedProjectId(Number(val))}
+                >
+                  <SelectTrigger className="h-7 text-xs w-44 border-accent/30 bg-accent/5" data-testid="select-admin-project">
+                    <SelectValue placeholder="Select company…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allProjects.map(p => (
+                      <SelectItem key={p.id} value={p.id.toString()}>
+                        {p.orgName || `Project #${p.id}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Activity className="w-3 h-3 text-accent" /><span>Online</span>
               </div>
@@ -876,7 +919,7 @@ export default function ISOManager() {
               </div>
             ) : activeSection === 'documentation' ? (
               <div className="flex-1 min-h-0 overflow-hidden">
-                <DocumentationModule onAskIsa={handleAskIsa} />
+                <DocumentationModule onAskIsa={handleAskIsa} isoProjectId={project?.id} />
               </div>
             ) : activeSection === 'context_org' ? (
               <div className="flex-1 min-h-0 overflow-hidden flex flex-col">

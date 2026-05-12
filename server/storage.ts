@@ -1653,7 +1653,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getIsoProjects(userId: string, isSuperadmin = false): Promise<IsoProject[]> {
-    return db.select().from(isoProjects).where(isSuperadmin ? undefined : eq(isoProjects.userId, userId)).orderBy(isoProjects.name);
+    return db.select().from(isoProjects).where(isSuperadmin ? undefined : eq(isoProjects.userId, userId)).orderBy(isoProjects.orgName);
   }
 
   async getIsoProjectById(id: number): Promise<IsoProject | undefined> {

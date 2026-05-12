@@ -76,6 +76,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface DocumentationModuleProps {
   onAskIsa: (prompt: string) => void;
+  isoProjectId?: number;
 }
 
 type ComplianceRequirement = {
@@ -582,7 +583,7 @@ function LineDiffView({ oldText, newText }: { oldText: string; newText: string }
   );
 }
 
-export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
+export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationModuleProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<IsoDocument | null>(null);
@@ -616,8 +617,15 @@ export function DocumentationModule({ onAskIsa }: DocumentationModuleProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const docQueryKey = isoProjectId ? ["/api/iso-documents", isoProjectId] : ["/api/iso-documents"];
+  const docQueryUrl = isoProjectId ? `/api/iso-documents?isoProjectId=${isoProjectId}` : "/api/iso-documents";
   const { data: documents, isLoading } = useQuery<IsoDocument[]>({
-    queryKey: ["/api/iso-documents"],
+    queryKey: docQueryKey,
+    queryFn: async () => {
+      const res = await fetch(docQueryUrl, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch documents");
+      return res.json();
+    },
   });
 
   useEffect(() => {
