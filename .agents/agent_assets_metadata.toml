@@ -17,3 +17,9 @@ id = "mtT7vzs6Q5Ww8aP91Xydb"
 uri = "file://CCHUB_Pricing_and_Tiers.md"
 type = "text"
 title = "CCHUB Pricing & Tier Reference"
+
+[[outputs]]
+id = "H4uoGFYAzkWqhy0uuIaYo"
+uri = "file://Isa_ISO_Manager_Platform_Presentation.pptx"
+type = "slides"
+title = "Isa & the ISO Manager Platform — Full Presentation"
