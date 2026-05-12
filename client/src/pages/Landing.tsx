@@ -911,11 +911,11 @@ export default function Landing() {
 
             {/* Value prop strip — directly under video */}
             <div className="max-w-4xl mx-auto text-center px-4 pt-6 pb-2">
-              <p className="text-lg md:text-xl font-bold text-primary leading-snug">
-                One login, zero spreadsheets, and the total recovery of your most valuable commodity: <span className="text-accent">Time.</span>
+              <p className="text-xl md:text-2xl font-black text-primary leading-snug">
+                One platform. Every compliance requirement. <span className="text-accent">Zero chaos.</span>
               </p>
-              <p className="text-base md:text-lg text-muted-foreground mt-2 leading-relaxed">
-                Stop managing paperwork and start leading your team — we give you back <span className="font-bold text-primary">10 hours a week</span> by putting your compliance on autopilot. Core Compliance Hub handles the clock so you can handle the business.
+              <p className="text-base md:text-lg text-muted-foreground mt-3 leading-relaxed">
+                Core Compliance Hub is the only solution that runs <span className="font-bold text-primary">regulatory compliance</span> — OSHA, DOT, EPA, occupational health — <em>and</em> your complete <span className="font-bold text-primary">ISO management system</span> under one intelligent roof. One login. Two compliance worlds unified. We give you back <span className="font-bold text-accent">10 hours a week</span> so you can lead the business instead of drowning in paperwork.
               </p>
             </div>
 
@@ -969,50 +969,26 @@ export default function Landing() {
                       </div>
                       <div>
                         <p className="font-black text-indigo-400 text-base leading-tight">ISO Management Platform</p>
-                        <p className="text-[11px] text-white/35 leading-tight mt-0.5">9001 · 14001 · 45001 · 13485 · 27001 · AS9100 · IATF 16949</p>
+                        <p className="text-[11px] text-white/35 leading-tight mt-0.5">ISO 9001 · IATF 16949 · ISO 14001 · ISO 45001 · AS9100D</p>
                       </div>
                     </div>
-                    <div className="space-y-3.5">
+                    <ul className="space-y-2.5">
                       {[
-                        {
-                          label: "Foundation",
-                          items: ["Context of the Organization · Process Maps · Roles & RACI"],
-                        },
-                        {
-                          label: "Documentation",
-                          items: ["Document Vault · Version Control · AI-Drafted Documents"],
-                        },
-                        {
-                          label: "NC & Quality",
-                          items: ["NC & CAPA · Risk Assessment · Management Review · Action Items"],
-                        },
-                        {
-                          label: "Audit Program",
-                          items: ["Internal Audits · Layered Process Audits (LPA)"],
-                        },
-                        {
-                          label: "People & Performance",
-                          items: ["Training & Awareness · Measurement & Monitoring · Communication"],
-                        },
-                        {
-                          label: "EMS / OHS — 14001 · 45001",
-                          items: ["Compliance Obligations · Compliance Calendar · Aspects & Impacts ✦"],
-                          accent: true,
-                        },
-                        {
-                          label: "Advanced",
-                          items: ["Supplier Mgmt · APQP · Calibration · Preventive Maintenance"],
-                        },
-                      ].map(({ label, items, accent }) => (
-                        <div key={label}>
-                          <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${accent ? "text-indigo-300/70" : "text-white/25"}`}>{label}</p>
-                          {items.map((item) => (
-                            <p key={item} className={`text-[11px] leading-snug ${accent ? "text-indigo-200/60" : "text-white/50"}`}>{item}</p>
-                          ))}
-                        </div>
+                        "Documentation Vault — Version Control & AI-Drafted Documents",
+                        "NC & CAPA — 8D Corrective Action with Root Cause Analysis",
+                        "Internal Audits — System, Process & Product (LPA L1–L5)",
+                        "Risk Assessment — PFMEA-Linked Register & PESTLE/SWOT",
+                        "Management Review — AI Minutes, KPI Dashboards & Action Items",
+                        "Supplier Management — ASL, Scorecards & Risk-Based Audits",
+                        "Calibration · Preventive Maintenance · Training & Competency",
+                      ].map((item) => (
+                        <li key={item} className="flex items-start gap-2.5 text-sm text-white/55 leading-snug">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                          {item}
+                        </li>
                       ))}
-                      <p className="text-[9px] text-white/20 italic pt-1">✦ Aspects &amp; Impacts Analysis — coming soon</p>
-                    </div>
+                    </ul>
+                    <p className="text-[10px] text-indigo-300/40 italic mt-3">APQP · Context of Org · Communication Log · Compliance Calendar — and growing</p>
                   </div>
                 </div>
 
