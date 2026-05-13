@@ -976,8 +976,8 @@ Assess the following:
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {IMPACT_TYPES.map(t => (
                   <div key={t.code} className="flex items-start gap-2 bg-muted/40 rounded-lg px-2 py-1.5">
-                    <span className="text-xs font-black bg-lime-200 dark:bg-lime-800/40 text-lime-800 dark:text-lime-300 px-1.5 py-0.5 rounded shrink-0">{t.code}</span>
-                    <div><p className="text-sm font-semibold">{t.label}</p><p className="text-xs text-muted-foreground">{t.desc}</p></div>
+                    <span className="text-sm font-black bg-lime-200 dark:bg-lime-800/40 text-lime-800 dark:text-lime-300 px-1.5 py-0.5 rounded shrink-0">{t.code}</span>
+                    <div><p className="text-sm font-semibold">{t.label}</p><p className="text-sm text-muted-foreground">{t.desc}</p></div>
                   </div>
                 ))}
               </div>
