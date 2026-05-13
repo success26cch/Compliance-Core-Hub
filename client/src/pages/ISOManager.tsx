@@ -50,6 +50,7 @@ import SupplierModule from "./SupplierModule";
 import GlobalIsaWidget from "./GlobalIsaWidget";
 import ComplianceObligationsModule from "./ComplianceObligationsModule";
 import ComplianceCalendarModule from "./ComplianceCalendarModule";
+import AspectsImpactsModule from "./AspectsImpactsModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -274,7 +275,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -297,6 +298,7 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   preventive_maintenance:   [null, undefined, 'auditor'],
   compliance_obligations:   [null, undefined, 'auditor'],
   compliance_calendar:      [null, undefined, 'auditor'],
+  aspects_impacts:          [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -724,10 +726,11 @@ export default function ISOManager() {
             )}
             {!sidebarOpen && <div className="my-2 h-px bg-border/40 mx-2" />}
             <div className="space-y-0.5">
-              {(["compliance_obligations", "compliance_calendar"] as SectionKey[]).map((section) => {
+              {(["compliance_obligations", "compliance_calendar", "aspects_impacts"] as SectionKey[]).map((section) => {
                 const META: Record<string, { icon: any; label: string }> = {
                   compliance_obligations: { icon: ShieldAlert, label: "Compliance Obligations" },
                   compliance_calendar:    { icon: CalendarDays, label: "Compliance Calendar" },
+                  aspects_impacts:        { icon: Layers,       label: "Aspects & Impacts" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
@@ -1022,6 +1025,12 @@ export default function ISOManager() {
                 {canAccessSection('compliance_calendar', isoRole, isSuperadmin)
                   ? <ComplianceCalendarModule isoProjectId={project?.id} />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="compliance_calendar" /></div>}
+              </div>
+            ) : activeSection === 'aspects_impacts' ? (
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {canAccessSection('aspects_impacts', isoRole, isSuperadmin)
+                  ? <AspectsImpactsModule />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="aspects_impacts" /></div>}
               </div>
             ) : (
               <>
