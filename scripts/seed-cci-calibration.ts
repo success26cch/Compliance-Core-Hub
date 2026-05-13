@@ -936,6 +936,58 @@ async function main() {
   console.log(`  Project ID : ${PROJECT_ID}`);
   console.log(`  Equipment  : ${EQUIPMENT_SEEDS.length} gages\n`);
 
+  // ── Idempotency check ───────────────────────────────────────────────────
+  // Check for the specific first seed gage (CCI-GAG-001) rather than any
+  // equipment, so the check is precise: custom equipment added by the user
+  // will not falsely prevent the demo data from being seeded.
+  const existing = await db
+    .select({ id: calibrationEquipment.id })
+    .from(calibrationEquipment)
+    .where(
+      and(
+        eq(calibrationEquipment.userId, USER_ID),
+        eq(calibrationEquipment.isoProjectId, PROJECT_ID),
+        eq(calibrationEquipment.gageId, "CCI-GAG-001")
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    const eqCount = await db
+      .select({ id: calibrationEquipment.id })
+      .from(calibrationEquipment)
+      .where(
+        and(
+          eq(calibrationEquipment.userId, USER_ID),
+          eq(calibrationEquipment.isoProjectId, PROJECT_ID)
+        )
+      );
+    const recCount = await db
+      .select({ id: calibrationRecords.id })
+      .from(calibrationRecords)
+      .where(
+        and(
+          eq(calibrationRecords.userId, USER_ID),
+          eq(calibrationRecords.isoProjectId, PROJECT_ID)
+        )
+      );
+    const ootCount = await db
+      .select({ id: calibrationOotAssessments.id })
+      .from(calibrationOotAssessments)
+      .where(
+        and(
+          eq(calibrationOotAssessments.userId, USER_ID),
+          eq(calibrationOotAssessments.isoProjectId, PROJECT_ID)
+        )
+      );
+    console.log(`✅ Already seeded — skipping insert.`);
+    console.log(`   Equipment  : ${eqCount.length} gages`);
+    console.log(`   Records    : ${recCount.length} calibration records`);
+    console.log(`   OOT Assmts : ${ootCount.length} OOT assessments`);
+    console.log(`\n   Re-run is safe — nothing changed.\n`);
+    process.exit(0);
+  }
+
   await clearExisting();
 
   // Ensure the conductivity meter calibration work instruction exists
