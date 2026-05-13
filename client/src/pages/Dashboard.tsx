@@ -1228,7 +1228,8 @@ function ComplianceInsightsPanel() {
     queryKey: ['/api/conversations/topic-breakdown'],
   });
   const { data: calendarData, isLoading: calendarLoading } = useQuery<{ reminders: ComplianceCalendarItem[] }>({
-    queryKey: ['/api/compliance-calendar'],
+    queryKey: ['/api/compliance-calendar-triggers'],
+    queryFn: () => fetch('/api/compliance-calendar-triggers', { credentials: 'include' }).then(r => r.json()),
   });
 
   const totalConvs = topicData.reduce((s, t) => s + t.count, 0);

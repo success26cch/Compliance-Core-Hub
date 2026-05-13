@@ -92,11 +92,13 @@ function OverviewModule({ setActive }: { setActive: (k: string) => void }) {
   const { data: monitoring = [] } = useQuery<StormwaterMonitor[]>({ queryKey: ["/api/env/stormwater-monitoring"], staleTime: Infinity });
   const { data: permits = [] } = useQuery<AirPermit[]>({ queryKey: ["/api/env/air-permits"], staleTime: Infinity });
   const { data: profile } = useQuery<FacilityProfile | null>({ queryKey: ["/api/env/facility-profile"], staleTime: Infinity });
+  const { data: aspects = [] } = useQuery<AspectImpact[]>({ queryKey: ["/api/env/aspects"], staleTime: Infinity });
 
   const overdueUW = (uw as UniversalWaste[]).filter(w => !w.disposalDate && daysSince(w.startDate) >= 365).length;
   const overdueManifests = (manifests as Manifest[]).filter(m => m.status === "pending" && daysSince(m.shipmentDate) >= 45).length;
   const expiringPermits = (permits as AirPermit[]).filter(p => p.expirationDate && daysUntil(p.expirationDate) <= 180 && daysUntil(p.expirationDate) >= 0).length;
   const thisYearMonitoring = (monitoring as StormwaterMonitor[]).filter(m => m.year === new Date().getFullYear()).length;
+  const significantAspects = (aspects as AspectImpact[]).filter(a => a.isSignificant).length;
 
   const cards = [
     { label: "Universal Waste", icon: Recycle, color: "emerald", value: (uw as UniversalWaste[]).filter(w => !w.disposalDate).length + " active", alert: overdueUW > 0 ? `${overdueUW} overdue` : null, key: "universal" },
@@ -104,10 +106,11 @@ function OverviewModule({ setActive }: { setActive: (k: string) => void }) {
     { label: "SPCC", icon: Droplets, color: "blue", value: (tanks as SpccTank[]).length + " tanks logged", alert: null, key: "spcc" },
     { label: "Stormwater", icon: Wind, color: "cyan", value: thisYearMonitoring + "/4 events this year", alert: thisYearMonitoring < Math.ceil((new Date().getMonth() + 1) / 3) ? "Behind on quarterly monitoring" : null, key: "stormwater" },
     { label: "Air Quality", icon: Factory, color: "purple", value: (permits as AirPermit[]).length + " permits", alert: expiringPermits > 0 ? `${expiringPermits} expiring within 180 days` : null, key: "air" },
+    { label: "Aspects & Impacts", icon: Layers, color: "lime", value: (aspects as AspectImpact[]).length + " aspects logged", alert: significantAspects > 0 ? `${significantAspects} Significant SEA` : null, key: "aspects" },
   ];
 
-  const colorMap: Record<string, string> = { emerald: "text-emerald-500 bg-emerald-50 border-emerald-200", orange: "text-orange-500 bg-orange-50 border-orange-200", blue: "text-blue-500 bg-blue-50 border-blue-200", cyan: "text-cyan-500 bg-cyan-50 border-cyan-200", purple: "text-purple-500 bg-purple-50 border-purple-200" };
-  const iconBg: Record<string, string> = { emerald: "bg-emerald-100", orange: "bg-orange-100", blue: "bg-blue-100", cyan: "bg-cyan-100", purple: "bg-purple-100" };
+  const colorMap: Record<string, string> = { emerald: "text-emerald-500 bg-emerald-50 border-emerald-200", orange: "text-orange-500 bg-orange-50 border-orange-200", blue: "text-blue-500 bg-blue-50 border-blue-200", cyan: "text-cyan-500 bg-cyan-50 border-cyan-200", purple: "text-purple-500 bg-purple-50 border-purple-200", lime: "text-lime-600 bg-lime-50 border-lime-200" };
+  const iconBg: Record<string, string> = { emerald: "bg-emerald-100", orange: "bg-orange-100", blue: "bg-blue-100", cyan: "bg-cyan-100", purple: "bg-purple-100", lime: "bg-lime-100" };
 
   return (
     <div className="p-6 space-y-6">

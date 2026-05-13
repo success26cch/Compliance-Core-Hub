@@ -2144,7 +2144,9 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
   });
 
   // ─── COMPLIANCE CALENDAR TRIGGERS (T011) ────────────────────────────────────
-  app.get("/api/compliance-calendar", async (req, res) => {
+  // NOTE: renamed to /api/compliance-calendar-triggers to avoid collision with
+  // the DB-backed /api/compliance-calendar route added later in this file.
+  app.get("/api/compliance-calendar-triggers", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const now = new Date();
     const month = now.getMonth() + 1;
