@@ -1820,6 +1820,18 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
     return (!isNaN(u) && !isNaN(l)) ? Math.abs(u - l) : null;
   }, [meta.usl, meta.lsl]);
 
+  // Per-trial-row averages: mean of all parts for that specific trial + appraiser
+  const trialRowAvgs = useMemo(() =>
+    Array.from({length: appraiserCount}, (_, i) =>
+      Array.from({length: trialCount}, (_, k) => {
+        const vs = Array.from({length: partCount}, (_, j) =>
+          parseFloat(gridData[i]?.[j]?.[k] ?? "")).filter(v => !isNaN(v));
+        if (vs.length !== partCount) return null as number|null;
+        return vs.reduce((s,v) => s+v, 0) / vs.length;
+      })
+    ), [gridData, appraiserCount, partCount, trialCount]
+  );
+
   // ── Save handler ─────────────────────────────────────────────────────────────
   function handleSave() {
     if (studyType === "gage_rrr" && phase === "grid" && aiag) {
@@ -2048,122 +2060,191 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
 
   // ══════════════════════════════════════════════════════════════════════════════
   // ── GRID PHASE — AIAG Variable Gage Study (Long Method) ──────────────────────
-  // Parts as COLUMNS, appraisers as ROW GROUPS (matches standard AIAG worksheet)
+  // Parts as COLUMNS · Appraisers as ROW GROUPS · Single AVERAGE column
+  // Matches AIAG MSA 4th Ed. standard data collection worksheet format
   // ══════════════════════════════════════════════════════════════════════════════
   const eq = equipment.find(e => e.id === equipmentId);
+  const K1 = AIAG_K1[trialCount] ?? 3.05;
+  const K2 = AIAG_K2[appraiserCount] ?? 2.70;
+  const K3 = AIAG_K3[partCount] ?? 1.62;
+  const D4 = AIAG_D4[trialCount] ?? 2.575;
+  // Tol = (USL−LSL)/6  — displayed in the AIAG %Tolerance formulas
+  const tolSixth = tolerance != null ? tolerance / 6 : null;
+  // Grand mean of all part averages
+  const grandMean = aiag ? aiag.partAvgs.reduce((s,v) => s+v, 0) / aiag.partAvgs.length : null;
+  // Appraiser letter labels (A, B, C…)
+  const appLabel = (i: number) => String.fromCharCode(65 + i);
+
   return (
     <div className="space-y-4">
-      {/* ── AIAG Worksheet Study Header ── */}
-      <div className="grid grid-cols-3 gap-x-6 gap-y-1 text-xs border rounded-lg p-3 bg-muted/10">
-        <div><span className="text-muted-foreground font-semibold">Part Name: </span>{meta.partName || "—"}</div>
-        <div><span className="text-muted-foreground font-semibold">Part No.: </span>{meta.partNumber || "—"}</div>
-        <div><span className="text-muted-foreground font-semibold">Date: </span>{studyDate}</div>
-        <div><span className="text-muted-foreground font-semibold">Characteristic: </span>{meta.characteristic || "—"}</div>
-        <div><span className="text-muted-foreground font-semibold">Gage: </span>{eq ? `${eq.gageId} — ${eq.name}` : "—"}</div>
-        <div><span className="text-muted-foreground font-semibold">Performed By: </span>{meta.performedBy || "—"}</div>
-        {meta.usl && <div><span className="text-muted-foreground font-semibold">USL: </span>{meta.usl}</div>}
-        {meta.lsl && <div><span className="text-muted-foreground font-semibold">LSL: </span>{meta.lsl}</div>}
-        {tolerance != null && <div><span className="text-muted-foreground font-semibold">Tolerance: </span>{tolerance.toFixed(4)}</div>}
+      {/* ── AIAG Worksheet Study Header ───────────────────────────────────────── */}
+      <div className="border rounded-lg overflow-hidden text-xs">
+        <div className="grid grid-cols-3 divide-x divide-y border-b">
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Part Number:</span>
+            <span className="font-medium">{meta.partNumber || "—"}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Gage Name:</span>
+            <span className="font-medium">{meta.gaugeDesc || (eq ? eq.name : "—")}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Appraiser {appLabel(0)}:</span>
+            <span className="font-medium">{meta.appraiserNames[0] || "—"}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Part Name:</span>
+            <span className="font-medium">{meta.partName || "—"}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Gage Number:</span>
+            <span className="font-medium">{eq ? eq.gageId : "—"}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Appraiser {appLabel(1)}:</span>
+            <span className="font-medium">{meta.appraiserNames[1] || "—"}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Characteristic:</span>
+            <span className="font-medium">{meta.characteristic || "—"}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Gage Type:</span>
+            <span className="font-medium">{meta.gaugeDesc || "—"}</span>
+          </div>
+          {appraiserCount >= 3 && (
+            <div className="px-3 py-1.5 flex gap-1.5">
+              <span className="text-muted-foreground font-semibold shrink-0">Appraiser {appLabel(2)}:</span>
+              <span className="font-medium">{meta.appraiserNames[2] || "—"}</span>
+            </div>
+          )}
+          <div className="px-3 py-1.5 flex gap-1.5 col-span-1">
+            <span className="text-muted-foreground font-semibold shrink-0">Specification:</span>
+            <span className="font-medium">{meta.lsl || "—"} / {meta.usl || "—"}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Trials:</span>
+            <span className="font-medium">{trialCount}</span>
+            <span className="text-muted-foreground font-semibold shrink-0 ml-3">Parts:</span>
+            <span className="font-medium">{partCount}</span>
+            <span className="text-muted-foreground font-semibold shrink-0 ml-3">Appraisers:</span>
+            <span className="font-medium">{appraiserCount}</span>
+          </div>
+          <div className="px-3 py-1.5 flex gap-1.5">
+            <span className="text-muted-foreground font-semibold shrink-0">Date:</span>
+            <span className="font-medium">{studyDate}</span>
+            <span className="text-muted-foreground font-semibold shrink-0 ml-3">Performed By:</span>
+            <span className="font-medium">{meta.performedBy || "—"}</span>
+          </div>
+        </div>
         {!hasReadings && (
-          <div className="col-span-3 pt-1 border-t">
+          <div className="px-3 py-1 bg-muted/10">
             <button type="button" onClick={() => setPhase("config")}
-              className="text-xs text-accent hover:underline">← Edit study setup</button>
+              className="text-[11px] text-accent hover:underline">← Edit study setup</button>
           </div>
         )}
       </div>
 
-      {/* ── AIAG Data Collection Sheet: Parts as COLUMNS ── */}
+      {/* ── AIAG Data Collection Sheet ─────────────────────────────────────────── */}
+      {/* Columns: APPRAISER/TRIAL # | Part 1…n | AVERAGE                         */}
+      {/* Rows per appraiser: group header · Trial 1…r · Average (X̄) · Range (R) */}
       <div className="overflow-x-auto border rounded-lg">
-        <table className="text-xs border-collapse" style={{minWidth: `${130 + partCount*56 + 130}px`}}>
+        <table className="text-xs border-collapse" style={{minWidth: `${145 + partCount*54 + 90}px`}}>
           <thead>
-            <tr className="bg-muted/60">
-              <th className="border px-2 py-2 text-left font-bold min-w-[130px] sticky left-0 bg-muted/60 z-20 text-[11px]">
-                Operator / Trial
+            <tr className="bg-muted/70 text-[11px]">
+              <th className="border px-2 py-1.5 text-left font-bold min-w-[145px] sticky left-0 bg-muted/70 z-20">
+                APPRAISER / TRIAL #
               </th>
               {Array.from({length: partCount}, (_, j) => (
-                <th key={j} className="border px-1 py-2 text-center font-bold min-w-[54px] text-muted-foreground">
-                  Sample {j+1}
+                <th key={j} className="border px-1 py-1.5 text-center font-bold min-w-[52px]">
+                  {j + 1}
                 </th>
               ))}
-              <th className="border px-2 py-2 text-center font-bold min-w-[62px] text-emerald-700 dark:text-emerald-400">X̄</th>
-              <th className="border px-2 py-2 text-center font-bold min-w-[62px] text-sky-700 dark:text-sky-400">R̄</th>
+              <th className="border px-2 py-1.5 text-center font-bold min-w-[82px] bg-muted/70">
+                AVERAGE
+              </th>
             </tr>
           </thead>
           <tbody>
             {Array.from({length: appraiserCount}, (_, i) => {
-              const appName = meta.appraiserNames[i] || `Appraiser ${String.fromCharCode(65+i)}`;
-              const colorClass = APPRAISER_COLORS[i] ?? APPRAISER_COLORS[0];
+              const appName = meta.appraiserNames[i] || `Appraiser ${appLabel(i)}`;
+              const acColor = APPRAISER_COLORS[i] ?? APPRAISER_COLORS[0];
               const rows: React.ReactNode[] = [];
 
-              // Appraiser group header
+              // ── Appraiser group header ──
               rows.push(
                 <tr key={`hdr-${i}`}>
-                  <td colSpan={partCount + 3}
-                    className={`border px-3 py-1.5 font-bold text-xs sticky left-0 z-10 ${colorClass}`}>
-                    {appName}
+                  <td colSpan={partCount + 2}
+                    className={`border px-3 py-1 font-bold text-[11px] sticky left-0 z-10 ${acColor}`}>
+                    {i + 1}. {appName}
                   </td>
                 </tr>
               );
 
-              // Trial input rows
+              // ── Trial input rows ──
               for (let k = 0; k < trialCount; k++) {
+                const rowAvg = trialRowAvgs[i]?.[k];
                 rows.push(
-                  <tr key={`t-${i}-${k}`} className={k%2===0 ? "bg-white dark:bg-background" : "bg-muted/5"}>
-                    <td className="border px-3 py-0.5 text-muted-foreground sticky left-0 bg-inherit z-10 text-[11px]">
-                      Trial {k+1}
+                  <tr key={`t-${i}-${k}`}>
+                    <td className="border px-3 py-0 text-muted-foreground sticky left-0 bg-background z-10 text-[11px] h-7">
+                      <span className="text-muted-foreground/50 mr-1.5">{i * (trialCount + 2) + k + 2}.</span>
+                      Trial {k + 1}
                     </td>
                     {Array.from({length: partCount}, (_, j) => (
-                      <td key={j} className="border p-0.5">
+                      <td key={j} className="border p-0">
                         <input type="number" step="any"
-                          className="w-[50px] h-6 text-center text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-accent/60 rounded"
+                          className="w-[50px] h-7 text-center text-[11px] border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-accent/60 rounded font-mono"
                           value={gridData[i]?.[j]?.[k] ?? ""}
                           onChange={e => setCell(i, j, k, e.target.value)}
                           data-testid={`cell-a${i}-s${j}-t${k}`} />
                       </td>
                     ))}
-                    <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
-                    <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
+                    <td className="border px-2 py-0 text-center font-mono text-[11px] text-muted-foreground/60 bg-muted/5 h-7">
+                      {rowAvg != null ? rowAvg.toFixed(3) : ""}
+                    </td>
                   </tr>
                 );
               }
 
-              // Average row per appraiser (X̄ per sample)
+              // ── Average row (X̄ per part, x̄a= grand appraiser mean) ──
+              const aveRowNum = i * (trialCount + 2) + trialCount + 2;
               rows.push(
                 <tr key={`avg-${i}`} className="bg-muted/10">
-                  <td className="border px-3 py-0.5 italic text-muted-foreground sticky left-0 bg-muted/10 z-10 text-[11px]">
-                    Average (X̄)
+                  <td className="border px-3 py-0.5 text-[11px] font-semibold sticky left-0 bg-muted/10 z-10 h-6">
+                    <span className="text-muted-foreground/50 mr-1.5">{aveRowNum}.</span>
+                    AVE
                   </td>
                   {Array.from({length: partCount}, (_, j) => (
-                    <td key={j} className="border px-1 py-0.5 text-center font-mono text-[10px] text-foreground/80">
+                    <td key={j} className="border px-1 py-0 text-center font-mono text-[11px] h-6">
                       {cellStats[i]?.[j]?.mean != null ? cellStats[i][j].mean!.toFixed(3) : ""}
                     </td>
                   ))}
-                  <td className="border px-1 py-0.5 text-center font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-                    {aiag?.XbarA[i] != null ? aiag.XbarA[i].toFixed(4) : "—"}
+                  <td className="border px-2 py-0 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-muted/10 h-6 whitespace-nowrap">
+                    x̄{appLabel(i).toLowerCase()}= {aiag?.XbarA[i] != null ? aiag.XbarA[i].toFixed(4) : "—"}
                   </td>
-                  <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
                 </tr>
               );
 
-              // Range row per appraiser (R per sample)
+              // ── Range row (R per part, r̄a= appraiser avg range) ──
+              const rngRowNum = aveRowNum + 1;
               rows.push(
                 <tr key={`rng-${i}`} className="bg-muted/10">
-                  <td className="border px-3 py-0.5 italic text-muted-foreground sticky left-0 bg-muted/10 z-10 text-[11px]">
-                    Range (R)
+                  <td className="border px-3 py-0.5 text-[11px] font-semibold sticky left-0 bg-muted/10 z-10 h-6">
+                    <span className="text-muted-foreground/50 mr-1.5">{rngRowNum}.</span>
+                    R
                   </td>
                   {Array.from({length: partCount}, (_, j) => {
-                    const r = cellStats[i]?.[j]?.range;
-                    const overLimit = aiag?.UCLR != null && r != null && r > aiag.UCLR;
+                    const rng = cellStats[i]?.[j]?.range;
+                    const overLimit = aiag?.UCLR != null && rng != null && rng > aiag.UCLR;
                     return (
-                      <td key={j} className={`border px-1 py-0.5 text-center font-mono text-[10px] ${overLimit ? "bg-red-50 dark:bg-red-950/20 text-red-700 font-bold" : "text-foreground/80"}`}>
-                        {r != null ? r.toFixed(3) : ""}
-                        {overLimit && " ▲"}
+                      <td key={j} className={`border px-1 py-0 text-center font-mono text-[11px] h-6 ${overLimit ? "bg-red-50 dark:bg-red-950/30 text-red-700 font-bold" : ""}`}>
+                        {rng != null ? rng.toFixed(3) : ""}
+                        {overLimit && <span className="text-red-500 ml-0.5">▲</span>}
                       </td>
                     );
                   })}
-                  <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
-                  <td className="border px-1 py-0.5 text-center font-mono text-[11px] font-bold text-sky-700 dark:text-sky-400">
-                    {aiag?.RbarA[i] != null ? aiag.RbarA[i].toFixed(4) : "—"}
+                  <td className="border px-2 py-0 text-[11px] font-bold text-sky-700 dark:text-sky-400 bg-muted/10 h-6 whitespace-nowrap">
+                    r{appLabel(i).toLowerCase()}= {aiag?.RbarA[i] != null ? aiag.RbarA[i].toFixed(4) : "—"}
                   </td>
                 </tr>
               );
@@ -2171,141 +2252,282 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
               return rows;
             })}
 
-            {/* Part Average row (grand mean per sample across all appraisers) */}
-            <tr className="bg-muted/30 font-bold border-t-2">
-              <td className="border px-3 py-1.5 text-xs font-bold sticky left-0 bg-muted/30 z-10">
-                Part Average (X̄p)
+            {/* ── Part Average row (grand mean per part across all appraisers) ── */}
+            <tr className="bg-muted/30 border-t-2 border-foreground/20">
+              <td className="border px-3 py-1 text-[11px] font-bold sticky left-0 bg-muted/30 z-10">
+                PART AVERAGE
               </td>
               {Array.from({length: partCount}, (_, j) => (
-                <td key={j} className="border px-1 py-1.5 text-center font-mono text-[10px] font-bold">
+                <td key={j} className="border px-1 py-1 text-center font-mono text-[11px] font-bold">
                   {aiag?.partAvgs[j] != null ? aiag.partAvgs[j].toFixed(3) : ""}
                 </td>
               ))}
-              <td className="border px-1 py-1.5 text-center text-muted-foreground/30">—</td>
-              <td className="border px-1 py-1.5 text-center text-muted-foreground/30">—</td>
+              <td className="border px-2 py-1 text-[11px] font-bold bg-muted/30 whitespace-nowrap">
+                {grandMean != null && <>X̄= {grandMean.toFixed(4)}</>}
+                {aiag && <span className="ml-2 text-muted-foreground">Rp= {aiag.Rp.toFixed(4)}</span>}
+              </td>
+            </tr>
+
+            {/* ── Row 17: R̄ calculation ── */}
+            <tr className="bg-muted/5 text-[10px] italic">
+              <td colSpan={partCount + 1} className="border px-3 py-1 text-muted-foreground sticky left-0 bg-muted/5 z-10">
+                ({Array.from({length: appraiserCount}, (_, i) => `r${appLabel(i).toLowerCase()}`).join(" + ")}) ÷ {appraiserCount} =
+                {aiag && <span className="not-italic font-mono text-foreground ml-1 font-bold">
+                  ({aiag.RbarA.map(r => r.toFixed(4)).join(" + ")}) ÷ {appraiserCount}
+                </span>}
+              </td>
+              <td className="border px-2 py-1 text-[11px] font-bold font-mono not-italic text-sky-700 dark:text-sky-400 whitespace-nowrap bg-muted/10">
+                R̄= {aiag?.Rbar.toFixed(4) ?? "—"}
+              </td>
+            </tr>
+
+            {/* ── Row 18: xDIFF ── */}
+            <tr className="bg-muted/5 text-[10px] italic">
+              <td colSpan={partCount + 1} className="border px-3 py-1 text-muted-foreground sticky left-0 bg-muted/5 z-10">
+                x̄DIFF = Max x̄ − Min x̄ =
+                {aiag && <span className="not-italic font-mono text-foreground ml-1 font-bold">
+                  {Math.max(...aiag.XbarA).toFixed(4)} − {Math.min(...aiag.XbarA).toFixed(4)}
+                </span>}
+              </td>
+              <td className="border px-2 py-1 text-[11px] font-bold font-mono not-italic text-emerald-700 dark:text-emerald-400 whitespace-nowrap bg-muted/10">
+                x̄DIFF= {aiag?.xdiff.toFixed(4) ?? "—"}
+              </td>
+            </tr>
+
+            {/* ── Row 19: UCL_R ── */}
+            <tr className="bg-muted/5 text-[10px] italic">
+              <td colSpan={partCount + 1} className="border px-3 py-1 text-muted-foreground sticky left-0 bg-muted/5 z-10">
+                * UCL<sub>R</sub> = R̄ × D₄ =
+                {aiag && <span className="not-italic font-mono text-foreground ml-1 font-bold">
+                  {aiag.Rbar.toFixed(4)} × {D4}
+                </span>}
+                <span className="ml-2 not-italic text-[9px]">(D₄ = 3.27 for 2 trials · 2.58 for 3 trials — circle ranges above limit)</span>
+              </td>
+              <td className="border px-2 py-1 text-[11px] font-bold font-mono not-italic text-amber-700 dark:text-amber-400 whitespace-nowrap bg-muted/10">
+                UCL<sub>R</sub>= {aiag?.UCLR.toFixed(4) ?? "—"}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* ── Intermediate Calculations + Verdict ── */}
+      {/* ── Measurement Unit Analysis ──────────────────────────────────────────── */}
       {aiag ? (
-        <div className="grid grid-cols-2 gap-4">
-          {/* Left: intermediate values (AIAG worksheet reference box) */}
-          <div className="rounded-lg border p-3 space-y-2 text-xs bg-muted/10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Intermediate Calculations</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-              <span className="text-muted-foreground">R̄ (Grand Avg Range)</span>
-              <span className="font-mono font-bold">{aiag.Rbar.toFixed(4)}</span>
-              <span className="text-muted-foreground">X̄<sub>diff</sub> (Appraiser Spread)</span>
-              <span className="font-mono font-bold">{aiag.xdiff.toFixed(4)}</span>
-              <span className="text-muted-foreground">R<sub>p</sub> (Part Range)</span>
-              <span className="font-mono font-bold">{aiag.Rp.toFixed(4)}</span>
-              <span className="text-muted-foreground">UCL<sub>R</sub> = D₄ × R̄</span>
-              <span className="font-mono font-bold text-amber-700 dark:text-amber-400">
-                {aiag.UCLR.toFixed(4)} <span className="font-normal text-muted-foreground">(D₄={AIAG_D4[trialCount]})</span>
-              </span>
-            </div>
-            <p className="text-[10px] text-muted-foreground border-t pt-2 mt-1 leading-relaxed">
-              K₁ = {AIAG_K1[trialCount]} (r={trialCount} trials) ·
-              K₂ = {AIAG_K2[appraiserCount]} (a={appraiserCount} appraisers) ·
-              K₃ = {AIAG_K3[partCount]} (n={partCount} parts)
-            </p>
-            {aiag.UCLR > 0 && (
-              <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                ▲ Ranges exceeding UCL<sub>R</sub> indicate inconsistent technique — re-measure those samples.
-              </p>
-            )}
-          </div>
-
-          {/* Right: verdict */}
-          <div className={`rounded-lg border p-4 flex flex-col items-center justify-center gap-3 ${
-            aiag.pctGRR < 10  ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20"
-            : aiag.pctGRR <= 30 ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20"
-            : "border-red-300 bg-red-50 dark:bg-red-950/20"
-          }`}>
-            <span className={`text-3xl font-black tabular-nums ${grrColor}`}>
-              %GRR = {aiag.pctGRR.toFixed(1)}%
-            </span>
-            <span className={`text-sm font-bold px-3 py-1 rounded-full border ${
-              aiag.ndc >= 5 ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-red-100 text-red-700 border-red-300"
-            }`}>
-              NDC = {aiag.ndc} {aiag.ndc >= 5 ? "✓" : "✗  (< 5 required)"}
-            </span>
-            <span className={`text-sm font-black px-5 py-1.5 rounded-full text-white ${
-              aiag.pctGRR < 10 ? "bg-emerald-600" : aiag.pctGRR <= 30 ? "bg-amber-500" : "bg-red-600"
-            }`}>
-              {aiag.pctGRR < 10 ? "✓ ACCEPTABLE" : aiag.pctGRR <= 30 ? "⚠ MARGINAL" : "✗ UNACCEPTABLE"}
-            </span>
-            <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-              &lt;10% = Acceptable · 10–30% = Marginal · &gt;30% = Unacceptable<br/>NDC ≥ 5 required
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="border rounded-lg p-5 text-center text-muted-foreground bg-muted/10">
-          <p className="text-sm italic">Complete all measurement cells to see AIAG variance components analysis</p>
-        </div>
-      )}
-
-      {/* ── Measurement Unit Analysis — Variance Components Table ── */}
-      {aiag && (
         <div className="border rounded-lg overflow-hidden">
-          <div className="px-4 py-2 bg-muted/30 border-b">
+          <div className="px-4 py-2 bg-muted/40 border-b">
             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Measurement Unit Analysis — Variance Components (AIAG MSA 4th Ed.)
+              Gage Repeatability &amp; Reproducibility — Measurement Unit Analysis (AIAG MSA 4th Ed.)
             </p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="grid grid-cols-5 gap-0 divide-x text-xs">
+
+            {/* LEFT 3 columns: step-by-step formulas with values substituted */}
+            <div className="col-span-3 p-4 space-y-3.5">
+
+              {/* EV */}
+              <div>
+                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Repeatability — Equipment Variation (EV)</p>
+                <div className="font-mono text-[11px] leading-5 pl-1">
+                  <p>EV = R̄ × K₁</p>
+                  <p className="text-muted-foreground pl-4">= {aiag.Rbar.toFixed(4)} × {K1}</p>
+                  <p className="pl-4 font-bold">= {aiag.EV.toFixed(4)}</p>
+                </div>
+              </div>
+
+              {/* AV */}
+              <div>
+                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Reproducibility — Appraiser Variation (AV)</p>
+                <div className="font-mono text-[11px] leading-5 pl-1">
+                  <p>AV = √[(x̄DIFF × K₂)² − (EV² ÷ n×r)]</p>
+                  <p className="text-muted-foreground pl-4">= √[({aiag.xdiff.toFixed(4)} × {K2})² − ({aiag.EV.toFixed(4)}² ÷ {partCount}×{trialCount})]</p>
+                  <p className="pl-4 font-bold">= {aiag.AV.toFixed(4)}</p>
+                </div>
+                <div className="mt-1 text-[10px] text-muted-foreground pl-1 flex gap-4">
+                  <span>Appraisers: {Object.entries(AIAG_K2).map(([a,k]) => `${a}→K₂=${k}`).join(" · ")}</span>
+                </div>
+              </div>
+
+              {/* GRR */}
+              <div>
+                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Repeatability &amp; Reproducibility (GRR)</p>
+                <div className="font-mono text-[11px] leading-5 pl-1">
+                  <p>GRR = √(EV² + AV²)</p>
+                  <p className="text-muted-foreground pl-4">= √({aiag.EV.toFixed(4)}² + {aiag.AV.toFixed(4)}²)</p>
+                  <p className="pl-4 font-bold">= {aiag.GRR.toFixed(4)}</p>
+                </div>
+              </div>
+
+              {/* PV */}
+              <div>
+                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Part Variation (PV)</p>
+                <div className="font-mono text-[11px] leading-5 pl-1">
+                  <p>PV = Rp × K₃</p>
+                  <p className="text-muted-foreground pl-4">= {aiag.Rp.toFixed(4)} × {K3}</p>
+                  <p className="pl-4 font-bold">= {aiag.PV.toFixed(4)}</p>
+                </div>
+              </div>
+
+              {/* TV */}
+              <div>
+                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Total Variation (TV)</p>
+                <div className="font-mono text-[11px] leading-5 pl-1">
+                  <p>TV = √(GRR² + PV²)</p>
+                  <p className="text-muted-foreground pl-4">= √({aiag.GRR.toFixed(4)}² + {aiag.PV.toFixed(4)}²)</p>
+                  <p className="pl-4 font-bold">= {aiag.TV.toFixed(4)}</p>
+                </div>
+              </div>
+
+              {/* Tolerance */}
+              {tolSixth != null && (
+                <div className="border-t pt-2">
+                  <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Tolerance (Tol)</p>
+                  <div className="font-mono text-[11px] leading-5 pl-1">
+                    <p>Tol = (USL − LSL) ÷ 6</p>
+                    <p className="text-muted-foreground pl-4">= ({meta.usl} − {meta.lsl}) ÷ 6</p>
+                    <p className="pl-4 font-bold">= {tolSixth.toFixed(4)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT 2 columns: K tables + %Tolerance + verdict */}
+            <div className="col-span-2 p-4 space-y-4">
+
+              {/* K constant reference tables */}
+              <div className="grid grid-cols-3 gap-3 text-[10px]">
+                <div>
+                  <table className="border-collapse w-full">
+                    <thead><tr className="bg-muted/30"><th className="border px-1 py-0.5 text-left">Trials</th><th className="border px-1 py-0.5 text-right font-bold">K₁</th></tr></thead>
+                    <tbody>
+                      {Object.entries(AIAG_K1).map(([t, k]) => (
+                        <tr key={t} className={trialCount === +t ? "bg-accent/10 font-bold" : ""}>
+                          <td className="border px-1 py-0.5">{t}</td>
+                          <td className="border px-1 py-0.5 text-right font-mono">{k}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <table className="border-collapse w-full">
+                    <thead><tr className="bg-muted/30"><th className="border px-1 py-0.5 text-left">App.</th><th className="border px-1 py-0.5 text-right font-bold">K₂</th></tr></thead>
+                    <tbody>
+                      {Object.entries(AIAG_K2).map(([a, k]) => (
+                        <tr key={a} className={appraiserCount === +a ? "bg-accent/10 font-bold" : ""}>
+                          <td className="border px-1 py-0.5">{a}</td>
+                          <td className="border px-1 py-0.5 text-right font-mono">{k}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <table className="border-collapse w-full">
+                    <thead><tr className="bg-muted/30"><th className="border px-1 py-0.5 text-left">Parts</th><th className="border px-1 py-0.5 text-right font-bold">K₃</th></tr></thead>
+                    <tbody>
+                      {Object.entries(AIAG_K3).map(([p, k]) => (
+                        <tr key={p} className={partCount === +p ? "bg-accent/10 font-bold" : ""}>
+                          <td className="border px-1 py-0.5">{p}</td>
+                          <td className="border px-1 py-0.5 text-right font-mono">{k}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* %Tolerance column */}
+              {tolSixth != null && (
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-1">% Tolerance (Tol = {tolSixth.toFixed(4)})</p>
+                  <div className="font-mono text-[11px] leading-6 space-y-0.5">
+                    {[
+                      { label: "%EV",  val: aiag.EV },
+                      { label: "%AV",  val: aiag.AV },
+                      { label: "%GRR", val: aiag.GRR, bold: true },
+                      { label: "%PV",  val: aiag.PV },
+                    ].map(row => (
+                      <div key={row.label} className={`flex gap-1 ${row.bold ? "font-bold" : ""}`}>
+                        <span className="w-12">{row.label}</span>
+                        <span className="text-muted-foreground">=</span>
+                        <span>100({row.val.toFixed(4)}/{tolSixth.toFixed(4)})</span>
+                        <span className={`ml-auto pl-2 ${row.bold ? grrColor : ""}`}>
+                          = {(row.val / tolSixth * 100).toFixed(2)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* NDC + verdict */}
+              <div className="border-t pt-3 space-y-2">
+                <div className="font-mono text-[11px]">
+                  <p>ndc = 1.41 × (PV ÷ GRR)</p>
+                  <p className="text-muted-foreground pl-4">= 1.41 × ({aiag.PV.toFixed(4)} ÷ {aiag.GRR.toFixed(4)})</p>
+                  <p className="pl-4 font-bold text-foreground">= {aiag.ndc}</p>
+                </div>
+                <div className={`rounded-lg p-3 text-center space-y-1.5 ${
+                  aiag.pctGRR < 10  ? "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200"
+                  : aiag.pctGRR <= 30 ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200"
+                  : "bg-red-50 dark:bg-red-950/20 border border-red-200"
+                }`}>
+                  <p className={`text-xl font-black tabular-nums ${grrColor}`}>%GRR = {aiag.pctGRR.toFixed(2)}%</p>
+                  <p className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block ${
+                    aiag.ndc >= 5 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                  }`}>NDC = {aiag.ndc} {aiag.ndc >= 5 ? "✓" : "✗"}</p>
+                  <p className={`text-xs font-black px-3 py-1 rounded-full text-white inline-block ${
+                    aiag.pctGRR < 10 ? "bg-emerald-600" : aiag.pctGRR <= 30 ? "bg-amber-500" : "bg-red-600"
+                  }`}>
+                    {aiag.pctGRR < 10 ? "Gage System OK ✓" : aiag.pctGRR <= 30 ? "⚠ Marginal" : "✗ Unacceptable"}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">&lt;10% Acceptable · 10–30% Marginal · &gt;30% Unacceptable</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary variance components table */}
+          <div className="border-t">
             <table className="w-full text-xs">
               <thead className="bg-muted/20">
                 <tr>
-                  <th className="text-left px-4 py-2.5 font-bold">Source</th>
-                  <th className="text-right px-3 py-2.5 font-bold">σ (Std Dev)</th>
-                  <th className="text-right px-3 py-2.5 font-bold">6σ (Study Var)</th>
-                  <th className="text-right px-3 py-2.5 font-bold">%Contribution</th>
-                  <th className="text-right px-3 py-2.5 font-bold">%Study Var</th>
-                  {tolerance != null && (
-                    <th className="text-right px-3 py-2.5 font-bold">%Tolerance</th>
-                  )}
+                  <th className="text-left px-4 py-2 font-bold">Source</th>
+                  <th className="text-right px-3 py-2 font-bold">σ (Std Dev)</th>
+                  <th className="text-right px-3 py-2 font-bold">6σ Study Var</th>
+                  <th className="text-right px-3 py-2 font-bold">%Contribution</th>
+                  <th className="text-right px-3 py-2 font-bold">%Study Var</th>
+                  {tolSixth != null && <th className="text-right px-3 py-2 font-bold">%Tolerance</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
                 {[
-                  { label: "Repeatability — EV",       s: aiag.EV,  pct: aiag.pctEV,  bold: false },
-                  { label: "Reproducibility — AV",      s: aiag.AV,  pct: aiag.pctAV,  bold: false },
-                  { label: "Gage R&R (GRR)",             s: aiag.GRR, pct: aiag.pctGRR, bold: true  },
-                  { label: "Part-to-Part — PV",          s: aiag.PV,  pct: aiag.pctPV,  bold: false },
-                  { label: "Total Variation — TV",       s: aiag.TV,  pct: 100,          bold: true  },
+                  { label: "Repeatability (EV)",   s: aiag.EV,  pct: aiag.pctEV,  grr: false },
+                  { label: "Reproducibility (AV)",  s: aiag.AV,  pct: aiag.pctAV,  grr: false },
+                  { label: "Gage R&R (GRR)",         s: aiag.GRR, pct: aiag.pctGRR, grr: true  },
+                  { label: "Part-to-Part (PV)",      s: aiag.PV,  pct: aiag.pctPV,  grr: false },
+                  { label: "Total Variation (TV)",   s: aiag.TV,  pct: 100,          grr: false },
                 ].map((row, idx) => (
-                  <tr key={idx} className={row.bold ? "bg-muted/10 font-bold" : ""}>
-                    <td className={`px-4 py-2 ${row.bold ? "" : "pl-7 text-muted-foreground"}`}>{row.label}</td>
-                    <td className="px-3 py-2 text-right font-mono">{row.s.toFixed(4)}</td>
-                    <td className="px-3 py-2 text-right font-mono">{(row.s * 6).toFixed(4)}</td>
-                    <td className="px-3 py-2 text-right">{(row.pct ** 2 / 100).toFixed(1)}%</td>
-                    <td className={`px-3 py-2 text-right font-bold ${row.label.includes("GRR") ? grrColor : ""}`}>
-                      {row.pct.toFixed(1)}%
-                    </td>
-                    {tolerance != null && (
-                      <td className={`px-3 py-2 text-right ${row.label.includes("GRR") ? grrColor + " font-bold" : ""}`}>
-                        {(row.s * 6 / tolerance * 100).toFixed(1)}%
+                  <tr key={idx} className={idx === 4 ? "bg-muted/10 font-bold" : ""}>
+                    <td className={`px-4 py-1.5 ${!row.grr && idx !== 4 ? "text-muted-foreground pl-7" : "font-bold"}`}>{row.label}</td>
+                    <td className="px-3 py-1.5 text-right font-mono">{row.s.toFixed(4)}</td>
+                    <td className="px-3 py-1.5 text-right font-mono">{(row.s * 6).toFixed(4)}</td>
+                    <td className="px-3 py-1.5 text-right">{(row.pct ** 2 / 100).toFixed(1)}%</td>
+                    <td className={`px-3 py-1.5 text-right font-bold ${row.grr ? grrColor : ""}`}>{row.pct.toFixed(1)}%</td>
+                    {tolSixth != null && (
+                      <td className={`px-3 py-1.5 text-right ${row.grr ? grrColor + " font-bold" : ""}`}>
+                        {(row.s / tolSixth * 100).toFixed(1)}%
                       </td>
                     )}
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-muted/10 text-[10px] text-muted-foreground">
-                <tr>
-                  <td colSpan={tolerance != null ? 6 : 5} className="px-4 py-2 border-t leading-relaxed">
-                    ndc = 1.41 × (PV / GRR) = 1.41 × ({aiag.PV.toFixed(4)} / {aiag.GRR.toFixed(4)}) = <strong className="text-foreground">{aiag.ndc}</strong>
-                    {" · "}%Contribution = (σ / TV)² × 100 · %Study Var = (σ / TV) × 100
-                    {tolerance != null && ` · %Tolerance = (6σ / Tolerance) × 100`}
-                    {" · "}UCL<sub>R</sub> = {aiag.UCLR.toFixed(4)} — ranges marked ▲ require investigation
-                  </td>
-                </tr>
-              </tfoot>
             </table>
           </div>
+        </div>
+      ) : (
+        <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/10">
+          <p className="text-sm italic">Complete all measurement cells above to see the AIAG variance components analysis</p>
         </div>
       )}
 
