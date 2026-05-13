@@ -31,12 +31,13 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type SupplierCandidateAssessment, type InsertSupplierCandidateAssessment,
   type SupplierEvaluation, type InsertSupplierEvaluation,
   type SupplierAudit, type InsertSupplierAudit,
-  calibrationEquipment, calibrationRecords, calibrationOotAssessments, calibrationLabs, calibrationLabScope,
+  calibrationEquipment, calibrationRecords, calibrationOotAssessments, calibrationLabs, calibrationLabScope, msaStudies,
   type CalibrationEquipment, type InsertCalibrationEquipment,
   type CalibrationRecord, type InsertCalibrationRecord,
   type CalibrationOotAssessment, type InsertCalibrationOotAssessment,
   type CalibrationLab, type InsertCalibrationLab,
   type CalibrationLabScope, type InsertCalibrationLabScope,
+  type MsaStudy, type InsertMsaStudy,
   pmEquipment, pmRecords,
   type PmEquipment, type InsertPmEquipment,
   type PmRecord, type InsertPmRecord,
@@ -524,6 +525,13 @@ export interface IStorage {
   // ── Internal Lab Scope (IATF §7.1.5.3.1) ────────────────────────────────
   getLabScope(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationLabScope | undefined>;
   upsertLabScope(userId: string, isoProjectId: number | null, data: Partial<InsertCalibrationLabScope>): Promise<CalibrationLabScope>;
+
+  // ── MSA Studies ────────────────────────────────────────────────────────────
+  getMsaStudies(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<MsaStudy[]>;
+  getMsaStudyById(id: number, userId: string, isSuperadmin?: boolean): Promise<MsaStudy | undefined>;
+  createMsaStudy(data: InsertMsaStudy): Promise<MsaStudy>;
+  updateMsaStudy(id: number, userId: string, data: Partial<InsertMsaStudy>, isSuperadmin?: boolean): Promise<MsaStudy | undefined>;
+  deleteMsaStudy(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
   // ── Preventive Maintenance Equipment ───────────────────────────────────────
   getPmEquipment(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<PmEquipment[]>;
@@ -2690,6 +2698,45 @@ export class DatabaseStorage implements IStorage {
       .values({ userId, isoProjectId, ...cleanData })
       .returning();
     return created;
+  }
+
+  // ── MSA Studies ──────────────────────────────────────────────────────────
+  async getMsaStudies(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<MsaStudy[]> {
+    const conditions = [];
+    if (!isSuperadmin) conditions.push(eq(msaStudies.userId, userId));
+    if (isoProjectId != null) conditions.push(eq(msaStudies.isoProjectId, isoProjectId));
+    const cond = conditions.length ? and(...conditions) : undefined;
+    return db.select().from(msaStudies).where(cond).orderBy(desc(msaStudies.studyDate));
+  }
+
+  async getMsaStudyById(id: number, userId: string, isSuperadmin = false): Promise<MsaStudy | undefined> {
+    const where = isSuperadmin
+      ? eq(msaStudies.id, id)
+      : and(eq(msaStudies.id, id), eq(msaStudies.userId, userId));
+    const [r] = await db.select().from(msaStudies).where(where).limit(1);
+    return r;
+  }
+
+  async createMsaStudy(data: InsertMsaStudy): Promise<MsaStudy> {
+    const [r] = await db.insert(msaStudies).values(data).returning();
+    return r;
+  }
+
+  async updateMsaStudy(id: number, userId: string, data: Partial<InsertMsaStudy>, isSuperadmin = false): Promise<MsaStudy | undefined> {
+    const where = isSuperadmin
+      ? eq(msaStudies.id, id)
+      : and(eq(msaStudies.id, id), eq(msaStudies.userId, userId));
+    // Strip ownership/immutable fields before applying update to prevent reassignment
+    const { userId: _u, isoProjectId: _p, ...safeData } = data;
+    const [r] = await db.update(msaStudies).set(safeData).where(where).returning();
+    return r;
+  }
+
+  async deleteMsaStudy(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin
+      ? eq(msaStudies.id, id)
+      : and(eq(msaStudies.id, id), eq(msaStudies.userId, userId));
+    await db.delete(msaStudies).where(where);
   }
 
   // ── Preventive Maintenance Equipment ─────────────────────────────────────

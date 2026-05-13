@@ -166,6 +166,14 @@ interface CalibrationOotAssessment {
   assessmentDate?: string | null; notes?: string | null; createdAt?: string | null;
 }
 
+interface MsaStudy {
+  id: number; userId: string; isoProjectId?: number | null;
+  equipmentId: number; studyType: string; studyDate: string;
+  appraiserCount?: number | null; partCount?: number | null; trialCount?: number | null;
+  grrPercent?: string | null; ndc?: string | null;
+  result?: string | null; notes?: string | null; createdAt?: string | null;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GAGE_TYPES = [
@@ -1630,6 +1638,167 @@ function LabForm({ initial, isoProjectId, onSave, onCancel, onUploadCert }: {
   );
 }
 
+// ─── MSA Study Form ───────────────────────────────────────────────────────────
+
+const MSA_STUDY_TYPES = [
+  { value: "gage_rrr", label: "Gage R&R (GRR)" },
+  { value: "bias", label: "Bias Study" },
+  { value: "linearity", label: "Linearity Study" },
+  { value: "stability", label: "Stability Study" },
+  { value: "attribute_agreement", label: "Attribute Agreement Analysis (AAA)" },
+];
+
+function computeMsaResult(grrPercent: string, ndc: string): string {
+  const grr = parseFloat(grrPercent);
+  const ndcNum = parseInt(ndc, 10);
+  const ndcFails = !isNaN(ndcNum) && ndcNum < 5;
+  if (isNaN(grr)) return ndcFails ? "marginal" : "acceptable";
+  if (grr > 30) return "unacceptable";
+  if (grr >= 10 || ndcFails) return "marginal";
+  return "acceptable";
+}
+
+function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
+  equipment: CalibrationEquipment[];
+  initial: MsaStudy | null;
+  isSaving: boolean;
+  onSave: (d: Partial<MsaStudy>) => void;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState<Partial<MsaStudy>>({
+    equipmentId: initial?.equipmentId ?? (equipment[0]?.id ?? undefined),
+    studyType: initial?.studyType ?? "gage_rrr",
+    studyDate: initial?.studyDate ?? new Date().toISOString().split("T")[0],
+    appraiserCount: initial?.appraiserCount ?? undefined,
+    partCount: initial?.partCount ?? undefined,
+    trialCount: initial?.trialCount ?? undefined,
+    grrPercent: initial?.grrPercent ?? "",
+    ndc: initial?.ndc ?? "",
+    result: initial?.result ?? "acceptable",
+    notes: initial?.notes ?? "",
+  });
+
+  function handleGrrChange(val: string) {
+    const result = computeMsaResult(val, form.ndc ?? "");
+    setForm(f => ({ ...f, grrPercent: val, result }));
+  }
+
+  function handleNdcChange(val: string) {
+    const result = computeMsaResult(form.grrPercent ?? "", val);
+    setForm(f => ({ ...f, ndc: val, result }));
+  }
+
+  const grrNum = form.grrPercent ? parseFloat(form.grrPercent) : null;
+  const grrBadgeColor = grrNum === null ? ""
+    : grrNum < 10 ? "text-emerald-700"
+    : grrNum <= 30 ? "text-amber-600"
+    : "text-red-600";
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <Label className="text-sm font-semibold">Equipment / Gage *</Label>
+          <Select value={String(form.equipmentId ?? "")}
+            onValueChange={v => setForm(f => ({ ...f, equipmentId: Number(v) }))}>
+            <SelectTrigger className="mt-1 h-8" data-testid="select-msa-equipment">
+              <SelectValue placeholder="Select equipment" />
+            </SelectTrigger>
+            <SelectContent>
+              {equipment.filter(e => e.status === "active").map(e => (
+                <SelectItem key={e.id} value={String(e.id)}>{e.gageId} — {e.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label className="text-sm font-semibold">Study Type *</Label>
+          <Select value={form.studyType ?? "gage_rrr"}
+            onValueChange={v => setForm(f => ({ ...f, studyType: v }))}>
+            <SelectTrigger className="mt-1 h-8" data-testid="select-msa-study-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MSA_STUDY_TYPES.map(t => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label className="text-sm font-semibold">Study Date *</Label>
+          <Input type="date" className="mt-1 h-8" value={form.studyDate ?? ""}
+            onChange={e => setForm(f => ({ ...f, studyDate: e.target.value }))}
+            data-testid="input-msa-study-date" />
+        </div>
+
+        <div>
+          <Label className="text-sm font-semibold">Appraisers</Label>
+          <Input type="number" min={1} className="mt-1 h-8" value={form.appraiserCount ?? ""}
+            onChange={e => setForm(f => ({ ...f, appraiserCount: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
+            placeholder="e.g. 3" data-testid="input-msa-appraisers" />
+        </div>
+
+        <div>
+          <Label className="text-sm font-semibold">Parts Sampled</Label>
+          <Input type="number" min={1} className="mt-1 h-8" value={form.partCount ?? ""}
+            onChange={e => setForm(f => ({ ...f, partCount: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
+            placeholder="e.g. 10" data-testid="input-msa-part-count" />
+        </div>
+
+        <div>
+          <Label className="text-sm font-semibold">Trials per Part</Label>
+          <Input type="number" min={1} className="mt-1 h-8" value={form.trialCount ?? ""}
+            onChange={e => setForm(f => ({ ...f, trialCount: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
+            placeholder="e.g. 2" data-testid="input-msa-trial-count" />
+        </div>
+
+        <div>
+          <Label className="text-sm font-semibold">
+            GRR% {grrNum !== null && <span className={`font-bold ml-1 ${grrBadgeColor}`}>{grrNum < 10 ? "✓ Acceptable" : grrNum <= 30 ? "⚠ Marginal" : "✗ Unacceptable"}</span>}
+          </Label>
+          <Input type="number" step="0.01" min={0} max={100} className="mt-1 h-8"
+            value={form.grrPercent ?? ""}
+            onChange={e => handleGrrChange(e.target.value)}
+            placeholder="e.g. 8.4" data-testid="input-msa-grr-percent" />
+          <p className="text-[10px] text-muted-foreground mt-0.5">&lt;10% = acceptable · 10–30% = marginal · &gt;30% = unacceptable</p>
+        </div>
+
+        <div>
+          <Label className="text-sm font-semibold">
+            NDC {form.ndc && parseInt(form.ndc, 10) >= 5 ? <span className="text-emerald-600 ml-1 font-bold">✓</span> : form.ndc ? <span className="text-red-600 ml-1 font-bold">✗ (&lt;5)</span> : null}
+          </Label>
+          <Input type="number" step="1" min={0} className="mt-1 h-8"
+            value={form.ndc ?? ""}
+            onChange={e => handleNdcChange(e.target.value)}
+            placeholder="e.g. 7" data-testid="input-msa-ndc" />
+          <p className="text-[10px] text-muted-foreground mt-0.5">Number of Distinct Categories — must be ≥5</p>
+        </div>
+
+        <div className="col-span-2">
+          <Label className="text-sm font-semibold">Notes</Label>
+          <Textarea className="mt-1" rows={2} value={form.notes ?? ""}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+            placeholder="Study conditions, corrective actions, reference documents..."
+            data-testid="textarea-msa-notes" />
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <Button disabled={isSaving || !form.equipmentId || !form.studyDate}
+          className="bg-accent hover:bg-accent/90 text-white"
+          onClick={() => onSave(form)}
+          data-testid="button-save-msa-study">
+          {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
+        </Button>
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Module ──────────────────────────────────────────────────────────────
 
 interface CalibrationModuleProps {
@@ -1658,6 +1827,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const [labScopeDialog, setLabScopeDialog] = useState(false);
   const [labScopeSection, setLabScopeSection] = useState<"header"|"personnel"|"environmental"|"csrs"|"capabilities">("header");
   const [labScopeDraft, setLabScopeDraft] = useState<Partial<LabScopeDoc>>({});
+  const [msaDialog, setMsaDialog] = useState(false);
+  const [editMsaStudy, setEditMsaStudy] = useState<MsaStudy | null>(null);
   const iatf = isIatf(project);
   const aerospace = isAerospace(project);
   const medical = isMedical(project);
@@ -1695,6 +1866,13 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
     queryKey: ["/api/calibration/labs", projectId],
     queryFn: () => fetch(labsUrl, { credentials: "include" }).then(r => r.json()),
   });
+
+  const msaUrl = projectId ? `/api/calibration/msa-studies?isoProjectId=${projectId}` : "/api/calibration/msa-studies";
+  const { data: msaStudies = [] } = useQuery<MsaStudy[]>({
+    queryKey: ["/api/calibration/msa-studies", projectId],
+    queryFn: () => fetch(msaUrl, { credentials: "include" }).then(r => r.json()),
+  });
+
   const workInstructions = allDocs.filter(
     d => d.docType === "work_instruction" && d.status !== "obsolete",
   );
@@ -1816,6 +1994,27 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const deleteLab = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/calibration/labs/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/calibration/labs", projectId] }),
+  });
+
+  const saveMsa = useMutation({
+    mutationFn: async (d: Partial<MsaStudy>) =>
+      editMsaStudy
+        ? apiRequest("PATCH", `/api/calibration/msa-studies/${editMsaStudy.id}`, d)
+        : apiRequest("POST", "/api/calibration/msa-studies", { ...d, isoProjectId: project?.id }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/calibration/msa-studies", projectId] });
+      setMsaDialog(false); setEditMsaStudy(null);
+      toast({ title: editMsaStudy ? "MSA study updated" : "MSA study recorded" });
+    },
+    onError: () => toast({ title: "Error saving MSA study", variant: "destructive" }),
+  });
+
+  const deleteMsa = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/calibration/msa-studies/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/calibration/msa-studies", projectId] });
+      toast({ title: "MSA study deleted" });
+    },
   });
 
   async function handleCreateLab(data: Partial<CalibrationLab>): Promise<CalibrationLab> {
@@ -2334,47 +2533,105 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             </div>
           )}
 
-          {/* ── MSA Tab (IATF only) ── */}
+          {/* ── MSA Tab ── */}
           {tab === "msa" && (
             <div className="mt-4 space-y-4">
-              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <BarChart3 className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-amber-800">IATF 16949 §7.1.5.2 — Measurement System Analysis (MSA)</p>
-                  <p className="text-xs text-amber-700 mt-1">
-                    IATF 16949 requires MSA studies for measurement systems referenced in the Control Plan. Studies assess Gage R&R
-                    (repeatability & reproducibility), bias, linearity, and stability. Results guide whether a measurement system is
-                    acceptable for production use (%GRR &lt;10% = acceptable, 10–30% = conditional, &gt;30% = unacceptable; NDC ≥5 required).
-                  </p>
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4 flex-1">
+                  <BarChart3 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-blue-800">IATF 16949 §7.1.5.2 — Measurement System Analysis (MSA)</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Record MSA studies for measurement systems referenced in the Control Plan. GRR% &lt;10% = Acceptable, 10–30% = Marginal, &gt;30% = Unacceptable. NDC ≥5 required.
+                      Reference: AIAG MSA Reference Manual (4th Ed.).
+                    </p>
+                  </div>
                 </div>
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white shrink-0"
+                  onClick={() => { setEditMsaStudy(null); setMsaDialog(true); }}
+                  data-testid="button-add-msa-study">
+                  <Plus className="w-4 h-4 mr-1" /> Add Study
+                </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { type: "Gage R&R (GRR)", desc: "Repeatability & Reproducibility study — quantifies measurement variation due to the gage and appraisers. Primary MSA tool for variable data." },
-                  { type: "Bias Study", desc: "Compares the average of repeated measurements to a reference value to identify systematic error in the measurement system." },
-                  { type: "Linearity Study", desc: "Evaluates whether gage bias is consistent across the full operating range of the instrument." },
-                  { type: "Stability Study", desc: "Monitors measurement system variation over time using control charts to detect drift or shifts." },
-                  { type: "Attribute Agreement Analysis (AAA)", desc: "Assesses repeatability and reproducibility for pass/fail or attribute-type gages and inspectors." },
-                ].map(s => (
-                  <Card key={s.type} className="border border-dashed border-border/60">
+              {/* Studies list */}
+              {msaStudies.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
+                  <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-medium">No MSA studies recorded yet</p>
+                  <p className="text-xs mt-1">Add a Gage R&R or other MSA study to track measurement system acceptability.</p>
+                </div>
+              )}
+
+              {msaStudies.map(study => {
+                const eq = equipment.find(e => e.id === study.equipmentId);
+                const grr = study.grrPercent ? parseFloat(study.grrPercent) : null;
+                const ndcNum = study.ndc ? parseInt(study.ndc, 10) : null;
+                const grrColor = grr === null ? "bg-slate-100 text-slate-500 border-slate-300"
+                  : grr < 10 ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                  : grr <= 30 ? "bg-amber-100 text-amber-700 border-amber-200"
+                  : "bg-red-100 text-red-700 border-red-200";
+                const resultLabel = study.result === "acceptable" ? "Acceptable"
+                  : study.result === "marginal" ? "Marginal"
+                  : study.result === "unacceptable" ? "Unacceptable"
+                  : study.result ?? "—";
+                const resultColor = study.result === "acceptable" ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                  : study.result === "marginal" ? "bg-amber-100 text-amber-700 border-amber-200"
+                  : "bg-red-100 text-red-700 border-red-200";
+                const studyTypeLabel: Record<string, string> = {
+                  gage_rrr: "Gage R&R (GRR)", bias: "Bias Study", linearity: "Linearity Study",
+                  stability: "Stability Study", attribute_agreement: "Attribute Agreement Analysis",
+                };
+                return (
+                  <Card key={study.id} className="border border-border" data-testid={`card-msa-study-${study.id}`}>
                     <CardContent className="p-4">
-                      <div className="flex items-start gap-2">
-                        <Activity className="w-4 h-4 text-muted-foreground/50 mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{s.type}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
-                          <Badge variant="outline" className="mt-2 text-[10px] text-muted-foreground">Coming Soon</Badge>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm">{studyTypeLabel[study.studyType] ?? study.studyType}</span>
+                            <Badge className={`text-[10px] ${resultColor}`}>{resultLabel}</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {eq ? <span className="font-medium text-foreground">{eq.gageId} — {eq.name}</span> : `Equipment ID: ${study.equipmentId}`}
+                            {" · "}{study.studyDate}
+                          </div>
+                          <div className="flex flex-wrap gap-3 text-xs">
+                            {grr !== null && (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-semibold ${grrColor}`}
+                                data-testid={`text-grr-${study.id}`}>
+                                GRR: {grr.toFixed(1)}%
+                              </span>
+                            )}
+                            {ndcNum !== null && (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-semibold ${ndcNum >= 5 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-700 border-red-200"}`}
+                                data-testid={`text-ndc-${study.id}`}>
+                                NDC: {ndcNum}{ndcNum >= 5 ? " ✓" : " ✗ (<5)"}
+                              </span>
+                            )}
+                            {study.appraiserCount != null && <span className="text-muted-foreground">Appraisers: {study.appraiserCount}</span>}
+                            {study.partCount != null && <span className="text-muted-foreground">Parts: {study.partCount}</span>}
+                            {study.trialCount != null && <span className="text-muted-foreground">Trials: {study.trialCount}</span>}
+                          </div>
+                          {study.notes && <p className="text-xs text-muted-foreground italic">{study.notes}</p>}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0"
+                            onClick={() => { setEditMsaStudy(study); setMsaDialog(true); }}
+                            data-testid={`button-edit-msa-${study.id}`}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                            onClick={() => { if (confirm("Delete this MSA study?")) deleteMsa.mutate(study.id); }}
+                            data-testid={`button-delete-msa-${study.id}`}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-
-              <p className="text-xs text-muted-foreground text-center pb-4">
-                MSA data entry and GRR analysis will be available in a future update. Reference: AIAG MSA Reference Manual (4th Ed.), IATF 16949 §7.1.5.2.
-              </p>
+                );
+              })}
             </div>
           )}
 
@@ -2890,6 +3147,22 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               </div>
             );
           })()}
+
+          {/* ── MSA Study Dialog ── */}
+          <Dialog open={msaDialog} onOpenChange={o => { setMsaDialog(o); if (!o) setEditMsaStudy(null); }}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>{editMsaStudy ? "Edit MSA Study" : "Record MSA Study"}</DialogTitle>
+              </DialogHeader>
+              <MsaStudyForm
+                equipment={equipment}
+                initial={editMsaStudy}
+                isSaving={saveMsa.isPending}
+                onSave={d => saveMsa.mutate(d)}
+                onCancel={() => { setMsaDialog(false); setEditMsaStudy(null); }}
+              />
+            </DialogContent>
+          </Dialog>
 
           {/* ── Labs Registry Tab ── */}
           {tab === "labs" && (

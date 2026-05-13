@@ -2398,6 +2398,31 @@ export const insertCalibrationLabScopeSchema = createInsertSchema(calibrationLab
 export type InsertCalibrationLabScope = z.infer<typeof insertCalibrationLabScopeSchema>;
 export type CalibrationLabScope = typeof calibrationLabScope.$inferSelect;
 
+// ─── MSA Studies (IATF 16949 §7.1.5.2) ──────────────────────────────────────
+
+export const msaStudies = pgTable("msa_studies", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  equipmentId: integer("equipment_id").notNull(),           // FK → calibration_equipment.id
+  studyType: text("study_type").notNull(),                  // gage_rrr | bias | linearity | stability | attribute_agreement
+  studyDate: text("study_date").notNull(),
+  appraiserCount: integer("appraiser_count"),               // number of appraisers
+  partCount: integer("part_count"),                         // number of parts sampled
+  trialCount: integer("trial_count"),                       // number of measurement trials
+  grrPercent: text("grr_percent"),                          // GRR% as text e.g. "8.4"
+  ndc: text("ndc"),                                         // Number of Distinct Categories e.g. "7"
+  result: text("result").default("acceptable"),             // acceptable | marginal | unacceptable
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const insertMsaStudySchema = createInsertSchema(msaStudies).omit({ id: true, createdAt: true }).extend({
+  studyType: z.enum(["gage_rrr", "bias", "linearity", "stability", "attribute_agreement"]),
+  result: z.enum(["acceptable", "marginal", "unacceptable"]).optional(),
+});
+export type InsertMsaStudy = z.infer<typeof insertMsaStudySchema>;
+export type MsaStudy = typeof msaStudies.$inferSelect;
+
 // ─── Preventive Maintenance ──────────────────────────────────────────────────
 
 export const pmEquipment = pgTable("pm_equipment", {

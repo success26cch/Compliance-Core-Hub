@@ -10635,6 +10635,75 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.json(scope);
   });
 
+  // ─── MSA Studies (IATF 16949 §7.1.5.2) ──────────────────────────────────────
+
+  app.get("/api/calibration/msa-studies", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const isoProjectId = req.query.isoProjectId ? Number(req.query.isoProjectId) : undefined;
+    const studies = await storage.getMsaStudies(req.session.userId, req.user?.claims?.isSuperadmin, isoProjectId);
+    res.json(studies);
+  });
+
+  function deriveMsaResult(grrPercent?: string | null, ndc?: string | null): string {
+    const grr = grrPercent ? parseFloat(grrPercent) : NaN;
+    const ndcNum = ndc ? parseInt(ndc, 10) : NaN;
+    const ndcFails = !isNaN(ndcNum) && ndcNum < 5;
+    if (!isNaN(grr)) {
+      if (grr > 30) return "unacceptable";
+      if (grr >= 10 || ndcFails) return "marginal";
+      return "acceptable";
+    }
+    return ndcFails ? "marginal" : "acceptable";
+  }
+
+  app.post("/api/calibration/msa-studies", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const { insertMsaStudySchema } = await import("@shared/schema");
+    const parsed = insertMsaStudySchema.safeParse({ ...req.body, userId: req.session.userId });
+    if (!parsed.success) return res.status(400).json({ message: "Validation failed", errors: parsed.error.flatten() });
+    const equipmentList = await storage.getCalibrationEquipment(req.session.userId, req.user?.claims?.isSuperadmin);
+    if (!equipmentList.some(e => e.id === parsed.data.equipmentId)) {
+      return res.status(400).json({ message: "Invalid equipmentId: equipment not found or not accessible" });
+    }
+    const data = { ...parsed.data, result: deriveMsaResult(parsed.data.grrPercent, parsed.data.ndc) };
+    const study = await storage.createMsaStudy(data);
+    res.status(201).json(study);
+  });
+
+  app.patch("/api/calibration/msa-studies/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const id = Number(req.params.id);
+    const { insertMsaStudySchema } = await import("@shared/schema");
+    const updateSchema = insertMsaStudySchema
+      .omit({ userId: true, isoProjectId: true, result: true })
+      .partial();
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Validation failed", errors: parsed.error.flatten() });
+    if ("equipmentId" in parsed.data && parsed.data.equipmentId != null) {
+      const equipmentList = await storage.getCalibrationEquipment(req.session.userId, req.user?.claims?.isSuperadmin);
+      if (!equipmentList.some(e => e.id === parsed.data.equipmentId)) {
+        return res.status(400).json({ message: "Invalid equipmentId: equipment not found or not accessible" });
+      }
+    }
+    const patchData: typeof parsed.data = { ...parsed.data };
+    if ("grrPercent" in parsed.data || "ndc" in parsed.data) {
+      const existing = await storage.getMsaStudyById(id, req.session.userId, req.user?.claims?.isSuperadmin);
+      const mergedGrr = "grrPercent" in parsed.data ? parsed.data.grrPercent : existing?.grrPercent;
+      const mergedNdc = "ndc" in parsed.data ? parsed.data.ndc : existing?.ndc;
+      patchData.result = deriveMsaResult(mergedGrr, mergedNdc);
+    }
+    const updated = await storage.updateMsaStudy(id, req.session.userId, patchData, req.user?.claims?.isSuperadmin);
+    if (!updated) return res.status(404).json({ message: "MSA study not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/calibration/msa-studies/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    const id = Number(req.params.id);
+    await storage.deleteMsaStudy(id, req.session.userId, req.user?.claims?.isSuperadmin);
+    res.json({ success: true });
+  });
+
   // ─── Preventive Maintenance ──────────────────────────────────────────────────
 
   app.get("/api/pm/equipment", async (req: Request, res: Response) => {
