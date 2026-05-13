@@ -422,11 +422,11 @@ function EsaWizard({ onSave }: { onSave: (data: typeof ASPECT_BLANK) => void }) 
           </div>
 
           <div>
-            <Label className="text-xs font-bold mb-2 block">Impact Type(s)</Label>
+            <Label className="text-sm font-bold mb-2 block">Impact Type(s)</Label>
             <div className="flex flex-wrap gap-1.5">
               {IMPACT_TYPES.map(t => (
                 <button key={t.code} type="button" onClick={() => toggleImpact(t.code)}
-                  className={`text-xs px-2.5 py-1 rounded-full border font-bold transition-colors ${w.impactTypes.includes(t.code) ? "bg-lime-600 text-white border-lime-600" : "border-border text-muted-foreground hover:border-lime-500"}`}
+                  className={`text-sm px-2.5 py-1 rounded-full border font-bold transition-colors ${w.impactTypes.includes(t.code) ? "bg-lime-600 text-white border-lime-600" : "border-border text-muted-foreground hover:border-lime-500"}`}
                   data-testid={`wizard-impact-${t.code}`}>
                   {t.code} — {t.label}
                 </button>
@@ -1246,11 +1246,11 @@ Assess the following:
               <Textarea className="mt-1 text-sm h-16 resize-none" placeholder="e.g., Air emissions to atmosphere, groundwater contamination, storm water discharge..." value={form.potentialImpactDescription} onChange={e => setForm(f => ({ ...f, potentialImpactDescription: e.target.value }))} data-testid="textarea-impact-description" />
             </div>
             <div>
-              <Label className="text-xs font-bold mb-1.5 block">Impact Type(s)</Label>
+              <Label className="text-sm font-bold mb-1.5 block">Impact Type(s)</Label>
               <div className="flex flex-wrap gap-1.5">
                 {IMPACT_TYPES.map(t => (
                   <button key={t.code} type="button" onClick={() => toggleImpact(t.code)}
-                    className={`text-xs px-2.5 py-1 rounded-full border font-bold transition-colors ${form.impactTypes.includes(t.code) ? "bg-lime-600 text-white border-lime-600" : "border-border text-muted-foreground hover:border-lime-500"}`}
+                    className={`text-sm px-2.5 py-1 rounded-full border font-bold transition-colors ${form.impactTypes.includes(t.code) ? "bg-lime-600 text-white border-lime-600" : "border-border text-muted-foreground hover:border-lime-500"}`}
                     data-testid={`toggle-impact-${t.code}`}>
                     {t.code} — {t.label}
                   </button>
@@ -1259,12 +1259,12 @@ Assess the following:
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-bold">Applicable Regulations (F/S/L)</Label>
-                <Textarea className="mt-1 text-xs h-16 resize-none" placeholder="40 CFR 279 (F), Act 451 Part 121 (S), City Ord. §82 (L)..." value={form.applicableRegulations} onChange={e => setForm(f => ({ ...f, applicableRegulations: e.target.value }))} data-testid="textarea-applicable-regulations" />
+                <Label className="text-sm font-bold">Applicable Regulations (F/S/L)</Label>
+                <Textarea className="mt-1 text-sm h-16 resize-none" placeholder="40 CFR 279 (F), Act 451 Part 121 (S), City Ord. §82 (L)..." value={form.applicableRegulations} onChange={e => setForm(f => ({ ...f, applicableRegulations: e.target.value }))} data-testid="textarea-applicable-regulations" />
               </div>
               <div>
-                <Label className="text-xs font-bold">Other Requirements</Label>
-                <Textarea className="mt-1 text-xs h-16 resize-none" placeholder="Corporate policy, customer requirement, voluntary (ISO 14001)..." value={form.otherRequirements} onChange={e => setForm(f => ({ ...f, otherRequirements: e.target.value }))} data-testid="textarea-other-requirements" />
+                <Label className="text-sm font-bold">Other Requirements</Label>
+                <Textarea className="mt-1 text-sm h-16 resize-none" placeholder="Corporate policy, customer requirement, voluntary (ISO 14001)..." value={form.otherRequirements} onChange={e => setForm(f => ({ ...f, otherRequirements: e.target.value }))} data-testid="textarea-other-requirements" />
               </div>
             </div>
             {/* Scoring */}
