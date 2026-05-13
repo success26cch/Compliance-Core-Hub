@@ -56,6 +56,10 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type TrainingMatrixEntry, type InsertTrainingMatrixEntry,
   trainingEvidenceFiles,
   type TrainingEvidenceFile, type InsertTrainingEvidenceFile,
+  envAspectsImpacts,
+  type EnvAspectImpact, type InsertEnvAspectImpact,
+  complianceCalendarEvents,
+  type ComplianceCalendarEvent, type InsertComplianceCalendarEvent,
 } from "@shared/schema";
 import { db } from "./rls";
 import { eq, desc, asc, and, gte, lte, lt, count, sql, isNull, or, inArray } from "drizzle-orm";
@@ -532,6 +536,12 @@ export interface IStorage {
   createPmRecord(data: InsertPmRecord): Promise<PmRecord>;
   updatePmRecord(id: number, userId: string, data: Partial<InsertPmRecord>, isSuperadmin?: boolean): Promise<PmRecord | undefined>;
   deletePmRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+
+  // ── Environmental Aspects & Impacts (ISO 14001 §6.1.2) ────────────────────
+  getEnvAspectsImpacts(userId: string, isSuperadmin?: boolean): Promise<EnvAspectImpact[]>;
+  createEnvAspectImpact(data: InsertEnvAspectImpact): Promise<EnvAspectImpact>;
+  updateEnvAspectImpact(id: number, userId: string, data: Partial<InsertEnvAspectImpact>, isSuperadmin?: boolean): Promise<EnvAspectImpact | undefined>;
+  deleteEnvAspectImpact(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2836,6 +2846,33 @@ export class DatabaseStorage implements IStorage {
   async deleteIsoComplianceEvaluation(id: number, userId: string, isSuperadmin = false): Promise<void> {
     const where = isSuperadmin ? eq(isoComplianceEvaluations.id, id) : and(eq(isoComplianceEvaluations.id, id), eq(isoComplianceEvaluations.userId, userId));
     await db.delete(isoComplianceEvaluations).where(where);
+  }
+
+  // ─── Environmental Aspects & Impacts (ISO 14001 §6.1.2) ──────────────────
+  async getEnvAspectsImpacts(userId: string, isSuperadmin = false): Promise<EnvAspectImpact[]> {
+    const cond = isSuperadmin ? undefined : eq(envAspectsImpacts.userId, userId);
+    return db.select().from(envAspectsImpacts).where(cond).orderBy(envAspectsImpacts.processActivity, envAspectsImpacts.environmentalAspect);
+  }
+  async createEnvAspectImpact(data: InsertEnvAspectImpact): Promise<EnvAspectImpact> {
+    const s = data.severity ?? 1;
+    const p = data.probability ?? 1;
+    const r = data.regulatoryScore ?? 1;
+    const score = s * p * r;
+    const [rec] = await db.insert(envAspectsImpacts).values({ ...data, significanceScore: score, isSignificant: score >= 75 }).returning();
+    return rec;
+  }
+  async updateEnvAspectImpact(id: number, userId: string, data: Partial<InsertEnvAspectImpact>, isSuperadmin = false): Promise<EnvAspectImpact | undefined> {
+    const where = isSuperadmin ? eq(envAspectsImpacts.id, id) : and(eq(envAspectsImpacts.id, id), eq(envAspectsImpacts.userId, userId));
+    const existing = await db.select().from(envAspectsImpacts).where(where).limit(1);
+    if (!existing.length) return undefined;
+    const merged = { ...existing[0], ...data };
+    const score = (merged.severity ?? 1) * (merged.probability ?? 1) * (merged.regulatoryScore ?? 1);
+    const [rec] = await db.update(envAspectsImpacts).set({ ...data, significanceScore: score, isSignificant: score >= 75, updatedAt: new Date() }).where(where).returning();
+    return rec;
+  }
+  async deleteEnvAspectImpact(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin ? eq(envAspectsImpacts.id, id) : and(eq(envAspectsImpacts.id, id), eq(envAspectsImpacts.userId, userId));
+    await db.delete(envAspectsImpacts).where(where);
   }
 }
 

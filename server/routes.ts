@@ -11119,5 +11119,42 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── Environmental Aspects & Impacts (ISO 14001 §6.1.2) ─────────────────────
+  app.get("/api/env/aspects", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const data = await storage.getEnvAspectsImpacts(req.session.userId, req.session.isSuperadmin);
+      res.json(data);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/env/aspects", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { insertEnvAspectImpactSchema } = await import("@shared/schema");
+      const parsed = insertEnvAspectImpactSchema.safeParse({ ...req.body, userId: req.session.userId });
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+      const created = await storage.createEnvAspectImpact(parsed.data);
+      res.json(created);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/env/aspects/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const updated = await storage.updateEnvAspectImpact(Number(req.params.id), req.session.userId, req.body, req.session.isSuperadmin);
+      if (!updated) return res.status(404).json({ message: "Not found" });
+      res.json(updated);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/env/aspects/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteEnvAspectImpact(Number(req.params.id), req.session.userId, req.session.isSuperadmin);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }

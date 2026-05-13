@@ -2890,3 +2890,41 @@ export const complianceCalendarEvents = pgTable("compliance_calendar_events", {
 export const insertComplianceCalendarEventSchema = createInsertSchema(complianceCalendarEvents).omit({ id: true, createdAt: true, updatedAt: true });
 export type ComplianceCalendarEvent = typeof complianceCalendarEvents.$inferSelect;
 export type InsertComplianceCalendarEvent = z.infer<typeof insertComplianceCalendarEventSchema>;
+
+// ─── Environmental Aspects & Impacts Analysis (ISO 14001 §6.1.2) ─────────────
+// Full aspects register with FMEA-inspired Severity × Probability × Regulatory
+// significance scoring (1–5 each; score ≥ 75 = Significant Environmental Aspect).
+export const envAspectsImpacts = pgTable("env_aspects_impacts", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  // Identification
+  processActivity: text("process_activity"),
+  environmentalAspect: text("environmental_aspect").notNull(),
+  aspectCondition: text("aspect_condition").notNull().default("normal"), // 'normal' | 'abnormal' | 'emergency'
+  isRoutine: boolean("is_routine").default(true),
+  // Potential Impact
+  potentialImpactDescription: text("potential_impact_description"),
+  impactTypes: text("impact_types").array().default([]), // ['AQ','WG','SS','SW','GW','SI','EC','NR']
+  // Regulatory context
+  applicableRegulations: text("applicable_regulations"),
+  otherRequirements: text("other_requirements"), // corporate / customer / voluntary
+  // Scoring — Significance = Severity × Probability × RegulatoryScore
+  severity: integer("severity").notNull().default(1),          // 1–5
+  probability: integer("probability").notNull().default(1),    // 1–5
+  regulatoryScore: integer("regulatory_score").notNull().default(1), // 1–5
+  significanceScore: integer("significance_score").notNull().default(1), // computed S×P×R
+  isSignificant: boolean("is_significant").notNull().default(false),     // score ≥ 75
+  // Life Cycle & Controls
+  lifeCycleConsidered: boolean("life_cycle_considered").default(false),
+  operationalControl: text("operational_control"),
+  objectiveTarget: text("objective_target"),
+  responsiblePerson: text("responsible_person"),
+  reviewDate: text("review_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertEnvAspectImpactSchema = createInsertSchema(envAspectsImpacts).omit({ id: true, createdAt: true, updatedAt: true });
+export type EnvAspectImpact = typeof envAspectsImpacts.$inferSelect;
+export type InsertEnvAspectImpact = z.infer<typeof insertEnvAspectImpactSchema>;
