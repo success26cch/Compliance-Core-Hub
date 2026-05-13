@@ -15,7 +15,7 @@ import {
   Plus, Loader2, Layers, CheckCircle2, FileText, Trash2,
   Sparkles, Send, BookOpen, ChevronRight, AlertTriangle, RefreshCw,
   Factory, Wrench, Truck, Zap, Package, Monitor, Leaf, Building2,
-  ArrowRight, ArrowLeft, RotateCcw, ClipboardList,
+  ArrowRight, ArrowLeft, RotateCcw, ClipboardList, X, ThumbsUp,
 } from "lucide-react";
 
 interface AspectImpact {
@@ -693,17 +693,105 @@ export default function AspectsImpactsModule() {
   const [isaPrompt, setIsaPrompt] = useState<string>("");
   const createConv = useCreateIsaConversation();
 
+  // Isa auto-review panel (fires after every save)
+  const [isaReview, setIsaReview] = useState<{
+    open: boolean; streaming: boolean; text: string; aspect: string;
+  }>({ open: false, streaming: false, text: "", aspect: "" });
+
+  async function triggerIsaReview(data: typeof ASPECT_BLANK) {
+    const score = data.severity * data.probability * data.regulatoryScore;
+    const sig = score >= 75;
+    setIsaReview({ open: true, streaming: true, text: "", aspect: data.environmentalAspect });
+    try {
+      const convRes = await fetch("/api/isa-conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: `ESA Record Review — ${data.environmentalAspect.slice(0, 50)}`, source: "aspects_impacts" }),
+        credentials: "include",
+      });
+      if (!convRes.ok) throw new Error("conv");
+      const conv = await convRes.json();
+
+      const impactLabels = (data.impactTypes ?? []).map(c => {
+        const t = IMPACT_TYPES.find(x => x.code === c);
+        return t ? `${c} (${t.label})` : c;
+      }).join(", ") || "none selected";
+
+      const sLabel = SEVERITY_OPTIONS.find(o => o.value === data.severity)?.label ?? String(data.severity);
+      const pLabel = PROBABILITY_OPTIONS.find(o => o.value === data.probability)?.label ?? String(data.probability);
+      const rLabel = REGULATORY_OPTIONS.find(o => o.value === data.regulatoryScore)?.label ?? String(data.regulatoryScore);
+
+      const prompt = `[CONTEXT: The user just saved an Environmental Significance Assessment record in CCHUB's ISO 14001 §6.1.2 module and has requested an automatic Lead Auditor peer review of this single record. Do NOT ask if they want help — jump straight into a concise audit-style review. Use 3–6 bullet points. If the record looks solid and defensible, say so and explain why. Focus only on this specific record.]
+
+Please review this ESA record for ISO 14001:2015 §6.1.2 conformance and flag any scoring concerns, missing impact types, regulatory gaps, or missing controls:
+
+**Aspect:** ${data.environmentalAspect || "not stated"}
+**Process / Activity:** ${data.processActivity || "not stated"}
+**Operating Condition:** ${data.aspectCondition} | Routine: ${data.isRoutine ? "Yes" : "No"}
+**Potential Impact Description:** ${data.potentialImpactDescription || "not stated"}
+**Impact Types Selected:** ${impactLabels}
+**Scoring:** S: ${sLabel} × P: ${pLabel} × R: ${rLabel} = ${score} → ${sig ? "SIGNIFICANT ENVIRONMENTAL ASPECT (SEA)" : "Not Significant"}
+**Applicable Regulations:** ${data.applicableRegulations || "none stated"}
+**Other Requirements:** ${data.otherRequirements || "none stated"}
+**Operational Control:** ${data.operationalControl || "none stated"}
+**Objective / Target:** ${data.objectiveTarget || "none stated"}
+**Life Cycle Considered:** ${data.lifeCycleConsidered ? "Yes" : "No"}
+
+Flag any: (1) S×P×R scores that seem inconsistent with the described aspect or impact, (2) impact type codes that appear missing or mismatched for this type of aspect, (3) significant aspects lacking operational controls or objectives, (4) regulatory score that seems too low or high for this aspect, (5) any other concern a third-party CB auditor would raise. If everything looks defensible, confirm that briefly.`;
+
+      const msgRes = await fetch(`/api/isa-conversations/${conv.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: prompt }),
+        credentials: "include",
+      });
+      if (!msgRes.ok) throw new Error("msg");
+
+      const reader = msgRes.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error("no reader");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split("\n\n")) {
+          if (line.startsWith("data: ")) {
+            try {
+              const parsed = JSON.parse(line.slice(6));
+              if (parsed.content) setIsaReview(prev => ({ ...prev, text: prev.text + parsed.content }));
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      setIsaReview(prev => ({ ...prev, text: "Isa could not complete the review. Open the Isa tab to run a full register assessment manually." }));
+    } finally {
+      setIsaReview(prev => ({ ...prev, streaming: false }));
+    }
+  }
+
   const { data: aspects = [], isLoading } = useQuery<AspectImpact[]>({ queryKey: ["/api/env/aspects"] });
 
   const create = useMutation({
     mutationFn: (d: typeof ASPECT_BLANK) => apiRequest("POST", "/api/env/aspects", d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/env/aspects"] }); setShowDialog(false); toast({ title: "Aspect added to register" }); },
+    onSuccess: (_res, variables) => {
+      qc.invalidateQueries({ queryKey: ["/api/env/aspects"] });
+      setShowDialog(false);
+      toast({ title: "Aspect added — Isa is reviewing…" });
+      triggerIsaReview(variables);
+    },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const update = useMutation({
     mutationFn: ({ id, data }: { id: number; data: typeof ASPECT_BLANK }) => apiRequest("PATCH", `/api/env/aspects/${id}`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/env/aspects"] }); setShowDialog(false); toast({ title: "Aspect updated" }); },
+    onSuccess: (_res, variables) => {
+      qc.invalidateQueries({ queryKey: ["/api/env/aspects"] });
+      setShowDialog(false);
+      toast({ title: "Aspect updated — Isa is reviewing…" });
+      triggerIsaReview(variables.data);
+    },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -827,6 +915,73 @@ Assess the following:
               {t.code} <span className="font-normal text-lime-600 dark:text-lime-400">({impactDist[t.code]})</span>
             </span>
           ))}
+        </div>
+      )}
+
+      {/* ── Isa Auto-Review Panel ── */}
+      {isaReview.open && (
+        <div className="rounded-xl border border-accent/40 bg-accent/5 dark:bg-accent/10 p-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-accent" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-foreground leading-none">Isa's Record Review</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-xs">{isaReview.aspect}</p>
+              </div>
+              {isaReview.streaming && <Loader2 className="w-3.5 h-3.5 animate-spin text-accent ml-1 shrink-0" />}
+            </div>
+            <button
+              onClick={() => setIsaReview(p => ({ ...p, open: false }))}
+              className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted transition-colors shrink-0"
+              data-testid="button-dismiss-isa-review"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {isaReview.text ? (
+            <div className="text-sm leading-relaxed space-y-1 pl-9">
+              {isaReview.text.split("\n").filter(l => l.trim()).map((line, i) => {
+                const isBullet = line.trim().startsWith("•") || line.trim().startsWith("-") || line.trim().startsWith("*");
+                const cleaned = line.replace(/^[\s•\-*]+/, "").replace(/\*\*(.*?)\*\*/g, "$1");
+                const isPositive = /looks (solid|good|defensible|well|strong)|no (major|significant|critical)|appropriate|well-documented|correctly|adequate/i.test(cleaned);
+                return (
+                  <div key={i} className={`flex gap-2 items-start ${isBullet ? "" : "mt-2"}`}>
+                    {isBullet && (
+                      <span className={`mt-1 shrink-0 ${isPositive ? "text-emerald-500" : "text-accent"}`}>
+                        {isPositive ? <ThumbsUp className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                      </span>
+                    )}
+                    <p className={`text-sm ${!isBullet ? "font-bold text-foreground" : "text-muted-foreground"}`}>{cleaned}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="pl-9 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />Isa is analyzing the record…
+            </div>
+          )}
+
+          {!isaReview.streaming && (
+            <div className="pl-9 pt-1 flex items-center gap-3">
+              <button
+                onClick={() => setIsaReview(p => ({ ...p, open: false }))}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="button-isa-review-dismiss-link"
+              >Dismiss</button>
+              <span className="text-muted-foreground/40">·</span>
+              <button
+                onClick={() => setTab("isa")}
+                className="text-xs text-accent hover:text-accent/80 font-semibold transition-colors flex items-center gap-1"
+                data-testid="button-isa-review-open-tab"
+              >
+                <Sparkles className="w-3 h-3" />Full register review in Isa tab
+              </button>
+            </div>
+          )}
         </div>
       )}
 
