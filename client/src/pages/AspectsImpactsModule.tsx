@@ -72,15 +72,15 @@ const REGULATORY_OPTIONS = [
 
 function SigBadge({ isSignificant }: { isSignificant: boolean }) {
   return isSignificant
-    ? <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700/40 font-black text-[10px] whitespace-nowrap">SIGNIFICANT</Badge>
-    : <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700/40 text-[10px] whitespace-nowrap">Not Sig.</Badge>;
+    ? <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700/40 font-black text-xs whitespace-nowrap">SIGNIFICANT</Badge>
+    : <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700/40 text-xs whitespace-nowrap">Not Sig.</Badge>;
 }
 
 function ScoreDisplay({ s, p, r, score, sig }: { s: number; p: number; r: number; score: number; sig: boolean }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className={`text-base font-black ${sig ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>{score}</span>
-      <span className="text-[9px] text-muted-foreground">{s}×{p}×{r}</span>
+      <span className={`text-lg font-black ${sig ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>{score}</span>
+      <span className="text-xs text-muted-foreground">{s}×{p}×{r}</span>
     </div>
   );
 }
@@ -230,35 +230,36 @@ export default function AspectsImpactsModule() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full text-xs min-w-[960px]">
+              <table className="w-full text-sm min-w-[1200px]">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[140px]">Process / Activity</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[200px]">Environmental Aspect</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground">Potential Impact</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[90px]">Condition</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[110px]">Impact Types</th>
-                    <th className="text-center px-2 py-2.5 font-bold text-muted-foreground w-[28px]" title="Severity">S</th>
-                    <th className="text-center px-2 py-2.5 font-bold text-muted-foreground w-[28px]" title="Probability">P</th>
-                    <th className="text-center px-2 py-2.5 font-bold text-muted-foreground w-[28px]" title="Regulatory">R</th>
-                    <th className="text-center px-2 py-2.5 font-bold text-muted-foreground w-[58px]">Score</th>
-                    <th className="text-center px-2 py-2.5 font-bold text-muted-foreground w-[100px]">Significance</th>
-                    <th className="text-center px-2 py-2.5 font-bold text-muted-foreground w-[28px]" title="Life Cycle">LC</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground">Operational Control</th>
-                    <th className="px-2 py-2.5 w-[60px]"></th>
+                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[150px]">Process / Activity</th>
+                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[200px]">Environmental Aspect</th>
+                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[220px]">Potential Impact</th>
+                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[180px]">Compliance Regulation</th>
+                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[100px]">Condition</th>
+                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[120px]">Impact Types</th>
+                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Severity">S</th>
+                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Probability">P</th>
+                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Regulatory">R</th>
+                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[64px]">Score</th>
+                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[110px]">Significance</th>
+                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Life Cycle">LC</th>
+                    <th className="text-left px-3 py-3 font-bold text-muted-foreground">Operational Control</th>
+                    <th className="px-2 py-3 w-[64px]"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(a => (
                     <tr key={a.id} className={`border-b transition-colors hover:bg-muted/30 ${a.isSignificant ? "bg-red-50/50 dark:bg-red-950/10" : ""}`} data-testid={`row-aspect-${a.id}`}>
-                      <td className="px-3 py-2.5 text-muted-foreground text-[11px]">{a.processActivity || "—"}</td>
-                      <td className="px-3 py-2.5">
-                        <p className="font-semibold text-foreground leading-snug">{a.environmentalAspect}</p>
-                        {a.applicableRegulations && <p className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono">{a.applicableRegulations}</p>}
+                      <td className="px-3 py-3 text-sm text-muted-foreground">{a.processActivity || "—"}</td>
+                      <td className="px-3 py-3">
+                        <p className="font-semibold text-sm text-foreground leading-snug">{a.environmentalAspect}</p>
                       </td>
-                      <td className="px-3 py-2.5 text-[11px] text-muted-foreground leading-snug">{a.potentialImpactDescription || "—"}</td>
-                      <td className="px-3 py-2.5">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded capitalize ${
+                      <td className="px-3 py-3 text-sm text-muted-foreground leading-snug">{a.potentialImpactDescription || "—"}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground leading-snug font-mono">{a.applicableRegulations || "—"}</td>
+                      <td className="px-3 py-3">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${
                           a.aspectCondition === "emergency" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                           a.aspectCondition === "abnormal" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
                           "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
@@ -266,28 +267,28 @@ export default function AspectsImpactsModule() {
                           {a.aspectCondition}{!a.isRoutine ? " · NR" : ""}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex flex-wrap gap-0.5">
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-1">
                           {(a.impactTypes ?? []).map(t => (
-                            <span key={t} className="text-[9px] font-black bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-400 px-1 rounded">{t}</span>
+                            <span key={t} className="text-xs font-black bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-400 px-1.5 py-0.5 rounded">{t}</span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-2 py-2.5 text-center font-black">{a.severity}</td>
-                      <td className="px-2 py-2.5 text-center font-black">{a.probability}</td>
-                      <td className="px-2 py-2.5 text-center font-black">{a.regulatoryScore}</td>
-                      <td className="px-2 py-2.5 text-center">
+                      <td className="px-2 py-3 text-sm text-center font-black">{a.severity}</td>
+                      <td className="px-2 py-3 text-sm text-center font-black">{a.probability}</td>
+                      <td className="px-2 py-3 text-sm text-center font-black">{a.regulatoryScore}</td>
+                      <td className="px-2 py-3 text-center">
                         <ScoreDisplay s={a.severity} p={a.probability} r={a.regulatoryScore} score={a.significanceScore} sig={a.isSignificant} />
                       </td>
-                      <td className="px-2 py-2.5 text-center"><SigBadge isSignificant={a.isSignificant} /></td>
-                      <td className="px-2 py-2.5 text-center">
-                        {a.lifeCycleConsidered ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground/40">—</span>}
+                      <td className="px-2 py-3 text-center"><SigBadge isSignificant={a.isSignificant} /></td>
+                      <td className="px-2 py-3 text-center">
+                        {a.lifeCycleConsidered ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground/40">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-[11px] text-muted-foreground">{a.operationalControl || "—"}</td>
-                      <td className="px-2 py-2.5">
+                      <td className="px-3 py-3 text-sm text-muted-foreground">{a.operationalControl || "—"}</td>
+                      <td className="px-2 py-3">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => openEdit(a)} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" data-testid={`button-edit-aspect-${a.id}`}><FileText className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => setDeleteConfirm(a)} className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600" data-testid={`button-delete-aspect-${a.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => openEdit(a)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground" data-testid={`button-edit-aspect-${a.id}`}><FileText className="w-4 h-4" /></button>
+                          <button onClick={() => setDeleteConfirm(a)} className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600" data-testid={`button-delete-aspect-${a.id}`}><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
