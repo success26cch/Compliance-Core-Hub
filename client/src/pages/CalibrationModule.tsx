@@ -1650,25 +1650,30 @@ const MSA_STUDY_TYPES = [
   { value: "attribute_agreement", label: "Attribute Agreement Analysis (AAA)" },
 ];
 
-// ─── AIAG MSA X̄-R Constants & Calculator ────────────────────────────────────
+// ─── AIAG MSA 4th Edition — Constants & X̄-R Calculator ──────────────────────
 const AIAG_K1: Record<number, number> = { 2: 4.56, 3: 3.05, 4: 2.50, 5: 2.21 };
 const AIAG_K2: Record<number, number> = { 2: 3.65, 3: 2.70, 4: 2.30, 5: 2.08 };
 const AIAG_K3: Record<number, number> = {
   2: 3.65, 3: 2.70, 4: 2.30, 5: 2.08,
   6: 1.93, 7: 1.82, 8: 1.74, 9: 1.67, 10: 1.62,
 };
+const AIAG_D4: Record<number, number> = { 2: 3.267, 3: 2.575, 4: 2.282, 5: 2.114 };
+
 interface AiagResult {
   EV: number; AV: number; GRR: number; PV: number; TV: number;
   pctEV: number; pctAV: number; pctGRR: number; pctPV: number; ndc: number;
+  Rbar: number; xdiff: number; Rp: number; UCLR: number;
+  RbarA: number[]; XbarA: number[]; partAvgs: number[];
 }
-function calcAiagGrr(grid: string[][][], a: number, p: number, r: number): AiagResult | null {
+
+function calcAiagGrr(data: string[][][], a: number, p: number, r: number): AiagResult | null {
   const vals: number[][][] = [];
   for (let i = 0; i < a; i++) {
     vals[i] = [];
     for (let j = 0; j < p; j++) {
       vals[i][j] = [];
       for (let k = 0; k < r; k++) {
-        const v = parseFloat(grid[i]?.[j]?.[k] ?? "");
+        const v = parseFloat(data[i]?.[j]?.[k] ?? "");
         if (isNaN(v)) return null;
         vals[i][j][k] = v;
       }
@@ -1680,23 +1685,44 @@ function calcAiagGrr(grid: string[][][], a: number, p: number, r: number): AiagR
   const RbarA  = ranges.map(ap => ap.reduce((s, v) => s + v, 0) / ap.length);
   const XbarA  = means.map(ap => ap.reduce((s, v) => s + v, 0) / ap.length);
   const Rbar = RbarA.reduce((s, v) => s + v, 0) / RbarA.length;
-  const EV   = Rbar * K1;
+  const EV = Rbar * K1;
   const xdiff = Math.max(...XbarA) - Math.min(...XbarA);
-  const AV    = Math.sqrt(Math.max(0, (xdiff * K2) ** 2 - EV ** 2 / (p * r)));
-  const GRR   = Math.sqrt(EV ** 2 + AV ** 2);
+  const AV = Math.sqrt(Math.max(0, (xdiff * K2) ** 2 - EV ** 2 / (p * r)));
+  const GRR = Math.sqrt(EV ** 2 + AV ** 2);
   const partAvgs = Array.from({ length: p }, (_, j) => {
     let s = 0; for (let i = 0; i < a; i++) for (let k = 0; k < r; k++) s += vals[i][j][k];
     return s / (a * r);
   });
-  const PV = (Math.max(...partAvgs) - Math.min(...partAvgs)) * K3;
+  const Rp = Math.max(...partAvgs) - Math.min(...partAvgs);
+  const PV = Rp * K3;
   const TV = Math.sqrt(GRR ** 2 + PV ** 2);
   if (TV === 0) return null;
-  return { EV, AV, GRR, PV, TV,
+  return {
+    EV, AV, GRR, PV, TV, Rbar, xdiff, Rp, UCLR: (AIAG_D4[r] ?? 2.575) * Rbar,
     pctEV: (EV/TV)*100, pctAV: (AV/TV)*100, pctGRR: (GRR/TV)*100, pctPV: (PV/TV)*100,
-    ndc: GRR > 0 ? Math.floor(1.41 * PV / GRR) : 0 };
+    ndc: GRR > 0 ? Math.floor(1.41 * PV / GRR) : 0,
+    RbarA, XbarA, partAvgs,
+  };
 }
+
 function makeEmptyGrid(a: number, p: number, r: number): string[][][] {
   return Array.from({length: a}, () => Array.from({length: p}, () => Array.from({length: r}, () => "")));
+}
+
+// Readings stored in JSONB — version 2 wraps data + study header metadata
+interface MsaReadingsMeta {
+  partName: string; partNumber: string; characteristic: string;
+  gaugeDesc: string; usl: string; lsl: string; performedBy: string;
+  appraiserNames: string[];
+}
+function parseMsaReadings(raw: any): { meta: MsaReadingsMeta; data: string[][][] } | null {
+  if (!raw) return null;
+  if (raw.version === "2" && Array.isArray(raw.data)) return { meta: raw.meta, data: raw.data };
+  if (Array.isArray(raw)) return {
+    meta: { partName:"", partNumber:"", characteristic:"", gaugeDesc:"", usl:"", lsl:"", performedBy:"", appraiserNames:[] },
+    data: raw as string[][][],
+  };
+  return null;
 }
 
 function computeMsaResult(grrPercent: string, ndc: string): string {
@@ -1709,6 +1735,12 @@ function computeMsaResult(grrPercent: string, ndc: string): string {
   return "acceptable";
 }
 
+const APPRAISER_COLORS = [
+  "bg-sky-50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border-sky-200",
+  "bg-violet-50 dark:bg-violet-950/30 text-violet-800 dark:text-violet-300 border-violet-200",
+  "bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border-amber-200",
+];
+
 function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
   equipment: CalibrationEquipment[];
   initial: MsaStudy | null;
@@ -1716,73 +1748,79 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
   onSave: (d: Partial<MsaStudy>) => void;
   onCancel: () => void;
 }) {
-  const hasReadings = !!(initial?.readings);
+  const parsedInitial = useMemo(() => parseMsaReadings(initial?.readings), []);
+  const hasReadings = !!parsedInitial;
   const [phase, setPhase] = useState<"config"|"grid">(hasReadings ? "grid" : "config");
 
-  // Config
+  // ── Core config ─────────────────────────────────────────────────────────────
   const [equipmentId, setEquipmentId] = useState(initial?.equipmentId ?? (equipment.find(e => e.status === "active")?.id ?? 0));
   const [studyType, setStudyType]     = useState(initial?.studyType ?? "gage_rrr");
   const [studyDate, setStudyDate]     = useState(initial?.studyDate ?? new Date().toISOString().split("T")[0]);
   const [appraiserCount, setAppraiserCount] = useState(initial?.appraiserCount ?? 3);
-  const [partCount, setPartCount]     = useState(initial?.partCount ?? 10);
-  const [trialCount, setTrialCount]   = useState(initial?.trialCount ?? 3);
-  const [appraiserNames, setAppraiserNames] = useState<string[]>(() =>
-    Array.from({length: initial?.appraiserCount ?? 3}, (_, i) => `Appraiser ${i+1}`)
+  const [partCount, setPartCount]           = useState(initial?.partCount ?? 10);
+  const [trialCount, setTrialCount]         = useState(initial?.trialCount ?? 2);
+
+  // ── Study header metadata (AIAG worksheet header fields) ────────────────────
+  const [meta, setMeta] = useState<MsaReadingsMeta>(() => parsedInitial?.meta ?? {
+    partName: "", partNumber: "", characteristic: "",
+    gaugeDesc: "", usl: "", lsl: "", performedBy: "",
+    appraiserNames: ["Appraiser A", "Appraiser B", "Appraiser C"],
+  });
+  const setMetaField = (k: keyof MsaReadingsMeta, v: string) =>
+    setMeta(m => ({ ...m, [k]: v }));
+  const setAppraiserName = (i: number, v: string) =>
+    setMeta(m => { const a = [...m.appraiserNames]; a[i] = v; return { ...m, appraiserNames: a }; });
+
+  // ── Measurement grid: data[appraiser][part][trial] ──────────────────────────
+  const [gridData, setGridData] = useState<string[][][]>(() =>
+    parsedInitial?.data ?? makeEmptyGrid(initial?.appraiserCount ?? 3, initial?.partCount ?? 10, initial?.trialCount ?? 2)
   );
 
-  // Grid
-  const [readings, setReadings] = useState<string[][][]>(() =>
-    initial?.readings ? (initial.readings as string[][][]) : makeEmptyGrid(initial?.appraiserCount ?? 3, initial?.partCount ?? 10, initial?.trialCount ?? 3)
-  );
-
-  // Simple / notes
+  // ── Non-GRR simple form ─────────────────────────────────────────────────────
   const [simpleGrr, setSimpleGrr] = useState(initial?.grrPercent ?? "");
   const [simpleNdc, setSimpleNdc] = useState(initial?.ndc ?? "");
   const [notes, setNotes]         = useState(initial?.notes ?? "");
 
   function buildGrid() {
-    setReadings(makeEmptyGrid(appraiserCount, partCount, trialCount));
-    setAppraiserNames(Array.from({length: appraiserCount}, (_, i) => appraiserNames[i] ?? `Appraiser ${i+1}`));
+    setGridData(makeEmptyGrid(appraiserCount, partCount, trialCount));
     setPhase("grid");
   }
 
   function setCell(a: number, p: number, t: number, val: string) {
-    setReadings(prev => {
+    setGridData(prev => {
       const next = prev.map(ap => ap.map(pt => [...pt]));
       if (next[a]?.[p]) next[a][p][t] = val;
       return next;
     });
   }
 
+  // ── Live AIAG X̄-R calculations ──────────────────────────────────────────────
   const aiag = useMemo(() =>
     studyType === "gage_rrr" && phase === "grid"
-      ? calcAiagGrr(readings, appraiserCount, partCount, trialCount)
+      ? calcAiagGrr(gridData, appraiserCount, partCount, trialCount)
       : null,
-    [readings, studyType, phase, appraiserCount, partCount, trialCount]
+    [gridData, studyType, phase, appraiserCount, partCount, trialCount]
   );
 
+  // Per-cell mean and range (displayed inline in the grid)
   const cellStats = useMemo(() =>
-    phase !== "grid" ? [] :
     Array.from({length: appraiserCount}, (_, i) =>
       Array.from({length: partCount}, (_, j) => {
-        const vals = Array.from({length: trialCount}, (_, k) => parseFloat(readings[i]?.[j]?.[k] ?? "")).filter(v => !isNaN(v));
-        if (vals.length !== trialCount) return {range: null as number|null, mean: null as number|null};
-        return { range: Math.max(...vals) - Math.min(...vals), mean: vals.reduce((s,v) => s+v, 0)/vals.length };
+        const vals = Array.from({length: trialCount}, (_, k) =>
+          parseFloat(gridData[i]?.[j]?.[k] ?? "")).filter(v => !isNaN(v));
+        if (vals.length !== trialCount) return { mean: null as number|null, range: null as number|null };
+        return { mean: vals.reduce((s,v) => s+v, 0)/vals.length, range: Math.max(...vals)-Math.min(...vals) };
       })
-    ), [readings, appraiserCount, partCount, trialCount, phase]
+    ), [gridData, appraiserCount, partCount, trialCount]
   );
 
-  const footerStats = useMemo(() =>
-    cellStats.map(pts => {
-      const rs = pts.map(p => p.range).filter((v): v is number => v !== null);
-      const ms = pts.map(p => p.mean).filter((v): v is number => v !== null);
-      return {
-        Rbar: rs.length > 0 ? rs.reduce((s,v) => s+v, 0)/rs.length : null,
-        Xbar: ms.length > 0 ? ms.reduce((s,v) => s+v, 0)/ms.length : null,
-      };
-    }), [cellStats]
-  );
+  // Tolerance for %Tolerance column
+  const tolerance = useMemo(() => {
+    const u = parseFloat(meta.usl), l = parseFloat(meta.lsl);
+    return (!isNaN(u) && !isNaN(l)) ? Math.abs(u - l) : null;
+  }, [meta.usl, meta.lsl]);
 
+  // ── Save handler ─────────────────────────────────────────────────────────────
   function handleSave() {
     if (studyType === "gage_rrr" && phase === "grid" && aiag) {
       const grr = aiag.pctGRR;
@@ -1790,7 +1828,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
         equipmentId, studyType, studyDate, appraiserCount, partCount, trialCount,
         grrPercent: grr.toFixed(2), ndc: String(aiag.ndc),
         evPercent: aiag.pctEV.toFixed(2), avPercent: aiag.pctAV.toFixed(2),
-        readings: readings as any, notes,
+        readings: { version: "2", meta, data: gridData } as any, notes,
         result: grr > 30 ? "unacceptable" : grr >= 10 || aiag.ndc < 5 ? "marginal" : "acceptable",
       });
     } else {
@@ -1809,15 +1847,20 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
     ? aiag.pctGRR < 10 ? "text-emerald-600" : aiag.pctGRR <= 30 ? "text-amber-600" : "text-red-600"
     : "";
 
-  // ── Config Phase ────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── CONFIG PHASE ─────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
   if (phase === "config") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {/* ── Core info (all study types) ── */}
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
             <Label className="text-sm font-semibold">Equipment / Gage *</Label>
             <Select value={String(equipmentId)} onValueChange={v => setEquipmentId(Number(v))}>
-              <SelectTrigger className="mt-1 h-8" data-testid="select-msa-equipment"><SelectValue placeholder="Select equipment" /></SelectTrigger>
+              <SelectTrigger className="mt-1 h-8" data-testid="select-msa-equipment">
+                <SelectValue placeholder="Select equipment" />
+              </SelectTrigger>
               <SelectContent>
                 {equipment.filter(e => e.status === "active").map(e => (
                   <SelectItem key={e.id} value={String(e.id)}>{e.gageId} — {e.name}</SelectItem>
@@ -1834,261 +1877,443 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
           </div>
           <div>
             <Label className="text-sm font-semibold">Study Date *</Label>
-            <Input type="date" className="mt-1 h-8" value={studyDate} onChange={e => setStudyDate(e.target.value)} data-testid="input-msa-study-date" />
+            <Input type="date" className="mt-1 h-8" value={studyDate}
+              onChange={e => setStudyDate(e.target.value)} data-testid="input-msa-study-date" />
           </div>
+        </div>
 
-          {studyType === "gage_rrr" ? (<>
+        {studyType === "gage_rrr" ? (
+          <>
+            {/* ── AIAG Worksheet Header Fields ── */}
+            <div className="border rounded-lg p-3 space-y-3 bg-muted/10">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Study Header (AIAG Worksheet)</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold">Part Name</Label>
+                  <Input className="mt-1 h-7 text-sm" value={meta.partName}
+                    onChange={e => setMetaField("partName", e.target.value)}
+                    placeholder="e.g. Control Arm Bracket" data-testid="input-msa-part-name" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">Part / Drawing No.</Label>
+                  <Input className="mt-1 h-7 text-sm" value={meta.partNumber}
+                    onChange={e => setMetaField("partNumber", e.target.value)}
+                    placeholder="e.g. 1234-A" data-testid="input-msa-part-number" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">Characteristic / Feature</Label>
+                  <Input className="mt-1 h-7 text-sm" value={meta.characteristic}
+                    onChange={e => setMetaField("characteristic", e.target.value)}
+                    placeholder="e.g. Bore Diameter" data-testid="input-msa-characteristic" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">Gauge Description</Label>
+                  <Input className="mt-1 h-7 text-sm" value={meta.gaugeDesc}
+                    onChange={e => setMetaField("gaugeDesc", e.target.value)}
+                    placeholder="e.g. Digital Caliper 0-6&quot;" data-testid="input-msa-gauge-desc" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">Performed By</Label>
+                  <Input className="mt-1 h-7 text-sm" value={meta.performedBy}
+                    onChange={e => setMetaField("performedBy", e.target.value)}
+                    placeholder="e.g. Quality Engineer" data-testid="input-msa-performed-by" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Label className="text-xs font-semibold">USL <span className="font-normal text-muted-foreground">(opt.)</span></Label>
+                    <Input className="mt-1 h-7 text-sm" value={meta.usl}
+                      onChange={e => setMetaField("usl", e.target.value)}
+                      placeholder="e.g. 25.05" data-testid="input-msa-usl" />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-xs font-semibold">LSL <span className="font-normal text-muted-foreground">(opt.)</span></Label>
+                    <Input className="mt-1 h-7 text-sm" value={meta.lsl}
+                      onChange={e => setMetaField("lsl", e.target.value)}
+                      placeholder="e.g. 24.95" data-testid="input-msa-lsl" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Study Dimensions ── */}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-sm font-semibold">Appraisers</Label>
+                <div className="flex gap-2 mt-1">
+                  {[2, 3].map(n => (
+                    <button key={n} type="button" onClick={() => setAppraiserCount(n)}
+                      className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${appraiserCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/40"}`}
+                      data-testid={`btn-appraisers-${n}`}>{n}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Trials / Part</Label>
+                <div className="flex gap-2 mt-1">
+                  {[2, 3].map(n => (
+                    <button key={n} type="button" onClick={() => setTrialCount(n)}
+                      className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${trialCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/40"}`}
+                      data-testid={`btn-trials-${n}`}>{n}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Parts to Sample</Label>
+                <div className="flex gap-1 mt-1">
+                  {[5, 6, 7, 8, 9, 10].map(n => (
+                    <button key={n} type="button" onClick={() => setPartCount(n)}
+                      className={`flex-1 h-8 rounded border text-xs font-bold transition-colors ${partCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/40"}`}
+                      data-testid={`btn-parts-${n}`}>{n}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Appraiser Names ── */}
             <div>
-              <Label className="text-sm font-semibold">Appraisers</Label>
-              <div className="flex gap-2 mt-1">
-                {[2,3].map(n => (
-                  <button key={n} type="button" onClick={() => setAppraiserCount(n)}
-                    className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${appraiserCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/50"}`}
-                    data-testid={`btn-appraisers-${n}`}>{n}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-semibold">Trials per Part</Label>
-              <div className="flex gap-2 mt-1">
-                {[2,3].map(n => (
-                  <button key={n} type="button" onClick={() => setTrialCount(n)}
-                    className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${trialCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/50"}`}
-                    data-testid={`btn-trials-${n}`}>{n}</button>
-                ))}
-              </div>
-            </div>
-            <div className="col-span-2">
-              <Label className="text-sm font-semibold">Parts to Sample</Label>
-              <div className="flex gap-1 mt-1">
-                {[5,6,7,8,9,10].map(n => (
-                  <button key={n} type="button" onClick={() => setPartCount(n)}
-                    className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${partCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/50"}`}
-                    data-testid={`btn-parts-${n}`}>{n}</button>
-                ))}
-              </div>
-            </div>
-            <div className="col-span-2">
-              <Label className="text-sm font-semibold">Appraiser Names <span className="font-normal text-muted-foreground text-xs">(optional)</span></Label>
+              <Label className="text-sm font-semibold">Appraiser Names</Label>
               <div className="flex gap-2 mt-1">
                 {Array.from({length: appraiserCount}, (_, i) => (
-                  <Input key={i} className="h-8 text-sm" value={appraiserNames[i] ?? ""}
-                    onChange={e => setAppraiserNames(prev => { const n=[...prev]; n[i]=e.target.value; return n; })}
-                    placeholder={`Appraiser ${i+1}`} data-testid={`input-appraiser-name-${i}`} />
+                  <Input key={i} className="h-8 text-sm" value={meta.appraiserNames[i] ?? ""}
+                    onChange={e => setAppraiserName(i, e.target.value)}
+                    placeholder={`Appraiser ${String.fromCharCode(65+i)}`}
+                    data-testid={`input-appraiser-name-${i}`} />
                 ))}
               </div>
             </div>
-          </>) : (<>
-            <div>
-              <Label className="text-sm font-semibold">Appraisers</Label>
-              <Input type="number" min={1} className="mt-1 h-8" value={appraiserCount || ""}
-                onChange={e => setAppraiserCount(parseInt(e.target.value)||0)} placeholder="e.g. 3" data-testid="input-msa-appraisers" />
-            </div>
-            <div>
-              <Label className="text-sm font-semibold">Parts Sampled</Label>
-              <Input type="number" min={1} className="mt-1 h-8" value={partCount || ""}
-                onChange={e => setPartCount(parseInt(e.target.value)||0)} placeholder="e.g. 10" data-testid="input-msa-part-count" />
-            </div>
-            <div>
-              <Label className="text-sm font-semibold">Trials per Part</Label>
-              <Input type="number" min={1} className="mt-1 h-8" value={trialCount || ""}
-                onChange={e => setTrialCount(parseInt(e.target.value)||0)} placeholder="e.g. 2" data-testid="input-msa-trial-count" />
-            </div>
-            {studyType !== "attribute_agreement" && <>
-              <div>
-                <Label className="text-sm font-semibold">GRR% / Study Error
-                  {simpleGrr && <span className={`ml-1 font-bold ${parseFloat(simpleGrr)<10 ? "text-emerald-600" : parseFloat(simpleGrr)<=30 ? "text-amber-600" : "text-red-600"}`}>
-                    {parseFloat(simpleGrr)<10 ? "✓ Acceptable" : parseFloat(simpleGrr)<=30 ? "⚠ Marginal" : "✗ Unacceptable"}
-                  </span>}
-                </Label>
-                <Input type="number" step="0.01" min={0} max={100} className="mt-1 h-8" value={simpleGrr}
-                  onChange={e => setSimpleGrr(e.target.value)} placeholder="e.g. 8.4" data-testid="input-msa-grr-percent" />
-              </div>
-              <div>
-                <Label className="text-sm font-semibold">NDC
-                  {simpleNdc && <span className={`ml-1 font-bold ${parseInt(simpleNdc)>=5 ? "text-emerald-600" : "text-red-600"}`}>{parseInt(simpleNdc)>=5 ? "✓" : "✗ (<5)"}</span>}
-                </Label>
-                <Input type="number" step="1" min={0} className="mt-1 h-8" value={simpleNdc}
-                  onChange={e => setSimpleNdc(e.target.value)} placeholder="e.g. 7" data-testid="input-msa-ndc" />
-              </div>
-            </>}
-            <div className="col-span-2">
-              <Label className="text-sm font-semibold">Notes</Label>
-              <Textarea className="mt-1" rows={2} value={notes} onChange={e => setNotes(e.target.value)}
-                placeholder="Study conditions, corrective actions..." data-testid="textarea-msa-notes" />
-            </div>
-          </>)}
-        </div>
 
-        <div className="flex gap-2">
-          {studyType === "gage_rrr" ? (
-            <Button onClick={buildGrid} disabled={!equipmentId || !studyDate}
-              className="bg-accent hover:bg-accent/90 text-white gap-2" data-testid="button-build-data-sheet">
-              Build AIAG Data Sheet →  ({appraiserCount} appraisers · {partCount} parts · {trialCount} trials)
-            </Button>
-          ) : (
-            <Button disabled={isSaving || !equipmentId || !studyDate}
-              className="bg-accent hover:bg-accent/90 text-white" onClick={handleSave} data-testid="button-save-msa-study">
-              {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
-            </Button>
-          )}
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        </div>
+            <div className="flex gap-2">
+              <Button onClick={buildGrid} disabled={!equipmentId || !studyDate}
+                className="bg-accent hover:bg-accent/90 text-white" data-testid="button-build-data-sheet">
+                Build AIAG Data Sheet → ({appraiserCount} × {partCount} × {trialCount})
+              </Button>
+              <Button variant="outline" onClick={onCancel}>Cancel</Button>
+            </div>
+          </>
+        ) : (
+          /* ── Non-GRR simple form ── */
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm font-semibold">Appraisers</Label>
+                <Input type="number" min={1} className="mt-1 h-8" value={appraiserCount || ""}
+                  onChange={e => setAppraiserCount(parseInt(e.target.value)||0)}
+                  placeholder="e.g. 3" data-testid="input-msa-appraisers" />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Parts Sampled</Label>
+                <Input type="number" min={1} className="mt-1 h-8" value={partCount || ""}
+                  onChange={e => setPartCount(parseInt(e.target.value)||0)}
+                  placeholder="e.g. 10" data-testid="input-msa-part-count" />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Trials per Part</Label>
+                <Input type="number" min={1} className="mt-1 h-8" value={trialCount || ""}
+                  onChange={e => setTrialCount(parseInt(e.target.value)||0)}
+                  placeholder="e.g. 2" data-testid="input-msa-trial-count" />
+              </div>
+              {studyType !== "attribute_agreement" && <>
+                <div>
+                  <Label className="text-sm font-semibold">GRR% / Study Error</Label>
+                  <Input type="number" step="0.01" min={0} max={100} className="mt-1 h-8"
+                    value={simpleGrr} onChange={e => setSimpleGrr(e.target.value)}
+                    placeholder="e.g. 8.4" data-testid="input-msa-grr-percent" />
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold">NDC</Label>
+                  <Input type="number" step="1" min={0} className="mt-1 h-8"
+                    value={simpleNdc} onChange={e => setSimpleNdc(e.target.value)}
+                    placeholder="e.g. 7" data-testid="input-msa-ndc" />
+                </div>
+              </>}
+              <div className="col-span-2">
+                <Label className="text-sm font-semibold">Notes</Label>
+                <Textarea className="mt-1" rows={2} value={notes} onChange={e => setNotes(e.target.value)}
+                  placeholder="Study conditions, corrective actions..." data-testid="textarea-msa-notes" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button disabled={isSaving || !equipmentId || !studyDate}
+                className="bg-accent hover:bg-accent/90 text-white" onClick={handleSave}
+                data-testid="button-save-msa-study">
+                {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
+              </Button>
+              <Button variant="outline" onClick={onCancel}>Cancel</Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  // ── Grid Phase (Gage R&R only) ──────────────────────────────────────────────
-  const CELL_W = "w-[52px]";
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── GRID PHASE — AIAG Variable Gage Study (Long Method) ──────────────────────
+  // Parts as COLUMNS, appraisers as ROW GROUPS (matches standard AIAG worksheet)
+  // ══════════════════════════════════════════════════════════════════════════════
+  const eq = equipment.find(e => e.id === equipmentId);
   return (
     <div className="space-y-4">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* ── AIAG Worksheet Study Header ── */}
+      <div className="grid grid-cols-3 gap-x-6 gap-y-1 text-xs border rounded-lg p-3 bg-muted/10">
+        <div><span className="text-muted-foreground font-semibold">Part Name: </span>{meta.partName || "—"}</div>
+        <div><span className="text-muted-foreground font-semibold">Part No.: </span>{meta.partNumber || "—"}</div>
+        <div><span className="text-muted-foreground font-semibold">Date: </span>{studyDate}</div>
+        <div><span className="text-muted-foreground font-semibold">Characteristic: </span>{meta.characteristic || "—"}</div>
+        <div><span className="text-muted-foreground font-semibold">Gage: </span>{eq ? `${eq.gageId} — ${eq.name}` : "—"}</div>
+        <div><span className="text-muted-foreground font-semibold">Performed By: </span>{meta.performedBy || "—"}</div>
+        {meta.usl && <div><span className="text-muted-foreground font-semibold">USL: </span>{meta.usl}</div>}
+        {meta.lsl && <div><span className="text-muted-foreground font-semibold">LSL: </span>{meta.lsl}</div>}
+        {tolerance != null && <div><span className="text-muted-foreground font-semibold">Tolerance: </span>{tolerance.toFixed(4)}</div>}
         {!hasReadings && (
-          <button type="button" onClick={() => setPhase("config")}
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 underline underline-offset-2">
-            ← Change setup
-          </button>
+          <div className="col-span-3 pt-1 border-t">
+            <button type="button" onClick={() => setPhase("config")}
+              className="text-xs text-accent hover:underline">← Edit study setup</button>
+          </div>
         )}
-        <p className="text-xs text-muted-foreground">
-          {equipment.find(e => e.id === equipmentId)?.name ?? ""} · {studyDate} ·
-          {" "}{appraiserCount} Appraisers × {partCount} Parts × {trialCount} Trials/Part
-        </p>
       </div>
 
-      {/* AIAG Measurement Data Entry Grid */}
+      {/* ── AIAG Data Collection Sheet: Parts as COLUMNS ── */}
       <div className="overflow-x-auto border rounded-lg">
-        <table className="text-xs border-collapse min-w-full">
+        <table className="text-xs border-collapse" style={{minWidth: `${130 + partCount*56 + 130}px`}}>
           <thead>
-            {/* Appraiser group headers */}
-            <tr>
-              <th className="border bg-muted/60 px-2 py-1.5 text-left font-bold sticky left-0 z-10 min-w-[36px]">Part</th>
-              {Array.from({length: appraiserCount}, (_, i) => (
-                <th key={i} colSpan={trialCount + 1}
-                  className={`border px-2 py-1.5 text-center font-bold text-xs ${i%2===0 ? "bg-sky-50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300" : "bg-violet-50 dark:bg-violet-950/30 text-violet-800 dark:text-violet-300"}`}>
-                  {appraiserNames[i] ?? `Appraiser ${i+1}`}
+            <tr className="bg-muted/60">
+              <th className="border px-2 py-2 text-left font-bold min-w-[130px] sticky left-0 bg-muted/60 z-20 text-[11px]">
+                Operator / Trial
+              </th>
+              {Array.from({length: partCount}, (_, j) => (
+                <th key={j} className="border px-1 py-2 text-center font-bold min-w-[54px] text-muted-foreground">
+                  Sample {j+1}
                 </th>
               ))}
-            </tr>
-            {/* Trial sub-headers */}
-            <tr className="bg-muted/40">
-              <th className="border px-2 py-1 font-semibold sticky left-0 bg-muted/40 z-10">#</th>
-              {Array.from({length: appraiserCount}, (_, i) => [
-                ...Array.from({length: trialCount}, (_, k) => (
-                  <th key={`${i}-t${k}`} className="border px-1 py-1 font-semibold text-center text-muted-foreground">T{k+1}</th>
-                )),
-                <th key={`${i}-r`} className="border px-1 py-1 font-semibold text-center text-muted-foreground/60 text-[10px]">R</th>
-              ])}
+              <th className="border px-2 py-2 text-center font-bold min-w-[62px] text-emerald-700 dark:text-emerald-400">X̄</th>
+              <th className="border px-2 py-2 text-center font-bold min-w-[62px] text-sky-700 dark:text-sky-400">R̄</th>
             </tr>
           </thead>
           <tbody>
-            {Array.from({length: partCount}, (_, j) => (
-              <tr key={j} className={j%2===0 ? "" : "bg-muted/10"}>
-                <td className="border px-2 py-0.5 font-bold text-center text-muted-foreground sticky left-0 bg-background z-10">{j+1}</td>
-                {Array.from({length: appraiserCount}, (_, i) => [
-                  ...Array.from({length: trialCount}, (_, k) => (
-                    <td key={`${i}-${j}-${k}`} className="border p-0.5">
-                      <input type="number" step="any"
-                        className={`${CELL_W} h-6 text-center text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-accent/60 rounded`}
-                        value={readings[i]?.[j]?.[k] ?? ""}
-                        onChange={e => setCell(i, j, k, e.target.value)}
-                        data-testid={`cell-${i}-${j}-${k}`} />
-                    </td>
-                  )),
-                  <td key={`${i}-${j}-r`} className="border px-1.5 py-0.5 text-center font-mono text-muted-foreground/70 text-[10px] min-w-[42px]">
-                    {cellStats[i]?.[j]?.range != null ? cellStats[i][j].range!.toFixed(3) : ""}
+            {Array.from({length: appraiserCount}, (_, i) => {
+              const appName = meta.appraiserNames[i] || `Appraiser ${String.fromCharCode(65+i)}`;
+              const colorClass = APPRAISER_COLORS[i] ?? APPRAISER_COLORS[0];
+              const rows: React.ReactNode[] = [];
+
+              // Appraiser group header
+              rows.push(
+                <tr key={`hdr-${i}`}>
+                  <td colSpan={partCount + 3}
+                    className={`border px-3 py-1.5 font-bold text-xs sticky left-0 z-10 ${colorClass}`}>
+                    {appName}
                   </td>
-                ])}
-              </tr>
-            ))}
+                </tr>
+              );
+
+              // Trial input rows
+              for (let k = 0; k < trialCount; k++) {
+                rows.push(
+                  <tr key={`t-${i}-${k}`} className={k%2===0 ? "bg-white dark:bg-background" : "bg-muted/5"}>
+                    <td className="border px-3 py-0.5 text-muted-foreground sticky left-0 bg-inherit z-10 text-[11px]">
+                      Trial {k+1}
+                    </td>
+                    {Array.from({length: partCount}, (_, j) => (
+                      <td key={j} className="border p-0.5">
+                        <input type="number" step="any"
+                          className="w-[50px] h-6 text-center text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-accent/60 rounded"
+                          value={gridData[i]?.[j]?.[k] ?? ""}
+                          onChange={e => setCell(i, j, k, e.target.value)}
+                          data-testid={`cell-a${i}-s${j}-t${k}`} />
+                      </td>
+                    ))}
+                    <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
+                    <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
+                  </tr>
+                );
+              }
+
+              // Average row per appraiser (X̄ per sample)
+              rows.push(
+                <tr key={`avg-${i}`} className="bg-muted/10">
+                  <td className="border px-3 py-0.5 italic text-muted-foreground sticky left-0 bg-muted/10 z-10 text-[11px]">
+                    Average (X̄)
+                  </td>
+                  {Array.from({length: partCount}, (_, j) => (
+                    <td key={j} className="border px-1 py-0.5 text-center font-mono text-[10px] text-foreground/80">
+                      {cellStats[i]?.[j]?.mean != null ? cellStats[i][j].mean!.toFixed(3) : ""}
+                    </td>
+                  ))}
+                  <td className="border px-1 py-0.5 text-center font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                    {aiag?.XbarA[i] != null ? aiag.XbarA[i].toFixed(4) : "—"}
+                  </td>
+                  <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
+                </tr>
+              );
+
+              // Range row per appraiser (R per sample)
+              rows.push(
+                <tr key={`rng-${i}`} className="bg-muted/10">
+                  <td className="border px-3 py-0.5 italic text-muted-foreground sticky left-0 bg-muted/10 z-10 text-[11px]">
+                    Range (R)
+                  </td>
+                  {Array.from({length: partCount}, (_, j) => {
+                    const r = cellStats[i]?.[j]?.range;
+                    const overLimit = aiag?.UCLR != null && r != null && r > aiag.UCLR;
+                    return (
+                      <td key={j} className={`border px-1 py-0.5 text-center font-mono text-[10px] ${overLimit ? "bg-red-50 dark:bg-red-950/20 text-red-700 font-bold" : "text-foreground/80"}`}>
+                        {r != null ? r.toFixed(3) : ""}
+                        {overLimit && " ▲"}
+                      </td>
+                    );
+                  })}
+                  <td className="border px-1 py-0.5 text-center text-muted-foreground/30 text-[10px]">—</td>
+                  <td className="border px-1 py-0.5 text-center font-mono text-[11px] font-bold text-sky-700 dark:text-sky-400">
+                    {aiag?.RbarA[i] != null ? aiag.RbarA[i].toFixed(4) : "—"}
+                  </td>
+                </tr>
+              );
+
+              return rows;
+            })}
+
+            {/* Part Average row (grand mean per sample across all appraisers) */}
+            <tr className="bg-muted/30 font-bold border-t-2">
+              <td className="border px-3 py-1.5 text-xs font-bold sticky left-0 bg-muted/30 z-10">
+                Part Average (X̄p)
+              </td>
+              {Array.from({length: partCount}, (_, j) => (
+                <td key={j} className="border px-1 py-1.5 text-center font-mono text-[10px] font-bold">
+                  {aiag?.partAvgs[j] != null ? aiag.partAvgs[j].toFixed(3) : ""}
+                </td>
+              ))}
+              <td className="border px-1 py-1.5 text-center text-muted-foreground/30">—</td>
+              <td className="border px-1 py-1.5 text-center text-muted-foreground/30">—</td>
+            </tr>
           </tbody>
-          <tfoot className="bg-muted/40 font-bold">
-            <tr>
-              <td className="border px-2 py-1 text-[10px] text-muted-foreground text-center sticky left-0 bg-muted/40 z-10">R̄</td>
-              {Array.from({length: appraiserCount}, (_, i) => [
-                ...Array.from({length: trialCount}, (_, k) => (
-                  <td key={`fr-${i}-${k}`} className="border px-1 py-1 text-center text-muted-foreground/40 text-[10px]">—</td>
-                )),
-                <td key={`fr-${i}-v`} className="border px-1.5 py-1 text-center font-mono text-sky-700 dark:text-sky-400 text-[11px]">
-                  {footerStats[i]?.Rbar != null ? footerStats[i].Rbar!.toFixed(3) : "—"}
-                </td>
-              ])}
-            </tr>
-            <tr>
-              <td className="border px-2 py-1 text-[10px] text-muted-foreground text-center sticky left-0 bg-muted/40 z-10">X̄</td>
-              {Array.from({length: appraiserCount}, (_, i) => [
-                ...Array.from({length: trialCount}, (_, k) => (
-                  <td key={`fx-${i}-${k}`} className="border px-1 py-1 text-center text-muted-foreground/40 text-[10px]">—</td>
-                )),
-                <td key={`fx-${i}-v`} className="border px-1.5 py-1 text-center font-mono text-emerald-700 dark:text-emerald-400 text-[11px]">
-                  {footerStats[i]?.Xbar != null ? footerStats[i].Xbar!.toFixed(3) : "—"}
-                </td>
-              ])}
-            </tr>
-          </tfoot>
         </table>
       </div>
 
-      {/* AIAG Variance Components Results */}
-      <div className={`rounded-xl border p-4 space-y-3 ${
-        aiag
-          ? aiag.pctGRR < 10  ? "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/10"
-          : aiag.pctGRR <= 30 ? "border-amber-300 bg-amber-50/60 dark:bg-amber-950/10"
-          : "border-red-300 bg-red-50/60 dark:bg-red-950/10"
-          : "border-border bg-muted/20"
-      }`}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AIAG X̄-R Variance Components</p>
-          {aiag ? (
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className={`text-xl font-black ${grrColor}`}>GRR: {aiag.pctGRR.toFixed(1)}%</span>
-              <span className={`text-sm font-bold px-2 py-0.5 rounded-full border ${aiag.ndc >= 5 ? "text-emerald-700 bg-emerald-100 border-emerald-300" : "text-red-700 bg-red-100 border-red-300"}`}>
-                NDC = {aiag.ndc}{aiag.ndc >= 5 ? " ✓" : " ✗ (< 5)"}
-              </span>
-              <span className={`text-xs font-black px-3 py-1 rounded-full text-white ${aiag.pctGRR < 10 ? "bg-emerald-600" : aiag.pctGRR <= 30 ? "bg-amber-500" : "bg-red-600"}`}>
-                {aiag.pctGRR < 10 ? "ACCEPTABLE" : aiag.pctGRR <= 30 ? "MARGINAL" : "UNACCEPTABLE"}
+      {/* ── Intermediate Calculations + Verdict ── */}
+      {aiag ? (
+        <div className="grid grid-cols-2 gap-4">
+          {/* Left: intermediate values (AIAG worksheet reference box) */}
+          <div className="rounded-lg border p-3 space-y-2 text-xs bg-muted/10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Intermediate Calculations</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+              <span className="text-muted-foreground">R̄ (Grand Avg Range)</span>
+              <span className="font-mono font-bold">{aiag.Rbar.toFixed(4)}</span>
+              <span className="text-muted-foreground">X̄<sub>diff</sub> (Appraiser Spread)</span>
+              <span className="font-mono font-bold">{aiag.xdiff.toFixed(4)}</span>
+              <span className="text-muted-foreground">R<sub>p</sub> (Part Range)</span>
+              <span className="font-mono font-bold">{aiag.Rp.toFixed(4)}</span>
+              <span className="text-muted-foreground">UCL<sub>R</sub> = D₄ × R̄</span>
+              <span className="font-mono font-bold text-amber-700 dark:text-amber-400">
+                {aiag.UCLR.toFixed(4)} <span className="font-normal text-muted-foreground">(D₄={AIAG_D4[trialCount]})</span>
               </span>
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground italic">Complete all cells above to see AIAG results</p>
-          )}
+            <p className="text-[10px] text-muted-foreground border-t pt-2 mt-1 leading-relaxed">
+              K₁ = {AIAG_K1[trialCount]} (r={trialCount} trials) ·
+              K₂ = {AIAG_K2[appraiserCount]} (a={appraiserCount} appraisers) ·
+              K₃ = {AIAG_K3[partCount]} (n={partCount} parts)
+            </p>
+            {aiag.UCLR > 0 && (
+              <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                ▲ Ranges exceeding UCL<sub>R</sub> indicate inconsistent technique — re-measure those samples.
+              </p>
+            )}
+          </div>
+
+          {/* Right: verdict */}
+          <div className={`rounded-lg border p-4 flex flex-col items-center justify-center gap-3 ${
+            aiag.pctGRR < 10  ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20"
+            : aiag.pctGRR <= 30 ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20"
+            : "border-red-300 bg-red-50 dark:bg-red-950/20"
+          }`}>
+            <span className={`text-3xl font-black tabular-nums ${grrColor}`}>
+              %GRR = {aiag.pctGRR.toFixed(1)}%
+            </span>
+            <span className={`text-sm font-bold px-3 py-1 rounded-full border ${
+              aiag.ndc >= 5 ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-red-100 text-red-700 border-red-300"
+            }`}>
+              NDC = {aiag.ndc} {aiag.ndc >= 5 ? "✓" : "✗  (< 5 required)"}
+            </span>
+            <span className={`text-sm font-black px-5 py-1.5 rounded-full text-white ${
+              aiag.pctGRR < 10 ? "bg-emerald-600" : aiag.pctGRR <= 30 ? "bg-amber-500" : "bg-red-600"
+            }`}>
+              {aiag.pctGRR < 10 ? "✓ ACCEPTABLE" : aiag.pctGRR <= 30 ? "⚠ MARGINAL" : "✗ UNACCEPTABLE"}
+            </span>
+            <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+              &lt;10% = Acceptable · 10–30% = Marginal · &gt;30% = Unacceptable<br/>NDC ≥ 5 required
+            </p>
+          </div>
         </div>
+      ) : (
+        <div className="border rounded-lg p-5 text-center text-muted-foreground bg-muted/10">
+          <p className="text-sm italic">Complete all measurement cells to see AIAG variance components analysis</p>
+        </div>
+      )}
 
-        {aiag && (
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b text-muted-foreground">
-                <th className="text-left pb-1.5 font-bold">Source</th>
-                <th className="text-right pb-1.5 font-bold">σ (StdDev)</th>
-                <th className="text-right pb-1.5 font-bold">%Contribution</th>
-                <th className="text-right pb-1.5 font-bold">%Study Var</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              {[
-                { label: "Repeatability (EV)", s: aiag.EV, pct: aiag.pctEV, bold: false },
-                { label: "Reproducibility (AV)", s: aiag.AV, pct: aiag.pctAV, bold: false },
-                { label: "Gage R&R (GRR)", s: aiag.GRR, pct: aiag.pctGRR, bold: true },
-                { label: "Part-to-Part (PV)", s: aiag.PV, pct: aiag.pctPV, bold: false },
-                { label: "Total Variation (TV)", s: aiag.TV, pct: 100, bold: true },
-              ].map((row, idx) => (
-                <tr key={idx} className={row.bold ? "font-black" : ""}>
-                  <td className="py-1.5">{row.label}</td>
-                  <td className="py-1.5 text-right font-mono">{row.s.toFixed(4)}</td>
-                  <td className="py-1.5 text-right">{(row.pct ** 2 / 100).toFixed(1)}%</td>
-                  <td className={`py-1.5 text-right font-bold ${row.label.includes("GRR") ? grrColor : ""}`}>{row.pct.toFixed(1)}%</td>
+      {/* ── Measurement Unit Analysis — Variance Components Table ── */}
+      {aiag && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="px-4 py-2 bg-muted/30 border-b">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Measurement Unit Analysis — Variance Components (AIAG MSA 4th Ed.)
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/20">
+                <tr>
+                  <th className="text-left px-4 py-2.5 font-bold">Source</th>
+                  <th className="text-right px-3 py-2.5 font-bold">σ (Std Dev)</th>
+                  <th className="text-right px-3 py-2.5 font-bold">6σ (Study Var)</th>
+                  <th className="text-right px-3 py-2.5 font-bold">%Contribution</th>
+                  <th className="text-right px-3 py-2.5 font-bold">%Study Var</th>
+                  {tolerance != null && (
+                    <th className="text-right px-3 py-2.5 font-bold">%Tolerance</th>
+                  )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {[
+                  { label: "Repeatability — EV",       s: aiag.EV,  pct: aiag.pctEV,  bold: false },
+                  { label: "Reproducibility — AV",      s: aiag.AV,  pct: aiag.pctAV,  bold: false },
+                  { label: "Gage R&R (GRR)",             s: aiag.GRR, pct: aiag.pctGRR, bold: true  },
+                  { label: "Part-to-Part — PV",          s: aiag.PV,  pct: aiag.pctPV,  bold: false },
+                  { label: "Total Variation — TV",       s: aiag.TV,  pct: 100,          bold: true  },
+                ].map((row, idx) => (
+                  <tr key={idx} className={row.bold ? "bg-muted/10 font-bold" : ""}>
+                    <td className={`px-4 py-2 ${row.bold ? "" : "pl-7 text-muted-foreground"}`}>{row.label}</td>
+                    <td className="px-3 py-2 text-right font-mono">{row.s.toFixed(4)}</td>
+                    <td className="px-3 py-2 text-right font-mono">{(row.s * 6).toFixed(4)}</td>
+                    <td className="px-3 py-2 text-right">{(row.pct ** 2 / 100).toFixed(1)}%</td>
+                    <td className={`px-3 py-2 text-right font-bold ${row.label.includes("GRR") ? grrColor : ""}`}>
+                      {row.pct.toFixed(1)}%
+                    </td>
+                    {tolerance != null && (
+                      <td className={`px-3 py-2 text-right ${row.label.includes("GRR") ? grrColor + " font-bold" : ""}`}>
+                        {(row.s * 6 / tolerance * 100).toFixed(1)}%
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-muted/10 text-[10px] text-muted-foreground">
+                <tr>
+                  <td colSpan={tolerance != null ? 6 : 5} className="px-4 py-2 border-t leading-relaxed">
+                    ndc = 1.41 × (PV / GRR) = 1.41 × ({aiag.PV.toFixed(4)} / {aiag.GRR.toFixed(4)}) = <strong className="text-foreground">{aiag.ndc}</strong>
+                    {" · "}%Contribution = (σ / TV)² × 100 · %Study Var = (σ / TV) × 100
+                    {tolerance != null && ` · %Tolerance = (6σ / Tolerance) × 100`}
+                    {" · "}UCL<sub>R</sub> = {aiag.UCLR.toFixed(4)} — ranges marked ▲ require investigation
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
 
-      {/* Notes & Save */}
+      {/* ── Notes & Save ── */}
       <div>
         <Label className="text-sm font-semibold">Notes / Corrective Action</Label>
         <Textarea className="mt-1" rows={2} value={notes} onChange={e => setNotes(e.target.value)}
-          placeholder="Study conditions, corrective actions, reference documents..."
+          placeholder="Study conditions, gauge calibration status, corrective actions, reference documents..."
           data-testid="textarea-msa-notes" />
       </div>
       <div className="flex gap-2">
