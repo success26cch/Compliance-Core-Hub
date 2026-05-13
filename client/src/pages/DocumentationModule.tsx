@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import jsPDF from "jspdf";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Plus, 
@@ -46,6 +47,7 @@ import {
   BadgeCheck,
   AlertTriangle,
   XCircle,
+  Download,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -941,6 +943,145 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
     }
   };
 
+  const downloadRevisionSummaryPDF = () => {
+    if (!draftDoc || !draftContent) return;
+    const summary = computeRevisionSummary(draftDoc.content ?? "", draftContent);
+    const reason = isaAcceptReason.trim() || "AI-assisted revision by Isa";
+    const docTitle = draftDoc.title ?? "Document";
+    const fromVer = draftDoc.version ?? "1.0";
+    const docId = draftDoc.id;
+
+    const pdf = new jsPDF({ unit: "pt", format: "letter" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 50;
+    const contentW = pageW - margin * 2;
+    let y = margin;
+
+    const checkPage = (needed: number) => {
+      if (y + needed > pageH - margin) {
+        pdf.addPage();
+        y = margin;
+      }
+    };
+
+    pdf.setFillColor(109, 40, 217);
+    pdf.rect(0, 0, pageW, 6, "F");
+
+    y = 56;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(18);
+    pdf.setTextColor(30, 10, 60);
+    pdf.text("Revision Summary", margin, y);
+    y += 22;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(100, 100, 120);
+    pdf.text(`Document: ${docTitle}`, margin, y);
+    y += 14;
+    pdf.text(`Revision: Rev. ${fromVer} → proposed`, margin, y);
+    y += 14;
+    pdf.text(`Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, margin, y);
+    y += 20;
+
+    pdf.setDrawColor(220, 210, 240);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 16;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 10, 60);
+    pdf.text("Reason for Change", margin, y);
+    y += 14;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(60, 60, 80);
+    const reasonLines = pdf.splitTextToSize(reason, contentW);
+    checkPage(reasonLines.length * 13 + 8);
+    pdf.text(reasonLines, margin, y);
+    y += reasonLines.length * 13 + 18;
+
+    pdf.setDrawColor(220, 210, 240);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 16;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 10, 60);
+    pdf.text("Changed Sections", margin, y);
+    y += 16;
+
+    for (const item of summary) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      const labelMaxW = contentW - 140;
+      const sectionLines = pdf.splitTextToSize(item.section, labelMaxW);
+      const titleLineH = 13;
+      const titleBlockH = sectionLines.length * titleLineH;
+      const rowH = Math.max(40, 10 + titleBlockH + 18);
+      checkPage(rowH + 6);
+
+      pdf.setFillColor(248, 245, 255);
+      pdf.setDrawColor(220, 210, 240);
+      pdf.roundedRect(margin, y, contentW, rowH, 4, 4, "FD");
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(40, 20, 80);
+      pdf.text(sectionLines, margin + 10, y + 14);
+
+      if (item.isNew) {
+        pdf.setFillColor(220, 252, 231);
+        pdf.setDrawColor(134, 239, 172);
+        pdf.roundedRect(pageW - margin - 56, y + 6, 46, 14, 3, 3, "FD");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(21, 128, 61);
+        pdf.text("NEW", pageW - margin - 40, y + 16);
+      } else if (item.isRemoved) {
+        pdf.setFillColor(254, 226, 226);
+        pdf.setDrawColor(252, 165, 165);
+        pdf.roundedRect(pageW - margin - 70, y + 6, 60, 14, 3, 3, "FD");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(185, 28, 28);
+        pdf.text("REMOVED", pageW - margin - 61, y + 16);
+      }
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      let statX = margin + 10;
+      const statY = y + 10 + titleBlockH + 6;
+      if (item.removedCount > 0) {
+        pdf.setTextColor(185, 28, 28);
+        pdf.text(`−${item.removedCount} line${item.removedCount !== 1 ? "s" : ""}`, statX, statY);
+        statX += 60;
+      }
+      if (item.addedCount > 0) {
+        pdf.setTextColor(21, 128, 61);
+        pdf.text(`+${item.addedCount} line${item.addedCount !== 1 ? "s" : ""}`, statX, statY);
+      }
+      if (item.removedCount === 0 && item.addedCount === 0) {
+        pdf.setTextColor(120, 120, 140);
+        pdf.setFont("helvetica", "italic");
+        pdf.setFontSize(9);
+        pdf.text("formatting only", statX, statY);
+      }
+
+      y += rowH + 6;
+    }
+
+    y += 10;
+    checkPage(20);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(160, 160, 180);
+    pdf.text(`Core Compliance Hub — Document Change Record | ${summary.length} section${summary.length !== 1 ? "s" : ""} affected`, margin, y);
+
+    pdf.save(`DCR-${docId}-revision-summary.pdf`);
+  };
+
   const getDocIcon = (type: string) => {
     const docType = DOC_TYPES.find(t => t.value === type);
     const Icon = docType?.icon || FileText;
@@ -1355,7 +1496,7 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
               </div>
 
               {/* Accept / Discard */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={acceptIsaDraft}
                   disabled={isAcceptingIsaDraft}
@@ -1368,6 +1509,17 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
                   }
                   {isAcceptingIsaDraft ? "Accepting…" : "Accept as Official Draft"}
                 </Button>
+                {draftContent.length >= LARGE_DOC_THRESHOLD && (
+                  <Button
+                    onClick={downloadRevisionSummaryPDF}
+                    variant="outline"
+                    className="text-xs h-8 gap-1.5 border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/30"
+                    data-testid="button-download-revision-summary-pdf"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download Summary PDF
+                  </Button>
+                )}
                 <Button
                   onClick={() => { setDraftReady(false); setDraftContent(""); setPrevShowExpanded(false); setShowFullDiff(false); setIsaNote(""); }}
                   variant="outline"
