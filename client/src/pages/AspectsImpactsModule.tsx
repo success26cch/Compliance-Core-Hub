@@ -234,7 +234,8 @@ export default function AspectsImpactsModule() {
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[140px]">Process / Activity</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground">Environmental Aspect &amp; Potential Impact</th>
+                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[200px]">Environmental Aspect</th>
+                    <th className="text-left px-3 py-2.5 font-bold text-muted-foreground">Potential Impact</th>
                     <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[90px]">Condition</th>
                     <th className="text-left px-3 py-2.5 font-bold text-muted-foreground w-[110px]">Impact Types</th>
                     <th className="text-center px-2 py-2.5 font-bold text-muted-foreground w-[28px]" title="Severity">S</th>
@@ -253,9 +254,9 @@ export default function AspectsImpactsModule() {
                       <td className="px-3 py-2.5 text-muted-foreground text-[11px]">{a.processActivity || "—"}</td>
                       <td className="px-3 py-2.5">
                         <p className="font-semibold text-foreground leading-snug">{a.environmentalAspect}</p>
-                        {a.potentialImpactDescription && <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{a.potentialImpactDescription}</p>}
                         {a.applicableRegulations && <p className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono">{a.applicableRegulations}</p>}
                       </td>
+                      <td className="px-3 py-2.5 text-[11px] text-muted-foreground leading-snug">{a.potentialImpactDescription || "—"}</td>
                       <td className="px-3 py-2.5">
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded capitalize ${
                           a.aspectCondition === "emergency" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
