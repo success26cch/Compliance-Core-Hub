@@ -2412,6 +2412,9 @@ export const msaStudies = pgTable("msa_studies", {
   trialCount: integer("trial_count"),                       // number of measurement trials
   grrPercent: text("grr_percent"),                          // GRR% as text e.g. "8.4"
   ndc: text("ndc"),                                         // Number of Distinct Categories e.g. "7"
+  evPercent: text("ev_percent"),                            // EV% (Repeatability) e.g. "12.3"
+  avPercent: text("av_percent"),                            // AV% (Reproducibility) e.g. "8.4"
+  readings: jsonb("readings"),                              // number[][][] — appraiser × part × trial
   result: text("result").default("acceptable"),             // acceptable | marginal | unacceptable
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
