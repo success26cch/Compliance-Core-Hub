@@ -27,6 +27,7 @@ import {
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
   Gauge, Wrench, ShieldAlert, Pencil, ClipboardList, CalendarDays,
+  ScanSearch, Leaf,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -700,7 +701,7 @@ export default function ISOManager() {
                   management_review:  { icon: BarChart2,     label: "Management Review" },
                   action_items:       { icon: ClipboardList, label: "Action Items" },
                   internal_audit:     { icon: ClipboardCheck,label: "Internal Audits" },
-                  lpa:                { icon: Layers,        label: "Layered Process Audits" },
+                  lpa:                { icon: ScanSearch,    label: "Layered Process Audits" },
                   training:           { icon: GraduationCap, label: "Training" },
                   measurement:        { icon: Activity,      label: "Measurement" },
                 };
@@ -730,7 +731,7 @@ export default function ISOManager() {
                 const META: Record<string, { icon: any; label: string }> = {
                   compliance_obligations: { icon: ShieldAlert, label: "Compliance Obligations" },
                   compliance_calendar:    { icon: CalendarDays, label: "Compliance Calendar" },
-                  aspects_impacts:        { icon: Layers,       label: "Aspects & Impacts" },
+                  aspects_impacts:        { icon: Leaf,         label: "Aspects & Impacts" },
                 };
                 const { icon, label } = META[section];
                 const locked = !canAccessSection(section, isoRole, isSuperadmin);
