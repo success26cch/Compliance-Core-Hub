@@ -59,6 +59,8 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type TrainingEvidenceFile, type InsertTrainingEvidenceFile,
   envAspectsImpacts,
   type EnvAspectImpact, type InsertEnvAspectImpact,
+  hazardAnalysis,
+  type HazardAnalysisRecord, type InsertHazardAnalysis,
   complianceCalendarEvents,
   type ComplianceCalendarEvent, type InsertComplianceCalendarEvent,
 } from "@shared/schema";
@@ -550,6 +552,11 @@ export interface IStorage {
   createEnvAspectImpact(data: InsertEnvAspectImpact): Promise<EnvAspectImpact>;
   updateEnvAspectImpact(id: number, userId: string, data: Partial<InsertEnvAspectImpact>, isSuperadmin?: boolean): Promise<EnvAspectImpact | undefined>;
   deleteEnvAspectImpact(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
+  // ── ISO 45001 Hazard Analysis & Risk Assessment (§6.1.2) ─────────────────
+  getHazardAnalysisRecords(userId: string, isSuperadmin?: boolean): Promise<HazardAnalysisRecord[]>;
+  createHazardAnalysisRecord(data: InsertHazardAnalysis): Promise<HazardAnalysisRecord>;
+  updateHazardAnalysisRecord(id: number, userId: string, data: Partial<InsertHazardAnalysis>, isSuperadmin?: boolean): Promise<HazardAnalysisRecord | undefined>;
+  deleteHazardAnalysisRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2920,6 +2927,54 @@ export class DatabaseStorage implements IStorage {
   async deleteEnvAspectImpact(id: number, userId: string, isSuperadmin = false): Promise<void> {
     const where = isSuperadmin ? eq(envAspectsImpacts.id, id) : and(eq(envAspectsImpacts.id, id), eq(envAspectsImpacts.userId, userId));
     await db.delete(envAspectsImpacts).where(where);
+  }
+
+  // ── ISO 45001 Hazard Analysis & Risk Assessment ───────────────────────────
+  private calcRiskLevel(score: number): string {
+    if (score <= 6) return "low";
+    if (score <= 12) return "medium";
+    if (score <= 19) return "high";
+    return "critical";
+  }
+  async getHazardAnalysisRecords(userId: string, isSuperadmin = false): Promise<HazardAnalysisRecord[]> {
+    const cond = isSuperadmin ? undefined : eq(hazardAnalysis.userId, userId);
+    return db.select().from(hazardAnalysis).where(cond).orderBy(hazardAnalysis.workArea, hazardAnalysis.activityTask);
+  }
+  async createHazardAnalysisRecord(data: InsertHazardAnalysis): Promise<HazardAnalysisRecord> {
+    const riskScore = (data.likelihood ?? 1) * (data.severity ?? 1);
+    const residualRiskScore = (data.residualLikelihood ?? 1) * (data.residualSeverity ?? 1);
+    const [rec] = await db.insert(hazardAnalysis).values({
+      ...data,
+      riskScore,
+      riskLevel: this.calcRiskLevel(riskScore),
+      residualRiskScore,
+      residualRiskLevel: this.calcRiskLevel(residualRiskScore),
+    }).returning();
+    return rec;
+  }
+  async updateHazardAnalysisRecord(id: number, userId: string, data: Partial<InsertHazardAnalysis>, isSuperadmin = false): Promise<HazardAnalysisRecord | undefined> {
+    const where = isSuperadmin ? eq(hazardAnalysis.id, id) : and(eq(hazardAnalysis.id, id), eq(hazardAnalysis.userId, userId));
+    const existing = await db.select().from(hazardAnalysis).where(where).limit(1);
+    if (!existing[0]) return undefined;
+    const likelihood = data.likelihood ?? existing[0].likelihood;
+    const severity = data.severity ?? existing[0].severity;
+    const residualLikelihood = data.residualLikelihood ?? existing[0].residualLikelihood;
+    const residualSeverity = data.residualSeverity ?? existing[0].residualSeverity;
+    const riskScore = likelihood * severity;
+    const residualRiskScore = residualLikelihood * residualSeverity;
+    const [rec] = await db.update(hazardAnalysis).set({
+      ...data,
+      riskScore,
+      riskLevel: this.calcRiskLevel(riskScore),
+      residualRiskScore,
+      residualRiskLevel: this.calcRiskLevel(residualRiskScore),
+      updatedAt: new Date(),
+    }).where(where).returning();
+    return rec;
+  }
+  async deleteHazardAnalysisRecord(id: number, userId: string, isSuperadmin = false): Promise<void> {
+    const where = isSuperadmin ? eq(hazardAnalysis.id, id) : and(eq(hazardAnalysis.id, id), eq(hazardAnalysis.userId, userId));
+    await db.delete(hazardAnalysis).where(where);
   }
 }
 

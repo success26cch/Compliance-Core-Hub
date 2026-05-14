@@ -27,7 +27,7 @@ import {
   Mail, BarChart2, GraduationCap, Loader2, Compass, Globe, TrendingUp,
   TrendingDown, Lightbulb, AlertCircle, UserCheck, ChevronLeft, Printer, Truck,
   Gauge, Wrench, ShieldAlert, Pencil, ClipboardList, CalendarDays,
-  ScanSearch, Leaf,
+  ScanSearch, Leaf, HardHat,
 } from "lucide-react";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -52,6 +52,7 @@ import GlobalIsaWidget from "./GlobalIsaWidget";
 import ComplianceObligationsModule from "./ComplianceObligationsModule";
 import ComplianceCalendarModule from "./ComplianceCalendarModule";
 import AspectsImpactsModule from "./AspectsImpactsModule";
+import HazardAnalysisModule from "./HazardAnalysisModule";
 
 const ISA_STANDARDS = [
   { code: "9001", label: "Quality" },
@@ -276,7 +277,7 @@ const ROLE_COLORS: Record<string, string> = {
   auditor: "bg-accent/10 text-accent border-accent/30",
 };
 
-type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts';
+type SectionKey = 'context_org' | 'nc' | 'documentation' | 'process_map' | 'system_profile' | 'roles_raci' | 'communication' | 'risk' | 'management_review' | 'action_items' | 'internal_audit' | 'lpa' | 'training' | 'measurement' | 'apqp' | 'supplier_management' | 'calibration' | 'preventive_maintenance' | 'compliance_obligations' | 'compliance_calendar' | 'aspects_impacts' | 'hazard_analysis';
 
 const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   context_org:       [null, undefined, 'librarian', 'trainer', 'auditor'],
@@ -300,6 +301,7 @@ const ROLE_SECTION_ACCESS: Record<SectionKey, IsoRoleType[]> = {
   compliance_obligations:   [null, undefined, 'auditor'],
   compliance_calendar:      [null, undefined, 'auditor'],
   aspects_impacts:          [null, undefined, 'auditor'],
+  hazard_analysis:          [null, undefined, 'auditor'],
 };
 
 function canAccessSection(section: SectionKey, role: IsoRoleType, isSuperadmin: boolean): boolean {
@@ -741,6 +743,16 @@ export default function ISOManager() {
                     testId={`nav-${section.replace(/_/g, '-')}`} locked={locked} collapsed={!sidebarOpen} />
                 );
               })}
+              {/* ISO 45001 — Hazard Analysis (only when 45001 is in scope) */}
+              {(project?.standard?.includes('45001') || isSuperadmin) && (() => {
+                const locked = !canAccessSection('hazard_analysis', isoRole, isSuperadmin);
+                return (
+                  <ModuleNavButton active={activeSection === 'hazard_analysis'}
+                    onClick={() => handleSectionChange('hazard_analysis')}
+                    icon={HardHat} label="Hazard Analysis"
+                    testId="nav-hazard-analysis" locked={locked} collapsed={!sidebarOpen} />
+                );
+              })()}
             </div>
 
             {/* Advanced Modules */}
@@ -1032,6 +1044,12 @@ export default function ISOManager() {
                 {canAccessSection('aspects_impacts', isoRole, isSuperadmin)
                   ? <AspectsImpactsModule />
                   : <div className="p-4 sm:p-6"><LockedModuleView section="aspects_impacts" /></div>}
+              </div>
+            ) : activeSection === 'hazard_analysis' ? (
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {canAccessSection('hazard_analysis', isoRole, isSuperadmin)
+                  ? <HazardAnalysisModule />
+                  : <div className="p-4 sm:p-6"><LockedModuleView section="hazard_analysis" /></div>}
               </div>
             ) : (
               <>

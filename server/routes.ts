@@ -11285,5 +11285,39 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ── ISO 45001 Hazard Analysis & Risk Assessment ───────────────────────────
+  app.get("/api/iso/hazard-analysis", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const records = await storage.getHazardAnalysisRecords(req.session.userId, req.session.isSuperadmin);
+      res.json(records);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post("/api/iso/hazard-analysis", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const rec = await storage.createHazardAnalysisRecord({ ...req.body, userId: req.session.userId });
+      res.json(rec);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.patch("/api/iso/hazard-analysis/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const rec = await storage.updateHazardAnalysisRecord(Number(req.params.id), req.session.userId, req.body, req.session.isSuperadmin);
+      if (!rec) return res.status(404).json({ message: "Not found" });
+      res.json(rec);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/iso/hazard-analysis/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteHazardAnalysisRecord(Number(req.params.id), req.session.userId, req.session.isSuperadmin);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   return httpServer;
 }

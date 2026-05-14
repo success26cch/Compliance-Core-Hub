@@ -2956,3 +2956,48 @@ export const envAspectsImpacts = pgTable("env_aspects_impacts", {
 export const insertEnvAspectImpactSchema = createInsertSchema(envAspectsImpacts).omit({ id: true, createdAt: true, updatedAt: true });
 export type EnvAspectImpact = typeof envAspectsImpacts.$inferSelect;
 export type InsertEnvAspectImpact = z.infer<typeof insertEnvAspectImpactSchema>;
+
+// ─── ISO 45001 Hazard Analysis & Risk Assessment ──────────────────────────────
+export const hazardAnalysis = pgTable("hazard_analysis", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  isoProjectId: integer("iso_project_id"),
+  // Hazard Identification (ISO 45001 §6.1.2)
+  workArea: text("work_area"),
+  activityTask: text("activity_task").notNull(),
+  hazardDescription: text("hazard_description").notNull(),
+  hazardType: text("hazard_type").notNull().default("physical"), // physical|chemical|biological|ergonomic|psychosocial|electrical|mechanical|fire|environmental|other
+  operatingCondition: text("operating_condition").notNull().default("routine"), // routine|non-routine|emergency
+  whoAffected: text("who_affected").array().default([]), // employees|contractors|visitors|public
+  // Potential Consequences
+  consequenceDescription: text("consequence_description"),
+  // Existing Controls
+  existingControls: text("existing_controls"),
+  // Inherent Risk Score (before additional controls) — Likelihood × Severity
+  likelihood: integer("likelihood").notNull().default(1),       // 1–5
+  severity: integer("severity").notNull().default(1),           // 1–5
+  riskScore: integer("risk_score").notNull().default(1),        // computed L × S (1–25)
+  riskLevel: text("risk_level").notNull().default("low"),       // low|medium|high|critical
+  // Hierarchy of Controls applied (ISO 45001 §8.1.2)
+  controlHierarchy: text("control_hierarchy").array().default([]), // elimination|substitution|engineering|administrative|ppe
+  plannedControls: text("planned_controls"),
+  // Residual Risk (after controls)
+  residualLikelihood: integer("residual_likelihood").notNull().default(1),
+  residualSeverity: integer("residual_severity").notNull().default(1),
+  residualRiskScore: integer("residual_risk_score").notNull().default(1),
+  residualRiskLevel: text("residual_risk_level").notNull().default("low"),
+  // Action & Tracking
+  actionRequired: text("action_required"),
+  responsiblePerson: text("responsible_person"),
+  targetDate: text("target_date"),
+  status: text("status").notNull().default("open"), // open|in-progress|closed
+  // References
+  legalRequirement: text("legal_requirement"),
+  iso45001Clause: text("iso45001_clause").default("6.1.2"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertHazardAnalysisSchema = createInsertSchema(hazardAnalysis).omit({ id: true, createdAt: true, updatedAt: true });
+export type HazardAnalysisRecord = typeof hazardAnalysis.$inferSelect;
+export type InsertHazardAnalysis = z.infer<typeof insertHazardAnalysisSchema>;
