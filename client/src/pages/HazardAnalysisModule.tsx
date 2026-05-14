@@ -273,6 +273,25 @@ function scoreToLevel(score: number): string {
   return "critical";
 }
 
+function BulletList({ text }: { text: string | null | undefined }) {
+  if (!text) return <span className="text-sm text-muted-foreground">—</span>;
+  const items = text
+    .split(/\n|;|(?<=\w),\s*/)
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (items.length <= 1) return <p className="text-sm text-foreground leading-relaxed">{text}</p>;
+  return (
+    <ul className="space-y-1 pl-1">
+      {items.map((item, i) => (
+        <li key={i} className="flex items-start gap-2 text-sm text-foreground leading-relaxed">
+          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0" />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function RiskBadge({ score, level }: { score: number; level: string }) {
   const meta = riskLevelMeta(level);
   return (
@@ -684,7 +703,7 @@ export default function HazardAnalysisModule() {
                             </div>
                             <div>
                               <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Existing Controls</p>
-                              <p className="text-sm text-foreground leading-relaxed">{r.existingControls || "—"}</p>
+                              <BulletList text={r.existingControls} />
                             </div>
                             <div>
                               <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Who is Affected</p>
@@ -701,15 +720,15 @@ export default function HazardAnalysisModule() {
                             </div>
                             <div>
                               <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Planned / Additional Controls</p>
-                              <p className="text-sm text-foreground leading-relaxed">{r.plannedControls || "—"}</p>
+                              <BulletList text={r.plannedControls} />
                             </div>
                             <div>
                               <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Action Required</p>
-                              <p className="text-sm text-foreground leading-relaxed">{r.actionRequired || "—"}</p>
+                              <BulletList text={r.actionRequired} />
                             </div>
                             <div>
                               <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Legal / Regulatory Requirement</p>
-                              <p className="text-sm text-foreground leading-relaxed">{r.legalRequirement || "—"}</p>
+                              <BulletList text={r.legalRequirement} />
                             </div>
                             <div>
                               <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">ISO 45001 Clause</p>
