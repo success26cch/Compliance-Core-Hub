@@ -3235,6 +3235,35 @@ function EmptyState({ onNewDoc, onAskIsa }: any) {
   );
 }
 
+const ISO_45001_CLAUSES = [
+  { clause: "4.1", title: "Understanding the organization and its context (OH&S)" },
+  { clause: "4.2", title: "Understanding the needs and expectations of workers and interested parties" },
+  { clause: "4.3", title: "Determining the scope of the OH&S management system" },
+  { clause: "5.1", title: "Leadership and commitment — OH&S" },
+  { clause: "5.2", title: "OH&S policy" },
+  { clause: "5.3", title: "Organizational roles, responsibilities and authorities — OH&S" },
+  { clause: "5.4", title: "Consultation and participation of workers" },
+  { clause: "6.1.1", title: "Actions to address OH&S risks and opportunities" },
+  { clause: "6.1.2", title: "Hazard identification and assessment of risks" },
+  { clause: "6.1.3", title: "Determination of legal and other requirements" },
+  { clause: "6.2", title: "OH&S objectives and planning to achieve them" },
+  { clause: "7.2", title: "Competence — OH&S" },
+  { clause: "7.3", title: "Awareness — OH&S" },
+  { clause: "7.4", title: "Communication — OH&S" },
+  { clause: "7.5", title: "Documented information — OH&S" },
+  { clause: "8.1.1", title: "Operational planning and control — OH&S" },
+  { clause: "8.1.2", title: "Eliminating hazards and reducing OH&S risks (hierarchy of controls)" },
+  { clause: "8.1.3", title: "Management of change" },
+  { clause: "8.1.4", title: "Procurement, contractors and outsourcing" },
+  { clause: "8.2", title: "Emergency preparedness and response" },
+  { clause: "9.1.1", title: "Monitoring, measurement, analysis and performance evaluation" },
+  { clause: "9.1.2", title: "Evaluation of compliance" },
+  { clause: "9.2", title: "Internal audit — OH&S" },
+  { clause: "9.3", title: "Management review — OH&S" },
+  { clause: "10.2", title: "Incident investigation, nonconformity and corrective action" },
+  { clause: "10.3", title: "Continual improvement — OH&S" },
+];
+
 const ISO_9001_CLAUSES = [
   { clause: "4.1", title: "Understanding the organization and its context" },
   { clause: "4.2", title: "Understanding the needs and expectations of interested parties" },
@@ -3345,8 +3374,11 @@ function ClauseCoverageMap({ documents, onAskIsa, complianceResults }: { documen
         </div>
       )}
 
-      {/* Clause list */}
-      <div className="overflow-hidden rounded-lg border bg-white">
+      {/* ISO 9001 Clause list */}
+      <div className="overflow-hidden rounded-lg border bg-white dark:bg-card">
+        <div className="px-4 py-2.5 bg-primary/5 border-b border-primary/10 flex items-center gap-2">
+          <span className="text-[11px] font-black uppercase tracking-widest text-primary/70">ISO 9001:2015 — Quality Management System</span>
+        </div>
         <table className="w-full text-sm" data-testid="table-coverage-map">
           <thead className="bg-muted/50 border-b">
             <tr>
@@ -3377,6 +3409,65 @@ function ClauseCoverageMap({ documents, onAskIsa, complianceResults }: { documen
                     {complianceVerdict === "Partially Compliant" && <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-xs">Partially Compliant</Badge>}
                     {complianceVerdict === "Non-Compliant" && <Badge className="bg-red-100 text-red-800 border border-red-200 text-xs">Non-Compliant</Badge>}
                     {complianceVerdict === null && <span className="text-xs text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {clauseDocs.length === 0 ? (
+                      <span className="text-xs text-muted-foreground italic">No documents mapped</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {clauseDocs.slice(0, 2).map(doc => (
+                          <span key={doc.id} className="text-xs bg-muted px-2 py-0.5 rounded">{doc.title}</span>
+                        ))}
+                        {clauseDocs.length > 2 && <span className="text-xs text-muted-foreground">+{clauseDocs.length - 2} more</span>}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ISO 45001 OH&S Documentation Coverage */}
+      <div className="overflow-hidden rounded-lg border bg-white dark:bg-card">
+        <div className="px-4 py-2.5 bg-orange-50 dark:bg-orange-950/20 border-b border-orange-200 dark:border-orange-800/40 flex items-center justify-between gap-2">
+          <span className="text-[11px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-400">ISO 45001:2018 — Occupational Health &amp; Safety Management System</span>
+          {(() => {
+            const ohs45Covered = ISO_45001_CLAUSES.filter(({ clause }) =>
+              documents.some(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status !== "obsolete")
+            ).length;
+            const ohs45Pct = Math.round((ohs45Covered / ISO_45001_CLAUSES.length) * 100);
+            return (
+              <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400 shrink-0">
+                {ohs45Covered}/{ISO_45001_CLAUSES.length} clauses · {ohs45Pct}%
+              </span>
+            );
+          })()}
+        </div>
+        <table className="w-full text-sm" data-testid="table-coverage-map-45001">
+          <thead className="bg-muted/50 border-b">
+            <tr>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-20">Clause</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Requirement</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-28">Status</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Documents</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {ISO_45001_CLAUSES.map(({ clause, title }) => {
+              const clauseDocs = documents.filter(doc => doc.isoClause && doc.isoClause.includes(clause) && doc.status !== "obsolete");
+              const hasApproved = clauseDocs.some(d => d.status === "approved");
+              const hasDraft = clauseDocs.some(d => d.status === "draft" || d.status === "in_review");
+              const status = clauseDocs.length === 0 ? "none" : hasApproved ? "approved" : hasDraft ? "draft" : "none";
+              return (
+                <tr key={`45001-${clause}`} className="hover:bg-muted/10" data-testid={`row-coverage-45001-${clause}`}>
+                  <td className="px-4 py-3 font-mono text-xs font-bold text-orange-600 dark:text-orange-400">{clause}</td>
+                  <td className="px-4 py-3 text-foreground text-sm">{title}</td>
+                  <td className="px-4 py-3">
+                    {status === "approved" && <Badge className="bg-green-100 text-green-800 border border-green-200 text-xs">Approved</Badge>}
+                    {status === "draft" && <Badge className="bg-gray-100 text-gray-700 border border-gray-200 text-xs">Draft</Badge>}
+                    {status === "none" && <Badge className="bg-red-50 text-red-600 border border-red-200 text-xs">Not Addressed</Badge>}
                   </td>
                   <td className="px-4 py-3">
                     {clauseDocs.length === 0 ? (
