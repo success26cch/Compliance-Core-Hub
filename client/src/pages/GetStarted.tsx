@@ -352,7 +352,7 @@ export default function GetStarted() {
                   <th className="text-center p-4 bg-muted/50 dark:bg-muted/20 rounded-tr-md font-semibold text-foreground" data-testid="th-employer">
                     <div className="flex flex-col items-center gap-1">
                       <span>Employer Platform</span>
-                      <span className="text-lg font-bold text-primary">$599<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                      <span className="text-sm font-semibold text-accent">Contact us for a demo &amp; pricing</span>
                     </div>
                   </th>
                 </tr>
