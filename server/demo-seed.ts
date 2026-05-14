@@ -7,17 +7,20 @@ import { isoProjects, users, nonconformances } from "@shared/schema";
 import { eq, count, sql } from "drizzle-orm";
 
 // ─── CCI Chemical ISO 45001 Hazard Analysis seed data ─────────────────────────
+// Scoring: P × G × M  P=1/3/7/10  G=1/3/7/10  M=1/2/3/4
+// Risk Levels: Low≤30 / Medium≤100 / High≤280 / Critical>280
 const CCI_HAZARDS: Array<{
   workArea: string; activityTask: string; hazardDescription: string;
   hazardType: string; operatingCondition: string; whoAffected: string[];
   consequenceDescription: string; existingControls: string;
-  likelihood: number; severity: number;
+  probability: number; gravity: number; magnitude: number;
   controlHierarchy: string[]; plannedControls: string;
-  residualLikelihood: number; residualSeverity: number;
+  residualProbability: number; residualGravity: number; residualMagnitude: number;
   actionRequired: string | null; responsiblePerson: string;
   targetDate: string | null; status: string;
   legalRequirement: string; iso45001Clause: string; notes: string | null;
 }> = [
+  // P=1/3/7/10  G=1/3/7/10  M=1/2/3/4  Score=P×G×M
   {
     workArea: "Chemical Blending",
     activityTask: "Batch blending — glycol ether addition",
@@ -26,10 +29,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees", "contractors"],
     consequenceDescription: "Dermatitis, eye irritation, respiratory irritation; EGBE is a reproductive hazard at sustained high exposure",
     existingControls: "SDS training (HazCom 2012), nitrile gloves, safety glasses, local exhaust ventilation at blend stations",
-    likelihood: 3, severity: 4,
+    probability: 7, gravity: 7, magnitude: 2,  // Score 98 — Medium
     controlHierarchy: ["engineering", "administrative", "ppe"],
     plannedControls: "Install enclosed drum-transfer pump system to minimize open handling; upgrade LEV to ASHRAE capture-velocity spec",
-    residualLikelihood: 2, residualSeverity: 3,
+    residualProbability: 3, residualGravity: 3, residualMagnitude: 2,  // Score 18 — Low
     actionRequired: null, responsiblePerson: "EHS Coordinator",
     targetDate: null, status: "closed",
     legalRequirement: "OSHA 29 CFR 1910.1000 (PELs); OSHA HazCom 2012 (29 CFR 1910.1200)",
@@ -43,10 +46,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees", "contractors"],
     consequenceDescription: "Flash fire or explosion causing severe burns, structural damage, or fatality",
     existingControls: "Bonding/grounding cables on all containers, explosion-proof electrical in blending area, ABC extinguishers, no-ignition-source policy",
-    likelihood: 2, severity: 5,
+    probability: 3, gravity: 10, magnitude: 2,  // Score 60 — Medium
     controlHierarchy: ["engineering", "administrative", "ppe"],
     plannedControls: "Install continuous LEL monitoring with audible/visual alarm; annual fire suppression system inspection",
-    residualLikelihood: 1, residualSeverity: 5,
+    residualProbability: 1, residualGravity: 10, residualMagnitude: 2,  // Score 20 — Low
     actionRequired: null, responsiblePerson: "Production Supervisor",
     targetDate: null, status: "closed",
     legalRequirement: "OSHA 29 CFR 1910.119 (PSM); NFPA 30 (Flammable Liquids Code); OSHA 29 CFR 1910.106",
@@ -60,10 +63,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees", "contractors", "visitors"],
     consequenceDescription: "Crush injuries, fractures, traumatic brain injury, or fatality",
     existingControls: "Forklift certification training, horn use in blind spots, 5 mph speed limit, yellow floor striping",
-    likelihood: 3, severity: 5,
+    probability: 7, gravity: 10, magnitude: 3,  // Score 210 — High
     controlHierarchy: ["engineering", "administrative"],
     plannedControls: "Install physical barriers (Armco barriers or floor-mounted bollards) separating pedestrian walkways from forklift aisles; proximity warning system on forklifts",
-    residualLikelihood: 2, residualSeverity: 4,
+    residualProbability: 3, residualGravity: 7, residualMagnitude: 2,  // Score 42 — Medium
     actionRequired: "Install physical pedestrian separation barriers in Warehouse Bays 1–3 and Shipping dock area",
     responsiblePerson: "Warehouse Supervisor",
     targetDate: "2026-09-30", status: "in-progress",
@@ -78,10 +81,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees"],
     consequenceDescription: "Musculoskeletal disorders: lower back strain, rotator cuff injury, herniated disc — leading cause of lost-time injuries",
     existingControls: "Team-lift policy for loads >50 lbs, pre-shift stretching program, back-support belts available",
-    likelihood: 4, severity: 3,
+    probability: 10, gravity: 7, magnitude: 3,  // Score 210 — High
     controlHierarchy: ["substitution", "engineering", "administrative"],
     plannedControls: "Procure drum tilters and drum-handling dollies for fill line; redesign workstation to reduce reach distance",
-    residualLikelihood: 2, residualSeverity: 3,
+    residualProbability: 3, residualGravity: 3, residualMagnitude: 2,  // Score 18 — Low
     actionRequired: "Evaluate and purchase mechanical drum handling equipment for Fill Lines 1 and 2",
     responsiblePerson: "Production Supervisor",
     targetDate: "2026-07-31", status: "in-progress",
@@ -96,10 +99,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees"],
     consequenceDescription: "Chemical burns to eyes, face, and skin; risk of permanent eye injury or blindness",
     existingControls: "Fume hood for all acid/base work, safety glasses, nitrile gloves, emergency eyewash within 10 seconds (ANSI Z358.1)",
-    likelihood: 3, severity: 4,
+    probability: 7, gravity: 7, magnitude: 2,  // Score 98 — Medium
     controlHierarchy: ["engineering", "administrative", "ppe"],
     plannedControls: "Require face shield (not just safety glasses) for all concentrated acid/base work; annual eyewash station inspection log",
-    residualLikelihood: 1, residualSeverity: 3,
+    residualProbability: 1, residualGravity: 3, residualMagnitude: 2,  // Score 6 — Low
     actionRequired: null, responsiblePerson: "QC Lab Manager",
     targetDate: null, status: "closed",
     legalRequirement: "OSHA 29 CFR 1910.133 (Eye/Face Protection); OSHA 29 CFR 1910.151 (Medical Services/First Aid)",
@@ -113,10 +116,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees"],
     consequenceDescription: "Amputation, crush injury, or fatality if lockout/tagout procedure not followed",
     existingControls: "Written LOTO procedure (SOP-MNT-001), annual LOTO training, energy-isolation locks assigned per operator",
-    likelihood: 2, severity: 5,
+    probability: 3, gravity: 10, magnitude: 2,  // Score 60 — Medium
     controlHierarchy: ["elimination", "engineering", "administrative"],
     plannedControls: "Install zero-energy-state verification step in electronic CMMS work order; add LOTO audit to monthly EHS inspection checklist",
-    residualLikelihood: 1, residualSeverity: 5,
+    residualProbability: 1, residualGravity: 10, residualMagnitude: 1,  // Score 10 — Low
     actionRequired: null, responsiblePerson: "Maintenance Supervisor",
     targetDate: null, status: "closed",
     legalRequirement: "OSHA 29 CFR 1910.147 (Control of Hazardous Energy — LOTO); OSHA 29 CFR 1910.212 (Machine Guarding)",
@@ -130,10 +133,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees", "contractors"],
     consequenceDescription: "Electrocution, cardiac arrest, severe arc flash burns (up to 40 cal/cm² incident energy)",
     existingControls: "Qualified electrician requirement, LOTO prior to panel entry, arc flash labels on all 480V equipment, FR arc-rated PPE available",
-    likelihood: 2, severity: 5,
+    probability: 3, gravity: 10, magnitude: 3,  // Score 90 — Medium
     controlHierarchy: ["engineering", "administrative", "ppe"],
     plannedControls: "Complete arc flash hazard analysis (NFPA 70E) for all 480V panels; add PPE category label to each panel door",
-    residualLikelihood: 1, residualSeverity: 4,
+    residualProbability: 1, residualGravity: 7, residualMagnitude: 2,  // Score 14 — Low
     actionRequired: "Commission arc flash study for filling line electrical distribution panels",
     responsiblePerson: "Maintenance Supervisor",
     targetDate: "2026-12-31", status: "open",
@@ -148,10 +151,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees", "contractors", "public"],
     consequenceDescription: "Acute chemical exposure to responders; environmental contamination of storm drain or POTW; OSHA/EPA regulatory violation",
     existingControls: "SPCC Plan current (rev. 2024), spill kits at each blending station and dock, 8-hour HAZWOPER first-responder awareness training for all plant employees",
-    likelihood: 2, severity: 4,
+    probability: 3, gravity: 7, magnitude: 3,  // Score 63 — Medium
     controlHierarchy: ["administrative", "ppe"],
     plannedControls: "Conduct annual tabletop emergency response drill; update Emergency Response Plan with Ohio SERC notification contacts",
-    residualLikelihood: 1, residualSeverity: 3,
+    residualProbability: 1, residualGravity: 3, residualMagnitude: 3,  // Score 9 — Low
     actionRequired: "Schedule Q3 2026 full-scale spill response drill; update ERP contact list",
     responsiblePerson: "EHS Coordinator",
     targetDate: "2026-09-15", status: "open",
@@ -166,10 +169,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees"],
     consequenceDescription: "Mental health disorders, burnout, fatigue-related errors, increased absenteeism and turnover",
     existingControls: "EAP (Employee Assistance Program) available at no cost, open-door policy, annual performance reviews",
-    likelihood: 4, severity: 2,
+    probability: 10, gravity: 3, magnitude: 3,  // Score 90 — Medium
     controlHierarchy: ["administrative"],
     plannedControls: "Implement annual employee wellbeing survey; review shift-rotation policy to limit consecutive night shifts; mental health awareness training for supervisors",
-    residualLikelihood: 3, residualSeverity: 2,
+    residualProbability: 7, residualGravity: 3, residualMagnitude: 3,  // Score 63 — Medium
     actionRequired: "Launch wellbeing survey by Q2 2026; deliver supervisor mental health training",
     responsiblePerson: "HR Manager",
     targetDate: "2026-06-30", status: "open",
@@ -184,10 +187,10 @@ const CCI_HAZARDS: Array<{
     whoAffected: ["employees"],
     consequenceDescription: "High-velocity projectile (cylinder becomes 'rocket') causing fatal impact injury; asphyxiation in confined space from inert gas leak",
     existingControls: "Cylinders chained in upright position at all times, protective valve caps installed when not in use, CGA handling training for all warehouse personnel",
-    likelihood: 2, severity: 4,
+    probability: 3, gravity: 10, magnitude: 2,  // Score 60 — Medium
     controlHierarchy: ["engineering", "administrative"],
     plannedControls: "Install dedicated cylinder storage cage with fall-prevention chains; add cylinder inspection to monthly EHS walk checklist",
-    residualLikelihood: 1, residualSeverity: 3,
+    residualProbability: 1, residualGravity: 3, residualMagnitude: 2,  // Score 6 — Low
     actionRequired: null, responsiblePerson: "Warehouse Supervisor",
     targetDate: null, status: "closed",
     legalRequirement: "OSHA 29 CFR 1910.101 (Compressed Gases — General Requirements); CGA P-1",
@@ -336,19 +339,19 @@ async function seedHazardsIfMissing(): Promise<void> {
 }
 
 async function seedHazardsForUser(userId: string): Promise<void> {
+  // P × G × M scoring: Low≤30 / Medium≤100 / High≤280 / Critical>280
   function calcLevel(score: number): string {
-    if (score <= 6) return "low";
-    if (score <= 12) return "medium";
-    if (score <= 19) return "high";
+    if (score <= 30) return "low";
+    if (score <= 100) return "medium";
+    if (score <= 280) return "high";
     return "critical";
   }
 
   for (const h of CCI_HAZARDS) {
-    const riskScore = h.likelihood * h.severity;
-    const residualRiskScore = h.residualLikelihood * h.residualSeverity;
+    const riskScore = h.probability * h.gravity * h.magnitude;
+    const residualRiskScore = h.residualProbability * h.residualGravity * h.residualMagnitude;
     const riskLevel = calcLevel(riskScore);
     const residualRiskLevel = calcLevel(residualRiskScore);
-    // PostgreSQL array literal format: {val1,val2}
     const whoLiteral = "{" + h.whoAffected.join(",") + "}";
     const controlLiteral = "{" + h.controlHierarchy.join(",") + "}";
 
@@ -357,9 +360,10 @@ async function seedHazardsForUser(userId: string): Promise<void> {
         user_id, work_area, activity_task, hazard_description, hazard_type,
         operating_condition, who_affected,
         consequence_description, existing_controls,
-        likelihood, severity, risk_score, risk_level,
+        probability, gravity, magnitude, risk_score, risk_level,
         control_hierarchy, planned_controls,
-        residual_likelihood, residual_severity, residual_risk_score, residual_risk_level,
+        residual_probability, residual_gravity, residual_magnitude,
+        residual_risk_score, residual_risk_level,
         action_required, responsible_person, target_date, status,
         legal_requirement, iso45001_clause, notes,
         created_at, updated_at
@@ -367,9 +371,10 @@ async function seedHazardsForUser(userId: string): Promise<void> {
         ${userId}, ${h.workArea}, ${h.activityTask}, ${h.hazardDescription}, ${h.hazardType},
         ${h.operatingCondition}, ${whoLiteral}::text[],
         ${h.consequenceDescription}, ${h.existingControls},
-        ${h.likelihood}, ${h.severity}, ${riskScore}, ${riskLevel},
+        ${h.probability}, ${h.gravity}, ${h.magnitude}, ${riskScore}, ${riskLevel},
         ${controlLiteral}::text[], ${h.plannedControls},
-        ${h.residualLikelihood}, ${h.residualSeverity}, ${residualRiskScore}, ${residualRiskLevel},
+        ${h.residualProbability}, ${h.residualGravity}, ${h.residualMagnitude},
+        ${residualRiskScore}, ${residualRiskLevel},
         ${h.actionRequired}, ${h.responsiblePerson}, ${h.targetDate ?? null}, ${h.status},
         ${h.legalRequirement}, ${h.iso45001Clause}, ${h.notes},
         NOW(), NOW()

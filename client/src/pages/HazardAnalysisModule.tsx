@@ -28,14 +28,17 @@ interface HazardRecord {
   whoAffected: string[] | null;
   consequenceDescription: string | null;
   existingControls: string | null;
-  likelihood: number;
-  severity: number;
-  riskScore: number;
+  // P × G × M scoring (AIAG / ISO 45001 industry standard)
+  probability: number;   // P: 1=Not-Probable, 3=Low, 7=High, 10=Very High
+  gravity: number;       // G: 1=Negligible, 3=Low, 7=High, 10=Very High
+  magnitude: number;     // M: 1=Very High Prevention … 4=No Prevention
+  riskScore: number;     // P × G × M  (max 400)
   riskLevel: string;
   controlHierarchy: string[] | null;
   plannedControls: string | null;
-  residualLikelihood: number;
-  residualSeverity: number;
+  residualProbability: number;
+  residualGravity: number;
+  residualMagnitude: number;
   residualRiskScore: number;
   residualRiskLevel: string;
   actionRequired: string | null;
@@ -76,20 +79,26 @@ const CONTROL_HIERARCHY_OPTIONS = [
   { value: "ppe",             label: "PPE",                   desc: "Personal Protective Equipment" },
 ];
 
-const LIKELIHOOD_OPTS = [
-  { value: 1, label: "1 – Rare",       desc: "May happen only in exceptional circumstances" },
-  { value: 2, label: "2 – Unlikely",   desc: "Could happen but not expected" },
-  { value: 3, label: "3 – Possible",   desc: "Might happen occasionally" },
-  { value: 4, label: "4 – Likely",     desc: "Will probably happen; occurs sometimes" },
-  { value: 5, label: "5 – Almost Certain", desc: "Expected to occur in most circumstances" },
+// AIAG / ISO 45001 P × G × M scoring — from reference criteria document
+const PROBABILITY_OPTS = [
+  { value: 1,  label: "1 – Not-Probable",  desc: "Never occurred in the past. Only a theoretical risk. Would occur only if many unpredictable and independent events occur together." },
+  { value: 3,  label: "3 – Low",           desc: "Few cases registered (one or two) due to very special reasons. Possible but not probable. Would be surprising if it occurred." },
+  { value: 7,  label: "7 – High",          desc: "Probable event. If it occurred it would be modestly surprising. Some events have occurred even if no consequences were recorded." },
+  { value: 10, label: "10 – Very High",    desc: "Relevant risk for occurrence. The event will occur if appropriate preventive actions are not taken. No surprise if the event would occur." },
 ];
 
-const SEVERITY_OPTS = [
-  { value: 1, label: "1 – Negligible",   desc: "No injury; first-aid only" },
-  { value: 2, label: "2 – Minor",        desc: "Minor injury; medical treatment required" },
-  { value: 3, label: "3 – Moderate",     desc: "Significant injury; restricted work or lost time" },
-  { value: 4, label: "4 – Major",        desc: "Serious injury; permanent partial disability" },
-  { value: 5, label: "5 – Catastrophic", desc: "Fatality or permanent total disability" },
+const GRAVITY_OPTS = [
+  { value: 1,  label: "1 – Negligible",  desc: "Small damage, no consequence for the body. Damage within 500 USD." },
+  { value: 3,  label: "3 – Low",         desc: "Damage with economic values between 500 and 5,000 USD. First aid as possible consequence." },
+  { value: 7,  label: "7 – High",        desc: "Damage with economic values between 5,000 and 50,000 USD. Possible injuries as consequence of the accident." },
+  { value: 10, label: "10 – Very High",  desc: "Very high loss of money. Company reputation can be damaged. Risk to stop operations. Fatal injuries possible." },
+];
+
+const MAGNITUDE_OPTS = [
+  { value: 1, label: "1 – Very High Prevention", desc: "Equipment/Technology: top-level preventive actions automatically applied. People own the process. No injuries recorded." },
+  { value: 2, label: "2 – High Prevention",      desc: "Technology does not allow automatic prevention. Prevention done through procedures. PPE correctly used. No injuries recorded." },
+  { value: 3, label: "3 – Low Prevention",       desc: "Not easy to upgrade equipment. Prevention done by people with no procedures applied. Injuries recorded. Adequate skilled people." },
+  { value: 4, label: "4 – No Prevention",        desc: "No automatic prevention possible. No prevention in place. PPE not correctly used. Injuries recorded. Low level of awareness." },
 ];
 
 const CLAUSES = [
@@ -115,11 +124,12 @@ function riskLevelMeta(level: string) {
   }
 }
 
-function calcScore(l: number, s: number) { return l * s; }
+// P × G × M  Risk Score = Probability × Gravity × Magnitude  (max 400)
+function calcScore(p: number, g: number, m: number) { return p * g * m; }
 function scoreToLevel(score: number): string {
-  if (score <= 6) return "low";
-  if (score <= 12) return "medium";
-  if (score <= 19) return "high";
+  if (score <= 30)  return "low";
+  if (score <= 100) return "medium";
+  if (score <= 280) return "high";
   return "critical";
 }
 
@@ -153,9 +163,9 @@ function printHazardRegister(records: HazardRecord[]) {
   <table><thead><tr>
     <th>#</th><th>Work Area</th><th>Activity / Task</th><th>Hazard</th><th>Type</th>
     <th>Condition</th><th>Who Affected</th><th>Consequence</th><th>Existing Controls</th>
-    <th>L</th><th>S</th><th>Risk Score</th>
+    <th>P</th><th>G</th><th>M</th><th>Risk Score (P×G×M)</th>
     <th>Control Hierarchy</th><th>Planned Controls</th>
-    <th>Res. L</th><th>Res. S</th><th>Residual Risk</th>
+    <th>Res. P</th><th>Res. G</th><th>Res. M</th><th>Residual Risk</th>
     <th>Action Required</th><th>Responsible</th><th>Target Date</th><th>Status</th>
   </tr></thead><tbody>
   ${records.map((r, i) => `<tr>
@@ -168,13 +178,15 @@ function printHazardRegister(records: HazardRecord[]) {
     <td>${(r.whoAffected || []).join(", ") || "—"}</td>
     <td>${r.consequenceDescription || "—"}</td>
     <td>${r.existingControls || "—"}</td>
-    <td style="text-align:center">${r.likelihood}</td>
-    <td style="text-align:center">${r.severity}</td>
+    <td style="text-align:center">${r.probability}</td>
+    <td style="text-align:center">${r.gravity}</td>
+    <td style="text-align:center">${r.magnitude}</td>
     ${levelCell(r.riskLevel, r.riskScore)}
     <td>${(r.controlHierarchy || []).join(", ") || "—"}</td>
     <td>${r.plannedControls || "—"}</td>
-    <td style="text-align:center">${r.residualLikelihood}</td>
-    <td style="text-align:center">${r.residualSeverity}</td>
+    <td style="text-align:center">${r.residualProbability}</td>
+    <td style="text-align:center">${r.residualGravity}</td>
+    <td style="text-align:center">${r.residualMagnitude}</td>
     ${levelCell(r.residualRiskLevel, r.residualRiskScore)}
     <td>${r.actionRequired || "—"}</td>
     <td>${r.responsiblePerson || "—"}</td>
@@ -316,13 +328,15 @@ export default function HazardAnalysisModule() {
         </div>
       )}
 
-      {/* Risk Matrix Legend */}
+      {/* Risk Matrix Legend — P × G × M */}
       {records.length > 0 && (
         <div className="flex flex-wrap gap-2 items-center text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">Risk Score = Likelihood × Severity</span>
+          <span className="font-semibold text-foreground">Risk Score = P × G × M (max 400)</span>
           {[
-            { level: "low", range: "1–6" }, { level: "medium", range: "7–12" },
-            { level: "high", range: "13–19" }, { level: "critical", range: "20–25" },
+            { level: "low",      range: "1–30"   },
+            { level: "medium",   range: "31–100"  },
+            { level: "high",     range: "101–280" },
+            { level: "critical", range: "281–400" },
           ].map(({ level, range }) => {
             const meta = riskLevelMeta(level);
             return (
@@ -570,12 +584,14 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
   const [whoAffected, setWhoAffected] = useState<string[]>(r?.whoAffected ?? []);
   const [consequenceDescription, setConsequenceDescription] = useState(r?.consequenceDescription ?? "");
   const [existingControls, setExistingControls] = useState(r?.existingControls ?? "");
-  const [likelihood, setLikelihood] = useState(r?.likelihood ?? 3);
-  const [severity, setSeverity] = useState(r?.severity ?? 3);
+  const [probability, setProbability] = useState(r?.probability ?? 3);
+  const [gravity, setGravity] = useState(r?.gravity ?? 3);
+  const [magnitude, setMagnitude] = useState(r?.magnitude ?? 3);
   const [controlHierarchy, setControlHierarchy] = useState<string[]>(r?.controlHierarchy ?? []);
   const [plannedControls, setPlannedControls] = useState(r?.plannedControls ?? "");
-  const [residualLikelihood, setResidualLikelihood] = useState(r?.residualLikelihood ?? 1);
-  const [residualSeverity, setResidualSeverity] = useState(r?.residualSeverity ?? 1);
+  const [residualProbability, setResidualProbability] = useState(r?.residualProbability ?? 1);
+  const [residualGravity, setResidualGravity] = useState(r?.residualGravity ?? 1);
+  const [residualMagnitude, setResidualMagnitude] = useState(r?.residualMagnitude ?? 1);
   const [actionRequired, setActionRequired] = useState(r?.actionRequired ?? "");
   const [responsiblePerson, setResponsiblePerson] = useState(r?.responsiblePerson ?? "");
   const [targetDate, setTargetDate] = useState(r?.targetDate ?? "");
@@ -584,9 +600,9 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
   const [iso45001Clause, setIso45001Clause] = useState(r?.iso45001Clause ?? "6.1.2");
   const [notes, setNotes] = useState(r?.notes ?? "");
 
-  const inherentScore = calcScore(likelihood, severity);
+  const inherentScore = calcScore(probability, gravity, magnitude);
   const inherentLevel = scoreToLevel(inherentScore);
-  const residualScore = calcScore(residualLikelihood, residualSeverity);
+  const residualScore = calcScore(residualProbability, residualGravity, residualMagnitude);
   const residualLevel = scoreToLevel(residualScore);
 
   function toggleWho(val: string) {
@@ -607,12 +623,14 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
       whoAffected,
       consequenceDescription: consequenceDescription || null,
       existingControls: existingControls || null,
-      likelihood,
-      severity,
+      probability,
+      gravity,
+      magnitude,
       controlHierarchy,
       plannedControls: plannedControls || null,
-      residualLikelihood,
-      residualSeverity,
+      residualProbability,
+      residualGravity,
+      residualMagnitude,
       actionRequired: actionRequired || null,
       responsiblePerson: responsiblePerson || null,
       targetDate: targetDate || null,
@@ -697,38 +715,66 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
             </div>
           </div>
 
-          {/* ── Section 2: Inherent Risk Scoring ── */}
-          <SectionHeading icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} title="Inherent Risk Rating (Before Additional Controls)" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* ── Section 2: Inherent Risk Scoring (P × G × M) ── */}
+          <SectionHeading icon={<AlertTriangle className="w-4 h-4 text-orange-500" />} title="Inherent Risk Rating — P × G × M (Before Additional Controls)" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label>Likelihood (1–5)</Label>
-              <Select value={String(likelihood)} onValueChange={v => setLikelihood(Number(v))}>
-                <SelectTrigger data-testid="select-likelihood">
+              <Label>P — Probability of Occurrence</Label>
+              <Select value={String(probability)} onValueChange={v => setProbability(Number(v))}>
+                <SelectTrigger data-testid="select-probability">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LIKELIHOOD_OPTS.map(o => (
-                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  {PROBABILITY_OPTS.map(o => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      <span className="font-semibold">{o.label}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {PROBABILITY_OPTS.find(o => o.value === probability)?.desc}
+              </p>
             </div>
             <div className="space-y-1.5">
-              <Label>Severity (1–5)</Label>
-              <Select value={String(severity)} onValueChange={v => setSeverity(Number(v))}>
-                <SelectTrigger data-testid="select-severity">
+              <Label>G — Gravity of Harm</Label>
+              <Select value={String(gravity)} onValueChange={v => setGravity(Number(v))}>
+                <SelectTrigger data-testid="select-gravity">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SEVERITY_OPTS.map(o => (
-                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  {GRAVITY_OPTS.map(o => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      <span className="font-semibold">{o.label}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {GRAVITY_OPTS.find(o => o.value === gravity)?.desc}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>M — Magnitude of Prevention</Label>
+              <Select value={String(magnitude)} onValueChange={v => setMagnitude(Number(v))}>
+                <SelectTrigger data-testid="select-magnitude">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MAGNITUDE_OPTS.map(o => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      <span className="font-semibold">{o.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {MAGNITUDE_OPTS.find(o => o.value === magnitude)?.desc}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Inherent Risk Score:</span>
+            <span className="text-sm text-muted-foreground">Inherent Risk Score (P×G×M = {probability}×{gravity}×{magnitude}):</span>
             <RiskBadge score={inherentScore} level={inherentLevel} />
           </div>
 
@@ -750,38 +796,66 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
             <Textarea value={plannedControls} onChange={e => setPlannedControls(e.target.value)} placeholder="Describe the specific controls to be implemented" rows={2} data-testid="textarea-planned-controls" />
           </div>
 
-          {/* ── Section 4: Residual Risk ── */}
-          <SectionHeading icon={<CheckCircle2 className="w-4 h-4 text-green-500" />} title="Residual Risk Rating (After Controls)" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* ── Section 4: Residual Risk (P × G × M after controls) ── */}
+          <SectionHeading icon={<CheckCircle2 className="w-4 h-4 text-green-500" />} title="Residual Risk Rating — P × G × M (After Controls)" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label>Residual Likelihood (1–5)</Label>
-              <Select value={String(residualLikelihood)} onValueChange={v => setResidualLikelihood(Number(v))}>
-                <SelectTrigger data-testid="select-residual-likelihood">
+              <Label>Residual P — Probability</Label>
+              <Select value={String(residualProbability)} onValueChange={v => setResidualProbability(Number(v))}>
+                <SelectTrigger data-testid="select-residual-probability">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LIKELIHOOD_OPTS.map(o => (
-                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  {PROBABILITY_OPTS.map(o => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      <span className="font-semibold">{o.label}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {PROBABILITY_OPTS.find(o => o.value === residualProbability)?.desc}
+              </p>
             </div>
             <div className="space-y-1.5">
-              <Label>Residual Severity (1–5)</Label>
-              <Select value={String(residualSeverity)} onValueChange={v => setResidualSeverity(Number(v))}>
-                <SelectTrigger data-testid="select-residual-severity">
+              <Label>Residual G — Gravity</Label>
+              <Select value={String(residualGravity)} onValueChange={v => setResidualGravity(Number(v))}>
+                <SelectTrigger data-testid="select-residual-gravity">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SEVERITY_OPTS.map(o => (
-                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  {GRAVITY_OPTS.map(o => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      <span className="font-semibold">{o.label}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {GRAVITY_OPTS.find(o => o.value === residualGravity)?.desc}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Residual M — Prevention</Label>
+              <Select value={String(residualMagnitude)} onValueChange={v => setResidualMagnitude(Number(v))}>
+                <SelectTrigger data-testid="select-residual-magnitude">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MAGNITUDE_OPTS.map(o => (
+                    <SelectItem key={o.value} value={String(o.value)}>
+                      <span className="font-semibold">{o.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {MAGNITUDE_OPTS.find(o => o.value === residualMagnitude)?.desc}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Residual Risk Score:</span>
+            <span className="text-sm text-muted-foreground">Residual Risk Score (P×G×M = {residualProbability}×{residualGravity}×{residualMagnitude}):</span>
             <RiskBadge score={residualScore} level={residualLevel} />
           </div>
 

@@ -2973,17 +2973,23 @@ export const hazardAnalysis = pgTable("hazard_analysis", {
   consequenceDescription: text("consequence_description"),
   // Existing Controls
   existingControls: text("existing_controls"),
-  // Inherent Risk Score (before additional controls) — Likelihood × Severity
-  likelihood: integer("likelihood").notNull().default(1),       // 1–5
-  severity: integer("severity").notNull().default(1),           // 1–5
-  riskScore: integer("risk_score").notNull().default(1),        // computed L × S (1–25)
+  // Inherent Risk Score — P × G × M (Probability × Gravity × Magnitude/Prevention)
+  // P: 1=Not-Probable, 3=Low, 7=High, 10=Very High
+  // G: 1=Negligible, 3=Low, 7=High, 10=Very High
+  // M: 1=Very High Prevention, 2=High Prevention, 3=Low Prevention, 4=No Prevention
+  // Risk Score = P × G × M  (max 400)  Levels: Low≤30 / Medium≤100 / High≤280 / Critical>280
+  probability: integer("probability").notNull().default(1),     // P: 1|3|7|10
+  gravity: integer("gravity").notNull().default(1),             // G: 1|3|7|10
+  magnitude: integer("magnitude").notNull().default(1),         // M: 1|2|3|4
+  riskScore: integer("risk_score").notNull().default(1),        // P × G × M
   riskLevel: text("risk_level").notNull().default("low"),       // low|medium|high|critical
   // Hierarchy of Controls applied (ISO 45001 §8.1.2)
   controlHierarchy: text("control_hierarchy").array().default([]), // elimination|substitution|engineering|administrative|ppe
   plannedControls: text("planned_controls"),
   // Residual Risk (after controls)
-  residualLikelihood: integer("residual_likelihood").notNull().default(1),
-  residualSeverity: integer("residual_severity").notNull().default(1),
+  residualProbability: integer("residual_probability").notNull().default(1),
+  residualGravity: integer("residual_gravity").notNull().default(1),
+  residualMagnitude: integer("residual_magnitude").notNull().default(1),
   residualRiskScore: integer("residual_risk_score").notNull().default(1),
   residualRiskLevel: text("residual_risk_level").notNull().default("low"),
   // Action & Tracking

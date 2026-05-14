@@ -2930,10 +2930,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ── ISO 45001 Hazard Analysis & Risk Assessment ───────────────────────────
+  // P × G × M scoring: Low≤30 / Medium≤100 / High≤280 / Critical>280
   private calcRiskLevel(score: number): string {
-    if (score <= 6) return "low";
-    if (score <= 12) return "medium";
-    if (score <= 19) return "high";
+    if (score <= 30) return "low";
+    if (score <= 100) return "medium";
+    if (score <= 280) return "high";
     return "critical";
   }
   async getHazardAnalysisRecords(userId: string, isSuperadmin = false): Promise<HazardAnalysisRecord[]> {
@@ -2941,8 +2942,8 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(hazardAnalysis).where(cond).orderBy(hazardAnalysis.workArea, hazardAnalysis.activityTask);
   }
   async createHazardAnalysisRecord(data: InsertHazardAnalysis): Promise<HazardAnalysisRecord> {
-    const riskScore = (data.likelihood ?? 1) * (data.severity ?? 1);
-    const residualRiskScore = (data.residualLikelihood ?? 1) * (data.residualSeverity ?? 1);
+    const riskScore = (data.probability ?? 1) * (data.gravity ?? 1) * (data.magnitude ?? 1);
+    const residualRiskScore = (data.residualProbability ?? 1) * (data.residualGravity ?? 1) * (data.residualMagnitude ?? 1);
     const [rec] = await db.insert(hazardAnalysis).values({
       ...data,
       riskScore,
@@ -2956,12 +2957,14 @@ export class DatabaseStorage implements IStorage {
     const where = isSuperadmin ? eq(hazardAnalysis.id, id) : and(eq(hazardAnalysis.id, id), eq(hazardAnalysis.userId, userId));
     const existing = await db.select().from(hazardAnalysis).where(where).limit(1);
     if (!existing[0]) return undefined;
-    const likelihood = data.likelihood ?? existing[0].likelihood;
-    const severity = data.severity ?? existing[0].severity;
-    const residualLikelihood = data.residualLikelihood ?? existing[0].residualLikelihood;
-    const residualSeverity = data.residualSeverity ?? existing[0].residualSeverity;
-    const riskScore = likelihood * severity;
-    const residualRiskScore = residualLikelihood * residualSeverity;
+    const probability = data.probability ?? existing[0].probability;
+    const gravity = data.gravity ?? existing[0].gravity;
+    const magnitude = data.magnitude ?? existing[0].magnitude;
+    const residualProbability = data.residualProbability ?? existing[0].residualProbability;
+    const residualGravity = data.residualGravity ?? existing[0].residualGravity;
+    const residualMagnitude = data.residualMagnitude ?? existing[0].residualMagnitude;
+    const riskScore = probability * gravity * magnitude;
+    const residualRiskScore = residualProbability * residualGravity * residualMagnitude;
     const [rec] = await db.update(hazardAnalysis).set({
       ...data,
       riskScore,
