@@ -609,53 +609,61 @@ export default function HazardAnalysisModule() {
         <div className="border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-700 dark:bg-slate-800 border-b text-xs font-semibold text-white uppercase tracking-wide">
+              <tr className="bg-slate-700 dark:bg-slate-800 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                <th className="px-3 py-1.5 w-6"></th>
+                <th colSpan={5} className="px-3 py-1.5 text-left border-r border-slate-500/50">Hazard Identification</th>
+                <th colSpan={2} className="px-3 py-1.5 text-center border-r border-slate-500/50">Risk Assessment</th>
+                <th colSpan={2} className="px-3 py-1.5 text-left">Management</th>
+                <th className="px-3 py-1.5"></th>
+              </tr>
+              <tr className="bg-slate-700 dark:bg-slate-800 border-b-2 border-slate-500 text-xs font-semibold text-white uppercase tracking-wide">
                 <th className="text-left px-3 py-2.5 w-6"></th>
                 <th className="text-left px-3 py-2.5">Work Area</th>
                 <th className="text-left px-3 py-2.5">Activity / Task</th>
                 <th className="text-left px-3 py-2.5">Hazard</th>
                 <th className="text-left px-3 py-2.5">Type</th>
-                <th className="text-left px-3 py-2.5">Condition</th>
+                <th className="text-left px-3 py-2.5 border-r border-slate-500/50">Condition</th>
                 <th className="text-center px-3 py-2.5">Inherent Risk</th>
-                <th className="text-center px-3 py-2.5">Residual Risk</th>
+                <th className="text-center px-3 py-2.5 border-r border-slate-500/50">Residual Risk</th>
                 <th className="text-left px-3 py-2.5">Status</th>
                 <th className="text-left px-3 py-2.5">Responsible</th>
                 <th className="px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => {
+              {filtered.map((r, idx) => {
                 const isExpanded = expanded === r.id;
                 const condColor = r.operatingCondition === "emergency" ? "text-red-600 dark:text-red-400" : r.operatingCondition === "non-routine" ? "text-yellow-600 dark:text-yellow-400" : "text-green-600 dark:text-green-400";
+                const zebraBase = idx % 2 === 0 ? "bg-white dark:bg-background" : "bg-slate-50 dark:bg-slate-900/40";
                 return (
                   <>
                     <tr
                       key={r.id}
-                      className="border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                      className={`border-b hover:bg-blue-50/60 dark:hover:bg-blue-900/10 cursor-pointer transition-colors ${zebraBase}`}
                       onClick={() => setExpanded(isExpanded ? null : r.id)}
                       data-testid={`row-hazard-${r.id}`}
                     >
-                      <td className="px-3 py-2.5 text-muted-foreground">
+                      <td className="px-3 py-3 text-muted-foreground">
                         {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                       </td>
-                      <td className="px-3 py-2.5 font-medium text-foreground">{r.workArea || "—"}</td>
-                      <td className="px-3 py-2.5 text-foreground max-w-[180px] truncate">{r.activityTask}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground max-w-[160px] truncate">{r.hazardDescription}</td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-3 font-medium text-foreground">{r.workArea || "—"}</td>
+                      <td className="px-3 py-3 text-foreground max-w-[180px] truncate">{r.activityTask}</td>
+                      <td className="px-3 py-3 text-muted-foreground max-w-[160px] truncate">{r.hazardDescription}</td>
+                      <td className="px-3 py-3">
                         <span className="capitalize text-xs bg-muted px-2 py-0.5 rounded-full">{r.hazardType}</span>
                       </td>
-                      <td className={`px-3 py-2.5 capitalize font-medium ${condColor}`}>{r.operatingCondition}</td>
-                      <td className="px-3 py-2.5 text-center">
+                      <td className={`px-3 py-3 capitalize font-medium border-r border-border/60 ${condColor}`}>{r.operatingCondition}</td>
+                      <td className="px-3 py-3 text-center">
                         <RiskBadge score={r.riskScore} level={r.riskLevel} />
                       </td>
-                      <td className="px-3 py-2.5 text-center">
+                      <td className="px-3 py-3 text-center border-r border-border/60">
                         <RiskBadge score={r.residualRiskScore} level={r.residualRiskLevel} />
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-3">
                         <StatusBadge status={r.status} />
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-muted-foreground">{r.responsiblePerson || "—"}</td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-3 text-muted-foreground">{r.responsiblePerson || "—"}</td>
+                      <td className="px-3 py-3">
                         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)} data-testid={`btn-edit-hazard-${r.id}`}>
                             <Pencil className="w-3 h-3" />
