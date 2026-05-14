@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -77,7 +77,9 @@ export default function Login() {
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
-        <img src={hubLogo} alt="Core Compliance Hub" className="h-32 w-auto" data-testid="img-logo" />
+        <Link href="/">
+          <img src={hubLogo} alt="Core Compliance Hub" className="h-32 w-auto cursor-pointer hover:opacity-80 transition-opacity" data-testid="img-logo" />
+        </Link>
         <div className="flex items-center gap-2 text-slate-400 text-sm">
           <ShieldCheck className="w-4 h-4 text-orange-400" />
           <span>AI-Powered Occupational Health &amp; Safety Compliance</span>
