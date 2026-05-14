@@ -213,10 +213,10 @@ export default function MeetCorey() {
   return (
     <div className="min-h-screen bg-[hsl(222,47%,11%)] text-white font-sans" data-testid="page-meet-corey">
       <nav className="sticky top-0 z-50 bg-[hsl(222,47%,9%)]/95 backdrop-blur border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-24">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoUrl} alt="CCHUB" className="h-14 w-auto" />
+              <img src={logoUrl} alt="CCHUB" className="h-20 w-auto" />
             </div>
           </Link>
           <div className="flex items-center gap-3">
