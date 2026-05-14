@@ -717,12 +717,12 @@ export default function ISOManager() {
               })}
             </div>
 
-            {/* EMS — ISO 14001 */}
+            {/* EHS — ISO 14001 / ISO 45001 */}
             {sidebarOpen && (
               <div className="pt-3 pb-1">
                 <div className="flex items-center gap-2 px-1">
                   <div className="h-px flex-1 bg-border/60" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">EMS — 14001</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 shrink-0">EHS</span>
                   <div className="h-px flex-1 bg-border/60" />
                 </div>
               </div>
