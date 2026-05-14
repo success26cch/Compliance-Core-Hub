@@ -9,7 +9,7 @@ import {
   Mail, Building2, ArrowUpRight, Award, Layers, Cpu,
   ShieldCheck, HeartPulse, Sparkles,
   Megaphone, Activity, BarChart3, Lock, CheckSquare,
-  Star, Play, RefreshCw, Syringe
+  Star, Play, RefreshCw, Syringe, Ambulance, Bell, Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -144,23 +144,23 @@ export default function EmployerDashboard() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10">
             <Badge variant="outline" className="text-accent border-accent/30 mb-3">What's Inside</Badge>
-            <h2 className="text-2xl md:text-3xl font-bold text-primary">Every Tool Your Program Needs</h2>
-            <p className="text-muted-foreground mt-2 max-w-xl mx-auto">From your first incident report to your next OSHA inspection — everything is documented, tracked, and audit-ready.</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-primary">Built for Every Corner of Occupational Health</h2>
+            <p className="text-muted-foreground mt-2 max-w-xl mx-auto">Every module talks to the others. One login, one system, zero spreadsheets.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: ShieldCheck, label: "Compliance Health Score", desc: "Continuously calculated safety posture score that updates as incidents are closed and actions are completed.", color: "text-green-600", bg: "bg-green-50 border-green-100" },
-              { icon: AlertTriangle, label: "Incident Management", desc: "Structured injury and illness capture with automatic OSHA recordability determination at the point of entry.", color: "text-orange-600", bg: "bg-orange-50 border-orange-100" },
-              { icon: FileText, label: "OSHA 300 / 300A Log", desc: "Auto-populated from incident records. Always ready for OSHA inspection or required annual posting.", color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
-              { icon: ClipboardList, label: "CAPA Workflow", desc: "Root cause to corrective action to closure — with automated SMS reminders so nothing gets lost.", color: "text-purple-600", bg: "bg-purple-50 border-purple-100" },
-              { icon: Stethoscope, label: "Medical Surveillance", desc: "Track DOT physicals, respiratory exams, and occupational health visits across your entire workforce.", color: "text-teal-600", bg: "bg-teal-50 border-teal-100" },
-              { icon: Syringe, label: "Drug Screen Tracking", desc: "Pre-employment, random, and post-accident results documented per employee with chain-of-custody support.", color: "text-indigo-600", bg: "bg-indigo-50 border-indigo-100" },
-              { icon: Bot, label: "Ask Corey — AI Guidance", desc: "Your AI occupational health expert answers OSHA, FMCSA, and workplace safety questions in seconds.", color: "text-accent", bg: "bg-accent/5 border-accent/20" },
-              { icon: GraduationCap, label: "Training Management", desc: "Assign required training, track completion, and maintain documented evidence per employee.", color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-100" },
-              { icon: Users, label: "Employee Records", desc: "Centralized employee profiles with medical, training, drug screen, and incident history in one place.", color: "text-slate-600", bg: "bg-slate-50 border-slate-200" },
+              { icon: AlertTriangle, label: "Incident Management", desc: "Log workplace incidents in minutes with OSHA-aligned dropdowns. Automatic recordability flags, OSHA 300 log entries, and instant notifications to your DER and workers' comp carrier.", color: "text-orange-600", bg: "bg-orange-50 border-orange-100" },
+              { icon: ClipboardList, label: "CAPA Tracking", desc: "Turn every incident into a corrective action. Assign owners, set due dates, and get SMS reminders. Overdue CAPAs are flagged automatically with recurrence warnings.", color: "text-purple-600", bg: "bg-purple-50 border-purple-100" },
+              { icon: Users, label: "Employee Medical Surveillance", desc: "Track respirator physicals, DOT certifications, hearing tests, and drug screens by employee. Get ahead of expirations before they become violations.", color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
+              { icon: FileText, label: "OSHA 300 Log & Reporting", desc: "Your 300, 300A, and 301 forms built automatically from logged incidents. Recordability guidance built in so you never second-guess a log entry.", color: "text-green-600", bg: "bg-green-50 border-green-100" },
+              { icon: Ambulance, label: "Digital Medical Passport", desc: "QR-based clinic authorization forms your employees carry on their phone. Clinics scan, get employer preferences instantly — first-aid limits, OTC meds, restriction wording.", color: "text-red-600", bg: "bg-red-50 border-red-100" },
+              { icon: Syringe, label: "Drug Screen Tracking", desc: "Log pre-employment, random, post-accident, and return-to-duty screens. Track results, chain of custody status, and DOT Clearinghouse obligations by employee.", color: "text-teal-600", bg: "bg-teal-50 border-teal-100" },
+              { icon: Bot, label: "Ask Corey — AI Compliance", desc: "Your AI compliance expert is woven into every module. Ask Corey directly from an incident form, a CAPA, or the dashboard — and get regulation-backed answers in seconds.", color: "text-accent", bg: "bg-accent/5 border-accent/20" },
+              { icon: Bell, label: "Email & SMS Notifications", desc: "Every key event triggers the right people automatically — incident reports to DER and workers' comp, CAPA assignments to responsible parties, overdue alerts to managers.", color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-100" },
+              { icon: Globe, label: "Multi-Site Analytics", desc: "Run a single facility or fifty. Dashboard metrics roll up across all locations. Compare incident rates, CAPA closure times, and surveillance completion by site.", color: "text-sky-600", bg: "bg-sky-50 border-sky-100" },
             ].map(({ icon: Icon, label, desc, color, bg }) => (
-              <div key={label} className={`rounded-2xl border p-5 flex flex-col gap-3 hover:shadow-md transition-shadow ${bg}`}>
-                <div className={`w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center border border-white`}>
+              <div key={label} className={`rounded-2xl border p-5 flex flex-col gap-3 hover:shadow-md transition-shadow ${bg}`} data-testid={`card-platform-feature-${label.toLowerCase().replace(/\s+/g, '-')}`}>
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center border border-white">
                   <Icon className={`w-5 h-5 ${color}`} />
                 </div>
                 <div>

@@ -51,40 +51,6 @@ export default function GetStarted() {
           </Link>
         </div>
 
-        {/* Platform Features Detail */}
-        <div className="mb-20">
-          <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
-            <Badge className="bg-primary/10 text-primary border border-primary/20 text-sm px-3 py-1">What's Inside</Badge>
-            <h1 className="text-3xl md:text-4xl font-display font-black text-primary leading-tight" data-testid="text-platform-features-title">
-              Built for Every Corner of Occupational Health
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Every module talks to the others. One login, one system, zero spreadsheets.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {[
-              { icon: AlertTriangle, color: "bg-orange-50 text-orange-600 border-orange-100", title: "Incident Management", desc: "Log workplace incidents in minutes with OSHA-aligned dropdowns. Automatic recordability flags, OSHA 300 log entries, and instant notifications to your DER and workers' comp carrier." },
-              { icon: ClipboardList, color: "bg-purple-50 text-purple-600 border-purple-100", title: "CAPA Tracking", desc: "Turn every incident into a corrective action. Assign owners, set due dates, and get SMS reminders. Overdue CAPAs are flagged automatically with recurrence warnings." },
-              { icon: Users, color: "bg-blue-50 text-blue-600 border-blue-100", title: "Employee Medical Surveillance", desc: "Track respirator physicals, DOT certifications, hearing tests, and drug screens by employee. Get ahead of expirations before they become violations." },
-              { icon: FileText, color: "bg-green-50 text-green-600 border-green-100", title: "OSHA 300 Log & Reporting", desc: "Your 300, 300A, and 301 forms built automatically from logged incidents. Recordability guidance built in so you never second-guess a log entry." },
-              { icon: Ambulance, color: "bg-red-50 text-red-600 border-red-100", title: "Digital Medical Passport", desc: "QR-based clinic authorization forms your employees carry on their phone. Clinics scan, get employer preferences instantly — first-aid limits, OTC meds, restriction wording." },
-              { icon: Syringe, color: "bg-teal-50 text-teal-600 border-teal-100", title: "Drug Screen Tracking", desc: "Log pre-employment, random, post-accident, and return-to-duty screens. Track results, chain of custody status, and DOT Clearinghouse obligations by employee." },
-              { icon: Bot, color: "bg-orange-50 text-orange-600 border-orange-100", title: "Ask Corey — AI Compliance", desc: "Your AI compliance expert is woven into every module. Ask Corey directly from an incident form, a CAPA, or the dashboard — and get regulation-backed answers in seconds." },
-              { icon: Bell, color: "bg-yellow-50 text-yellow-600 border-yellow-100", title: "Email & SMS Notifications", desc: "Every key event triggers the right people automatically — incident reports to DER and workers' comp, CAPA assignments to responsible parties, overdue alerts to managers." },
-              { icon: Globe, color: "bg-sky-50 text-sky-600 border-sky-100", title: "Multi-Site Analytics", desc: "Run a single facility or fifty. Dashboard metrics roll up across all locations. Compare incident rates, CAPA closure times, and surveillance completion by site." },
-            ].map(({ icon: Icon, color, title, desc }) => (
-              <div key={title} className="rounded-xl border border-slate-200 bg-white p-6" data-testid={`card-platform-feature-${title.toLowerCase().replace(/\s+/g, '-')}`}>
-                <div className={`w-10 h-10 rounded-lg border flex items-center justify-center mb-4 ${color}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <h3 className="font-bold text-primary mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-display font-bold text-primary mb-4" data-testid="text-page-title">
             Choose Your Plan
