@@ -830,32 +830,33 @@ Keep each item under 20 words. No lengthy explanation.`;
               <div className="md:col-span-2 space-y-6">
 
                 {/* Description */}
-                <section className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Description
-                  </h3>
-                  <div className="bg-white dark:bg-muted/30 border rounded-lg p-4 text-sm leading-relaxed">
+                <section className="rounded-xl border overflow-hidden">
+                  <div className="bg-slate-50 dark:bg-slate-800/40 border-b px-4 py-2.5 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Description</span>
+                  </div>
+                  <div className="p-4 bg-white dark:bg-background text-sm leading-relaxed text-foreground/90">
                     {nc.description}
                   </div>
                 </section>
 
                 {/* ── CAPA Decision ── */}
-                <section className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <section className="rounded-xl border border-blue-100 dark:border-blue-900/50 overflow-hidden">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800/40 px-4 py-2.5 flex items-center gap-2">
                     <ClipboardList className="w-4 h-4 text-blue-600" />
-                    <span className="text-blue-700 dark:text-blue-400">CAPA Decision</span>
+                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400 flex-1">CAPA Decision</span>
                     {ncAny.capaRequired === true && ncAny.capaNumber && (
-                      <Badge className="bg-blue-600 text-white font-mono text-xs ml-auto">{ncAny.capaNumber}</Badge>
+                      <Badge className="bg-blue-600 text-white font-mono text-xs">{ncAny.capaNumber}</Badge>
                     )}
                     {ncAny.capaRequired === false && (
-                      <Badge variant="outline" className="text-xs ml-auto text-muted-foreground">No CAPA</Badge>
+                      <Badge variant="outline" className="text-xs text-muted-foreground">No CAPA</Badge>
                     )}
                     {ncAny.capaRequired == null && (
-                      <Badge variant="outline" className="text-xs ml-auto text-amber-600 border-amber-300">Decision Pending</Badge>
+                      <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">Decision Pending</Badge>
                     )}
-                  </h3>
+                  </div>
 
-                  <div className="p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg space-y-3">
+                  <div className="p-4 space-y-3">
                     <p className="text-xs text-muted-foreground">
                       Not every NC requires a full Corrective Action Request (CAR). The quality manager decides based on severity, standard requirements, and risk.
                     </p>
@@ -927,7 +928,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                         placeholder={ncAny.capaRequired === false
                           ? "Reason why CAPA is not required (e.g., isolated occurrence, low risk, immediate correction sufficient)..."
                           : "Notes on why a full CAPA is required..."}
-                        className="min-h-[60px] text-sm"
+                        className="min-h-[80px] text-sm bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                         data-testid="textarea-capa-decision-notes"
                       />
                     </div>
@@ -951,15 +952,14 @@ Keep each item under 20 words. No lengthy explanation.`;
 
                 {/* ── Root Cause Analysis — only shown when CAPA required or not yet decided ── */}
                 {ncAny.capaRequired !== false && (
-                <section className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4" /> Root Cause Analysis
-
-                    {/* Inline Isa CAPA Suggestions button */}
+                <section className="rounded-xl border border-amber-100 dark:border-amber-900/50 overflow-hidden">
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/40 px-4 py-2.5 flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm font-bold text-amber-700 dark:text-amber-400 flex-1">Root Cause Analysis</span>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="ml-auto gap-1.5 text-xs h-7 border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20"
+                      className="gap-1.5 text-xs h-7 border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20"
                       onClick={handleGetIsaSuggestions}
                       disabled={isaLoading}
                       data-testid="btn-isa-capa-suggestions"
@@ -967,7 +967,8 @@ Keep each item under 20 words. No lengthy explanation.`;
                       <Zap className="w-3 h-3" />
                       {isaLoading ? 'Isa thinking…' : 'Get Isa\'s Guidance'}
                     </Button>
-                  </h3>
+                  </div>
+                  <div className="p-4 space-y-3">
 
                   {/* Loading / error strip */}
                   {isaLoading && (
@@ -1087,7 +1088,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                       defaultValue={nc.rootCause || ''}
                       onBlur={e => onUpdate({ rootCause: e.target.value })}
                       placeholder="Describe the underlying root cause of the nonconformance..."
-                      className="min-h-[120px]"
+                      className="min-h-[140px] text-sm bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                       data-testid="textarea-nc-root-cause"
                     />
                   )}
@@ -1115,7 +1116,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                           onChange={e => setRootCauseStatement(e.target.value)}
                           onBlur={() => saveRca('5why', { whys, rootCauseStatement })}
                           placeholder="Summarize the confirmed root cause..."
-                          className="min-h-[60px] text-sm mt-1"
+                          className="min-h-[80px] text-sm mt-1 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                         />
                       </div>
                     </div>
@@ -1153,7 +1154,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                           defaultValue={(ncAny.rcaData as any)?.rootCauseStatement || ''}
                           onBlur={e => onUpdate({ rcaData: { ...(ncAny.rcaData as any), rootCauseStatement: e.target.value } } as any)}
                           placeholder="Common root cause across all strands..."
-                          className="min-h-[60px] text-sm mt-1"
+                          className="min-h-[80px] text-sm mt-1 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                         />
                       </div>
                     </div>
@@ -1178,7 +1179,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                               onChange={e => setFishbone({ ...fishbone, [cat.key]: e.target.value })}
                               onBlur={() => saveRca('fishbone', { categories: fishbone, rootCauseStatement })}
                               placeholder={`Contributing causes — ${cat.label}`}
-                              className="min-h-[70px] text-xs resize-none"
+                              className="min-h-[80px] text-xs resize-none bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                             />
                           </div>
                         ))}
@@ -1190,7 +1191,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                           onChange={e => setRootCauseStatement(e.target.value)}
                           onBlur={() => saveRca('fishbone', { categories: fishbone, rootCauseStatement })}
                           placeholder="Confirmed root cause based on fishbone analysis..."
-                          className="min-h-[60px] text-sm mt-1"
+                          className="min-h-[80px] text-sm mt-1 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                         />
                       </div>
                     </div>
@@ -1206,14 +1207,17 @@ Keep each item under 20 words. No lengthy explanation.`;
                       Confirm Root Cause
                     </Button>
                   )}
+                  </div>
                 </section>
                 )}
 
                 {/* ── Corrective & Preventive Actions ── */}
-                <section className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Corrective & Preventive Actions
-                  </h3>
+                <section className="rounded-xl border border-emerald-100 dark:border-emerald-900/50 overflow-hidden">
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-800/40 px-4 py-2.5 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Corrective & Preventive Actions</span>
+                  </div>
+                  <div className="p-4 space-y-4">
                   <div className="space-y-5">
 
                     {/* Immediate Containment + date */}
@@ -1233,7 +1237,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                         defaultValue={nc.immediateContainment || ""}
                         onBlur={e => onUpdate({ immediateContainment: e.target.value })}
                         placeholder="What was done immediately to contain the issue?"
-                        className="min-h-[80px]"
+                        className="min-h-[100px] text-sm bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                       />
                     </div>
 
@@ -1294,7 +1298,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                         defaultValue={nc.correctiveAction || ""}
                         onBlur={e => onUpdate({ correctiveAction: e.target.value })}
                         placeholder="What actions are being taken to eliminate the cause?"
-                        className="min-h-[80px]"
+                        className="min-h-[100px] text-sm bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                       />
                     </div>
 
@@ -1355,7 +1359,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                         defaultValue={nc.preventiveAction || ""}
                         onBlur={e => onUpdate({ preventiveAction: e.target.value })}
                         placeholder="How will we prevent this from happening again?"
-                        className="min-h-[80px]"
+                        className="min-h-[100px] text-sm bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600"
                       />
                     </div>
 
@@ -1365,23 +1369,25 @@ Keep each item under 20 words. No lengthy explanation.`;
                       Move to Action in Progress
                     </Button>
                   )}
+                  </div>
                 </section>
 
                 {/* ── Documentation Update Verification ── */}
-                <section className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <section className="rounded-xl border border-violet-100 dark:border-violet-900/50 overflow-hidden">
+                  <div className="bg-violet-50 dark:bg-violet-900/20 border-b border-violet-100 dark:border-violet-800/40 px-4 py-2.5 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-violet-600" />
-                    <span className="text-violet-700 dark:text-violet-400">Documentation Update Verification</span>
+                    <span className="text-sm font-bold text-violet-700 dark:text-violet-400 flex-1">Documentation Update Verification</span>
                     {ncAny.docUpdateRequired && ncAny.docUpdateStatus === 'completed' && (
-                      <Badge className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs ml-auto">All Updated ✓</Badge>
+                      <Badge className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs">All Updated ✓</Badge>
                     )}
                     {ncAny.docUpdateRequired && ncAny.docUpdateStatus === 'in_progress' && (
-                      <Badge className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs ml-auto">In Progress</Badge>
+                      <Badge className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs">In Progress</Badge>
                     )}
                     {!ncAny.docUpdateRequired && (
-                      <Badge variant="outline" className="text-xs ml-auto text-muted-foreground">Not Required</Badge>
+                      <Badge variant="outline" className="text-xs text-muted-foreground">Not Required</Badge>
                     )}
-                  </h3>
+                  </div>
+                  <div className="p-4 space-y-3">
 
                   <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
                     <Switch
@@ -1403,7 +1409,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                         <div className="flex flex-wrap gap-1.5">
                           {DOC_TYPE_PRESETS.map(type => (
                             <Button key={type} type="button" variant="outline" size="sm"
-                              className="text-[10px] h-6 px-2 py-0"
+                              className="text-xs h-8 px-3"
                               onClick={() => addDocItem(type)}
                               data-testid={`button-nc-add-doc-${type.replace(/\s+/g, '-').toLowerCase()}`}
                             >
@@ -1480,10 +1486,11 @@ Keep each item under 20 words. No lengthy explanation.`;
                         <Label className="text-xs">Notes</Label>
                         <Textarea defaultValue={ncAny.docUpdateNotes || ''} placeholder="Notes about the documentation update..."
                           onBlur={e => onUpdate({ docUpdateNotes: e.target.value } as any)}
-                          className="min-h-[60px] text-sm" data-testid="textarea-nc-doc-notes" />
+                          className="min-h-[80px] text-sm bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-600" data-testid="textarea-nc-doc-notes" />
                       </div>
                     </div>
                   )}
+                  </div>
                 </section>
 
                 {/* ── Training Required ── */}
