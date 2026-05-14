@@ -227,7 +227,7 @@ function Router() {
 
       {/* ── Protected routes — require auth + active subscription or superadmin ── */}
       <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
-      <Route path="/employer-dashboard">{() => <ProtectedRoute component={EmployerDashboard} />}</Route>
+      <Route path="/employer-dashboard" component={EmployerDashboard} />
       <Route path="/bot">{() => <ProtectedRoute component={BotPage} />}</Route>
       <Route path="/iso-manager">{() => <ProtectedRoute component={ISOManager} />}</Route>
       <Route path="/decision-tree">{() => <ProtectedRoute component={DecisionTree} />}</Route>
