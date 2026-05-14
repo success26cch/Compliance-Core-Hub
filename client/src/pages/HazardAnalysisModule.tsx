@@ -366,6 +366,8 @@ export default function HazardAnalysisModule() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterLevel, setFilterLevel] = useState("all");
   const [filterArea, setFilterArea] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterCondition, setFilterCondition] = useState("all");
   const [expanded, setExpanded] = useState<number | null>(null);
 
   // ── Query ──────────────────────────────────────────────────────────────────
@@ -402,10 +404,12 @@ export default function HazardAnalysisModule() {
     return records.filter(r => {
       if (filterStatus !== "all" && r.status !== filterStatus) return false;
       if (filterLevel !== "all" && r.riskLevel !== filterLevel) return false;
+      if (filterType !== "all" && r.hazardType !== filterType) return false;
+      if (filterCondition !== "all" && r.operatingCondition !== filterCondition) return false;
       if (filterArea && !r.workArea?.toLowerCase().includes(filterArea.toLowerCase())) return false;
       return true;
     });
-  }, [records, filterStatus, filterLevel, filterArea]);
+  }, [records, filterStatus, filterLevel, filterType, filterCondition, filterArea]);
 
   // ── Summary counts ─────────────────────────────────────────────────────────
   const stats = useMemo(() => ({
@@ -490,44 +494,103 @@ export default function HazardAnalysisModule() {
 
       {/* Filters */}
       {records.length > 0 && (
-        <div className="flex flex-wrap gap-2 items-center border rounded-lg px-3 py-2.5 bg-muted/20">
-          <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-          <Input
-            placeholder="Filter by work area…"
-            value={filterArea}
-            onChange={e => setFilterArea(e.target.value)}
-            className="h-7 w-44 text-xs"
-            data-testid="input-filter-area"
-          />
-          <Select value={filterLevel} onValueChange={setFilterLevel}>
-            <SelectTrigger className="h-7 w-36 text-xs" data-testid="select-filter-level">
-              <SelectValue placeholder="Risk level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="h-7 w-36 text-xs" data-testid="select-filter-status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-            </SelectContent>
-          </Select>
-          {(filterArea || filterLevel !== "all" || filterStatus !== "all") && (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setFilterArea(""); setFilterLevel("all"); setFilterStatus("all"); }}>
-              <X className="w-3 h-3 mr-1" /> Clear
-            </Button>
+        <div className="border rounded-lg px-3 py-2.5 bg-muted/20 space-y-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              placeholder="Filter by work area…"
+              value={filterArea}
+              onChange={e => setFilterArea(e.target.value)}
+              className="h-7 w-44 text-xs"
+              data-testid="input-filter-area"
+            />
+            <Select value={filterLevel} onValueChange={setFilterLevel}>
+              <SelectTrigger className="h-7 w-36 text-xs" data-testid="select-filter-level">
+                <SelectValue placeholder="Risk level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Risk Levels</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-7 w-36 text-xs" data-testid="select-filter-status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="h-7 w-38 text-xs" data-testid="select-filter-type">
+                <SelectValue placeholder="Hazard type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Hazard Types</SelectItem>
+                {HAZARD_TYPES.map(h => (
+                  <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterCondition} onValueChange={setFilterCondition}>
+              <SelectTrigger className="h-7 w-38 text-xs" data-testid="select-filter-condition">
+                <SelectValue placeholder="Condition" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Conditions</SelectItem>
+                <SelectItem value="routine">Routine</SelectItem>
+                <SelectItem value="non-routine">Non-Routine</SelectItem>
+                <SelectItem value="emergency">Emergency</SelectItem>
+              </SelectContent>
+            </Select>
+            {(filterArea || filterLevel !== "all" || filterStatus !== "all" || filterType !== "all" || filterCondition !== "all") && (
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setFilterArea(""); setFilterLevel("all"); setFilterStatus("all"); setFilterType("all"); setFilterCondition("all"); }} data-testid="btn-clear-filters">
+                <X className="w-3 h-3 mr-1" /> Clear All
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} of {records.length} records</span>
+          </div>
+          {/* Active filter chips */}
+          {(filterLevel !== "all" || filterStatus !== "all" || filterType !== "all" || filterCondition !== "all" || filterArea) && (
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {filterArea && (
+                <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-full px-2 py-0.5 text-[11px] font-medium">
+                  Area: {filterArea}
+                  <button type="button" onClick={() => setFilterArea("")} className="hover:text-blue-900 dark:hover:text-blue-100"><X className="w-2.5 h-2.5" /></button>
+                </span>
+              )}
+              {filterLevel !== "all" && (
+                <span className="inline-flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize">
+                  Risk: {filterLevel}
+                  <button type="button" onClick={() => setFilterLevel("all")} className="hover:text-orange-900 dark:hover:text-orange-100"><X className="w-2.5 h-2.5" /></button>
+                </span>
+              )}
+              {filterStatus !== "all" && (
+                <span className="inline-flex items-center gap-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize">
+                  Status: {filterStatus}
+                  <button type="button" onClick={() => setFilterStatus("all")} className="hover:text-purple-900 dark:hover:text-purple-100"><X className="w-2.5 h-2.5" /></button>
+                </span>
+              )}
+              {filterType !== "all" && (
+                <span className="inline-flex items-center gap-1 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize">
+                  Type: {filterType}
+                  <button type="button" onClick={() => setFilterType("all")} className="hover:text-teal-900 dark:hover:text-teal-100"><X className="w-2.5 h-2.5" /></button>
+                </span>
+              )}
+              {filterCondition !== "all" && (
+                <span className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize">
+                  Condition: {filterCondition}
+                  <button type="button" onClick={() => setFilterCondition("all")} className="hover:text-yellow-900 dark:hover:text-yellow-100"><X className="w-2.5 h-2.5" /></button>
+                </span>
+              )}
+            </div>
           )}
-          <span className="text-xs text-muted-foreground ml-auto">{filtered.length} of {records.length}</span>
         </div>
       )}
 
@@ -605,53 +668,53 @@ export default function HazardAnalysisModule() {
                     </tr>
                     {isExpanded && (
                       <tr key={`exp-${r.id}`} className="bg-muted/20 border-b">
-                        <td colSpan={11} className="px-5 py-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <td colSpan={11} className="px-5 py-5">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Potential Consequence</p>
-                              <p className="text-foreground">{r.consequenceDescription || "—"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Potential Consequence</p>
+                              <p className="text-sm text-foreground leading-relaxed">{r.consequenceDescription || "—"}</p>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Existing Controls</p>
-                              <p className="text-foreground">{r.existingControls || "—"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Existing Controls</p>
+                              <p className="text-sm text-foreground leading-relaxed">{r.existingControls || "—"}</p>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Who is Affected</p>
-                              <p className="text-foreground capitalize">{(r.whoAffected || []).join(", ") || "—"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Who is Affected</p>
+                              <p className="text-sm text-foreground capitalize">{(r.whoAffected || []).join(", ") || "—"}</p>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Control Hierarchy Applied</p>
-                              <div className="flex flex-wrap gap-1">
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Control Hierarchy Applied</p>
+                              <div className="flex flex-wrap gap-1.5">
                                 {(r.controlHierarchy || []).map(c => (
-                                  <span key={c} className="bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 capitalize">{c}</span>
+                                  <span key={c} className="bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 text-sm capitalize">{c}</span>
                                 ))}
-                                {!(r.controlHierarchy?.length) && <span className="text-muted-foreground">—</span>}
+                                {!(r.controlHierarchy?.length) && <span className="text-sm text-muted-foreground">—</span>}
                               </div>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Planned / Additional Controls</p>
-                              <p className="text-foreground">{r.plannedControls || "—"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Planned / Additional Controls</p>
+                              <p className="text-sm text-foreground leading-relaxed">{r.plannedControls || "—"}</p>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Action Required</p>
-                              <p className="text-foreground">{r.actionRequired || "—"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Action Required</p>
+                              <p className="text-sm text-foreground leading-relaxed">{r.actionRequired || "—"}</p>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Legal / Regulatory Requirement</p>
-                              <p className="text-foreground">{r.legalRequirement || "—"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Legal / Regulatory Requirement</p>
+                              <p className="text-sm text-foreground leading-relaxed">{r.legalRequirement || "—"}</p>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">ISO 45001 Clause</p>
-                              <p className="text-foreground">{r.iso45001Clause || "6.1.2"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">ISO 45001 Clause</p>
+                              <p className="text-sm text-foreground">{r.iso45001Clause || "6.1.2"}</p>
                             </div>
                             <div>
-                              <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Target Date</p>
-                              <p className="text-foreground">{r.targetDate || "—"}</p>
+                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Target Date</p>
+                              <p className="text-sm text-foreground">{r.targetDate || "—"}</p>
                             </div>
                             {r.notes && (
                               <div className="sm:col-span-3">
-                                <p className="font-semibold text-muted-foreground mb-1 uppercase tracking-wide text-[10px]">Notes</p>
-                                <p className="text-foreground">{r.notes}</p>
+                                <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Notes</p>
+                                <p className="text-sm text-foreground leading-relaxed">{r.notes}</p>
                               </div>
                             )}
                           </div>
