@@ -1019,7 +1019,7 @@ Assess the following:
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full text-sm min-w-[1200px]">
+              <table className="w-full text-xs min-w-[1200px]">
                 <thead>
                   {/* Group label row */}
                   <tr className="bg-slate-700 dark:bg-slate-800 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
@@ -1053,14 +1053,12 @@ Assess the following:
                       : idx % 2 === 0 ? "bg-white dark:bg-background" : "bg-slate-50 dark:bg-slate-900/40";
                     return (
                   <tr key={a.id} className={`border-b transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-900/10 ${zebraBase}`} data-testid={`row-aspect-${a.id}`}>
-                      <td className="px-3 py-3 text-sm text-muted-foreground">{a.processActivity || "—"}</td>
-                      <td className="px-3 py-3">
-                        <p className="font-semibold text-sm text-foreground leading-snug">{a.environmentalAspect}</p>
-                      </td>
-                      <td className="px-3 py-3 text-sm text-muted-foreground leading-snug">{a.potentialImpactDescription || "—"}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground leading-snug font-mono">{a.applicableRegulations || "—"}</td>
-                      <td className="px-3 py-3">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${
+                      <td className="px-3 py-2.5 text-muted-foreground">{a.processActivity || "—"}</td>
+                      <td className="px-3 py-2.5 font-semibold text-foreground leading-snug">{a.environmentalAspect}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground leading-snug">{a.potentialImpactDescription || "—"}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground leading-snug">{a.applicableRegulations || "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`font-semibold px-2 py-0.5 rounded capitalize ${
                           a.aspectCondition === "emergency" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                           a.aspectCondition === "abnormal" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
                           "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
@@ -1068,28 +1066,28 @@ Assess the following:
                           {a.aspectCondition}{!a.isRoutine ? " · NR" : ""}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         <div className="flex flex-wrap gap-1">
                           {(a.impactTypes ?? []).map(t => (
-                            <span key={t} className="text-xs font-black bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-400 px-1.5 py-0.5 rounded">{t}</span>
+                            <span key={t} className="font-bold bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-400 px-1.5 py-0.5 rounded">{t}</span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-2 py-3 text-sm text-center font-black">{a.severity}</td>
-                      <td className="px-2 py-3 text-sm text-center font-black">{a.probability}</td>
-                      <td className="px-2 py-3 text-sm text-center font-black">{a.regulatoryScore}</td>
-                      <td className="px-2 py-3 text-center">
+                      <td className="px-2 py-2.5 text-center font-bold">{a.severity}</td>
+                      <td className="px-2 py-2.5 text-center font-bold">{a.probability}</td>
+                      <td className="px-2 py-2.5 text-center font-bold">{a.regulatoryScore}</td>
+                      <td className="px-2 py-2.5 text-center">
                         <ScoreDisplay s={a.severity} p={a.probability} r={a.regulatoryScore} score={a.significanceScore} sig={a.isSignificant} />
                       </td>
-                      <td className="px-2 py-3 text-center"><SigBadge isSignificant={a.isSignificant} /></td>
-                      <td className="px-2 py-3 text-center">
-                        {a.lifeCycleConsidered ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground/40">—</span>}
+                      <td className="px-2 py-2.5 text-center"><SigBadge isSignificant={a.isSignificant} /></td>
+                      <td className="px-2 py-2.5 text-center">
+                        {a.lifeCycleConsidered ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground/40">—</span>}
                       </td>
-                      <td className="px-3 py-3 text-sm text-muted-foreground">{a.operationalControl || "—"}</td>
-                      <td className="px-2 py-3">
+                      <td className="px-3 py-2.5 text-muted-foreground leading-snug">{a.operationalControl || "—"}</td>
+                      <td className="px-2 py-2.5">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => openEdit(a)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground" data-testid={`button-edit-aspect-${a.id}`}><FileText className="w-4 h-4" /></button>
-                          <button onClick={() => setDeleteConfirm(a)} className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600" data-testid={`button-delete-aspect-${a.id}`}><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => openEdit(a)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground" data-testid={`button-edit-aspect-${a.id}`}><FileText className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setDeleteConfirm(a)} className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600" data-testid={`button-delete-aspect-${a.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </td>
                     </tr>
