@@ -308,14 +308,26 @@ export function Sidebar({ className = "" }: { className?: string }) {
   );
 }
 
+interface CompanyProfile { companyName?: string; logoUrl?: string | null; }
+
 export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user } = useAuth();
+  const { data: companyProfile } = useQuery<CompanyProfile>({ queryKey: ["/api/company-profile"] });
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
       <Sidebar className="hidden md:flex w-64 fixed inset-y-0" />
+
+      {/* Print-only company logo header — shows on every window.print() call */}
+      <div className="print-logo-header hidden" aria-hidden="true">
+        {companyProfile?.logoUrl
+          ? <img src={companyProfile.logoUrl} alt={companyProfile.companyName ?? "Company"} style={{maxHeight:"55px",maxWidth:"200px",objectFit:"contain"}} />
+          : <span style={{fontSize:"15pt",fontWeight:800,color:"#1e3a5f"}}>{companyProfile?.companyName ?? ""}</span>
+        }
+        <span style={{fontSize:"8pt",color:"#666"}}>Generated {new Date().toLocaleDateString()}</span>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen">

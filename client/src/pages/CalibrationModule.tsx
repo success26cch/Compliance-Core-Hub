@@ -18,7 +18,7 @@ import {
   ClipboardList, ChevronDown, ChevronUp, AlertCircle, XCircle, FileCheck,
   Calendar, Activity, Info, FileUp, Download, BarChart3, MapPin, User, X,
   CheckCircle2, Thermometer, FlaskConical, Building2, ExternalLink, Link2,
-  Microscope, Users, Shield, BookOpen, Cpu, Save, ChevronRight,
+  Microscope, Users, Shield, BookOpen, Cpu, Save, ChevronRight, Printer,
 } from "lucide-react";
 import type { IsoProject } from "@shared/schema";
 
@@ -1744,12 +1744,14 @@ const APPRAISER_COLORS = [
   "bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border-amber-200",
 ];
 
-function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
+function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyLogo, companyName }: {
   equipment: CalibrationEquipment[];
   initial: MsaStudy | null;
   isSaving: boolean;
   onSave: (d: Partial<MsaStudy>) => void;
   onCancel: () => void;
+  companyLogo?: string | null;
+  companyName?: string;
 }) {
   const parsedInitial = useMemo(() => parseMsaReadings(initial?.readings), []);
   const hasReadings = !!parsedInitial;
@@ -1856,6 +1858,131 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
         result: computeMsaResult(simpleGrr, simpleNdc), notes,
       });
     }
+  }
+
+  // ── Print handler — opens new window with full AIAG worksheet ───────────────
+  function handlePrint() {
+    if (phase !== "grid") return;
+    const win = window.open("", "_blank", "width=1200,height=900");
+    if (!win) return;
+    const al = (i: number) => String.fromCharCode(65 + i);
+    const pK1 = AIAG_K1[trialCount] ?? 3.05;
+    const pK2 = AIAG_K2[appraiserCount] ?? 2.70;
+    const pK3 = AIAG_K3[partCount] ?? 1.62;
+    const pD4 = AIAG_D4[trialCount] ?? 2.575;
+    const eq = equipment.find(e => e.id === equipmentId);
+    const tol = tolerance;
+    const tol6 = tol != null ? tol / 6 : null;
+    const gMean = aiag ? aiag.partAvgs.reduce((s,v)=>s+v,0)/aiag.partAvgs.length : null;
+    const logoHtml = companyLogo
+      ? `<img src="${companyLogo}" alt="${companyName??''}" style="max-height:55px;max-width:200px;object-fit:contain;"/>`
+      : `<div style="font-size:14pt;font-weight:800;color:#1e3a5f;">${companyName??""}</div>`;
+
+    // Build grid rows HTML
+    let gridRows = "";
+    for (let i = 0; i < appraiserCount; i++) {
+      const aName = meta.appraiserNames[i] || `Appraiser ${al(i)}`;
+      const bgColors = ["#e0f2fe","#f3e8ff","#fef9c3"];
+      gridRows += `<tr style="background:${bgColors[i]??bgColors[0]};"><td colspan="${partCount+2}" style="padding:4px 10px;font-weight:700;font-size:9pt;">${i+1}. ${aName}</td></tr>`;
+      for (let k = 0; k < trialCount; k++) {
+        const rowNum = i*(trialCount+2)+k+1;
+        let cells = ""; let sum=0, cnt=0;
+        for (let j=0; j<partCount; j++) {
+          const v = parseFloat(gridData[i]?.[j]?.[k]??"");
+          cells += `<td style="text-align:center;font-family:monospace;">${isNaN(v)?"":v.toFixed(3)}</td>`;
+          if (!isNaN(v)){sum+=v;cnt++;}
+        }
+        const avg = cnt===partCount?(sum/cnt).toFixed(3):"";
+        gridRows += `<tr><td style="color:#555;white-space:nowrap;padding:3px 8px;"><span style="color:#ccc;margin-right:5px;">${rowNum}.</span>Trial ${k+1}</td>${cells}<td style="text-align:center;font-family:monospace;color:#888;">${avg}</td></tr>`;
+      }
+      // AVE row
+      const aveNum = i*(trialCount+2)+trialCount+1;
+      let aveCells="";
+      for (let j=0;j<partCount;j++){
+        const vs=Array.from({length:trialCount},(_,k)=>parseFloat(gridData[i]?.[j]?.[k]??"")).filter(v=>!isNaN(v));
+        aveCells+=`<td style="text-align:center;font-family:monospace;">${vs.length===trialCount?(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(3):""}</td>`;
+      }
+      gridRows+=`<tr style="background:#f0fdf4;"><td style="font-weight:600;white-space:nowrap;padding:3px 8px;"><span style="color:#ccc;margin-right:5px;">${aveNum}.</span>AVE</td>${aveCells}<td style="font-family:monospace;font-weight:700;color:#166534;">x&#773;${al(i).toLowerCase()}= ${aiag?.XbarA[i]!=null?aiag.XbarA[i].toFixed(4):"&#8212;"}</td></tr>`;
+      // Range row
+      const rngNum = aveNum+1;
+      let rCells="";
+      for (let j=0;j<partCount;j++){
+        const vs=Array.from({length:trialCount},(_,k)=>parseFloat(gridData[i]?.[j]?.[k]??"")).filter(v=>!isNaN(v));
+        const rng=vs.length===trialCount?Math.max(...vs)-Math.min(...vs):NaN;
+        const over=aiag?.UCLR!=null&&!isNaN(rng)&&rng>aiag.UCLR;
+        rCells+=`<td style="text-align:center;font-family:monospace;${over?"color:red;font-weight:700;":""}">${isNaN(rng)?"":rng.toFixed(3)}${over?"&#9650;":""}</td>`;
+      }
+      gridRows+=`<tr style="background:#f0fdf4;"><td style="font-weight:600;white-space:nowrap;padding:3px 8px;"><span style="color:#ccc;margin-right:5px;">${rngNum}.</span>R</td>${rCells}<td style="font-family:monospace;font-weight:700;color:#0369a1;">r${al(i).toLowerCase()}= ${aiag?.RbarA[i]!=null?aiag.RbarA[i].toFixed(4):"&#8212;"}</td></tr>`;
+    }
+    // Part Average
+    let paCells="";
+    for (let j=0;j<partCount;j++) paCells+=`<td style="text-align:center;font-family:monospace;font-weight:700;">${aiag?.partAvgs[j]!=null?aiag.partAvgs[j].toFixed(3):""}</td>`;
+    gridRows+=`<tr style="background:#e9ecef;border-top:2px solid #444;"><td style="font-weight:700;padding:4px 8px;">PART AVERAGE</td>${paCells}<td style="font-family:monospace;font-weight:700;">${gMean!=null?`X&#773;= ${gMean.toFixed(4)}`:""}${aiag?`  Rp= ${aiag.Rp.toFixed(4)}`:""}</td></tr>`;
+    // Footer rows 17-19
+    const rbarCalc=aiag?`(${aiag.RbarA.map(r=>r.toFixed(4)).join(" + ")}) &#247; ${appraiserCount}`:"";
+    gridRows+=`<tr style="background:#fafafa;font-style:italic;font-size:8pt;"><td colspan="${partCount+1}" style="color:#666;padding:3px 8px;">(${Array.from({length:appraiserCount},(_,i)=>`r${al(i).toLowerCase()}`).join(" + ")}) &#247; ${appraiserCount} = ${rbarCalc}</td><td style="font-family:monospace;font-weight:700;color:#0369a1;font-style:normal;padding:3px 8px;">R&#772;= ${aiag?.Rbar.toFixed(4)??"&#8212;"}</td></tr>`;
+    const xdiffCalc=aiag?`${Math.max(...aiag.XbarA).toFixed(4)} &minus; ${Math.min(...aiag.XbarA).toFixed(4)}`:"";
+    gridRows+=`<tr style="background:#fafafa;font-style:italic;font-size:8pt;"><td colspan="${partCount+1}" style="color:#666;padding:3px 8px;">x&#773;DIFF = Max x&#773; &minus; Min x&#773; = ${xdiffCalc}</td><td style="font-family:monospace;font-weight:700;color:#166534;font-style:normal;padding:3px 8px;">x&#773;DIFF= ${aiag?.xdiff.toFixed(4)??"&#8212;"}</td></tr>`;
+    const uclCalc=aiag?`${aiag.Rbar.toFixed(4)} &times; ${pD4}`:"";
+    gridRows+=`<tr style="background:#fafafa;font-style:italic;font-size:8pt;"><td colspan="${partCount+1}" style="color:#666;padding:3px 8px;">* UCL<sub>R</sub> = R&#772; &times; D&#8324; = ${uclCalc} &nbsp;&nbsp;(D&#8324; = 3.27 for 2 trials &middot; 2.58 for 3 trials)</td><td style="font-family:monospace;font-weight:700;color:#92400e;font-style:normal;padding:3px 8px;">UCL<sub>R</sub>= ${aiag?.UCLR.toFixed(4)??"&#8212;"}</td></tr>`;
+
+    // Analysis section
+    let analysisHtml="";
+    if (aiag) {
+      const gc=aiag.pctGRR<10?"#166534":aiag.pctGRR<=30?"#92400e":"#991b1b";
+      const gbg=aiag.pctGRR<10?"#dcfce7":aiag.pctGRR<=30?"#fef3c7":"#fee2e2";
+      const kRows=(obj:Record<string,number>,active:number)=>Object.entries(obj).map(([k,v])=>`<tr style="${active===+k?"background:#dbeafe;font-weight:700;":""}"><td style="border:1px solid #ccc;padding:2px 5px;">${k}</td><td style="border:1px solid #ccc;padding:2px 5px;text-align:right;font-family:monospace;">${v}</td></tr>`).join("");
+      const tolRows=tol6!=null?[{l:"%EV",v:aiag.EV},{l:"%AV",v:aiag.AV},{l:"%GRR",v:aiag.GRR,b:true},{l:"%PV",v:aiag.PV}].map(r=>`<div style="display:flex;gap:4px;font-family:monospace;${r.b?"font-weight:700;":""}font-size:8pt;"><span style="width:38px;">${r.l}</span><span>=</span><span>100(${r.v.toFixed(4)}/${tol6.toFixed(4)})</span><span style="margin-left:auto;${r.b?`color:${gc};`:""}">= ${(r.v/tol6*100).toFixed(2)}%</span></div>`).join(""):"";
+      const varRows=[{l:"Repeatability (EV)",s:aiag.EV,p:aiag.pctEV,g:false},{l:"Reproducibility (AV)",s:aiag.AV,p:aiag.pctAV,g:false},{l:"Gage R&amp;R (GRR)",s:aiag.GRR,p:aiag.pctGRR,g:true},{l:"Part-to-Part (PV)",s:aiag.PV,p:aiag.pctPV,g:false},{l:"Total Variation (TV)",s:aiag.TV,p:100,g:false}].map((r,i)=>`<tr style="${i===4?"background:#f8f9fa;font-weight:700;":""}"><td style="padding:5px 10px;border:1px solid #ccc;${!r.g&&i!==4?"padding-left:22px;color:#555;":"font-weight:700;"}">${r.l}</td><td style="padding:5px 10px;border:1px solid #ccc;text-align:right;font-family:monospace;">${r.s.toFixed(4)}</td><td style="padding:5px 10px;border:1px solid #ccc;text-align:right;font-family:monospace;">${(r.s*6).toFixed(4)}</td><td style="padding:5px 10px;border:1px solid #ccc;text-align:right;">${(r.p**2/100).toFixed(1)}%</td><td style="padding:5px 10px;border:1px solid #ccc;text-align:right;font-weight:700;${r.g?`color:${gc};`:""}">${r.p.toFixed(1)}%</td>${tol6!=null?`<td style="padding:5px 10px;border:1px solid #ccc;text-align:right;${r.g?`color:${gc};font-weight:700;`:""}">${(r.s/tol6*100).toFixed(1)}%</td>`:""}</tr>`).join("");
+      analysisHtml=`
+      <div style="margin-top:14px;border:1px solid #ccc;border-radius:4px;overflow:hidden;font-size:8.5pt;">
+        <div style="background:#f0f0f0;padding:5px 12px;border-bottom:1px solid #ccc;font-weight:700;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.05em;color:#555;">Gage Repeatability &amp; Reproducibility — Measurement Unit Analysis (AIAG MSA 4th Ed.)</div>
+        <div style="display:grid;grid-template-columns:3fr 2fr;border-bottom:1px solid #ccc;">
+          <div style="padding:14px;border-right:1px solid #ccc;">
+            ${[["Repeatability — Equipment Variation (EV)","EV = R&#772; &times; K&#8321;",`${aiag.Rbar.toFixed(4)} &times; ${pK1}`,aiag.EV.toFixed(4)],["Reproducibility — Appraiser Variation (AV)","AV = &radic;[(x&#773;DIFF &times; K&#8322;)&sup2; &minus; (EV&sup2; &divide; n&times;r)]",`&radic;[(${aiag.xdiff.toFixed(4)} &times; ${pK2})&sup2; &minus; (${aiag.EV.toFixed(4)}&sup2; &divide; ${partCount}&times;${trialCount})]`,aiag.AV.toFixed(4)],["Repeatability &amp; Reproducibility (GRR)","GRR = &radic;(EV&sup2; + AV&sup2;)",`&radic;(${aiag.EV.toFixed(4)}&sup2; + ${aiag.AV.toFixed(4)}&sup2;)`,aiag.GRR.toFixed(4)],["Part Variation (PV)","PV = Rp &times; K&#8323;",`${aiag.Rp.toFixed(4)} &times; ${pK3}`,aiag.PV.toFixed(4)],["Total Variation (TV)","TV = &radic;(GRR&sup2; + PV&sup2;)",`&radic;(${aiag.GRR.toFixed(4)}&sup2; + ${aiag.PV.toFixed(4)}&sup2;)`,aiag.TV.toFixed(4)]].map(([title,formula,sub,result])=>`<div style="margin-bottom:10px;"><div style="font-weight:700;color:#444;margin-bottom:3px;">${title}</div><div style="font-family:monospace;">${formula}</div><div style="font-family:monospace;color:#666;padding-left:14px;">= ${sub}</div><div style="font-family:monospace;font-weight:700;padding-left:14px;">= ${result}</div></div>`).join("")}
+            ${tol6!=null?`<div style="border-top:1px solid #eee;padding-top:8px;margin-top:4px;"><div style="font-weight:700;color:#444;margin-bottom:3px;">Tolerance (Tol)</div><div style="font-family:monospace;">Tol = (USL &minus; LSL) &divide; 6</div><div style="font-family:monospace;color:#666;padding-left:14px;">= (${meta.usl} &minus; ${meta.lsl}) &divide; 6</div><div style="font-family:monospace;font-weight:700;padding-left:14px;">= ${tol6.toFixed(4)}</div></div>`:""}
+          </div>
+          <div style="padding:14px;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+              <table style="border-collapse:collapse;font-size:7.5pt;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:2px 5px;text-align:left;">Trials</th><th style="border:1px solid #ccc;padding:2px 5px;font-weight:700;">K&#8321;</th></tr></thead><tbody>${kRows(AIAG_K1,trialCount)}</tbody></table>
+              <table style="border-collapse:collapse;font-size:7.5pt;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:2px 5px;text-align:left;">App.</th><th style="border:1px solid #ccc;padding:2px 5px;font-weight:700;">K&#8322;</th></tr></thead><tbody>${kRows(AIAG_K2,appraiserCount)}</tbody></table>
+              <table style="border-collapse:collapse;font-size:7.5pt;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:2px 5px;text-align:left;">Parts</th><th style="border:1px solid #ccc;padding:2px 5px;font-weight:700;">K&#8323;</th></tr></thead><tbody>${kRows(AIAG_K3,partCount)}</tbody></table>
+            </div>
+            ${tol6!=null?`<div style="margin-bottom:14px;"><div style="font-size:7pt;font-weight:700;text-transform:uppercase;color:#666;margin-bottom:5px;">% Tolerance (Tol = ${tol6.toFixed(4)})</div>${tolRows}</div>`:""}
+            <div style="border-top:1px solid #eee;padding-top:10px;">
+              <div style="font-family:monospace;margin-bottom:8px;font-size:8pt;"><div>ndc = 1.41 &times; (PV &divide; GRR)</div><div style="color:#666;padding-left:14px;">= 1.41 &times; (${aiag.PV.toFixed(4)} &divide; ${aiag.GRR.toFixed(4)})</div><div style="font-weight:700;padding-left:14px;">= ${aiag.ndc}</div></div>
+              <div style="background:${gbg};border:1px solid ${gc}40;border-radius:6px;padding:12px;text-align:center;">
+                <div style="font-size:18pt;font-weight:900;color:${gc};">%GRR = ${aiag.pctGRR.toFixed(2)}%</div>
+                <div style="margin-top:5px;display:inline-block;padding:3px 12px;border-radius:99px;background:${aiag.ndc>=5?"#dcfce7":"#fee2e2"};color:${aiag.ndc>=5?"#166534":"#991b1b"};font-weight:700;font-size:9pt;">NDC = ${aiag.ndc} ${aiag.ndc>=5?"✓":"✗"}</div>
+                <div style="margin-top:6px;display:inline-block;padding:4px 14px;border-radius:99px;background:${aiag.pctGRR<10?"#16a34a":aiag.pctGRR<=30?"#f59e0b":"#dc2626"};color:white;font-weight:800;font-size:9pt;">${aiag.pctGRR<10?"Gage System OK ✓":aiag.pctGRR<=30?"⚠ Marginal":"✗ Unacceptable"}</div>
+                <div style="margin-top:4px;font-size:7pt;color:#666;">&lt;10% Acceptable &middot; 10–30% Marginal &middot; &gt;30% Unacceptable</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:8.5pt;">
+          <thead style="background:#f0f0f0;"><tr><th style="text-align:left;padding:6px 10px;border:1px solid #ccc;">Source</th><th style="text-align:right;padding:6px 10px;border:1px solid #ccc;">&sigma; (Std Dev)</th><th style="text-align:right;padding:6px 10px;border:1px solid #ccc;">6&sigma; Study Var</th><th style="text-align:right;padding:6px 10px;border:1px solid #ccc;">%Contribution</th><th style="text-align:right;padding:6px 10px;border:1px solid #ccc;">%Study Var</th>${tol6!=null?`<th style="text-align:right;padding:6px 10px;border:1px solid #ccc;">%Tolerance</th>`:""}</tr></thead>
+          <tbody>${varRows}</tbody>
+        </table>
+      </div>`;
+    }
+
+    const partHeaders = Array.from({length:partCount},(_,j)=>`<th style="text-align:center;min-width:58px;">${j+1}</th>`).join("");
+    const html=`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>MSA Gage R&amp;R — ${meta.partName||"Study"}</title><style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;font-size:9pt;color:#111;padding:16px;}@page{size:landscape;margin:0.4in;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #ccc;padding:3px 6px;}.ph{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:12px;border-bottom:2px solid #1e3a5f;}.pt h1{font-size:12pt;font-weight:800;color:#1e3a5f;text-align:right;}.pt p{font-size:8pt;color:#666;text-align:right;}.sh{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #ccc;margin-bottom:10px;font-size:8.5pt;}.sh>div{padding:4px 8px;border-right:1px solid #ccc;border-bottom:1px solid #ccc;}.sh>div:nth-child(3n){border-right:none;}.fl{color:#555;font-weight:600;margin-right:4px;}</style></head><body>
+    <div class="ph"><div>${logoHtml}</div><div class="pt"><h1>Variable Gage Study — Long Form</h1><p>AIAG MSA 4th Ed. &middot; ${studyDate} &middot; ${eq?.name??"Gage"} (${eq?.gageId??""})</p></div></div>
+    <div class="sh">
+      <div><span class="fl">Part Number:</span>${meta.partNumber||"&#8212;"}</div><div><span class="fl">Gage Name:</span>${meta.gaugeDesc||(eq?.name??"&#8212;")}</div><div><span class="fl">Appraiser A:</span>${meta.appraiserNames[0]||"&#8212;"}</div>
+      <div><span class="fl">Part Name:</span>${meta.partName||"&#8212;"}</div><div><span class="fl">Gage Number:</span>${eq?.gageId??"&#8212;"}</div><div><span class="fl">Appraiser B:</span>${meta.appraiserNames[1]||"&#8212;"}</div>
+      <div><span class="fl">Characteristic:</span>${meta.characteristic||"&#8212;"}</div><div><span class="fl">Gage Type:</span>${meta.gaugeDesc||"&#8212;"}</div><div><span class="fl">${appraiserCount>=3?`Appraiser C: ${meta.appraiserNames[2]||"&#8212;"}`:"&nbsp;"}</span></div>
+      <div><span class="fl">Specification:</span>${meta.lsl||"&#8212;"} / ${meta.usl||"&#8212;"}</div><div><span class="fl">Trials:</span>${trialCount} &nbsp;<span class="fl">Parts:</span>${partCount} &nbsp;<span class="fl">Appraisers:</span>${appraiserCount}</div><div><span class="fl">Performed By:</span>${meta.performedBy||"&#8212;"}</div>
+    </div>
+    <table><thead><tr style="background:#e9ecef;"><th style="text-align:left;min-width:165px;">APPRAISER / TRIAL #</th>${partHeaders}<th style="text-align:center;min-width:100px;">AVERAGE</th></tr></thead><tbody>${gridRows}</tbody></table>
+    ${analysisHtml}
+    ${notes?`<div style="margin-top:12px;padding:8px 12px;background:#f8f9fa;border:1px solid #ccc;border-radius:4px;font-size:8.5pt;"><strong>Notes / Corrective Action:</strong><br/>${notes}</div>`:""}
+    <div style="margin-top:14px;font-size:7pt;color:#999;text-align:center;border-top:1px solid #eee;padding-top:6px;">Generated ${new Date().toLocaleString()} &middot; Core Compliance Hub &middot; AIAG MSA 4th Ed. Variable Gage Study (Long Method)</div>
+    <script>window.onload=function(){window.print();}</script></body></html>`;
+    win.document.write(html);
+    win.document.close();
   }
 
   const grrColor = aiag
@@ -2546,6 +2673,11 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
           onClick={handleSave} data-testid="button-save-msa-study">
           {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
         </Button>
+        {phase === "grid" && aiag && (
+          <Button variant="outline" onClick={handlePrint} data-testid="button-print-msa-study">
+            <Printer className="w-4 h-4 mr-1" /> Print Study
+          </Button>
+        )}
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
       </div>
     </div>
@@ -2585,6 +2717,10 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
   const iatf = isIatf(project);
   const aerospace = isAerospace(project);
   const medical = isMedical(project);
+
+  const { data: companyProfile } = useQuery<{ companyName?: string; logoUrl?: string | null }>({
+    queryKey: ["/api/company-profile"],
+  });
 
   const projectId = project?.id ?? null;
   const equipUrl = projectId ? `/api/calibration/equipment?projectId=${projectId}` : "/api/calibration/equipment";
@@ -3926,6 +4062,8 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 isSaving={saveMsa.isPending}
                 onSave={d => saveMsa.mutate(d)}
                 onCancel={() => { setMsaDialog(false); setEditMsaStudy(null); }}
+                companyLogo={companyProfile?.logoUrl}
+                companyName={companyProfile?.companyName}
               />
             </DialogContent>
           </Dialog>
