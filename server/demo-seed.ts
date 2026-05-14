@@ -6,6 +6,195 @@ import { db } from "./db";
 import { isoProjects, users, nonconformances } from "@shared/schema";
 import { eq, count, sql } from "drizzle-orm";
 
+// ─── CCI Chemical ISO 45001 Hazard Analysis seed data ─────────────────────────
+const CCI_HAZARDS: Array<{
+  workArea: string; activityTask: string; hazardDescription: string;
+  hazardType: string; operatingCondition: string; whoAffected: string[];
+  consequenceDescription: string; existingControls: string;
+  likelihood: number; severity: number;
+  controlHierarchy: string[]; plannedControls: string;
+  residualLikelihood: number; residualSeverity: number;
+  actionRequired: string | null; responsiblePerson: string;
+  targetDate: string | null; status: string;
+  legalRequirement: string; iso45001Clause: string; notes: string | null;
+}> = [
+  {
+    workArea: "Chemical Blending",
+    activityTask: "Batch blending — glycol ether addition",
+    hazardDescription: "Skin / vapor exposure to glycol ethers (EGBE, EGME) during open-drum handling and blending",
+    hazardType: "chemical", operatingCondition: "routine",
+    whoAffected: ["employees", "contractors"],
+    consequenceDescription: "Dermatitis, eye irritation, respiratory irritation; EGBE is a reproductive hazard at sustained high exposure",
+    existingControls: "SDS training (HazCom 2012), nitrile gloves, safety glasses, local exhaust ventilation at blend stations",
+    likelihood: 3, severity: 4,
+    controlHierarchy: ["engineering", "administrative", "ppe"],
+    plannedControls: "Install enclosed drum-transfer pump system to minimize open handling; upgrade LEV to ASHRAE capture-velocity spec",
+    residualLikelihood: 2, residualSeverity: 3,
+    actionRequired: null, responsiblePerson: "EHS Coordinator",
+    targetDate: null, status: "closed",
+    legalRequirement: "OSHA 29 CFR 1910.1000 (PELs); OSHA HazCom 2012 (29 CFR 1910.1200)",
+    iso45001Clause: "6.1.2", notes: null,
+  },
+  {
+    workArea: "Chemical Blending",
+    activityTask: "Solvent transfer — MEK & isopropanol handling",
+    hazardDescription: "Flammable vapor accumulation during solvent transfer from bulk containers to blend vessels",
+    hazardType: "fire", operatingCondition: "routine",
+    whoAffected: ["employees", "contractors"],
+    consequenceDescription: "Flash fire or explosion causing severe burns, structural damage, or fatality",
+    existingControls: "Bonding/grounding cables on all containers, explosion-proof electrical in blending area, ABC extinguishers, no-ignition-source policy",
+    likelihood: 2, severity: 5,
+    controlHierarchy: ["engineering", "administrative", "ppe"],
+    plannedControls: "Install continuous LEL monitoring with audible/visual alarm; annual fire suppression system inspection",
+    residualLikelihood: 1, residualSeverity: 5,
+    actionRequired: null, responsiblePerson: "Production Supervisor",
+    targetDate: null, status: "closed",
+    legalRequirement: "OSHA 29 CFR 1910.119 (PSM); NFPA 30 (Flammable Liquids Code); OSHA 29 CFR 1910.106",
+    iso45001Clause: "6.1.2", notes: "LEL monitor purchase approved in FY2026 CapEx. Installation Q2 2026.",
+  },
+  {
+    workArea: "Warehouse & Shipping",
+    activityTask: "Forklift operation in shared pedestrian/vehicle areas",
+    hazardDescription: "Struck-by or run-over incident — forklift operating in proximity to pedestrian workers",
+    hazardType: "physical", operatingCondition: "routine",
+    whoAffected: ["employees", "contractors", "visitors"],
+    consequenceDescription: "Crush injuries, fractures, traumatic brain injury, or fatality",
+    existingControls: "Forklift certification training, horn use in blind spots, 5 mph speed limit, yellow floor striping",
+    likelihood: 3, severity: 5,
+    controlHierarchy: ["engineering", "administrative"],
+    plannedControls: "Install physical barriers (Armco barriers or floor-mounted bollards) separating pedestrian walkways from forklift aisles; proximity warning system on forklifts",
+    residualLikelihood: 2, residualSeverity: 4,
+    actionRequired: "Install physical pedestrian separation barriers in Warehouse Bays 1–3 and Shipping dock area",
+    responsiblePerson: "Warehouse Supervisor",
+    targetDate: "2026-09-30", status: "in-progress",
+    legalRequirement: "OSHA 29 CFR 1910.178 (Powered Industrial Trucks)",
+    iso45001Clause: "8.1.2", notes: "3 near-miss events recorded in 2024. Priority corrective action.",
+  },
+  {
+    workArea: "Filling & Packaging",
+    activityTask: "Manual drum and container handling on fill line",
+    hazardDescription: "Repetitive heavy lifting and awkward postures during manual drum handling (55-gal drums up to 475 lbs when full)",
+    hazardType: "ergonomic", operatingCondition: "routine",
+    whoAffected: ["employees"],
+    consequenceDescription: "Musculoskeletal disorders: lower back strain, rotator cuff injury, herniated disc — leading cause of lost-time injuries",
+    existingControls: "Team-lift policy for loads >50 lbs, pre-shift stretching program, back-support belts available",
+    likelihood: 4, severity: 3,
+    controlHierarchy: ["substitution", "engineering", "administrative"],
+    plannedControls: "Procure drum tilters and drum-handling dollies for fill line; redesign workstation to reduce reach distance",
+    residualLikelihood: 2, residualSeverity: 3,
+    actionRequired: "Evaluate and purchase mechanical drum handling equipment for Fill Lines 1 and 2",
+    responsiblePerson: "Production Supervisor",
+    targetDate: "2026-07-31", status: "in-progress",
+    legalRequirement: "OSHA General Duty Clause §5(a)(1); OSHA Ergonomics Guidelines for Material Handling",
+    iso45001Clause: "6.1.2", notes: "5 OSHA recordable MSD cases in 2023–2024 linked to fill-line handling.",
+  },
+  {
+    workArea: "Analytical Laboratory",
+    activityTask: "pH and titration analysis — acid/base reagent use",
+    hazardDescription: "Chemical splash during preparation and use of strong acid (HCl, H₂SO₄) and base (NaOH) reagents",
+    hazardType: "chemical", operatingCondition: "routine",
+    whoAffected: ["employees"],
+    consequenceDescription: "Chemical burns to eyes, face, and skin; risk of permanent eye injury or blindness",
+    existingControls: "Fume hood for all acid/base work, safety glasses, nitrile gloves, emergency eyewash within 10 seconds (ANSI Z358.1)",
+    likelihood: 3, severity: 4,
+    controlHierarchy: ["engineering", "administrative", "ppe"],
+    plannedControls: "Require face shield (not just safety glasses) for all concentrated acid/base work; annual eyewash station inspection log",
+    residualLikelihood: 1, residualSeverity: 3,
+    actionRequired: null, responsiblePerson: "QC Lab Manager",
+    targetDate: null, status: "closed",
+    legalRequirement: "OSHA 29 CFR 1910.133 (Eye/Face Protection); OSHA 29 CFR 1910.151 (Medical Services/First Aid)",
+    iso45001Clause: "6.1.2", notes: null,
+  },
+  {
+    workArea: "Chemical Blending",
+    activityTask: "Cleaning and maintenance of batch mixing vessels",
+    hazardDescription: "Entanglement or crush injury from unguarded agitator/mixer blades during vessel cleaning or inspection",
+    hazardType: "mechanical", operatingCondition: "non-routine",
+    whoAffected: ["employees"],
+    consequenceDescription: "Amputation, crush injury, or fatality if lockout/tagout procedure not followed",
+    existingControls: "Written LOTO procedure (SOP-MNT-001), annual LOTO training, energy-isolation locks assigned per operator",
+    likelihood: 2, severity: 5,
+    controlHierarchy: ["elimination", "engineering", "administrative"],
+    plannedControls: "Install zero-energy-state verification step in electronic CMMS work order; add LOTO audit to monthly EHS inspection checklist",
+    residualLikelihood: 1, residualSeverity: 5,
+    actionRequired: null, responsiblePerson: "Maintenance Supervisor",
+    targetDate: null, status: "closed",
+    legalRequirement: "OSHA 29 CFR 1910.147 (Control of Hazardous Energy — LOTO); OSHA 29 CFR 1910.212 (Machine Guarding)",
+    iso45001Clause: "8.1.2", notes: "LOTO verified during last internal audit — no deficiencies.",
+  },
+  {
+    workArea: "Maintenance",
+    activityTask: "Electrical repairs and panel work on filling equipment",
+    hazardDescription: "Electrical shock or arc flash during repair or inspection of 480V filling line electrical panels",
+    hazardType: "electrical", operatingCondition: "non-routine",
+    whoAffected: ["employees", "contractors"],
+    consequenceDescription: "Electrocution, cardiac arrest, severe arc flash burns (up to 40 cal/cm² incident energy)",
+    existingControls: "Qualified electrician requirement, LOTO prior to panel entry, arc flash labels on all 480V equipment, FR arc-rated PPE available",
+    likelihood: 2, severity: 5,
+    controlHierarchy: ["engineering", "administrative", "ppe"],
+    plannedControls: "Complete arc flash hazard analysis (NFPA 70E) for all 480V panels; add PPE category label to each panel door",
+    residualLikelihood: 1, residualSeverity: 4,
+    actionRequired: "Commission arc flash study for filling line electrical distribution panels",
+    responsiblePerson: "Maintenance Supervisor",
+    targetDate: "2026-12-31", status: "open",
+    legalRequirement: "OSHA 29 CFR 1910.147; OSHA 29 CFR 1910.269; NFPA 70E (2021)",
+    iso45001Clause: "6.1.2", notes: "Electrical contractor to perform arc flash study. Budgeted in FY2027 plan.",
+  },
+  {
+    workArea: "All Areas",
+    activityTask: "Emergency response to chemical spill (bulk glycol or solvent)",
+    hazardDescription: "Uncontrolled release of bulk chemical during transfer failure, container breach, or vehicle collision at dock",
+    hazardType: "environmental", operatingCondition: "emergency",
+    whoAffected: ["employees", "contractors", "public"],
+    consequenceDescription: "Acute chemical exposure to responders; environmental contamination of storm drain or POTW; OSHA/EPA regulatory violation",
+    existingControls: "SPCC Plan current (rev. 2024), spill kits at each blending station and dock, 8-hour HAZWOPER first-responder awareness training for all plant employees",
+    likelihood: 2, severity: 4,
+    controlHierarchy: ["administrative", "ppe"],
+    plannedControls: "Conduct annual tabletop emergency response drill; update Emergency Response Plan with Ohio SERC notification contacts",
+    residualLikelihood: 1, residualSeverity: 3,
+    actionRequired: "Schedule Q3 2026 full-scale spill response drill; update ERP contact list",
+    responsiblePerson: "EHS Coordinator",
+    targetDate: "2026-09-15", status: "open",
+    legalRequirement: "OSHA 29 CFR 1910.120 (HAZWOPER); Ohio EPA SPCC regulations; EPCRA §302–304 (SARA Title III)",
+    iso45001Clause: "8.1.3", notes: "Ohio LEPC notified annually. Last drill conducted March 2024.",
+  },
+  {
+    workArea: "Office / Administration",
+    activityTask: "Shift work, production planning, and customer order management",
+    hazardDescription: "Work-related stress and psychosocial hazards from extended shifts, production pressures, and OEM deadline demands",
+    hazardType: "psychosocial", operatingCondition: "routine",
+    whoAffected: ["employees"],
+    consequenceDescription: "Mental health disorders, burnout, fatigue-related errors, increased absenteeism and turnover",
+    existingControls: "EAP (Employee Assistance Program) available at no cost, open-door policy, annual performance reviews",
+    likelihood: 4, severity: 2,
+    controlHierarchy: ["administrative"],
+    plannedControls: "Implement annual employee wellbeing survey; review shift-rotation policy to limit consecutive night shifts; mental health awareness training for supervisors",
+    residualLikelihood: 3, residualSeverity: 2,
+    actionRequired: "Launch wellbeing survey by Q2 2026; deliver supervisor mental health training",
+    responsiblePerson: "HR Manager",
+    targetDate: "2026-06-30", status: "open",
+    legalRequirement: "OSHA General Duty Clause §5(a)(1); ISO 45001:2018 §6.1.2 (psychosocial hazards)",
+    iso45001Clause: "6.1.2", notes: "ISO 45001:2021 amendment explicitly includes psychosocial hazards within §6.1.2 scope.",
+  },
+  {
+    workArea: "Warehouse & Shipping",
+    activityTask: "Compressed gas cylinder storage and movement (nitrogen, CO₂ for lab)",
+    hazardDescription: "Cylinder valve damage or seal failure causing uncontrolled pressurized gas release or projectile hazard",
+    hazardType: "physical", operatingCondition: "routine",
+    whoAffected: ["employees"],
+    consequenceDescription: "High-velocity projectile (cylinder becomes 'rocket') causing fatal impact injury; asphyxiation in confined space from inert gas leak",
+    existingControls: "Cylinders chained in upright position at all times, protective valve caps installed when not in use, CGA handling training for all warehouse personnel",
+    likelihood: 2, severity: 4,
+    controlHierarchy: ["engineering", "administrative"],
+    plannedControls: "Install dedicated cylinder storage cage with fall-prevention chains; add cylinder inspection to monthly EHS walk checklist",
+    residualLikelihood: 1, residualSeverity: 3,
+    actionRequired: null, responsiblePerson: "Warehouse Supervisor",
+    targetDate: null, status: "closed",
+    legalRequirement: "OSHA 29 CFR 1910.101 (Compressed Gases — General Requirements); CGA P-1",
+    iso45001Clause: "6.1.2", notes: null,
+  },
+];
+
 const DEMO_USER_ID_PROD = "a60ec465-679d-4967-9e0f-e7a36d465a1c";
 const DEMO_USER_ID_DEV  = "c2df200b-5806-4310-ba66-e127f2095625";
 const EBENI_USER_ID     = "54320068";
@@ -50,6 +239,8 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
         `);
         console.log("[demo-seed] Backfilled strategic_risks for CCI Chemical demo account.");
       }
+      // Backfill hazard_analysis if missing for the CCI Chemical demo account
+      await seedHazardsIfMissing();
       return;
     }
 
@@ -115,8 +306,75 @@ export async function seedDemoDataIfEmpty(): Promise<void> {
     `);
 
     console.log("[demo-seed] Seeded 3 nonconformances.");
+
+    // Seed hazard analysis records
+    await seedHazardsForUser(ownerUserId);
+
     console.log("[demo-seed] CCI Chemical demo seed complete ✓");
   } catch (err: any) {
     console.error("[demo-seed] Seed error:", err.message);
   }
+}
+
+async function seedHazardsIfMissing(): Promise<void> {
+  // Find the owner of the CCI Chemical demo project
+  const ownerRes = await db.execute(sql`
+    SELECT user_id FROM iso_projects WHERE org_name = 'CCI Chemical, Inc.' LIMIT 1
+  `);
+  if (!ownerRes.rows.length) return;
+  const ownerId = (ownerRes.rows[0] as any).user_id as string;
+
+  const existingRes = await db.execute(sql`
+    SELECT COUNT(*) AS cnt FROM hazard_analysis WHERE user_id = ${ownerId}
+  `);
+  const cnt = Number((existingRes.rows[0] as any).cnt ?? 0);
+  if (cnt > 0) {
+    console.log(`[demo-seed] hazard_analysis already has ${cnt} row(s) for CCI Chemical — skipping.`);
+    return;
+  }
+  await seedHazardsForUser(ownerId);
+}
+
+async function seedHazardsForUser(userId: string): Promise<void> {
+  function calcLevel(score: number): string {
+    if (score <= 6) return "low";
+    if (score <= 12) return "medium";
+    if (score <= 19) return "high";
+    return "critical";
+  }
+
+  for (const h of CCI_HAZARDS) {
+    const riskScore = h.likelihood * h.severity;
+    const residualRiskScore = h.residualLikelihood * h.residualSeverity;
+    const riskLevel = calcLevel(riskScore);
+    const residualRiskLevel = calcLevel(residualRiskScore);
+    // PostgreSQL array literal format: {val1,val2}
+    const whoLiteral = "{" + h.whoAffected.join(",") + "}";
+    const controlLiteral = "{" + h.controlHierarchy.join(",") + "}";
+
+    await db.execute(sql`
+      INSERT INTO hazard_analysis (
+        user_id, work_area, activity_task, hazard_description, hazard_type,
+        operating_condition, who_affected,
+        consequence_description, existing_controls,
+        likelihood, severity, risk_score, risk_level,
+        control_hierarchy, planned_controls,
+        residual_likelihood, residual_severity, residual_risk_score, residual_risk_level,
+        action_required, responsible_person, target_date, status,
+        legal_requirement, iso45001_clause, notes,
+        created_at, updated_at
+      ) VALUES (
+        ${userId}, ${h.workArea}, ${h.activityTask}, ${h.hazardDescription}, ${h.hazardType},
+        ${h.operatingCondition}, ${whoLiteral}::text[],
+        ${h.consequenceDescription}, ${h.existingControls},
+        ${h.likelihood}, ${h.severity}, ${riskScore}, ${riskLevel},
+        ${controlLiteral}::text[], ${h.plannedControls},
+        ${h.residualLikelihood}, ${h.residualSeverity}, ${residualRiskScore}, ${residualRiskLevel},
+        ${h.actionRequired}, ${h.responsiblePerson}, ${h.targetDate ?? null}, ${h.status},
+        ${h.legalRequirement}, ${h.iso45001Clause}, ${h.notes},
+        NOW(), NOW()
+      )
+    `);
+  }
+  console.log(`[demo-seed] Seeded ${CCI_HAZARDS.length} hazard analysis records for userId=${userId}.`);
 }
