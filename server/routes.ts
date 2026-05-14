@@ -3317,6 +3317,64 @@ Critical: Post-accident drug test must occur within 8 hours (alcohol) and 32 hou
     }
   });
 
+  // ── Public Ask Corey — visitor trial (no auth, max 3 questions per email) ─────
+  app.post("/api/public/ask-corey", async (req, res) => {
+    try {
+      const { name, email, question } = req.body;
+      if (!name?.trim() || !email?.trim() || !question?.trim()) {
+        return res.status(400).json({ message: "Name, email, and question are required." });
+      }
+      const emailLc = email.toLowerCase().trim();
+
+      // Find or create the trial lead
+      let lead = await storage.getTrialLeadByEmail(emailLc);
+      if (!lead) {
+        const rawIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket.remoteAddress || null;
+        const ip = Array.isArray(rawIp) ? rawIp[0] : (typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : null);
+        lead = await storage.createTrialLead({ name: name.trim(), email: emailLc }, ip ?? undefined);
+      }
+
+      // Enforce 3-question limit
+      if ((lead.questionCount ?? 0) >= 3) {
+        return res.status(403).json({
+          message: "You have used all 3 free questions. Sign up for a free account to continue chatting with Corey.",
+          limitReached: true,
+          questionsUsed: lead.questionCount,
+        });
+      }
+
+      // Call Corey AI
+      const anthropic = createAnthropicClient();
+      const systemPrompt = `You are Corey, a Senior Occupational Health & Safety and Compliance Expert with 30+ years of experience in EHS, OSHA regulations (29 CFR 1910 & 1926), workers' compensation, industrial hygiene, DOT/FMCSA compliance, and occupational medicine. You are deeply knowledgeable, practical, and direct. You help employers understand and meet their compliance obligations.
+
+You are answering a FREE trial question from a prospective user of Core Compliance Hub (CCHUB). Be genuinely helpful, give a thorough and accurate answer, and end your response by briefly mentioning that CCHUB offers ongoing AI-powered compliance support. Keep the tone professional and approachable. Do not use excessive disclaimers — you are the expert.`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 800,
+        system: systemPrompt,
+        messages: [{ role: "user", content: question.trim() }],
+      });
+
+      const answer = (response.content[0] as any)?.text ?? "I'm sorry, I couldn't generate a response. Please try again.";
+
+      // Save question and increment count
+      await storage.saveTrialLeadQuestion(emailLc, question.trim());
+      await storage.incrementTrialQuestionCount(emailLc);
+
+      const updatedLead = await storage.getTrialLeadByEmail(emailLc);
+
+      res.json({
+        answer,
+        questionsUsed: updatedLead?.questionCount ?? (lead.questionCount ?? 0) + 1,
+        questionsRemaining: Math.max(0, 3 - (updatedLead?.questionCount ?? 1)),
+      });
+    } catch (error: any) {
+      console.error("Public Ask Corey error:", error);
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
   // Track page visit (public, no auth required)
   app.post("/api/track-visit", async (req, res) => {
     try {

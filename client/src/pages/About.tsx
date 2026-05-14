@@ -1,14 +1,211 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Bot, Globe, BookOpen, Phone, CheckCircle2, Sparkles, TrendingUp, Heart, Lightbulb, Shield, GraduationCap, FileText, Users, Stethoscope, ClipboardList, AlertTriangle, Target, Zap, Building2, Award, Smartphone, Settings2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ArrowLeft, Bot, Globe, BookOpen, Phone, CheckCircle2, Sparkles, TrendingUp, Heart, Lightbulb, Shield, GraduationCap, FileText, Users, Stethoscope, ClipboardList, AlertTriangle, Target, Zap, Building2, Award, Smartphone, Settings2, Send, Lock } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import logoUrl from "@assets/7_1772482223269.png";
 import acsiLogo from "@assets/Transp1_1768928785892.png";
 import cchLogo from "@assets/1_1770683748423.png";
 
+// ── Ask Corey visitor dialog ────────────────────────────────────────────────
+function AskCoreyDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [step, setStep] = useState<"info" | "chat">("info");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [question, setQuestion] = useState("");
+  const [conversation, setConversation] = useState<{ q: string; a: string }[]>([]);
+  const [questionsUsed, setQuestionsUsed] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
+  const [infoError, setInfoError] = useState("");
+
+  function handleClose() {
+    onClose();
+    // Reset after close animation
+    setTimeout(() => {
+      setStep("info"); setName(""); setEmail(""); setQuestion("");
+      setConversation([]); setQuestionsUsed(0); setLimitReached(false); setInfoError("");
+    }, 300);
+  }
+
+  const askMutation = useMutation({
+    mutationFn: async (q: string) => {
+      const res = await apiRequest("POST", "/api/public/ask-corey", { name, email, question: q });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.limitReached) {
+        setLimitReached(true);
+        setQuestionsUsed(3);
+        return;
+      }
+      setConversation(prev => [...prev, { q: question.trim(), a: data.answer }]);
+      setQuestionsUsed(data.questionsUsed ?? questionsUsed + 1);
+      setQuestion("");
+      if (data.questionsRemaining === 0) setLimitReached(true);
+    },
+  });
+
+  function handleInfoSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) { setInfoError("Please enter your name."); return; }
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) { setInfoError("Please enter a valid email address."); return; }
+    setInfoError("");
+    setStep("chat");
+  }
+
+  function handleAsk(e: React.FormEvent) {
+    e.preventDefault();
+    if (!question.trim() || askMutation.isPending || limitReached) return;
+    askMutation.mutate(question.trim());
+  }
+
+  const remaining = Math.max(0, 3 - questionsUsed);
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
+      <DialogContent className="max-w-lg w-full">
+        {step === "info" ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Bot className="w-6 h-6 text-accent" />
+                Ask Corey — Free Trial
+              </DialogTitle>
+              <DialogDescription>
+                Get up to <strong>3 free answers</strong> from Corey, our Senior Occupational Health &amp; Safety AI Expert. No account required.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleInfoSubmit} className="space-y-4 mt-2">
+              <div>
+                <Label htmlFor="corey-name" className="text-sm font-semibold">Your Name *</Label>
+                <Input id="corey-name" className="mt-1" value={name} onChange={e => setName(e.target.value)}
+                  placeholder="e.g. Jane Smith" data-testid="input-corey-name" autoFocus />
+              </div>
+              <div>
+                <Label htmlFor="corey-email" className="text-sm font-semibold">Email Address *</Label>
+                <Input id="corey-email" type="email" className="mt-1" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="e.g. jane@company.com" data-testid="input-corey-email" />
+              </div>
+              {infoError && <p className="text-sm text-red-500">{infoError}</p>}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground border rounded-lg px-3 py-2 bg-muted/30">
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                Your email is used only to track your 3 free questions. We don't spam.
+              </div>
+              <div className="flex gap-2 justify-end pt-1">
+                <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+                <Button type="submit" className="bg-accent hover:bg-accent/90 text-white" data-testid="button-corey-start">
+                  Start Chatting →
+                </Button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Bot className="w-6 h-6 text-accent" />
+                Corey — Compliance Expert
+              </DialogTitle>
+              <DialogDescription className="flex items-center justify-between">
+                <span>Hi {name.split(" ")[0]}! Ask your compliance questions below.</span>
+                <span className={`font-semibold text-sm ${remaining === 0 ? "text-red-500" : remaining === 1 ? "text-amber-500" : "text-emerald-600"}`}>
+                  {remaining} question{remaining !== 1 ? "s" : ""} remaining
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Conversation history */}
+            <div className="space-y-4 max-h-72 overflow-y-auto pr-1 mt-2">
+              {conversation.length === 0 && !askMutation.isPending && (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  <Bot className="w-10 h-10 mx-auto mb-2 text-accent/50" />
+                  Ask me anything about OSHA compliance, workplace safety, occupational health, or DOT regulations.
+                </div>
+              )}
+              {conversation.map((item, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex justify-end">
+                    <div className="bg-accent text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm max-w-[85%]">
+                      {item.q}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="w-7 h-7 rounded-full bg-[hsl(222,47%,11%)] flex items-center justify-center shrink-0 mt-0.5">
+                      <Bot className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm max-w-[85%] whitespace-pre-wrap leading-relaxed">
+                      {item.a}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {askMutation.isPending && (
+                <div className="flex gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[hsl(222,47%,11%)] flex items-center justify-center shrink-0">
+                    <Bot className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-muted-foreground">
+                    <span className="inline-flex gap-1">
+                      <span className="animate-bounce" style={{animationDelay:"0ms"}}>●</span>
+                      <span className="animate-bounce" style={{animationDelay:"150ms"}}>●</span>
+                      <span className="animate-bounce" style={{animationDelay:"300ms"}}>●</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+              {askMutation.isError && (
+                <p className="text-sm text-red-500 text-center">Something went wrong. Please try again.</p>
+              )}
+            </div>
+
+            {/* Limit reached */}
+            {limitReached ? (
+              <div className="border border-accent/30 bg-accent/5 rounded-lg p-4 space-y-3 mt-2">
+                <p className="text-sm font-semibold text-center">You've used all 3 free questions!</p>
+                <p className="text-xs text-muted-foreground text-center">Create a free CCHUB account to get unlimited access to Corey plus all our compliance tools.</p>
+                <div className="flex gap-2 justify-center">
+                  <Link href="/get-started">
+                    <Button className="bg-accent hover:bg-accent/90 text-white text-sm" data-testid="button-corey-signup">
+                      Create Free Account →
+                    </Button>
+                  </Link>
+                  <Button variant="outline" onClick={handleClose} className="text-sm">Close</Button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleAsk} className="flex gap-2 mt-2">
+                <Textarea
+                  className="resize-none text-sm flex-1 min-h-[60px] max-h-[120px]"
+                  placeholder="e.g. When is an injury OSHA recordable?"
+                  value={question}
+                  onChange={e => setQuestion(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAsk(e); } }}
+                  disabled={askMutation.isPending}
+                  data-testid="textarea-corey-question"
+                />
+                <Button type="submit" disabled={!question.trim() || askMutation.isPending}
+                  className="bg-accent hover:bg-accent/90 text-white self-end h-10 px-3" data-testid="button-corey-ask">
+                  <Send className="w-4 h-4" />
+                </Button>
+              </form>
+            )}
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function About() {
+  const [coreyOpen, setCoreyOpen] = useState(false);
+
   useEffect(() => {
     document.title = "About Core Compliance Hub | Occupational Health & Safety Education Platform";
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -500,18 +697,11 @@ export default function About() {
             Whether you have a quick recordability question or you're building an entire compliance program from the ground up — CCHUB is here to educate, empower, and protect.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
-            <Link href="/corey">
-              <Button size="lg" className="bg-accent text-accent-foreground border-accent-border px-8" data-testid="button-cta-corey">
-                <Bot className="w-5 h-5 mr-2" />
-                Talk to Corey
-              </Button>
-            </Link>
-            <Link href="/training">
-              <Button size="lg" variant="outline" className="text-white border-white/30 backdrop-blur-sm bg-white/5 px-8" data-testid="button-cta-training">
-                <GraduationCap className="w-5 h-5 mr-2" />
-                Browse Training
-              </Button>
-            </Link>
+            <Button size="lg" onClick={() => setCoreyOpen(true)}
+              className="bg-accent text-accent-foreground border-accent-border px-8" data-testid="button-cta-corey">
+              <Bot className="w-5 h-5 mr-2" />
+              Ask Corey — 3 Free Questions
+            </Button>
             <Link href="/contact">
               <Button size="lg" variant="outline" className="text-white border-white/30 backdrop-blur-sm bg-white/5 px-8" data-testid="button-cta-contact">
                 <Phone className="w-5 h-5 mr-2" />
@@ -519,8 +709,11 @@ export default function About() {
               </Button>
             </Link>
           </div>
+          <p className="text-white/40 text-xs">No account needed · Up to 3 questions · Sign up free for unlimited access</p>
         </div>
       </section>
+
+      <AskCoreyDialog open={coreyOpen} onClose={() => setCoreyOpen(false)} />
 
       <footer className="py-8 border-t">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
