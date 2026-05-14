@@ -2330,7 +2330,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
             ))}
           </div>
           {!activeTools.pestle && !activeTools.swot && (
-            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Enable at least one tool to identify §4.1 issues</span>
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Enable at least one tool to identify 4.1 issues</span>
           )}
         </div>
 
@@ -2750,9 +2750,9 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
               {/* ── Info banner */}
               <div className="bg-orange-50 dark:bg-orange-900/15 border border-orange-200 dark:border-orange-700/40 rounded-xl p-4 text-sm text-orange-900 dark:text-orange-200 flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-bold text-orange-800 dark:text-orange-300 mb-0.5">ISO §4.1 Strategic Risk Register</p>
+                  <p className="font-bold text-orange-800 dark:text-orange-300 mb-0.5">ISO 4.1 Strategic Risk Register</p>
                   <p className="text-xs text-orange-700/80 dark:text-orange-400 leading-relaxed">
-                    Strategic risks and opportunities are rated on a 3×3 matrix: <strong>Impact (H/M/L)</strong> × <strong>Likelihood (H/M/L)</strong>. This is separate from the §6.1 operational process risk register.
+                    Strategic risks and opportunities are rated on a 3×3 matrix: <strong>Impact (H/M/L)</strong> × <strong>Likelihood (H/M/L)</strong>. This is separate from the 6.1 operational process risk register.
                     Use the PESTLE and SWOT export buttons to auto-populate this register, then assign owners and responses here.
                   </p>
                 </div>
@@ -3041,7 +3041,7 @@ function ContextOfOrgModule({ project, onStartWizard, onAskIsa, onNavigate }: {
                 ].map(row => (
                   <div key={row.std} className="flex items-start gap-3 py-1.5 border-b border-border/40 last:border-0">
                     <span className="shrink-0 text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">{row.std}</span>
-                    <span className="text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">§{row.clause}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">{row.clause}</span>
                     <p className="text-sm text-muted-foreground leading-snug">{row.req}</p>
                   </div>
                 ))}

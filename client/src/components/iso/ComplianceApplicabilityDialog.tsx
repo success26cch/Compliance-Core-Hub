@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────────────────────
  * ComplianceApplicabilityDialog
- * ISO 14001 §6.1.3 — "Does this requirement APPLY to our organization?"
+ * ISO 14001 6.1.3 — "Does this requirement APPLY to our organization?"
  * Used from the Starter Library dialog to help users decide before importing.
  * ───────────────────────────────────────────────────────────────────────────── */
 import { useState } from "react";
@@ -36,7 +36,7 @@ const RESULT_CONFIG = {
     color: "text-emerald-600 dark:text-emerald-400",
     bg: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40",
     badge: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300",
-    advice: "Based on your answers, this regulation appears to apply to your facility. We recommend adding it to your Compliance Obligations Register (§6.1.3) and scheduling a §9.1.2 compliance evaluation.",
+    advice: "Based on your answers, this regulation appears to apply to your facility. We recommend adding it to your Compliance Obligations Register (6.1.3) and scheduling a 9.1.2 compliance evaluation.",
   },
   may_not_apply: {
     label: "May Not Apply to Your Facility",
@@ -124,11 +124,11 @@ export default function ComplianceApplicabilityDialog({ open, onOpenChange, item
               <Scale className="w-5 h-5 text-blue-500" />
               <DialogTitle className="text-base font-bold">Applicability Screening</DialogTitle>
               <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 text-xs border">
-                ISO 14001 §6.1.3
+                ISO 14001 6.1.3
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Under §6.1.3, your organization must <strong>identify and have access to all legal and other requirements applicable to its environmental aspects.</strong> This screening helps you determine whether this requirement applies to your facility before adding it to your register.
+              Under 6.1.3, your organization must <strong>identify and have access to all legal and other requirements applicable to its environmental aspects.</strong> This screening helps you determine whether this requirement applies to your facility before adding it to your register.
             </p>
           </DialogHeader>
 
@@ -189,7 +189,7 @@ export default function ComplianceApplicabilityDialog({ open, onOpenChange, item
               </div>
 
               <p className="text-xs text-muted-foreground italic border-t border-border/40 pt-3">
-                This screening is a decision-support tool. Your organization's qualified personnel make the final applicability determination. Document this determination in your §6.1.3 register.
+                This screening is a decision-support tool. Your organization's qualified personnel make the final applicability determination. Document this determination in your 6.1.3 register.
               </p>
             </div>
           ) : (

@@ -483,14 +483,14 @@ function EquipmentForm({ initial, isoProjectId, onSave, onCancel }: {
         </div>
       </div>
 
-      <SectionLabel icon={Factory} label="IATF 16949 §8.5.1.1" sub="Total Productive Maintenance" />
+      <SectionLabel icon={Factory} label="IATF 16949 8.5.1.1" sub="Total Productive Maintenance" />
       <div className="space-y-3">
         <div className="flex items-center gap-3 p-4 border border-border rounded-xl bg-muted/20">
           <Checkbox id="isKeyProd" checked={!!form.isKeyProductionEquipment}
             onCheckedChange={v => set("isKeyProductionEquipment")(!!v)} className="w-5 h-5" />
           <label htmlFor="isKeyProd" className="text-sm font-semibold cursor-pointer">
             Key Production Equipment (KPE)
-            <span className="block text-xs font-normal text-muted-foreground">IATF §8.5.1.1 — List of key process equipment; TPM planning required</span>
+            <span className="block text-xs font-normal text-muted-foreground">IATF 8.5.1.1 — List of key process equipment; TPM planning required</span>
           </label>
         </div>
         <div className={row2}>
@@ -503,7 +503,7 @@ function EquipmentForm({ initial, isoProjectId, onSave, onCancel }: {
             <Textarea className="resize-none" rows={2} value={form.contingencyPlan ?? ""} onChange={e => set("contingencyPlan")(e.target.value)} placeholder="Backup equipment, alternative process…" />
           </div>
           <div className="sm:col-span-2 space-y-1.5">
-            <Label className="text-xs font-semibold">Spare Parts Inventory (IATF §8.5.1.1)</Label>
+            <Label className="text-xs font-semibold">Spare Parts Inventory (IATF 8.5.1.1)</Label>
             <Textarea className="resize-none" rows={2} value={form.sparePartsInventory ?? ""} onChange={e => set("sparePartsInventory")(e.target.value)} placeholder="Critical spare parts on-hand (part numbers, quantities)…" />
           </div>
           <div className="space-y-1.5">
@@ -522,13 +522,13 @@ function EquipmentForm({ initial, isoProjectId, onSave, onCancel }: {
         </label>
       </div>
 
-      <SectionLabel icon={FlaskConical} label="ISO 13485 §6.3" sub="Equipment Validation" />
+      <SectionLabel icon={FlaskConical} label="ISO 13485 6.3" sub="Equipment Validation" />
       <div className="space-y-3">
         <div className="flex items-center gap-3 p-4 border border-border rounded-xl bg-muted/20">
           <Checkbox id="validationReq" checked={!!form.validationRequired} onCheckedChange={v => set("validationRequired")(!!v)} className="w-5 h-5" />
           <label htmlFor="validationReq" className="text-sm font-semibold cursor-pointer">
-            Validation Required (§6.3)
-            <span className="block text-xs font-normal text-muted-foreground">Equipment used in manufacturing / quality requires validation per ISO 13485 §6.3</span>
+            Validation Required (6.3)
+            <span className="block text-xs font-normal text-muted-foreground">Equipment used in manufacturing / quality requires validation per ISO 13485 6.3</span>
           </label>
         </div>
         {form.validationRequired && (
@@ -764,7 +764,7 @@ function RecordForm({ equipment, allEquipment, isoProjectId, initial, onSave, on
                 sub: "No tools or materials left inside equipment after PM",
                 color: "orange" },
               { id: "postPmVal", field: "equipmentValidatedPostPm" as const,
-                label: "Equipment Validated After PM (ISO 13485 §6.3)",
+                label: "Equipment Validated After PM (ISO 13485 6.3)",
                 sub: "Post-maintenance validation confirmed before returning to production",
                 color: "purple" },
             ].map(({ id, field, label, sub, color }) => {
@@ -1104,7 +1104,7 @@ function EquipmentDetailView({ equipment, records, allEquipment, isoProjectId, o
               <div className="border-t border-border pt-4 space-y-2">
                 {equipment.breakdownImpact && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 text-xs text-red-900">
-                    <p className="font-bold mb-0.5 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Breakdown Impact (IATF §8.5.1.1)</p>
+                    <p className="font-bold mb-0.5 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Breakdown Impact (IATF 8.5.1.1)</p>
                     <p>{equipment.breakdownImpact}</p>
                   </div>
                 )}
@@ -1402,7 +1402,7 @@ export function PreventiveMaintenanceModule({ project }: PreventiveMaintenanceMo
                 <Wrench className="w-5 h-5 text-accent" /> Preventive Maintenance
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                ISO 9001 §6.3 · IATF 16949 §8.5.1.1 TPM · AS9100D FOD · ISO 13485 §6.3
+                ISO 9001 6.3 · IATF 16949 8.5.1.1 TPM · AS9100D FOD · ISO 13485 6.3
               </p>
             </div>
             <Button className="bg-accent hover:bg-accent/90 text-white h-11"

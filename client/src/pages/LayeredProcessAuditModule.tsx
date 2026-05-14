@@ -187,7 +187,7 @@ export default function LayeredProcessAuditModule() {
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-base leading-tight">Layered Process Audits</h1>
-          <p className="text-xs text-muted-foreground">GM BIQS · Stellantis · Ford Q1 · IATF 16949 §9.2</p>
+          <p className="text-xs text-muted-foreground">GM BIQS · Stellantis · Ford Q1 · IATF 16949 9.2</p>
         </div>
         <div className="flex gap-2 shrink-0">
           <Badge variant="outline" className="text-xs gap-1 hidden sm:flex"><ClipboardCheck className="w-3 h-3" />{records.length} Records</Badge>

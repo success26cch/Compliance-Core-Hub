@@ -111,13 +111,13 @@ interface CalibrationRecord {
   certNumber?: string | null; standardsReferenced?: string[] | null;
   result?: string | null; outOfTolerance?: boolean | null; adjustmentsMade?: string | null;
   certificateFileUrl?: string | null; nextDueDate?: string | null; notes?: string | null;
-  // IATF §7.1.5.2.1
+  // IATF 7.1.5.2.1
   softwareVerified?: boolean | null;
-  // AS9100D §7.1.5.2
+  // AS9100D 7.1.5.2
   measurementUncertainty?: string | null; asFoundReading?: string | null;
   asLeftReading?: string | null; environmentConditions?: string | null;
   labAccredited?: boolean | null;
-  // ISO 13485 §7.6
+  // ISO 13485 7.6
   acceptanceCriteria?: string | null; equipmentLabelConfirmed?: boolean | null;
   // Variable-gage measurement data
   preCalibrationChecks?: unknown | null;
@@ -572,10 +572,10 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
     }
     if (showOot && isIatfProject) {
       if (!(oot.assessedBy ?? "").trim()) {
-        toast({ title: "OOT assessment requires 'Assessed By'", description: "IATF §7.1.5.3 mandates the assessor be identified.", variant: "destructive" }); return;
+        toast({ title: "OOT assessment requires 'Assessed By'", description: "IATF 7.1.5.3 mandates the assessor be identified.", variant: "destructive" }); return;
       }
       if (!(oot.disposition ?? "").trim()) {
-        toast({ title: "OOT assessment requires 'Disposition'", description: "IATF §7.1.5.3 requires a documented disposition decision.", variant: "destructive" }); return;
+        toast({ title: "OOT assessment requires 'Disposition'", description: "IATF 7.1.5.3 requires a documented disposition decision.", variant: "destructive" }); return;
       }
     }
     const payload: Partial<CalibrationRecord> = {
@@ -1224,11 +1224,11 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         </div>
       </div>
 
-      {/* ── IATF §7.1.5.2.1 — Production Software Verification ── */}
+      {/* ── IATF 7.1.5.2.1 — Production Software Verification ── */}
       {isIatfProject && (
         <div className="border border-amber-200 rounded-lg p-3 bg-amber-50/40 space-y-2">
           <p className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
-            <Activity className="w-3.5 h-3.5" /> IATF §7.1.5.2.1 — Production Software
+            <Activity className="w-3.5 h-3.5" /> IATF 7.1.5.2.1 — Production Software
           </p>
           <div className="flex items-start gap-2">
             <input type="checkbox" id="softwareVerified" checked={!!form.softwareVerified}
@@ -1241,11 +1241,11 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         </div>
       )}
 
-      {/* ── AS9100D §7.1.5.2 — Aerospace Measurement Requirements ── */}
+      {/* ── AS9100D 7.1.5.2 — Aerospace Measurement Requirements ── */}
       {isAerospaceProject && (
         <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/30 space-y-3">
           <p className="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5" /> AS9100D §7.1.5.2 — Aerospace Calibration Requirements
+            <Info className="w-3.5 h-3.5" /> AS9100D 7.1.5.2 — Aerospace Calibration Requirements
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -1285,11 +1285,11 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         </div>
       )}
 
-      {/* ── ISO 13485 §7.6 — Medical Device Calibration Requirements ── */}
+      {/* ── ISO 13485 7.6 — Medical Device Calibration Requirements ── */}
       {isMedicalProject && (
         <div className="border border-purple-200 rounded-lg p-4 bg-purple-50/30 space-y-3">
           <p className="text-xs font-bold text-purple-800 uppercase tracking-wide flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5" /> ISO 13485 §7.6 — Medical Device Calibration
+            <Info className="w-3.5 h-3.5" /> ISO 13485 7.6 — Medical Device Calibration
           </p>
           <div className="space-y-3">
             <div>
@@ -1297,14 +1297,14 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
               <Textarea className="mt-1 resize-none" rows={2} value={form.acceptanceCriteria ?? ""}
                 onChange={e => set("acceptanceCriteria")(e.target.value)}
                 placeholder="Document the specific pass/fail criteria used (e.g. 'Max error ±0.05 mm per calibration SOP-QC-007')" />
-              <p className="text-[11px] text-muted-foreground mt-0.5">ISO 13485 §7.6 requires explicit acceptance criteria to be documented on each cal record.</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">ISO 13485 7.6 requires explicit acceptance criteria to be documented on each cal record.</p>
             </div>
             <div className="flex items-start gap-2">
               <input type="checkbox" id="equipmentLabelConfirmed" checked={!!form.equipmentLabelConfirmed}
                 onChange={e => set("equipmentLabelConfirmed")(e.target.checked)}
                 className="w-4 h-4 rounded border-border accent-orange-500 mt-0.5" />
               <Label htmlFor="equipmentLabelConfirmed" className="text-sm cursor-pointer leading-snug">
-                Calibration status label / identification confirmed on physical equipment — label shows next due date, unique ID, and calibration status (§7.6 label requirement).
+                Calibration status label / identification confirmed on physical equipment — label shows next due date, unique ID, and calibration status (7.6 label requirement).
               </Label>
             </div>
           </div>
@@ -1316,7 +1316,7 @@ function RecordForm({ equipment, isoProjectId, onSave, onCancel, isIatfProject, 
         <div className="border-2 border-red-200 rounded-lg p-4 space-y-3 bg-red-50/50">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-600" />
-            <p className="text-sm font-bold text-red-700">IATF 16949 §7.1.5.3 — Out-of-Tolerance Risk Assessment Required</p>
+            <p className="text-sm font-bold text-red-700">IATF 16949 7.1.5.3 — Out-of-Tolerance Risk Assessment Required</p>
           </div>
           <p className="text-xs text-muted-foreground">
             Because this gage was found out-of-tolerance, IATF requires an assessment of the potential impact on previously produced parts.
@@ -2100,7 +2100,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
       `<tr>${Array.from({length:5},(_,col)=>{const i=row*5+col; return i<vals.length?`<td style="text-align:center;font-family:monospace;border:1px solid #ccc;padding:3px 8px;">${(i+1)}. ${vals[i].toFixed(4)}</td>`:`<td style="border:1px solid #ccc;"></td>`;}).join("")}</tr>`).join("");
     win.document.write(`<!DOCTYPE html><html><head><title>Bias Study</title><style>body{font-family:Arial,sans-serif;font-size:10pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
     <div style="display:flex;align-items:center;border-bottom:3px solid #1e40af;padding-bottom:8px;margin-bottom:12px;">
-      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#1e40af;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Bias Study — AIAG MSA 4th Edition §3.1</div></div>
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#1e40af;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Bias Study — AIAG MSA 4th Edition 3.1</div></div>
     </div>
     <table style="width:100%;margin-bottom:12px;"><tbody>
       ${hdr("Part Name:",meta.partName||"—")}${hdr("Part No.:",meta.partNumber||"—")}${hdr("Characteristic:",meta.characteristic||"—")}
@@ -2138,7 +2138,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
     }).join("");
     win.document.write(`<!DOCTYPE html><html><head><title>Linearity Study</title><style>body{font-family:Arial,sans-serif;font-size:10pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
     <div style="display:flex;align-items:center;border-bottom:3px solid #7c3aed;padding-bottom:8px;margin-bottom:12px;">
-      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#7c3aed;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Linearity Study — AIAG MSA 4th Edition §3.2</div></div>
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#7c3aed;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Linearity Study — AIAG MSA 4th Edition 3.2</div></div>
     </div>
     <table style="width:100%;margin-bottom:12px;"><tbody>
       ${hdr("Part Name:",meta.partName||"—")}${hdr("Characteristic:",meta.characteristic||"—")}${hdr("Gage Description:",meta.gaugeDesc||"—")}
@@ -2175,7 +2175,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
     const measHdrs=Array.from({length:stabSubgroupSize},(_,i)=>`<th style="border:1px solid #ccc;padding:3px 6px;">x${i+1}</th>`).join("");
     win.document.write(`<!DOCTYPE html><html><head><title>Stability Study</title><style>body{font-family:Arial,sans-serif;font-size:10pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
     <div style="display:flex;align-items:center;border-bottom:3px solid #059669;padding-bottom:8px;margin-bottom:12px;">
-      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#059669;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Stability Study — AIAG MSA 4th Edition §3.3 · X̄-R Control Chart</div></div>
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#059669;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Stability Study — AIAG MSA 4th Edition 3.3 · X̄-R Control Chart</div></div>
     </div>
     <table style="width:100%;margin-bottom:12px;"><tbody>
       ${hdr("Part Name:",meta.partName||"—")}${hdr("Characteristic:",meta.characteristic||"—")}${hdr("Gage Description:",meta.gaugeDesc||"—")}
@@ -2213,7 +2213,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
     }).join("");
     win.document.write(`<!DOCTYPE html><html><head><title>AAA Study</title><style>body{font-family:Arial,sans-serif;font-size:9.5pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
     <div style="display:flex;align-items:center;border-bottom:3px solid #b45309;padding-bottom:8px;margin-bottom:12px;">
-      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#b45309;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">Attribute Agreement Analysis — AIAG MSA 4th Edition §4 · Cohen's Kappa (κ)</div></div>
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#b45309;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">Attribute Agreement Analysis — AIAG MSA 4th Edition 4 · Cohen's Kappa (κ)</div></div>
     </div>
     <table style="width:100%;margin-bottom:12px;"><tbody>
       ${hdr("Part Name:",meta.partName||"—")}${hdr("Characteristic:",meta.characteristic||"—")}${hdr("Gage Description:",meta.gaugeDesc||"—")}
@@ -2490,7 +2490,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
         {studyType === "bias" && (
           <div className="space-y-3">
             <div className="p-3 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200 text-xs text-sky-700 dark:text-sky-300">
-              <strong>AIAG MSA 4th Ed. §3.1 — Bias Study:</strong> Obtain the known reference/master value for the part. Collect ≥10 repeat measurements (25 recommended) using the same appraiser and gage. The study determines whether the measurement system has statistically significant bias.
+              <strong>AIAG MSA 4th Ed. 3.1 — Bias Study:</strong> Obtain the known reference/master value for the part. Collect ≥10 repeat measurements (25 recommended) using the same appraiser and gage. The study determines whether the measurement system has statistically significant bias.
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -2521,7 +2521,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
         {studyType === "linearity" && (
           <div className="space-y-3">
             <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 text-xs text-violet-700 dark:text-violet-300">
-              <strong>AIAG MSA 4th Ed. §3.2 — Linearity Study:</strong> Select 5 reference parts that span the operating measurement range (low, mid-low, middle, mid-high, high). Obtain known reference values via a layout inspection. Collect 10–12 repeat measurements per reference level to determine if bias is consistent across the measurement range.
+              <strong>AIAG MSA 4th Ed. 3.2 — Linearity Study:</strong> Select 5 reference parts that span the operating measurement range (low, mid-low, middle, mid-high, high). Obtain known reference values via a layout inspection. Collect 10–12 repeat measurements per reference level to determine if bias is consistent across the measurement range.
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -2548,7 +2548,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
         {studyType === "stability" && (
           <div className="space-y-3">
             <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 text-xs text-emerald-700 dark:text-emerald-300">
-              <strong>AIAG MSA 4th Ed. §3.3 — Stability Study:</strong> Select a master/reference part with a known value. Measure it n times per subgroup at regular time intervals (daily, weekly, monthly) over ≥25 periods. Produces an X̄-R control chart to detect measurement system drift over time.
+              <strong>AIAG MSA 4th Ed. 3.3 — Stability Study:</strong> Select a master/reference part with a known value. Measure it n times per subgroup at regular time intervals (daily, weekly, monthly) over ≥25 periods. Produces an X̄-R control chart to detect measurement system drift over time.
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -2575,7 +2575,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
         {studyType === "attribute_agreement" && (
           <div className="space-y-3">
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 text-xs text-amber-700 dark:text-amber-300">
-              <strong>AIAG MSA 4th Ed. §4 — Attribute Agreement Analysis:</strong> Each appraiser classifies each part as Accept or Reject across multiple trials. The study measures within-appraiser consistency, between-appraiser agreement, and agreement vs. a known reference standard. Uses Cohen's Kappa (κ). AIAG criterion: κ ≥ 0.75 acceptable.
+              <strong>AIAG MSA 4th Ed. 4 — Attribute Agreement Analysis:</strong> Each appraiser classifies each part as Accept or Reject across multiple trials. The study measures within-appraiser consistency, between-appraiser agreement, and agreement vs. a known reference standard. Uses Cohen's Kappa (κ). AIAG criterion: κ ≥ 0.75 acceptable.
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -2631,7 +2631,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
           <div className="flex items-center gap-3">
             {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-sky-700 dark:text-sky-300">Bias Study — AIAG MSA 4th Ed. §3.1</div>
+              <div className="text-xs font-black uppercase tracking-wider text-sky-700 dark:text-sky-300">Bias Study — AIAG MSA 4th Ed. 3.1</div>
               <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · {meta.gaugeDesc||"—"} · Ref: <span className="font-mono font-bold">{biasRef||"—"}</span></div>
             </div>
           </div>
@@ -2728,7 +2728,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
           <div className="flex items-center gap-3">
             {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-violet-700 dark:text-violet-300">Linearity Study — AIAG MSA 4th Ed. §3.2</div>
+              <div className="text-xs font-black uppercase tracking-wider text-violet-700 dark:text-violet-300">Linearity Study — AIAG MSA 4th Ed. 3.2</div>
               <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · {meta.gaugeDesc||"—"} · TV: <span className="font-mono font-bold">{linProcessVar||"—"}</span></div>
             </div>
           </div>
@@ -2841,7 +2841,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
           <div className="flex items-center gap-3">
             {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Stability Study — AIAG MSA 4th Ed. §3.3 · X̄-R Chart</div>
+              <div className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Stability Study — AIAG MSA 4th Ed. 3.3 · X̄-R Chart</div>
               <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · Ref: <span className="font-mono font-bold">{stabRef||"—"}</span> · n={stabSubgroupSize}</div>
             </div>
           </div>
@@ -2989,7 +2989,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
           <div className="flex items-center gap-3">
             {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">Attribute Agreement Analysis — AIAG MSA 4th Ed. §4 · Cohen's Kappa</div>
+              <div className="text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">Attribute Agreement Analysis — AIAG MSA 4th Ed. 4 · Cohen's Kappa</div>
               <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · {aaaAppraisers} appraisers · {aaaParts} parts · {aaaTrials} trials</div>
             </div>
           </div>
@@ -3706,7 +3706,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/calibration/lab-scope", projectId] });
       setLabScopeDialog(false);
-      toast({ title: "Lab Scope saved", description: "IATF §7.1.5.3.1 Internal Laboratory Scope updated." });
+      toast({ title: "Lab Scope saved", description: "IATF 7.1.5.3.1 Internal Laboratory Scope updated." });
     },
     onError: () => toast({ title: "Save failed", variant: "destructive" }),
   });
@@ -3952,16 +3952,16 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <Gauge className="w-5 h-5 text-accent" />
               <h2 className="text-xl font-black text-foreground">Calibration</h2>
-              <span className="text-xs font-mono text-accent font-bold">§7.1.5</span>
-              {iatf && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">IATF 16949 §7.1.5.2.1</Badge>}
-              {aerospace && <Badge className="text-[10px] bg-blue-100 text-blue-700 border-blue-200">AS9100D §7.1.5.2</Badge>}
-              {medical && <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200">ISO 13485 §7.6</Badge>}
+              <span className="text-xs font-mono text-accent font-bold">7.1.5</span>
+              {iatf && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200">IATF 16949 7.1.5.2.1</Badge>}
+              {aerospace && <Badge className="text-[10px] bg-blue-100 text-blue-700 border-blue-200">AS9100D 7.1.5.2</Badge>}
+              {medical && <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200">ISO 13485 7.6</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">
               All measuring instruments · click any gage row to see its specs and calibration history · click a record to open the full detail view
-              {iatf ? " · IATF §7.1.5.3 OOT Assessments" : ""}
-              {aerospace ? " · AS9100D §7.1.5.2 measurement data" : ""}
-              {medical ? " · ISO 13485 §7.6" : ""}.
+              {iatf ? " · IATF 7.1.5.3 OOT Assessments" : ""}
+              {aerospace ? " · AS9100D 7.1.5.2 measurement data" : ""}
+              {medical ? " · ISO 13485 7.6" : ""}.
             </p>
           </div>
           <Button onClick={() => { setEditEquip(null); setEquipDialog(true); }}
@@ -4274,7 +4274,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
                   <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-blue-800">IATF 16949 §7.1.5.3 — Out-of-Tolerance Risk Assessment</p>
+                    <p className="font-semibold text-blue-800">IATF 16949 7.1.5.3 — Out-of-Tolerance Risk Assessment</p>
                     <p className="text-blue-700 text-xs mt-1">
                       OOT risk assessments are required for IATF 16949 certified organizations. Switch your ISO project standard to IATF 16949 to enable this workflow.
                     </p>
@@ -4358,7 +4358,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4 flex-1">
                   <BarChart3 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-blue-800">IATF 16949 §7.1.5.2 — Measurement System Analysis (MSA)</p>
+                    <p className="text-sm font-bold text-blue-800">IATF 16949 7.1.5.2 — Measurement System Analysis (MSA)</p>
                     <p className="text-xs text-blue-700 mt-1">
                       Record MSA studies for measurement systems referenced in the Control Plan. GRR% &lt;10% = Acceptable, 10–30% = Marginal, &gt;30% = Unacceptable. NDC ≥5 required.
                       Reference: AIAG MSA Reference Manual (4th Ed.).
@@ -4465,7 +4465,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
             </div>
           )}
 
-          {/* ── Internal Lab Scope Tab (IATF §7.1.5.3.1) ── */}
+          {/* ── Internal Lab Scope Tab (IATF 7.1.5.3.1) ── */}
           {tab === "lab_scope" && (() => {
             const internalEquip = equipment.filter(e => e.calType === "internal" && e.status !== "out_of_service");
 
@@ -4575,11 +4575,11 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <Microscope className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-blue-800">IATF 16949 §7.1.5.3.1 — Internal Laboratory Scope</p>
+                    <p className="text-sm font-bold text-blue-800">IATF 16949 7.1.5.3.1 — Internal Laboratory Scope</p>
                     <p className="text-xs text-blue-700 mt-1">
                       Internal labs must document their scope of activity covering: (a) measurement capabilities, (b) technical procedures &amp; WI references,
                       (c) personnel competency requirements, (d) equipment &amp; reference standards, (e) environmental controls, and (f) customer-specific requirements.
-                      This controlled document satisfies §7.1.5.3.1 requirements and must be reviewed at minimum annually.
+                      This controlled document satisfies 7.1.5.3.1 requirements and must be reviewed at minimum annually.
                     </p>
                   </div>
                   <Button size="sm" variant="outline" className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100"
@@ -4678,7 +4678,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <FlaskConical className="w-4 h-4 text-accent" />
-                          <p className="text-sm font-bold">§ (a) — Calibrations</p>
+                          <p className="text-sm font-bold"> (a) — Calibrations</p>
                         </div>
                         {autoCapabilities.length === 0 ? (
                           <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground">
@@ -4697,7 +4697,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <Microscope className="w-4 h-4 text-accent" />
-                            <p className="text-sm font-bold">§ (b) — Inspection &amp; Testing Performed</p>
+                            <p className="text-sm font-bold"> (b) — Inspection &amp; Testing Performed</p>
                           </div>
                           <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
                             onClick={() => openEdit("capabilities")} data-testid="button-edit-capabilities">
@@ -4761,13 +4761,13 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                                   </div>
                                 </td>
                                 <td className="px-3 py-2 text-muted-foreground">Work Instruction</td>
-                                <td className="px-3 py-2 text-muted-foreground">§ (a) Calibrations</td>
+                                <td className="px-3 py-2 text-muted-foreground"> (a) Calibrations</td>
                               </tr>
                             ))}
                             {allStds.map((std, i) => {
                               const inCalib = calibStds.includes(std);
                               const inTest  = testStds.includes(std);
-                              const section = inCalib && inTest ? "§ (a) + § (b)" : inCalib ? "§ (a) Calibrations" : "§ (b) Inspection & Testing";
+                              const section = inCalib && inTest ? " (a) +  (b)" : inCalib ? " (a) Calibrations" : " (b) Inspection & Testing";
                               return (
                                 <tr key={`std-${i}`} className={`border-b border-border/60 ${(wiRefs.length + i) % 2 !== 0 ? "bg-muted/10" : ""}`}>
                                   <td className="px-3 py-2 text-muted-foreground">{wiRefs.length + i + 1}</td>
@@ -4789,7 +4789,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-accent" />
-                      <p className="text-sm font-bold">§ (c) — Personnel Competency Requirements</p>
+                      <p className="text-sm font-bold"> (c) — Personnel Competency Requirements</p>
                     </div>
                     <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
                       onClick={() => openEdit("personnel")} data-testid="button-edit-personnel">
@@ -4799,7 +4799,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   {personnel.length === 0 ? (
                     <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
                       <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-800">No personnel requirements defined. Click Edit to specify required qualifications, training records, and competency verification methods per IATF §7.1.5.3.1(c).</p>
+                      <p className="text-xs text-amber-800">No personnel requirements defined. Click Edit to specify required qualifications, training records, and competency verification methods per IATF 7.1.5.3.1(c).</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto rounded-lg border border-border">
@@ -4836,7 +4836,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Cpu className="w-4 h-4 text-accent" />
-                    <p className="text-sm font-bold">§ (d) — Laboratory Equipment &amp; Reference Standards</p>
+                    <p className="text-sm font-bold"> (d) — Laboratory Equipment &amp; Reference Standards</p>
                   </div>
                   {internalEquip.length === 0 ? (
                     <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-xs">
@@ -4884,7 +4884,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                     </div>
                   )}
                   <p className="text-[10px] text-muted-foreground mt-1 ml-1">
-                    All reference standards must have NIST-traceable calibration certificates on file per §7.1.5.3.1(d).
+                    All reference standards must have NIST-traceable calibration certificates on file per 7.1.5.3.1(d).
                   </p>
                 </div>
 
@@ -4893,7 +4893,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Thermometer className="w-4 h-4 text-accent" />
-                      <p className="text-sm font-bold">§ (e) — Laboratory Environmental Controls</p>
+                      <p className="text-sm font-bold"> (e) — Laboratory Environmental Controls</p>
                     </div>
                     <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
                       onClick={() => openEdit("environmental")} data-testid="button-edit-environmental">
@@ -4904,7 +4904,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                     <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
                       <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                       <p className="text-xs text-amber-800">
-                        Environmental requirements not documented. Click Edit to specify temperature, humidity, lighting, vibration controls, and monitoring methods required for valid measurements per §7.1.5.3.1(e).
+                        Environmental requirements not documented. Click Edit to specify temperature, humidity, lighting, vibration controls, and monitoring methods required for valid measurements per 7.1.5.3.1(e).
                       </p>
                     </div>
                   ) : (
@@ -4939,7 +4939,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-accent" />
-                      <p className="text-sm font-bold">§ (f) — Customer-Specific Requirements (CSRs)</p>
+                      <p className="text-sm font-bold"> (f) — Customer-Specific Requirements (CSRs)</p>
                     </div>
                     <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7"
                       onClick={() => openEdit("csrs")} data-testid="button-edit-csrs">
@@ -4950,7 +4950,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                     <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
                       <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                       <p className="text-xs text-amber-800">
-                        No customer-specific requirements defined. Click Edit to add OEM requirements from GM, Ford, Stellantis, or other customers applicable to your internal laboratory per §7.1.5.3.1(f).
+                        No customer-specific requirements defined. Click Edit to add OEM requirements from GM, Ford, Stellantis, or other customers applicable to your internal laboratory per 7.1.5.3.1(f).
                       </p>
                     </div>
                   ) : (
@@ -4972,7 +4972,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 </div>
 
                 <p className="text-[10px] text-muted-foreground text-center pb-4 border-t border-border pt-3 mt-2">
-                  IATF 16949:2016 §7.1.5.3.1 — Internal Laboratory Scope. Document controlled under QMS. Annual review required. Retain records per §7.5.
+                  IATF 16949:2016 7.1.5.3.1 — Internal Laboratory Scope. Document controlled under QMS. Annual review required. Retain records per 7.5.
                 </p>
               </div>
             );
@@ -5405,11 +5405,11 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   );
                 })()}
 
-                {/* IATF §7.1.5.2.1 */}
+                {/* IATF 7.1.5.2.1 */}
                 {iatf && (
                   <div className="border border-amber-200 rounded-lg p-3 bg-amber-50/40 space-y-1">
                     <p className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5" /> IATF §7.1.5.2.1 — Production Software
+                      <Activity className="w-3.5 h-3.5" /> IATF 7.1.5.2.1 — Production Software
                     </p>
                     <p className="text-sm">
                       Software verified:{" "}
@@ -5420,11 +5420,11 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   </div>
                 )}
 
-                {/* AS9100D §7.1.5.2 */}
+                {/* AS9100D 7.1.5.2 */}
                 {aerospace && (r.measurementUncertainty || r.asFoundReading || r.asLeftReading || r.environmentConditions || r.labAccredited !== null) && (
                   <div className="border border-blue-200 rounded-lg p-3 bg-blue-50/30 space-y-1.5">
                     <p className="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1.5">
-                      <Info className="w-3.5 h-3.5" /> AS9100D §7.1.5.2 — Measurement Data
+                      <Info className="w-3.5 h-3.5" /> AS9100D 7.1.5.2 — Measurement Data
                     </p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                       {r.measurementUncertainty && <p><span className="font-medium">Uncertainty (U):</span> {r.measurementUncertainty}</p>}
@@ -5436,11 +5436,11 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                   </div>
                 )}
 
-                {/* ISO 13485 §7.6 */}
+                {/* ISO 13485 7.6 */}
                 {medical && (r.acceptanceCriteria || r.equipmentLabelConfirmed !== null) && (
                   <div className="border border-purple-200 rounded-lg p-3 bg-purple-50/30 space-y-1.5">
                     <p className="text-xs font-bold text-purple-800 uppercase tracking-wide flex items-center gap-1.5">
-                      <Info className="w-3.5 h-3.5" /> ISO 13485 §7.6 — Medical Device
+                      <Info className="w-3.5 h-3.5" /> ISO 13485 7.6 — Medical Device
                     </p>
                     {r.acceptanceCriteria && <p className="text-sm"><span className="font-medium">Acceptance Criteria:</span> {r.acceptanceCriteria}</p>}
                     {r.equipmentLabelConfirmed !== null && r.equipmentLabelConfirmed !== undefined && (
@@ -5457,7 +5457,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
                 {oots.length > 0 && oots.map(oot => (
                   <div key={oot.id} className="border border-red-200 rounded-lg p-3 bg-red-50/30 space-y-1.5">
                     <p className="text-xs font-bold text-red-800 uppercase tracking-wide flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" /> IATF §7.1.5.3 — OOT Risk Assessment
+                      <AlertTriangle className="w-3.5 h-3.5" /> IATF 7.1.5.3 — OOT Risk Assessment
                     </p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                       <p><span className="font-medium">Risk Level:</span> <span className={oot.riskLevel === "high" ? "text-red-700 font-bold" : oot.riskLevel === "medium" ? "text-amber-700 font-bold" : "text-emerald-700 font-bold"}>{(oot.riskLevel ?? "medium").toUpperCase()}</span></p>
@@ -5576,13 +5576,13 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
         </DialogContent>
       </Dialog>
 
-      {/* ── Lab Scope Edit Dialog (IATF §7.1.5.3.1) ── */}
+      {/* ── Lab Scope Edit Dialog (IATF 7.1.5.3.1) ── */}
       <Dialog open={labScopeDialog} onOpenChange={v => { setLabScopeDialog(v); }}>
         <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Microscope className="w-4 h-4 text-blue-600" />
-              Edit Internal Laboratory Scope — IATF §7.1.5.3.1
+              Edit Internal Laboratory Scope — IATF 7.1.5.3.1
             </DialogTitle>
           </DialogHeader>
 
@@ -5650,7 +5650,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               <div>
                 <Label className="text-xs">Scope Statement / Quality System Reference</Label>
                 <Textarea className="mt-1 text-sm" rows={3} value={labScopeDraft.qualitySystemStatement ?? ""}
-                  placeholder="This Internal Laboratory Scope defines the scope of calibration and testing activities performed by [Company] in accordance with IATF 16949:2016 §7.1.5.3.1 and the QMS Quality Manual..."
+                  placeholder="This Internal Laboratory Scope defines the scope of calibration and testing activities performed by [Company] in accordance with IATF 16949:2016 7.1.5.3.1 and the QMS Quality Manual..."
                   onChange={e => setLabScopeDraft(d => ({ ...d, qualitySystemStatement: e.target.value }))} data-testid="textarea-lab-scope-statement" />
               </div>
             </div>
@@ -5667,7 +5667,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               setLabScopeDraft(d => ({ ...d, personnelRequirements: personnel.map(p => p.id === id ? { ...p, [field]: value } : p) }));
             return (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Define required qualifications, training, and competency verification for each laboratory personnel role (§7.1.5.3.1 c).</p>
+                <p className="text-xs text-muted-foreground">Define required qualifications, training, and competency verification for each laboratory personnel role (7.1.5.3.1 c).</p>
                 {personnel.length === 0 && (
                   <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-xs">
                     No personnel requirements defined. Click "Add Role" to start.
@@ -5730,7 +5730,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               setLabScopeDraft(d => ({ ...d, environmentalRequirements: { ...env, [field]: val } }));
             return (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Specify environmental conditions required for valid measurements. All conditions must be monitored and recorded (§7.1.5.3.1 e).</p>
+                <p className="text-xs text-muted-foreground">Specify environmental conditions required for valid measurements. All conditions must be monitored and recorded (7.1.5.3.1 e).</p>
                 {([
                   { key: "temperature" as const, label: "Temperature Range", placeholder: "e.g. 20°C ± 2°C (68°F ± 4°F)" },
                   { key: "humidity" as const, label: "Relative Humidity", placeholder: "e.g. 40–60% RH" },
@@ -5761,7 +5761,7 @@ export function CalibrationModule({ project }: CalibrationModuleProps) {
               setLabScopeDraft(d => ({ ...d, customerRequirements: csrs.map(c => c.id === id ? { ...c, [field]: value } : c) }));
             return (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Document OEM customer requirements applicable to your internal laboratory (§7.1.5.3.1 f). Common sources: GM Supplier Requirements, Ford Q1, Stellantis STDS, AIAG CSR supplements.</p>
+                <p className="text-xs text-muted-foreground">Document OEM customer requirements applicable to your internal laboratory (7.1.5.3.1 f). Common sources: GM Supplier Requirements, Ford Q1, Stellantis STDS, AIAG CSR supplements.</p>
                 {csrs.length === 0 && (
                   <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-xs">
                     No CSRs defined. Click "Add CSR" to start.

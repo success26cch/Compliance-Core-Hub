@@ -358,11 +358,11 @@ export default function EnvComplianceHub() {
               </p>
               <ul className="space-y-2 flex-1">
                 {[
-                  "§6.1.3 Compliance Obligations Register",
-                  "Environmental Aspects & Impacts (§6.1.2)",
-                  "Objectives & Targets (§6.2)",
-                  "Internal Audit Program (§9.2)",
-                  "Management Review (§9.3)",
+                  "6.1.3 Compliance Obligations Register",
+                  "Environmental Aspects & Impacts (6.1.2)",
+                  "Objectives & Targets (6.2)",
+                  "Internal Audit Program (9.2)",
+                  "Management Review (9.3)",
                   "\"Ask Corey\" Jurisdiction Requirements Identifier",
                   "NC & CAPA Management",
                   "Documentation Control",

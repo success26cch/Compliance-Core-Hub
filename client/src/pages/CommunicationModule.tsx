@@ -279,7 +279,7 @@ export default function CommunicationModule({ isoProjectId }: { isoProjectId?: n
                       <span className="font-semibold text-sm text-foreground">{c.topic}</span>
                       <Badge className={`text-xs ${directionStyle(c.direction)}`}>{c.direction}</Badge>
                       {c.medium && <Badge variant="outline" className="text-xs">{c.medium}</Badge>}
-                      {c.clauseRef && <span className="text-xs text-accent font-mono font-bold">§{c.clauseRef}</span>}
+                      {c.clauseRef && <span className="text-xs text-accent font-mono font-bold">{c.clauseRef}</span>}
                     </div>
                     <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                       <span>{new Date(c.date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>

@@ -292,7 +292,7 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
   </div>
 
   <div class="authority">
-    As required by 49 CFR Part 382, Subpart G &nbsp;|&nbsp; 49 CFR § 382.701(b) &nbsp;|&nbsp; clearinghouse.fmcsa.dot.gov
+    As required by 49 CFR Part 382, Subpart G &nbsp;|&nbsp; 49 CFR  382.701(b) &nbsp;|&nbsp; clearinghouse.fmcsa.dot.gov
   </div>
 
   <div class="section-label">Driver Information</div>
@@ -321,7 +321,7 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
     <p>
       I, the undersigned CDL/CLP holder, hereby <strong>authorize the employer identified above</strong> to conduct
       a <strong>Limited Inquiry</strong> of the FMCSA Commercial Driver's License Drug and Alcohol Clearinghouse
-      (Clearinghouse) pursuant to 49 CFR § 382.701(b)(1) to determine whether drug or alcohol violation
+      (Clearinghouse) pursuant to 49 CFR  382.701(b)(1) to determine whether drug or alcohol violation
       information pertaining to me exists in the Clearinghouse.
     </p>
     <p>I understand and acknowledge the following:</p>
@@ -331,7 +331,7 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
       <li>This consent is valid for a period of <strong>twelve (12) months</strong> from the date signed below, or until withdrawn in writing, whichever occurs first.</li>
       <li>I have the right to review any information in the Clearinghouse pertaining to me by registering at <strong>clearinghouse.fmcsa.dot.gov</strong>.</li>
       <li>Withdrawal of this consent does not remove information already in the Clearinghouse and may affect my ability to perform safety-sensitive functions under 49 CFR Part 382.</li>
-      <li>This form will be retained in my Driver Qualification (DQ) file as required by <strong>49 CFR § 391.51</strong>.</li>
+      <li>This form will be retained in my Driver Qualification (DQ) file as required by <strong>49 CFR  391.51</strong>.</li>
     </ol>
   </div>
 
@@ -373,10 +373,10 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
 
   <div class="notice">
     <strong>Retention Notice:</strong> This signed consent form must be retained in the driver's DQ file for the duration of employment and for <strong>three (3) years</strong> after the driver leaves the company,
-    in accordance with 49 CFR § 391.51. Annual re-consent is required by January 5 of each calendar year for all active CDL drivers performing safety-sensitive functions.
+    in accordance with 49 CFR  391.51. Annual re-consent is required by January 5 of each calendar year for all active CDL drivers performing safety-sensitive functions.
     <br/><br/>
     <strong>References:</strong> 49 CFR Part 382 (Controlled Substances and Alcohol Use and Testing) &nbsp;|&nbsp;
-    49 CFR § 382.701 (Clearinghouse) &nbsp;|&nbsp; 49 CFR § 391.51 (Driver Qualification Files) &nbsp;|&nbsp;
+    49 CFR  382.701 (Clearinghouse) &nbsp;|&nbsp; 49 CFR  391.51 (Driver Qualification Files) &nbsp;|&nbsp;
     FMCSA: <strong>www.fmcsa.dot.gov</strong>
   </div>
 
@@ -547,7 +547,7 @@ function DriverFormDialog({ open, onClose, existing }: { open: boolean; onClose:
             </Button>
           </div>
           <div className="col-span-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
-            <strong>Note:</strong> Annual Limited Inquiry consent is required under 49 CFR § 382.701(b). Print, have the driver sign, and keep the original in their DQ file. Re-consent is required by January 5 each calendar year.
+            <strong>Note:</strong> Annual Limited Inquiry consent is required under 49 CFR  382.701(b). Print, have the driver sign, and keep the original in their DQ file. Re-consent is required by January 5 each calendar year.
           </div>
           <div className="col-span-2">
             <Label>Notes</Label>
@@ -690,17 +690,17 @@ function EquipmentFormDialog({ open, onClose, existing }: { open: boolean; onClo
 // ─── DQ File Dialog ──────────────────────────────────────────────────────────
 
 const DQ_REQUIRED_DOCS: Array<{ type: string; label: string; ref: string }> = [
-  { type: "application", label: "Application for Employment", ref: "49 CFR § 391.21" },
-  { type: "cdl_copy", label: "CDL / License Copy", ref: "49 CFR § 391.51" },
-  { type: "mvr", label: "Pre-Employment MVR (Motor Vehicle Record)", ref: "49 CFR § 391.23" },
-  { type: "annual_mvr_review", label: "Annual MVR Review", ref: "49 CFR § 391.25" },
-  { type: "road_test", label: "Road Test / Certificate of Competency", ref: "49 CFR § 391.31" },
-  { type: "pre_employment_drug", label: "Pre-Employment Drug Test Result", ref: "49 CFR § 382.301" },
-  { type: "medical_card", label: "Medical Examiner's Certificate", ref: "49 CFR § 391.43" },
-  { type: "annual_review", label: "Annual Review of Driving Record", ref: "49 CFR § 391.25" },
-  { type: "certificate_of_violations", label: "Annual Certificate of Violations", ref: "49 CFR § 391.27" },
-  { type: "previous_employer_inquiry", label: "Previous Employer Safety Performance History", ref: "49 CFR § 391.23" },
-  { type: "sph_inquiry", label: "SPH Inquiry (FMCSARegistration.dot.gov)", ref: "49 CFR § 391.23(g)" },
+  { type: "application", label: "Application for Employment", ref: "49 CFR  391.21" },
+  { type: "cdl_copy", label: "CDL / License Copy", ref: "49 CFR  391.51" },
+  { type: "mvr", label: "Pre-Employment MVR (Motor Vehicle Record)", ref: "49 CFR  391.23" },
+  { type: "annual_mvr_review", label: "Annual MVR Review", ref: "49 CFR  391.25" },
+  { type: "road_test", label: "Road Test / Certificate of Competency", ref: "49 CFR  391.31" },
+  { type: "pre_employment_drug", label: "Pre-Employment Drug Test Result", ref: "49 CFR  382.301" },
+  { type: "medical_card", label: "Medical Examiner's Certificate", ref: "49 CFR  391.43" },
+  { type: "annual_review", label: "Annual Review of Driving Record", ref: "49 CFR  391.25" },
+  { type: "certificate_of_violations", label: "Annual Certificate of Violations", ref: "49 CFR  391.27" },
+  { type: "previous_employer_inquiry", label: "Previous Employer Safety Performance History", ref: "49 CFR  391.23" },
+  { type: "sph_inquiry", label: "SPH Inquiry (FMCSARegistration.dot.gov)", ref: "49 CFR  391.23(g)" },
 ];
 
 interface DqDoc { id: number; documentType: string; onFile: boolean; expirationDate?: string; notes?: string; }
@@ -872,7 +872,7 @@ function RandomTestDialog({ open, onClose, existing, drivers, year }: { open: bo
           <div className="col-span-2"><Label>Notes</Label><Input value={form.notes} onChange={e => s("notes", e.target.value)} /></div>
           {form.result === "positive" || form.result === "refused" ? (
             <div className="col-span-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
-              <strong>REGULATORY ACTION REQUIRED:</strong> A positive test or refusal requires immediate removal from safety-sensitive functions and referral to a Substance Abuse Professional (SAP). 49 CFR § 382.605.
+              <strong>REGULATORY ACTION REQUIRED:</strong> A positive test or refusal requires immediate removal from safety-sensitive functions and referral to a Substance Abuse Professional (SAP). 49 CFR  382.605.
             </div>
           ) : null}
         </div>
@@ -912,7 +912,7 @@ function AccidentDialog({ open, onClose, existing, drivers }: { open: boolean; o
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{isEdit ? "Edit Accident Record" : "Log DOT Accident"}</DialogTitle></DialogHeader>
         <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800 mb-2">
-          DOT-recordable: any CMV accident involving a fatality, injury requiring immediate off-scene medical treatment, or disabling tow-away. Per 49 CFR § 390.15. Keep on file 3 years.
+          DOT-recordable: any CMV accident involving a fatality, injury requiring immediate off-scene medical treatment, or disabling tow-away. Per 49 CFR  390.15. Keep on file 3 years.
         </div>
         <div className="grid grid-cols-2 gap-3 py-1">
           <div><Label>Accident Date *</Label><Input type="date" value={form.accidentDate} onChange={e => s("accidentDate", e.target.value)} /></div>
@@ -950,7 +950,7 @@ function AccidentDialog({ open, onClose, existing, drivers }: { open: boolean; o
           <div className="col-span-2"><Label>Description</Label><Input value={form.description} onChange={e => s("description", e.target.value)} placeholder="Brief description of accident circumstances" /></div>
           {isFatal && (
             <div className="col-span-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
-              <strong>FATAL ACCIDENT:</strong> Post-accident alcohol test required within 8 hours; drug test within 32 hours. Notify FMCSA as required. 49 CFR § 382.303.
+              <strong>FATAL ACCIDENT:</strong> Post-accident alcohol test required within 8 hours; drug test within 32 hours. Notify FMCSA as required. 49 CFR  382.303.
             </div>
           )}
         </div>
@@ -1102,7 +1102,7 @@ function DvirDialog({ open, onClose, existing, drivers }: { open: boolean; onClo
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{isEdit ? "Edit DVIR" : "Log Vehicle Inspection (DVIR)"}</DialogTitle></DialogHeader>
-        <div className="text-xs text-muted-foreground mb-3 bg-blue-50 border border-blue-200 rounded px-3 py-2">Required daily per 49 CFR § 396.11. Driver must complete at end of each shift. Keep signed copies for 3 months.</div>
+        <div className="text-xs text-muted-foreground mb-3 bg-blue-50 border border-blue-200 rounded px-3 py-2">Required daily per 49 CFR  396.11. Driver must complete at end of each shift. Keep signed copies for 3 months.</div>
         <div className="grid grid-cols-2 gap-3 py-1">
           <div><Label>Inspection Date *</Label><Input type="date" value={form.inspectionDate} onChange={e => s("inspectionDate", e.target.value)} /></div>
           <div><Label>Type</Label>
@@ -1454,7 +1454,7 @@ export default function DotHub() {
                 {metrics.noConsentOnFile} driver{metrics.noConsentOnFile > 1 ? "s" : ""} without a Clearinghouse consent form on file
               </p>
               <p className="text-xs text-yellow-700 mt-0.5">
-                You cannot legally run a Limited Inquiry query without a signed consent form (49 CFR § 382.701). Update the driver record once the form is signed.
+                You cannot legally run a Limited Inquiry query without a signed consent form (49 CFR  382.701). Update the driver record once the form is signed.
               </p>
             </div>
           </div>
@@ -1475,7 +1475,7 @@ export default function DotHub() {
                     <p className="text-sm font-semibold text-red-800">
                       {overdueChDrivers.length} driver{overdueChDrivers.length > 1 ? "s" : ""} {overdueChDrivers.length > 1 ? "are" : "is"} overdue for an annual Clearinghouse query
                     </p>
-                    <p className="text-xs text-red-600 mt-0.5">Annual queries required under 49 CFR § 382.701 — action needed now</p>
+                    <p className="text-xs text-red-600 mt-0.5">Annual queries required under 49 CFR  382.701 — action needed now</p>
                   </div>
                 </div>
                 <Button size="sm" className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white" onClick={() => setActiveTab("clearinghouse")} data-testid="button-alert-ch-overdue">
@@ -1517,7 +1517,7 @@ export default function DotHub() {
                     <p className="text-sm font-semibold text-red-800">
                       {overdueMedDrivers.length} driver{overdueMedDrivers.length > 1 ? "s" : ""} {overdueMedDrivers.length > 1 ? "have" : "has"} an expired medical card
                     </p>
-                    <p className="text-xs text-red-600 mt-0.5">Drivers cannot operate a CMV with an expired medical certificate — 49 CFR § 391.45</p>
+                    <p className="text-xs text-red-600 mt-0.5">Drivers cannot operate a CMV with an expired medical certificate — 49 CFR  391.45</p>
                   </div>
                 </div>
                 <Button size="sm" variant="outline" className="flex-shrink-0 border-red-300 text-red-700 hover:bg-red-100" onClick={() => setActiveTab("drivers")} data-testid="button-alert-med-expired">
@@ -1841,7 +1841,7 @@ export default function DotHub() {
                     : `Generate Changes File (${(deltaStatus?.pendingAdd ?? 0) + (deltaStatus?.pendingRemove ?? 0)} change${(deltaStatus?.pendingAdd ?? 0) + (deltaStatus?.pendingRemove ?? 0) !== 1 ? "s" : ""})`}
                 </Button>
                 <p className="mt-3 text-xs text-center text-muted-foreground">
-                  After download, drivers are automatically marked as synced · 49 CFR § 382.701
+                  After download, drivers are automatically marked as synced · 49 CFR  382.701
                 </p>
               </div>
 
@@ -1892,7 +1892,7 @@ export default function DotHub() {
             ) : (
               <div className="bg-white border border-border/60 rounded-xl overflow-hidden">
                 <div className="px-4 py-3 bg-muted/30 border-b border-border/60">
-                  <p className="text-xs text-muted-foreground">FMCSA requires DQ file records to be retained for <strong>3 years</strong> after driver employment ends (49 CFR § 391.51). Records are read-only in archive mode.</p>
+                  <p className="text-xs text-muted-foreground">FMCSA requires DQ file records to be retained for <strong>3 years</strong> after driver employment ends (49 CFR  391.51). Records are read-only in archive mode.</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -2040,7 +2040,7 @@ export default function DotHub() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold">DOT Accident Register</h2>
-                  <p className="text-xs text-muted-foreground">49 CFR § 390.15 — Must retain 3 years. Fatal accidents require post-accident testing within 8/32 hrs.</p>
+                  <p className="text-xs text-muted-foreground">49 CFR  390.15 — Must retain 3 years. Fatal accidents require post-accident testing within 8/32 hrs.</p>
                 </div>
                 <Button size="sm" onClick={() => setAccidentDialog({ open: true })} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-accident">
                   <Plus className="w-4 h-4 mr-1" />Log Accident
@@ -2158,7 +2158,7 @@ export default function DotHub() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold">Driver Vehicle Inspection Reports (DVIR)</h2>
-                  <p className="text-xs text-muted-foreground">49 CFR § 396.11 — Required daily pre-/post-trip. Keep signed originals 3 months.</p>
+                  <p className="text-xs text-muted-foreground">49 CFR  396.11 — Required daily pre-/post-trip. Keep signed originals 3 months.</p>
                 </div>
                 <Button size="sm" onClick={() => setDvirDialog2({ open: true })} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-add-dvir">
                   <Plus className="w-4 h-4 mr-1" />Log DVIR

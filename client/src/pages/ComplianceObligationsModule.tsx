@@ -348,7 +348,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   {
     aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "NPDES — Industrial Process/Contact Wastewater Discharge Permit",
-    citationSource: "40 CFR Part 122; Clean Water Act §402",
+    citationSource: "40 CFR Part 122; Clean Water Act 402",
     jurisdictionLevel: "F/S",
     state: null, county: null,
     descriptionOfRequirement: "Facilities that discharge process wastewater, cooling water, or other industrial wastewater directly to surface waters (rivers, streams, lakes) must obtain an NPDES permit. Permit specifies effluent limits, monitoring, and reporting requirements.",
@@ -361,7 +361,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   {
     aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "Industrial Pretreatment Program — POTW/Sewer Discharge",
-    citationSource: "40 CFR Part 403; Clean Water Act §307(b)",
+    citationSource: "40 CFR Part 403; Clean Water Act 307(b)",
     jurisdictionLevel: "F/S/L",
     state: null, county: null,
     descriptionOfRequirement: "Industrial facilities discharging wastewater to a Publicly Owned Treatment Works (POTW/municipal sewer) must comply with National Pretreatment Standards (general and categorical) and local limits set by the POTW. Categorical standards apply to specific industries (e.g., metal finishing, electroplating, printed circuit boards). Local limits may impose more stringent requirements.",
@@ -387,7 +387,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   {
     aspectCategory: "Oil Management & Spillage",
     requirementName: "Oil Spill Prevention, Control & Countermeasure (SPCC) Plan",
-    citationSource: "40 CFR Part 112; Clean Water Act §311",
+    citationSource: "40 CFR Part 112; Clean Water Act 311",
     jurisdictionLevel: "F",
     state: null, county: null,
     descriptionOfRequirement: "Facilities with aggregate aboveground oil storage capacity >1,320 gallons (or a single underground storage tank >42,000 gallons) must prepare and implement a Spill Prevention, Control and Countermeasure (SPCC) Plan to prevent oil discharges to navigable waters. Applies to petroleum, lubricating oil, hydraulic fluid, coolants, and other oil-based products. Qualified Facility SPCC plans (≤10,000 gal total, ≤1,320 gal largest single container) may be self-certified.",
@@ -399,15 +399,15 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   },
   {
     aspectCategory: "Water Quality & Spillage Prevention",
-    requirementName: "Clean Water Act §404 — Wetlands Dredge & Fill Permit",
-    citationSource: "40 CFR Parts 230–233; CWA §404",
+    requirementName: "Clean Water Act 404 — Wetlands Dredge & Fill Permit",
+    citationSource: "40 CFR Parts 230–233; CWA 404",
     jurisdictionLevel: "F",
     state: null, county: null,
-    descriptionOfRequirement: "Activities involving the discharge of dredged or fill material into waters of the United States, including wetlands, require a §404 permit from the U.S. Army Corps of Engineers and/or state §401 water quality certification. Nationwide Permits (NWPs) cover minor/routine activities; Individual Permits required for larger impacts.",
-    facilityAction: "Before any construction, grading, or fill activity near streams, wetlands, or drainage features, conduct jurisdictional wetlands delineation. If §404 activity is proposed, consult with U.S. Army Corps of Engineers for NWP or Individual Permit.",
+    descriptionOfRequirement: "Activities involving the discharge of dredged or fill material into waters of the United States, including wetlands, require a 404 permit from the U.S. Army Corps of Engineers and/or state 401 water quality certification. Nationwide Permits (NWPs) cover minor/routine activities; Individual Permits required for larger impacts.",
+    facilityAction: "Before any construction, grading, or fill activity near streams, wetlands, or drainage features, conduct jurisdictional wetlands delineation. If 404 activity is proposed, consult with U.S. Army Corps of Engineers for NWP or Individual Permit.",
     complianceStatus: "compliant",
     permitRequired: true, permitRenewalFrequency: "Per project",
-    recordsToMaintain: "Wetlands delineation report, §404 permit or NWP verification, §401 water quality certification, mitigation records",
+    recordsToMaintain: "Wetlands delineation report, 404 permit or NWP verification, 401 water quality certification, mitigation records",
     responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Applicable if any construction or fill activity near wetlands, streams, or drainage ditches is planned. Consult before any ground disturbance near water features.",
   },
   // ── Petroleum / UST ─────────────────────────────────────────────────────
@@ -428,7 +428,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   {
     aspectCategory: "Emergency Planning",
     requirementName: "Risk Management Plan (RMP) — Accidental Release Prevention",
-    citationSource: "40 CFR Part 68; CAA §112(r)",
+    citationSource: "40 CFR Part 68; CAA 112(r)",
     jurisdictionLevel: "F",
     state: null, county: null,
     descriptionOfRequirement: "Facilities that hold regulated toxic or flammable substances above threshold quantities must develop and submit a Risk Management Plan (RMP) to EPA. RMP includes hazard assessment (worst-case/alternate release scenarios), prevention program, and emergency response program. Applies to common substances: ammonia (>10,000 lbs), chlorine (>2,500 lbs), propane (>10,000 lbs), hydrogen fluoride (>1,000 lbs), and others.",
@@ -436,12 +436,12 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     complianceStatus: "compliant",
     permitRequired: false, permitRenewalFrequency: "5-year resubmission; update within 6 months of process changes",
     recordsToMaintain: "RMP document, EPA submission confirmation, process hazard analyses (PHA/HAZOP), incident investigation reports",
-    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Common RMP triggers in manufacturing: anhydrous ammonia (refrigeration, heat treat), chlorine (water treatment), flammable gases. Review regulated substance list at 40 CFR §68.130.",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Common RMP triggers in manufacturing: anhydrous ammonia (refrigeration, heat treat), chlorine (water treatment), flammable gases. Review regulated substance list at 40 CFR 68.130.",
   },
   {
     aspectCategory: "Emergency Planning",
-    requirementName: "EPCRA §304 — Emergency Release Notification",
-    citationSource: "40 CFR Part 355; EPCRA §304",
+    requirementName: "EPCRA 304 — Emergency Release Notification",
+    citationSource: "40 CFR Part 355; EPCRA 304",
     jurisdictionLevel: "F",
     state: null, county: null,
     descriptionOfRequirement: "Facilities must immediately notify the SERC and LEPC if there is a release of a CERCLA hazardous substance or an Extremely Hazardous Substance (EHS) that equals or exceeds the reportable quantity (RQ) and goes off-site. Notification must include substance name, estimated quantity, time/duration, location, known health risks, and actions taken.",
@@ -449,20 +449,20 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
     complianceStatus: "compliant",
     permitRequired: false, permitRenewalFrequency: "As needed (triggered by qualifying release)",
     recordsToMaintain: "Release notification records, SERC/LEPC contact list, written follow-up reports, incident investigation records",
-    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Distinct from EPCRA §302 planning requirement. §304 notification is an immediate action required upon an actual release — not a planning submission.",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Distinct from EPCRA 302 planning requirement. 304 notification is an immediate action required upon an actual release — not a planning submission.",
   },
   {
     aspectCategory: "Chemical Reporting",
-    requirementName: "EPCRA §311 — MSDS / Chemical List Submission",
-    citationSource: "40 CFR Part 370; EPCRA §311",
+    requirementName: "EPCRA 311 — MSDS / Chemical List Submission",
+    citationSource: "40 CFR Part 370; EPCRA 311",
     jurisdictionLevel: "F",
     state: null, county: null,
     descriptionOfRequirement: "Facilities required to maintain SDSs (MSDSs) under OSHA HazCom must submit copies of SDSs (or a list of covered chemicals) to the SERC, LEPC, and local fire department. One-time submission required; updates needed within 3 months when new covered chemicals are added.",
     facilityAction: "Submit SDS or chemical list to SERC, LEPC, and local fire department for all hazardous chemicals required to have an SDS under OSHA HazCom. Update submissions within 3 months when new chemicals meeting SDS requirements are brought to the facility.",
     complianceStatus: "compliant",
     permitRequired: false, permitRenewalFrequency: "One-time + update when new chemicals added",
-    recordsToMaintain: "§311 submission records, SERC/LEPC/fire department acknowledgements, chemical list updates",
-    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Companion requirement to Tier II (§312). §311 is a one-time submission of SDS or list; Tier II is the annual quantity/inventory report.",
+    recordsToMaintain: "311 submission records, SERC/LEPC/fire department acknowledgements, chemical list updates",
+    responsiblePerson: null, dateLastReviewed: null, nextReviewDate: null, actionRequired: null, notes: "Companion requirement to Tier II (312). 311 is a one-time submission of SDS or list; Tier II is the annual quantity/inventory report.",
   },
   // ── Hazardous Waste ──────────────────────────────────────────────────────
   {
@@ -482,7 +482,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   {
     aspectCategory: "Chemical Reporting",
     requirementName: "TSCA Chemical Data Reporting (CDR)",
-    citationSource: "40 CFR Part 711; TSCA §8(a)",
+    citationSource: "40 CFR Part 711; TSCA 8(a)",
     jurisdictionLevel: "F",
     state: null, county: null,
     descriptionOfRequirement: "Chemical manufacturers (including importers) who produce or import ≥25,000 lbs of a chemical substance listed on the TSCA Chemical Substance Inventory in a reporting year must submit Chemical Data Reports to EPA. Reported every 4 years (principal reporting year). Certain substances have lower thresholds (≥2,500 lbs for certain chemicals of concern).",
@@ -495,7 +495,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   {
     aspectCategory: "Material Use/Exposure",
     requirementName: "Lead-Based Paint — Renovation, Repair & Painting (RRP) Rule",
-    citationSource: "40 CFR Part 745; TSCA §402/406",
+    citationSource: "40 CFR Part 745; TSCA 402/406",
     jurisdictionLevel: "F",
     state: null, county: null,
     descriptionOfRequirement: "Renovation, repair, and painting projects that disturb lead-based paint in pre-1978 facilities require compliance with EPA's RRP Rule (applies to child-occupied facilities and residential buildings, and to general industry under OSHA 29 CFR 1926.62 for construction). Industrial facilities constructed before 1978 should test for lead paint before any renovation activity.",
@@ -509,7 +509,7 @@ const FEDERAL_STARTER_LIBRARY: Omit<IsoComplianceObligation, "id" | "userId" | "
   {
     aspectCategory: "Air Quality",
     requirementName: "Greenhouse Gas (GHG) Mandatory Reporting Rule",
-    citationSource: "40 CFR Part 98; CAA §114",
+    citationSource: "40 CFR Part 98; CAA 114",
     jurisdictionLevel: "F",
     state: null, county: null,
     descriptionOfRequirement: "Facilities that emit ≥25,000 metric tons of CO2 equivalent (CO2e) per year from covered source categories must report GHG emissions to EPA annually. Covered sources include stationary fuel combustion, industrial processes, and fugitive emissions. Report submitted via EPA's e-GGRT system by March 31 for the prior calendar year.",
@@ -961,7 +961,7 @@ const MICHIGAN_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProj
     citationSource: "MI NREPA Part 303, Act 451 (1994)",
     jurisdictionLevel: "S",
     state: "Michigan", county: null,
-    descriptionOfRequirement: "Michigan Part 303 regulates activities in wetlands (fill, dredge, drainage alteration). Activities affecting wetlands regulated by Michigan (including isolated wetlands <5 acres, which are not covered by federal §404) require a permit from EGLE. Michigan's wetland protections are more extensive than the federal program.",
+    descriptionOfRequirement: "Michigan Part 303 regulates activities in wetlands (fill, dredge, drainage alteration). Activities affecting wetlands regulated by Michigan (including isolated wetlands <5 acres, which are not covered by federal 404) require a permit from EGLE. Michigan's wetland protections are more extensive than the federal program.",
     facilityAction: "Before any construction, expansion, or grading near wetlands or low-lying areas on or adjacent to the facility, consult EGLE and a certified wetlands consultant to determine if a Part 303 permit is required. Apply for permit well in advance (up to 90-day review period).",
     complianceStatus: "compliant",
     permitRequired: true, permitRenewalFrequency: "Per project",
@@ -1368,7 +1368,7 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
   {
     aspectCategory: "Water Quality & Spillage Prevention",
     requirementName: "Ohio NPDES Industrial Process Wastewater Permit",
-    citationSource: "Ohio Revised Code §6111; Ohio Admin. Code 3745-33; Ohio EPA NPDES",
+    citationSource: "Ohio Revised Code 6111; Ohio Admin. Code 3745-33; Ohio EPA NPDES",
     jurisdictionLevel: "S",
     state: "Ohio", county: null,
     descriptionOfRequirement: "Ohio EPA requires NPDES permits for facilities that discharge process wastewater, cooling water, or other industrial wastewater to surface waters of the state. Ohio EPA administers the NPDES program and may set more stringent limits than the federal minimums based on the receiving water body.",
@@ -1381,7 +1381,7 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
   {
     aspectCategory: "Oil Management & Spillage",
     requirementName: "Ohio Underground Storage Tank (UST) Program",
-    citationSource: "Ohio Revised Code §3737.87; Ohio Admin. Code 1301:7-9; Ohio State Fire Marshal",
+    citationSource: "Ohio Revised Code 3737.87; Ohio Admin. Code 1301:7-9; Ohio State Fire Marshal",
     jurisdictionLevel: "S",
     state: "Ohio", county: null,
     descriptionOfRequirement: "Ohio's UST program is administered by the State Fire Marshal's Bureau of Underground Storage Tank Regulations (BUSTR). Requirements include registration, installation standards, leak detection, spill/overfill prevention, corrosion protection, and corrective action for releases. Applies to USTs containing petroleum or hazardous substances.",
@@ -1394,7 +1394,7 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
   {
     aspectCategory: "Oil Management & Spillage",
     requirementName: "Ohio SPCC / Aboveground Petroleum Storage Tank Rules",
-    citationSource: "Ohio Revised Code §1509.22; Ohio Admin. Code 1301:7-7 (SFMO); Ohio EPA",
+    citationSource: "Ohio Revised Code 1509.22; Ohio Admin. Code 1301:7-7 (SFMO); Ohio EPA",
     jurisdictionLevel: "S",
     state: "Ohio", county: null,
     descriptionOfRequirement: "Ohio regulates aboveground petroleum storage tanks (ASTs) through the State Fire Marshal's Office (flammable/combustible liquids) and Ohio EPA (spill prevention and water quality). Ohio facilities must comply with federal SPCC (40 CFR Part 112) and any applicable state fire code requirements for AST construction, containment, and labeling. Oil spills threatening waters of the state must be reported to Ohio EPA.",
@@ -1420,7 +1420,7 @@ const OHIO_STARTER: Omit<IsoComplianceObligation, "id" | "userId" | "isoProjectI
   {
     aspectCategory: "Solid & Liquid Waste",
     requirementName: "Ohio Hazardous Waste Management — Ohio EPA (RCRA-Authorized)",
-    citationSource: "Ohio Revised Code §3734; Ohio Admin. Code 3745-50 through 3745-69; Ohio EPA",
+    citationSource: "Ohio Revised Code 3734; Ohio Admin. Code 3745-50 through 3745-69; Ohio EPA",
     jurisdictionLevel: "S",
     state: "Ohio", county: null,
     descriptionOfRequirement: "Ohio is authorized by EPA to administer its own RCRA hazardous waste program. Ohio's rules (Ohio Admin. Code 3745-50 through 3745-69) are substantially equivalent to federal RCRA but include Ohio-specific provisions. Generators must register with Ohio EPA's RCRA Information System (RIS/myRCRAid) and comply with Ohio generator requirements.",
@@ -1756,7 +1756,7 @@ const OSHA_STARTER_LIBRARY: StarterItem[] = [
     requirementName: "Ergonomics — Musculoskeletal Hazard Prevention",
     citationSource: "OSH Act Section 5(a)(1) — General Duty Clause",
     jurisdictionLevel: "F", state: null, county: null, standard: "ISO 45001",
-    descriptionOfRequirement: "While OSHA's ergonomics rule was withdrawn in 2001, employers remain responsible under the General Duty Clause for addressing recognized ergonomic hazards that cause or are likely to cause serious harm. ISO 45001 §6.1.2 specifically requires identification of musculoskeletal hazards.",
+    descriptionOfRequirement: "While OSHA's ergonomics rule was withdrawn in 2001, employers remain responsible under the General Duty Clause for addressing recognized ergonomic hazards that cause or are likely to cause serious harm. ISO 45001 6.1.2 specifically requires identification of musculoskeletal hazards.",
     facilityAction: "Conduct ergonomic risk assessments for repetitive motion, heavy lifting, awkward postures; implement engineering and administrative controls; train employees.",
     complianceStatus: "compliant", permitRequired: false, permitRenewalFrequency: null,
     recordsToMaintain: "Ergonomic risk assessments, incident/injury records related to MSDs, training records",
@@ -1838,7 +1838,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
   const [selectedStarters, setSelectedStarters] = useState<Set<string>>(new Set());
   const [starterSearch, setStarterSearch] = useState("");
 
-  // §6.1.3 Applicability Screener
+  // 6.1.3 Applicability Screener
   const [applicabilityItem, setApplicabilityItem] = useState<{
     requirementName: string;
     aspectCategory: string;
@@ -1846,7 +1846,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
     descriptionOfRequirement?: string | null;
   } | null>(null);
 
-  // §9.1.2 Evaluation Wizard
+  // 9.1.2 Evaluation Wizard
   const [evalWizardObligation, setEvalWizardObligation] = useState<IsoComplianceObligation | null>(null);
 
   // Ask Corey — Identify Requirements by Jurisdiction
@@ -2112,7 +2112,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             <div className="flex items-center gap-2.5 mb-1">
               <Shield className="w-6 h-6 text-accent" />
               <h1 className="text-xl font-black text-primary">Compliance Obligations Register</h1>
-              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO §6.1.3 + §9.1.2</Badge>
+              <Badge className="bg-accent/10 text-accent border-accent/30 text-xs font-bold">ISO 6.1.3 + 9.1.2</Badge>
             </div>
             <p className="text-sm text-muted-foreground">Legal and other requirements — EMS obligations (ISO 14001) and OH&S obligations (ISO 45001) applicable to your organization's scope.</p>
           </div>
@@ -2166,7 +2166,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
             <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Bundle</span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-            This register identifies <strong>what</strong> you must comply with (§6.1.3). The <strong>Environmental Hub</strong> tracks the operational records — inspections, manifests, monitoring logs — that <strong>prove</strong> you are. Bundle both for complete ISO 14001 conformance.
+            This register identifies <strong>what</strong> you must comply with (6.1.3). The <strong>Environmental Hub</strong> tracks the operational records — inspections, manifests, monitoring logs — that <strong>prove</strong> you are. Bundle both for complete ISO 14001 conformance.
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -2409,7 +2409,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                             )}
                           </div>
 
-                          {/* §6.1.3 / §9.1.2 Action Bar */}
+                          {/* 6.1.3 / 9.1.2 Action Bar */}
                           <div className="mt-4 pt-3 border-t border-border/30 flex flex-wrap items-center gap-2">
                             <div className="flex items-center gap-1.5 mr-2">
                               <Shield className="w-3.5 h-3.5 text-muted-foreground" />
@@ -2419,11 +2419,11 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                               onClick={() => setEvalWizardObligation(o)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-accent text-xs font-semibold transition-colors"
                               data-testid={`button-eval-wizard-${o.id}`}
-                              title="ISO §9.1.2 — Evaluate whether you are meeting this requirement"
+                              title="ISO 9.1.2 — Evaluate whether you are meeting this requirement"
                             >
                               <ClipboardCheck className="w-3.5 h-3.5" />
                               Evaluate Compliance
-                              <Badge className="text-[9px] px-1 py-0 h-4 bg-accent/10 text-accent border-accent/30 border ml-0.5">§9.1.2</Badge>
+                              <Badge className="text-[9px] px-1 py-0 h-4 bg-accent/10 text-accent border-accent/30 border ml-0.5">9.1.2</Badge>
                             </button>
                             <button
                               onClick={() => setApplicabilityItem({
@@ -2434,11 +2434,11 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                               })}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-300/60 bg-blue-50/50 hover:bg-blue-100/60 dark:border-blue-700/40 dark:bg-blue-950/20 dark:hover:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-xs font-semibold transition-colors"
                               data-testid={`button-applicability-${o.id}`}
-                              title="ISO §6.1.3 — Screen whether this requirement applies to your facility"
+                              title="ISO 6.1.3 — Screen whether this requirement applies to your facility"
                             >
                               <Scale className="w-3.5 h-3.5" />
                               Applicability Screen
-                              <Badge className="text-[9px] px-1 py-0 h-4 bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 border ml-0.5">§6.1.3</Badge>
+                              <Badge className="text-[9px] px-1 py-0 h-4 bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 border ml-0.5">6.1.3</Badge>
                             </button>
                           </div>
                         </div>
@@ -2482,7 +2482,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               <div className="p-12 text-center">
                 <ClipboardCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
                 <p className="text-base font-semibold text-muted-foreground mb-1">No evaluations logged</p>
-                <p className="text-sm text-muted-foreground mb-4">ISO 14001 §9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your audit trail.</p>
+                <p className="text-sm text-muted-foreground mb-4">ISO 14001 9.1.2 requires periodic compliance evaluation records. Log an evaluation to start your audit trail.</p>
                 <Button size="sm" variant="outline" className="gap-1.5 text-sm" onClick={() => openAddEvaluation()}>
                   <Plus className="w-4 h-4" /> Log First Evaluation
                 </Button>
@@ -3089,7 +3089,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                                   <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.descriptionOfRequirement}</p>
                                 )}
                               </div>
-                              {/* §6.1.3 applicability screen button — stop propagation so checkbox isn't toggled */}
+                              {/* 6.1.3 applicability screen button — stop propagation so checkbox isn't toggled */}
                               {!alreadyImported && (
                                 <button
                                   type="button"
@@ -3104,11 +3104,11 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
                                     });
                                   }}
                                   className="shrink-0 flex items-center gap-1 px-2 py-1 rounded border border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-800/40 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors"
-                                  title="§6.1.3 Applicability Screen — Does this requirement apply to your facility?"
+                                  title="6.1.3 Applicability Screen — Does this requirement apply to your facility?"
                                   data-testid={`button-screen-${idx}`}
                                 >
                                   <Scale className="w-3 h-3" />
-                                  <span className="text-[9px] font-semibold">§6.1.3</span>
+                                  <span className="text-[9px] font-semibold">6.1.3</span>
                                 </button>
                               )}
                             </label>
@@ -3156,7 +3156,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
               </div>
               <div>
                 <h2 className="text-base font-black text-primary">Ask Corey — Identify My Compliance Requirements</h2>
-                <p className="text-[11px] text-muted-foreground">Corey will analyze your facility's jurisdiction and industry to identify applicable Federal, State, and Local environmental and H&S legal requirements for your ISO 14001 §6.1.3 register.</p>
+                <p className="text-[11px] text-muted-foreground">Corey will analyze your facility's jurisdiction and industry to identify applicable Federal, State, and Local environmental and H&S legal requirements for your ISO 14001 6.1.3 register.</p>
               </div>
             </div>
           </div>
@@ -3336,7 +3336,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
         </DialogContent>
       </Dialog>
 
-      {/* ── §6.1.3 Applicability Screener ──────────────────────────────────── */}
+      {/* ── 6.1.3 Applicability Screener ──────────────────────────────────── */}
       {applicabilityItem && (
         <ComplianceApplicabilityDialog
           open={!!applicabilityItem}
@@ -3345,7 +3345,7 @@ export default function ComplianceObligationsModule({ isoProjectId }: { isoProje
         />
       )}
 
-      {/* ── §9.1.2 Compliance Evaluation Wizard ────────────────────────────── */}
+      {/* ── 9.1.2 Compliance Evaluation Wizard ────────────────────────────── */}
       {evalWizardObligation && (
         <ComplianceEvaluationWizard
           open={!!evalWizardObligation}

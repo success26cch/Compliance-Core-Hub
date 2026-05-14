@@ -128,7 +128,7 @@ export default function DrugAlcoholPolicy() {
               <section>
                 <h3 className="text-xl font-bold text-gray-900 mb-3 border-b border-gray-300 pb-2">1. PURPOSE</h3>
                 <p>{companyName} is committed to providing a safe, healthy, and productive work environment for all employees, contractors, and visitors. The use, possession, distribution, or being under the influence of illegal drugs or unauthorized alcohol in the workplace poses unacceptable risks to health and safety and is strictly prohibited.</p>
-                <p className="mt-2">This policy establishes standards for maintaining a drug- and alcohol-free workplace and outlines the procedures for testing, disciplinary action, and employee assistance in compliance with federal regulations including the Drug-Free Workplace Act (41 U.S.C. §§ 8101-8106), DOT 49 CFR Part 40, and applicable state and local laws.</p>
+                <p className="mt-2">This policy establishes standards for maintaining a drug- and alcohol-free workplace and outlines the procedures for testing, disciplinary action, and employee assistance in compliance with federal regulations including the Drug-Free Workplace Act (41 U.S.C.  8101-8106), DOT 49 CFR Part 40, and applicable state and local laws.</p>
               </section>
 
               <section>

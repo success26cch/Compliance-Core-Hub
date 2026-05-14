@@ -108,7 +108,7 @@ const SCHEDULE_DATA = [
     lastAuditDate: new Date("2026-02-17"),
     nextAuditDate: new Date("2027-02-17"),
     auditorAssigned: "David Kwan",
-    notes: "Design FMEA review required — §8.3.3 NC from Feb audit under CAPA",
+    notes: "Design FMEA review required — 8.3.3 NC from Feb audit under CAPA",
   },
   // SOP processes
   {
@@ -224,7 +224,7 @@ const PROCESS_NOTES = [
     personnelInterviewed: "J. Ramirez — Lead Blending Operator; K. Patel — QC Lab Manager; T. Wu — Production Supervisor",
     processDescription: "Blending operations are conducted in ISO Class 8 climate-controlled environment. Operators follow SOP-BL-001 Rev 6 and documented batch records. In-process sampling performed per sampling plan QCP-12. Batch records reviewed — 28 of 30 sampled records complete. 2 records missing final supervisor sign-off.",
     objectiveEvidence: "SOP-BL-001 Rev 6 verified current\nBatch records sampled — Feb 1–17, 2026 (30 batches)\nIn-process test results QCP-12 log reviewed\nOperator training records for 5 blending operators verified current\nChemical inventory / CoA files spot-checked (15 raw materials)\nEquipment calibration tags verified on all blending vessels",
-    nonconformances: "NC-1 [§8.5.1]: 2 of 30 batch records missing final production supervisor sign-off — not detected prior to release. (CAR-2026-003 issued)\nNC-2 [§8.7]: Non-conforming batch #BL-2026-0047 (viscosity out of spec) was not properly quarantined — found in staging area without hold tag. (CAR-2026-004 issued)",
+    nonconformances: "NC-1 [8.5.1]: 2 of 30 batch records missing final production supervisor sign-off — not detected prior to release. (CAR-2026-003 issued)\nNC-2 [8.7]: Non-conforming batch #BL-2026-0047 (viscosity out of spec) was not properly quarantined — found in staging area without hold tag. (CAR-2026-004 issued)",
     opportunities: "Consider digital batch record system to eliminate missed signatures and enable real-time supervisor review\nReal-time viscosity monitoring sensors on blending vessels could enable immediate corrective action before batch release",
   },
   {
@@ -252,7 +252,7 @@ const PROCESS_NOTES = [
     personnelInterviewed: "R. Gomez — Program Manager; D. Kwan — Quality Manager; S. Kim — R&D Lead",
     processDescription: "APQP managed via project tracking spreadsheet. 3 active programs reviewed. Gate reviews documented. Design FMEA found to be initiated late on 2 programs — templates exist but assignment timing not formally controlled. Control Plans in place and current for all 3 programs.",
     objectiveEvidence: "APQP project tracker (3 active programs) reviewed\nPPAP submission packages for FM-2026-01 and GM-2026-03 reviewed\nDesign FMEA revision logs reviewed\nControl Plans CP-2026-01, CP-2026-02, CP-2026-03 verified\nCustomer approval letters on file",
-    nonconformances: "NC-1 [§8.3.3]: No documented procedure or timing matrix for Design FMEA initiation in the APQP process — timing left to Program Manager discretion, resulting in 2 late PPAPs. (CAR-2026-005 issued)",
+    nonconformances: "NC-1 [8.3.3]: No documented procedure or timing matrix for Design FMEA initiation in the APQP process — timing left to Program Manager discretion, resulting in 2 late PPAPs. (CAR-2026-005 issued)",
     opportunities: "Implement formal APQP timeline template with DFMEA start gate tied to program kick-off meeting date\nConsider APQP project management software to automate gate review notifications and milestone tracking",
   },
   {
@@ -264,7 +264,7 @@ const PROCESS_NOTES = [
     processOutputs: "Completed PM records, calibration certificates, equipment status tags, work orders, downtime reports",
     processInteractions: "Supports all COP processes (production equipment); interfaces with Document Control (procedure updates); OOT calibration events trigger Corrective Action.",
     personnelInterviewed: "M. Torres — Maintenance Supervisor; J. Adeyemi — Calibration Technician; T. Wu — Production Supervisor",
-    processDescription: "PM program managed via CCHUB system — 15 equipment items in register. PM frequencies assigned per IATF §8.5.1.1. Calibration register maintained for 15 gages. External calibration lab (AccuCal Labs, ISO 17025 accredited) used for precision instruments. Viscometer OOT assessment completed — impact assessed as low.",
+    processDescription: "PM program managed via CCHUB system — 15 equipment items in register. PM frequencies assigned per IATF 8.5.1.1. Calibration register maintained for 15 gages. External calibration lab (AccuCal Labs, ISO 17025 accredited) used for precision instruments. Viscometer OOT assessment completed — impact assessed as low.",
     objectiveEvidence: "PM schedule and completion records Feb 2026 reviewed\nCalibration register — all 15 gages reviewed\nExternal calibration certificates from AccuCal Labs verified\nViscometer OOT risk assessment (CAR-2023-017) reviewed\nSpareParts inventory for Reactor Chiller and Dosing Pump verified",
     nonconformances: "",
     opportunities: "Establish automated PM reminder alerts for upcoming due dates (≤14 days) to prevent repeat overdue situations\nConsider adding Reactor Chiller to monthly predictive maintenance monitoring given its KPE status and recent downtime history",
@@ -309,7 +309,7 @@ async function updateAuditHeaders() {
     openingMeetingAttendees: "David Kwan (Lead Auditor), Maria Santos (Auditor), Tom Wu (Production Supervisor), Kevin Patel (QC Manager), Rosa Gomez (Program Manager), Mike Torres (Maintenance Supervisor)",
     closingMeetingDate: new Date("2026-02-17T16:30:00"),
     closingMeetingAttendees: "David Kwan (Lead Auditor), Maria Santos (Auditor), Tom Wu (Production Supervisor), Kevin Patel (QC Manager), Rosa Gomez (Program Manager), General Manager",
-    executiveSummary: "The February 2026 internal audit of CCI Chemical's IATF 16949:2016 QMS found the management system to be substantially conforming, with two major nonconformances identified in the Chemical Blending and APQP processes.\n\nTwo major NCs were issued: (1) incomplete batch record sign-off controls in Chemical Blending (§8.5.1), and (2) absence of a formalized DFMEA timing matrix in the APQP process (§8.3.3). Both CARs have been opened and root causes identified.\n\nProcess effectiveness was rated as follows: Analytical Testing and Corrective Action processes are performing at target. Chemical Blending and APQP require attention. Equipment Maintenance is below target on PM completion rate.\n\nThe QMS demonstrates strong foundational controls in document management, calibration, and corrective action response. Recommended focus areas for the next 12 months: PPAP on-time performance, PM completion rate improvement, and batch record digital transformation.",
+    executiveSummary: "The February 2026 internal audit of CCI Chemical's IATF 16949:2016 QMS found the management system to be substantially conforming, with two major nonconformances identified in the Chemical Blending and APQP processes.\n\nTwo major NCs were issued: (1) incomplete batch record sign-off controls in Chemical Blending (8.5.1), and (2) absence of a formalized DFMEA timing matrix in the APQP process (8.3.3). Both CARs have been opened and root causes identified.\n\nProcess effectiveness was rated as follows: Analytical Testing and Corrective Action processes are performing at target. Chemical Blending and APQP require attention. Equipment Maintenance is below target on PM completion rate.\n\nThe QMS demonstrates strong foundational controls in document management, calibration, and corrective action response. Recommended focus areas for the next 12 months: PPAP on-time performance, PM completion rate improvement, and batch record digital transformation.",
   }).where(and(eq(isoAudits.id, COMPLETED_AUDIT_ID), eq(isoAudits.userId, USER_ID)));
   console.log("    ✓ Updated completed audit header");
 }

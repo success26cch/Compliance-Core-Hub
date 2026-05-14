@@ -235,7 +235,7 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
     { text: "Isa, what does IATF 16949 clause 8.7.1.1 require for warranty management?", user: true, y: 2.62 },
     { text: "Clause 8.7.1.1 requires a warranty management process including analysis of warranty returns. You must implement a 'no-trouble-found' (NTF) process per customer-specific requirements — let me walk you through the key elements...", user: false, y: 3.42 },
     { text: "Can you review my control plan and tell me if it meets the standard?", user: true, y: 4.75 },
-    { text: "Absolutely. Upload your control plan and I will check it against IATF §8.3.3.3 — including special characteristics, sample sizes, and reaction plans.", user: false, y: 5.45 },
+    { text: "Absolutely. Upload your control plan and I will check it against IATF 8.3.3.3 — including special characteristics, sample sizes, and reaction plans.", user: false, y: 5.45 },
   ];
   bubbles.forEach(({ text, user, y }) => {
     const bx = user ? 8.3 : 5.7;
@@ -321,11 +321,11 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
   const modules = [
     { icon: "📄", name: "Documentation Library", desc: "Versioned vault with AI drafting, change control & clause compliance checks", color: C.purple },
     { icon: "📋", name: "NC & CAPA", desc: "8D/PDCA corrective actions, root cause analysis, effectiveness tracking", color: C.red },
-    { icon: "🔍", name: "Internal Audit", desc: "Risk-based schedules, process/product audits, turtle diagrams, IATF §9.2.2", color: C.blue },
+    { icon: "🔍", name: "Internal Audit", desc: "Risk-based schedules, process/product audits, turtle diagrams, IATF 9.2.2", color: C.blue },
     { icon: "⚡", name: "Layered Process Audits", desc: "L1–L5 LPA, GM BIQS/Stellantis/Ford Q1 compliant, 25-question library", color: C.amber },
     { icon: "📊", name: "Risk Assessment", desc: "PFMEA-aligned register, H/M/L 3x3 matrix, strategic & operational risks", color: C.orange },
     { icon: "📅", name: "Management Review", desc: "Agenda builder, input/output tracking, KPI dashboards, AI-generated minutes", color: C.green },
-    { icon: "🌍", name: "Context of Organization", desc: "PESTLE, SWOT, interested parties, strategic risk register §4.1", color: C.blue },
+    { icon: "🌍", name: "Context of Organization", desc: "PESTLE, SWOT, interested parties, strategic risk register 4.1", color: C.blue },
     { icon: "🏭", name: "Supplier Management", desc: "Approved Supplier List, pre-qualification, scorecards, risk-based audits", color: C.purple },
     { icon: "🎓", name: "Training & Awareness", desc: "Competency matrix, evidence file library, 10 document categories, multi-file upload", color: C.green },
     { icon: "🔧", name: "Preventive Maintenance", desc: "Full TPM/PM platform — IATF 16949, AS9100D, ISO 13485 specific fields", color: C.amber },
@@ -472,9 +472,9 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
   });
 
   const types = [
-    { icon: "🏢", title: "System Audit", clause: "§9.2.2", color: C.blue, desc: "Full QMS clause-structure audits covering all processes and their interactions. Scheduled annually or risk-triggered. Isa generates the checklist from your scope." },
-    { icon: "⚙️", title: "Manufacturing Process Audit", clause: "§9.2.2.4", color: C.orange, desc: "Process audits with full turtle diagram capture — Inputs, Outputs, Resources, Personnel, Methods, Measurements, Environment. IATF specific." },
-    { icon: "🔬", title: "Product Audit", clause: "§9.2.2.3", color: C.purple, desc: "Final product conformance audits against acceptance criteria. Structured checklists, photographic evidence, and automatic NC linkage." },
+    { icon: "🏢", title: "System Audit", clause: "9.2.2", color: C.blue, desc: "Full QMS clause-structure audits covering all processes and their interactions. Scheduled annually or risk-triggered. Isa generates the checklist from your scope." },
+    { icon: "⚙️", title: "Manufacturing Process Audit", clause: "9.2.2.4", color: C.orange, desc: "Process audits with full turtle diagram capture — Inputs, Outputs, Resources, Personnel, Methods, Measurements, Environment. IATF specific." },
+    { icon: "🔬", title: "Product Audit", clause: "9.2.2.3", color: C.purple, desc: "Final product conformance audits against acceptance criteria. Structured checklists, photographic evidence, and automatic NC linkage." },
   ];
   types.forEach((t, i) => {
     const tx = 0.25 + i*4.36;
@@ -598,7 +598,7 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
 
   const rFeats = [
     "PESTLE & SWOT analysis with export buttons",
-    "Strategic Risk Register §4.1 (separate from §6.1)",
+    "Strategic Risk Register 4.1 (separate from 6.1)",
     "Risk-based scheduling feeds Internal Audit module",
     "Isa suggests risk treatments & controls",
     "Link risks to processes, objectives & KPIs",
@@ -613,9 +613,9 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
 
   const mrInputs = ["Customer feedback & satisfaction", "Quality objectives vs. targets (KPIs)", "Process performance & conformity", "NC & CAPA status", "Audit results", "Risk & opportunity status", "Resource adequacy", "Improvement opportunities"];
   const mrOutputs = ["Improvement decisions & actions", "Resource allocation changes", "QMS changes needed", "Strategic direction updates"];
-  s.addText("INPUTS (§9.3.2)", { x: 6.75, y: 1.62, w: 2.9, h: 0.3, fontSize: 10, bold: true, color: C.blue, fontFace: "Calibri" });
+  s.addText("INPUTS (9.3.2)", { x: 6.75, y: 1.62, w: 2.9, h: 0.3, fontSize: 10, bold: true, color: C.blue, fontFace: "Calibri" });
   mrInputs.forEach((it, i) => s.addText("\u25b8  " + it, { x: 6.75, y: 1.98 + i*0.37, w: 2.9, h: 0.34, fontSize: 8.5, color: C.slateLight, fontFace: "Calibri" }));
-  s.addText("OUTPUTS (§9.3.3)", { x: 9.85, y: 1.62, w: 3.45, h: 0.3, fontSize: 10, bold: true, color: C.green, fontFace: "Calibri" });
+  s.addText("OUTPUTS (9.3.3)", { x: 9.85, y: 1.62, w: 3.45, h: 0.3, fontSize: 10, bold: true, color: C.green, fontFace: "Calibri" });
   mrOutputs.forEach((it, i) => s.addText("\u25b8  " + it, { x: 9.85, y: 1.98 + i*0.37, w: 3.45, h: 0.34, fontSize: 8.5, color: C.slateLight, fontFace: "Calibri" }));
 
   s.addShape(pptx.ShapeType.roundRect, { x: 6.75, y: 5.05, w: 6.28, h: 2.08, rectRadius: 0.12, fill: tintFill(C.green, T.lo), line: { color: C.green, width: 1.2 } });
@@ -644,7 +644,7 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
     { step: "2", title: "ASL Approval", desc: "Approved Supplier List with classification & risk tier assignment", color: C.purple },
     { step: "3", title: "Performance Scorecard", desc: "Quality PPM, delivery %, responsiveness ratings — auto-calculated", color: C.amber },
     { step: "4", title: "Risk-Based Audit Schedule", desc: "Supplier audits auto-scheduled based on risk tier & performance history", color: C.orange },
-    { step: "5", title: "§8.4.2.4 Monitoring", desc: "IATF-required statistical supplier performance tracking & reporting", color: C.red },
+    { step: "5", title: "8.4.2.4 Monitoring", desc: "IATF-required statistical supplier performance tracking & reporting", color: C.red },
   ];
   steps.forEach((st, i) => {
     s.addShape(pptx.ShapeType.roundRect, { x: 0.3, y: 1.85 + i*1.02, w: 6.1, h: 0.9, rectRadius: 0.1, fill: solidFill(C.darkNavy), line: { color: st.color, width: 0.8 } });
@@ -697,7 +697,7 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
     ["📋", "Master Register", "All measuring devices — ID, description, location, frequency, tolerance, next calibration date"],
     ["📅", "Calibration Log", "Full records with as-found/as-left data, technician ID, and certificate upload"],
     ["🏢", "Labs Registry", "Track approved external calibration labs — accreditation, scope, expiry date"],
-    ["🔬", "Internal Lab Scope", "IATF §7.1.5.3.2 compliant internal lab scope documentation for audit evidence"],
+    ["🔬", "Internal Lab Scope", "IATF 7.1.5.3.2 compliant internal lab scope documentation for audit evidence"],
     ["⚠️", "Overdue Alerts", "Never let a device go out of calibration. 30/14/7-day advance notifications"],
     ["📊", "MSA Tracking", "Measurement System Analysis results linked to control plan special characteristics"],
   ];
@@ -742,8 +742,8 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
   slideHeading(s, "Five Standards. One Platform.", "From automotive to aerospace to environmental — ISO Manager is built to run them all simultaneously.");
 
   const stds = [
-    { std: "IATF 16949:2016", sub: "Automotive Quality", icon: "🚗", color: C.blue, feats: ["Customer-Specific Requirements (GM/Ford/Stellantis)", "APQP, PPAP, PFMEA, Control Plan", "Layered Process Audits (L1–L5)", "Warranty management §8.7.1.1", "Manufacturing process audits §9.2.2.4", "No-design-responsibility scoping"] },
-    { std: "ISO 9001:2015", sub: "Quality Management", icon: "📋", color: C.green, feats: ["Full clause 4–10 QMS coverage", "Context of the organization §4", "Risk-based thinking throughout", "Management review framework §9.3", "Documented information control §7.5", "Monitoring & measurement §9.1"] },
+    { std: "IATF 16949:2016", sub: "Automotive Quality", icon: "🚗", color: C.blue, feats: ["Customer-Specific Requirements (GM/Ford/Stellantis)", "APQP, PPAP, PFMEA, Control Plan", "Layered Process Audits (L1–L5)", "Warranty management 8.7.1.1", "Manufacturing process audits 9.2.2.4", "No-design-responsibility scoping"] },
+    { std: "ISO 9001:2015", sub: "Quality Management", icon: "📋", color: C.green, feats: ["Full clause 4–10 QMS coverage", "Context of the organization 4", "Risk-based thinking throughout", "Management review framework 9.3", "Documented information control 7.5", "Monitoring & measurement 9.1"] },
     { std: "ISO 14001:2015", sub: "Environmental Mgmt", icon: "🌍", color: C.greenDark, feats: ["Environmental aspects & impacts", "Compliance obligations register", "Environmental objectives & KPIs", "Emergency preparedness", "Life cycle perspective", "Legal register management"] },
     { std: "ISO 45001:2018", sub: "OH&S Management", icon: "🦺", color: C.amber, feats: ["Hazard identification & risk assessment", "Worker participation & consultation", "OH&S objectives tracking", "Incident investigation workflow", "Legal & regulatory compliance", "Contractor management"] },
     { std: "AS9100D", sub: "Aerospace Quality", icon: "✈️", color: C.purple, feats: ["Configuration management", "First Article Inspection (FAI)", "FOD prevention programs", "Counterfeit parts awareness", "Key characteristics management", "Project management integration"] },
@@ -951,7 +951,7 @@ function slideHeading(slide, title, subtitle = null, x = 0.5, y = 0.3) {
     "AI Lead Auditor (Isa) built in — clause-specific, not generic",
     "IATF 16949 Customer-Specific Requirements (GM / Ford / Stellantis)",
     "Layered Process Audits (LPA) — L1–L5, OEM-compliant",
-    "Turtle diagram process audits (§9.2.2.4)",
+    "Turtle diagram process audits (9.2.2.4)",
     "All 5 ISO standards simultaneously in one platform",
     "AI document drafting — full procedures generated in seconds",
     "Cross-source Action Item Tracker — nothing orphaned",

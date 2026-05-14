@@ -376,7 +376,7 @@ function DeliverableRow({ d, projectId }: { d: ApqpDeliverable; projectId: numbe
   );
 }
 
-// ─── Design & Development §8.3 Types ─────────────────────────────────────────
+// ─── Design & Development 8.3 Types ─────────────────────────────────────────
 interface DDTeamMember { name: string; dept: string; role: string; skills: string }
 interface DDInput { input: string; source: string; status: string }
 interface DDSpecialChar { characteristic: string; symbol: string; controlMethod: string; drawing: string }
@@ -556,7 +556,7 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         <div>
           <h3 className="font-bold text-base flex items-center gap-2">
             <Beaker className="w-4 h-4 text-accent" />
-            Design &amp; Development — IATF 16949 §8.3
+            Design &amp; Development — IATF 16949 8.3
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">Full product-design-responsible compliance coverage</p>
         </div>
@@ -577,8 +577,8 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         </div>
       </div>
 
-      {/* §8.3.1 General */}
-      <ClauseCard clause="§8.3.1" title="General — Product Design Responsibility" icon={<Shield className="w-4 h-4" />}>
+      {/* 8.3.1 General */}
+      <ClauseCard clause="8.3.1" title="General — Product Design Responsibility" icon={<Shield className="w-4 h-4" />}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => up({ isProductResponsible: !plan.isProductResponsible })}
@@ -588,12 +588,12 @@ function DesignDevTab({ projectId }: { projectId: number }) {
             <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${plan.isProductResponsible ? "translate-x-5" : ""}`} />
           </button>
           <span className="text-sm font-medium">
-            Organization is <strong>Product Design Responsible</strong> (§8.3 applies in full)
+            Organization is <strong>Product Design Responsible</strong> (8.3 applies in full)
           </span>
         </div>
         {plan.isProductResponsible && (
           <div className="mt-1 p-3 rounded-lg bg-accent/5 border border-accent/20 text-xs text-accent/80">
-            ✓ Full §8.3 requirements apply — DFMEA, DVP&R, product design inputs, design validation, and design outputs are all required.
+            ✓ Full 8.3 requirements apply — DFMEA, DVP&R, product design inputs, design validation, and design outputs are all required.
           </div>
         )}
         <div>
@@ -608,12 +608,12 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         </div>
       </ClauseCard>
 
-      {/* §8.3.2 Planning */}
-      <ClauseCard clause="§8.3.2" title="Design & Development Planning" icon={<Users className="w-4 h-4" />}>
-        {/* §8.3.2.1 Multidisciplinary team */}
+      {/* 8.3.2 Planning */}
+      <ClauseCard clause="8.3.2" title="Design & Development Planning" icon={<Users className="w-4 h-4" />}>
+        {/* 8.3.2.1 Multidisciplinary team */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <Label className="text-xs font-semibold">§8.3.2.1 Cross-Functional / Multidisciplinary Team</Label>
+            <Label className="text-xs font-semibold">8.3.2.1 Cross-Functional / Multidisciplinary Team</Label>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
               onClick={() => addRow("crossFunctionalTeam", { name: "", dept: "", role: "", skills: "" })}
               data-testid="btn-add-team-member"
@@ -641,9 +641,9 @@ function DesignDevTab({ projectId }: { projectId: number }) {
           )}
         </div>
 
-        {/* §8.3.2.2 Product design skills */}
+        {/* 8.3.2.2 Product design skills */}
         <div>
-          <Label className="text-xs font-semibold">§8.3.2.2 Product Design Skills Required</Label>
+          <Label className="text-xs font-semibold">8.3.2.2 Product Design Skills Required</Label>
           <Textarea
             value={plan.requiredSkills}
             onChange={e => up({ requiredSkills: e.target.value })}
@@ -653,7 +653,7 @@ function DesignDevTab({ projectId }: { projectId: number }) {
           />
         </div>
 
-        {/* §8.3.2.3 Prototype */}
+        {/* 8.3.2.3 Prototype */}
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <button
@@ -663,7 +663,7 @@ function DesignDevTab({ projectId }: { projectId: number }) {
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${plan.prototypeRequired ? "translate-x-5" : ""}`} />
             </button>
-            <Label className="text-xs font-semibold">§8.3.2.3 Prototype Program Required</Label>
+            <Label className="text-xs font-semibold">8.3.2.3 Prototype Program Required</Label>
           </div>
           {plan.prototypeRequired && (
             <Textarea
@@ -677,13 +677,13 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         </div>
       </ClauseCard>
 
-      {/* §8.3.3 Inputs */}
-      <ClauseCard clause="§8.3.3" title="Design & Development Inputs" icon={<FileText className="w-4 h-4" />}>
-        {/* §8.3.3.1 Product design inputs */}
+      {/* 8.3.3 Inputs */}
+      <ClauseCard clause="8.3.3" title="Design & Development Inputs" icon={<FileText className="w-4 h-4" />}>
+        {/* 8.3.3.1 Product design inputs */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <Label className="text-xs font-semibold">§8.3.3.1 Product Design Inputs</Label>
+              <Label className="text-xs font-semibold">8.3.3.1 Product Design Inputs</Label>
               <p className="text-xs text-muted-foreground">Customer specs, regulatory, QFD/VoC, material specs, safety, reliability requirements</p>
             </div>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
@@ -725,11 +725,11 @@ function DesignDevTab({ projectId }: { projectId: number }) {
           )}
         </div>
 
-        {/* §8.3.3.2 Mfg process design inputs */}
+        {/* 8.3.3.2 Mfg process design inputs */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <Label className="text-xs font-semibold">§8.3.3.2 Manufacturing Process Design Inputs</Label>
+              <Label className="text-xs font-semibold">8.3.3.2 Manufacturing Process Design Inputs</Label>
               <p className="text-xs text-muted-foreground">Capacity, facilities, equipment, materials, applicable standards</p>
             </div>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
@@ -763,11 +763,11 @@ function DesignDevTab({ projectId }: { projectId: number }) {
           )}
         </div>
 
-        {/* §8.3.3.3 Special characteristics */}
+        {/* 8.3.3.3 Special characteristics */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <Label className="text-xs font-semibold">§8.3.3.3 Special Characteristics</Label>
+              <Label className="text-xs font-semibold">8.3.3.3 Special Characteristics</Label>
               <p className="text-xs text-muted-foreground">Product special characteristics (KPC, SC, CC) identified from design — carry through to PFMEA &amp; Control Plan</p>
             </div>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
@@ -801,13 +801,13 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         </div>
       </ClauseCard>
 
-      {/* §8.3.4 Controls */}
-      <ClauseCard clause="§8.3.4" title="Design & Development Controls" icon={<Settings className="w-4 h-4" />}>
-        {/* §8.3.4.1 Design reviews */}
+      {/* 8.3.4 Controls */}
+      <ClauseCard clause="8.3.4" title="Design & Development Controls" icon={<Settings className="w-4 h-4" />}>
+        {/* 8.3.4.1 Design reviews */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <Label className="text-xs font-semibold">§8.3.4.1 Design Reviews</Label>
+              <Label className="text-xs font-semibold">8.3.4.1 Design Reviews</Label>
               <p className="text-xs text-muted-foreground">Formal design reviews including DFMEA review, concept review, design release</p>
             </div>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
@@ -854,10 +854,10 @@ function DesignDevTab({ projectId }: { projectId: number }) {
           )}
         </div>
 
-        {/* §8.3.4.2 Verification */}
+        {/* 8.3.4.2 Verification */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">§8.3.4 Design Verification</Label>
+            <Label className="text-xs font-semibold">8.3.4 Design Verification</Label>
             <Textarea
               value={plan.verificationMethod}
               onChange={e => up({ verificationMethod: e.target.value })}
@@ -875,9 +875,9 @@ function DesignDevTab({ projectId }: { projectId: number }) {
             </Select>
           </div>
 
-          {/* §8.3.4.2 Validation */}
+          {/* 8.3.4.2 Validation */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">§8.3.4.2 Design Validation</Label>
+            <Label className="text-xs font-semibold">8.3.4.2 Design Validation</Label>
             <Textarea
               value={plan.validationMethod}
               onChange={e => up({ validationMethod: e.target.value })}
@@ -900,13 +900,13 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         </div>
       </ClauseCard>
 
-      {/* §8.3.5 Outputs */}
-      <ClauseCard clause="§8.3.5" title="Design & Development Outputs" icon={<CheckCircle2 className="w-4 h-4" />}>
-        {/* §8.3.5.1 Design output documents */}
+      {/* 8.3.5 Outputs */}
+      <ClauseCard clause="8.3.5" title="Design & Development Outputs" icon={<CheckCircle2 className="w-4 h-4" />}>
+        {/* 8.3.5.1 Design output documents */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <Label className="text-xs font-semibold">§8.3.5.1 Design Output Documents</Label>
+              <Label className="text-xs font-semibold">8.3.5.1 Design Output Documents</Label>
               <p className="text-xs text-muted-foreground">DFMEA, DVP&R, design drawings, specs, material specs, reliability study results</p>
             </div>
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
@@ -949,9 +949,9 @@ function DesignDevTab({ projectId }: { projectId: number }) {
           )}
         </div>
 
-        {/* §8.3.5.2 Mfg process outputs */}
+        {/* 8.3.5.2 Mfg process outputs */}
         <div>
-          <Label className="text-xs font-semibold mb-2 block">§8.3.5.2 Manufacturing Process Design Outputs</Label>
+          <Label className="text-xs font-semibold mb-2 block">8.3.5.2 Manufacturing Process Design Outputs</Label>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {mfgOutputs.map(o => (
               <button
@@ -977,8 +977,8 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         </div>
       </ClauseCard>
 
-      {/* §8.3.6 Changes */}
-      <ClauseCard clause="§8.3.6" title="Design & Development Changes" icon={<RefreshCw className="w-4 h-4" />}>
+      {/* 8.3.6 Changes */}
+      <ClauseCard clause="8.3.6" title="Design & Development Changes" icon={<RefreshCw className="w-4 h-4" />}>
         <div>
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-muted-foreground">All design changes must be identified, reviewed, and authorized before implementation</p>
@@ -1030,8 +1030,8 @@ function DesignDevTab({ projectId }: { projectId: number }) {
         </div>
       </ClauseCard>
 
-      {/* §8.3.7 Externally Provided D&D */}
-      <ClauseCard clause="§8.3.7" title="Externally Provided Design & Development" icon={<ExternalLink className="w-4 h-4" />}>
+      {/* 8.3.7 Externally Provided D&D */}
+      <ClauseCard clause="8.3.7" title="Externally Provided Design & Development" icon={<ExternalLink className="w-4 h-4" />}>
         <p className="text-xs text-muted-foreground -mt-2">Control of suppliers or external labs responsible for any portion of the product design</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -1227,7 +1227,7 @@ function ProjectDetail({ project, onBack }: { project: ApqpProject; onBack: () =
             <Flag className="w-5 h-5 mb-0.5 text-accent" />
             <span className="text-xs font-medium">Gate Reviews</span>
           </button>
-          {/* Design & Dev §8.3 tab */}
+          {/* Design & Dev 8.3 tab */}
           <button
             onClick={() => setActiveTab("design_dev")}
             className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all min-w-[90px] ml-1 ${
@@ -1236,7 +1236,7 @@ function ProjectDetail({ project, onBack }: { project: ApqpProject; onBack: () =
             data-testid="tab-design-dev"
           >
             <Beaker className="w-5 h-5 mb-0.5 text-accent" />
-            <span className="text-xs font-medium text-center leading-tight">Design &amp; Dev §8.3</span>
+            <span className="text-xs font-medium text-center leading-tight">Design &amp; Dev 8.3</span>
           </button>
         </div>
       </div>
@@ -1478,7 +1478,7 @@ export default function APQPModule({ isoProjectId }: { isoProjectId?: number }) 
               APQP Program Management
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              AIAG Advanced Product Quality Planning — 5-phase launch with gate reviews (IATF 16949 §8.3.2)
+              AIAG Advanced Product Quality Planning — 5-phase launch with gate reviews (IATF 16949 8.3.2)
             </p>
           </div>
           <Button

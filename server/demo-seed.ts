@@ -88,7 +88,7 @@ const CCI_HAZARDS: Array<{
     actionRequired: "Evaluate and purchase mechanical drum handling equipment for Fill Lines 1 and 2",
     responsiblePerson: "Production Supervisor",
     targetDate: "2026-07-31", status: "in-progress",
-    legalRequirement: "OSHA General Duty Clause §5(a)(1); OSHA Ergonomics Guidelines for Material Handling",
+    legalRequirement: "OSHA General Duty Clause 5(a)(1); OSHA Ergonomics Guidelines for Material Handling",
     iso45001Clause: "6.1.2", notes: "5 OSHA recordable MSD cases in 2023–2024 linked to fill-line handling.",
   },
   {
@@ -158,7 +158,7 @@ const CCI_HAZARDS: Array<{
     actionRequired: "Schedule Q3 2026 full-scale spill response drill; update ERP contact list",
     responsiblePerson: "EHS Coordinator",
     targetDate: "2026-09-15", status: "open",
-    legalRequirement: "OSHA 29 CFR 1910.120 (HAZWOPER); Ohio EPA SPCC regulations; EPCRA §302–304 (SARA Title III)",
+    legalRequirement: "OSHA 29 CFR 1910.120 (HAZWOPER); Ohio EPA SPCC regulations; EPCRA 302–304 (SARA Title III)",
     iso45001Clause: "8.1.3", notes: "Ohio LEPC notified annually. Last drill conducted March 2024.",
   },
   {
@@ -176,8 +176,8 @@ const CCI_HAZARDS: Array<{
     actionRequired: "Launch wellbeing survey by Q2 2026; deliver supervisor mental health training",
     responsiblePerson: "HR Manager",
     targetDate: "2026-06-30", status: "open",
-    legalRequirement: "OSHA General Duty Clause §5(a)(1); ISO 45001:2018 §6.1.2 (psychosocial hazards)",
-    iso45001Clause: "6.1.2", notes: "ISO 45001:2021 amendment explicitly includes psychosocial hazards within §6.1.2 scope.",
+    legalRequirement: "OSHA General Duty Clause 5(a)(1); ISO 45001:2018 6.1.2 (psychosocial hazards)",
+    iso45001Clause: "6.1.2", notes: "ISO 45001:2021 amendment explicitly includes psychosocial hazards within 6.1.2 scope.",
   },
   {
     workArea: "Warehouse & Shipping",

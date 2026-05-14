@@ -29,7 +29,7 @@ const CATEGORY_CONFIG: Record<string, {
 }> = {
   env_legal: {
     label: "Env. Legal Obligations",
-    sublabel: "ISO 14001 §6.1.3 / §9.1.2",
+    sublabel: "ISO 14001 6.1.3 / 9.1.2",
     icon: Leaf,
     badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     dot: "bg-emerald-500",
@@ -39,7 +39,7 @@ const CATEGORY_CONFIG: Record<string, {
   },
   ohs_legal: {
     label: "OH&S Legal Obligations",
-    sublabel: "ISO 45001 §6.1.3 / §9.1.2",
+    sublabel: "ISO 45001 6.1.3 / 9.1.2",
     icon: ShieldCheck,
     badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
     dot: "bg-blue-500",
@@ -205,8 +205,8 @@ function EventDialog({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl><SelectTrigger data-testid="select-standard-category"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="env_legal">Env. Legal (ISO 14001 §6.1.3)</SelectItem>
-                      <SelectItem value="ohs_legal">OH&S Legal (ISO 45001 §6.1.3)</SelectItem>
+                      <SelectItem value="env_legal">Env. Legal (ISO 14001 6.1.3)</SelectItem>
+                      <SelectItem value="ohs_legal">OH&S Legal (ISO 45001 6.1.3)</SelectItem>
                       <SelectItem value="osha">OSHA Deliverables</SelectItem>
                       <SelectItem value="training">Legal Compliance Training</SelectItem>
                       <SelectItem value="drill">Drill / Exercise</SelectItem>
@@ -630,8 +630,8 @@ export default function ComplianceCalendarModule({ isoProjectId }: { isoProjectI
 
   const FILTER_TABS = [
     { key: "all",      label: "All" },
-    { key: "env_legal", label: "Env Legal §6.1.3" },
-    { key: "ohs_legal", label: "OH&S Legal §6.1.3" },
+    { key: "env_legal", label: "Env Legal 6.1.3" },
+    { key: "ohs_legal", label: "OH&S Legal 6.1.3" },
     { key: "osha",      label: "OSHA" },
     { key: "training",  label: "Training" },
     { key: "drill",     label: "Drills" },
@@ -647,8 +647,8 @@ export default function ComplianceCalendarModule({ isoProjectId }: { isoProjectI
             <h2 className="text-lg font-bold">Integrated Compliance Calendar</h2>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-            Unified deadline register for <span className="font-medium text-emerald-700 dark:text-emerald-400">Environmental Legal Obligations (ISO 14001 §6.1.3/§9.1.2)</span>,{" "}
-            <span className="font-medium text-blue-700 dark:text-blue-400">OH&S Legal Obligations (ISO 45001 §6.1.3/§9.1.2)</span>, OSHA deliverables, training, and drills.
+            Unified deadline register for <span className="font-medium text-emerald-700 dark:text-emerald-400">Environmental Legal Obligations (ISO 14001 6.1.3/9.1.2)</span>,{" "}
+            <span className="font-medium text-blue-700 dark:text-blue-400">OH&S Legal Obligations (ISO 45001 6.1.3/9.1.2)</span>, OSHA deliverables, training, and drills.
             Events sync directly from your Compliance Obligations Register.
           </p>
         </div>

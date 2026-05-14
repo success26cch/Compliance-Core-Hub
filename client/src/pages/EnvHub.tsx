@@ -166,12 +166,12 @@ function OverviewModule({ setActive }: { setActive: (k: string) => void }) {
               <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">EMS Environmental Suite</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-              The Environmental Hub tracks your operational compliance records — but ISO 14001 requires you to also <strong>identify and register every legal obligation</strong> that applies to your facility (§6.1.3). ISO Manager's Compliance Obligations Register does exactly that, with a built-in starter library and Corey's jurisdiction analysis to make sure nothing is missed.
+              The Environmental Hub tracks your operational compliance records — but ISO 14001 requires you to also <strong>identify and register every legal obligation</strong> that applies to your facility (6.1.3). ISO Manager's Compliance Obligations Register does exactly that, with a built-in starter library and Corey's jurisdiction analysis to make sure nothing is missed.
             </p>
             <div className="grid sm:grid-cols-3 gap-2 mb-3">
               {[
                 { label: "Env Hub does", desc: "Universal Waste, RCRA, SPCC, Stormwater, Air — operational records & monitoring" },
-                { label: "ISO Manager adds", desc: "§6.1.3 Compliance Register, Aspects/Impacts, Audits, CAPA, Management Review" },
+                { label: "ISO Manager adds", desc: "6.1.3 Compliance Register, Aspects/Impacts, Audits, CAPA, Management Review" },
                 { label: "Together they prove", desc: "Complete ISO 14001 conformance — obligation identified, records documented" },
               ].map(item => (
                 <div key={item.label} className="rounded-lg bg-white/60 dark:bg-white/5 border border-border/40 p-2.5">
@@ -1999,7 +1999,7 @@ Provide precise, regulation-cited answers. Always cite the specific CFR section.
 
 // ─── Main EnvHub App ──────────────────────────────────────────────────────────
 
-// NOTE: Aspects & Impacts Analysis (ISO 14001 §6.1.2) has moved to ISO Manager.
+// NOTE: Aspects & Impacts Analysis (ISO 14001 6.1.2) has moved to ISO Manager.
 
 
 export default function EnvHub() {

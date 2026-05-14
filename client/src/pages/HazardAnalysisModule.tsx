@@ -80,7 +80,7 @@ const CONTROL_HIERARCHY_OPTIONS = [
   { value: "ppe",             label: "PPE",                   desc: "Personal Protective Equipment" },
 ];
 
-// ─── P × G × M Scoring Criteria (AIAG / ISO 45001 §6.1.2) ────────────────────
+// ─── P × G × M Scoring Criteria (AIAG / ISO 45001 6.1.2) ────────────────────
 
 const PROBABILITY_OPTS = [
   {
@@ -123,11 +123,11 @@ const GRAVITY_OPTS = [
 const MAGNITUDE_OPTS = [
   {
     value: 1, label: "1 – Very High Prevention",
-    desc: "Engineering controls eliminate/reduce exposure to <1% of PEL/TLV. Interlocks, guarding, LOTO, LEV, or elimination fully applied (ISO 45001 §8.1.2 Tier 1). 100% compliance verified. Zero recordable injuries in 3+ yrs.",
+    desc: "Engineering controls eliminate/reduce exposure to <1% of PEL/TLV. Interlocks, guarding, LOTO, LEV, or elimination fully applied (ISO 45001 8.1.2 Tier 1). 100% compliance verified. Zero recordable injuries in 3+ yrs.",
   },
   {
     value: 2, label: "2 – High Prevention",
-    desc: "Admin controls + PPE program documented, trained, and signed off. Written JSA/SWP per 29 CFR 1910.132. >90% compliance on last 3 audits. Minor first-aid incidents only. ISO 45001 §8.1.2 Tier 3–4 applied.",
+    desc: "Admin controls + PPE program documented, trained, and signed off. Written JSA/SWP per 29 CFR 1910.132. >90% compliance on last 3 audits. Minor first-aid incidents only. ISO 45001 8.1.2 Tier 3–4 applied.",
   },
   {
     value: 3, label: "3 – Low Prevention",
@@ -135,7 +135,7 @@ const MAGNITUDE_OPTS = [
   },
   {
     value: 4, label: "4 – No Prevention",
-    desc: "No engineering or admin controls in place. PPE absent or consistently misused. Repeat OSHA violations on record. Multiple recordables per year. Workers unaware of hazards (no HazCom/GHS training). §8.1.2 hierarchy not applied.",
+    desc: "No engineering or admin controls in place. PPE absent or consistently misused. Repeat OSHA violations on record. Multiple recordables per year. Workers unaware of hazards (no HazCom/GHS training). 8.1.2 hierarchy not applied.",
   },
 ];
 
@@ -201,14 +201,14 @@ const SCORING_CRITERIA = {
       oshaRecordable: "OSHA Recordable — Fatality / Amputation / Permanent Total Disability",
       injuryType: "Fatality, amputation, permanent total disability, or catastrophic multi-victim event.",
       examples: "Worker fatality, traumatic amputation, permanent blindness, catastrophic chemical release (IDLH), explosion, confined space fatality, electrocution.",
-      regulatory: "OSHA Willful or Repeat citation. Potential criminal referral under OSH Act §17(e). Regulatory stop-work order or shutdown. Catastrophic workers' comp claim. Reputational damage, OSHA press release, civil & criminal litigation.",
+      regulatory: "OSHA Willful or Repeat citation. Potential criminal referral under OSH Act 17(e). Regulatory stop-work order or shutdown. Catastrophic workers' comp claim. Reputational damage, OSHA press release, civil & criminal litigation.",
       penalty: "$10,360 – $156,259 per violation (Willful/Repeat) | Criminal penalties up to $10,000 + imprisonment for willful violation resulting in death",
     },
   ],
   magnitude: [
     {
       value: 1, rating: "Very High Prevention", badge: "bg-green-100 text-green-800 border-green-300",
-      controlTier: "ISO 45001 §8.1.2 — Tier 1: Elimination / Substitution + Engineering Controls",
+      controlTier: "ISO 45001 8.1.2 — Tier 1: Elimination / Substitution + Engineering Controls",
       description: "Engineering controls fully eliminate or reduce exposure to < 1% of PEL/TLV. Controls are automatic, passive, and do not depend on human behavior.",
       examples: "Fully interlocked machine guarding; automated LOTO system; local exhaust ventilation (LEV) at emission source; process redesign eliminating chemical use; pressurized enclosure for noise.",
       compliance: "100% compliance verified in last internal audit. Zero OSHA-recordable injuries in 3+ years. Zero near-miss reports. PPE used only as secondary backup.",
@@ -216,7 +216,7 @@ const SCORING_CRITERIA = {
     },
     {
       value: 2, rating: "High Prevention", badge: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      controlTier: "ISO 45001 §8.1.2 — Tier 3–4: Administrative Controls + PPE",
+      controlTier: "ISO 45001 8.1.2 — Tier 3–4: Administrative Controls + PPE",
       description: "Formal administrative controls and a documented PPE program in place. Written JSA/SWP documented, trained, and signed off. Controls effective but dependent on human behavior.",
       examples: "Formal permit-to-work system; signed JSA/SWP with training records; PPE hazard assessment per 29 CFR 1910.132; regular safety inspections; SDS accessible at point of use; HazCom training documented.",
       compliance: "> 90% compliance rate on last 3 safety audits. First-aid incidents only (no recordables) in past 3 years. PPE fit-testing and inspection records current.",
@@ -224,7 +224,7 @@ const SCORING_CRITERIA = {
     },
     {
       value: 3, rating: "Low Prevention", badge: "bg-orange-100 text-orange-800 border-orange-300",
-      controlTier: "ISO 45001 §8.1.2 — Partial / Inconsistent Controls",
+      controlTier: "ISO 45001 8.1.2 — Partial / Inconsistent Controls",
       description: "Some controls exist but are inconsistently applied. No formal control plan or JSA. Training records incomplete. Controls depend on individual awareness rather than system enforcement.",
       examples: "Informal verbal safety rules; aging machine guards occasionally bypassed; generic SDS not task-specific; PPE available but not enforced; inspection intervals not documented; near-misses under-reported.",
       compliance: "< 80% compliance rate. One or more OSHA-recordable injuries in past 3 years. Training records incomplete or expired. Near-miss culture weak.",
@@ -232,11 +232,11 @@ const SCORING_CRITERIA = {
     },
     {
       value: 4, rating: "No Prevention", badge: "bg-red-100 text-red-800 border-red-300",
-      controlTier: "ISO 45001 §8.1.2 — No Controls Applied",
-      description: "No engineering or administrative controls in place. PPE absent or consistently misused. Workers unaware of hazards. No HazCom/GHS compliance. ISO 45001 §8.1.2 hierarchy completely unapplied.",
+      controlTier: "ISO 45001 8.1.2 — No Controls Applied",
+      description: "No engineering or administrative controls in place. PPE absent or consistently misused. Workers unaware of hazards. No HazCom/GHS compliance. ISO 45001 8.1.2 hierarchy completely unapplied.",
       examples: "Unguarded rotating parts in active use; no LOTO procedures; chemicals with no labeling or SDS; PPE required but never worn; no inspection or maintenance schedule; employees unable to identify job hazards.",
       compliance: "Multiple OSHA-recordable injuries per year. Repeat OSHA violations on record. High near-miss frequency unreported. Workers demonstrate low hazard awareness.",
-      oshaRef: "Very high OSHA Serious/Willful citation risk. Possible OSHA 11(c) retaliation if injuries under-reported. High probability of stop-work order for imminent danger conditions (OSH Act §13).",
+      oshaRef: "Very high OSHA Serious/Willful citation risk. Possible OSHA 11(c) retaliation if injuries under-reported. High probability of stop-work order for imminent danger conditions (OSH Act 13).",
     },
   ],
 };
@@ -366,7 +366,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       </div>
       <h3 className="font-bold text-lg text-foreground mb-2">No hazards identified yet</h3>
       <p className="text-sm text-muted-foreground max-w-sm mb-6">
-        Begin your ISO 45001 §6.1.2 hazard identification by adding your first hazard assessment record.
+        Begin your ISO 45001 6.1.2 hazard identification by adding your first hazard assessment record.
       </p>
       <Button onClick={onAdd} data-testid="btn-add-first-hazard">
         <Plus className="w-4 h-4 mr-2" /> Add First Hazard
@@ -456,7 +456,7 @@ export default function HazardAnalysisModule() {
           <div className="flex items-center gap-2 mb-1">
             <HardHat className="w-5 h-5 text-orange-500" />
             <h2 className="text-lg font-bold text-foreground">Hazard Analysis &amp; Risk Assessment</h2>
-            <Badge variant="outline" className="text-[10px] font-mono">ISO 45001 §6.1.2</Badge>
+            <Badge variant="outline" className="text-[10px] font-mono">ISO 45001 6.1.2</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
             Identify, evaluate, and control occupational health &amp; safety hazards using the hierarchy of controls.
@@ -916,7 +916,7 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
           <DialogTitle className="flex items-center gap-2">
             <HardHat className="w-5 h-5 text-orange-500" />
             {record ? "Edit Hazard Record" : "Add Hazard Record"}
-            <Badge variant="outline" className="text-[10px] font-mono ml-1">ISO 45001 §6.1.2</Badge>
+            <Badge variant="outline" className="text-[10px] font-mono ml-1">ISO 45001 6.1.2</Badge>
           </DialogTitle>
         </DialogHeader>
 
@@ -1050,7 +1050,7 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
           </div>
 
           {/* ── Section 3: Hierarchy of Controls ── */}
-          <SectionHeading icon={<ShieldCheck className="w-4 h-4 text-accent" />} title="Hierarchy of Controls (ISO 45001 §8.1.2)" />
+          <SectionHeading icon={<ShieldCheck className="w-4 h-4 text-accent" />} title="Hierarchy of Controls (ISO 45001 8.1.2)" />
           <div className="space-y-2">
             {CONTROL_HIERARCHY_OPTIONS.map((c, idx) => (
               <label key={c.value} className="flex items-start gap-3 cursor-pointer p-2.5 rounded-lg border hover:bg-muted/30 transition-colors">
@@ -1236,7 +1236,7 @@ function ScoringGuidePanel() {
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
           <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">P × G × M Scoring Reference Guide</span>
-          <span className="hidden sm:inline text-xs text-blue-500/80 dark:text-blue-400/60 font-normal">ISO 45001 §6.1.2 · AIAG · OSHA Regulatory Context</span>
+          <span className="hidden sm:inline text-xs text-blue-500/80 dark:text-blue-400/60 font-normal">ISO 45001 6.1.2 · AIAG · OSHA Regulatory Context</span>
         </div>
         {open
           ? <ChevronDown className="w-4 h-4 text-blue-500 shrink-0" />
@@ -1336,7 +1336,7 @@ function ScoringGuidePanel() {
           {tab === "M" && (
             <div className="space-y-2">
               <p className="text-[11px] text-muted-foreground italic">
-                Magnitude of prevention — effectiveness of existing controls per ISO 45001 §8.1.2 hierarchy. Lower scores mean better control; higher scores mean greater residual risk.
+                Magnitude of prevention — effectiveness of existing controls per ISO 45001 8.1.2 hierarchy. Lower scores mean better control; higher scores mean greater residual risk.
               </p>
               {SCORING_CRITERIA.magnitude.map(row => (
                 <div key={row.value} className={`rounded-lg border p-3 space-y-2 ${row.value === 1 ? "border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-900/10" : row.value === 2 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/40 dark:bg-yellow-900/10" : row.value === 3 ? "border-orange-200 dark:border-orange-800 bg-orange-50/40 dark:bg-orange-900/10" : "border-red-200 dark:border-red-800 bg-red-50/40 dark:bg-red-900/10"}`}>
@@ -1396,7 +1396,7 @@ function ScoringGuidePanel() {
                   zone: "critical", score: "281–400", label: "Critical Risk",
                   action: "Intolerable risk. STOP work or restrict task until immediate controls are implemented. Escalate to plant/site management.",
                   priority: "Immediate stop-work authority invoked if imminent danger. Emergency CAPA required. Executive review within 24 hours.",
-                  oshaNote: "OSHA Willful/Repeat citation range ($10,360–$156,259/violation). Potential criminal referral. Imminent danger stop-work authority applies (OSH Act §13).",
+                  oshaNote: "OSHA Willful/Repeat citation range ($10,360–$156,259/violation). Potential criminal referral. Imminent danger stop-work authority applies (OSH Act 13).",
                 },
               ].map(z => (
                 <div key={z.zone} className={`rounded-lg border p-3 space-y-2 ${zoneColors[z.zone]}`}>

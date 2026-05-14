@@ -1589,7 +1589,7 @@ interface ScorecardCategory {
 const IATF_SCORECARD: ScorecardCategory[] = [
   {
     id: "incoming_quality", label: "Incoming Quality", weight: 30,
-    iatfClause: "§8.4.1 — delivered part quality performance",
+    iatfClause: "8.4.1 — delivered part quality performance",
     color: "blue",
     metrics: [
       {
@@ -1615,7 +1615,7 @@ const IATF_SCORECARD: ScorecardCategory[] = [
   },
   {
     id: "delivery_performance", label: "Delivery Performance", weight: 25,
-    iatfClause: "§8.4.1 — delivery schedule performance",
+    iatfClause: "8.4.1 — delivery schedule performance",
     color: "violet",
     metrics: [
       {
@@ -1642,7 +1642,7 @@ const IATF_SCORECARD: ScorecardCategory[] = [
   },
   {
     id: "customer_impact", label: "Customer Disruptions & Impact", weight: 20,
-    iatfClause: "§8.4.1 — customer disruptions incl. field returns",
+    iatfClause: "8.4.1 — customer disruptions incl. field returns",
     color: "red", iatfOnly: true,
     metrics: [
       {
@@ -1670,7 +1670,7 @@ const IATF_SCORECARD: ScorecardCategory[] = [
   },
   {
     id: "capa_responsiveness", label: "CAPA & Responsiveness", weight: 15,
-    iatfClause: "§8.4.2.4 — supplier monitoring",
+    iatfClause: "8.4.2.4 — supplier monitoring",
     color: "amber",
     metrics: [
       {
@@ -1696,7 +1696,7 @@ const IATF_SCORECARD: ScorecardCategory[] = [
   },
   {
     id: "quality_system", label: "Quality System Status", weight: 10,
-    iatfClause: "§8.4.2.4 — supplier monitoring",
+    iatfClause: "8.4.2.4 — supplier monitoring",
     color: "emerald",
     metrics: [
       {
@@ -1878,7 +1878,7 @@ function MetricInput({ metric, value, onChange }: {
 function printScorecard(ev: SupplierEvaluation, supplierName: string, companyName = "CCI Chemical, Inc.", activeScorecard: ScorecardCategory[] = IATF_SCORECARD) {
   const isIATF = activeScorecard === IATF_SCORECARD || activeScorecard.some(c => c.iatfOnly === undefined && c.id === "customer_impact");
   const standardLabel = isIATF ? "IATF 16949" : "ISO 9001:2015";
-  const clauseRef = isIATF ? "IATF 16949 §8.4.1 / §8.4.2.4 Supplier Monitoring" : "ISO 9001:2015 §8.4 — Control of Externally Provided Processes, Products & Services";
+  const clauseRef = isIATF ? "IATF 16949 8.4.1 / 8.4.2.4 Supplier Monitoring" : "ISO 9001:2015 8.4 — Control of Externally Provided Processes, Products & Services";
   const scores: any = ev.scores ?? {};
   const RECO_COLORS: Record<string, string> = {
     preferred: "#059669", approved: "#16a34a", conditional: "#d97706", disqualified: "#dc2626",
@@ -1947,7 +1947,7 @@ function printScorecard(ev: SupplierEvaluation, supplierName: string, companyNam
         <span style="color:#fff;font-size:11px;margin-left:8px;">${companyName}</span>
       </div>
       <h1>${standardLabel} Supplier Performance Scorecard</h1>
-      <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Per ${clauseRef.replace(/§/g, "§")}</p>
+      <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Per ${clauseRef}</p>
     </div>
     <button class="no-print" onclick="window.print()" style="background:#ea6c19;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">🖨 Print / Save PDF</button>
   </div>
@@ -2109,8 +2109,8 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
           <p className="font-bold text-slate-700 dark:text-slate-300 mb-0.5">{standardLabel} Supplier Performance Scorecard — for active, ongoing suppliers</p>
           <p className="leading-relaxed">
             {isIATF
-              ? <>This scorecard fulfills IATF 16949 §8.4.1 (supplier monitoring) and §8.4.2.4 (supplier performance evaluation). It tracks five required categories: delivered quality, delivery schedule performance (including <strong>premium freight</strong>), customer disruptions (including <strong>yard holds</strong> and <strong>field returns</strong>), corrective action responsiveness, and quality system status.</>
-              : <>This scorecard fulfills ISO 9001:2015 §8.4 (control of externally provided processes, products and services). It tracks three categories: incoming quality, delivery performance, corrective action responsiveness, and quality system status. IATF 16949-specific metrics (premium freight, PPAP, controlled shipping status, line stops, yard holds, warranty returns) are not included for ISO 9001 clients.</>
+              ? <>This scorecard fulfills IATF 16949 8.4.1 (supplier monitoring) and 8.4.2.4 (supplier performance evaluation). It tracks five required categories: delivered quality, delivery schedule performance (including <strong>premium freight</strong>), customer disruptions (including <strong>yard holds</strong> and <strong>field returns</strong>), corrective action responsiveness, and quality system status.</>
+              : <>This scorecard fulfills ISO 9001:2015 8.4 (control of externally provided processes, products and services). It tracks three categories: incoming quality, delivery performance, corrective action responsiveness, and quality system status. IATF 16949-specific metrics (premium freight, PPAP, controlled shipping status, line stops, yard holds, warranty returns) are not included for ISO 9001 clients.</>
             }
           </p>
         </div>
@@ -2244,7 +2244,7 @@ function SupplierEvaluations({ isoProjectId, isIATF = false }: { isoProjectId?: 
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-sm font-semibold text-primary">{m.label}</span>
                                     {m.iatfHighlight && (
-                                      <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200 border px-1 py-0">IATF §8.4.1</Badge>
+                                      <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200 border px-1 py-0">IATF 8.4.1</Badge>
                                     )}
                                   </div>
                                   <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{m.description}</p>
@@ -2577,7 +2577,7 @@ function SupplierAuditSchedule({ isoProjectId }: { isoProjectId?: number }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-lg px-3 py-2 text-sm text-blue-700 dark:text-blue-300">
         <Info className="w-3.5 h-3.5 shrink-0" />
-        <span>IATF 16949 requires a risk-based supplier audit program. ISO 9001-only suppliers are treated as a development risk because IATF requires supplier development toward IATF 16949 (§8.4.2).</span>
+        <span>IATF 16949 requires a risk-based supplier audit program. ISO 9001-only suppliers are treated as a development risk because IATF requires supplier development toward IATF 16949 (8.4.2).</span>
       </div>
 
       {/* Supplier selector */}
@@ -2860,16 +2860,16 @@ export default function SupplierModule({ project }: SupplierModuleProps) {
                 {tab === "evals" && "Supplier Evaluations"}
                 {tab === "audits" && "Supplier Audit Schedule"}
               </h2>
-              {tab === "audits" && <Badge className="text-sm bg-amber-100 text-amber-700 border-amber-200">IATF 16949 §8.4.2</Badge>}
-              {tab === "asl" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.1</Badge>}
-              {tab === "criteria" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.1</Badge>}
-              {tab === "evals" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 §8.4.2</Badge>}
+              {tab === "audits" && <Badge className="text-sm bg-amber-100 text-amber-700 border-amber-200">IATF 16949 8.4.2</Badge>}
+              {tab === "asl" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 8.4.1</Badge>}
+              {tab === "criteria" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 8.4.1</Badge>}
+              {tab === "evals" && <Badge className="text-sm bg-blue-50 text-blue-700 border-blue-200">ISO 9001 8.4.2</Badge>}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               {tab === "asl" && "Maintain your Approved Supplier List with ISO certification tracking and expiry reminders."}
               {tab === "criteria" && "Define weighted criteria for supplier selection and qualification decisions."}
               {tab === "evals" && "Score suppliers against your criteria and generate formal evaluation scorecards."}
-              {tab === "audits" && "Determine supplier audit frequency using a risk-based assessment per IATF 16949 §8.4.2."}
+              {tab === "audits" && "Determine supplier audit frequency using a risk-based assessment per IATF 16949 8.4.2."}
             </p>
           </div>
 

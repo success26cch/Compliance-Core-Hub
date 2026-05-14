@@ -219,7 +219,7 @@ function KpiCard({ obj, actuals, onLog, onEdit, range, showYoY, compareMode }: {
               <span className="font-semibold text-sm text-foreground truncate">{obj.name}</span>
               {compareMode && <Badge variant="outline" className="text-xs shrink-0 border-indigo-300 text-indigo-600">Year-over-year comparison</Badge>}
               {!compareMode && <Badge variant="outline" className="text-xs shrink-0">{obj.frequency}</Badge>}
-              <span className="text-xs font-mono text-accent font-bold">§9.1</span>
+              <span className="text-xs font-mono text-accent font-bold">9.1</span>
             </div>
             <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
               {obj.processName && <span>Process: <span className="font-medium">{obj.processName}</span></span>}
@@ -603,7 +603,7 @@ function MultiKpiSummaryChart({ objectives, allActuals, compareMode }: { objecti
         <CardTitle className="text-sm font-bold flex items-center gap-2">
           <BarChart2 className="w-4 h-4 text-accent" />
           KPI Performance vs. Target (All Metrics)
-          <span className="text-xs font-mono text-accent font-bold ml-1">§9.1</span>
+          <span className="text-xs font-mono text-accent font-bold ml-1">9.1</span>
         </CardTitle>
         <p className="text-xs text-muted-foreground">
           {compareMode
@@ -754,7 +754,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-accent" />
             Measurement &amp; Monitoring
-            <span className="text-xs font-mono text-accent font-bold">ISO §9.1</span>
+            <span className="text-xs font-mono text-accent font-bold">ISO 9.1</span>
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">Monitor, measure, analyze and evaluate QMS performance — objectives come from Process Maps</p>
         </div>
@@ -1005,7 +1005,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
         <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-400">
-              <Bot className="w-5 h-5" /> Isa — Measurement Advisor (ISO §9.1)
+              <Bot className="w-5 h-5" /> Isa — Measurement Advisor (ISO 9.1)
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">
@@ -1023,7 +1023,7 @@ export default function MeasurementModule({ isoProjectId }: { isoProjectId?: num
             {isaLoading && <div className="text-xs text-violet-500 animate-pulse p-3">Isa is thinking…</div>}
           </div>
           <div className="flex gap-2 pt-2 border-t border-border">
-            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} placeholder="Ask Isa about §9.1…" data-testid="input-isa-message"
+            <Input value={isaInput} onChange={e => setIsaInput(e.target.value)} placeholder="Ask Isa about 9.1…" data-testid="input-isa-message"
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendIsaMessage(); } }}
               className="text-sm"
             />

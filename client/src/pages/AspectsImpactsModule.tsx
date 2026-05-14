@@ -512,7 +512,7 @@ function EsaWizard({ onSave }: { onSave: (data: typeof ASPECT_BLANK) => void }) 
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <Label className="text-xs font-bold">Applicable Regulations (Federal / State / Local)</Label>
-                  <Textarea className="mt-1 text-xs h-16 resize-none" placeholder="e.g., 40 CFR Part 279 (F), State Act 451 Part 121 (S), City Ord. §82-3 (L)…" value={w.applicableRegulations} onChange={e => setW(v => ({ ...v, applicableRegulations: e.target.value }))} data-testid="wizard-regulations" />
+                  <Textarea className="mt-1 text-xs h-16 resize-none" placeholder="e.g., 40 CFR Part 279 (F), State Act 451 Part 121 (S), City Ord. 82-3 (L)…" value={w.applicableRegulations} onChange={e => setW(v => ({ ...v, applicableRegulations: e.target.value }))} data-testid="wizard-regulations" />
                 </div>
                 <div className="col-span-2">
                   <Label className="text-xs font-bold">Operational Control / Document Name &amp; Number</Label>
@@ -532,7 +532,7 @@ function EsaWizard({ onSave }: { onSave: (data: typeof ASPECT_BLANK) => void }) 
                 </div>
                 <div className="flex items-center gap-2 pt-5">
                   <input type="checkbox" id="wiz-lc" checked={w.lifeCycleConsidered} onChange={e => setW(v => ({ ...v, lifeCycleConsidered: e.target.checked }))} className="w-4 h-4 rounded" data-testid="wizard-lifecycle" />
-                  <Label htmlFor="wiz-lc" className="text-xs font-semibold cursor-pointer">Life Cycle Considered (§6.1.2)</Label>
+                  <Label htmlFor="wiz-lc" className="text-xs font-semibold cursor-pointer">Life Cycle Considered (6.1.2)</Label>
                 </div>
               </div>
 
@@ -721,9 +721,9 @@ export default function AspectsImpactsModule() {
       const pLabel = PROBABILITY_OPTIONS.find(o => o.value === data.probability)?.label ?? String(data.probability);
       const rLabel = REGULATORY_OPTIONS.find(o => o.value === data.regulatoryScore)?.label ?? String(data.regulatoryScore);
 
-      const prompt = `[CONTEXT: The user just saved an Environmental Significance Assessment record in CCHUB's ISO 14001 §6.1.2 module and has requested an automatic Lead Auditor peer review of this single record. Do NOT ask if they want help — jump straight into a concise audit-style review. Use 3–6 bullet points. If the record looks solid and defensible, say so and explain why. Focus only on this specific record.]
+      const prompt = `[CONTEXT: The user just saved an Environmental Significance Assessment record in CCHUB's ISO 14001 6.1.2 module and has requested an automatic Lead Auditor peer review of this single record. Do NOT ask if they want help — jump straight into a concise audit-style review. Use 3–6 bullet points. If the record looks solid and defensible, say so and explain why. Focus only on this specific record.]
 
-Please review this ESA record for ISO 14001:2015 §6.1.2 conformance and flag any scoring concerns, missing impact types, regulatory gaps, or missing controls:
+Please review this ESA record for ISO 14001:2015 6.1.2 conformance and flag any scoring concerns, missing impact types, regulatory gaps, or missing controls:
 
 **Aspect:** ${data.environmentalAspect || "not stated"}
 **Process / Activity:** ${data.processActivity || "not stated"}
@@ -846,9 +846,9 @@ Flag any: (1) S×P×R scores that seem inconsistent with the described aspect or
         `${i + 1}. [${a.isSignificant ? "SEA" : "Not Sig."}] Score ${a.significanceScore} (S${a.severity}×P${a.probability}×R${a.regulatoryScore}) — ${a.environmentalAspect} | Process: ${a.processActivity || "N/A"} | Condition: ${a.aspectCondition} | Impact types: ${(a.impactTypes ?? []).join(", ") || "none"} | Regulation: ${a.applicableRegulations || "none stated"} | Control: ${a.operationalControl || "none stated"}`
       ).join("\n");
 
-      const prompt = `[CONTEXT: The user is in the Aspects & Impacts Analysis module (ISO 14001:2015 §6.1.2) of CCHUB's ISO Manager. They have requested a Lead Auditor review of their Environmental Significance Assessment (ESA) register. Provide a structured, audit-style assessment — do not ask if they want help, jump straight into the review. Address each of the five points below. Important: every organization has unique processes, activities, and operating environments, so assess the register based on what is actually logged here — do not benchmark against a generic industry template or assume what aspects "should" be present.]
+      const prompt = `[CONTEXT: The user is in the Aspects & Impacts Analysis module (ISO 14001:2015 6.1.2) of CCHUB's ISO Manager. They have requested a Lead Auditor review of their Environmental Significance Assessment (ESA) register. Provide a structured, audit-style assessment — do not ask if they want help, jump straight into the review. Address each of the five points below. Important: every organization has unique processes, activities, and operating environments, so assess the register based on what is actually logged here — do not benchmark against a generic industry template or assume what aspects "should" be present.]
 
-Please assess my ESA register for ISO 14001:2015 §6.1.2 conformance. We have ${allAspects.length} aspects logged, ${totalSig} identified as Significant Environmental Aspects (SEAs).
+Please assess my ESA register for ISO 14001:2015 6.1.2 conformance. We have ${allAspects.length} aspects logged, ${totalSig} identified as Significant Environmental Aspects (SEAs).
 
 REGISTER:
 ${registerText}
@@ -856,7 +856,7 @@ ${registerText}
 Assess the following:
 1. Internal consistency & completeness — based on the processes and activities listed in this register, are the aspects and impacts logically derived? Are there operating conditions (normal, abnormal, emergency) that appear underrepresented given what is logged?
 2. Scoring integrity — are the S×P×R scores and SEA designations defensible from an auditor's perspective given the stated impact types and regulations?
-3. Life cycle perspective (§6.1.2 requirement) — is there evidence of upstream/downstream life cycle thinking, or does the register only capture direct facility emissions?
+3. Life cycle perspective (6.1.2 requirement) — is there evidence of upstream/downstream life cycle thinking, or does the register only capture direct facility emissions?
 4. SEA follow-through — do the Significant Environmental Aspects have appropriate operational controls and objectives linked?
 5. Audit readiness — what specific questions or evidence requests would a third-party CB auditor likely raise against this register as submitted?`;
 
@@ -874,7 +874,7 @@ Assess the following:
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-lg font-black text-foreground">Aspects &amp; Impacts Analysis</h2>
-          <p className="text-xs text-muted-foreground">ISO 14001:2015 §6.1.2 · Significant Environmental Aspects Register · Score = Severity × Probability × Regulatory (≥ 75 = SEA)</p>
+          <p className="text-xs text-muted-foreground">ISO 14001:2015 6.1.2 · Significant Environmental Aspects Register · Score = Severity × Probability × Regulatory (≥ 75 = SEA)</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" className="gap-1.5 border-accent/40 text-accent hover:bg-accent/10" onClick={requestIsaAssessment} disabled={createConv.isPending} data-testid="button-isa-assess">
@@ -1015,7 +1015,7 @@ Assess the following:
             <div className="border border-dashed rounded-xl p-12 text-center space-y-2">
               <Layers className="w-8 h-8 text-muted-foreground/40 mx-auto" />
               <p className="text-sm font-semibold text-muted-foreground">No aspects logged yet</p>
-              <p className="text-xs text-muted-foreground">Click <strong>Add Aspect</strong> to build your ISO 14001 §6.1.2 register.</p>
+              <p className="text-xs text-muted-foreground">Click <strong>Add Aspect</strong> to build your ISO 14001 6.1.2 register.</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border">
@@ -1127,7 +1127,7 @@ Assess the following:
             ))}
             <div className="rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50/60 dark:bg-red-950/10 p-4 space-y-3 sm:col-span-2 lg:col-span-3">
               <p className="font-black text-sm text-red-700 dark:text-red-400">Significance Formula: S × P × R ≥ 75 = Significant Environmental Aspect (SEA)</p>
-              <p className="text-sm text-muted-foreground">Maximum possible score: <strong>125</strong> (5 × 5 × 5). Threshold for significance: <strong>≥ 75</strong>. Significant aspects must be addressed in your EMS environmental objectives (§6.2), operational controls (§8.1), and management review inputs (§9.3).</p>
+              <p className="text-sm text-muted-foreground">Maximum possible score: <strong>125</strong> (5 × 5 × 5). Threshold for significance: <strong>≥ 75</strong>. Significant aspects must be addressed in your EMS environmental objectives (6.2), operational controls (8.1), and management review inputs (9.3).</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
                 {([["≥ 75","SIGNIFICANT — SEA","bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"],["60–74","High — Review Controls","bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"],["30–59","Moderate","bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"],["< 30","Low","bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"]] as [string,string,string][]).map(([range, label, cls]) => (
                   <div key={range} className={`rounded-lg px-3 py-2 ${cls}`}>
@@ -1178,7 +1178,7 @@ Assess the following:
             {/* Header banner */}
             <div className="rounded-xl border border-lime-200 dark:border-lime-800/40 bg-lime-50/60 dark:bg-lime-950/10 p-5">
               <p className="font-black text-base text-lime-800 dark:text-lime-300">Environmental Significance Assessment (ESA) — Methodology Guide</p>
-              <p className="text-sm text-muted-foreground mt-1">ISO 14001:2015 §6.1.2 requires the organization to determine environmental aspects and their associated environmental impacts, considering a life cycle perspective, and to identify those that have or can have a significant environmental impact.</p>
+              <p className="text-sm text-muted-foreground mt-1">ISO 14001:2015 6.1.2 requires the organization to determine environmental aspects and their associated environmental impacts, considering a life cycle perspective, and to identify those that have or can have a significant environmental impact.</p>
             </div>
 
             {/* Steps */}
@@ -1227,20 +1227,20 @@ Assess the following:
                 step: "5", title: "Communicate Significant Aspects & Set Controls",
                 color: "purple",
                 points: [
-                  "SEAs must be communicated within the organization at all relevant levels and functions (§7.3 Awareness).",
-                  "Each SEA requires a documented operational control under §8.1 — this can be a procedure, work instruction, or inspection checklist.",
-                  "SEAs should drive environmental objectives and targets under §6.2 (e.g., 'Reduce hazardous waste generation 10% by year-end').",
-                  "SEAs must be included as inputs to Management Review under §9.3.2(a).",
+                  "SEAs must be communicated within the organization at all relevant levels and functions (7.3 Awareness).",
+                  "Each SEA requires a documented operational control under 8.1 — this can be a procedure, work instruction, or inspection checklist.",
+                  "SEAs should drive environmental objectives and targets under 6.2 (e.g., 'Reduce hazardous waste generation 10% by year-end').",
+                  "SEAs must be included as inputs to Management Review under 9.3.2(a).",
                 ],
               },
               {
                 step: "6", title: "Maintain, Review & Update",
                 color: "emerald",
                 points: [
-                  "The ESA register is documented information required by §6.1.2 — it must be maintained and retained as evidence of conformance.",
+                  "The ESA register is documented information required by 6.1.2 — it must be maintained and retained as evidence of conformance.",
                   "Review the register when changes occur: new processes, new chemicals, facility expansions, regulatory changes, or significant incidents.",
                   "Review at minimum annually as part of the Management Review cycle.",
-                  "Use internal audit findings (§9.2) and nonconformances (§10.2) as triggers to re-evaluate affected aspects.",
+                  "Use internal audit findings (9.2) and nonconformances (10.2) as triggers to re-evaluate affected aspects.",
                 ],
               },
             ].map(({ step, title, color, points }) => {
@@ -1290,7 +1290,7 @@ Assess the following:
             <div className="rounded-xl border border-amber-300 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-950/20 p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <p className="font-black text-sm text-amber-800 dark:text-amber-300">Common Auditor Findings — ISO 14001 §6.1.2</p>
+                <p className="font-black text-sm text-amber-800 dark:text-amber-300">Common Auditor Findings — ISO 14001 6.1.2</p>
               </div>
               <p className="text-xs text-amber-700 dark:text-amber-400">These apply across industries — regardless of what type of organization you are.</p>
               <div className="grid sm:grid-cols-2 gap-2 text-sm text-amber-900 dark:text-amber-200">
@@ -1299,7 +1299,7 @@ Assess the following:
                   "Emergency conditions (spills, leaks, power loss) not covered as separate aspect rows",
                   "Life cycle perspective absent — only direct operational outputs considered, no upstream or downstream phases",
                   "SEA designation not linked to a documented operational control or procedure",
-                  "SEAs not included as inputs to the Management Review agenda (§9.3.2a)",
+                  "SEAs not included as inputs to the Management Review agenda (9.3.2a)",
                   "Scoring rationale undocumented — scores appear inconsistent or arbitrary across aspects",
                   "Regulatory score (R) underestimated — permits and legal obligations not reflected in the scoring",
                   "Register scope does not align with the EMS scope statement — aspects inside scope boundaries are missing",
@@ -1359,7 +1359,7 @@ Assess the following:
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
                   <p className="text-sm font-bold text-foreground">Isa — Lead ISO Auditor Assessment</p>
-                  <Badge className="bg-accent/15 text-accent border-accent/30 text-xs">ISO 14001 §6.1.2</Badge>
+                  <Badge className="bg-accent/15 text-accent border-accent/30 text-xs">ISO 14001 6.1.2</Badge>
                 </div>
                 <button
                   onClick={() => { setIsaConvId(null); setIsaPrompt(""); }}
@@ -1426,7 +1426,7 @@ Assess the following:
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-sm font-bold">Applicable Regulations (F/S/L)</Label>
-                <Textarea className="mt-1 text-sm h-16 resize-none" placeholder="40 CFR 279 (F), Act 451 Part 121 (S), City Ord. §82 (L)..." value={form.applicableRegulations} onChange={e => setForm(f => ({ ...f, applicableRegulations: e.target.value }))} data-testid="textarea-applicable-regulations" />
+                <Textarea className="mt-1 text-sm h-16 resize-none" placeholder="40 CFR 279 (F), Act 451 Part 121 (S), City Ord. 82 (L)..." value={form.applicableRegulations} onChange={e => setForm(f => ({ ...f, applicableRegulations: e.target.value }))} data-testid="textarea-applicable-regulations" />
               </div>
               <div>
                 <Label className="text-sm font-bold">Other Requirements</Label>
@@ -1470,7 +1470,7 @@ Assess the following:
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 flex items-center gap-2">
                 <input type="checkbox" id="chk-lc" checked={form.lifeCycleConsidered} onChange={e => setForm(f => ({ ...f, lifeCycleConsidered: e.target.checked }))} className="w-4 h-4 rounded border-border" data-testid="checkbox-lifecycle" />
-                <Label htmlFor="chk-lc" className="text-xs font-semibold cursor-pointer">Life Cycle Considered (ISO 14001 §6.1.2 — facility has influence over this aspect's upstream/downstream phases)</Label>
+                <Label htmlFor="chk-lc" className="text-xs font-semibold cursor-pointer">Life Cycle Considered (ISO 14001 6.1.2 — facility has influence over this aspect's upstream/downstream phases)</Label>
               </div>
               <div className="col-span-2">
                 <Label className="text-xs font-bold">Operational Control / Document Name &amp; Number</Label>

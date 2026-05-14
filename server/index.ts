@@ -189,7 +189,7 @@ app.use((req, res, next) => {
             </a>
           </p>
           <p style="color:#6b7280;font-size:13px;margin-top:16px;">
-            This is an automated reminder from Core Compliance Hub (ISO 9001 §7.1.5 / IATF 16949 §7.1.5.3).
+            This is an automated reminder from Core Compliance Hub (ISO 9001 7.1.5 / IATF 16949 7.1.5.3).
           </p>
         `;
 

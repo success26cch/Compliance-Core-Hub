@@ -159,10 +159,10 @@ export function TrainingAwarenessModule({ onAskIsa }: { onAskIsa?: (prompt: stri
           <h2 className="text-lg font-bold text-primary flex items-center gap-2">
             <GraduationCap className="w-5 h-5" /> Training & Awareness
           </h2>
-          <p className="text-xs text-muted-foreground">ISO 9001 §7.2 Competence · §7.3 Awareness · IATF 16949 §7.2.2 – 7.2.4</p>
+          <p className="text-xs text-muted-foreground">ISO 9001 7.2 Competence · 7.3 Awareness · IATF 16949 7.2.2 – 7.2.4</p>
         </div>
         {onAskIsa && (
-          <Button size="sm" variant="outline" onClick={() => onAskIsa("What are the full competence and awareness requirements under ISO 9001 §7.2 and §7.3, and how do IATF 16949 §7.2.2 OJT requirements apply to production operators?")}>
+          <Button size="sm" variant="outline" onClick={() => onAskIsa("What are the full competence and awareness requirements under ISO 9001 7.2 and 7.3, and how do IATF 16949 7.2.2 OJT requirements apply to production operators?")}>
             Ask Isa
           </Button>
         )}
@@ -174,7 +174,7 @@ export function TrainingAwarenessModule({ onAskIsa }: { onAskIsa?: (prompt: stri
           <TabsTrigger value="records" className="text-xs gap-1.5"><User className="w-3.5 h-3.5" />Employee Records</TabsTrigger>
           <TabsTrigger value="log" className="text-xs gap-1.5"><ClipboardList className="w-3.5 h-3.5" />Training Log</TabsTrigger>
           <TabsTrigger value="skills" className="text-xs gap-1.5"><Grid3x3 className="w-3.5 h-3.5" />Skills Matrix</TabsTrigger>
-          <TabsTrigger value="awareness" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" />Awareness §7.3</TabsTrigger>
+          <TabsTrigger value="awareness" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" />Awareness 7.3</TabsTrigger>
           <TabsTrigger value="special" className="text-xs gap-1.5"><ShieldCheck className="w-3.5 h-3.5" />Special Reqs</TabsTrigger>
         </TabsList>
 
@@ -202,7 +202,7 @@ export function TrainingAwarenessModule({ onAskIsa }: { onAskIsa?: (prompt: stri
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// TAB 1 — Competence Matrix (§7.2)
+// TAB 1 — Competence Matrix (7.2)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function CompetenceMatrixTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
@@ -253,7 +253,7 @@ function CompetenceMatrixTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-sm">Competence Matrix — ISO 9001 §7.2 / IATF §7.2.1</h3>
+          <h3 className="font-semibold text-sm">Competence Matrix — ISO 9001 7.2 / IATF 7.2.1</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Define what each job title must know, be trained in, or be able to demonstrate.</p>
         </div>
         <Button size="sm" className="bg-primary text-white gap-1" onClick={() => setShowNewRole(true)} data-testid="button-add-role">
@@ -323,7 +323,7 @@ function CompetenceMatrixTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void
                             {COMPETENCY_TYPE_LABELS[req.competencyType] ?? req.competencyType}
                           </Badge>
                           {!req.isRequired && <Badge variant="outline" className="text-xs text-muted-foreground">Preferred</Badge>}
-                          {req.standard && <Badge variant="outline" className="text-xs font-mono">{req.standard}{req.clause ? ` §${req.clause}` : ""}</Badge>}
+                          {req.standard && <Badge variant="outline" className="text-xs font-mono">{req.standard}{req.clause ? ` ${req.clause}` : ""}</Badge>}
                         </div>
                         {req.description && <p className="text-xs text-muted-foreground mt-1">{req.description}</p>}
                       </div>
@@ -494,7 +494,7 @@ function EmployeeRecordsTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-sm">Employee Competency Records — ISO 9001 §7.2</h3>
+          <h3 className="font-semibold text-sm">Employee Competency Records — ISO 9001 7.2</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Record evidence of competence and identify gaps against role requirements.</p>
         </div>
       </div>
@@ -593,7 +593,7 @@ function EmployeeRecordsTab() {
                                 <span className="font-medium text-sm">{rec.competencyName}</span>
                                 <Badge variant="outline" className={`text-xs ${evidenceBadge(rec.evidenceType)}`}>{EVIDENCE_TYPE_LABELS[rec.evidenceType] ?? rec.evidenceType}</Badge>
                                 <Badge variant="outline" className={`text-xs ${statusBadge(rec.status)}`}>{rec.status}</Badge>
-                                {rec.isOjt && <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT §7.2.2</Badge>}
+                                {rec.isOjt && <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT 7.2.2</Badge>}
                                 {rec.effectivenessVerified && <Badge variant="outline" className="text-xs bg-green-50 text-green-700"><CheckCircle2 className="w-3 h-3 mr-0.5" />Effectiveness Verified</Badge>}
                               </div>
                               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
@@ -802,7 +802,7 @@ function EvidenceDialog({ employeeId, initial, onSave, onClose, isPending }: {
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <Checkbox checked={form.isOjt} onCheckedChange={v => setForm(f => ({ ...f, isOjt: !!v }))} data-testid="checkbox-ojt" />
-              OJT (IATF §7.2.2)
+              OJT (IATF 7.2.2)
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <Checkbox checked={form.effectivenessVerified} onCheckedChange={v => setForm(f => ({ ...f, effectivenessVerified: !!v }))} data-testid="checkbox-effectiveness" />
@@ -1151,7 +1151,7 @@ function TrainingLogTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-sm">Training Event Log — ISO 9001 §7.2 / IATF §7.2.2</h3>
+          <h3 className="font-semibold text-sm">Training Event Log — ISO 9001 7.2 / IATF 7.2.2</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Record all training conducted — classroom, OJT, external, toolbox talks, and more.</p>
         </div>
         <Button size="sm" className="bg-primary text-white gap-1" onClick={() => setShowAdd(true)} data-testid="button-log-training">
@@ -1183,7 +1183,7 @@ function TrainingLogTab() {
         <Card className="p-10 text-center border-dashed">
           <ClipboardList className="w-9 h-9 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm font-medium text-muted-foreground">No training events logged yet</p>
-          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">Record all training activities — this creates an audit-ready log covering both §7.2 competence actions and §7.2.2 OJT requirements.</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">Record all training activities — this creates an audit-ready log covering both 7.2 competence actions and 7.2.2 OJT requirements.</p>
           <Button size="sm" variant="outline" className="mt-3" onClick={() => setShowAdd(true)}>Log First Event</Button>
         </Card>
       ) : (
@@ -1194,7 +1194,7 @@ function TrainingLogTab() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-sm">{ev.title}</span>
                   <Badge variant="outline" className={`text-xs ${trainingTypeBg(ev.trainingType)}`}>{TRAINING_TYPE_LABELS[ev.trainingType] ?? ev.trainingType}</Badge>
-                  {ev.standard && <Badge variant="outline" className="text-xs font-mono">{ev.standard}{ev.clause ? ` §${ev.clause}` : ""}</Badge>}
+                  {ev.standard && <Badge variant="outline" className="text-xs font-mono">{ev.standard}{ev.clause ? ` ${ev.clause}` : ""}</Badge>}
                   {ev.passed === true && <Badge variant="outline" className="text-xs bg-green-50 text-green-700">Passed</Badge>}
                   {ev.passed === false && <Badge variant="outline" className="text-xs bg-red-50 text-red-700">Did Not Pass</Badge>}
                 </div>
@@ -1257,7 +1257,7 @@ function TrainingEventDialog({ initial, onSave, onClose, isPending }: {
         <div className="space-y-3 pt-2">
           <div>
             <Label>Training Title *</Label>
-            <Input placeholder="e.g. IATF 16949 §7.2.2 OJT — Press Operator Qualification" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} data-testid="input-event-title" />
+            <Input placeholder="e.g. IATF 16949 7.2.2 OJT — Press Operator Qualification" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} data-testid="input-event-title" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1340,14 +1340,14 @@ function TrainingEventDialog({ initial, onSave, onClose, isPending }: {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// TAB 4 — Awareness (§7.3) — enhanced existing + §7.3 topic tracker
+// TAB 4 — Awareness (7.3) — enhanced existing + 7.3 topic tracker
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const AWARENESS_TOPICS_73 = [
-  { key: "quality_policy", label: "Quality Policy (§7.3a)", desc: "Employees are aware of the quality policy and its relevance to their work." },
-  { key: "quality_objectives", label: "Quality Objectives (§7.3b)", desc: "Relevant quality objectives have been communicated to the process area." },
-  { key: "contribution", label: "Contribution to QMS (§7.3c)", desc: "Employees understand how their activities contribute to QMS effectiveness and product/service conformity." },
-  { key: "nc_consequences", label: "NC Consequences (§7.3d)", desc: "Employees understand the implications of not conforming to QMS requirements." },
+  { key: "quality_policy", label: "Quality Policy (7.3a)", desc: "Employees are aware of the quality policy and its relevance to their work." },
+  { key: "quality_objectives", label: "Quality Objectives (7.3b)", desc: "Relevant quality objectives have been communicated to the process area." },
+  { key: "contribution", label: "Contribution to QMS (7.3c)", desc: "Employees understand how their activities contribute to QMS effectiveness and product/service conformity." },
+  { key: "nc_consequences", label: "NC Consequences (7.3d)", desc: "Employees understand the implications of not conforming to QMS requirements." },
 ];
 
 function AwarenessTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
@@ -1382,9 +1382,9 @@ function AwarenessTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
 
   return (
     <div className="space-y-5">
-      {/* §7.3 Topic Tracker */}
+      {/* 7.3 Topic Tracker */}
       <div>
-        <h3 className="font-semibold text-sm mb-1">§7.3 Awareness Requirements Tracker</h3>
+        <h3 className="font-semibold text-sm mb-1">7.3 Awareness Requirements Tracker</h3>
         <p className="text-xs text-muted-foreground mb-3">Create awareness notices for each required topic below. Each notice can collect employee acknowledgments as audit evidence.</p>
         <div className="grid grid-cols-2 gap-3">
           {AWARENESS_TOPICS_73.map(topic => {
@@ -1429,7 +1429,7 @@ function AwarenessTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
         {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : notices.length === 0 ? (
           <Card className="p-8 text-center border-dashed">
             <GraduationCap className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No awareness notices yet. Create notices for each §7.3 topic above to build your audit evidence.</p>
+            <p className="text-sm text-muted-foreground">No awareness notices yet. Create notices for each 7.3 topic above to build your audit evidence.</p>
           </Card>
         ) : (
           <div className="space-y-2">
@@ -1442,7 +1442,7 @@ function AwarenessTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
                       <p className="font-semibold text-sm text-primary">{notice.title}</p>
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-xs">{notice.standard}</Badge>
-                        {notice.clause && <Badge variant="outline" className="text-xs font-mono">§{notice.clause}</Badge>}
+                        {notice.clause && <Badge variant="outline" className="text-xs font-mono">{notice.clause}</Badge>}
                         {notice.processArea && <Badge variant="outline" className="text-xs">{notice.processArea}</Badge>}
                         {notice.dueDate && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />Due {new Date(notice.dueDate).toLocaleDateString()}</span>}
                       </div>
@@ -1570,7 +1570,7 @@ function AckDialog({ noticeId, noticeTitle, onSave, onClose, isPending }: { noti
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// TAB 5 — Special Requirements (IATF §7.2.2 OJT, Auditor Competency, AS9100D, etc.)
+// TAB 5 — Special Requirements (IATF 7.2.2 OJT, Auditor Competency, AS9100D, etc.)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
@@ -1591,10 +1591,10 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-sm">Standard-Specific Requirements</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Additional training and competency requirements beyond the base ISO 9001 §7.2/7.3 requirements.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Additional training and competency requirements beyond the base ISO 9001 7.2/7.3 requirements.</p>
         </div>
         {onAskIsa && (
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAskIsa("What are the IATF 16949 §7.2.2 on-the-job training requirements for production operators, and how do §7.2.3 internal auditor competency requirements differ from ISO 9001?")}>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAskIsa("What are the IATF 16949 7.2.2 on-the-job training requirements for production operators, and how do 7.2.3 internal auditor competency requirements differ from ISO 9001?")}>
             Ask Isa
           </Button>
         )}
@@ -1620,19 +1620,19 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
 
       {activeStd === "iatf" && (
         <div className="space-y-5">
-          {/* §7.2.2 OJT Register */}
+          {/* 7.2.2 OJT Register */}
           <div>
             <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
               <Award className="w-4 h-4 text-orange-500" />
-              IATF 16949 §7.2.2 — On-the-Job Training (OJT) Register
+              IATF 16949 7.2.2 — On-the-Job Training (OJT) Register
             </h4>
             <p className="text-xs text-muted-foreground mb-3">
-              IATF 16949 §7.2.2 requires on-the-job training for personnel in any role that affects product quality conformance,
+              IATF 16949 7.2.2 requires on-the-job training for personnel in any role that affects product quality conformance,
               including temporary and contract staff. Evidence must be retained for all positions.
             </p>
             {ojtRecords.length === 0 ? (
               <Card className="p-6 border-dashed text-center">
-                <p className="text-xs text-muted-foreground">No OJT records yet. Add competency evidence and check "OJT (IATF §7.2.2)" in the Employee Records tab.</p>
+                <p className="text-xs text-muted-foreground">No OJT records yet. Add competency evidence and check "OJT (IATF 7.2.2)" in the Employee Records tab.</p>
               </Card>
             ) : (
               <div className="space-y-2">
@@ -1644,7 +1644,7 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm">{emp ? `${emp.firstName} ${emp.lastName}` : `Employee #${rec.employeeId}`}</span>
                           {emp?.position && <span className="text-xs text-muted-foreground">· {emp.position}</span>}
-                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT §7.2.2</Badge>
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">OJT 7.2.2</Badge>
                           <Badge variant="outline" className={`text-xs ${statusBadge(rec.status)}`}>{rec.status}</Badge>
                           {rec.effectivenessVerified && <Badge variant="outline" className="text-xs bg-green-50 text-green-700"><CheckCircle2 className="w-3 h-3 mr-0.5" />Effectiveness Verified</Badge>}
                         </div>
@@ -1661,11 +1661,11 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
             )}
           </div>
 
-          {/* §7.2.3 Internal Auditor Competency */}
+          {/* 7.2.3 Internal Auditor Competency */}
           <div>
             <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
               <FileText className="w-4 h-4 text-blue-500" />
-              IATF 16949 §7.2.3 — Internal Auditor Competency
+              IATF 16949 7.2.3 — Internal Auditor Competency
             </h4>
             <p className="text-xs text-muted-foreground mb-3">
               Internal auditors must demonstrate specific competency in: (a) the standard being audited,
@@ -1691,16 +1691,16 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
             )}
           </div>
 
-          {/* §7.2.4 */}
+          {/* 7.2.4 */}
           <Card className="p-4 border-l-4 border-l-blue-400 bg-blue-50/50">
-            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><FileText className="w-4 h-4 text-blue-600" />IATF 16949 §7.2.4 — Second-Party Auditor Competency</h4>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><FileText className="w-4 h-4 text-blue-600" />IATF 16949 7.2.4 — Second-Party Auditor Competency</h4>
             <p className="text-xs text-muted-foreground">Personnel conducting supplier audits must demonstrate competency in the applicable requirements. Add "Supplier / Second-Party Auditor" as a job role in the Competence Matrix with requirements linked to clause 7.2.4.</p>
           </Card>
 
-          {/* §7.3.1 */}
+          {/* 7.3.1 */}
           <Card className="p-4 border-l-4 border-l-orange-400 bg-orange-50/50">
-            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-orange-600" />IATF 16949 §7.3.1 — Product / Process NC Awareness</h4>
-            <p className="text-xs text-muted-foreground">Employees must be aware of consequences of departures from product / process standards. Create a specific awareness notice in the §7.3 Awareness tab covering product/process nonconformance consequences.</p>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-orange-600" />IATF 16949 7.3.1 — Product / Process NC Awareness</h4>
+            <p className="text-xs text-muted-foreground">Employees must be aware of consequences of departures from product / process standards. Create a specific awareness notice in the 7.3 Awareness tab covering product/process nonconformance consequences.</p>
           </Card>
         </div>
       )}
@@ -1708,7 +1708,7 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
       {activeStd === "as9100" && (
         <div className="space-y-4">
           <Card className="p-4 border-l-4 border-l-blue-400 bg-blue-50/50">
-            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-blue-600" />AS9100 Rev D §7.2 — Safety-Critical Role Identification</h4>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-blue-600" />AS9100 Rev D 7.2 — Safety-Critical Role Identification</h4>
             <p className="text-xs text-muted-foreground mb-2">AS9100 Rev D requires specific competency for roles whose work affects product safety, including counterfeit parts awareness and ethical behavior. Add roles such as "Safety-Critical Process Operator" and "Product Inspection" to the Competence Matrix with safety-specific competency requirements.</p>
             <div className="text-xs space-y-1 text-blue-700">
               <p>• Employees in safety-critical roles must be identified</p>
@@ -1718,7 +1718,7 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
             </div>
           </Card>
           <Card className="p-4 border-l-4 border-l-purple-400 bg-purple-50/50">
-            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><BarChart2 className="w-4 h-4 text-purple-600" />AS9100 Rev D §7.3 — Contribution to Product Safety</h4>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><BarChart2 className="w-4 h-4 text-purple-600" />AS9100 Rev D 7.3 — Contribution to Product Safety</h4>
             <p className="text-xs text-muted-foreground">Employees must be aware of their contribution to product safety. Create awareness notices covering product safety awareness and the consequences of not following safety-critical requirements.</p>
           </Card>
         </div>
@@ -1727,7 +1727,7 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
       {activeStd === "iso13485" && (
         <div className="space-y-4">
           <Card className="p-4 border-l-4 border-l-teal-400 bg-teal-50/50">
-            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-teal-600" />ISO 13485:2016 §7.2 — Medical Device Competency</h4>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-teal-600" />ISO 13485:2016 7.2 — Medical Device Competency</h4>
             <p className="text-xs text-muted-foreground mb-2">ISO 13485 requires competency documentation that is tightly tied to regulatory requirements. Key additions beyond ISO 9001:</p>
             <div className="text-xs space-y-1 text-teal-700">
               <p>• Training must address regulatory requirements applicable to each role</p>
@@ -1743,7 +1743,7 @@ function SpecialReqsTab({ onAskIsa }: { onAskIsa?: (prompt: string) => void }) {
       {activeStd === "iso14001" && (
         <div className="space-y-4">
           <Card className="p-4 border-l-4 border-l-green-400 bg-green-50/50">
-            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-green-600" />ISO 14001:2015 §7.2 — Environmental Competency</h4>
+            <h4 className="font-semibold text-sm mb-1 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-green-600" />ISO 14001:2015 7.2 — Environmental Competency</h4>
             <p className="text-xs text-muted-foreground mb-2">Persons doing work that affects environmental performance or compliance obligations must be competent. Key areas:</p>
             <div className="text-xs space-y-1 text-green-700">
               <p>• Environmental aspects and impacts related to their role</p>

@@ -29,7 +29,7 @@ type AgendaTemplateItem = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ISO 9001:2015  §9.3 Management Review Template
+// ISO 9001:2015  9.3 Management Review Template
 // Source: FM-9.3-1 Management Review Agenda PDF
 // ─────────────────────────────────────────────────────────────────────────────
 const ISO_9001_AGENDA_ITEMS: AgendaTemplateItem[] = [
@@ -37,8 +37,8 @@ const ISO_9001_AGENDA_ITEMS: AgendaTemplateItem[] = [
   { clause: "9.3.2(a)", title: "Follow-up on open issues from previous management review", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Quarterly" },
 
   // 9.3.2(b) External/Internal Issues
-  { clause: "9.3.2(b)-issues", title: "Changes in external and internal issues relevant to the QMS (§4.1)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
-  { clause: "9.3.2(b)-parties", title: "Review of Interested Parties Matrix (§4.2) — needs and expectations", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
+  { clause: "9.3.2(b)-issues", title: "Changes in external and internal issues relevant to the QMS (4.1)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
+  { clause: "9.3.2(b)-parties", title: "Review of Interested Parties Matrix (4.2) — needs and expectations", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
 
   // 9.3.2(c-i) Customer Satisfaction
   { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Quarterly" },
@@ -89,7 +89,7 @@ const ISO_9001_AGENDA_ITEMS: AgendaTemplateItem[] = [
   { clause: "9.3.2(e)-3", title: "Interested parties review — changes in needs/expectations", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
 
   // Quality Policy Review
-  { clause: "qpr-suitability", title: "Quality policy suitability — remains aligned with strategic direction?", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
+  { clause: "qpr-suitability", title: "Quality policy suitability — remains aligned with strategic direction?", group: "input", section: "Quality Policy Review — 5.2", frequency: "Annually" },
 
   // Changes to KPIs/Objectives
   { clause: "kpi-changes", title: "KPI targets and quality objectives — suitability for next period", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
@@ -104,14 +104,14 @@ const ISO_9001_AGENDA_ITEMS: AgendaTemplateItem[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// IATF 16949  §9.3 Management Review Template (Monthly + IATF-specific inputs)
+// IATF 16949  9.3 Management Review Template (Monthly + IATF-specific inputs)
 // Source: IATF Management Review Agenda PDF
 // ─────────────────────────────────────────────────────────────────────────────
 const IATF_16949_AGENDA_ITEMS: AgendaTemplateItem[] = [
   { clause: "9.3.2(a)", title: "Follow-up on open issues from previous management review", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Monthly" },
 
-  { clause: "9.3.2(b)-issues", title: "Changes in external and internal issues relevant to the QMS (§4.1)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
-  { clause: "9.3.2(b)-parties", title: "Review of Interested Parties Matrix (§4.2) — needs and expectations", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
+  { clause: "9.3.2(b)-issues", title: "Changes in external and internal issues relevant to the QMS (4.1)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
+  { clause: "9.3.2(b)-parties", title: "Review of Interested Parties Matrix (4.2) — needs and expectations", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Quarterly" },
 
   { clause: "9.3.2(c-i)-scorecards", title: "Customer Scorecards (all customer portals / report cards)", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Monthly" },
   { clause: "9.3.2(c-i)-survey", title: "Customer Satisfaction Survey results", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Annually" },
@@ -119,22 +119,22 @@ const IATF_16949_AGENDA_ITEMS: AgendaTemplateItem[] = [
 
   { clause: "9.3.2(c-ii)-objectives", title: "Extent to which quality objectives have been met", group: "input", section: "Quality Objectives Achievement — 9.3.2(c-ii)", frequency: "Monthly" },
 
-  // IATF-specific KPI Dashboard (§9.3.2.1 automotive supplement)
-  { clause: "9.3.2(c-iii)-quote-timing", title: "Quote Timing (positive to goal)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-quote-budget", title: "Quote to Budget (new business won)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-ppap", title: "On Time PPAP (program milestones)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-apqp", title: "APQP on Budget (program cost vs. budget)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-scrap", title: "Scrap Cost (rolling 12-month target %)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-copq", title: "COPQ — Cost of Poor Quality (rework, returns, warranty)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-supplier-scrap", title: "Supplier Scrap (vendor quality performance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-supplier-cost", title: "Supplier Cost Reductions (goal vs. actual savings)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-otd", title: "On Time Delivery (OTD) — by plant / customer", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-premium-freight", title: "Premium Freight (cost and root cause trends)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-pm-schedule", title: "On Time to PM Schedule (preventive maintenance compliance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-calibrations", title: "On Time Calibrations (gage/equipment calibration compliance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-turnover", title: "Employee Turnover (by plant)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-inventory", title: "Inventory Accuracy (cycle count results)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "9.3.2(c-iii)-lost-time", title: "Lost Time (safety — days without lost-time incident)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF §9.3.2.1", frequency: "Monthly" },
+  // IATF-specific KPI Dashboard (9.3.2.1 automotive supplement)
+  { clause: "9.3.2(c-iii)-quote-timing", title: "Quote Timing (positive to goal)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-quote-budget", title: "Quote to Budget (new business won)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-ppap", title: "On Time PPAP (program milestones)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-apqp", title: "APQP on Budget (program cost vs. budget)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-scrap", title: "Scrap Cost (rolling 12-month target %)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-copq", title: "COPQ — Cost of Poor Quality (rework, returns, warranty)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-supplier-scrap", title: "Supplier Scrap (vendor quality performance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-supplier-cost", title: "Supplier Cost Reductions (goal vs. actual savings)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-otd", title: "On Time Delivery (OTD) — by plant / customer", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-premium-freight", title: "Premium Freight (cost and root cause trends)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-pm-schedule", title: "On Time to PM Schedule (preventive maintenance compliance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-calibrations", title: "On Time Calibrations (gage/equipment calibration compliance)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-turnover", title: "Employee Turnover (by plant)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-inventory", title: "Inventory Accuracy (cycle count results)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "9.3.2(c-iii)-lost-time", title: "Lost Time (safety — days without lost-time incident)", group: "input", section: "KPI Dashboard — 9.3.2(c-iii) & IATF 9.3.2.1", frequency: "Monthly" },
 
   { clause: "9.3.2(c-iv)-cars", title: "Past due CARs / Completion Status", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Monthly" },
   { clause: "9.3.2(c-iv)-trends", title: "NC trend analysis — repeat nonconformances, systemic issues", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Monthly" },
@@ -153,9 +153,9 @@ const IATF_16949_AGENDA_ITEMS: AgendaTemplateItem[] = [
 
   { clause: "nb-quotes", title: "New business — quotes submitted, RFQs, customer pipeline", group: "input", section: "New Business Update", frequency: "Quarterly" },
 
-  // IATF Manufacturing Assessment §9.3.2.1
-  { clause: "iatf-fmea", title: "FMEA Review — PFMEA open actions, updated risk ratings", group: "input", section: "Manufacturing Assessment — IATF §9.3.2.1", frequency: "Monthly" },
-  { clause: "iatf-feasibility", title: "Feasibility or Capacity Concern review (quoting & mfg phases)", group: "input", section: "Manufacturing Assessment — IATF §9.3.2.1", frequency: "Monthly" },
+  // IATF Manufacturing Assessment 9.3.2.1
+  { clause: "iatf-fmea", title: "FMEA Review — PFMEA open actions, updated risk ratings", group: "input", section: "Manufacturing Assessment — IATF 9.3.2.1", frequency: "Monthly" },
+  { clause: "iatf-feasibility", title: "Feasibility or Capacity Concern review (quoting & mfg phases)", group: "input", section: "Manufacturing Assessment — IATF 9.3.2.1", frequency: "Monthly" },
 
   { clause: "9.3.2(d)-1", title: "Talent — personnel, open positions, skills gaps", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
   { clause: "9.3.2(d)-2", title: "Infrastructure, equipment, technology upgrades", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Monthly" },
@@ -164,7 +164,7 @@ const IATF_16949_AGENDA_ITEMS: AgendaTemplateItem[] = [
   { clause: "9.3.2(e)-2", title: "Contingency plan review", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
   { clause: "9.3.2(e)-3", title: "Interested parties review", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
 
-  { clause: "qpr-suitability", title: "Quality policy suitability — aligned with strategic direction?", group: "input", section: "Quality Policy Review — §5.2", frequency: "Annually" },
+  { clause: "qpr-suitability", title: "Quality policy suitability — aligned with strategic direction?", group: "input", section: "Quality Policy Review — 5.2", frequency: "Annually" },
   { clause: "kpi-changes", title: "KPI targets and quality objectives — suitability for next period", group: "input", section: "Changes to KPIs / Objectives", frequency: "Annually" },
   { clause: "9.3.2(f)", title: "Open discussion — opportunities for improvement across the QMS", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
 
@@ -174,53 +174,53 @@ const IATF_16949_AGENDA_ITEMS: AgendaTemplateItem[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ISO 14001:2015  §9.3 Management Review Template (Environmental)
+// ISO 14001:2015  9.3 Management Review Template (Environmental)
 // ─────────────────────────────────────────────────────────────────────────────
 const ISO_14001_AGENDA_ITEMS: AgendaTemplateItem[] = [
-  { clause: "14.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3(a)", frequency: "Quarterly" },
+  { clause: "14.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — 9.3(a)", frequency: "Quarterly" },
 
-  { clause: "14.9.3(b)-issues", title: "Changes in external/internal issues relevant to the EMS (§4.1)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
-  { clause: "14.9.3(b)-parties", title: "Changes in needs and expectations of interested parties, including compliance obligations (§4.2)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
-  { clause: "14.9.3(b)-aspects", title: "Changes in significant environmental aspects (new/modified operations)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
-  { clause: "14.9.3(b)-risks", title: "Changes in risks and opportunities (risk register updates)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
+  { clause: "14.9.3(b)-issues", title: "Changes in external/internal issues relevant to the EMS (4.1)", group: "input", section: "Changes in Context — 9.3(b)", frequency: "Annually" },
+  { clause: "14.9.3(b)-parties", title: "Changes in needs and expectations of interested parties, including compliance obligations (4.2)", group: "input", section: "Changes in Context — 9.3(b)", frequency: "Annually" },
+  { clause: "14.9.3(b)-aspects", title: "Changes in significant environmental aspects (new/modified operations)", group: "input", section: "Changes in Context — 9.3(b)", frequency: "Annually" },
+  { clause: "14.9.3(b)-risks", title: "Changes in risks and opportunities (risk register updates)", group: "input", section: "Changes in Context — 9.3(b)", frequency: "Annually" },
 
-  { clause: "14.9.3(c)-objectives", title: "Extent to which environmental objectives have been achieved", group: "input", section: "Environmental Objectives Achievement — §9.3(c)", frequency: "Quarterly" },
+  { clause: "14.9.3(c)-objectives", title: "Extent to which environmental objectives have been achieved", group: "input", section: "Environmental Objectives Achievement — 9.3(c)", frequency: "Quarterly" },
 
-  { clause: "14.9.3(d)-ncs", title: "Environmental nonconformities and corrective actions (trend review)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Quarterly" },
-  { clause: "14.9.3(d)-monitoring", title: "Environmental monitoring and measurement results (emissions, waste, water, energy)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Quarterly" },
-  { clause: "14.9.3(d)-compliance", title: "Fulfillment of compliance obligations (legal, regulatory, permit requirements)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Quarterly" },
-  { clause: "14.9.3(d)-audits", title: "Audit results (internal EMS audits, external/regulatory audits)", group: "input", section: "Environmental Performance Information — §9.3(d)", frequency: "Bi-Annually" },
+  { clause: "14.9.3(d)-ncs", title: "Environmental nonconformities and corrective actions (trend review)", group: "input", section: "Environmental Performance Information — 9.3(d)", frequency: "Quarterly" },
+  { clause: "14.9.3(d)-monitoring", title: "Environmental monitoring and measurement results (emissions, waste, water, energy)", group: "input", section: "Environmental Performance Information — 9.3(d)", frequency: "Quarterly" },
+  { clause: "14.9.3(d)-compliance", title: "Fulfillment of compliance obligations (legal, regulatory, permit requirements)", group: "input", section: "Environmental Performance Information — 9.3(d)", frequency: "Quarterly" },
+  { clause: "14.9.3(d)-audits", title: "Audit results (internal EMS audits, external/regulatory audits)", group: "input", section: "Environmental Performance Information — 9.3(d)", frequency: "Bi-Annually" },
 
-  { clause: "14.9.3(e)-resources", title: "Adequacy of resources for maintaining the EMS", group: "input", section: "Adequacy of Resources — §9.3(e)", frequency: "Quarterly" },
+  { clause: "14.9.3(e)-resources", title: "Adequacy of resources for maintaining the EMS", group: "input", section: "Adequacy of Resources — 9.3(e)", frequency: "Quarterly" },
 
-  { clause: "14.9.3(f)-comms", title: "Relevant communications from interested parties, including complaints (environmental grievances)", group: "input", section: "Stakeholder Communications — §9.3(f)", frequency: "Quarterly" },
+  { clause: "14.9.3(f)-comms", title: "Relevant communications from interested parties, including complaints (environmental grievances)", group: "input", section: "Stakeholder Communications — 9.3(f)", frequency: "Quarterly" },
 
-  { clause: "14.9.3(g)", title: "Opportunities for continual improvement of EMS performance", group: "input", section: "Opportunities for Continual Improvement — §9.3(g)", frequency: "Annually" },
+  { clause: "14.9.3(g)", title: "Opportunities for continual improvement of EMS performance", group: "input", section: "Opportunities for Continual Improvement — 9.3(g)", frequency: "Annually" },
 
-  { clause: "14.9.3-out-a", title: "Conclusions on continuing suitability, adequacy and effectiveness of the EMS", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "14.9.3-out-b", title: "Decisions related to continual improvement opportunities", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "14.9.3-out-c", title: "Actions related to any need for changes to the EMS, including resources", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "14.9.3-out-d", title: "Actions needed when environmental objectives have not been achieved", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "14.9.3-out-e", title: "Opportunities to improve integration of EMS with other business processes", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "14.9.3-out-a", title: "Conclusions on continuing suitability, adequacy and effectiveness of the EMS", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "14.9.3-out-b", title: "Decisions related to continual improvement opportunities", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "14.9.3-out-c", title: "Actions related to any need for changes to the EMS, including resources", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "14.9.3-out-d", title: "Actions needed when environmental objectives have not been achieved", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "14.9.3-out-e", title: "Opportunities to improve integration of EMS with other business processes", group: "output", section: "Required Outputs — 9.3", frequency: "" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ISO 45001:2018  §9.3 Management Review Template (Occupational Health & Safety)
+// ISO 45001:2018  9.3 Management Review Template (Occupational Health & Safety)
 // ─────────────────────────────────────────────────────────────────────────────
 const ISO_45001_AGENDA_ITEMS: AgendaTemplateItem[] = [
-  { clause: "45.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3(a)", frequency: "Quarterly" },
+  { clause: "45.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — 9.3(a)", frequency: "Quarterly" },
 
-  { clause: "45.9.3(b)", title: "Changes in external and internal issues relevant to the OH&S MS (§4.1, §4.2)", group: "input", section: "Changes in Context — §9.3(b)", frequency: "Annually" },
+  { clause: "45.9.3(b)", title: "Changes in external and internal issues relevant to the OH&S MS (4.1, 4.2)", group: "input", section: "Changes in Context — 9.3(b)", frequency: "Annually" },
 
-  { clause: "45.9.3(c)-policy", title: "Extent to which the OH&S policy has been fulfilled", group: "input", section: "OH&S Policy & Objectives Fulfillment — §9.3(c)", frequency: "Annually" },
-  { clause: "45.9.3(c)-objectives", title: "Extent to which OH&S objectives have been achieved", group: "input", section: "OH&S Policy & Objectives Fulfillment — §9.3(c)", frequency: "Quarterly" },
+  { clause: "45.9.3(c)-policy", title: "Extent to which the OH&S policy has been fulfilled", group: "input", section: "OH&S Policy & Objectives Fulfillment — 9.3(c)", frequency: "Annually" },
+  { clause: "45.9.3(c)-objectives", title: "Extent to which OH&S objectives have been achieved", group: "input", section: "OH&S Policy & Objectives Fulfillment — 9.3(c)", frequency: "Quarterly" },
 
-  { clause: "45.9.3(d)-incidents", title: "Incidents, nonconformities, corrective actions and continual improvement (trend analysis)", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
-  { clause: "45.9.3(d)-monitoring", title: "Monitoring and measurement results (leading and lagging indicators)", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
-  { clause: "45.9.3(d)-compliance", title: "Evaluation of compliance with legal requirements and other OH&S requirements", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
-  { clause: "45.9.3(d)-audits", title: "Audit results (internal OH&S audits, external/regulatory inspections)", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Bi-Annually" },
-  { clause: "45.9.3(d)-participation", title: "Consultation and participation of workers in OH&S decisions", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
-  { clause: "45.9.3(d)-risks", title: "Risks and opportunities — hazard identification results, risk register status", group: "input", section: "OH&S Performance Information — §9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-incidents", title: "Incidents, nonconformities, corrective actions and continual improvement (trend analysis)", group: "input", section: "OH&S Performance Information — 9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-monitoring", title: "Monitoring and measurement results (leading and lagging indicators)", group: "input", section: "OH&S Performance Information — 9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-compliance", title: "Evaluation of compliance with legal requirements and other OH&S requirements", group: "input", section: "OH&S Performance Information — 9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-audits", title: "Audit results (internal OH&S audits, external/regulatory inspections)", group: "input", section: "OH&S Performance Information — 9.3(d)", frequency: "Bi-Annually" },
+  { clause: "45.9.3(d)-participation", title: "Consultation and participation of workers in OH&S decisions", group: "input", section: "OH&S Performance Information — 9.3(d)", frequency: "Quarterly" },
+  { clause: "45.9.3(d)-risks", title: "Risks and opportunities — hazard identification results, risk register status", group: "input", section: "OH&S Performance Information — 9.3(d)", frequency: "Quarterly" },
 
   { clause: "45.9.3(e)-kpi-lti", title: "Lost Time Injuries (LTI) and Lost Time Injury Rate (LTIR)", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
   { clause: "45.9.3(e)-kpi-trir", title: "Total Recordable Incident Rate (TRIR) — OSHA 300 Log summary", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
@@ -229,49 +229,49 @@ const ISO_45001_AGENDA_ITEMS: AgendaTemplateItem[] = [
   { clause: "45.9.3(e)-kpi-hazards", title: "Hazard Reports Submitted and Closed (leading indicator)", group: "input", section: "OH&S KPI Dashboard", frequency: "Monthly" },
   { clause: "45.9.3(e)-kpi-inspections", title: "Safety Inspections / Workplace Assessments completed vs. scheduled", group: "input", section: "OH&S KPI Dashboard", frequency: "Quarterly" },
 
-  { clause: "45.9.3(e)-resources", title: "Adequacy of resources for maintaining an effective OH&S MS", group: "input", section: "Adequacy of Resources — §9.3(e)", frequency: "Quarterly" },
+  { clause: "45.9.3(e)-resources", title: "Adequacy of resources for maintaining an effective OH&S MS", group: "input", section: "Adequacy of Resources — 9.3(e)", frequency: "Quarterly" },
 
-  { clause: "45.9.3(f)-comms", title: "Relevant communication with interested parties — regulatory, worker concerns", group: "input", section: "Stakeholder Communications — §9.3(f)", frequency: "Quarterly" },
-  { clause: "45.9.3(f)-legal", title: "New or revised legal and regulatory OH&S requirements", group: "input", section: "Stakeholder Communications — §9.3(f)", frequency: "Quarterly" },
+  { clause: "45.9.3(f)-comms", title: "Relevant communication with interested parties — regulatory, worker concerns", group: "input", section: "Stakeholder Communications — 9.3(f)", frequency: "Quarterly" },
+  { clause: "45.9.3(f)-legal", title: "New or revised legal and regulatory OH&S requirements", group: "input", section: "Stakeholder Communications — 9.3(f)", frequency: "Quarterly" },
 
-  { clause: "45.9.3(g)", title: "Opportunities for continual improvement of OH&S performance", group: "input", section: "Opportunities for Continual Improvement — §9.3(g)", frequency: "Annually" },
+  { clause: "45.9.3(g)", title: "Opportunities for continual improvement of OH&S performance", group: "input", section: "Opportunities for Continual Improvement — 9.3(g)", frequency: "Annually" },
 
-  { clause: "45.9.3-out-a", title: "Conclusions on continuing suitability, adequacy and effectiveness of OH&S MS", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "45.9.3-out-b", title: "Continual improvement opportunities identified", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "45.9.3-out-c", title: "Any changes needed to the OH&S policy, objectives, or other OH&S MS elements", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "45.9.3-out-d", title: "Resources needed to maintain the OH&S MS", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "45.9.3-out-e", title: "Actions needed when OH&S objectives have not been achieved", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "45.9.3-out-a", title: "Conclusions on continuing suitability, adequacy and effectiveness of OH&S MS", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "45.9.3-out-b", title: "Continual improvement opportunities identified", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "45.9.3-out-c", title: "Any changes needed to the OH&S policy, objectives, or other OH&S MS elements", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "45.9.3-out-d", title: "Resources needed to maintain the OH&S MS", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "45.9.3-out-e", title: "Actions needed when OH&S objectives have not been achieved", group: "output", section: "Required Outputs — 9.3", frequency: "" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ISO 13485:2016  §5.6 Management Review Template (Medical Devices)
-// Note: ISO 13485 uses §5.6 (not §9.3) for management review
+// ISO 13485:2016  5.6 Management Review Template (Medical Devices)
+// Note: ISO 13485 uses 5.6 (not 9.3) for management review
 // ─────────────────────────────────────────────────────────────────────────────
 const ISO_13485_AGENDA_ITEMS: AgendaTemplateItem[] = [
-  { clause: "5.6.1-prev", title: "Follow-up on actions from previous management reviews (§5.6.1)", group: "input", section: "Previous Management Review — §5.6.1", frequency: "Annually" },
+  { clause: "5.6.1-prev", title: "Follow-up on actions from previous management reviews (5.6.1)", group: "input", section: "Previous Management Review — 5.6.1", frequency: "Annually" },
 
-  { clause: "5.6.2(a)-feedback", title: "Customer feedback — complaints, advisory notices, MDR/vigilance reports", group: "input", section: "Customer Feedback — §5.6.2(a)", frequency: "Quarterly" },
-  { clause: "5.6.2(a)-csat", title: "Customer satisfaction survey results and trends", group: "input", section: "Customer Feedback — §5.6.2(a)", frequency: "Annually" },
+  { clause: "5.6.2(a)-feedback", title: "Customer feedback — complaints, advisory notices, MDR/vigilance reports", group: "input", section: "Customer Feedback — 5.6.2(a)", frequency: "Quarterly" },
+  { clause: "5.6.2(a)-csat", title: "Customer satisfaction survey results and trends", group: "input", section: "Customer Feedback — 5.6.2(a)", frequency: "Annually" },
 
-  { clause: "5.6.2(b)-complaints", title: "Complaint handling — open complaints, trends, MDR reporting status", group: "input", section: "Complaint Handling — §5.6.2(b)", frequency: "Quarterly" },
+  { clause: "5.6.2(b)-complaints", title: "Complaint handling — open complaints, trends, MDR reporting status", group: "input", section: "Complaint Handling — 5.6.2(b)", frequency: "Quarterly" },
 
-  { clause: "5.6.2(c)-regulatory", title: "Reporting to regulatory authorities — MDR/vigilance filings, FDA 510(k), CE/MDD submissions", group: "input", section: "Regulatory Reporting — §5.6.2(c)", frequency: "Quarterly" },
+  { clause: "5.6.2(c)-regulatory", title: "Reporting to regulatory authorities — MDR/vigilance filings, FDA 510(k), CE/MDD submissions", group: "input", section: "Regulatory Reporting — 5.6.2(c)", frequency: "Quarterly" },
 
-  { clause: "5.6.2(d)-ia", title: "Internal audit results — findings, NCs, OFIs, closure status", group: "input", section: "Audit Results — §5.6.2(d)", frequency: "Annually" },
-  { clause: "5.6.2(d)-ea", title: "External audit results — notified body, registrar, regulatory inspections", group: "input", section: "Audit Results — §5.6.2(d)", frequency: "Annually" },
+  { clause: "5.6.2(d)-ia", title: "Internal audit results — findings, NCs, OFIs, closure status", group: "input", section: "Audit Results — 5.6.2(d)", frequency: "Annually" },
+  { clause: "5.6.2(d)-ea", title: "External audit results — notified body, registrar, regulatory inspections", group: "input", section: "Audit Results — 5.6.2(d)", frequency: "Annually" },
 
-  { clause: "5.6.2(e)-processes", title: "Monitoring and measurement of processes — process capability, control chart results", group: "input", section: "Process Monitoring & Measurement — §5.6.2(e)", frequency: "Quarterly" },
+  { clause: "5.6.2(e)-processes", title: "Monitoring and measurement of processes — process capability, control chart results", group: "input", section: "Process Monitoring & Measurement — 5.6.2(e)", frequency: "Quarterly" },
 
-  { clause: "5.6.2(f)-nc-product", title: "Nonconforming product — scope, disposition, CAPA status", group: "input", section: "Nonconforming Product — §5.6.2(f)", frequency: "Quarterly" },
+  { clause: "5.6.2(f)-nc-product", title: "Nonconforming product — scope, disposition, CAPA status", group: "input", section: "Nonconforming Product — 5.6.2(f)", frequency: "Quarterly" },
 
-  { clause: "5.6.2(g)-ca", title: "Corrective action status — open CARs, effectiveness reviews, repeat NCs", group: "input", section: "Corrective & Preventive Actions — §5.6.2(g)", frequency: "Quarterly" },
-  { clause: "5.6.2(g)-pa", title: "Preventive action status — risk-identified PAs, trend-based actions", group: "input", section: "Corrective & Preventive Actions — §5.6.2(g)", frequency: "Quarterly" },
+  { clause: "5.6.2(g)-ca", title: "Corrective action status — open CARs, effectiveness reviews, repeat NCs", group: "input", section: "Corrective & Preventive Actions — 5.6.2(g)", frequency: "Quarterly" },
+  { clause: "5.6.2(g)-pa", title: "Preventive action status — risk-identified PAs, trend-based actions", group: "input", section: "Corrective & Preventive Actions — 5.6.2(g)", frequency: "Quarterly" },
 
-  { clause: "5.6.2(h)-changes", title: "Changes that could affect the QMS — new regulations, product changes, design changes, supplier changes", group: "input", section: "Changes Affecting the QMS — §5.6.2(h)", frequency: "Quarterly" },
+  { clause: "5.6.2(h)-changes", title: "Changes that could affect the QMS — new regulations, product changes, design changes, supplier changes", group: "input", section: "Changes Affecting the QMS — 5.6.2(h)", frequency: "Quarterly" },
 
-  { clause: "5.6.2(i)-improvement", title: "Recommendations for improvement across the QMS", group: "input", section: "Recommendations for Improvement — §5.6.2(i)", frequency: "Annually" },
+  { clause: "5.6.2(i)-improvement", title: "Recommendations for improvement across the QMS", group: "input", section: "Recommendations for Improvement — 5.6.2(i)", frequency: "Annually" },
 
-  { clause: "5.6.2(j)-regulatory", title: "New or revised regulatory requirements affecting product or QMS", group: "input", section: "New/Revised Regulatory Requirements — §5.6.2(j)", frequency: "Quarterly" },
+  { clause: "5.6.2(j)-regulatory", title: "New or revised regulatory requirements affecting product or QMS", group: "input", section: "New/Revised Regulatory Requirements — 5.6.2(j)", frequency: "Quarterly" },
 
   { clause: "5.6.2-kpi-oee", title: "Process KPIs — OEE, yield, defect rate, sterilization validation status", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
   { clause: "5.6.2-kpi-complaint-rate", title: "Complaint rate (per unit sold or per procedure)", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
@@ -279,77 +279,77 @@ const ISO_13485_AGENDA_ITEMS: AgendaTemplateItem[] = [
   { clause: "5.6.2-kpi-supplier", title: "Supplier performance — quality, delivery, approved supplier list status", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
   { clause: "5.6.2-kpi-training", title: "Training compliance — personnel qualification, competency records", group: "input", section: "QMS Performance KPIs", frequency: "Quarterly" },
 
-  { clause: "5.6.3-out-a", title: "Actions to maintain suitability, adequacy and effectiveness of the QMS", group: "output", section: "Required Outputs — §5.6.3", frequency: "" },
-  { clause: "5.6.3-out-b", title: "Improvement of product to meet customer and regulatory requirements", group: "output", section: "Required Outputs — §5.6.3", frequency: "" },
-  { clause: "5.6.3-out-c", title: "Resource needs — personnel, equipment, training, infrastructure", group: "output", section: "Required Outputs — §5.6.3", frequency: "" },
+  { clause: "5.6.3-out-a", title: "Actions to maintain suitability, adequacy and effectiveness of the QMS", group: "output", section: "Required Outputs — 5.6.3", frequency: "" },
+  { clause: "5.6.3-out-b", title: "Improvement of product to meet customer and regulatory requirements", group: "output", section: "Required Outputs — 5.6.3", frequency: "" },
+  { clause: "5.6.3-out-c", title: "Resource needs — personnel, equipment, training, infrastructure", group: "output", section: "Required Outputs — 5.6.3", frequency: "" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AS9100 Rev D  §9.3 Management Review Template (Aerospace)
-// Extends ISO 9001 §9.3 with aerospace-specific inputs per §9.3.2.1
+// AS9100 Rev D  9.3 Management Review Template (Aerospace)
+// Extends ISO 9001 9.3 with aerospace-specific inputs per 9.3.2.1
 // ─────────────────────────────────────────────────────────────────────────────
 const AS9100_AGENDA_ITEMS: AgendaTemplateItem[] = [
-  { clause: "as.9.3.2(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3.2(a)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — 9.3.2(a)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2(b)-issues", title: "Changes in external/internal issues relevant to the QMS (§4.1)", group: "input", section: "External & Internal Issues — §9.3.2(b)", frequency: "Annually" },
-  { clause: "as.9.3.2(b)-parties", title: "Changes in needs and expectations of interested parties (§4.2)", group: "input", section: "External & Internal Issues — §9.3.2(b)", frequency: "Annually" },
+  { clause: "as.9.3.2(b)-issues", title: "Changes in external/internal issues relevant to the QMS (4.1)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
+  { clause: "as.9.3.2(b)-parties", title: "Changes in needs and expectations of interested parties (4.2)", group: "input", section: "External & Internal Issues — 9.3.2(b)", frequency: "Annually" },
 
-  { clause: "as.9.3.2(c-i)-scorecards", title: "Customer scorecards and satisfaction surveys (by customer)", group: "input", section: "Customer Satisfaction & Feedback — §9.3.2(c-i)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(c-i)-complaints", title: "Customer complaints — warranty claims, escapes, corrective requests", group: "input", section: "Customer Satisfaction & Feedback — §9.3.2(c-i)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(c-i)-feedback", title: "Customer feedback from surveys, visits, and program reviews", group: "input", section: "Customer Satisfaction & Feedback — §9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-i)-scorecards", title: "Customer scorecards and satisfaction surveys (by customer)", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-i)-complaints", title: "Customer complaints — warranty claims, escapes, corrective requests", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-i)-feedback", title: "Customer feedback from surveys, visits, and program reviews", group: "input", section: "Customer Satisfaction & Feedback — 9.3.2(c-i)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2(c-ii)-objectives", title: "Extent to which quality objectives have been achieved", group: "input", section: "Quality Objectives Achievement — §9.3.2(c-ii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-ii)-objectives", title: "Extent to which quality objectives have been achieved", group: "input", section: "Quality Objectives Achievement — 9.3.2(c-ii)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2(c-iii)-otd", title: "On Time Delivery (OTD) — by customer and program", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
-  { clause: "as.9.3.2(c-iii)-quality-escape", title: "Quality escapes (defects shipped to customer, PPM)", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
-  { clause: "as.9.3.2(c-iii)-scrap", title: "Scrap cost and yield trends", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
-  { clause: "as.9.3.2(c-iii)-rework", title: "Rework — hours and cost trends", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
-  { clause: "as.9.3.2(c-iii)-supplier", title: "Supplier quality performance (PPM, OTD, approved source list)", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(c-iii)-training", title: "Training completion and personnel certification status", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(c-iii)-audits-kpi", title: "Internal audit schedule compliance and findings trend", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(c-iii)-first-pass", title: "First Pass Yield (FPY) by process/product", group: "input", section: "Aerospace KPI Dashboard — §9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-otd", title: "On Time Delivery (OTD) — by customer and program", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-quality-escape", title: "Quality escapes (defects shipped to customer, PPM)", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-scrap", title: "Scrap cost and yield trends", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-rework", title: "Rework — hours and cost trends", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Monthly" },
+  { clause: "as.9.3.2(c-iii)-supplier", title: "Supplier quality performance (PPM, OTD, approved source list)", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iii)-training", title: "Training completion and personnel certification status", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iii)-audits-kpi", title: "Internal audit schedule compliance and findings trend", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iii)-first-pass", title: "First Pass Yield (FPY) by process/product", group: "input", section: "Aerospace KPI Dashboard — 9.3.2(c-iii)", frequency: "Monthly" },
 
-  { clause: "as.9.3.2(c-iv)-cars", title: "Nonconformities and corrective action status — past due CARs", group: "input", section: "Nonconformities & Corrective Actions — §9.3.2(c-iv)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(c-iv)-trends", title: "NC trend analysis — repeat nonconformances, systemic issues", group: "input", section: "Nonconformities & Corrective Actions — §9.3.2(c-iv)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iv)-cars", title: "Nonconformities and corrective action status — past due CARs", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-iv)-trends", title: "NC trend analysis — repeat nonconformances, systemic issues", group: "input", section: "Nonconformities & Corrective Actions — 9.3.2(c-iv)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2(c-v)-results", title: "Monitoring and measurement results — process capability, SPC charts", group: "input", section: "Monitoring & Measurement Results — §9.3.2(c-v)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-v)-results", title: "Monitoring and measurement results — process capability, SPC charts", group: "input", section: "Monitoring & Measurement Results — 9.3.2(c-v)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2(c-vi)-ia", title: "Internal audit results — AS9100 clause-by-clause findings", group: "input", section: "Audit Results — §9.3.2(c-vi)", frequency: "Bi-Annually" },
-  { clause: "as.9.3.2(c-vi)-ea", title: "External/Registrar audit schedule and findings status", group: "input", section: "Audit Results — §9.3.2(c-vi)", frequency: "Annually" },
-  { clause: "as.9.3.2(c-vi)-customer-audit", title: "Customer source inspections / delegated quality audits", group: "input", section: "Audit Results — §9.3.2(c-vi)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-vi)-ia", title: "Internal audit results — AS9100 clause-by-clause findings", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Bi-Annually" },
+  { clause: "as.9.3.2(c-vi)-ea", title: "External/Registrar audit schedule and findings status", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Annually" },
+  { clause: "as.9.3.2(c-vi)-customer-audit", title: "Customer source inspections / delegated quality audits", group: "input", section: "Audit Results — 9.3.2(c-vi)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2(c-vii)-1", title: "Supplier performance — scorecard summary and approved supplier list review", group: "input", section: "Supplier / External Provider Performance — §9.3.2(c-vii)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(c-vii)-2", title: "Supplier CARs and corrective action status", group: "input", section: "Supplier / External Provider Performance — §9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-vii)-1", title: "Supplier performance — scorecard summary and approved supplier list review", group: "input", section: "Supplier / External Provider Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(c-vii)-2", title: "Supplier CARs and corrective action status", group: "input", section: "Supplier / External Provider Performance — 9.3.2(c-vii)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2-risk", title: "Operational risk management — risk register status, mitigations effectiveness", group: "input", section: "Risk Management Review — AS9100 §9.3.2", frequency: "Quarterly" },
-  { clause: "as.9.3.2-safety", title: "Safety-related product/process issues and actions", group: "input", section: "Risk Management Review — AS9100 §9.3.2", frequency: "Quarterly" },
-  { clause: "as.9.3.2-config", title: "Configuration management effectiveness review", group: "input", section: "Risk Management Review — AS9100 §9.3.2", frequency: "Annually" },
+  { clause: "as.9.3.2-risk", title: "Operational risk management — risk register status, mitigations effectiveness", group: "input", section: "Risk Management Review — AS9100 9.3.2", frequency: "Quarterly" },
+  { clause: "as.9.3.2-safety", title: "Safety-related product/process issues and actions", group: "input", section: "Risk Management Review — AS9100 9.3.2", frequency: "Quarterly" },
+  { clause: "as.9.3.2-config", title: "Configuration management effectiveness review", group: "input", section: "Risk Management Review — AS9100 9.3.2", frequency: "Annually" },
 
-  { clause: "as.9.3.2(d)-1", title: "Talent — personnel, certifications, skills gaps", group: "input", section: "Adequacy of Resources — §9.3.2(d)", frequency: "Quarterly" },
-  { clause: "as.9.3.2(d)-2", title: "Infrastructure, tooling, special process equipment adequacy", group: "input", section: "Adequacy of Resources — §9.3.2(d)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(d)-1", title: "Talent — personnel, certifications, skills gaps", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Quarterly" },
+  { clause: "as.9.3.2(d)-2", title: "Infrastructure, tooling, special process equipment adequacy", group: "input", section: "Adequacy of Resources — 9.3.2(d)", frequency: "Quarterly" },
 
-  { clause: "as.9.3.2(e)", title: "Effectiveness of actions taken to address risks and opportunities", group: "input", section: "Risks & Opportunities Effectiveness — §9.3.2(e)", frequency: "Annually" },
+  { clause: "as.9.3.2(e)", title: "Effectiveness of actions taken to address risks and opportunities", group: "input", section: "Risks & Opportunities Effectiveness — 9.3.2(e)", frequency: "Annually" },
 
-  { clause: "as.9.3.2(f)", title: "Opportunities for continual improvement across the QMS", group: "input", section: "Opportunities for Improvement — §9.3.2(f)", frequency: "Annually" },
+  { clause: "as.9.3.2(f)", title: "Opportunities for continual improvement across the QMS", group: "input", section: "Opportunities for Improvement — 9.3.2(f)", frequency: "Annually" },
 
-  { clause: "as.9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output", section: "Required Outputs — §9.3.3", frequency: "" },
-  { clause: "as.9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output", section: "Required Outputs — §9.3.3", frequency: "" },
-  { clause: "as.9.3.3(c)", title: "Decisions and actions: Resource needs identified", group: "output", section: "Required Outputs — §9.3.3", frequency: "" },
+  { clause: "as.9.3.3(a)", title: "Decisions and actions: Opportunities for improvement", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "as.9.3.3(b)", title: "Decisions and actions: Any need for changes to the QMS", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
+  { clause: "as.9.3.3(c)", title: "Decisions and actions: Resource needs identified", group: "output", section: "Required Outputs — 9.3.3", frequency: "" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ISO 27001:2022  §9.3 Management Review Template (Information Security)
+// ISO 27001:2022  9.3 Management Review Template (Information Security)
 // ─────────────────────────────────────────────────────────────────────────────
 const ISO_27001_AGENDA_ITEMS: AgendaTemplateItem[] = [
-  { clause: "27.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — §9.3(a)", frequency: "Annually" },
+  { clause: "27.9.3(a)", title: "Follow-up on actions from previous management reviews", group: "input", section: "Previous Management Review — 9.3(a)", frequency: "Annually" },
 
-  { clause: "27.9.3(b)-issues", title: "Changes in external and internal issues relevant to the ISMS (§4.1)", group: "input", section: "Changes in ISMS Context — §9.3(b)", frequency: "Annually" },
-  { clause: "27.9.3(b)-parties", title: "Changes in needs and expectations of interested parties relevant to the ISMS (§4.2)", group: "input", section: "Changes in ISMS Context — §9.3(b)", frequency: "Annually" },
+  { clause: "27.9.3(b)-issues", title: "Changes in external and internal issues relevant to the ISMS (4.1)", group: "input", section: "Changes in ISMS Context — 9.3(b)", frequency: "Annually" },
+  { clause: "27.9.3(b)-parties", title: "Changes in needs and expectations of interested parties relevant to the ISMS (4.2)", group: "input", section: "Changes in ISMS Context — 9.3(b)", frequency: "Annually" },
 
-  { clause: "27.9.3(c)-ncs", title: "Nonconformities and corrective actions (security incidents, deviations from SoA)", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Quarterly" },
-  { clause: "27.9.3(c)-monitoring", title: "Monitoring and measurement results — security metrics, KPIs, control effectiveness", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Quarterly" },
-  { clause: "27.9.3(c)-audits", title: "Internal audit results (ISMS controls, Annex A coverage)", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Annually" },
-  { clause: "27.9.3(c)-objectives", title: "Fulfillment of information security objectives", group: "input", section: "ISMS Performance Feedback — §9.3(c)", frequency: "Quarterly" },
+  { clause: "27.9.3(c)-ncs", title: "Nonconformities and corrective actions (security incidents, deviations from SoA)", group: "input", section: "ISMS Performance Feedback — 9.3(c)", frequency: "Quarterly" },
+  { clause: "27.9.3(c)-monitoring", title: "Monitoring and measurement results — security metrics, KPIs, control effectiveness", group: "input", section: "ISMS Performance Feedback — 9.3(c)", frequency: "Quarterly" },
+  { clause: "27.9.3(c)-audits", title: "Internal audit results (ISMS controls, Annex A coverage)", group: "input", section: "ISMS Performance Feedback — 9.3(c)", frequency: "Annually" },
+  { clause: "27.9.3(c)-objectives", title: "Fulfillment of information security objectives", group: "input", section: "ISMS Performance Feedback — 9.3(c)", frequency: "Quarterly" },
 
   { clause: "27.9.3-kpi-incidents", title: "Security Incidents — count, severity, MTTR (Mean Time to Resolve)", group: "input", section: "Information Security KPI Dashboard", frequency: "Monthly" },
   { clause: "27.9.3-kpi-vulnerabilities", title: "Vulnerability Management — open critical/high vulnerabilities, patch rate", group: "input", section: "Information Security KPI Dashboard", frequency: "Monthly" },
@@ -359,19 +359,19 @@ const ISO_27001_AGENDA_ITEMS: AgendaTemplateItem[] = [
   { clause: "27.9.3-kpi-backups", title: "Backup success rates and recovery test results (BCP/DRP)", group: "input", section: "Information Security KPI Dashboard", frequency: "Quarterly" },
   { clause: "27.9.3-kpi-compliance", title: "Compliance obligations — GDPR, HIPAA, SOC 2, contractual requirements", group: "input", section: "Information Security KPI Dashboard", frequency: "Quarterly" },
 
-  { clause: "27.9.3(d)-interested-parties", title: "Feedback from interested parties — customers, regulators, auditors", group: "input", section: "Feedback from Interested Parties — §9.3(d)", frequency: "Quarterly" },
+  { clause: "27.9.3(d)-interested-parties", title: "Feedback from interested parties — customers, regulators, auditors", group: "input", section: "Feedback from Interested Parties — 9.3(d)", frequency: "Quarterly" },
 
-  { clause: "27.9.3(e)-risk-assessment", title: "Results of risk assessment — updated risk register, residual risk acceptance", group: "input", section: "Risk Assessment & Treatment — §9.3(e)", frequency: "Annually" },
-  { clause: "27.9.3(e)-risk-treatment", title: "Status of risk treatment plan — control implementation progress, SoA review", group: "input", section: "Risk Assessment & Treatment — §9.3(e)", frequency: "Annually" },
-  { clause: "27.9.3(e)-third-party", title: "Third-party / supplier risk — vendor security assessments, contracts", group: "input", section: "Risk Assessment & Treatment — §9.3(e)", frequency: "Annually" },
+  { clause: "27.9.3(e)-risk-assessment", title: "Results of risk assessment — updated risk register, residual risk acceptance", group: "input", section: "Risk Assessment & Treatment — 9.3(e)", frequency: "Annually" },
+  { clause: "27.9.3(e)-risk-treatment", title: "Status of risk treatment plan — control implementation progress, SoA review", group: "input", section: "Risk Assessment & Treatment — 9.3(e)", frequency: "Annually" },
+  { clause: "27.9.3(e)-third-party", title: "Third-party / supplier risk — vendor security assessments, contracts", group: "input", section: "Risk Assessment & Treatment — 9.3(e)", frequency: "Annually" },
 
   { clause: "27.9.3-resources", title: "Adequacy of resources for maintaining the ISMS", group: "input", section: "Adequacy of Resources", frequency: "Annually" },
 
-  { clause: "27.9.3(f)", title: "Opportunities for continual improvement of the ISMS", group: "input", section: "Opportunities for Continual Improvement — §9.3(f)", frequency: "Annually" },
+  { clause: "27.9.3(f)", title: "Opportunities for continual improvement of the ISMS", group: "input", section: "Opportunities for Continual Improvement — 9.3(f)", frequency: "Annually" },
 
-  { clause: "27.9.3-out-a", title: "Decisions related to continual improvement opportunities", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "27.9.3-out-b", title: "Any need for changes to the ISMS — policy, scope, controls, SoA", group: "output", section: "Required Outputs — §9.3", frequency: "" },
-  { clause: "27.9.3-out-c", title: "Resource needs — personnel, technology, budget for ISMS improvements", group: "output", section: "Required Outputs — §9.3", frequency: "" },
+  { clause: "27.9.3-out-a", title: "Decisions related to continual improvement opportunities", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "27.9.3-out-b", title: "Any need for changes to the ISMS — policy, scope, controls, SoA", group: "output", section: "Required Outputs — 9.3", frequency: "" },
+  { clause: "27.9.3-out-c", title: "Resource needs — personnel, technology, budget for ISMS improvements", group: "output", section: "Required Outputs — 9.3", frequency: "" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -401,8 +401,8 @@ function getStandardLabel(standard?: string | null): string {
 
 function getManagementClause(standard?: string | null): string {
   const s = (standard ?? "").toUpperCase().replace(/[-:\s]/g, "");
-  if (s.includes("13485")) return "§5.6";
-  return "§9.3";
+  if (s.includes("13485")) return "5.6";
+  return "9.3";
 }
 
 // ─── AgendaItem (saved per-review state) ─────────────────────────────────────
@@ -1040,7 +1040,7 @@ function ReviewDetail({
       </Card>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          AGENDA CHECKLIST — FIRST: All required inputs per standard §9.3
+          AGENDA CHECKLIST — FIRST: All required inputs per standard 9.3
           ══════════════════════════════════════════════════════════════════════ */}
       <Card>
         <CardHeader className="pb-3">
@@ -1299,7 +1299,7 @@ function ReviewDetail({
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               Action Register
-              <span className="text-xs font-normal text-muted-foreground font-mono">{clause.replace("§", "§")}3</span>
+              <span className="text-xs font-normal text-muted-foreground font-mono">{clause.replace("", "")}3</span>
               {actions.filter(a => a.status !== "closed").length > 0 && (
                 <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600">
                   {actions.filter(a => a.status !== "closed").length} open
@@ -1436,7 +1436,7 @@ export default function ManagementReviewModule({ isoProjectId, standard, onGoToM
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: newMsgs,
-          systemPrompt: `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You specialize in ${standardLabel} ${clause} Management Review. Help organizations conduct effective management reviews that meet ISO requirements, covering all required inputs and expected outputs.${standard?.toUpperCase().includes("IATF") ? " For IATF 16949, emphasize monthly frequency requirements (§9.3.2.1), FMEA review, LPA audit results, COPQ, scrap cost, on-time PPAP, and manufacturing-specific KPIs." : ""}${standard?.toUpperCase().includes("13485") ? " For ISO 13485, emphasize §5.6 inputs including customer feedback, MDR/vigilance reporting, regulatory authority communications, and CAPA status." : ""}${standard?.toUpperCase().includes("45001") ? " For ISO 45001, emphasize incident trends, leading/lagging safety indicators, legal compliance evaluation, and worker consultation/participation." : ""}${standard?.toUpperCase().includes("14001") ? " For ISO 14001, emphasize significant environmental aspects, compliance obligations, environmental performance data, and stakeholder communications." : ""}${standard?.toUpperCase().includes("27001") ? " For ISO 27001, emphasize risk assessment results, risk treatment plan status, security incident trends, and Statement of Applicability review." : ""} Provide practical, clause-referenced guidance.`,
+          systemPrompt: `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You specialize in ${standardLabel} ${clause} Management Review. Help organizations conduct effective management reviews that meet ISO requirements, covering all required inputs and expected outputs.${standard?.toUpperCase().includes("IATF") ? " For IATF 16949, emphasize monthly frequency requirements (9.3.2.1), FMEA review, LPA audit results, COPQ, scrap cost, on-time PPAP, and manufacturing-specific KPIs." : ""}${standard?.toUpperCase().includes("13485") ? " For ISO 13485, emphasize 5.6 inputs including customer feedback, MDR/vigilance reporting, regulatory authority communications, and CAPA status." : ""}${standard?.toUpperCase().includes("45001") ? " For ISO 45001, emphasize incident trends, leading/lagging safety indicators, legal compliance evaluation, and worker consultation/participation." : ""}${standard?.toUpperCase().includes("14001") ? " For ISO 14001, emphasize significant environmental aspects, compliance obligations, environmental performance data, and stakeholder communications." : ""}${standard?.toUpperCase().includes("27001") ? " For ISO 27001, emphasize risk assessment results, risk treatment plan status, security incident trends, and Statement of Applicability review." : ""} Provide practical, clause-referenced guidance.`,
         }),
       });
       const data = await resp.json();
@@ -1479,8 +1479,8 @@ export default function ManagementReviewModule({ isoProjectId, standard, onGoToM
       <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
         <Badge variant="outline" className="text-xs border-accent text-accent">{standardLabel}</Badge>
         <span>{template.filter(i => i.group === "input").length} required inputs · {template.filter(i => i.group === "output").length} required outputs · {template.length} total agenda items</span>
-        {standard?.toUpperCase().includes("IATF") && <Badge variant="outline" className="text-xs border-blue-400 text-blue-600">Monthly frequency — IATF §9.3.2.1</Badge>}
-        {standard?.toUpperCase().includes("13485") && <Badge variant="outline" className="text-xs border-purple-400 text-purple-600">§5.6 — Medical Device QMS</Badge>}
+        {standard?.toUpperCase().includes("IATF") && <Badge variant="outline" className="text-xs border-blue-400 text-blue-600">Monthly frequency — IATF 9.3.2.1</Badge>}
+        {standard?.toUpperCase().includes("13485") && <Badge variant="outline" className="text-xs border-purple-400 text-purple-600">5.6 — Medical Device QMS</Badge>}
       </div>
 
       {/* KPI summary */}
@@ -1607,8 +1607,8 @@ export default function ManagementReviewModule({ isoProjectId, standard, onGoToM
                 <ul className="space-y-1 text-xs">
                   <li>• What are all the required inputs for a management review?</li>
                   <li>• What outputs must be documented and retained as records?</li>
-                  {standard?.toUpperCase().includes("IATF") && <><li>• What does IATF 16949 §9.3.2.1 require beyond ISO 9001?</li><li>• How should LPA and FMEA results be presented?</li></>}
-                  {standard?.toUpperCase().includes("13485") && <><li>• What regulatory reporting must be reviewed in §5.6?</li><li>• How should complaint and MDR data be presented?</li></>}
+                  {standard?.toUpperCase().includes("IATF") && <><li>• What does IATF 16949 9.3.2.1 require beyond ISO 9001?</li><li>• How should LPA and FMEA results be presented?</li></>}
+                  {standard?.toUpperCase().includes("13485") && <><li>• What regulatory reporting must be reviewed in 5.6?</li><li>• How should complaint and MDR data be presented?</li></>}
                   {standard?.toUpperCase().includes("45001") && <><li>• How should incident data and TRIR be presented?</li><li>• What worker consultation evidence is needed?</li></>}
                   {standard?.toUpperCase().includes("27001") && <><li>• How should the risk treatment plan status be reviewed?</li><li>• What security metrics should be included?</li></>}
                   {!standard || (!standard.toUpperCase().includes("IATF") && !standard.toUpperCase().includes("13485") && !standard.toUpperCase().includes("45001") && !standard.toUpperCase().includes("27001")) && <><li>• How often should management reviews be conducted?</li><li>• What do auditors look for during management review audits?</li></>}

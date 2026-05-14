@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────────────────────────
  * Compliance Question Bank
- * ISO 14001 §6.1.3  — Applicability screening (does this requirement apply?)
- * ISO 14001 §9.1.2  — Compliance evaluation (are we meeting this requirement?)
+ * ISO 14001 6.1.3  — Applicability screening (does this requirement apply?)
+ * ISO 14001 9.1.2  — Compliance evaluation (are we meeting this requirement?)
  * ───────────────────────────────────────────────────────────────────────────── */
 
 export type ApplicabilityQuestion = {

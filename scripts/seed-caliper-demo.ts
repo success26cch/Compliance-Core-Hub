@@ -134,7 +134,7 @@ async function main() {
     asFoundReading: "25.001 mm at 25mm checkpoint — no adjustment needed",
     asLeftReading: "25.001 mm — as-found = as-left, no adjustment made",
     labAccredited: false, // internal calibration
-    // IATF §7.1.5.2.1
+    // IATF 7.1.5.2.1
     softwareVerified: false,
     // New JSON fields
     preCalibrationChecks,

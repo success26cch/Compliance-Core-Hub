@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────────────────────
  * ComplianceEvaluationWizard
- * ISO 14001 §9.1.2 — "Are we actually COMPLIANT with this requirement?"
+ * ISO 14001 9.1.2 — "Are we actually COMPLIANT with this requirement?"
  * Triggered from an expanded obligation row in the Compliance Register.
  * On completion: suggests a status and offers to create an evaluation log entry.
  * ───────────────────────────────────────────────────────────────────────────── */
@@ -38,21 +38,21 @@ const STATUS_CONFIG = {
     icon: CheckCircle2,
     color: "text-emerald-600 dark:text-emerald-400",
     bg: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/40",
-    advice: "All assessment questions were answered affirmatively. Your facility appears to be meeting this compliance obligation. We recommend accepting this result and logging it as a formal §9.1.2 evaluation entry to create your audit trail.",
+    advice: "All assessment questions were answered affirmatively. Your facility appears to be meeting this compliance obligation. We recommend accepting this result and logging it as a formal 9.1.2 evaluation entry to create your audit trail.",
   },
   non_compliant: {
     label: "Non-Compliant",
     icon: XCircle,
     color: "text-red-600 dark:text-red-400",
     bg: "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800/40",
-    advice: "One or more compliance gaps were identified. This requirement should be flagged as Non-Compliant. Log this as a §9.1.2 evaluation entry and initiate a Corrective Action to address the identified gaps.",
+    advice: "One or more compliance gaps were identified. This requirement should be flagged as Non-Compliant. Log this as a 9.1.2 evaluation entry and initiate a Corrective Action to address the identified gaps.",
   },
   under_review: {
     label: "Under Review",
     icon: HelpCircle,
     color: "text-amber-600 dark:text-amber-400",
     bg: "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/40",
-    advice: "Some answers were uncertain. Set the status to Under Review and assign a responsible person to gather the missing information. Log this as a §9.1.2 evaluation entry to document that an evaluation was initiated.",
+    advice: "Some answers were uncertain. Set the status to Under Review and assign a responsible person to gather the missing information. Log this as a 9.1.2 evaluation entry to document that an evaluation was initiated.",
   },
 };
 
@@ -165,11 +165,11 @@ export default function ComplianceEvaluationWizard({ open, onOpenChange, obligat
               <ClipboardCheck className="w-5 h-5 text-accent" />
               <DialogTitle className="text-base font-bold">Compliance Evaluation Wizard</DialogTitle>
               <Badge className="bg-accent/10 text-accent border-accent/30 text-xs border">
-                ISO 14001 §9.1.2
+                ISO 14001 9.1.2
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Under §9.1.2, your organization must <strong>evaluate compliance with legal and other requirements on a periodic basis and maintain evaluation records.</strong> This wizard walks you through a structured self-assessment to determine your compliance status and generate an evaluation log entry.
+              Under 9.1.2, your organization must <strong>evaluate compliance with legal and other requirements on a periodic basis and maintain evaluation records.</strong> This wizard walks you through a structured self-assessment to determine your compliance status and generate an evaluation log entry.
             </p>
           </DialogHeader>
 
@@ -288,10 +288,10 @@ export default function ComplianceEvaluationWizard({ open, onOpenChange, obligat
                     onChange={e => setCreateEval(e.target.checked)}
                     className="accent-accent w-4 h-4"
                   />
-                  <span className="text-sm text-primary">Create a §9.1.2 Evaluation Log entry with these responses as findings</span>
+                  <span className="text-sm text-primary">Create a 9.1.2 Evaluation Log entry with these responses as findings</span>
                 </label>
                 <p className="text-xs text-muted-foreground italic">
-                  ISO 14001 §9.1.2 requires that you retain documented information as evidence of the evaluation results.
+                  ISO 14001 9.1.2 requires that you retain documented information as evidence of the evaluation results.
                 </p>
               </div>
 

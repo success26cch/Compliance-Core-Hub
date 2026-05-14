@@ -217,7 +217,7 @@ async function main() {
       auditorName: "Director of Quality, J. Okonkwo", shift: "Day",
       auditItems: makeItems("L3"),
       conformingCount: 20, nonconformingCount: 0, naCount: 0, result: "pass",
-      overallNotes: "Monthly L3 lab audit. Lab meets all IATF §7.1.5.2 requirements for internal calibration laboratory.",
+      overallNotes: "Monthly L3 lab audit. Lab meets all IATF 7.1.5.2 requirements for internal calibration laboratory.",
       immediateActions: "", escalated: false, escalatedTo: "",
     },
 

@@ -5,8 +5,8 @@
  * CCI Chemical is a brake fluid (DOT 3/4/5.1) and coolant (EG/PG-based)
  * manufacturer in Dayton, OH, certified to IATF 16949.
  *
- * Covers IATF 16949 §7.1.5 (Monitoring & Measurement Resources)
- * and §7.1.5.3 (MSA / Out-of-Tolerance) requirements.
+ * Covers IATF 16949 7.1.5 (Monitoring & Measurement Resources)
+ * and 7.1.5.3 (MSA / Out-of-Tolerance) requirements.
  *
  * Project ID : 4   (CCI Chemical IATF 16949 QMS)
  * User ID    : 54320068  (Ebeni Villarreal)
@@ -40,7 +40,7 @@ Applies to: CCI-GAG-005 — Conductivity Meter — Inline (Manufacturer: Hach, M
 - NIST SRM 3190 (Conductivity Standard, 1413 µS/cm)
 - NIST SRM 917d (KCl Solution, 84 µS/cm)
 - ISO 10012:2003 — Measurement management systems
-- IATF 16949:2016 §7.1.5 — Monitoring and measuring resources
+- IATF 16949:2016 7.1.5 — Monitoring and measuring resources
 - ASTM D5391 — Conductivity of Water Measurement
 
 ## 4. Responsibility
@@ -847,7 +847,7 @@ function buildRecords(equipIds: number[]): Array<{
           calibrationDate: daysFromNow(-211),
           performedBy: "Precision Calibration Services",
           certNumber: "PCS-2024-BPT-0778",
-          standardsReferenced: ["FMVSS 116 §571.116", "SAE J1703", "ASTM D1120"],
+          standardsReferenced: ["FMVSS 116 571.116", "SAE J1703", "ASTM D1120"],
           result: "pass",
           outOfTolerance: false,
           nextDueDate: daysFromNow(154),
@@ -1063,8 +1063,8 @@ async function main() {
     }
   }
 
-  // ── IATF §7.1.5.3.1 Internal Lab Scope ──────────────────────────────────
-  console.log("\n  ── Internal Lab Scope (§7.1.5.3.1) ─────────────────");
+  // ── IATF 7.1.5.3.1 Internal Lab Scope ──────────────────────────────────
+  console.log("\n  ── Internal Lab Scope (7.1.5.3.1) ─────────────────");
   await db.delete(calibrationLabScope).where(eq(calibrationLabScope.userId, USER_ID));
   await db.insert(calibrationLabScope).values({
     userId: USER_ID,
@@ -1073,7 +1073,7 @@ async function main() {
     labDocumentNumber: "LAB-SCOPE-001",
     labLocation: "Building A, QC Laboratory — 4420 Industrial Pkwy, Dayton, OH 45414",
     labManager: "Ebeni Villarreal, Quality Engineer",
-    qualitySystemStatement: "This Internal Laboratory Scope defines the scope of calibration and testing activities performed by CCI Chemical, Inc. in accordance with IATF 16949:2016 §7.1.5.3.1. The laboratory is responsible for all in-process quality control measurements, inline calibration of designated gages, and measurement system validation for brake fluid (DOT 3, DOT 4, DOT 5.1) and automotive coolant (EG/PG-based) product lines. All laboratory activities are conducted in accordance with this scope document, the CCI Chemical Quality Manual (QM-001), and applicable customer-specific requirements.",
+    qualitySystemStatement: "This Internal Laboratory Scope defines the scope of calibration and testing activities performed by CCI Chemical, Inc. in accordance with IATF 16949:2016 7.1.5.3.1. The laboratory is responsible for all in-process quality control measurements, inline calibration of designated gages, and measurement system validation for brake fluid (DOT 3, DOT 4, DOT 5.1) and automotive coolant (EG/PG-based) product lines. All laboratory activities are conducted in accordance with this scope document, the CCI Chemical Quality Manual (QM-001), and applicable customer-specific requirements.",
     revision: "A",
     effectiveDate: "2025-01-15",
     nextReviewDate: "2026-01-15",
@@ -1093,7 +1093,7 @@ async function main() {
       additionalControls: "Electromagnetic interference: pH meters and conductivity meters must be kept ≥ 50 cm from transformers, motors, or high-current equipment. Chemicals: brake fluid and coolant samples must be sealed when not in use. All reference standards stored per manufacturer SDS at 4–25°C.",
     },
     customerRequirements: [
-      { id: "csr-1", customer: "General Motors (GM)", requirement: "All measurement systems referenced in the GM PPAP Control Plan must have documented MSA studies (Gage R&R ≤ 30% for critical characteristics). PPAP documentation must include measurement system validation results. pH, conductivity, and concentration measurements for GM-approved brake fluid and coolant programs require documented calibration traceability to NIST.", reference: "GM Supplier Requirements Manual (GSDB) — Rev. 9, Section 4.2; GM CSR Supplement to IATF 16949 §7.1.5", applicableTo: "All in-process and final inspection measurement systems for GM-approved product lines (DOT 3, DOT 4 brake fluids; DexCool® compatible coolants)" },
+      { id: "csr-1", customer: "General Motors (GM)", requirement: "All measurement systems referenced in the GM PPAP Control Plan must have documented MSA studies (Gage R&R ≤ 30% for critical characteristics). PPAP documentation must include measurement system validation results. pH, conductivity, and concentration measurements for GM-approved brake fluid and coolant programs require documented calibration traceability to NIST.", reference: "GM Supplier Requirements Manual (GSDB) — Rev. 9, Section 4.2; GM CSR Supplement to IATF 16949 7.1.5", applicableTo: "All in-process and final inspection measurement systems for GM-approved product lines (DOT 3, DOT 4 brake fluids; DexCool® compatible coolants)" },
       { id: "csr-2", customer: "Ford Motor Company", requirement: "Ford Q1 Program: Measurement systems must be validated per AIAG MSA Reference Manual (4th edition). Calibration certificates for all reference standards must be retained and traceable to NIST or international equivalents. Ford CSR requires that any OOT finding be reported to Ford SQE within 24 hours if product shipped to Ford was potentially affected.", reference: "Ford Q1 Manufacturing Site Assessment; Ford CSR for IATF 16949 — Section 7.1.5; Ford PPAP Requirements Manual", applicableTo: "All measurement systems for Ford-directed product programs; OOT notification applies to products in Ford's current model year supply chain" },
       { id: "csr-3", customer: "Stellantis (formerly FCA)", requirement: "Stellantis CSR requires use of AIAG MSA 4th Ed. for all new measurement systems. Calibration recall system must generate automatic notifications ≥ 30 days before calibration due date. Lab scope document must be reviewed annually and records of review retained.", reference: "Stellantis Supplier Quality Requirements (SQ00010); Stellantis CSR for IATF 16949", applicableTo: "Stellantis-directed product programs; DOT 3/4 brake fluid and engine coolant supply" },
       { id: "csr-4", customer: "AIAG / VDA FMEA (Industry Standard)", requirement: "Product and Process FMEA must reference measurement system adequacy as a detection control effectiveness factor. Control Plans must identify measurement method, sample frequency, control method, and reaction plan for each characteristic. Measurement systems cited in Control Plans must have corresponding entries in this Lab Scope.", reference: "AIAG-VDA FMEA Handbook (1st Ed., 2019); AIAG APQP & Control Plan Reference Manual (2nd Ed.)", applicableTo: "All product characteristics in the FMEA and Control Plan for IATF 16949 certified programs" },

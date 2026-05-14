@@ -2013,7 +2013,7 @@ Generate a complete, professional CAPA root cause analysis. Return ONLY valid JS
     } catch (e) { res.status(500).json({ message: "Failed" }); }
   });
 
-  // ─── DESIGN & DEVELOPMENT §8.3 ───────────────────────────────────────────────
+  // ─── DESIGN & DEVELOPMENT 8.3 ───────────────────────────────────────────────
   app.get("/api/apqp-projects/:id/design-dev", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const projectId = parseInt(req.params.id);
@@ -6575,7 +6575,7 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     }
   });
 
-  // ─── IATF §9.2.2.3 — Product Audits ─────────────────────────────────────────
+  // ─── IATF 9.2.2.3 — Product Audits ─────────────────────────────────────────
   app.get("/api/iatf-product-audits", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
@@ -6618,7 +6618,7 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (error: any) { res.status(500).json({ message: error.message }); }
   });
 
-  // ─── IATF §9.2.2.4 — Manufacturing Process Audits ───────────────────────────
+  // ─── IATF 9.2.2.4 — Manufacturing Process Audits ───────────────────────────
   app.get("/api/iatf-mfg-process-audits", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
@@ -6661,7 +6661,7 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (error: any) { res.status(500).json({ message: error.message }); }
   });
 
-  // ─── IATF Audit Schedule (§9.2.2.3 & §9.2.2.4) ──────────────────────────────
+  // ─── IATF Audit Schedule (9.2.2.3 & 9.2.2.4) ──────────────────────────────
   app.get("/api/iatf-audit-schedule", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
@@ -6934,7 +6934,7 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     }
   });
 
-  // ─── §7.2 Competency Requirements ───────────────────────────────────────────
+  // ─── 7.2 Competency Requirements ───────────────────────────────────────────
   app.get("/api/competency-requirements", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
@@ -6977,7 +6977,7 @@ Evaluate whether this document satisfies the requirements of ${doc.isoClause} un
     } catch (error: any) { res.status(500).json({ message: error.message }); }
   });
 
-  // ─── §7.2 Employee Competency Records ────────────────────────────────────────
+  // ─── 7.2 Employee Competency Records ────────────────────────────────────────
   app.get("/api/employee-competency-records", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
@@ -10245,16 +10245,16 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     const d = req.body;
     const oot = d.result === "fail" || d.outOfTolerance === true;
 
-    // IATF §7.1.5.3: if OOT and project is IATF, require OOT assessment in same request
+    // IATF 7.1.5.3: if OOT and project is IATF, require OOT assessment in same request
     if (oot && d.isoProjectId) {
       const project = await storage.getIsoProjectById(Number(d.isoProjectId));
       if (project && /iatf\s*16949/i.test(project.standard ?? "")) {
         const ootData = d.ootAssessment as Record<string, string> | undefined;
         if (!ootData?.assessedBy?.trim()) {
-          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'assessedBy' in ootAssessment" });
+          return res.status(422).json({ message: "IATF 7.1.5.3: OOT record requires 'assessedBy' in ootAssessment" });
         }
         if (!ootData?.disposition?.trim()) {
-          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'disposition' in ootAssessment" });
+          return res.status(422).json({ message: "IATF 7.1.5.3: OOT record requires 'disposition' in ootAssessment" });
         }
       }
     }
@@ -10335,16 +10335,16 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     const d = req.body;
     const oot = d.result === "fail" || d.outOfTolerance === true;
 
-    // IATF §7.1.5.3: mirror POST validation for edits — require assessedBy + disposition
+    // IATF 7.1.5.3: mirror POST validation for edits — require assessedBy + disposition
     if (oot && d.isoProjectId) {
       const project = await storage.getIsoProjectById(Number(d.isoProjectId));
       if (project && /iatf\s*16949/i.test(project.standard ?? "")) {
         const ootData = d.ootAssessment as Record<string, string> | undefined;
         if (!ootData?.assessedBy?.trim()) {
-          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'assessedBy' in ootAssessment" });
+          return res.status(422).json({ message: "IATF 7.1.5.3: OOT record requires 'assessedBy' in ootAssessment" });
         }
         if (!ootData?.disposition?.trim()) {
-          return res.status(422).json({ message: "IATF §7.1.5.3: OOT record requires 'disposition' in ootAssessment" });
+          return res.status(422).json({ message: "IATF 7.1.5.3: OOT record requires 'disposition' in ootAssessment" });
         }
       }
     }
@@ -10575,7 +10575,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
           <tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Calibration Type</td><td style="padding:8px;">${eq.cal_type === "internal" ? "Internal" : "External"}</td></tr>
           ${eq.calibration_lab ? `<tr><td style="padding:8px;font-weight:bold;background:#f8fafc;">Lab</td><td style="padding:8px;">${eq.calibration_lab}</td></tr>` : ""}
         </table>
-        <p style="color:#6b7280;font-size:13px;">Please schedule calibration per your quality system procedures (ISO 9001 §7.1.5 / IATF 16949 §7.1.5.3).</p>
+        <p style="color:#6b7280;font-size:13px;">Please schedule calibration per your quality system procedures (ISO 9001 7.1.5 / IATF 16949 7.1.5.3).</p>
       `;
 
       const recipients: string[] = [];
@@ -10677,7 +10677,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     });
   });
 
-  // ─── Internal Lab Scope (IATF §7.1.5.3.1) ───────────────────────────────────
+  // ─── Internal Lab Scope (IATF 7.1.5.3.1) ───────────────────────────────────
   app.get("/api/calibration/lab-scope", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     const isoProjectId = req.query.isoProjectId ? Number(req.query.isoProjectId) : null;
@@ -10693,7 +10693,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.json(scope);
   });
 
-  // ─── MSA Studies (IATF 16949 §7.1.5.2) ──────────────────────────────────────
+  // ─── MSA Studies (IATF 16949 7.1.5.2) ──────────────────────────────────────
 
   app.get("/api/calibration/msa-studies", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
@@ -10856,7 +10856,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
     res.json({ success: true });
   });
 
-  // ─── ISO Compliance Obligations (§6.1.3) ──────────────────────────────────────
+  // ─── ISO Compliance Obligations (6.1.3) ──────────────────────────────────────
   app.get("/api/iso-compliance-obligations", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
@@ -10933,7 +10933,7 @@ Use plain text — no Markdown bullets with **, no #, no bold. Use "- " for all 
 
     const systemPrompt = `You are Corey, a Senior Occupational Health & Safety and Environmental Compliance Expert with deep expertise in US federal and state-level environmental, health, and safety regulations for manufacturing and industrial facilities.
 
-A facility manager needs your expert guidance on identifying what legal and other environmental/health & safety compliance requirements likely apply to their facility. This output will seed their ISO 14001 §6.1.3 Compliance Obligations Register.
+A facility manager needs your expert guidance on identifying what legal and other environmental/health & safety compliance requirements likely apply to their facility. This output will seed their ISO 14001 6.1.3 Compliance Obligations Register.
 
 FACILITY JURISDICTION & PROFILE:
 ${jurisdictionDesc}
@@ -11017,7 +11017,7 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
-  // ─── ISO Compliance Evaluations (§9.1.2) ──────────────────────────────────────
+  // ─── ISO Compliance Evaluations (9.1.2) ──────────────────────────────────────
   app.get("/api/iso-compliance-evaluations", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
@@ -11066,7 +11066,7 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
-  // ─── Integrated Compliance Calendar (§6.1.3 + §9.1.2 — ISO 14001 & 45001 + OSHA) ──────
+  // ─── Integrated Compliance Calendar (6.1.3 + 9.1.2 — ISO 14001 & 45001 + OSHA) ──────
   app.get("/api/compliance-calendar", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
     const userId = (req.user as any).claims.sub;
@@ -11216,8 +11216,8 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
       const urgency = daysUntil < 0 ? "OVERDUE" : daysUntil <= 14 ? "URGENT" : daysUntil <= 30 ? "DUE SOON" : "UPCOMING";
 
       const catLabel: Record<string, string> = {
-        env_legal: "Environmental Legal Obligation (ISO 14001 §6.1.3/§9.1.2)",
-        ohs_legal: "OH&S Legal Obligation (ISO 45001 §6.1.3/§9.1.2)",
+        env_legal: "Environmental Legal Obligation (ISO 14001 6.1.3/9.1.2)",
+        ohs_legal: "OH&S Legal Obligation (ISO 45001 6.1.3/9.1.2)",
         osha: "OSHA Regulatory Requirement",
         training: "Legal Compliance Training",
         drill: "Emergency Drill / Exercise",
@@ -11248,7 +11248,7 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
-  // ─── Environmental Aspects & Impacts (ISO 14001 §6.1.2) ─────────────────────
+  // ─── Environmental Aspects & Impacts (ISO 14001 6.1.2) ─────────────────────
   app.get("/api/env/aspects", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     try {

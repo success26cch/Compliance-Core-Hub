@@ -353,19 +353,19 @@ export interface IStorage {
   upsertIsoAuditProcessNote(data: InsertIsoAuditProcessNote, userId: string, isSuperadmin?: boolean): Promise<IsoAuditProcessNote>;
   deleteIsoAuditProcessNote(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // IATF §9.2.2.3 — Product Audits
+  // IATF 9.2.2.3 — Product Audits
   getIatfProductAudits(userId: string, isSuperadmin?: boolean): Promise<IatfProductAudit[]>;
   createIatfProductAudit(data: InsertIatfProductAudit): Promise<IatfProductAudit>;
   updateIatfProductAudit(id: number, userId: string, data: Partial<InsertIatfProductAudit>, isSuperadmin?: boolean): Promise<IatfProductAudit | undefined>;
   deleteIatfProductAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // IATF §9.2.2.4 — Manufacturing Process Audits
+  // IATF 9.2.2.4 — Manufacturing Process Audits
   getIatfMfgProcessAudits(userId: string, isSuperadmin?: boolean): Promise<IatfMfgProcessAudit[]>;
   createIatfMfgProcessAudit(data: InsertIatfMfgProcessAudit): Promise<IatfMfgProcessAudit>;
   updateIatfMfgProcessAudit(id: number, userId: string, data: Partial<InsertIatfMfgProcessAudit>, isSuperadmin?: boolean): Promise<IatfMfgProcessAudit | undefined>;
   deleteIatfMfgProcessAudit(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // IATF Audit Schedule (§9.2.2.3 & §9.2.2.4)
+  // IATF Audit Schedule (9.2.2.3 & 9.2.2.4)
   getIatfAuditSchedule(userId: string, isSuperadmin?: boolean): Promise<IatfAuditSchedule[]>;
   createIatfAuditScheduleEntry(data: InsertIatfAuditSchedule): Promise<IatfAuditSchedule>;
   updateIatfAuditScheduleEntry(id: number, userId: string, data: Partial<InsertIatfAuditSchedule>, isSuperadmin?: boolean): Promise<IatfAuditSchedule | undefined>;
@@ -391,13 +391,13 @@ export interface IStorage {
   getIsoAwarenessAcknowledgments(noticeId: number): Promise<IsoAwarenessAcknowledgment[]>;
   createIsoAwarenessAcknowledgment(data: InsertIsoAwarenessAcknowledgment): Promise<IsoAwarenessAcknowledgment>;
 
-  // §7.2 Competency Requirements (per job title)
+  // 7.2 Competency Requirements (per job title)
   getCompetencyRequirements(userId: string, isSuperadmin?: boolean): Promise<CompetencyRequirement[]>;
   createCompetencyRequirement(data: InsertCompetencyRequirement): Promise<CompetencyRequirement>;
   updateCompetencyRequirement(id: number, userId: string, data: Partial<InsertCompetencyRequirement>, isSuperadmin?: boolean): Promise<CompetencyRequirement | undefined>;
   deleteCompetencyRequirement(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // §7.2 Employee Competency Records (evidence per employee)
+  // 7.2 Employee Competency Records (evidence per employee)
   getEmployeeCompetencyRecords(userId: string, employeeId?: number, isSuperadmin?: boolean): Promise<EmployeeCompetencyRecord[]>;
   createEmployeeCompetencyRecord(data: InsertEmployeeCompetencyRecord): Promise<EmployeeCompetencyRecord>;
   updateEmployeeCompetencyRecord(id: number, userId: string, data: Partial<InsertEmployeeCompetencyRecord>, isSuperadmin?: boolean): Promise<EmployeeCompetencyRecord | undefined>;
@@ -467,13 +467,13 @@ export interface IStorage {
   updateIsoCommunication(id: number, userId: string, data: Partial<InsertIsoCommunication>, isSuperadmin?: boolean): Promise<IsoCommunication | undefined>;
   deleteIsoCommunication(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // ISO Compliance Obligations (§6.1.3)
+  // ISO Compliance Obligations (6.1.3)
   getIsoComplianceObligations(userId: string, isoProjectId?: number, isSuperadmin?: boolean): Promise<IsoComplianceObligation[]>;
   createIsoComplianceObligation(data: InsertIsoComplianceObligation): Promise<IsoComplianceObligation>;
   updateIsoComplianceObligation(id: number, userId: string, data: Partial<InsertIsoComplianceObligation>, isSuperadmin?: boolean): Promise<IsoComplianceObligation | undefined>;
   deleteIsoComplianceObligation(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // ISO Compliance Evaluations (§9.1.2)
+  // ISO Compliance Evaluations (9.1.2)
   getIsoComplianceEvaluations(userId: string, obligationId?: number, isSuperadmin?: boolean): Promise<IsoComplianceEvaluation[]>;
   createIsoComplianceEvaluation(data: InsertIsoComplianceEvaluation): Promise<IsoComplianceEvaluation>;
   updateIsoComplianceEvaluation(id: number, userId: string, data: Partial<InsertIsoComplianceEvaluation>, isSuperadmin?: boolean): Promise<IsoComplianceEvaluation | undefined>;
@@ -524,7 +524,7 @@ export interface IStorage {
   updateCalibrationLab(id: number, userId: string, data: Partial<InsertCalibrationLab>, isSuperadmin?: boolean): Promise<CalibrationLab | undefined>;
   deleteCalibrationLab(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // ── Internal Lab Scope (IATF §7.1.5.3.1) ────────────────────────────────
+  // ── Internal Lab Scope (IATF 7.1.5.3.1) ────────────────────────────────
   getLabScope(userId: string, isSuperadmin?: boolean, isoProjectId?: number | null): Promise<CalibrationLabScope | undefined>;
   upsertLabScope(userId: string, isoProjectId: number | null, data: Partial<InsertCalibrationLabScope>): Promise<CalibrationLabScope>;
 
@@ -547,12 +547,12 @@ export interface IStorage {
   updatePmRecord(id: number, userId: string, data: Partial<InsertPmRecord>, isSuperadmin?: boolean): Promise<PmRecord | undefined>;
   deletePmRecord(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
 
-  // ── Environmental Aspects & Impacts (ISO 14001 §6.1.2) ────────────────────
+  // ── Environmental Aspects & Impacts (ISO 14001 6.1.2) ────────────────────
   getEnvAspectsImpacts(userId: string, isSuperadmin?: boolean): Promise<EnvAspectImpact[]>;
   createEnvAspectImpact(data: InsertEnvAspectImpact): Promise<EnvAspectImpact>;
   updateEnvAspectImpact(id: number, userId: string, data: Partial<InsertEnvAspectImpact>, isSuperadmin?: boolean): Promise<EnvAspectImpact | undefined>;
   deleteEnvAspectImpact(id: number, userId: string, isSuperadmin?: boolean): Promise<void>;
-  // ── ISO 45001 Hazard Analysis & Risk Assessment (§6.1.2) ─────────────────
+  // ── ISO 45001 Hazard Analysis & Risk Assessment (6.1.2) ─────────────────
   getHazardAnalysisRecords(userId: string, isSuperadmin?: boolean): Promise<HazardAnalysisRecord[]>;
   createHazardAnalysisRecord(data: InsertHazardAnalysis): Promise<HazardAnalysisRecord>;
   updateHazardAnalysisRecord(id: number, userId: string, data: Partial<InsertHazardAnalysis>, isSuperadmin?: boolean): Promise<HazardAnalysisRecord | undefined>;
@@ -2054,7 +2054,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(isoAuditProcessNotes).where(isSuperadmin ? eq(isoAuditProcessNotes.id, id) : and(eq(isoAuditProcessNotes.id, id), eq(isoAuditProcessNotes.userId, userId)));
   }
 
-  // ─── IATF §9.2.2.3 — Product Audits ─────────────────────────────────────────
+  // ─── IATF 9.2.2.3 — Product Audits ─────────────────────────────────────────
   async getIatfProductAudits(userId: string, isSuperadmin = false): Promise<IatfProductAudit[]> {
     return db.select().from(iatfProductAudits).where(isSuperadmin ? undefined : eq(iatfProductAudits.userId, userId)).orderBy(desc(iatfProductAudits.createdAt));
   }
@@ -2070,7 +2070,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(iatfProductAudits).where(isSuperadmin ? eq(iatfProductAudits.id, id) : and(eq(iatfProductAudits.id, id), eq(iatfProductAudits.userId, userId)));
   }
 
-  // ─── IATF §9.2.2.4 — Manufacturing Process Audits ───────────────────────────
+  // ─── IATF 9.2.2.4 — Manufacturing Process Audits ───────────────────────────
   async getIatfMfgProcessAudits(userId: string, isSuperadmin = false): Promise<IatfMfgProcessAudit[]> {
     return db.select().from(iatfMfgProcessAudits).where(isSuperadmin ? undefined : eq(iatfMfgProcessAudits.userId, userId)).orderBy(desc(iatfMfgProcessAudits.createdAt));
   }
@@ -2131,7 +2131,7 @@ export class DatabaseStorage implements IStorage {
     return rec;
   }
 
-  // ─── §7.2 Competency Requirements ────────────────────────────────────────────
+  // ─── 7.2 Competency Requirements ────────────────────────────────────────────
   async getCompetencyRequirements(userId: string, isSuperadmin = false): Promise<CompetencyRequirement[]> {
     const cond = isSuperadmin ? undefined : eq(competencyRequirements.userId, userId);
     return db.select().from(competencyRequirements).where(cond).orderBy(competencyRequirements.jobTitle, competencyRequirements.competencyName);
@@ -2150,7 +2150,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(competencyRequirements).where(cond);
   }
 
-  // ─── §7.2 Employee Competency Records ────────────────────────────────────────
+  // ─── 7.2 Employee Competency Records ────────────────────────────────────────
   async getEmployeeCompetencyRecords(userId: string, employeeId?: number, isSuperadmin = false): Promise<EmployeeCompetencyRecord[]> {
     let cond: any;
     if (isSuperadmin) {
@@ -2678,7 +2678,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(calibrationLabs).where(where);
   }
 
-  // ── Internal Lab Scope (IATF §7.1.5.3.1) ────────────────────────────────
+  // ── Internal Lab Scope (IATF 7.1.5.3.1) ────────────────────────────────
   async getLabScope(userId: string, isSuperadmin = false, isoProjectId?: number | null): Promise<CalibrationLabScope | undefined> {
     const conditions: any[] = [];
     if (!isSuperadmin) conditions.push(eq(calibrationLabScope.userId, userId));
@@ -2850,7 +2850,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(lpaRecords).where(where);
   }
 
-  // ─── ISO Compliance Obligations (§6.1.3) ──────────────────────────────────
+  // ─── ISO Compliance Obligations (6.1.3) ──────────────────────────────────
   async getIsoComplianceObligations(userId: string, isoProjectId?: number, isSuperadmin = false): Promise<IsoComplianceObligation[]> {
     let cond: any;
     if (isSuperadmin) {
@@ -2876,7 +2876,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(isoComplianceObligations).where(where);
   }
 
-  // ─── ISO Compliance Evaluations (§9.1.2) ──────────────────────────────────
+  // ─── ISO Compliance Evaluations (9.1.2) ──────────────────────────────────
   async getIsoComplianceEvaluations(userId: string, obligationId?: number, isSuperadmin = false): Promise<IsoComplianceEvaluation[]> {
     let cond: any;
     if (isSuperadmin) {
@@ -2902,7 +2902,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(isoComplianceEvaluations).where(where);
   }
 
-  // ─── Environmental Aspects & Impacts (ISO 14001 §6.1.2) ──────────────────
+  // ─── Environmental Aspects & Impacts (ISO 14001 6.1.2) ──────────────────
   async getEnvAspectsImpacts(userId: string, isSuperadmin = false): Promise<EnvAspectImpact[]> {
     const cond = isSuperadmin ? undefined : eq(envAspectsImpacts.userId, userId);
     return db.select().from(envAspectsImpacts).where(cond).orderBy(envAspectsImpacts.processActivity, envAspectsImpacts.environmentalAspect);

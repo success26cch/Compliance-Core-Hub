@@ -113,7 +113,7 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
         await apiRequest("DELETE", `/api/iso-risks/${r.id}`);
       }
       qc.invalidateQueries({ queryKey: risksQKey });
-      toast({ title: `${stale.length} §4.1 import${stale.length !== 1 ? 's' : ''} removed`, description: "Those risks are now managed in the §4.1 Strategic Risk Register." });
+      toast({ title: `${stale.length} 4.1 import${stale.length !== 1 ? 's' : ''} removed`, description: "Those risks are now managed in the 4.1 Strategic Risk Register." });
     } catch {
       toast({ title: "Cleanup failed", variant: "destructive" });
     } finally {
@@ -215,7 +215,7 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
             <Cog className="w-5 h-5 text-accent" />
             Operational Risk &amp; Opportunity Register
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">ISO §6.1 — Process-level risks to product/service quality, identified through audits, FMEAs, and process analysis</p>
+          <p className="text-sm text-muted-foreground mt-0.5">ISO 6.1 — Process-level risks to product/service quality, identified through audits, FMEAs, and process analysis</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setShowHeatmap(v => !v)} data-testid="button-toggle-heatmap">
@@ -248,16 +248,16 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
         ))}
       </div>
 
-      {/* §4.1 stale-import cleanup banner */}
+      {/* 4.1 stale-import cleanup banner */}
       {risks.filter(r => r.linkedProcess === "4.1 Context of the Organization").length > 0 && (
         <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40 rounded-xl px-4 py-3" data-testid="banner-stale-context-imports">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              {risks.filter(r => r.linkedProcess === "4.1 Context of the Organization").length} §4.1 import{risks.filter(r => r.linkedProcess === "4.1 Context of the Organization").length !== 1 ? 's' : ''} found in this register
+              {risks.filter(r => r.linkedProcess === "4.1 Context of the Organization").length} 4.1 import{risks.filter(r => r.linkedProcess === "4.1 Context of the Organization").length !== 1 ? 's' : ''} found in this register
             </p>
             <p className="text-xs text-amber-700/80 dark:text-amber-400 mt-0.5">
-              PESTLE and SWOT items previously exported here are now managed in the <strong>§4.1 Strategic Risk Register</strong> inside Context of the Organization. This register (§6.1) is for operational process risks only.
+              PESTLE and SWOT items previously exported here are now managed in the <strong>4.1 Strategic Risk Register</strong> inside Context of the Organization. This register (6.1) is for operational process risks only.
             </p>
           </div>
           <Button
@@ -268,7 +268,7 @@ export default function RiskAssessmentModule({ isoProjectId }: { isoProjectId?: 
             className="shrink-0 text-amber-700 border-amber-300 hover:bg-amber-100 dark:text-amber-300 dark:border-amber-700/50 dark:hover:bg-amber-900/30 text-xs"
             data-testid="button-cleanup-context-imports"
           >
-            {cleaningUp ? "Removing…" : "Remove §4.1 imports"}
+            {cleaningUp ? "Removing…" : "Remove 4.1 imports"}
           </Button>
         </div>
       )}

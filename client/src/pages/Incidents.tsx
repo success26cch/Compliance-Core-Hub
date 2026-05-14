@@ -2278,7 +2278,7 @@ function CAPAFormDialog({
               <h3 className="font-semibold text-sm uppercase tracking-wide text-violet-700 dark:text-violet-400">Documentation Update Verification</h3>
             </div>
             <p className="text-xs text-muted-foreground">
-              ISO 9001 §7.5, IATF 16949, AS9100D, and ISO 13485 require that affected documents (Control Plans, PFMEAs, Work Instructions, SOPs, etc.) are updated when corrective or preventive actions change a process or product.
+              ISO 9001 7.5, IATF 16949, AS9100D, and ISO 13485 require that affected documents (Control Plans, PFMEAs, Work Instructions, SOPs, etc.) are updated when corrective or preventive actions change a process or product.
             </p>
             <div className="flex items-center gap-3">
               <button

@@ -308,7 +308,7 @@ function ObjectiveMetBadge({ value }: { value: string | null | undefined }) {
   return <Badge className={`text-xs border ${cfg.cls}`}>{cfg.label}</Badge>;
 }
 
-// ── IATF §9.2.2.3 Default Product Audit Checklist ────────────────────────────
+// ── IATF 9.2.2.3 Default Product Audit Checklist ────────────────────────────
 const DEFAULT_PRODUCT_CHECKLIST: Omit<ProductAuditChecklistItem, "result" | "note">[] = [
   { id: "pi1", category: "Product Identification & Traceability", item: "Part number matches job traveler / production order" },
   { id: "pi2", category: "Product Identification & Traceability", item: "Lot / batch number correctly identified and traceable" },
@@ -335,7 +335,7 @@ function makeDefaultProductChecklist(): ProductAuditChecklistItem[] {
   return DEFAULT_PRODUCT_CHECKLIST.map(i => ({ ...i, result: "na" as const, note: "" }));
 }
 
-// ── IATF §9.2.2.4 Default Manufacturing Process Audit Checklist ───────────────
+// ── IATF 9.2.2.4 Default Manufacturing Process Audit Checklist ───────────────
 const DEFAULT_PROCESS_CHECKLIST: Omit<MfgProcessAuditChecklistItem, "result" | "note">[] = [
   { id: "sa1", category: "Setup & Job Authorization", question: "Production order / work order released and current at workstation" },
   { id: "sa2", category: "Setup & Job Authorization", question: "Setup sheet posted at workstation and current revision" },
@@ -944,10 +944,10 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
         {isIATF && (
           <>
             <button onClick={() => setActiveTab("product-audit")} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors shrink-0 ${activeTab === "product-audit" ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`} data-testid="tab-product-audit">
-              <span className="flex items-center gap-1.5"><Package className="w-4 h-4" />Product Audits <span className="text-[10px] font-bold opacity-60">§9.2.2.3</span></span>
+              <span className="flex items-center gap-1.5"><Package className="w-4 h-4" />Product Audits <span className="text-[10px] font-bold opacity-60">9.2.2.3</span></span>
             </button>
             <button onClick={() => setActiveTab("process-audit")} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors shrink-0 ${activeTab === "process-audit" ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`} data-testid="tab-process-audit">
-              <span className="flex items-center gap-1.5"><Factory className="w-4 h-4" />Process Audits <span className="text-[10px] font-bold opacity-60">§9.2.2.4</span></span>
+              <span className="flex items-center gap-1.5"><Factory className="w-4 h-4" />Process Audits <span className="text-[10px] font-bold opacity-60">9.2.2.4</span></span>
             </button>
           </>
         )}
@@ -1094,7 +1094,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
             )}
           </div>
         ) : activeTab === "product-audit" ? (
-          /* ── §9.2.2.3 Product Audits Tab ── */
+          /* ── 9.2.2.3 Product Audits Tab ── */
           <div className="p-6 space-y-5">
             {/* Header info */}
             <div className="flex items-start gap-3 p-4 rounded-xl border bg-blue-50 border-blue-200">
@@ -1189,7 +1189,7 @@ export function InternalAuditModule({ onAskIsa }: { onAskIsa?: (prompt: string) 
             </div>
           </div>
         ) : (
-          /* ── §9.2.2.4 Manufacturing Process Audits Tab ── */
+          /* ── 9.2.2.4 Manufacturing Process Audits Tab ── */
           <div className="p-6 space-y-5">
             {/* Header info */}
             <div className="flex items-start gap-3 p-4 rounded-xl border bg-orange-50 border-orange-200">
@@ -1820,7 +1820,7 @@ function ProcessNotesDialog({ process, existing, onSave, onClose, isPending }: {
               <span className="text-xs text-muted-foreground font-normal">(one per line)</span>
             </Label>
             <Textarea
-              placeholder={"Calibration record for Instrument #42 missing — ISO 9001 §7.1.5\nNo evidence of management review output action items"}
+              placeholder={"Calibration record for Instrument #42 missing — ISO 9001 7.1.5\nNo evidence of management review output action items"}
               value={form.nonconformances}
               onChange={e => set("nonconformances", e.target.value)}
               rows={3}
@@ -2102,7 +2102,7 @@ function RiskAssessmentDialog({ processName, processType, existing, onSave, onDe
   );
 }
 
-// ── §9.2.2.3 Product Audit Dialog ─────────────────────────────────────────────
+// ── 9.2.2.3 Product Audit Dialog ─────────────────────────────────────────────
 
 function ProductAuditDialog({
   existing, onSave, onDelete, onClose, isPending,
@@ -2162,7 +2162,7 @@ function ProductAuditDialog({
             <DialogTitle className="flex items-center gap-2 text-base">
               <Package className="w-5 h-5 text-primary" />
               {existing ? "Edit" : "New"} Product Audit
-              <Badge className="text-[10px] font-bold border bg-blue-50 text-blue-700 border-blue-200 ml-1">§9.2.2.3</Badge>
+              <Badge className="text-[10px] font-bold border bg-blue-50 text-blue-700 border-blue-200 ml-1">9.2.2.3</Badge>
             </DialogTitle>
           </DialogHeader>
           <div className="flex gap-1 border-b mt-4 -mx-6 px-6">
@@ -2277,7 +2277,7 @@ function ProductAuditDialog({
                 <Checkbox id="pa-mgmt" checked={managementNotified} onCheckedChange={v => setManagementNotified(!!v)} data-testid="checkbox-pa-mgmt" />
                 <div>
                   <Label htmlFor="pa-mgmt" className="text-sm font-semibold cursor-pointer flex items-center gap-1.5"><Bell className="w-3.5 h-3.5 text-amber-600" />Management Notified of Results</Label>
-                  <p className="text-xs text-muted-foreground">IATF §9.2.2.3 requires audit results be communicated to responsible management.</p>
+                  <p className="text-xs text-muted-foreground">IATF 9.2.2.3 requires audit results be communicated to responsible management.</p>
                 </div>
               </div>
               {managementNotified && (
@@ -2303,7 +2303,7 @@ function ProductAuditDialog({
   );
 }
 
-// ── §9.2.2.4 Manufacturing Process Audit Dialog ───────────────────────────────
+// ── 9.2.2.4 Manufacturing Process Audit Dialog ───────────────────────────────
 
 function MfgProcessAuditDialog({
   processes, existing, onSave, onDelete, onClose, isPending,
@@ -2377,7 +2377,7 @@ function MfgProcessAuditDialog({
             <DialogTitle className="flex items-center gap-2 text-base">
               <Factory className="w-5 h-5 text-primary" />
               {existing ? "Edit" : "New"} Manufacturing Process Audit
-              <Badge className="text-[10px] font-bold border bg-orange-50 text-orange-700 border-orange-200 ml-1">§9.2.2.4</Badge>
+              <Badge className="text-[10px] font-bold border bg-orange-50 text-orange-700 border-orange-200 ml-1">9.2.2.4</Badge>
             </DialogTitle>
           </DialogHeader>
           <div className="flex gap-1 border-b mt-4 -mx-6 px-6">
@@ -2513,7 +2513,7 @@ function MfgProcessAuditDialog({
                 <Checkbox id="mpa-mgmt" checked={managementNotified} onCheckedChange={v => setManagementNotified(!!v)} data-testid="checkbox-mpa-mgmt" />
                 <div>
                   <Label htmlFor="mpa-mgmt" className="text-sm font-semibold cursor-pointer flex items-center gap-1.5"><Bell className="w-3.5 h-3.5 text-amber-600" />Management Notified of Results</Label>
-                  <p className="text-xs text-muted-foreground">IATF §9.2.2.4 requires results communicated to responsible management for each process audit.</p>
+                  <p className="text-xs text-muted-foreground">IATF 9.2.2.4 requires results communicated to responsible management for each process audit.</p>
                 </div>
               </div>
               {managementNotified && (
@@ -2586,7 +2586,7 @@ function IatfScheduleDialog({
             <Calendar className="w-5 h-5 text-primary" />
             {existing ? "Edit" : "Add"} Audit Schedule
             <Badge className={`text-[10px] font-bold border ml-1 ${auditType === "product" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-orange-50 text-orange-700 border-orange-200"}`}>
-              {auditType === "product" ? "§9.2.2.3 Product" : "§9.2.2.4 Process"}
+              {auditType === "product" ? "9.2.2.3 Product" : "9.2.2.4 Process"}
             </Badge>
           </DialogTitle>
         </DialogHeader>

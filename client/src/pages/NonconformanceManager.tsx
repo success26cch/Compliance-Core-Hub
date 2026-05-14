@@ -1397,7 +1397,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                     />
                     <div>
                       <p className="text-sm font-medium">{ncAny.docUpdateRequired ? 'Documentation updates required' : 'No documentation updates needed'}</p>
-                      <p className="text-xs text-muted-foreground">ISO 9001 §7.5 / IATF 16949 / AS9100D / ISO 13485</p>
+                      <p className="text-xs text-muted-foreground">ISO 9001 7.5 / IATF 16949 / AS9100D / ISO 13485</p>
                     </div>
                   </div>
 
@@ -1520,7 +1520,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                         <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg text-xs text-amber-800 dark:text-amber-300">
                           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                           <span>
-                            <strong>Heads up:</strong> This CAPA includes updates to procedures or work instructions. Consider whether affected personnel need to be re-trained on the revised documents (IATF 16949 §7.2.4 / ISO 9001 §7.2).
+                            <strong>Heads up:</strong> This CAPA includes updates to procedures or work instructions. Consider whether affected personnel need to be re-trained on the revised documents (IATF 16949 7.2.4 / ISO 9001 7.2).
                           </span>
                         </div>
                       )}
@@ -1913,7 +1913,7 @@ Keep each item under 20 words. No lengthy explanation.`;
                   <p className="text-xs text-muted-foreground">
                     Confirm that the corrective and preventive actions described above were <strong>actually carried out</strong> — not just planned. 
                     This is separate from whether the actions were effective. 
-                    <em className="ml-1">(ISO 9001 §10.2.1(e) / IATF 16949 §10.2.3)</em>
+                    <em className="ml-1">(ISO 9001 10.2.1(e) / IATF 16949 10.2.3)</em>
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -2108,8 +2108,8 @@ Keep each item under 20 words. No lengthy explanation.`;
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-blue-600 dark:text-blue-500 leading-relaxed">
-                      Nonconformances must be addressed per ISO 9001:2015 §10.2 / IATF 16949 §10.2.3. 
-                      Perform RCA to prevent recurrence and update affected documents per §7.5.
+                      Nonconformances must be addressed per ISO 9001:2015 10.2 / IATF 16949 10.2.3. 
+                      Perform RCA to prevent recurrence and update affected documents per 7.5.
                     </p>
                   </CardContent>
                 </Card>

@@ -478,7 +478,7 @@ const EQUIPMENT = [
     validationDate: "2024-11-15",
     procedureNotes: "MONTHLY PM / CALIBRATION:\n1. Inspect pH electrode reference junction — refill if depleted\n2. Clean electrode tip with soft cloth and DI water\n3. Two-point calibration: pH 7.00 buffer (10 min stabilize), then pH 4.00 buffer\n4. Record slope (%): acceptable range 95–105%. Replace electrode if slope < 90%\n5. Two-point conductivity calibration using traceable standards\n6. Verify temperature compensation is functioning (±0.5°C vs. reference thermometer)\n7. Clean flow cell and process fitting\n8. Record all calibration data in Calibration Log (linked to CAL-REG, Gage CL-009)",
     status: "active",
-    notes: "ISO 13485 §6.3 validation — instrument used in product quality monitoring. Calibration is also recorded in the Calibration Module (Gage CL-009). Cross-reference for audit trail.",
+    notes: "ISO 13485 6.3 validation — instrument used in product quality monitoring. Calibration is also recorded in the Calibration Module (Gage CL-009). Cross-reference for audit trail.",
   },
   {
     equipmentId: "PM-015",

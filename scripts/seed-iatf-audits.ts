@@ -1,6 +1,6 @@
 /**
- * Seed script: CCI Chemical IATF §9.2.2.3 Product Audits,
- *              §9.2.2.4 Manufacturing Process Audits, and
+ * Seed script: CCI Chemical IATF 9.2.2.3 Product Audits,
+ *              9.2.2.4 Manufacturing Process Audits, and
  *              IATF Audit Schedule entries.
  * Run: npx tsx scripts/seed-iatf-audits.ts
  */
@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm";
 
 const USER_ID = "54320068";
 
-// ── §9.2.2.3 Product Audit checklist (19 items) ──────────────────────────────
+// ── 9.2.2.3 Product Audit checklist (19 items) ──────────────────────────────
 function makeProductChecklist(overrides: Record<string, { result: "pass" | "fail" | "na"; note?: string }> = []) {
   const items = [
     // Product ID / Traceability
@@ -50,7 +50,7 @@ function makeProductChecklist(overrides: Record<string, { result: "pass" | "fail
   }));
 }
 
-// ── §9.2.2.4 Process Audit checklist (25 items) ──────────────────────────────
+// ── 9.2.2.4 Process Audit checklist (25 items) ──────────────────────────────
 function makeProcessChecklist(overrides: Record<string, { result: "yes" | "no" | "partial" | "na"; note?: string }> = []) {
   const items = [
     // Setup & Authorization
@@ -106,7 +106,7 @@ async function main() {
   await db.delete(iatfAuditSchedule).where(eq(iatfAuditSchedule.userId, USER_ID));
   console.log("Cleared existing IATF audit data.");
 
-  // ── §9.2.2.3 Product Audits ───────────────────────────────────────────────
+  // ── 9.2.2.3 Product Audits ───────────────────────────────────────────────
   const productAudits = [
     {
       userId: USER_ID,
@@ -181,7 +181,7 @@ async function main() {
   const insertedProductAudits = await db.insert(iatfProductAudits).values(productAudits).returning();
   console.log(`Inserted ${insertedProductAudits.length} product audits.`);
 
-  // ── §9.2.2.4 Manufacturing Process Audits ─────────────────────────────────
+  // ── 9.2.2.4 Manufacturing Process Audits ─────────────────────────────────
   const processAudits = [
     {
       userId: USER_ID,
@@ -299,7 +299,7 @@ async function main() {
 
   // ── IATF Audit Schedule ───────────────────────────────────────────────────
   const scheduleEntries = [
-    // Product Audit Schedules (§9.2.2.3)
+    // Product Audit Schedules (9.2.2.3)
     {
       userId: USER_ID,
       auditType: "product",
@@ -312,7 +312,7 @@ async function main() {
       nextDueDate: "2026-05-10",
       lastCompletedDate: "2026-04-10",
       status: "active",
-      notes: "Customer-specific audit per Midwest Auto Stamping CSR §8.6. Focus on pH, viscosity, and label compliance.",
+      notes: "Customer-specific audit per Midwest Auto Stamping CSR 8.6. Focus on pH, viscosity, and label compliance.",
     },
     {
       userId: USER_ID,
@@ -357,7 +357,7 @@ async function main() {
       notes: "INCREASED FREQUENCY — temporary weekly audit following CAR-2026-039 (operator + temperature excursion). Revert to monthly after 4 consecutive passes and CAR closure.",
     },
 
-    // Process Audit Schedules (§9.2.2.4)
+    // Process Audit Schedules (9.2.2.4)
     {
       userId: USER_ID,
       auditType: "process",
@@ -370,7 +370,7 @@ async function main() {
       nextDueDate: "2026-04-28",
       lastCompletedDate: "2026-04-22",
       status: "active",
-      notes: "Per-shift audits required per IATF §9.2.2.4. Rotating auditors across all 3 shifts. Night shift is HIGH PRIORITY following CAR-2026-039.",
+      notes: "Per-shift audits required per IATF 9.2.2.4. Rotating auditors across all 3 shifts. Night shift is HIGH PRIORITY following CAR-2026-039.",
     },
     {
       userId: USER_ID,
@@ -420,8 +420,8 @@ async function main() {
   console.log(`Inserted ${insertedSchedule.length} audit schedule entries.`);
 
   console.log("\n✅ IATF audit seed complete!");
-  console.log(`   - ${insertedProductAudits.length} product audit records (§9.2.2.3)`);
-  console.log(`   - ${insertedProcessAudits.length} process audit records (§9.2.2.4)`);
+  console.log(`   - ${insertedProductAudits.length} product audit records (9.2.2.3)`);
+  console.log(`   - ${insertedProcessAudits.length} process audit records (9.2.2.4)`);
   console.log(`   - ${insertedSchedule.length} audit schedule entries (4 product + 4 process)`);
   process.exit(0);
 }

@@ -18,19 +18,19 @@ interface IsaMsg { role: "user" | "assistant"; content: string }
 // ─── Section context labels ───────────────────────────────────────────────────
 
 const SECTION_CONTEXT: Record<string, { label: string; clause: string; desc: string }> = {
-  context_org:       { label: "Context of the Organization", clause: "§4.1–4.2", desc: "PESTLE analysis, SWOT, interested parties matrix, and the 4.1→6.1 risk summary" },
-  system_profile:    { label: "My System Profile", clause: "§4.3–4.4", desc: "QMS scope statement, process list with owners and clause references, remote sites, and outsourced processes (§8.4)" },
-  process_map:       { label: "Process Maps", clause: "§4.4", desc: "Process flow documentation with inputs, outputs, owners, and KPIs" },
-  nc:                { label: "NC & CAPA", clause: "§10.2", desc: "Nonconformance log, corrective action assignments, effectiveness verification, and SMS notifications via Twilio" },
-  documentation:     { label: "Documentation", clause: "§7.5", desc: "Controlled document library with version history, approval status, and ISO clause tagging" },
-  roles_raci:        { label: "Roles & RACI", clause: "§5.3", desc: "Department-grouped RACI matrix mapping ISO clauses to roles, org-size templates (Small/Medium/Large), and AI job description generator" },
-  apqp:              { label: "APQP / Program Management", clause: "§8.3.2", desc: "AIAG Advanced Product Quality Planning — 5-phase program management with gate reviews, AIAG standard deliverable checklists per phase, and PPAP tracking. Per IATF 16949 §8.3.2 customer-specific APQP requirements." },
-  communication:     { label: "Communication Log", clause: "§7.4", desc: "Internal and external communication records filtered by direction and medium" },
-  training:          { label: "Training & Awareness", clause: "§7.2–7.3", desc: "Awareness notices pushed to process owners with urgency levels, expiry dates, and acknowledgment tracking" },
-  risk:              { label: "Risk Assessment", clause: "§6.1", desc: "Risk & Opportunity register with Likelihood × Severity scoring (1–25 heatmap), controls, residual risk, and status workflow" },
-  management_review: { label: "Management Review", clause: "§9.3", desc: "ISO 9.3.2 required inputs checklist (9 agenda items), KPI snapshots, meeting notes, and action items with owners and due dates" },
-  internal_audit:    { label: "Internal Audits", clause: "§9.2", desc: "Audit planning, clause-by-clause checklist execution, finding log with severity levels, and real-time status tracking" },
-  measurement:       { label: "Measurement & Monitoring", clause: "§9.1", desc: "KPI dashboard with gauge charts and trend lines, log measurement actuals by period, track on_track/at_risk/off_track status" },
+  context_org:       { label: "Context of the Organization", clause: "4.1–4.2", desc: "PESTLE analysis, SWOT, interested parties matrix, and the 4.1→6.1 risk summary" },
+  system_profile:    { label: "My System Profile", clause: "4.3–4.4", desc: "QMS scope statement, process list with owners and clause references, remote sites, and outsourced processes (8.4)" },
+  process_map:       { label: "Process Maps", clause: "4.4", desc: "Process flow documentation with inputs, outputs, owners, and KPIs" },
+  nc:                { label: "NC & CAPA", clause: "10.2", desc: "Nonconformance log, corrective action assignments, effectiveness verification, and SMS notifications via Twilio" },
+  documentation:     { label: "Documentation", clause: "7.5", desc: "Controlled document library with version history, approval status, and ISO clause tagging" },
+  roles_raci:        { label: "Roles & RACI", clause: "5.3", desc: "Department-grouped RACI matrix mapping ISO clauses to roles, org-size templates (Small/Medium/Large), and AI job description generator" },
+  apqp:              { label: "APQP / Program Management", clause: "8.3.2", desc: "AIAG Advanced Product Quality Planning — 5-phase program management with gate reviews, AIAG standard deliverable checklists per phase, and PPAP tracking. Per IATF 16949 8.3.2 customer-specific APQP requirements." },
+  communication:     { label: "Communication Log", clause: "7.4", desc: "Internal and external communication records filtered by direction and medium" },
+  training:          { label: "Training & Awareness", clause: "7.2–7.3", desc: "Awareness notices pushed to process owners with urgency levels, expiry dates, and acknowledgment tracking" },
+  risk:              { label: "Risk Assessment", clause: "6.1", desc: "Risk & Opportunity register with Likelihood × Severity scoring (1–25 heatmap), controls, residual risk, and status workflow" },
+  management_review: { label: "Management Review", clause: "9.3", desc: "ISO 9.3.2 required inputs checklist (9 agenda items), KPI snapshots, meeting notes, and action items with owners and due dates" },
+  internal_audit:    { label: "Internal Audits", clause: "9.2", desc: "Audit planning, clause-by-clause checklist execution, finding log with severity levels, and real-time status tracking" },
+  measurement:       { label: "Measurement & Monitoring", clause: "9.1", desc: "KPI dashboard with gauge charts and trend lines, log measurement actuals by period, track on_track/at_risk/off_track status" },
 };
 
 // ─── Comprehensive system prompt builder ─────────────────────────────────────
@@ -65,22 +65,22 @@ ISO MANAGER NAVIGATION GUIDE
 The ISO Manager sidebar has two sections:
 
 CORE MODULES (available to all role tiers):
-• Context of the Org (§4.1-4.2) — PESTLE Analysis (6 categories: Political/Economic/Social/Technological/Legal/Environmental, each item tagged Risk or Opportunity), SWOT Analysis (4 quadrants, items link to §6.1), Interested Parties matrix (PI-R selector: Manage Closely/Keep Informed/Keep Satisfied/Monitor Only, 6 fields per party), 4.1→6.1 Summary (count cards, 7-standard reference table, Go to Risk Assessment button). All data saves to the ISO project JSONB fields.
-• My System Profile (§4.3-4.4) — Scope statement editor, process list (name, owner, ISO clause references, KPIs), Remote Sites section (IATF 16949 multi-site, in-scope/excluded toggle, address, activities), Outside Processes section (provider, control method, maps to §8.4). Uses inline editors, saves via PATCH.
-• Process Maps (§4.4) — Visual process flow documentation. Add processes with inputs, outputs, responsible parties.
-• NC & CAPA (§10.2) — Log nonconformances with description, source, severity, root cause. Assign corrective action owners. SMS notifications fire via Twilio when owners are assigned. Effectiveness verification with due dates. AI suggestions from Isa. Full status workflow.
-• Documentation (§7.5) — Controlled document library. Filter by ISO clause, document type, status (approved/in-review/draft). Version history, approval dates, and ISO clause cross-references.
-• Roles & RACI (§5.3) — RACI matrix with 26 ISO clauses as rows and job roles as columns. Columns grouped by department with colored banners. Collapse departments to focus. Click cells to cycle R→A→C→I. Load templates: Small (6 roles/10-50 employees), Medium (12 roles/50-200), Large (22 roles/200+). Each ISO clause should have exactly ONE person marked A (Accountable) — multiple A's is an audit finding. Job Description Generator tab: enter title/dept/reports-to, Isa generates complete JD with clause references.
+• Context of the Org (4.1-4.2) — PESTLE Analysis (6 categories: Political/Economic/Social/Technological/Legal/Environmental, each item tagged Risk or Opportunity), SWOT Analysis (4 quadrants, items link to 6.1), Interested Parties matrix (PI-R selector: Manage Closely/Keep Informed/Keep Satisfied/Monitor Only, 6 fields per party), 4.1→6.1 Summary (count cards, 7-standard reference table, Go to Risk Assessment button). All data saves to the ISO project JSONB fields.
+• My System Profile (4.3-4.4) — Scope statement editor, process list (name, owner, ISO clause references, KPIs), Remote Sites section (IATF 16949 multi-site, in-scope/excluded toggle, address, activities), Outside Processes section (provider, control method, maps to 8.4). Uses inline editors, saves via PATCH.
+• Process Maps (4.4) — Visual process flow documentation. Add processes with inputs, outputs, responsible parties.
+• NC & CAPA (10.2) — Log nonconformances with description, source, severity, root cause. Assign corrective action owners. SMS notifications fire via Twilio when owners are assigned. Effectiveness verification with due dates. AI suggestions from Isa. Full status workflow.
+• Documentation (7.5) — Controlled document library. Filter by ISO clause, document type, status (approved/in-review/draft). Version history, approval dates, and ISO clause cross-references.
+• Roles & RACI (5.3) — RACI matrix with 26 ISO clauses as rows and job roles as columns. Columns grouped by department with colored banners. Collapse departments to focus. Click cells to cycle R→A→C→I. Load templates: Small (6 roles/10-50 employees), Medium (12 roles/50-200), Large (22 roles/200+). Each ISO clause should have exactly ONE person marked A (Accountable) — multiple A's is an audit finding. Job Description Generator tab: enter title/dept/reports-to, Isa generates complete JD with clause references.
 
 COMPLIANCE MODULES (Trainer role and above):
-• Communication Log (§7.4) — Log internal and external communications. Fields: direction (internal/external), topic, audience, medium, clause reference, summary. Filter by direction or medium. Isa AI guidance on §7.4 requirements.
-• Training & Awareness (§7.2-7.3) — Create awareness notices, select process owners as recipients, set urgency (Normal/High/Critical) and expiry dates. Track acknowledgments. Isa explains awareness requirements.
+• Communication Log (7.4) — Log internal and external communications. Fields: direction (internal/external), topic, audience, medium, clause reference, summary. Filter by direction or medium. Isa AI guidance on 7.4 requirements.
+• Training & Awareness (7.2-7.3) — Create awareness notices, select process owners as recipients, set urgency (Normal/High/Critical) and expiry dates. Track acknowledgments. Isa explains awareness requirements.
 
 AUDITOR MODULES (Auditor role and above):
-• Internal Audits (§9.2) — Create audit records, work through clause-by-clause checklists for your specific standard (ISO 9001/14001/45001), log findings with severity (Observation/Minor NC/Major NC/Critical). Track audit status (planned/in-progress/completed/closed).
-• Risk Assessment (§6.1) — Risks & Opportunities register. Score by Likelihood (1-5) × Severity (1-5) = Risk Score (1-25). Color-coded heatmap: green (1-4)/yellow (5-12)/red (13-25). Add controls, track residual risk and score. Status: open/mitigated/accepted. Isa AI guidance built in.
-• Management Review (§9.3) — Complete ISO 9.3.2 required inputs checklist (9 agenda items including previous review actions, context changes, customer feedback, nonconformances, objectives performance, monitoring results, supplier performance, resource adequacy, improvement opportunities). KPI snapshot table pulled from Measurement module. Meeting notes. Action items with owner, due date, status. Mark review Complete or save as Draft.
-• Measurement & Monitoring (§9.1) — Define KPIs with name, unit, target, frequency, owner, and linked ISO clause. Log actuals by period. View gauge chart (actual vs. target) and 12-month trend line (Recharts). Status: on_track/at_risk/off_track. Year comparison (current vs. previous year) and rolling 12-month view.
+• Internal Audits (9.2) — Create audit records, work through clause-by-clause checklists for your specific standard (ISO 9001/14001/45001), log findings with severity (Observation/Minor NC/Major NC/Critical). Track audit status (planned/in-progress/completed/closed).
+• Risk Assessment (6.1) — Risks & Opportunities register. Score by Likelihood (1-5) × Severity (1-5) = Risk Score (1-25). Color-coded heatmap: green (1-4)/yellow (5-12)/red (13-25). Add controls, track residual risk and score. Status: open/mitigated/accepted. Isa AI guidance built in.
+• Management Review (9.3) — Complete ISO 9.3.2 required inputs checklist (9 agenda items including previous review actions, context changes, customer feedback, nonconformances, objectives performance, monitoring results, supplier performance, resource adequacy, improvement opportunities). KPI snapshot table pulled from Measurement module. Meeting notes. Action items with owner, due date, status. Mark review Complete or save as Draft.
+• Measurement & Monitoring (9.1) — Define KPIs with name, unit, target, frequency, owner, and linked ISO clause. Log actuals by period. View gauge chart (actual vs. target) and 12-month trend line (Recharts). Status: on_track/at_risk/off_track. Year comparison (current vs. previous year) and rolling 12-month view.
 • Clause Coverage Map — Visual map of document coverage per ISO clause. Shows approved/in-review/draft/none status for each clause. Overall coverage percentage gauge.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -123,15 +123,15 @@ When explaining compliance, tie it to what the user should do in the ISO Manager
 // ─── Quick question suggestions per section ───────────────────────────────────
 
 const SECTION_QUESTIONS: Record<string, string[]> = {
-  context_org:       ["What goes in the PESTLE analysis?", "How do I identify interested parties?", "What's the difference between risks and opportunities here?", "How does §4.1 connect to §6.1?"],
+  context_org:       ["What goes in the PESTLE analysis?", "How do I identify interested parties?", "What's the difference between risks and opportunities here?", "How does 4.1 connect to 6.1?"],
   system_profile:    ["What should my scope statement include?", "How do I define a QMS process?", "What are remote sites for IATF?", "What counts as an outsourced process?"],
   process_map:       ["What inputs and outputs should a process have?", "How detailed should my process maps be?", "Which processes are mandatory for ISO 9001?"],
   nc:                ["What's the difference between a minor and major NC?", "How do I write a good root cause analysis?", "What makes a corrective action effective?", "When is a CAPA required?"],
   documentation:     ["Which documents are mandatory for ISO 9001?", "What is document control?", "How often should documents be reviewed?", "What's the difference in-review vs. approved?"],
-  roles_raci:        ["Who should be Accountable for 8.4?", "Can a clause have two people marked A?", "Which template is right for 80 employees?", "What does ISO §5.3 require for documented roles?"],
-  communication:     ["What does ISO §7.4 require?", "What communications need to be documented?", "Internal vs external communication — what's the difference?"],
+  roles_raci:        ["Who should be Accountable for 8.4?", "Can a clause have two people marked A?", "Which template is right for 80 employees?", "What does ISO 5.3 require for documented roles?"],
+  communication:     ["What does ISO 7.4 require?", "What communications need to be documented?", "Internal vs external communication — what's the difference?"],
   training:          ["What's the difference between training and awareness?", "How do I demonstrate competence?", "What records does ISO require for training?"],
-  risk:              ["How do I calculate a risk score?", "What's the difference between a risk and an opportunity?", "When is a risk 'mitigated' vs 'accepted'?", "What does an auditor check in §6.1?"],
+  risk:              ["How do I calculate a risk score?", "What's the difference between a risk and an opportunity?", "When is a risk 'mitigated' vs 'accepted'?", "What does an auditor check in 6.1?"],
   management_review: ["What are the 9 required inputs for a management review?", "How often must management reviews happen?", "What records do I need to keep?"],
   internal_audit:    ["How do I create an audit schedule?", "What's the difference between an observation and a minor NC?", "Can the same person audit their own process?"],
   measurement:       ["What KPIs should I track for ISO 9001?", "How do I set a meaningful quality objective target?", "What does 'monitoring vs measurement' mean?"],

@@ -81,13 +81,13 @@ const RACI_CLAUSES: Array<{ id: string; section: string; label: string; short: s
 ];
 
 const SECTION_LABELS: Record<string, string> = {
-  "4": "§4 Context",
-  "5": "§5 Leadership",
-  "6": "§6 Planning",
-  "7": "§7 Support",
-  "8": "§8 Operation",
-  "9": "§9 Performance Evaluation",
-  "10": "§10 Improvement",
+  "4": "4 Context",
+  "5": "5 Leadership",
+  "6": "6 Planning",
+  "7": "7 Support",
+  "8": "8 Operation",
+  "9": "9 Performance Evaluation",
+  "10": "10 Improvement",
 };
 
 // Department color palette — cycle through for unknown depts
@@ -417,7 +417,7 @@ function IsaChatPanel({ project, matrix, onClose }: {
   const [messages, setMessages] = useState<IsaMessage[]>([
     {
       role: "assistant",
-      content: `Hi! I'm Isa, your ISO lead auditor. I can help you build a compliant RACI matrix for **ISO §5.3 — Roles, Responsibilities, and Authorities**.
+      content: `Hi! I'm Isa, your ISO lead auditor. I can help you build a compliant RACI matrix for **ISO 5.3 — Roles, Responsibilities, and Authorities**.
 
 Here's what I can help with:
 - **Role selection**: What positions should be in your matrix?
@@ -448,7 +448,7 @@ What would you like to know?`,
     const validation = validateRaci(matrix);
     const missingA = validation.missingAccountable.slice(0, 5).join(", ");
 
-    const systemPrompt = `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You are helping the user build an ISO §5.3 RACI matrix.
+    const systemPrompt = `You are Isa, Lead ISO Auditor for ACSI ISO Manager. You are helping the user build an ISO 5.3 RACI matrix.
 
 Organization: ${project?.orgName ?? "the organization"}
 Standard: ${project?.standard ?? "ISO 9001"}
@@ -496,7 +496,7 @@ IMPORTANT: Each ISO clause row should have exactly ONE person Accountable (A). M
           </div>
           <div>
             <div className="text-xs font-bold text-violet-800 dark:text-violet-200">Ask Isa</div>
-            <div className="text-[10px] text-violet-600 dark:text-violet-400">ISO §5.3 advisor</div>
+            <div className="text-[10px] text-violet-600 dark:text-violet-400">ISO 5.3 advisor</div>
           </div>
         </div>
         <button onClick={onClose} className="p-1 rounded hover:bg-violet-100 dark:hover:bg-violet-900/30 text-muted-foreground">
@@ -943,7 +943,7 @@ function printJd(jd: JobDescription, project: IsoProject | null) {
   const dateStr = new Date(jd.createdAt).toLocaleDateString("en-US", {
     year: "numeric", month: "long", day: "numeric",
   });
-  const clauseHtml = jd.clauses.map(c => `<span class="clause-badge">§${c}</span>`).join("");
+  const clauseHtml = jd.clauses.map(c => `<span class="clause-badge">${c}</span>`).join("");
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -1050,7 +1050,7 @@ function printJd(jd: JobDescription, project: IsoProject | null) {
       <div class="org-name">${orgName}</div>
       <div class="org-sub">Human Resources · Job Description</div>
     </div>
-    <div class="std-badge">${standard} · §5.3</div>
+    <div class="std-badge">${standard} · 5.3</div>
   </div>
 
   <div class="job-title">${jd.title}</div>
@@ -1282,7 +1282,7 @@ function JobDescriptionsTab({ project, jds, onChange }: {
                     {jd.clauses.length > 0 && (
                       <div className="flex gap-1 flex-wrap mt-1.5">
                         {jd.clauses.map(c => (
-                          <Badge key={c} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">§{c}</Badge>
+                          <Badge key={c} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">{c}</Badge>
                         ))}
                       </div>
                     )}
@@ -1533,7 +1533,7 @@ export default function RolesRaciModule({ project, onStartWizard }: {
             <div>
               <h2 className="text-sm font-black text-primary flex items-center gap-2">
                 Roles, Responsibilities &amp; Authorities
-                <span className="text-xs font-mono text-accent">ISO §5.3</span>
+                <span className="text-xs font-mono text-accent">ISO 5.3</span>
               </h2>
               <p className="text-xs text-muted-foreground">
                 Department-grouped RACI matrix · {project.standard} · AI job description generator

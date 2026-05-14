@@ -1396,7 +1396,7 @@ export const insertDotRandomTestSchema = createInsertSchema(dotRandomTests, {
 export type DotRandomTest = typeof dotRandomTests.$inferSelect;
 export type InsertDotRandomTest = z.infer<typeof insertDotRandomTestSchema>;
 
-// ─── DOT Accident Register (49 CFR § 390.15) ─────────────────────────────────
+// ─── DOT Accident Register (49 CFR  390.15) ─────────────────────────────────
 export const dotAccidents = pgTable("dot_accidents", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
@@ -1448,7 +1448,7 @@ export const insertDotRoadsideInspectionSchema = createInsertSchema(dotRoadsideI
 export type DotRoadsideInspection = typeof dotRoadsideInspections.$inferSelect;
 export type InsertDotRoadsideInspection = z.infer<typeof insertDotRoadsideInspectionSchema>;
 
-// ─── DOT DVIR Log — Driver Vehicle Inspection Reports (49 CFR § 396.11) ──────
+// ─── DOT DVIR Log — Driver Vehicle Inspection Reports (49 CFR  396.11) ──────
 export const dotDvirLogs = pgTable("dot_dvir_logs", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
@@ -1851,40 +1851,40 @@ export const insertApqpGateReviewSchema = createInsertSchema(apqpGateReviews, {
 export type ApqpGateReview = typeof apqpGateReviews.$inferSelect;
 export type InsertApqpGateReview = z.infer<typeof insertApqpGateReviewSchema>;
 
-// ─── Design & Development Plans (IATF 16949 §8.3) ────────────────────────────
+// ─── Design & Development Plans (IATF 16949 8.3) ────────────────────────────
 export const designDevPlans = pgTable("design_dev_plans", {
   id: serial("id").primaryKey(),
   apqpProjectId: integer("apqp_project_id").notNull().unique(),
   userId: text("user_id").notNull(),
-  // §8.3.1 General
+  // 8.3.1 General
   isProductResponsible: boolean("is_product_responsible").default(true),
   designScope: text("design_scope"),
-  // §8.3.2 Planning
+  // 8.3.2 Planning
   crossFunctionalTeam: jsonb("cross_functional_team").$type<Array<{ name: string; dept: string; role: string; skills: string }>>().default([]),
   requiredSkills: text("required_skills"),
   prototypeRequired: boolean("prototype_required").default(false),
   prototypeDetails: text("prototype_details"),
-  // §8.3.3 Inputs
+  // 8.3.3 Inputs
   productDesignInputs: jsonb("product_design_inputs").$type<Array<{ input: string; source: string; status: string }>>().default([]),
   mfgProcessInputs: jsonb("mfg_process_inputs").$type<Array<{ input: string; source: string; status: string }>>().default([]),
   specialCharacteristics: jsonb("special_characteristics").$type<Array<{ characteristic: string; symbol: string; controlMethod: string; drawing: string }>>().default([]),
-  // §8.3.4 Controls
+  // 8.3.4 Controls
   designReviews: jsonb("design_reviews").$type<Array<{ type: string; date: string; attendees: string; outcome: string; actionItems: string }>>().default([]),
   verificationMethod: text("verification_method"),
   verificationStatus: text("verification_status").default("not_started"),
   validationMethod: text("validation_method"),
   validationStatus: text("validation_status").default("not_started"),
   validationDate: text("validation_date"),
-  // §8.3.5 Outputs
+  // 8.3.5 Outputs
   designOutputDocs: jsonb("design_output_docs").$type<Array<{ doc: string; rev: string; status: string; approvedBy: string }>>().default([]),
   pfdComplete: boolean("pfd_complete").default(false),
   pfmeaComplete: boolean("pfmea_complete").default(false),
   controlPlanComplete: boolean("control_plan_complete").default(false),
   workInstructionsComplete: boolean("work_instructions_complete").default(false),
   mfgProcessOutputNotes: text("mfg_process_output_notes"),
-  // §8.3.6 Changes
+  // 8.3.6 Changes
   designChanges: jsonb("design_changes").$type<Array<{ date: string; description: string; authorizedBy: string; impact: string; approved: boolean }>>().default([]),
-  // §8.3.7 Externally Provided D&D
+  // 8.3.7 Externally Provided D&D
   externalDdResponsible: text("external_dd_responsible"),
   externalDdControls: text("external_dd_controls"),
   externalDdSuppliers: jsonb("external_dd_suppliers").$type<Array<{ supplier: string; scope: string; controlMethod: string }>>().default([]),
@@ -2293,15 +2293,15 @@ export const calibrationRecords = pgTable("calibration_records", {
   certificateFileUrl: text("certificate_file_url"),
   nextDueDate: text("next_due_date"),
   notes: text("notes"),
-  // ── IATF 16949 §7.1.5.2.1 ───────────────────────────────────────────────
+  // ── IATF 16949 7.1.5.2.1 ───────────────────────────────────────────────
   softwareVerified: boolean("software_verified"),     // production software verification checkbox
-  // ── AS9100D §7.1.5.2 (Aerospace) ────────────────────────────────────────
+  // ── AS9100D 7.1.5.2 (Aerospace) ────────────────────────────────────────
   measurementUncertainty: text("measurement_uncertainty"),  // e.g. "±0.002 mm (k=2, 95% CI)"
   asFoundReading: text("as_found_reading"),                 // reading BEFORE adjustment
   asLeftReading: text("as_left_reading"),                   // reading AFTER adjustment
   environmentConditions: text("environment_conditions"),    // "23°C ±1°C, RH 50% ±5%"
   labAccredited: boolean("lab_accredited"),                 // ILAC / A2LA / NVLAP accredited
-  // ── ISO 13485 §7.6 (Medical Devices) ────────────────────────────────────
+  // ── ISO 13485 7.6 (Medical Devices) ────────────────────────────────────
   acceptanceCriteria: text("acceptance_criteria"),          // documented pass/fail criteria
   equipmentLabelConfirmed: boolean("equipment_label_confirmed"), // calibration status label on device
   // ── Variable-Gage Measurement Data ──────────────────────────────────────
@@ -2368,7 +2368,7 @@ export const insertCalibrationLabSchema = createInsertSchema(calibrationLabs).om
 export type InsertCalibrationLab = z.infer<typeof insertCalibrationLabSchema>;
 export type CalibrationLab = typeof calibrationLabs.$inferSelect;
 
-// ─── Calibration Internal Lab Scope (IATF §7.1.5.3.1) ───────────────────────
+// ─── Calibration Internal Lab Scope (IATF 7.1.5.3.1) ───────────────────────
 export const calibrationLabScope = pgTable("calibration_lab_scope", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
@@ -2383,13 +2383,13 @@ export const calibrationLabScope = pgTable("calibration_lab_scope", {
   effectiveDate: text("effective_date"),
   nextReviewDate: text("next_review_date"),
   approvedBy: text("approved_by"),
-  // §7.1.5.3.1 (c) — Personnel competency requirements
+  // 7.1.5.3.1 (c) — Personnel competency requirements
   personnelRequirements: jsonb("personnel_requirements"),   // PersonnelRequirement[]
-  // §7.1.5.3.1 (e) — Environmental / laboratory conditions
+  // 7.1.5.3.1 (e) — Environmental / laboratory conditions
   environmentalRequirements: jsonb("environmental_requirements"), // LabEnvironment object
-  // §7.1.5.3.1 (f) — Customer-specific requirements
+  // 7.1.5.3.1 (f) — Customer-specific requirements
   customerRequirements: jsonb("customer_requirements"),    // CustomerReq[]
-  // §7.1.5.3.1 (a+b) — Additional test capabilities beyond calibration gages
+  // 7.1.5.3.1 (a+b) — Additional test capabilities beyond calibration gages
   additionalCapabilities: jsonb("additional_capabilities"), // LabCapability[]
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -2398,7 +2398,7 @@ export const insertCalibrationLabScopeSchema = createInsertSchema(calibrationLab
 export type InsertCalibrationLabScope = z.infer<typeof insertCalibrationLabScopeSchema>;
 export type CalibrationLabScope = typeof calibrationLabScope.$inferSelect;
 
-// ─── MSA Studies (IATF 16949 §7.1.5.2) ──────────────────────────────────────
+// ─── MSA Studies (IATF 16949 7.1.5.2) ──────────────────────────────────────
 
 export const msaStudies = pgTable("msa_studies", {
   id: serial("id").primaryKey(),
@@ -2456,7 +2456,7 @@ export const pmEquipment = pgTable("pm_equipment", {
   maintenanceContractor: text("maintenance_contractor"),  // external service provider
   maintenanceType: text("maintenance_type").default("preventive"), // preventive|predictive|tpm|condition_based|reactive
   criticalityRating: text("criticality_rating").default("medium"), // critical|high|medium|low
-  // ── IATF 16949 §8.5.1.1 — Total Productive Maintenance ───────────────────
+  // ── IATF 16949 8.5.1.1 — Total Productive Maintenance ───────────────────
   isKeyProductionEquipment: boolean("is_key_production_equipment").default(false),
   breakdownImpact: text("breakdown_impact"),             // impact on production/quality if this fails
   contingencyPlan: text("contingency_plan"),             // backup equipment / alternative process
@@ -2464,7 +2464,7 @@ export const pmEquipment = pgTable("pm_equipment", {
   oeeTarget: text("oee_target"),                         // Overall Equipment Effectiveness target %
   // ── AS9100D — Foreign Object Damage ───────────────────────────────────────
   fodRisk: boolean("fod_risk").default(false),           // AS9100D: FOD risk present
-  // ── ISO 13485 §6.3 — Equipment Validation ─────────────────────────────────
+  // ── ISO 13485 6.3 — Equipment Validation ─────────────────────────────────
   validationRequired: boolean("validation_required").default(false),
   validationStatus: text("validation_status"),           // validated|not_validated|overdue
   validationDate: text("validation_date"),
@@ -2500,7 +2500,7 @@ export const pmRecords = pgTable("pm_records", {
   // ── AS9100D — FOD check ───────────────────────────────────────────────────
   fodCheckCompleted: boolean("fod_check_completed"),     // AS9100D: post-PM FOD check done
   // ── ISO 13485 — Post-PM validation ────────────────────────────────────────
-  equipmentValidatedPostPm: boolean("equipment_validated_post_pm"), // ISO 13485 §6.3
+  equipmentValidatedPostPm: boolean("equipment_validated_post_pm"), // ISO 13485 6.3
   // ── Interactive procedure checklist ────────────────────────────────────────
   checklistData: text("checklist_data"),  // JSON: array of booleans, one per parsed step
   createdAt: timestamp("created_at").defaultNow(),
@@ -2526,7 +2526,7 @@ export const auditLogs = pgTable("audit_logs", {
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 
-// ─── IATF §9.2.2.3 — Product Audits ──────────────────────────────────────────
+// ─── IATF 9.2.2.3 — Product Audits ──────────────────────────────────────────
 export interface ProductAuditChecklistItem {
   id: string;
   category: string;
@@ -2562,7 +2562,7 @@ export const insertIatfProductAuditSchema = createInsertSchema(iatfProductAudits
 export type IatfProductAudit = typeof iatfProductAudits.$inferSelect;
 export type InsertIatfProductAudit = z.infer<typeof insertIatfProductAuditSchema>;
 
-// ─── IATF §9.2.2.4 — Manufacturing Process Audits ────────────────────────────
+// ─── IATF 9.2.2.4 — Manufacturing Process Audits ────────────────────────────
 export interface MfgProcessAuditChecklistItem {
   id: string;
   category: string;
@@ -2604,7 +2604,7 @@ export const insertIatfMfgProcessAuditSchema = createInsertSchema(iatfMfgProcess
 export type IatfMfgProcessAudit = typeof iatfMfgProcessAudits.$inferSelect;
 export type InsertIatfMfgProcessAudit = z.infer<typeof insertIatfMfgProcessAuditSchema>;
 
-// ─── IATF Audit Schedule (§9.2.2.3 & §9.2.2.4) ───────────────────────────────
+// ─── IATF Audit Schedule (9.2.2.3 & 9.2.2.4) ───────────────────────────────
 export const iatfAuditSchedule = pgTable("iatf_audit_schedule", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
@@ -2730,7 +2730,7 @@ export const employeeCompetencyRecords = pgTable("employee_competency_records", 
   completedDate: text("completed_date"),
   expiryDate: text("expiry_date"),
   status: text("status").notNull().default("active"), // 'active' | 'expired' | 'pending_review'
-  isOjt: boolean("is_ojt").notNull().default(false),  // IATF §7.2.2 on-the-job training flag
+  isOjt: boolean("is_ojt").notNull().default(false),  // IATF 7.2.2 on-the-job training flag
   effectivenessVerified: boolean("effectiveness_verified").notNull().default(false),
   effectivenessNotes: text("effectiveness_notes"),
   notes: text("notes"),
@@ -2831,7 +2831,7 @@ export const insertTrainingEvidenceFileSchema = createInsertSchema(trainingEvide
 export type TrainingEvidenceFile = typeof trainingEvidenceFiles.$inferSelect;
 export type InsertTrainingEvidenceFile = z.infer<typeof insertTrainingEvidenceFileSchema>;
 
-// ─── ISO Manager: Compliance Obligations Register (§6.1.3) ────────────────────
+// ─── ISO Manager: Compliance Obligations Register (6.1.3) ────────────────────
 // Tracks all applicable legal and other requirements (Federal, State, Local,
 // Corporate, Voluntary) mapped to environmental aspects.
 export const isoComplianceObligations = pgTable("iso_compliance_obligations", {
@@ -2863,7 +2863,7 @@ export const insertIsoComplianceObligationSchema = createInsertSchema(isoComplia
 export type IsoComplianceObligation = typeof isoComplianceObligations.$inferSelect;
 export type InsertIsoComplianceObligation = z.infer<typeof insertIsoComplianceObligationSchema>;
 
-// ─── ISO Manager: Compliance Evaluation Log (§9.1.2) ─────────────────────────
+// ─── ISO Manager: Compliance Evaluation Log (9.1.2) ─────────────────────────
 // Periodic evaluations of each compliance obligation — evidence that the
 // organization systematically evaluates its compliance status.
 export const isoComplianceEvaluations = pgTable("iso_compliance_evaluations", {
@@ -2884,7 +2884,7 @@ export const insertIsoComplianceEvaluationSchema = createInsertSchema(isoComplia
 export type IsoComplianceEvaluation = typeof isoComplianceEvaluations.$inferSelect;
 export type InsertIsoComplianceEvaluation = z.infer<typeof insertIsoComplianceEvaluationSchema>;
 
-// ─── Integrated Compliance Calendar (§6.1.3 + §9.1.2 + ISO 45001 + OSHA) ─────
+// ─── Integrated Compliance Calendar (6.1.3 + 9.1.2 + ISO 45001 + OSHA) ─────
 // Unified deadline/event calendar that links back to the compliance obligations
 // register and covers ISO 14001, ISO 45001, OSHA, and regulatory training/drills.
 export const complianceCalendarEvents = pgTable("compliance_calendar_events", {
@@ -2895,8 +2895,8 @@ export const complianceCalendarEvents = pgTable("compliance_calendar_events", {
   eventType: text("event_type").notNull().default("deadline"),
   // 'deadline' | 'training' | 'audit' | 'drill' | 'permit_renewal' | 'report_due' | 'inspection' | 'monitoring' | 'review'
   standardCategory: text("standard_category").notNull().default("env_legal"),
-  // 'env_legal'  — Environmental Legal Obligations (ISO 14001 §6.1.3 / §9.1.2)
-  // 'ohs_legal'  — OH&S Legal Obligations (ISO 45001 §6.1.3 / §9.1.2)
+  // 'env_legal'  — Environmental Legal Obligations (ISO 14001 6.1.3 / 9.1.2)
+  // 'ohs_legal'  — OH&S Legal Obligations (ISO 45001 6.1.3 / 9.1.2)
   // 'osha'       — OSHA Regulatory Deliverables / Reports / Inspections
   // 'training'   — Legal-Requirement-Driven Environmental & Safety Training
   // 'drill'      — Emergency Response / Evacuation / Spill Drills
@@ -2919,7 +2919,7 @@ export const insertComplianceCalendarEventSchema = createInsertSchema(compliance
 export type ComplianceCalendarEvent = typeof complianceCalendarEvents.$inferSelect;
 export type InsertComplianceCalendarEvent = z.infer<typeof insertComplianceCalendarEventSchema>;
 
-// ─── Environmental Aspects & Impacts Analysis (ISO 14001 §6.1.2) ─────────────
+// ─── Environmental Aspects & Impacts Analysis (ISO 14001 6.1.2) ─────────────
 // Full aspects register with FMEA-inspired Severity × Probability × Regulatory
 // significance scoring (1–5 each; score ≥ 75 = Significant Environmental Aspect).
 export const envAspectsImpacts = pgTable("env_aspects_impacts", {
@@ -2962,7 +2962,7 @@ export const hazardAnalysis = pgTable("hazard_analysis", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
   isoProjectId: integer("iso_project_id"),
-  // Hazard Identification (ISO 45001 §6.1.2)
+  // Hazard Identification (ISO 45001 6.1.2)
   workArea: text("work_area"),
   activityTask: text("activity_task").notNull(),
   hazardDescription: text("hazard_description").notNull(),
@@ -2983,7 +2983,7 @@ export const hazardAnalysis = pgTable("hazard_analysis", {
   magnitude: integer("magnitude").notNull().default(1),         // M: 1|2|3|4
   riskScore: integer("risk_score").notNull().default(1),        // P × G × M
   riskLevel: text("risk_level").notNull().default("low"),       // low|medium|high|critical
-  // Hierarchy of Controls applied (ISO 45001 §8.1.2)
+  // Hierarchy of Controls applied (ISO 45001 8.1.2)
   controlHierarchy: text("control_hierarchy").array().default([]), // elimination|substitution|engineering|administrative|ppe
   plannedControls: text("planned_controls"),
   // Residual Risk (after controls)
