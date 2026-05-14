@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { ProtectedLayout } from "@/components/Layout";
-import { useSubscriptionStatus } from "@/hooks/use-subscriptions";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle, ArrowRight, RotateCcw, Lock, ChevronDown, ChevronUp, Info, ChevronLeft, ClipboardList, FileWarning } from "lucide-react";
@@ -386,7 +384,6 @@ function SubQuestionPanel({ subQuestions, criterionId, onSelect, answers, onAnsw
 }
 
 export default function DecisionTree() {
-  const { data: subStatus, isLoading } = useSubscriptionStatus();
   const [currentNodeId, setCurrentNodeId] = useState("start");
   const [history, setHistory] = useState<string[]>([]);
   const [expandedCriteria, setExpandedCriteria] = useState<string | null>(null);
@@ -453,36 +450,10 @@ export default function DecisionTree() {
     setExpandedCriteria(null);
   };
 
-  if (isLoading) return null;
-
-  if (!subStatus?.isPro) {
-    return (
-      <ProtectedLayout>
-        <div className="max-w-2xl mx-auto text-center py-20">
-          <div className="bg-white rounded-2xl shadow-xl p-12 border border-border/50">
-            <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent mb-6">
-              <Lock className="w-8 h-8" />
-            </div>
-            <h2 className="text-3xl font-bold text-primary mb-4" data-testid="text-pro-locked">Pro Feature Locked</h2>
-            <p className="text-muted-foreground mb-8 text-lg">
-              The Interactive OSHA 300, Log it or Not tool is available exclusively for Pro subscribers. 
-              Ensure compliance with accurate, guided assessments.
-            </p>
-            <Link href="/settings">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white w-full sm:w-auto" data-testid="button-upgrade">
-                Upgrade to Access
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </ProtectedLayout>
-    );
-  }
-
   if (currentNodeId === "recordable") {
     const criterion = SEVERITY_CRITERIA.find(c => c.id === selectedCriterion);
     return (
-      <ProtectedLayout>
+      <div className="min-h-screen bg-background py-6 px-4">
         <div className="max-w-2xl mx-auto py-10">
           <Card className="shadow-xl border-t-4 border-t-accent" data-testid="card-result-recordable">
             <CardContent className="p-8 text-center">
@@ -552,13 +523,13 @@ export default function DecisionTree() {
             </CardContent>
           </Card>
         </div>
-      </ProtectedLayout>
+      </div>
     );
   }
 
   if (currentNodeId === "not_recordable") {
     return (
-      <ProtectedLayout>
+      <div className="min-h-screen bg-background py-6 px-4">
         <ResultCard 
           title="Not Recordable"
           description="Based on your answers, this case does not need to be recorded on the OSHA 300 Log."
@@ -568,13 +539,13 @@ export default function DecisionTree() {
           onReset={reset}
           onBack={goBack}
         />
-      </ProtectedLayout>
+      </div>
     );
   }
 
   if (currentNodeId === "update_prev") {
     return (
-      <ProtectedLayout>
+      <div className="min-h-screen bg-background py-6 px-4">
         <ResultCard 
           title="Update Previous Case"
           description="This is not a new case. Update the existing OSHA 300 Log entry for the previous injury or illness if necessary."
@@ -584,13 +555,13 @@ export default function DecisionTree() {
           onReset={reset}
           onBack={goBack}
         />
-      </ProtectedLayout>
+      </div>
     );
   }
 
   if (currentNodeId === "severity") {
     return (
-      <ProtectedLayout>
+      <div className="min-h-screen bg-background py-6 px-4">
         <div className="max-w-2xl mx-auto py-10">
           <AnimatePresence mode="wait">
             <motion.div
@@ -696,12 +667,12 @@ export default function DecisionTree() {
             </motion.div>
           </AnimatePresence>
         </div>
-      </ProtectedLayout>
+      </div>
     );
   }
 
   return (
-    <ProtectedLayout>
+    <div className="min-h-screen bg-background py-6 px-4">
       <div className="max-w-2xl mx-auto py-10">
         <AnimatePresence mode="wait">
           <motion.div
@@ -758,7 +729,7 @@ export default function DecisionTree() {
           </motion.div>
         </AnimatePresence>
       </div>
-    </ProtectedLayout>
+    </div>
   );
 }
 

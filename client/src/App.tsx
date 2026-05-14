@@ -230,7 +230,7 @@ function Router() {
       <Route path="/employer-dashboard" component={EmployerDashboard} />
       <Route path="/bot">{() => <ProtectedRoute component={BotPage} />}</Route>
       <Route path="/iso-manager">{() => <ProtectedRoute component={ISOManager} />}</Route>
-      <Route path="/decision-tree">{() => <ProtectedRoute component={DecisionTree} />}</Route>
+      <Route path="/decision-tree" component={DecisionTree} />
       <Route path="/settings">{() => <ProtectedRoute component={Settings} />}</Route>
       <Route path="/brandnswag">{() => <ProtectedRoute component={BrandNSwag} />}</Route>
       <Route path="/mentorship">{() => <ProtectedRoute component={Mentorship} />}</Route>
