@@ -2081,51 +2081,51 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
   return (
     <div className="space-y-4">
       {/* ── AIAG Worksheet Study Header ───────────────────────────────────────── */}
-      <div className="border rounded-lg overflow-hidden text-xs">
+      <div className="border rounded-lg overflow-hidden text-sm">
         <div className="grid grid-cols-3 divide-x divide-y border-b">
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Part Number:</span>
             <span className="font-medium">{meta.partNumber || "—"}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Gage Name:</span>
             <span className="font-medium">{meta.gaugeDesc || (eq ? eq.name : "—")}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Appraiser {appLabel(0)}:</span>
             <span className="font-medium">{meta.appraiserNames[0] || "—"}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Part Name:</span>
             <span className="font-medium">{meta.partName || "—"}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Gage Number:</span>
             <span className="font-medium">{eq ? eq.gageId : "—"}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Appraiser {appLabel(1)}:</span>
             <span className="font-medium">{meta.appraiserNames[1] || "—"}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Characteristic:</span>
             <span className="font-medium">{meta.characteristic || "—"}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Gage Type:</span>
             <span className="font-medium">{meta.gaugeDesc || "—"}</span>
           </div>
           {appraiserCount >= 3 && (
-            <div className="px-3 py-1.5 flex gap-1.5">
+            <div className="px-4 py-2.5 flex gap-2">
               <span className="text-muted-foreground font-semibold shrink-0">Appraiser {appLabel(2)}:</span>
               <span className="font-medium">{meta.appraiserNames[2] || "—"}</span>
             </div>
           )}
-          <div className="px-3 py-1.5 flex gap-1.5 col-span-1">
+          <div className="px-4 py-2.5 flex gap-2 col-span-1">
             <span className="text-muted-foreground font-semibold shrink-0">Specification:</span>
             <span className="font-medium">{meta.lsl || "—"} / {meta.usl || "—"}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Trials:</span>
             <span className="font-medium">{trialCount}</span>
             <span className="text-muted-foreground font-semibold shrink-0 ml-3">Parts:</span>
@@ -2133,7 +2133,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
             <span className="text-muted-foreground font-semibold shrink-0 ml-3">Appraisers:</span>
             <span className="font-medium">{appraiserCount}</span>
           </div>
-          <div className="px-3 py-1.5 flex gap-1.5">
+          <div className="px-4 py-2.5 flex gap-2">
             <span className="text-muted-foreground font-semibold shrink-0">Date:</span>
             <span className="font-medium">{studyDate}</span>
             <span className="text-muted-foreground font-semibold shrink-0 ml-3">Performed By:</span>
@@ -2141,9 +2141,9 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
           </div>
         </div>
         {!hasReadings && (
-          <div className="px-3 py-1 bg-muted/10">
+          <div className="px-4 py-1.5 bg-muted/10">
             <button type="button" onClick={() => setPhase("config")}
-              className="text-[11px] text-accent hover:underline">← Edit study setup</button>
+              className="text-xs text-accent hover:underline">← Edit study setup</button>
           </div>
         )}
       </div>
@@ -2152,18 +2152,18 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
       {/* Columns: APPRAISER/TRIAL # | Part 1…n | AVERAGE                         */}
       {/* Rows per appraiser: group header · Trial 1…r · Average (X̄) · Range (R) */}
       <div className="overflow-x-auto border rounded-lg">
-        <table className="text-xs border-collapse" style={{minWidth: `${145 + partCount*54 + 90}px`}}>
+        <table className="text-sm border-collapse" style={{minWidth: `${185 + partCount*68 + 115}px`}}>
           <thead>
-            <tr className="bg-muted/70 text-[11px]">
-              <th className="border px-2 py-1.5 text-left font-bold min-w-[145px] sticky left-0 bg-muted/70 z-20">
+            <tr className="bg-muted/70 text-sm">
+              <th className="border px-3 py-2 text-left font-bold min-w-[185px] sticky left-0 bg-muted/70 z-20">
                 APPRAISER / TRIAL #
               </th>
               {Array.from({length: partCount}, (_, j) => (
-                <th key={j} className="border px-1 py-1.5 text-center font-bold min-w-[52px]">
+                <th key={j} className="border px-1 py-2 text-center font-bold min-w-[66px]">
                   {j + 1}
                 </th>
               ))}
-              <th className="border px-2 py-1.5 text-center font-bold min-w-[82px] bg-muted/70">
+              <th className="border px-2 py-2 text-center font-bold min-w-[115px] bg-muted/70">
                 AVERAGE
               </th>
             </tr>
@@ -2178,7 +2178,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
               rows.push(
                 <tr key={`hdr-${i}`}>
                   <td colSpan={partCount + 2}
-                    className={`border px-3 py-1 font-bold text-[11px] sticky left-0 z-10 ${acColor}`}>
+                    className={`border px-4 py-1.5 font-bold text-sm sticky left-0 z-10 ${acColor}`}>
                     {i + 1}. {appName}
                   </td>
                 </tr>
@@ -2189,20 +2189,20 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
                 const rowAvg = trialRowAvgs[i]?.[k];
                 rows.push(
                   <tr key={`t-${i}-${k}`}>
-                    <td className="border px-3 py-0 text-muted-foreground sticky left-0 bg-background z-10 text-[11px] h-7">
-                      <span className="text-muted-foreground/50 mr-1.5">{i * (trialCount + 2) + k + 1}.</span>
+                    <td className="border px-4 py-0 text-muted-foreground sticky left-0 bg-background z-10 text-sm h-9">
+                      <span className="text-muted-foreground/50 mr-2">{i * (trialCount + 2) + k + 1}.</span>
                       Trial {k + 1}
                     </td>
                     {Array.from({length: partCount}, (_, j) => (
                       <td key={j} className="border p-0">
                         <input type="number" step="any"
-                          className="w-[50px] h-7 text-center text-[11px] border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-accent/60 rounded font-mono"
+                          className="w-[62px] h-9 text-center text-sm border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-accent/60 rounded font-mono"
                           value={gridData[i]?.[j]?.[k] ?? ""}
                           onChange={e => setCell(i, j, k, e.target.value)}
                           data-testid={`cell-a${i}-s${j}-t${k}`} />
                       </td>
                     ))}
-                    <td className="border px-2 py-0 text-center font-mono text-[11px] text-muted-foreground/60 bg-muted/5 h-7">
+                    <td className="border px-3 py-0 text-center font-mono text-sm text-muted-foreground/60 bg-muted/5 h-9">
                       {rowAvg != null ? rowAvg.toFixed(3) : ""}
                     </td>
                   </tr>
@@ -2213,16 +2213,16 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
               const aveRowNum = i * (trialCount + 2) + trialCount + 1;
               rows.push(
                 <tr key={`avg-${i}`} className="bg-muted/10">
-                  <td className="border px-3 py-0.5 text-[11px] font-semibold sticky left-0 bg-muted/10 z-10 h-6">
-                    <span className="text-muted-foreground/50 mr-1.5">{aveRowNum}.</span>
+                  <td className="border px-4 py-1 text-sm font-semibold sticky left-0 bg-muted/10 z-10 h-8">
+                    <span className="text-muted-foreground/50 mr-2">{aveRowNum}.</span>
                     AVE
                   </td>
                   {Array.from({length: partCount}, (_, j) => (
-                    <td key={j} className="border px-1 py-0 text-center font-mono text-[11px] h-6">
+                    <td key={j} className="border px-1 py-0 text-center font-mono text-sm h-8">
                       {cellStats[i]?.[j]?.mean != null ? cellStats[i][j].mean!.toFixed(3) : ""}
                     </td>
                   ))}
-                  <td className="border px-2 py-0 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-muted/10 h-6 whitespace-nowrap">
+                  <td className="border px-3 py-0 text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-muted/10 h-8 whitespace-nowrap">
                     x̄{appLabel(i).toLowerCase()}= {aiag?.XbarA[i] != null ? aiag.XbarA[i].toFixed(4) : "—"}
                   </td>
                 </tr>
@@ -2232,21 +2232,21 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
               const rngRowNum = aveRowNum + 1;
               rows.push(
                 <tr key={`rng-${i}`} className="bg-muted/10">
-                  <td className="border px-3 py-0.5 text-[11px] font-semibold sticky left-0 bg-muted/10 z-10 h-6">
-                    <span className="text-muted-foreground/50 mr-1.5">{rngRowNum}.</span>
+                  <td className="border px-4 py-1 text-sm font-semibold sticky left-0 bg-muted/10 z-10 h-8">
+                    <span className="text-muted-foreground/50 mr-2">{rngRowNum}.</span>
                     R
                   </td>
                   {Array.from({length: partCount}, (_, j) => {
                     const rng = cellStats[i]?.[j]?.range;
                     const overLimit = aiag?.UCLR != null && rng != null && rng > aiag.UCLR;
                     return (
-                      <td key={j} className={`border px-1 py-0 text-center font-mono text-[11px] h-6 ${overLimit ? "bg-red-50 dark:bg-red-950/30 text-red-700 font-bold" : ""}`}>
+                      <td key={j} className={`border px-1 py-0 text-center font-mono text-sm h-8 ${overLimit ? "bg-red-50 dark:bg-red-950/30 text-red-700 font-bold" : ""}`}>
                         {rng != null ? rng.toFixed(3) : ""}
                         {overLimit && <span className="text-red-500 ml-0.5">▲</span>}
                       </td>
                     );
                   })}
-                  <td className="border px-2 py-0 text-[11px] font-bold text-sky-700 dark:text-sky-400 bg-muted/10 h-6 whitespace-nowrap">
+                  <td className="border px-3 py-0 text-sm font-bold text-sky-700 dark:text-sky-400 bg-muted/10 h-8 whitespace-nowrap">
                     r{appLabel(i).toLowerCase()}= {aiag?.RbarA[i] != null ? aiag.RbarA[i].toFixed(4) : "—"}
                   </td>
                 </tr>
@@ -2257,56 +2257,56 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
 
             {/* ── Part Average row (grand mean per part across all appraisers) ── */}
             <tr className="bg-muted/30 border-t-2 border-foreground/20">
-              <td className="border px-3 py-1 text-[11px] font-bold sticky left-0 bg-muted/30 z-10">
+              <td className="border px-4 py-1.5 text-sm font-bold sticky left-0 bg-muted/30 z-10">
                 PART AVERAGE
               </td>
               {Array.from({length: partCount}, (_, j) => (
-                <td key={j} className="border px-1 py-1 text-center font-mono text-[11px] font-bold">
+                <td key={j} className="border px-1 py-1.5 text-center font-mono text-sm font-bold">
                   {aiag?.partAvgs[j] != null ? aiag.partAvgs[j].toFixed(3) : ""}
                 </td>
               ))}
-              <td className="border px-2 py-1 text-[11px] font-bold bg-muted/30 whitespace-nowrap">
+              <td className="border px-3 py-1.5 text-sm font-bold bg-muted/30 whitespace-nowrap">
                 {grandMean != null && <>X̄= {grandMean.toFixed(4)}</>}
                 {aiag && <span className="ml-2 text-muted-foreground">Rp= {aiag.Rp.toFixed(4)}</span>}
               </td>
             </tr>
 
             {/* ── Row 17: R̄ calculation ── */}
-            <tr className="bg-muted/5 text-[10px] italic">
-              <td colSpan={partCount + 1} className="border px-3 py-1 text-muted-foreground sticky left-0 bg-muted/5 z-10">
+            <tr className="bg-muted/5 text-xs italic">
+              <td colSpan={partCount + 1} className="border px-4 py-1.5 text-muted-foreground sticky left-0 bg-muted/5 z-10">
                 ({Array.from({length: appraiserCount}, (_, i) => `r${appLabel(i).toLowerCase()}`).join(" + ")}) ÷ {appraiserCount} =
                 {aiag && <span className="not-italic font-mono text-foreground ml-1 font-bold">
                   ({aiag.RbarA.map(r => r.toFixed(4)).join(" + ")}) ÷ {appraiserCount}
                 </span>}
               </td>
-              <td className="border px-2 py-1 text-[11px] font-bold font-mono not-italic text-sky-700 dark:text-sky-400 whitespace-nowrap bg-muted/10">
+              <td className="border px-3 py-1.5 text-sm font-bold font-mono not-italic text-sky-700 dark:text-sky-400 whitespace-nowrap bg-muted/10">
                 R̄= {aiag?.Rbar.toFixed(4) ?? "—"}
               </td>
             </tr>
 
             {/* ── Row 18: xDIFF ── */}
-            <tr className="bg-muted/5 text-[10px] italic">
-              <td colSpan={partCount + 1} className="border px-3 py-1 text-muted-foreground sticky left-0 bg-muted/5 z-10">
+            <tr className="bg-muted/5 text-xs italic">
+              <td colSpan={partCount + 1} className="border px-4 py-1.5 text-muted-foreground sticky left-0 bg-muted/5 z-10">
                 x̄DIFF = Max x̄ − Min x̄ =
                 {aiag && <span className="not-italic font-mono text-foreground ml-1 font-bold">
                   {Math.max(...aiag.XbarA).toFixed(4)} − {Math.min(...aiag.XbarA).toFixed(4)}
                 </span>}
               </td>
-              <td className="border px-2 py-1 text-[11px] font-bold font-mono not-italic text-emerald-700 dark:text-emerald-400 whitespace-nowrap bg-muted/10">
+              <td className="border px-3 py-1.5 text-sm font-bold font-mono not-italic text-emerald-700 dark:text-emerald-400 whitespace-nowrap bg-muted/10">
                 x̄DIFF= {aiag?.xdiff.toFixed(4) ?? "—"}
               </td>
             </tr>
 
             {/* ── Row 19: UCL_R ── */}
-            <tr className="bg-muted/5 text-[10px] italic">
-              <td colSpan={partCount + 1} className="border px-3 py-1 text-muted-foreground sticky left-0 bg-muted/5 z-10">
+            <tr className="bg-muted/5 text-xs italic">
+              <td colSpan={partCount + 1} className="border px-4 py-1.5 text-muted-foreground sticky left-0 bg-muted/5 z-10">
                 * UCL<sub>R</sub> = R̄ × D₄ =
                 {aiag && <span className="not-italic font-mono text-foreground ml-1 font-bold">
                   {aiag.Rbar.toFixed(4)} × {D4}
                 </span>}
-                <span className="ml-2 not-italic text-[9px]">(D₄ = 3.27 for 2 trials · 2.58 for 3 trials — circle ranges above limit)</span>
+                <span className="ml-2 not-italic text-[10px]">(D₄ = 3.27 for 2 trials · 2.58 for 3 trials — circle ranges above limit)</span>
               </td>
-              <td className="border px-2 py-1 text-[11px] font-bold font-mono not-italic text-amber-700 dark:text-amber-400 whitespace-nowrap bg-muted/10">
+              <td className="border px-3 py-1.5 text-sm font-bold font-mono not-italic text-amber-700 dark:text-amber-400 whitespace-nowrap bg-muted/10">
                 UCL<sub>R</sub>= {aiag?.UCLR.toFixed(4) ?? "—"}
               </td>
             </tr>
@@ -2317,95 +2317,95 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
       {/* ── Measurement Unit Analysis ──────────────────────────────────────────── */}
       {aiag ? (
         <div className="border rounded-lg overflow-hidden">
-          <div className="px-4 py-2 bg-muted/40 border-b">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+          <div className="px-4 py-2.5 bg-muted/40 border-b">
+            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">
               Gage Repeatability &amp; Reproducibility — Measurement Unit Analysis (AIAG MSA 4th Ed.)
             </p>
           </div>
-          <div className="grid grid-cols-5 gap-0 divide-x text-xs">
+          <div className="grid grid-cols-5 gap-0 divide-x text-sm">
 
             {/* LEFT 3 columns: step-by-step formulas with values substituted */}
-            <div className="col-span-3 p-4 space-y-3.5">
+            <div className="col-span-3 p-5 space-y-4">
 
               {/* EV */}
               <div>
-                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Repeatability — Equipment Variation (EV)</p>
-                <div className="font-mono text-[11px] leading-5 pl-1">
+                <p className="font-bold text-sm text-muted-foreground mb-1">Repeatability — Equipment Variation (EV)</p>
+                <div className="font-mono text-sm leading-6 pl-2">
                   <p>EV = R̄ × K₁</p>
-                  <p className="text-muted-foreground pl-4">= {aiag.Rbar.toFixed(4)} × {K1}</p>
-                  <p className="pl-4 font-bold">= {aiag.EV.toFixed(4)}</p>
+                  <p className="text-muted-foreground pl-6">= {aiag.Rbar.toFixed(4)} × {K1}</p>
+                  <p className="pl-6 font-bold">= {aiag.EV.toFixed(4)}</p>
                 </div>
               </div>
 
               {/* AV */}
               <div>
-                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Reproducibility — Appraiser Variation (AV)</p>
-                <div className="font-mono text-[11px] leading-5 pl-1">
+                <p className="font-bold text-sm text-muted-foreground mb-1">Reproducibility — Appraiser Variation (AV)</p>
+                <div className="font-mono text-sm leading-6 pl-2">
                   <p>AV = √[(x̄DIFF × K₂)² − (EV² ÷ n×r)]</p>
-                  <p className="text-muted-foreground pl-4">= √[({aiag.xdiff.toFixed(4)} × {K2})² − ({aiag.EV.toFixed(4)}² ÷ {partCount}×{trialCount})]</p>
-                  <p className="pl-4 font-bold">= {aiag.AV.toFixed(4)}</p>
+                  <p className="text-muted-foreground pl-6">= √[({aiag.xdiff.toFixed(4)} × {K2})² − ({aiag.EV.toFixed(4)}² ÷ {partCount}×{trialCount})]</p>
+                  <p className="pl-6 font-bold">= {aiag.AV.toFixed(4)}</p>
                 </div>
-                <div className="mt-1 text-[10px] text-muted-foreground pl-1 flex gap-4">
+                <div className="mt-1 text-xs text-muted-foreground pl-2">
                   <span>Appraisers: {Object.entries(AIAG_K2).map(([a,k]) => `${a}→K₂=${k}`).join(" · ")}</span>
                 </div>
               </div>
 
               {/* GRR */}
               <div>
-                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Repeatability &amp; Reproducibility (GRR)</p>
-                <div className="font-mono text-[11px] leading-5 pl-1">
+                <p className="font-bold text-sm text-muted-foreground mb-1">Repeatability &amp; Reproducibility (GRR)</p>
+                <div className="font-mono text-sm leading-6 pl-2">
                   <p>GRR = √(EV² + AV²)</p>
-                  <p className="text-muted-foreground pl-4">= √({aiag.EV.toFixed(4)}² + {aiag.AV.toFixed(4)}²)</p>
-                  <p className="pl-4 font-bold">= {aiag.GRR.toFixed(4)}</p>
+                  <p className="text-muted-foreground pl-6">= √({aiag.EV.toFixed(4)}² + {aiag.AV.toFixed(4)}²)</p>
+                  <p className="pl-6 font-bold">= {aiag.GRR.toFixed(4)}</p>
                 </div>
               </div>
 
               {/* PV */}
               <div>
-                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Part Variation (PV)</p>
-                <div className="font-mono text-[11px] leading-5 pl-1">
+                <p className="font-bold text-sm text-muted-foreground mb-1">Part Variation (PV)</p>
+                <div className="font-mono text-sm leading-6 pl-2">
                   <p>PV = Rp × K₃</p>
-                  <p className="text-muted-foreground pl-4">= {aiag.Rp.toFixed(4)} × {K3}</p>
-                  <p className="pl-4 font-bold">= {aiag.PV.toFixed(4)}</p>
+                  <p className="text-muted-foreground pl-6">= {aiag.Rp.toFixed(4)} × {K3}</p>
+                  <p className="pl-6 font-bold">= {aiag.PV.toFixed(4)}</p>
                 </div>
               </div>
 
               {/* TV */}
               <div>
-                <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Total Variation (TV)</p>
-                <div className="font-mono text-[11px] leading-5 pl-1">
+                <p className="font-bold text-sm text-muted-foreground mb-1">Total Variation (TV)</p>
+                <div className="font-mono text-sm leading-6 pl-2">
                   <p>TV = √(GRR² + PV²)</p>
-                  <p className="text-muted-foreground pl-4">= √({aiag.GRR.toFixed(4)}² + {aiag.PV.toFixed(4)}²)</p>
-                  <p className="pl-4 font-bold">= {aiag.TV.toFixed(4)}</p>
+                  <p className="text-muted-foreground pl-6">= √({aiag.GRR.toFixed(4)}² + {aiag.PV.toFixed(4)}²)</p>
+                  <p className="pl-6 font-bold">= {aiag.TV.toFixed(4)}</p>
                 </div>
               </div>
 
               {/* Tolerance */}
               {tolSixth != null && (
-                <div className="border-t pt-2">
-                  <p className="font-bold text-[11px] text-muted-foreground mb-0.5">Tolerance (Tol)</p>
-                  <div className="font-mono text-[11px] leading-5 pl-1">
+                <div className="border-t pt-3">
+                  <p className="font-bold text-sm text-muted-foreground mb-1">Tolerance (Tol)</p>
+                  <div className="font-mono text-sm leading-6 pl-2">
                     <p>Tol = (USL − LSL) ÷ 6</p>
-                    <p className="text-muted-foreground pl-4">= ({meta.usl} − {meta.lsl}) ÷ 6</p>
-                    <p className="pl-4 font-bold">= {tolSixth.toFixed(4)}</p>
+                    <p className="text-muted-foreground pl-6">= ({meta.usl} − {meta.lsl}) ÷ 6</p>
+                    <p className="pl-6 font-bold">= {tolSixth.toFixed(4)}</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* RIGHT 2 columns: K tables + %Tolerance + verdict */}
-            <div className="col-span-2 p-4 space-y-4">
+            <div className="col-span-2 p-5 space-y-4">
 
               {/* K constant reference tables */}
-              <div className="grid grid-cols-3 gap-3 text-[10px]">
+              <div className="grid grid-cols-3 gap-3 text-xs">
                 <div>
                   <table className="border-collapse w-full">
-                    <thead><tr className="bg-muted/30"><th className="border px-1 py-0.5 text-left">Trials</th><th className="border px-1 py-0.5 text-right font-bold">K₁</th></tr></thead>
+                    <thead><tr className="bg-muted/30"><th className="border px-2 py-1 text-left">Trials</th><th className="border px-2 py-1 text-right font-bold">K₁</th></tr></thead>
                     <tbody>
                       {Object.entries(AIAG_K1).map(([t, k]) => (
                         <tr key={t} className={trialCount === +t ? "bg-accent/10 font-bold" : ""}>
-                          <td className="border px-1 py-0.5">{t}</td>
-                          <td className="border px-1 py-0.5 text-right font-mono">{k}</td>
+                          <td className="border px-2 py-1">{t}</td>
+                          <td className="border px-2 py-1 text-right font-mono">{k}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2413,12 +2413,12 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
                 </div>
                 <div>
                   <table className="border-collapse w-full">
-                    <thead><tr className="bg-muted/30"><th className="border px-1 py-0.5 text-left">App.</th><th className="border px-1 py-0.5 text-right font-bold">K₂</th></tr></thead>
+                    <thead><tr className="bg-muted/30"><th className="border px-2 py-1 text-left">App.</th><th className="border px-2 py-1 text-right font-bold">K₂</th></tr></thead>
                     <tbody>
                       {Object.entries(AIAG_K2).map(([a, k]) => (
                         <tr key={a} className={appraiserCount === +a ? "bg-accent/10 font-bold" : ""}>
-                          <td className="border px-1 py-0.5">{a}</td>
-                          <td className="border px-1 py-0.5 text-right font-mono">{k}</td>
+                          <td className="border px-2 py-1">{a}</td>
+                          <td className="border px-2 py-1 text-right font-mono">{k}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2426,12 +2426,12 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
                 </div>
                 <div>
                   <table className="border-collapse w-full">
-                    <thead><tr className="bg-muted/30"><th className="border px-1 py-0.5 text-left">Parts</th><th className="border px-1 py-0.5 text-right font-bold">K₃</th></tr></thead>
+                    <thead><tr className="bg-muted/30"><th className="border px-2 py-1 text-left">Parts</th><th className="border px-2 py-1 text-right font-bold">K₃</th></tr></thead>
                     <tbody>
                       {Object.entries(AIAG_K3).map(([p, k]) => (
                         <tr key={p} className={partCount === +p ? "bg-accent/10 font-bold" : ""}>
-                          <td className="border px-1 py-0.5">{p}</td>
-                          <td className="border px-1 py-0.5 text-right font-mono">{k}</td>
+                          <td className="border px-2 py-1">{p}</td>
+                          <td className="border px-2 py-1 text-right font-mono">{k}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2442,8 +2442,8 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
               {/* %Tolerance column */}
               {tolSixth != null && (
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-1">% Tolerance (Tol = {tolSixth.toFixed(4)})</p>
-                  <div className="font-mono text-[11px] leading-6 space-y-0.5">
+                  <p className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-1.5">% Tolerance (Tol = {tolSixth.toFixed(4)})</p>
+                  <div className="font-mono text-sm leading-7 space-y-0.5">
                     {[
                       { label: "%EV",  val: aiag.EV },
                       { label: "%AV",  val: aiag.AV },
@@ -2451,7 +2451,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
                       { label: "%PV",  val: aiag.PV },
                     ].map(row => (
                       <div key={row.label} className={`flex gap-1 ${row.bold ? "font-bold" : ""}`}>
-                        <span className="w-12">{row.label}</span>
+                        <span className="w-14">{row.label}</span>
                         <span className="text-muted-foreground">=</span>
                         <span>100({row.val.toFixed(4)}/{tolSixth.toFixed(4)})</span>
                         <span className={`ml-auto pl-2 ${row.bold ? grrColor : ""}`}>
@@ -2464,27 +2464,27 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
               )}
 
               {/* NDC + verdict */}
-              <div className="border-t pt-3 space-y-2">
-                <div className="font-mono text-[11px]">
+              <div className="border-t pt-3 space-y-3">
+                <div className="font-mono text-sm leading-6">
                   <p>ndc = 1.41 × (PV ÷ GRR)</p>
-                  <p className="text-muted-foreground pl-4">= 1.41 × ({aiag.PV.toFixed(4)} ÷ {aiag.GRR.toFixed(4)})</p>
-                  <p className="pl-4 font-bold text-foreground">= {aiag.ndc}</p>
+                  <p className="text-muted-foreground pl-6">= 1.41 × ({aiag.PV.toFixed(4)} ÷ {aiag.GRR.toFixed(4)})</p>
+                  <p className="pl-6 font-bold text-foreground">= {aiag.ndc}</p>
                 </div>
-                <div className={`rounded-lg p-3 text-center space-y-1.5 ${
+                <div className={`rounded-lg p-4 text-center space-y-2 ${
                   aiag.pctGRR < 10  ? "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200"
                   : aiag.pctGRR <= 30 ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200"
                   : "bg-red-50 dark:bg-red-950/20 border border-red-200"
                 }`}>
-                  <p className={`text-xl font-black tabular-nums ${grrColor}`}>%GRR = {aiag.pctGRR.toFixed(2)}%</p>
-                  <p className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block ${
+                  <p className={`text-2xl font-black tabular-nums ${grrColor}`}>%GRR = {aiag.pctGRR.toFixed(2)}%</p>
+                  <p className={`text-sm font-bold px-3 py-1 rounded-full inline-block ${
                     aiag.ndc >= 5 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
                   }`}>NDC = {aiag.ndc} {aiag.ndc >= 5 ? "✓" : "✗"}</p>
-                  <p className={`text-xs font-black px-3 py-1 rounded-full text-white inline-block ${
+                  <p className={`text-sm font-black px-4 py-1.5 rounded-full text-white inline-block ${
                     aiag.pctGRR < 10 ? "bg-emerald-600" : aiag.pctGRR <= 30 ? "bg-amber-500" : "bg-red-600"
                   }`}>
                     {aiag.pctGRR < 10 ? "Gage System OK ✓" : aiag.pctGRR <= 30 ? "⚠ Marginal" : "✗ Unacceptable"}
                   </p>
-                  <p className="text-[9px] text-muted-foreground">&lt;10% Acceptable · 10–30% Marginal · &gt;30% Unacceptable</p>
+                  <p className="text-xs text-muted-foreground">&lt;10% Acceptable · 10–30% Marginal · &gt;30% Unacceptable</p>
                 </div>
               </div>
             </div>
@@ -2492,15 +2492,15 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
 
           {/* Summary variance components table */}
           <div className="border-t">
-            <table className="w-full text-xs">
+            <table className="w-full text-sm">
               <thead className="bg-muted/20">
                 <tr>
-                  <th className="text-left px-4 py-2 font-bold">Source</th>
-                  <th className="text-right px-3 py-2 font-bold">σ (Std Dev)</th>
-                  <th className="text-right px-3 py-2 font-bold">6σ Study Var</th>
-                  <th className="text-right px-3 py-2 font-bold">%Contribution</th>
-                  <th className="text-right px-3 py-2 font-bold">%Study Var</th>
-                  {tolSixth != null && <th className="text-right px-3 py-2 font-bold">%Tolerance</th>}
+                  <th className="text-left px-4 py-2.5 font-bold">Source</th>
+                  <th className="text-right px-4 py-2.5 font-bold">σ (Std Dev)</th>
+                  <th className="text-right px-4 py-2.5 font-bold">6σ Study Var</th>
+                  <th className="text-right px-4 py-2.5 font-bold">%Contribution</th>
+                  <th className="text-right px-4 py-2.5 font-bold">%Study Var</th>
+                  {tolSixth != null && <th className="text-right px-4 py-2.5 font-bold">%Tolerance</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -2512,13 +2512,13 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
                   { label: "Total Variation (TV)",   s: aiag.TV,  pct: 100,          grr: false },
                 ].map((row, idx) => (
                   <tr key={idx} className={idx === 4 ? "bg-muted/10 font-bold" : ""}>
-                    <td className={`px-4 py-1.5 ${!row.grr && idx !== 4 ? "text-muted-foreground pl-7" : "font-bold"}`}>{row.label}</td>
-                    <td className="px-3 py-1.5 text-right font-mono">{row.s.toFixed(4)}</td>
-                    <td className="px-3 py-1.5 text-right font-mono">{(row.s * 6).toFixed(4)}</td>
-                    <td className="px-3 py-1.5 text-right">{(row.pct ** 2 / 100).toFixed(1)}%</td>
-                    <td className={`px-3 py-1.5 text-right font-bold ${row.grr ? grrColor : ""}`}>{row.pct.toFixed(1)}%</td>
+                    <td className={`px-4 py-2 ${!row.grr && idx !== 4 ? "text-muted-foreground pl-8" : "font-bold"}`}>{row.label}</td>
+                    <td className="px-4 py-2 text-right font-mono">{row.s.toFixed(4)}</td>
+                    <td className="px-4 py-2 text-right font-mono">{(row.s * 6).toFixed(4)}</td>
+                    <td className="px-4 py-2 text-right">{(row.pct ** 2 / 100).toFixed(1)}%</td>
+                    <td className={`px-4 py-2 text-right font-bold ${row.grr ? grrColor : ""}`}>{row.pct.toFixed(1)}%</td>
                     {tolSixth != null && (
-                      <td className={`px-3 py-1.5 text-right ${row.grr ? grrColor + " font-bold" : ""}`}>
+                      <td className={`px-4 py-2 text-right ${row.grr ? grrColor + " font-bold" : ""}`}>
                         {(row.s / tolSixth * 100).toFixed(1)}%
                       </td>
                     )}
