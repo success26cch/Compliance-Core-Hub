@@ -1177,36 +1177,82 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
     }
   };
 
+  const docStats = {
+    total: documents?.length ?? 0,
+    approved: documents?.filter(d => d.status === "approved").length ?? 0,
+    inReview: documents?.filter(d => d.status === "in_review").length ?? 0,
+    draft: documents?.filter(d => d.status === "draft").length ?? 0,
+    needsContent: documents?.filter(d => !d.content?.trim()).length ?? 0,
+  };
+
   return (
     <div className="flex h-full bg-muted/30 overflow-hidden">
       {/* Main content area */}
-      <div className={`flex flex-col p-6 overflow-y-auto transition-all duration-200 ${(draftDoc || formReviewOpen) ? "w-[38%]" : "flex-1"}`}>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-2">
-            <FileText className="w-6 h-6 text-accent" />
-            <h1 className="text-2xl font-black text-primary">Documentation Library</h1>
+      <div className={`flex flex-col overflow-y-auto transition-all duration-200 ${(draftDoc || formReviewOpen) ? "w-[38%]" : "flex-1"}`}>
+
+      {/* ── Page Header ───────────────────────────────────────────────── */}
+      <div className="px-6 pt-6 pb-4 border-b border-border/60 bg-white dark:bg-card">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-1.5 rounded-lg bg-accent/10">
+                <FileText className="w-5 h-5 text-accent" />
+              </div>
+              <h1 className="text-xl font-black text-primary tracking-tight">Documentation Library</h1>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">ISO 9001 · 14001 · 45001</span>
+            </div>
+            <p className="text-xs text-muted-foreground ml-0.5">Manage, version-control, and AI-draft your QMS/EMS/OH&S documented information</p>
           </div>
-          <p className="text-sm text-muted-foreground">Manage your ISO Quality Management System documentation</p>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => { setFormReviewOpen(true); setDraftDoc(null); setFormReviewResult(""); setFormReviewText(""); setFormReviewFileName(""); setFormReviewClause(""); }}
+              className="h-8 text-xs gap-1.5 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/30"
+              data-testid="button-review-form"
+            >
+              <ClipboardCheck className="w-3.5 h-3.5" /> Review My Form
+            </Button>
+            <Button
+              onClick={() => handleNewDoc()}
+              className="h-8 text-xs bg-accent hover:bg-accent/90 text-white gap-1.5"
+              data-testid="button-new-document"
+            >
+              <Plus className="w-3.5 h-3.5" /> New Document
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => { setFormReviewOpen(true); setDraftDoc(null); setFormReviewResult(""); setFormReviewText(""); setFormReviewFileName(""); setFormReviewClause(""); }}
-            className="gap-2 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/30"
-            data-testid="button-review-form"
-          >
-            <ClipboardCheck className="w-4 h-4" /> Review My Form
-          </Button>
-          <Button 
-            onClick={() => handleNewDoc()}
-            className="bg-accent hover:bg-accent/90 text-white gap-2"
-            data-testid="button-new-document"
-          >
-            <Plus className="w-4 h-4" /> New Document
-          </Button>
+
+        {/* KPI Strip */}
+        <div className="grid grid-cols-5 gap-2.5">
+          <div className="rounded-xl border bg-card p-3">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-0.5">Total</p>
+            <p className="text-2xl font-black text-primary leading-none">{docStats.total}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">documents</p>
+          </div>
+          <div className="rounded-xl border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 p-3">
+            <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-0.5">Approved</p>
+            <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400 leading-none">{docStats.approved}</p>
+            <p className="text-[10px] text-emerald-600/70 mt-1">active</p>
+          </div>
+          <div className="rounded-xl border bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800/40 p-3">
+            <p className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-400 uppercase tracking-widest mb-0.5">In Review</p>
+            <p className="text-2xl font-black text-yellow-700 dark:text-yellow-400 leading-none">{docStats.inReview}</p>
+            <p className="text-[10px] text-yellow-600/70 mt-1">pending</p>
+          </div>
+          <div className="rounded-xl border bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-700/40 p-3">
+            <p className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-0.5">Draft</p>
+            <p className="text-2xl font-black text-slate-700 dark:text-slate-300 leading-none">{docStats.draft}</p>
+            <p className="text-[10px] text-slate-500/70 mt-1">in progress</p>
+          </div>
+          <div className="rounded-xl border bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800/40 p-3">
+            <p className="text-[10px] font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-widest mb-0.5">Needs Draft</p>
+            <p className="text-2xl font-black text-violet-700 dark:text-violet-400 leading-none">{docStats.needsContent}</p>
+            <p className="text-[10px] text-violet-600/70 mt-1">no content</p>
+          </div>
         </div>
       </div>
+
+      <div className="flex-1 flex flex-col p-6 min-h-0">
 
       {/* Undo banner — shown after "Save to Document" when previous content existed */}
       {undoSnapshot && (
@@ -1235,33 +1281,37 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="bg-white border p-1 h-auto flex-wrap justify-start gap-1">
-          <TabsTrigger value="all" className="data-[state=active]:bg-accent data-[state=active]:text-white">All</TabsTrigger>
-          {DOC_TYPES.map(type => (
-            <TabsTrigger key={type.value} value={type.value} className="data-[state=active]:bg-accent data-[state=active]:text-white">
-              {type.label}
+      {/* ── Tab Bar ─────────────────────────────────────────── */}
+      <div className="mb-5">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-white dark:bg-card border border-border/60 p-1 h-auto flex-wrap justify-start gap-0.5 rounded-lg shadow-sm w-full">
+            <TabsTrigger value="all" className="text-xs h-7 px-3 data-[state=active]:bg-accent data-[state=active]:text-white data-[state=active]:shadow-sm">All Docs</TabsTrigger>
+            {DOC_TYPES.map(type => (
+              <TabsTrigger key={type.value} value={type.value} className="text-xs h-7 px-3 data-[state=active]:bg-accent data-[state=active]:text-white data-[state=active]:shadow-sm">
+                {type.label}
+              </TabsTrigger>
+            ))}
+            <div className="w-px h-5 bg-border/60 mx-0.5 self-center" />
+            <TabsTrigger value="coverage_map" className="text-xs h-7 px-3 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm gap-1.5" data-testid="tab-coverage-map">
+              <MapIcon className="w-3 h-3" /> Coverage Map
             </TabsTrigger>
-          ))}
-          <TabsTrigger value="coverage_map" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-coverage-map">
-            <MapIcon className="w-3.5 h-3.5" /> Coverage Map
-          </TabsTrigger>
-          <TabsTrigger value="change_requests" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white gap-1.5 relative" data-testid="tab-change-requests">
-            <GitMerge className="w-3.5 h-3.5" /> Change Control
-            {pendingCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                {pendingCount}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="master_list" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-master-list">
-            <List className="w-3.5 h-3.5" /> Master List
-          </TabsTrigger>
-          <TabsTrigger value="change_log" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5" data-testid="tab-change-log">
-            <ScrollText className="w-3.5 h-3.5" /> Change Log
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+            <TabsTrigger value="change_requests" className="text-xs h-7 px-3 data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm gap-1.5 relative" data-testid="tab-change-requests">
+              <GitMerge className="w-3 h-3" /> Change Control
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                  {pendingCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="master_list" className="text-xs h-7 px-3 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm gap-1.5" data-testid="tab-master-list">
+              <List className="w-3 h-3" /> Master List
+            </TabsTrigger>
+            <TabsTrigger value="change_log" className="text-xs h-7 px-3 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm gap-1.5" data-testid="tab-change-log">
+              <ScrollText className="w-3 h-3" /> Change Log
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {activeTab === "change_requests" ? (
         <ChangeRequestsPanel
@@ -1305,6 +1355,7 @@ export function DocumentationModule({ onAskIsa, isoProjectId }: DocumentationMod
           ))}
         </div>
       )}
+      </div>
       </div>
 
       {/* Draft with Isa panel */}
@@ -1790,152 +1841,178 @@ function ComplianceResultPanel({ result, docId }: { result: ComplianceResult; do
   );
 }
 
+const STATUS_ACCENT: Record<string, string> = {
+  approved: "border-l-emerald-500",
+  in_review: "border-l-yellow-400",
+  draft: "border-l-slate-400",
+  obsolete: "border-l-slate-300",
+};
+const STATUS_ICON_BG: Record<string, string> = {
+  approved: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30",
+  in_review: "bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30",
+  draft: "bg-slate-100 text-slate-500 dark:bg-slate-800/40",
+  obsolete: "bg-slate-50 text-slate-400 dark:bg-slate-900/30",
+};
+
 function DocumentCard({ doc, onEdit, onDelete, onAskIsa, onDraftWithIsa, onReviseWithIsa, onPrint, onRequestChange, getIcon, getStatusBadge, onRunComplianceCheck, complianceResult, isRunningComplianceCheck }: any) {
   const [showHistory, setShowHistory] = useState(false);
   const prevVersions: any[] = Array.isArray(doc.previousVersions) ? doc.previousVersions : [];
 
   const canRunCheck = !!(doc.content?.trim()) && !!(doc.isoClause?.trim());
   const hasContent = !!(doc.content?.trim());
+  const accentBorder = STATUS_ACCENT[doc.status] ?? "border-l-slate-300";
+  const iconBg = STATUS_ICON_BG[doc.status] ?? "bg-muted text-muted-foreground";
+
+  const docTypeLabel = doc.docType?.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) ?? "Document";
 
   return (
-    <Card className={`hover-elevate cursor-pointer group ${!hasContent ? "opacity-80 border-dashed" : ""}`} onClick={onEdit} data-testid={`card-document-${doc.id}`}>
-      <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${hasContent ? "bg-muted text-accent" : "bg-amber-50 text-amber-500"}`}>
+    <div
+      className={`group bg-white dark:bg-card rounded-xl border border-border/70 border-l-4 ${accentBorder} shadow-sm hover:shadow-md hover:border-accent/40 transition-all duration-150 cursor-pointer flex flex-col overflow-hidden ${!hasContent ? "opacity-85" : ""}`}
+      onClick={onEdit}
+      data-testid={`card-document-${doc.id}`}
+    >
+      {/* ── Card Header ─────────────────────────────────── */}
+      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className={`p-2 rounded-lg shrink-0 ${hasContent ? iconBg : "bg-amber-50 text-amber-500 dark:bg-amber-950/30"}`}>
             {getIcon(doc.docType)}
           </div>
-          <div>
-            <CardTitle className="text-sm font-bold group-hover:text-accent transition-colors">{doc.title}</CardTitle>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{doc.isoClause || "No clause reference"}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-primary group-hover:text-accent transition-colors leading-snug truncate">{doc.title}</p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className="text-[10px] font-mono text-muted-foreground">{doc.isoClause || "No clause"}</span>
+              <span className="text-muted-foreground/40 text-[10px]">·</span>
+              <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide">{docTypeLabel}</span>
+            </div>
             {!hasContent && (
-              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0.5 mt-1">
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 rounded-full px-1.5 py-0.5 mt-1">
                 <Sparkles className="w-2.5 h-2.5" /> Ready to Draft with Isa
               </span>
             )}
           </div>
         </div>
-        <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-accent"
+        <div className="flex gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground/50 hover:text-accent"
             title="Print / Export" onClick={onPrint} data-testid={`button-print-doc-${doc.id}`}>
-            <Printer className="w-3.5 h-3.5" />
+            <Printer className="w-3 h-3" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit} data-testid={`button-edit-doc-${doc.id}`}>
-            <Pencil className="w-3.5 h-3.5" />
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground/50 hover:text-primary" onClick={onEdit} data-testid={`button-edit-doc-${doc.id}`}>
+            <Pencil className="w-3 h-3" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onDelete} data-testid={`button-delete-doc-${doc.id}`}>
-            <Trash2 className="w-3.5 h-3.5" />
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground/50 hover:text-destructive" onClick={onDelete} data-testid={`button-delete-doc-${doc.id}`}>
+            <Trash2 className="w-3 h-3" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="pb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex gap-2 flex-wrap">
-            {getStatusBadge(doc.status)}
-            <Badge variant="outline" className="text-[10px]">Rev. {doc.version}</Badge>
-            {prevVersions.length > 0 && (
-              <button
-                onClick={e => { e.stopPropagation(); setShowHistory(h => !h); }}
-                className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-primary transition-colors"
-                data-testid={`button-history-${doc.id}`}
-              >
-                <History className="w-3 h-3" />
-                {prevVersions.length} revision{prevVersions.length > 1 ? "s" : ""}
-                {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-            )}
-          </div>
-        </div>
+      </div>
 
-        {showHistory && prevVersions.length > 0 && (
-          <div className="mb-3 border border-border/50 rounded-lg overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="bg-muted/50 px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-              <History className="w-3 h-3" /> Version History
-            </div>
-            {[...prevVersions].reverse().map((v, i) => (
-              <div key={i} className="px-3 py-2 border-t border-border/30 text-[10px]">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">Rev. {v.version}</span>
-                  <span className="text-muted-foreground">{v.archivedAt ? format(new Date(v.archivedAt), 'MMM d, yyyy') : "—"}</span>
-                </div>
-                {v.changeReason && <p className="text-muted-foreground mt-0.5 truncate">{v.changeReason}</p>}
-                {v.approvedBy && <p className="text-muted-foreground">Approved by: {v.approvedBy}</p>}
+      {/* ── Status / Rev strip ──────────────────────────── */}
+      <div className="px-4 py-2 bg-muted/30 dark:bg-muted/10 border-t border-border/40 flex items-center gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
+        {getStatusBadge(doc.status)}
+        <Badge variant="outline" className="text-[10px] font-mono h-5">Rev. {doc.version}</Badge>
+        {prevVersions.length > 0 && (
+          <button
+            onClick={e => { e.stopPropagation(); setShowHistory(h => !h); }}
+            className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-primary transition-colors ml-auto"
+            data-testid={`button-history-${doc.id}`}
+          >
+            <History className="w-3 h-3" />
+            {prevVersions.length} rev{prevVersions.length > 1 ? "s" : ""}
+            {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        )}
+        <span className="text-[10px] text-muted-foreground/60 ml-auto">
+          {format(new Date(doc.updatedAt || doc.createdAt), 'MMM d, yyyy')}
+        </span>
+      </div>
+
+      {/* ── Version history (expandable) ────────────────── */}
+      {showHistory && prevVersions.length > 0 && (
+        <div className="border-t border-border/40 overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="bg-slate-700 px-3 py-1.5 text-[10px] font-bold text-slate-200 uppercase tracking-widest flex items-center gap-1.5">
+            <History className="w-3 h-3" /> Version History
+          </div>
+          {[...prevVersions].reverse().map((v, i) => (
+            <div key={i} className={`px-3 py-2 border-t border-border/30 text-[10px] ${i % 2 === 0 ? "bg-white dark:bg-card" : "bg-slate-50 dark:bg-slate-900/30"}`}>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-primary">Rev. {v.version}</span>
+                <span className="text-muted-foreground">{v.archivedAt ? format(new Date(v.archivedAt), 'MMM d, yyyy') : "—"}</span>
               </div>
-            ))}
-          </div>
-        )}
-
-        {complianceResult && (
-          <ComplianceResultPanel result={complianceResult} docId={doc.id} />
-        )}
-
-        <div className="flex items-center justify-between gap-2 mt-3">
-          <p className="text-[10px] text-muted-foreground">
-            Updated {format(new Date(doc.updatedAt || doc.createdAt), 'MMM d, yyyy')}
-          </p>
-          <div className="flex gap-1.5 flex-wrap justify-end" onClick={e => e.stopPropagation()}>
-            {canRunCheck && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-[10px] gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-bold dark:bg-blue-950/30 dark:border-blue-800/40 dark:text-blue-300"
-                onClick={(e) => { e.stopPropagation(); onRunComplianceCheck(doc); }}
-                disabled={isRunningComplianceCheck}
-                data-testid={`button-compliance-check-${doc.id}`}
-              >
-                {isRunningComplianceCheck
-                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                  : <ShieldCheck className="w-3 h-3" />
-                }
-                {isRunningComplianceCheck ? "Checking…" : "Run Compliance Check"}
-              </Button>
-            )}
-            {doc.status === "approved" && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-[10px] gap-1 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700 font-bold dark:bg-orange-950/30 dark:border-orange-800/40 dark:text-orange-300"
-                onClick={(e) => { e.stopPropagation(); onRequestChange(doc); }}
-                data-testid={`button-request-change-${doc.id}`}
-              >
-                <GitMerge className="w-3 h-3" /> Request Change
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-[10px] gap-1 bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700 font-bold dark:bg-violet-950/30 dark:border-violet-800/40 dark:text-violet-300"
-              onClick={(e) => { e.stopPropagation(); onDraftWithIsa(doc); }}
-              data-testid={`button-draft-isa-${doc.id}`}
-            >
-              <Sparkles className="w-3 h-3" /> Draft with Isa
-            </Button>
-            {doc.content?.trim() && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-[10px] gap-1 bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 font-bold dark:bg-indigo-950/30 dark:border-indigo-800/40 dark:text-indigo-300"
-                onClick={(e) => { e.stopPropagation(); onReviseWithIsa(doc); }}
-                data-testid={`button-revise-isa-${doc.id}`}
-              >
-                <Sparkles className="w-3 h-3" /> Revise with Isa
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-[10px] gap-1 bg-accent/5 hover:bg-accent/10 border-accent/20 text-accent font-bold"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAskIsa(`I'm working on the ${doc.docType.replace(/_/g, ' ')} titled "${doc.title}". Can you coach me on improving it for ISO compliance? Current content: ${doc.content || "Empty"}`);
-              }}
-              data-testid={`button-ask-isa-${doc.id}`}
-            >
-              <MessageSquare className="w-3 h-3" /> Ask Isa
-            </Button>
-          </div>
+              {v.changeReason && <p className="text-muted-foreground mt-0.5 truncate">{v.changeReason}</p>}
+              {v.approvedBy && <p className="text-muted-foreground">Approved by: {v.approvedBy}</p>}
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      {/* ── Compliance result ───────────────────────────── */}
+      {complianceResult && (
+        <div className="border-t border-border/40" onClick={e => e.stopPropagation()}>
+          <ComplianceResultPanel result={complianceResult} docId={doc.id} />
+        </div>
+      )}
+
+      {/* ── Action buttons ──────────────────────────────── */}
+      <div className="px-3 py-2 border-t border-border/40 flex items-center gap-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
+        {canRunCheck && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 text-[10px] gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-bold dark:bg-blue-950/30 dark:border-blue-800/40 dark:text-blue-300"
+            onClick={(e) => { e.stopPropagation(); onRunComplianceCheck(doc); }}
+            disabled={isRunningComplianceCheck}
+            data-testid={`button-compliance-check-${doc.id}`}
+          >
+            {isRunningComplianceCheck ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <ShieldCheck className="w-2.5 h-2.5" />}
+            {isRunningComplianceCheck ? "Checking…" : "Compliance Check"}
+          </Button>
+        )}
+        {doc.status === "approved" && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 text-[10px] gap-1 bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700 font-bold dark:bg-orange-950/30 dark:border-orange-800/40 dark:text-orange-300"
+            onClick={(e) => { e.stopPropagation(); onRequestChange(doc); }}
+            data-testid={`button-request-change-${doc.id}`}
+          >
+            <GitMerge className="w-2.5 h-2.5" /> Request Change
+          </Button>
+        )}
+        <div className="ml-auto flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 text-[10px] gap-1 bg-violet-50 hover:bg-violet-100 border-violet-200 text-violet-700 font-bold dark:bg-violet-950/30 dark:border-violet-800/40 dark:text-violet-300"
+            onClick={(e) => { e.stopPropagation(); onDraftWithIsa(doc); }}
+            data-testid={`button-draft-isa-${doc.id}`}
+          >
+            <Sparkles className="w-2.5 h-2.5" /> {hasContent ? "Re-Draft" : "Draft"}
+          </Button>
+          {doc.content?.trim() && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] gap-1 bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 font-bold dark:bg-indigo-950/30 dark:border-indigo-800/40 dark:text-indigo-300"
+              onClick={(e) => { e.stopPropagation(); onReviseWithIsa(doc); }}
+              data-testid={`button-revise-isa-${doc.id}`}
+            >
+              <Sparkles className="w-2.5 h-2.5" /> Revise
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 text-[10px] gap-1 bg-accent/5 hover:bg-accent/10 border-accent/20 text-accent font-bold"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAskIsa(`I'm working on the ${doc.docType.replace(/_/g, ' ')} titled "${doc.title}". Can you coach me on improving it for ISO compliance? Current content: ${doc.content || "Empty"}`);
+            }}
+            data-testid={`button-ask-isa-${doc.id}`}
+          >
+            <MessageSquare className="w-2.5 h-2.5" /> Ask Isa
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
