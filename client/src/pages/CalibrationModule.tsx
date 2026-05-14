@@ -1662,6 +1662,52 @@ const AIAG_K3: Record<number, number> = {
 };
 const AIAG_D4: Record<number, number> = { 2: 3.267, 3: 2.575, 4: 2.282, 5: 2.114 };
 
+// ─── Control chart constants for Stability X̄-R charts ──────────────────────
+const CC_A2:  Record<number, number> = { 2: 1.880, 3: 1.023, 4: 0.729, 5: 0.577 };
+const CC_D3:  Record<number, number> = { 2: 0,     3: 0,     4: 0,     5: 0     };
+const CC_D4s: Record<number, number> = { 2: 3.267, 3: 2.575, 4: 2.282, 5: 2.114 };
+const CC_d2:  Record<number, number> = { 2: 1.128, 3: 1.693, 4: 2.059, 5: 2.326 };
+
+// ─── t-critical values α=0.05 two-tailed, indexed by df ─────────────────────
+const T_CRIT_05: Record<number, number> = {
+  1:12.706,2:4.303,3:3.182,4:2.776,5:2.571,6:2.447,7:2.365,8:2.306,
+  9:2.262,10:2.228,11:2.201,12:2.179,13:2.160,14:2.145,15:2.131,16:2.120,
+  17:2.110,18:2.101,19:2.093,20:2.086,25:2.060,30:2.042,40:2.021,60:2.000,120:1.980,
+};
+function tCrit95(df: number): number {
+  if (df >= 120) return 1.960;
+  if (T_CRIT_05[df]) return T_CRIT_05[df];
+  const keys = Object.keys(T_CRIT_05).map(Number).sort((a,b)=>a-b);
+  for (let i=0;i<keys.length-1;i++){
+    if(df>keys[i]&&df<keys[i+1]){
+      const t=(df-keys[i])/(keys[i+1]-keys[i]);
+      return T_CRIT_05[keys[i]]+t*(T_CRIT_05[keys[i+1]]-T_CRIT_05[keys[i]]);
+    }
+  }
+  return 2.042;
+}
+
+// ─── Linear regression ───────────────────────────────────────────────────────
+function linRegress(xs: number[], ys: number[]): { slope: number; intercept: number; r2: number } {
+  const n = xs.length;
+  if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
+  const xm = xs.reduce((a,b)=>a+b,0)/n, ym = ys.reduce((a,b)=>a+b,0)/n;
+  const num = xs.reduce((s,x,i)=>s+(x-xm)*(ys[i]-ym),0);
+  const den = xs.reduce((s,x)=>s+(x-xm)**2,0);
+  if (den===0) return { slope:0, intercept:ym, r2:0 };
+  const slope=num/den, intercept=ym-slope*xm;
+  const ssRes=ys.reduce((s,y,i)=>s+(y-(slope*xs[i]+intercept))**2,0);
+  const ssTot=ys.reduce((s,y)=>s+(y-ym)**2,0);
+  return { slope, intercept, r2: ssTot===0?1:1-ssRes/ssTot };
+}
+
+// ─── Cohen's Kappa ────────────────────────────────────────────────────────────
+function cohenKappa(n: number, agree: number, p1: number, p2: number): number {
+  if (n===0) return 0;
+  const Po=agree/n, Pe=p1*p2+(1-p1)*(1-p2);
+  return Pe>=1?1:(Po-Pe)/(1-Pe);
+}
+
 interface AiagResult {
   EV: number; AV: number; GRR: number; PV: number; TV: number;
   pctEV: number; pctAV: number; pctGRR: number; pctPV: number; ndc: number;
@@ -1781,13 +1827,65 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
     parsedInitial?.data ?? makeEmptyGrid(initial?.appraiserCount ?? 3, initial?.partCount ?? 10, initial?.trialCount ?? 2)
   );
 
-  // ── Non-GRR simple form ─────────────────────────────────────────────────────
-  const [simpleGrr, setSimpleGrr] = useState(initial?.grrPercent ?? "");
-  const [simpleNdc, setSimpleNdc] = useState(initial?.ndc ?? "");
-  const [notes, setNotes]         = useState(initial?.notes ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+
+  // ── Bias study state ────────────────────────────────────────────────────────
+  const [biasRef, setBiasRef] = useState<string>(() => { const r=initial?.readings as any; return r?.type==="bias"?String(r.referenceValue??""):""; });
+  const [biasProcessVar, setBiasProcessVar] = useState<string>(() => { const r=initial?.readings as any; return r?.type==="bias"?String(r.processVar??""):""; });
+  const [biasN, setBiasN] = useState<number>(() => { const r=initial?.readings as any; return r?.type==="bias"&&Array.isArray(r.measurements)?r.measurements.length:25; });
+  const [biasReadings, setBiasReadings] = useState<string[]>(() => { const r=initial?.readings as any; if(r?.type==="bias"&&Array.isArray(r.measurements)) return [...r.measurements.map(String),...Array(50).fill("")].slice(0,50); return Array(50).fill(""); });
+
+  // ── Linearity study state ───────────────────────────────────────────────────
+  const [linProcessVar, setLinProcessVar] = useState<string>(() => { const r=initial?.readings as any; return r?.type==="linearity"?String(r.processVar??""):""; });
+  const [linMeasCount, setLinMeasCount] = useState<number>(() => { const r=initial?.readings as any; return r?.type==="linearity"&&r.parts?.[0]?r.parts[0].readings.length:10; });
+  const [linParts, setLinParts] = useState<{reference:string;readings:string[]}[]>(() => {
+    const r=initial?.readings as any;
+    if(r?.type==="linearity"&&Array.isArray(r.parts)) return r.parts.map((p:any)=>({reference:String(p.reference??""),readings:(p.readings??[]).map(String)}));
+    return Array(5).fill(null).map(()=>({reference:"",readings:Array(10).fill("")}));
+  });
+
+  // ── Stability study state ───────────────────────────────────────────────────
+  const [stabRef, setStabRef] = useState<string>(() => { const r=initial?.readings as any; return r?.type==="stability"?String(r.referenceValue??""):""; });
+  const [stabSubgroupSize, setStabSubgroupSize] = useState<number>(() => { const r=initial?.readings as any; return r?.type==="stability"?(r.subgroupSize??3):3; });
+  const [stabSubgroups, setStabSubgroups] = useState<{date:string;readings:string[]}[]>(() => {
+    const r=initial?.readings as any;
+    if(r?.type==="stability"&&Array.isArray(r.subgroups)) return r.subgroups.map((sg:any)=>({date:sg.date??"",readings:(sg.readings??[]).map(String)}));
+    return Array(25).fill(null).map(()=>({date:"",readings:Array(3).fill("")}));
+  });
+
+  // ── Attribute Agreement Analysis (AAA) state ────────────────────────────────
+  const [aaaAppraisers, setAaaAppraisers] = useState<number>(() => { const r=initial?.readings as any; return r?.type==="aaa"?(r.appraisers??3):3; });
+  const [aaaParts, setAaaParts]           = useState<number>(() => { const r=initial?.readings as any; return r?.type==="aaa"?(r.parts??25):25; });
+  const [aaaTrials, setAaaTrials]         = useState<number>(() => { const r=initial?.readings as any; return r?.type==="aaa"?(r.trials??2):2; });
+  const [aaaData, setAaaData] = useState<boolean[][][]>(() => {
+    const r=initial?.readings as any;
+    if(r?.type==="aaa"&&Array.isArray(r.data)) return r.data;
+    return Array(3).fill(null).map(()=>Array(25).fill(null).map(()=>Array(2).fill(true)));
+  });
+  const [aaaReference, setAaaReference] = useState<boolean[]>(() => {
+    const r=initial?.readings as any;
+    if(r?.type==="aaa"&&Array.isArray(r.reference)) return r.reference;
+    return Array(25).fill(true);
+  });
 
   function buildGrid() {
     setGridData(makeEmptyGrid(appraiserCount, partCount, trialCount));
+    setPhase("grid");
+  }
+
+  function buildDataSheet() {
+    if (studyType === "gage_rrr") {
+      setGridData(makeEmptyGrid(appraiserCount, partCount, trialCount));
+    } else if (studyType === "bias") {
+      setBiasReadings(Array(50).fill(""));
+    } else if (studyType === "linearity") {
+      setLinParts(Array(5).fill(null).map((_,i)=>({reference:linParts[i]?.reference??"",readings:Array(linMeasCount).fill("")})));
+    } else if (studyType === "stability") {
+      setStabSubgroups(Array(25).fill(null).map((_,i)=>({date:stabSubgroups[i]?.date??"",readings:Array(stabSubgroupSize).fill("")})));
+    } else if (studyType === "attribute_agreement") {
+      setAaaData(Array(aaaAppraisers).fill(null).map(()=>Array(aaaParts).fill(null).map(()=>Array(aaaTrials).fill(true))));
+      setAaaReference(Array(aaaParts).fill(true));
+    }
     setPhase("grid");
   }
 
@@ -1806,6 +1904,116 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
       : null,
     [gridData, studyType, phase, appraiserCount, partCount, trialCount]
   );
+
+  // ── Bias live calculations ────────────────────────────────────────────────────
+  const biasResult = useMemo(() => {
+    if (studyType !== "bias" || phase !== "grid") return null;
+    const ref = parseFloat(biasRef), pv = parseFloat(biasProcessVar);
+    const vals = biasReadings.slice(0,biasN).filter(s=>s.trim()!=="").map(s=>parseFloat(s)).filter(v=>!isNaN(v));
+    if (vals.length < 2 || isNaN(ref)) return null;
+    const n=vals.length, mean=vals.reduce((a,b)=>a+b,0)/n;
+    const bias=mean-ref;
+    const sigma=Math.sqrt(vals.reduce((s,v)=>s+(v-mean)**2,0)/(n-1));
+    const tStat=sigma>0?Math.abs(bias)/(sigma/Math.sqrt(n)):0;
+    const tc=tCrit95(n-1);
+    const significant=tStat>tc;
+    const pctBias=!isNaN(pv)&&pv>0?Math.abs(bias)/pv*100:null;
+    const pctRepeat=!isNaN(pv)&&pv>0?(sigma*5.15)/pv*100:null;
+    const worst=pctBias??0;
+    const result: "acceptable"|"marginal"|"unacceptable" = worst>10||(significant&&worst>5)?worst>30?"unacceptable":"marginal":"acceptable";
+    return {n,mean,bias,sigma,tStat,tc,significant,pctBias,pctRepeat,result};
+  },[biasReadings,biasRef,biasProcessVar,biasN,studyType,phase]);
+
+  // ── Linearity live calculations ────────────────────────────────────────────────
+  const linResult = useMemo(() => {
+    if (studyType !== "linearity" || phase !== "grid") return null;
+    const pv=parseFloat(linProcessVar);
+    const levels=linParts.map(lp=>{
+      const ref=parseFloat(lp.reference);
+      const vals=lp.readings.filter(s=>s.trim()!=="").map(s=>parseFloat(s)).filter(v=>!isNaN(v));
+      if(isNaN(ref)||vals.length===0) return null;
+      const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+      return {ref,mean,bias:mean-ref,n:vals.length};
+    }).filter(Boolean) as {ref:number;mean:number;bias:number;n:number}[];
+    if (levels.length<2) return null;
+    const {slope,intercept,r2}=linRegress(levels.map(d=>d.ref),levels.map(d=>d.bias));
+    const maxBiasAbs=Math.max(...levels.map(d=>Math.abs(d.bias)));
+    const linearity=!isNaN(pv)&&pv>0?Math.abs(slope)*pv:null;
+    const pctLinearity=linearity&&pv>0?linearity/pv*100:null;
+    const pctBias=!isNaN(pv)&&pv>0?maxBiasAbs/pv*100:null;
+    const worst=pctLinearity??pctBias??0;
+    const result: "acceptable"|"marginal"|"unacceptable" = worst>10?worst>30?"unacceptable":"marginal":"acceptable";
+    return {levels,slope,intercept,r2,linearity,pctLinearity,maxBiasAbs,pctBias,result};
+  },[linParts,linProcessVar,studyType,phase]);
+
+  // ── Stability live calculations ────────────────────────────────────────────────
+  const stabResult = useMemo(() => {
+    if (studyType !== "stability" || phase !== "grid") return null;
+    const ref=parseFloat(stabRef);
+    const sgs=stabSubgroups.map(sg=>{
+      const vals=sg.readings.slice(0,stabSubgroupSize).filter(s=>s.trim()!=="").map(s=>parseFloat(s)).filter(v=>!isNaN(v));
+      return vals.length===stabSubgroupSize?{date:sg.date,vals}:null;
+    }).filter(Boolean) as {date:string;vals:number[]}[];
+    if (sgs.length<2) return null;
+    const xbars=sgs.map(sg=>sg.vals.reduce((a,b)=>a+b,0)/sg.vals.length);
+    const ranges=sgs.map(sg=>Math.max(...sg.vals)-Math.min(...sg.vals));
+    const xbarBar=xbars.reduce((a,b)=>a+b,0)/xbars.length;
+    const rBar=ranges.reduce((a,b)=>a+b,0)/ranges.length;
+    const A2=CC_A2[stabSubgroupSize]??0.577,D4=CC_D4s[stabSubgroupSize]??2.114,D3=CC_D3[stabSubgroupSize]??0,d2=CC_d2[stabSubgroupSize]??1.693;
+    const UCLX=xbarBar+A2*rBar,LCLX=xbarBar-A2*rBar,UCLR=D4*rBar,LCLR=D3*rBar;
+    const sigma=rBar/d2;
+    const bias=!isNaN(ref)?xbarBar-ref:null;
+    const pctBias=bias!==null&&sigma>0?Math.abs(bias)/(6*sigma)*100:null;
+    const oocX=xbars.map((x,i)=>x>UCLX||x<LCLX?i:-1).filter(i=>i>=0);
+    const oocR=ranges.map((r,i)=>r>UCLR?i:-1).filter(i=>i>=0);
+    const stable=oocX.length===0&&oocR.length===0;
+    const result: "acceptable"|"marginal"|"unacceptable"=stable?"acceptable":oocX.length+oocR.length>3?"unacceptable":"marginal";
+    return {sgs,xbars,ranges,xbarBar,rBar,A2,D4,D3,d2,UCLX,LCLX,UCLR,LCLR,sigma,bias,pctBias,oocX,oocR,stable,result};
+  },[stabSubgroups,stabRef,stabSubgroupSize,studyType,phase]);
+
+  // ── AAA live calculations ─────────────────────────────────────────────────────
+  const aaaResult = useMemo(() => {
+    if (studyType !== "attribute_agreement" || phase !== "grid") return null;
+    const A=aaaAppraisers,P=aaaParts,T=aaaTrials;
+    const withinPct=Array(A).fill(0).map((_,a)=>{
+      let agree=0;
+      for(let p=0;p<P;p++){
+        const d=Array(T).fill(null).map((_,t)=>aaaData[a]?.[p]?.[t]??true);
+        if(d.every(v=>v===d[0])) agree++;
+      }
+      return agree/P*100;
+    });
+    let allAgree=0;
+    for(let p=0;p<P;p++){
+      const appDec=Array(A).fill(null).map((_,a)=>{
+        const acc=Array(T).fill(null).map((_,t)=>aaaData[a]?.[p]?.[t]??true).filter(v=>v).length;
+        return acc>=T/2;
+      });
+      if(appDec.every(d=>d===appDec[0])) allAgree++;
+    }
+    const vsRefPct=Array(A).fill(0).map((_,a)=>{
+      let agree=0;
+      for(let p=0;p<P;p++){
+        const ref=aaaReference[p];
+        const d=Array(T).fill(null).map((_,t)=>aaaData[a]?.[p]?.[t]??true);
+        if(d.every(v=>v===ref)) agree++;
+      }
+      return agree/P*100;
+    });
+    const kappaVals=Array(A).fill(0).map((_,a)=>{
+      const dec=Array(P).fill(null).map((_,p)=>{
+        const acc=Array(T).fill(null).map((_,t)=>aaaData[a]?.[p]?.[t]??true).filter(v=>v).length;
+        return acc>=T/2;
+      });
+      const pAcc=dec.filter(d=>d).length/P;
+      const pRefAcc=aaaReference.slice(0,P).filter(v=>v).length/P;
+      const agree=dec.filter((d,p)=>d===aaaReference[p]).length;
+      return cohenKappa(P,agree,pAcc,pRefAcc);
+    });
+    const overallKappa=kappaVals.reduce((a,b)=>a+b,0)/kappaVals.length;
+    const result: "acceptable"|"marginal"|"unacceptable"=overallKappa>=0.75?"acceptable":overallKappa>=0.5?"marginal":"unacceptable";
+    return {withinPct,allAgree,betweenPct:allAgree/P*100,vsRefPct,kappaVals,overallKappa,result};
+  },[aaaData,aaaReference,aaaAppraisers,aaaParts,aaaTrials,studyType,phase]);
 
   // Per-cell mean and range (displayed inline in the grid)
   const cellStats = useMemo(() =>
@@ -1848,21 +2056,196 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
         readings: { version: "2", meta, data: gridData } as any, notes,
         result: grr > 30 ? "unacceptable" : grr >= 10 || aiag.ndc < 5 ? "marginal" : "acceptable",
       });
-    } else {
+    } else if (studyType === "bias") {
       onSave({
-        equipmentId, studyType, studyDate,
-        appraiserCount: appraiserCount || undefined,
-        partCount: partCount || undefined,
-        trialCount: trialCount || undefined,
-        grrPercent: simpleGrr || undefined, ndc: simpleNdc || undefined,
-        result: computeMsaResult(simpleGrr, simpleNdc), notes,
+        equipmentId, studyType, studyDate, notes,
+        grrPercent: biasResult?.pctBias?.toFixed(2),
+        result: biasResult?.result ?? "acceptable",
+        readings: { type:"bias", version:"1", referenceValue:parseFloat(biasRef), processVar:parseFloat(biasProcessVar), measurements:biasReadings.slice(0,biasN).filter(s=>s.trim()!==""), meta } as any,
       });
+    } else if (studyType === "linearity") {
+      onSave({
+        equipmentId, studyType, studyDate, notes,
+        grrPercent: linResult?.pctLinearity?.toFixed(2),
+        result: linResult?.result ?? "acceptable",
+        readings: { type:"linearity", version:"1", processVar:parseFloat(linProcessVar), parts:linParts, meta } as any,
+      });
+    } else if (studyType === "stability") {
+      onSave({
+        equipmentId, studyType, studyDate, notes,
+        result: stabResult?.result ?? "acceptable",
+        readings: { type:"stability", version:"1", referenceValue:parseFloat(stabRef), subgroupSize:stabSubgroupSize, subgroups:stabSubgroups, meta } as any,
+      });
+    } else if (studyType === "attribute_agreement") {
+      onSave({
+        equipmentId, studyType, studyDate, notes,
+        appraiserCount: aaaAppraisers, partCount: aaaParts, trialCount: aaaTrials,
+        grrPercent: aaaResult?.overallKappa?.toFixed(3),
+        result: aaaResult?.result ?? "acceptable",
+        readings: { type:"aaa", version:"1", appraisers:aaaAppraisers, parts:aaaParts, trials:aaaTrials, data:aaaData, reference:aaaReference, meta } as any,
+      });
+    } else {
+      onSave({ equipmentId, studyType, studyDate, notes, result: "acceptable" });
     }
+  }
+
+  // ── Per-type print helpers ────────────────────────────────────────────────────
+  function handlePrintBias() {
+    const win = window.open("","_blank","width=900,height=700"); if(!win) return;
+    const r=biasResult, ref=parseFloat(biasRef), pv=parseFloat(biasProcessVar);
+    const vals=biasReadings.slice(0,biasN).filter(s=>s.trim()!=="").map(Number).filter(v=>!isNaN(v));
+    const logoHtml=companyLogo?`<img src="${companyLogo}" style="height:48px;object-fit:contain;margin-right:10px;" />`:"";
+    const hdr=(k:string,v:string)=>`<tr><td style="font-weight:600;white-space:nowrap;padding:2px 8px 2px 0;">${k}</td><td style="font-family:monospace;padding:2px 0;">${v}</td></tr>`;
+    const rowsHtml=Array.from({length:Math.ceil(vals.length/5)},(_,row)=>
+      `<tr>${Array.from({length:5},(_,col)=>{const i=row*5+col; return i<vals.length?`<td style="text-align:center;font-family:monospace;border:1px solid #ccc;padding:3px 8px;">${(i+1)}. ${vals[i].toFixed(4)}</td>`:`<td style="border:1px solid #ccc;"></td>`;}).join("")}</tr>`).join("");
+    win.document.write(`<!DOCTYPE html><html><head><title>Bias Study</title><style>body{font-family:Arial,sans-serif;font-size:10pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
+    <div style="display:flex;align-items:center;border-bottom:3px solid #1e40af;padding-bottom:8px;margin-bottom:12px;">
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#1e40af;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Bias Study — AIAG MSA 4th Edition §3.1</div></div>
+    </div>
+    <table style="width:100%;margin-bottom:12px;"><tbody>
+      ${hdr("Part Name:",meta.partName||"—")}${hdr("Part No.:",meta.partNumber||"—")}${hdr("Characteristic:",meta.characteristic||"—")}
+      ${hdr("Gage Description:",meta.gaugeDesc||"—")}${hdr("Performed By:",meta.performedBy||"—")}${hdr("Study Date:",studyDate||"—")}
+      ${hdr("Reference Value:",isNaN(ref)?"-":ref.toFixed(4))}${hdr("Process Variation TV:",isNaN(pv)?"-":pv.toFixed(4))}${hdr("n (measurements):",String(vals.length))}
+    </tbody></table>
+    <p style="font-weight:700;margin:0 0 4px;">Measurements</p>
+    <table style="margin-bottom:14px;"><tbody>${rowsHtml}</tbody></table>
+    <p style="font-weight:700;margin:0 0 4px;">Analysis Summary</p>
+    <table style="width:60%;"><tbody>
+      ${hdr("Sample Mean (x̄):",r?r.mean.toFixed(4):"—")}${hdr("Bias (x̄ − Ref):",r?r.bias.toFixed(4):"—")}
+      ${hdr("Std Dev (σ):",r?r.sigma.toFixed(4):"—")}${hdr("t-statistic:",r?r.tStat.toFixed(3):"—")}
+      ${hdr("t-critical (95%, df=n−1):",r?r.tc.toFixed(3):"—")}${hdr("Bias Significant?:",r?(r.significant?"YES ⚠":"No"):"—")}
+      ${hdr("%Bias (|Bias|/TV×100):",r&&r.pctBias!=null?r.pctBias.toFixed(2)+"%":"—")}${hdr("%Repeatability (5.15σ/TV×100):",r&&r.pctRepeat!=null?r.pctRepeat.toFixed(2)+"%":"—")}
+      ${hdr("AIAG Criterion:",r?`${r.result.toUpperCase()} (${r.result==="acceptable"?"≤10%":"≥10%"})`:"—")}
+    </tbody></table>
+    <div style="margin-top:16px;padding:8px 12px;border-left:4px solid ${r?.result==="acceptable"?"#16a34a":r?.result==="marginal"?"#d97706":"#dc2626"};background:${r?.result==="acceptable"?"#f0fdf4":r?.result==="marginal"?"#fffbeb":"#fef2f2"};">
+      <b>Result: ${r?.result?.toUpperCase()||"INSUFFICIENT DATA"}</b>${r?.significant?" — Statistically significant bias detected.":""} ${r&&r.pctBias!=null?`%Bias = ${r.pctBias.toFixed(2)}%.`:""}
+    </div>
+    <button onclick="window.print()" style="margin-top:14px;padding:6px 16px;background:#1e40af;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10pt;">🖨 Print</button>
+    </body></html>`);
+    win.document.close();
+  }
+
+  function handlePrintLinearity() {
+    const win = window.open("","_blank","width=1000,height=750"); if(!win) return;
+    const r=linResult; const pv=parseFloat(linProcessVar);
+    const logoHtml=companyLogo?`<img src="${companyLogo}" style="height:48px;object-fit:contain;margin-right:10px;" />`:"";
+    const hdr=(k:string,v:string)=>`<tr><td style="font-weight:600;padding:2px 8px 2px 0;">${k}</td><td style="font-family:monospace;">${v}</td></tr>`;
+    const levelsRows=linParts.map((lp,i)=>{
+      const vals=lp.readings.filter(s=>s.trim()!=="").map(Number).filter(v=>!isNaN(v));
+      const ref=parseFloat(lp.reference); const m=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:NaN;
+      const bias=m-ref;
+      return `<tr><td style="text-align:center;border:1px solid #ccc;padding:4px 6px;">Level ${i+1}</td><td style="font-family:monospace;text-align:center;border:1px solid #ccc;padding:4px 6px;">${isNaN(ref)?"—":ref.toFixed(4)}</td><td style="font-family:monospace;text-align:center;border:1px solid #ccc;padding:4px 6px;">${vals.length}</td><td style="font-family:monospace;text-align:center;border:1px solid #ccc;padding:4px 6px;">${isNaN(m)?"—":m.toFixed(4)}</td><td style="font-family:monospace;text-align:center;border:1px solid #ccc;padding:4px 6px;">${isNaN(bias)?"—":bias.toFixed(4)}</td></tr>`;
+    }).join("");
+    win.document.write(`<!DOCTYPE html><html><head><title>Linearity Study</title><style>body{font-family:Arial,sans-serif;font-size:10pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
+    <div style="display:flex;align-items:center;border-bottom:3px solid #7c3aed;padding-bottom:8px;margin-bottom:12px;">
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#7c3aed;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Linearity Study — AIAG MSA 4th Edition §3.2</div></div>
+    </div>
+    <table style="width:100%;margin-bottom:12px;"><tbody>
+      ${hdr("Part Name:",meta.partName||"—")}${hdr("Characteristic:",meta.characteristic||"—")}${hdr("Gage Description:",meta.gaugeDesc||"—")}
+      ${hdr("Performed By:",meta.performedBy||"—")}${hdr("Study Date:",studyDate||"—")}${hdr("Process Variation TV:",isNaN(pv)?"—":pv.toFixed(4))}
+    </tbody></table>
+    <p style="font-weight:700;margin:0 0 4px;">Reference Levels & Bias by Level</p>
+    <table style="width:70%;margin-bottom:14px;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:4px 6px;">Level</th><th style="border:1px solid #ccc;padding:4px 6px;">Reference</th><th style="border:1px solid #ccc;padding:4px 6px;">n</th><th style="border:1px solid #ccc;padding:4px 6px;">Mean</th><th style="border:1px solid #ccc;padding:4px 6px;">Bias</th></tr></thead><tbody>${levelsRows}</tbody></table>
+    <p style="font-weight:700;margin:0 0 4px;">Regression Analysis (Bias = β₀ + β₁ × Reference)</p>
+    <table style="width:60%;margin-bottom:14px;"><tbody>
+      ${hdr("Slope (β₁):",r?r.slope.toFixed(4):"—")}${hdr("Intercept (β₀):",r?r.intercept.toFixed(4):"—")}${hdr("R²:",r?r.r2.toFixed(4):"—")}
+      ${hdr("Max |Bias|:",r?r.maxBiasAbs.toFixed(4):"—")}${hdr("%Linearity:",r&&r.pctLinearity!=null?r.pctLinearity.toFixed(2)+"%":"—")}${hdr("%Max Bias:",r&&r.pctBias!=null?r.pctBias.toFixed(2)+"%":"—")}
+      ${hdr("AIAG Result:",r?r.result.toUpperCase():"—")}
+    </tbody></table>
+    <div style="margin-top:16px;padding:8px 12px;border-left:4px solid ${r?.result==="acceptable"?"#16a34a":r?.result==="marginal"?"#d97706":"#dc2626"};background:${r?.result==="acceptable"?"#f0fdf4":r?.result==="marginal"?"#fffbeb":"#fef2f2"};">
+      <b>Result: ${r?.result?.toUpperCase()||"INSUFFICIENT DATA"}</b>${r?` — Slope β₁=${r.slope.toFixed(4)}, R²=${r.r2.toFixed(4)}`:""}.
+    </div>
+    <button onclick="window.print()" style="margin-top:14px;padding:6px 16px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10pt;">🖨 Print</button>
+    </body></html>`);
+    win.document.close();
+  }
+
+  function handlePrintStability() {
+    const win = window.open("","_blank","width=1100,height=800"); if(!win) return;
+    const r=stabResult; const ref=parseFloat(stabRef);
+    const logoHtml=companyLogo?`<img src="${companyLogo}" style="height:48px;object-fit:contain;margin-right:10px;" />`:"";
+    const hdr=(k:string,v:string)=>`<tr><td style="font-weight:600;padding:2px 8px 2px 0;">${k}</td><td style="font-family:monospace;">${v}</td></tr>`;
+    const sgRows=r?r.sgs.map((sg,i)=>{
+      const oocX=r.oocX.includes(i), oocR=r.oocR.includes(i);
+      const bg=oocX||oocR?"background:#fef2f2;":"";
+      return `<tr style="${bg}"><td style="border:1px solid #ccc;padding:3px 6px;text-align:center;">${i+1}</td><td style="border:1px solid #ccc;padding:3px 6px;">${sg.date||"—"}</td>${sg.vals.map(v=>`<td style="font-family:monospace;text-align:center;border:1px solid #ccc;padding:3px 6px;">${v.toFixed(4)}</td>`).join("")}<td style="font-family:monospace;font-weight:700;text-align:center;border:1px solid #ccc;padding:3px 6px;${oocX?"color:red;":""}">${r.xbars[i].toFixed(4)}${oocX?"▲":""}</td><td style="font-family:monospace;font-weight:700;text-align:center;border:1px solid #ccc;padding:3px 6px;${oocR?"color:red;":""}">${r.ranges[i].toFixed(4)}${oocR?"▲":""}</td></tr>`;
+    }).join(""):
+    stabSubgroups.filter(sg=>sg.readings.slice(0,stabSubgroupSize).some(s=>s.trim()!=="")).map((sg,i)=>
+      `<tr><td style="border:1px solid #ccc;padding:3px 6px;text-align:center;">${i+1}</td><td style="border:1px solid #ccc;padding:3px 6px;">${sg.date||"—"}</td>${sg.readings.slice(0,stabSubgroupSize).map(v=>`<td style="font-family:monospace;text-align:center;border:1px solid #ccc;padding:3px 6px;">${v||""}</td>`).join("")}<td style="border:1px solid #ccc;"></td><td style="border:1px solid #ccc;"></td></tr>`).join("");
+    const measHdrs=Array.from({length:stabSubgroupSize},(_,i)=>`<th style="border:1px solid #ccc;padding:3px 6px;">x${i+1}</th>`).join("");
+    win.document.write(`<!DOCTYPE html><html><head><title>Stability Study</title><style>body{font-family:Arial,sans-serif;font-size:10pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
+    <div style="display:flex;align-items:center;border-bottom:3px solid #059669;padding-bottom:8px;margin-bottom:12px;">
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#059669;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">MSA Stability Study — AIAG MSA 4th Edition §3.3 · X̄-R Control Chart</div></div>
+    </div>
+    <table style="width:100%;margin-bottom:12px;"><tbody>
+      ${hdr("Part Name:",meta.partName||"—")}${hdr("Characteristic:",meta.characteristic||"—")}${hdr("Gage Description:",meta.gaugeDesc||"—")}
+      ${hdr("Performed By:",meta.performedBy||"—")}${hdr("Study Date:",studyDate||"—")}${hdr("Reference Value:",isNaN(ref)?"—":ref.toFixed(4))}
+      ${hdr("Subgroup Size (n):",String(stabSubgroupSize))}${r?hdr("X̄-bar (Grand Mean):",r.xbarBar.toFixed(4)):""}${r?hdr("R̄ (Mean Range):",r.rBar.toFixed(4)):""}
+    </tbody></table>
+    ${r?`<p style="font-weight:700;margin:0 0 4px;">Control Limits (X̄ Chart: UCL=${r.UCLX.toFixed(4)}, LCL=${r.LCLX.toFixed(4)}) | (R Chart: UCL=${r.UCLR.toFixed(4)}, LCL=${r.LCLR.toFixed(4)})</p>`:""}
+    <table style="width:100%;margin-bottom:14px;"><thead><tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc;padding:3px 6px;">#</th><th style="border:1px solid #ccc;padding:3px 6px;">Date</th>${measHdrs}<th style="border:1px solid #ccc;padding:3px 6px;">X̄</th><th style="border:1px solid #ccc;padding:3px 6px;">R</th>
+    </tr></thead><tbody>${sgRows}</tbody></table>
+    ${r?`<div style="padding:8px 12px;border-left:4px solid ${r.result==="acceptable"?"#16a34a":r.result==="marginal"?"#d97706":"#dc2626"};background:${r.result==="acceptable"?"#f0fdf4":r.result==="marginal"?"#fffbeb":"#fef2f2"};">
+      <b>Result: ${r.result.toUpperCase()}</b> — ${r.stable?"No out-of-control points detected. Measurement system is stable.":`${r.oocX.length} X̄ OOC point(s), ${r.oocR.length} R OOC point(s). ▲ = out of control.`}${r.bias!=null?` Bias from reference: ${r.bias.toFixed(4)}.`:""}
+    </div>`:""}
+    <button onclick="window.print()" style="margin-top:14px;padding:6px 16px;background:#059669;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10pt;">🖨 Print</button>
+    </body></html>`);
+    win.document.close();
+  }
+
+  function handlePrintAAA() {
+    const win = window.open("","_blank","width=1100,height=800"); if(!win) return;
+    const r=aaaResult;
+    const logoHtml=companyLogo?`<img src="${companyLogo}" style="height:48px;object-fit:contain;margin-right:10px;" />`:"";
+    const hdr=(k:string,v:string)=>`<tr><td style="font-weight:600;padding:2px 8px 2px 0;">${k}</td><td style="font-family:monospace;">${v}</td></tr>`;
+    const al=(i:number)=>meta.appraiserNames[i]||String.fromCharCode(65+i);
+    const appraiserTables=Array.from({length:aaaAppraisers},(_,a)=>{
+      const rows=Array.from({length:aaaParts},(_,p)=>{
+        const ref=aaaReference[p];
+        const decisions=Array.from({length:aaaTrials},(_,t)=>aaaData[a]?.[p]?.[t]??true);
+        const allSame=decisions.every(d=>d===decisions[0]);
+        const vsRef=decisions.every(d=>d===ref);
+        return `<tr style="${!allSame?"background:#fef2f2;":""}"><td style="border:1px solid #ccc;padding:3px 6px;text-align:center;">${p+1}</td>${decisions.map(d=>`<td style="text-align:center;border:1px solid #ccc;padding:3px 6px;color:${d?"#16a34a":"#dc2626"};font-weight:700;">${d?"A":"R"}</td>`).join("")}<td style="text-align:center;border:1px solid #ccc;padding:3px 6px;color:${ref?"#16a34a":"#dc2626"};font-weight:700;">${ref?"A":"R"}</td><td style="text-align:center;border:1px solid #ccc;padding:3px 6px;">${allSame?"✓":"✗"}</td><td style="text-align:center;border:1px solid #ccc;padding:3px 6px;">${vsRef?"✓":"✗"}</td></tr>`;
+      }).join("");
+      const trialHdrs=Array.from({length:aaaTrials},(_,t)=>`<th style="border:1px solid #ccc;padding:3px 6px;">Trial ${t+1}</th>`).join("");
+      return `<div style="margin-bottom:16px;"><p style="font-weight:700;margin:0 0 4px;">Appraiser ${al(a)}</p><table style="width:100%;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:3px 6px;">Part</th>${trialHdrs}<th style="border:1px solid #ccc;padding:3px 6px;">Reference</th><th style="border:1px solid #ccc;padding:3px 6px;">Within ✓</th><th style="border:1px solid #ccc;padding:3px 6px;">vs Ref ✓</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }).join("");
+    win.document.write(`<!DOCTYPE html><html><head><title>AAA Study</title><style>body{font-family:Arial,sans-serif;font-size:9.5pt;margin:20px;}table{border-collapse:collapse;}@media print{button{display:none!important;}}</style></head><body>
+    <div style="display:flex;align-items:center;border-bottom:3px solid #b45309;padding-bottom:8px;margin-bottom:12px;">
+      ${logoHtml}<div><div style="font-size:15pt;font-weight:700;color:#b45309;">${companyName||"Company"}</div><div style="font-size:9pt;color:#666;">Attribute Agreement Analysis — AIAG MSA 4th Edition §4 · Cohen's Kappa (κ)</div></div>
+    </div>
+    <table style="width:100%;margin-bottom:12px;"><tbody>
+      ${hdr("Part Name:",meta.partName||"—")}${hdr("Characteristic:",meta.characteristic||"—")}${hdr("Gage Description:",meta.gaugeDesc||"—")}
+      ${hdr("Performed By:",meta.performedBy||"—")}${hdr("Study Date:",studyDate||"—")}
+      ${hdr("Appraisers:",Array.from({length:aaaAppraisers},(_,i)=>al(i)).join(", "))}
+      ${hdr("Parts / Samples:",String(aaaParts))}${hdr("Trials per Part:",String(aaaTrials))}
+    </tbody></table>
+    ${appraiserTables}
+    <p style="font-weight:700;margin:8px 0 4px;">Analysis Summary</p>
+    <table style="width:60%;margin-bottom:14px;"><tbody>
+      ${r?r.withinPct.map((pct,a)=>hdr(`Within-Appraiser % (${al(a)}):`,pct.toFixed(1)+"%")).join(""):""}
+      ${r?hdr("Between-Appraiser % (all agree):",r.betweenPct.toFixed(1)+"%"):""}
+      ${r?r.vsRefPct.map((pct,a)=>hdr(`vs Reference % (${al(a)}):`,pct.toFixed(1)+"%")).join(""):""}
+      ${r?r.kappaVals.map((k,a)=>hdr(`Kappa κ (${al(a)}):`,k.toFixed(4))).join(""):""}
+      ${r?hdr("Overall Kappa κ̄:",r.overallKappa.toFixed(4)):""}
+      ${r?hdr("AIAG Criterion (κ≥0.75 acceptable):",r.result.toUpperCase()):""}
+    </tbody></table>
+    ${r?`<div style="padding:8px 12px;border-left:4px solid ${r.result==="acceptable"?"#16a34a":r.result==="marginal"?"#d97706":"#dc2626"};background:${r.result==="acceptable"?"#f0fdf4":r.result==="marginal"?"#fffbeb":"#fef2f2"};">
+      <b>Result: ${r.result.toUpperCase()}</b> — κ̄ = ${r.overallKappa.toFixed(4)}. ${r.result==="acceptable"?"Measurement system is effective for attribute discrimination.":r.result==="marginal"?"System may be acceptable depending on application.":"System is not effective — recommend improvement before production use."}
+    </div>`:""}
+    <button onclick="window.print()" style="margin-top:14px;padding:6px 16px;background:#b45309;color:white;border:none;border-radius:4px;cursor:pointer;font-size:10pt;">🖨 Print</button>
+    </body></html>`);
+    win.document.close();
   }
 
   // ── Print handler — opens new window with full AIAG worksheet ───────────────
   function handlePrint() {
     if (phase !== "grid") return;
+    if (studyType === "bias")               { handlePrintBias();       return; }
+    if (studyType === "linearity")          { handlePrintLinearity();  return; }
+    if (studyType === "stability")          { handlePrintStability();  return; }
+    if (studyType === "attribute_agreement"){ handlePrintAAA();        return; }
     const win = window.open("", "_blank", "width=1200,height=900");
     if (!win) return;
     const al = (i: number) => String.fromCharCode(65 + i);
@@ -2024,166 +2407,711 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel, companyL
           </div>
         </div>
 
-        {studyType === "gage_rrr" ? (
-          <>
-            {/* ── AIAG Worksheet Header Fields ── */}
-            <div className="border rounded-lg p-3 space-y-3 bg-muted/10">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Study Header (AIAG Worksheet)</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold">Part Name</Label>
-                  <Input className="mt-1 h-7 text-sm" value={meta.partName}
-                    onChange={e => setMetaField("partName", e.target.value)}
-                    placeholder="e.g. Control Arm Bracket" data-testid="input-msa-part-name" />
+        {/* ── Shared AIAG Worksheet Header (all study types) ── */}
+        <div className="border rounded-lg p-3 space-y-3 bg-muted/10">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Study Header (AIAG Worksheet)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs font-semibold">Part Name</Label>
+              <Input className="mt-1 h-7 text-sm" value={meta.partName} onChange={e=>setMetaField("partName",e.target.value)} placeholder="e.g. Control Arm Bracket" data-testid="input-msa-part-name" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Part / Drawing No.</Label>
+              <Input className="mt-1 h-7 text-sm" value={meta.partNumber} onChange={e=>setMetaField("partNumber",e.target.value)} placeholder="e.g. 1234-A" data-testid="input-msa-part-number" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Characteristic / Feature</Label>
+              <Input className="mt-1 h-7 text-sm" value={meta.characteristic} onChange={e=>setMetaField("characteristic",e.target.value)} placeholder="e.g. Bore Diameter" data-testid="input-msa-characteristic" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Gauge / Gage Description</Label>
+              <Input className="mt-1 h-7 text-sm" value={meta.gaugeDesc} onChange={e=>setMetaField("gaugeDesc",e.target.value)} placeholder={studyType==="attribute_agreement"?"e.g. Attribute / Visual":"e.g. Digital Caliper 0-6\""} data-testid="input-msa-gauge-desc" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Performed By</Label>
+              <Input className="mt-1 h-7 text-sm" value={meta.performedBy} onChange={e=>setMetaField("performedBy",e.target.value)} placeholder="e.g. Quality Engineer" data-testid="input-msa-performed-by" />
+            </div>
+            {studyType !== "attribute_agreement" && (
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs font-semibold">USL <span className="font-normal text-muted-foreground">(opt.)</span></Label>
+                  <Input className="mt-1 h-7 text-sm" value={meta.usl} onChange={e=>setMetaField("usl",e.target.value)} placeholder="e.g. 25.05" data-testid="input-msa-usl" />
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold">Part / Drawing No.</Label>
-                  <Input className="mt-1 h-7 text-sm" value={meta.partNumber}
-                    onChange={e => setMetaField("partNumber", e.target.value)}
-                    placeholder="e.g. 1234-A" data-testid="input-msa-part-number" />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Characteristic / Feature</Label>
-                  <Input className="mt-1 h-7 text-sm" value={meta.characteristic}
-                    onChange={e => setMetaField("characteristic", e.target.value)}
-                    placeholder="e.g. Bore Diameter" data-testid="input-msa-characteristic" />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Gauge Description</Label>
-                  <Input className="mt-1 h-7 text-sm" value={meta.gaugeDesc}
-                    onChange={e => setMetaField("gaugeDesc", e.target.value)}
-                    placeholder="e.g. Digital Caliper 0-6&quot;" data-testid="input-msa-gauge-desc" />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Performed By</Label>
-                  <Input className="mt-1 h-7 text-sm" value={meta.performedBy}
-                    onChange={e => setMetaField("performedBy", e.target.value)}
-                    placeholder="e.g. Quality Engineer" data-testid="input-msa-performed-by" />
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Label className="text-xs font-semibold">USL <span className="font-normal text-muted-foreground">(opt.)</span></Label>
-                    <Input className="mt-1 h-7 text-sm" value={meta.usl}
-                      onChange={e => setMetaField("usl", e.target.value)}
-                      placeholder="e.g. 25.05" data-testid="input-msa-usl" />
-                  </div>
-                  <div className="flex-1">
-                    <Label className="text-xs font-semibold">LSL <span className="font-normal text-muted-foreground">(opt.)</span></Label>
-                    <Input className="mt-1 h-7 text-sm" value={meta.lsl}
-                      onChange={e => setMetaField("lsl", e.target.value)}
-                      placeholder="e.g. 24.95" data-testid="input-msa-lsl" />
-                  </div>
+                <div className="flex-1">
+                  <Label className="text-xs font-semibold">LSL <span className="font-normal text-muted-foreground">(opt.)</span></Label>
+                  <Input className="mt-1 h-7 text-sm" value={meta.lsl} onChange={e=>setMetaField("lsl",e.target.value)} placeholder="e.g. 24.95" data-testid="input-msa-lsl" />
                 </div>
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            {/* ── Study Dimensions ── */}
+        {/* ── GRR Study Configuration ── */}
+        {studyType === "gage_rrr" && (
+          <>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-sm font-semibold">Appraisers</Label>
                 <div className="flex gap-2 mt-1">
-                  {[2, 3].map(n => (
-                    <button key={n} type="button" onClick={() => setAppraiserCount(n)}
-                      className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${appraiserCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/40"}`}
-                      data-testid={`btn-appraisers-${n}`}>{n}</button>
-                  ))}
+                  {[2,3].map(n=><button key={n} type="button" onClick={()=>setAppraiserCount(n)} className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${appraiserCount===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-appraisers-${n}`}>{n}</button>)}
                 </div>
               </div>
               <div>
                 <Label className="text-sm font-semibold">Trials / Part</Label>
                 <div className="flex gap-2 mt-1">
-                  {[2, 3].map(n => (
-                    <button key={n} type="button" onClick={() => setTrialCount(n)}
-                      className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${trialCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/40"}`}
-                      data-testid={`btn-trials-${n}`}>{n}</button>
-                  ))}
+                  {[2,3].map(n=><button key={n} type="button" onClick={()=>setTrialCount(n)} className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${trialCount===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-trials-${n}`}>{n}</button>)}
                 </div>
               </div>
               <div>
                 <Label className="text-sm font-semibold">Parts to Sample</Label>
                 <div className="flex gap-1 mt-1">
-                  {[5, 6, 7, 8, 9, 10].map(n => (
-                    <button key={n} type="button" onClick={() => setPartCount(n)}
-                      className={`flex-1 h-8 rounded border text-xs font-bold transition-colors ${partCount===n ? "bg-accent text-white border-accent" : "border-border hover:border-accent/40"}`}
-                      data-testid={`btn-parts-${n}`}>{n}</button>
-                  ))}
+                  {[5,6,7,8,9,10].map(n=><button key={n} type="button" onClick={()=>setPartCount(n)} className={`flex-1 h-8 rounded border text-xs font-bold transition-colors ${partCount===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-parts-${n}`}>{n}</button>)}
                 </div>
               </div>
             </div>
-
-            {/* ── Appraiser Names ── */}
             <div>
               <Label className="text-sm font-semibold">Appraiser Names</Label>
               <div className="flex gap-2 mt-1">
-                {Array.from({length: appraiserCount}, (_, i) => (
-                  <Input key={i} className="h-8 text-sm" value={meta.appraiserNames[i] ?? ""}
-                    onChange={e => setAppraiserName(i, e.target.value)}
-                    placeholder={`Appraiser ${String.fromCharCode(65+i)}`}
-                    data-testid={`input-appraiser-name-${i}`} />
+                {Array.from({length:appraiserCount},(_,i)=>(
+                  <Input key={i} className="h-8 text-sm" value={meta.appraiserNames[i]??""} onChange={e=>setAppraiserName(i,e.target.value)} placeholder={`Appraiser ${String.fromCharCode(65+i)}`} data-testid={`input-appraiser-name-${i}`} />
                 ))}
               </div>
             </div>
-
             <div className="flex gap-2">
-              <Button onClick={buildGrid} disabled={!equipmentId || !studyDate}
-                className="bg-accent hover:bg-accent/90 text-white" data-testid="button-build-data-sheet">
+              <Button onClick={buildDataSheet} disabled={!equipmentId||!studyDate} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-build-data-sheet">
                 Build AIAG Data Sheet → ({appraiserCount} × {partCount} × {trialCount})
               </Button>
               <Button variant="outline" onClick={onCancel}>Cancel</Button>
             </div>
           </>
-        ) : (
-          /* ── Non-GRR simple form ── */
+        )}
+
+        {/* ── Bias Study Configuration ── */}
+        {studyType === "bias" && (
           <div className="space-y-3">
+            <div className="p-3 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-200 text-xs text-sky-700 dark:text-sky-300">
+              <strong>AIAG MSA 4th Ed. §3.1 — Bias Study:</strong> Obtain the known reference/master value for the part. Collect ≥10 repeat measurements (25 recommended) using the same appraiser and gage. The study determines whether the measurement system has statistically significant bias.
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-sm font-semibold">Appraisers</Label>
-                <Input type="number" min={1} className="mt-1 h-8" value={appraiserCount || ""}
-                  onChange={e => setAppraiserCount(parseInt(e.target.value)||0)}
-                  placeholder="e.g. 3" data-testid="input-msa-appraisers" />
+                <Label className="text-sm font-semibold">Reference Value (Known Master) *</Label>
+                <Input className="mt-1 h-8 text-sm font-mono" value={biasRef} onChange={e=>setBiasRef(e.target.value)} placeholder="e.g. 10.000" data-testid="input-bias-ref" />
               </div>
               <div>
-                <Label className="text-sm font-semibold">Parts Sampled</Label>
-                <Input type="number" min={1} className="mt-1 h-8" value={partCount || ""}
-                  onChange={e => setPartCount(parseInt(e.target.value)||0)}
-                  placeholder="e.g. 10" data-testid="input-msa-part-count" />
+                <Label className="text-sm font-semibold">Process Variation TV <span className="text-muted-foreground font-normal">(6σ or tolerance, optional)</span></Label>
+                <Input className="mt-1 h-8 text-sm font-mono" value={biasProcessVar} onChange={e=>setBiasProcessVar(e.target.value)} placeholder="e.g. 0.500" data-testid="input-bias-pv" />
               </div>
-              <div>
-                <Label className="text-sm font-semibold">Trials per Part</Label>
-                <Input type="number" min={1} className="mt-1 h-8" value={trialCount || ""}
-                  onChange={e => setTrialCount(parseInt(e.target.value)||0)}
-                  placeholder="e.g. 2" data-testid="input-msa-trial-count" />
-              </div>
-              {studyType !== "attribute_agreement" && <>
-                <div>
-                  <Label className="text-sm font-semibold">GRR% / Study Error</Label>
-                  <Input type="number" step="0.01" min={0} max={100} className="mt-1 h-8"
-                    value={simpleGrr} onChange={e => setSimpleGrr(e.target.value)}
-                    placeholder="e.g. 8.4" data-testid="input-msa-grr-percent" />
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold">NDC</Label>
-                  <Input type="number" step="1" min={0} className="mt-1 h-8"
-                    value={simpleNdc} onChange={e => setSimpleNdc(e.target.value)}
-                    placeholder="e.g. 7" data-testid="input-msa-ndc" />
-                </div>
-              </>}
-              <div className="col-span-2">
-                <Label className="text-sm font-semibold">Notes</Label>
-                <Textarea className="mt-1" rows={2} value={notes} onChange={e => setNotes(e.target.value)}
-                  placeholder="Study conditions, corrective actions..." data-testid="textarea-msa-notes" />
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">Number of Measurements (n)</Label>
+              <div className="flex gap-2 mt-1">
+                {[10,15,25,50].map(n=><button key={n} type="button" onClick={()=>setBiasN(n)} className={`px-4 h-8 rounded border text-sm font-bold transition-colors ${biasN===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-bias-n-${n}`}>{n}</button>)}
               </div>
             </div>
             <div className="flex gap-2">
-              <Button disabled={isSaving || !equipmentId || !studyDate}
-                className="bg-accent hover:bg-accent/90 text-white" onClick={handleSave}
-                data-testid="button-save-msa-study">
-                {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
+              <Button onClick={buildDataSheet} disabled={!equipmentId||!studyDate} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-build-bias-sheet">
+                Build Bias Data Sheet →
               </Button>
               <Button variant="outline" onClick={onCancel}>Cancel</Button>
             </div>
           </div>
         )}
+
+        {/* ── Linearity Study Configuration ── */}
+        {studyType === "linearity" && (
+          <div className="space-y-3">
+            <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 text-xs text-violet-700 dark:text-violet-300">
+              <strong>AIAG MSA 4th Ed. §3.2 — Linearity Study:</strong> Select 5 reference parts that span the operating measurement range (low, mid-low, middle, mid-high, high). Obtain known reference values via a layout inspection. Collect 10–12 repeat measurements per reference level to determine if bias is consistent across the measurement range.
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm font-semibold">Process Variation TV <span className="text-muted-foreground font-normal">(6σ, optional)</span></Label>
+                <Input className="mt-1 h-8 text-sm font-mono" value={linProcessVar} onChange={e=>setLinProcessVar(e.target.value)} placeholder="e.g. 1.000" data-testid="input-lin-pv" />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Measurements per Reference Level</Label>
+                <div className="flex gap-2 mt-1">
+                  {[5,10,12].map(n=><button key={n} type="button" onClick={()=>setLinMeasCount(n)} className={`px-4 h-8 rounded border text-sm font-bold transition-colors ${linMeasCount===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-lin-meas-${n}`}>{n}</button>)}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={buildDataSheet} disabled={!equipmentId||!studyDate} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-build-lin-sheet">
+                Build Linearity Data Sheet → (5 Levels × {linMeasCount})
+              </Button>
+              <Button variant="outline" onClick={onCancel}>Cancel</Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Stability Study Configuration ── */}
+        {studyType === "stability" && (
+          <div className="space-y-3">
+            <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 text-xs text-emerald-700 dark:text-emerald-300">
+              <strong>AIAG MSA 4th Ed. §3.3 — Stability Study:</strong> Select a master/reference part with a known value. Measure it n times per subgroup at regular time intervals (daily, weekly, monthly) over ≥25 periods. Produces an X̄-R control chart to detect measurement system drift over time.
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm font-semibold">Reference Value (Known Master)</Label>
+                <Input className="mt-1 h-8 text-sm font-mono" value={stabRef} onChange={e=>setStabRef(e.target.value)} placeholder="e.g. 50.000" data-testid="input-stab-ref" />
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Subgroup Size (n readings per period)</Label>
+                <div className="flex gap-2 mt-1">
+                  {[2,3,4,5].map(n=><button key={n} type="button" onClick={()=>setStabSubgroupSize(n)} className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${stabSubgroupSize===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-stab-sgsize-${n}`}>{n}</button>)}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={buildDataSheet} disabled={!equipmentId||!studyDate} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-build-stab-sheet">
+                Build Stability Chart → (25 Subgroups × n={stabSubgroupSize})
+              </Button>
+              <Button variant="outline" onClick={onCancel}>Cancel</Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Attribute Agreement Analysis Configuration ── */}
+        {studyType === "attribute_agreement" && (
+          <div className="space-y-3">
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 text-xs text-amber-700 dark:text-amber-300">
+              <strong>AIAG MSA 4th Ed. §4 — Attribute Agreement Analysis:</strong> Each appraiser classifies each part as Accept or Reject across multiple trials. The study measures within-appraiser consistency, between-appraiser agreement, and agreement vs. a known reference standard. Uses Cohen's Kappa (κ). AIAG criterion: κ ≥ 0.75 acceptable.
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-sm font-semibold">Appraisers</Label>
+                <div className="flex gap-2 mt-1">
+                  {[2,3].map(n=><button key={n} type="button" onClick={()=>setAaaAppraisers(n)} className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${aaaAppraisers===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-aaa-appraisers-${n}`}>{n}</button>)}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Parts (samples)</Label>
+                <div className="flex gap-2 mt-1">
+                  {[20,25,30].map(n=><button key={n} type="button" onClick={()=>setAaaParts(n)} className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${aaaParts===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-aaa-parts-${n}`}>{n}</button>)}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-semibold">Trials / Part</Label>
+                <div className="flex gap-2 mt-1">
+                  {[2,3].map(n=><button key={n} type="button" onClick={()=>setAaaTrials(n)} className={`flex-1 h-8 rounded border text-sm font-bold transition-colors ${aaaTrials===n?"bg-accent text-white border-accent":"border-border hover:border-accent/40"}`} data-testid={`btn-aaa-trials-${n}`}>{n}</button>)}
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-semibold">Appraiser Names</Label>
+              <div className="flex gap-2 mt-1">
+                {Array.from({length:aaaAppraisers},(_,i)=>(
+                  <Input key={i} className="h-8 text-sm" value={meta.appraiserNames[i]??""} onChange={e=>setAppraiserName(i,e.target.value)} placeholder={`Appraiser ${String.fromCharCode(65+i)}`} data-testid={`input-aaa-appraiser-name-${i}`} />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={buildDataSheet} disabled={!equipmentId||!studyDate} className="bg-accent hover:bg-accent/90 text-white" data-testid="button-build-aaa-sheet">
+                Build AAA Data Sheet → ({aaaAppraisers} Appraisers × {aaaParts} Parts × {aaaTrials} Trials)
+              </Button>
+              <Button variant="outline" onClick={onCancel}>Cancel</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── BIAS DATA PHASE ───────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (phase === "grid" && studyType === "bias") {
+    const r = biasResult;
+    const resultColor = r?.result === "acceptable" ? "text-emerald-600" : r?.result === "marginal" ? "text-amber-600" : "text-red-600";
+    const resultBg    = r?.result === "acceptable" ? "bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30" : r?.result === "marginal" ? "bg-amber-50 border-amber-300 dark:bg-amber-950/30" : "bg-red-50 border-red-300 dark:bg-red-950/30";
+    return (
+      <div className="space-y-4">
+        {/* Study Info Banner */}
+        <div className="flex items-center justify-between border rounded-lg px-3 py-2 bg-sky-50 dark:bg-sky-950/30 border-sky-200">
+          <div className="flex items-center gap-3">
+            {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-sky-700 dark:text-sky-300">Bias Study — AIAG MSA 4th Ed. §3.1</div>
+              <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · {meta.gaugeDesc||"—"} · Ref: <span className="font-mono font-bold">{biasRef||"—"}</span></div>
+            </div>
+          </div>
+          <button onClick={()=>setPhase("config")} className="text-xs text-muted-foreground hover:text-foreground border rounded px-2 py-1">← Edit Config</button>
+        </div>
+
+        <div className="grid grid-cols-5 gap-4">
+          {/* Measurement Grid */}
+          <div className="col-span-3 border rounded-lg overflow-hidden">
+            <div className="bg-muted/30 px-3 py-1.5 border-b flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wide">Measurements (n = {biasN})</span>
+              <span className="text-[10px] text-muted-foreground">Ref = <span className="font-mono font-bold">{biasRef||"?"}</span> &nbsp;|&nbsp; Enter each reading</span>
+            </div>
+            <div className="p-3 grid grid-cols-5 gap-1.5">
+              {Array.from({length:biasN},(_,i)=>(
+                <div key={i} className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground w-5 shrink-0 text-right">{i+1}.</span>
+                  <Input className="h-7 text-xs font-mono p-1 text-center" value={biasReadings[i]??""} onChange={e=>{const next=[...biasReadings];next[i]=e.target.value;setBiasReadings(next);}} data-testid={`input-bias-${i}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Analysis Panel */}
+          <div className="col-span-2 space-y-3">
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-muted/30 px-3 py-1.5 border-b text-xs font-bold uppercase tracking-wide">Live Analysis</div>
+              <div className="p-3 space-y-1.5 text-sm">
+                {[
+                  ["n (entered)",          r ? String(r.n) : "—"],
+                  ["Sample Mean (x̄)",      r ? r.mean.toFixed(5) : "—"],
+                  ["Bias (x̄ − Ref)",       r ? (r.bias >= 0 ? "+" : "") + r.bias.toFixed(5) : "—"],
+                  ["Std Dev σ",             r ? r.sigma.toFixed(5) : "—"],
+                  ["t-statistic",           r ? r.tStat.toFixed(3) : "—"],
+                  ["t-critical (95%)",      r ? r.tc.toFixed(3) : "—"],
+                  ["Bias Significant?",     r ? (r.significant ? "YES ⚠" : "No") : "—"],
+                  ["%Bias (|Bias|/TV×100)", r && r.pctBias != null ? r.pctBias.toFixed(2) + "%" : "—"],
+                  ["%Repeatability (5.15σ/TV)", r && r.pctRepeat != null ? r.pctRepeat.toFixed(2) + "%" : "—"],
+                ].map(([k,v])=>(
+                  <div key={k} className="flex justify-between gap-2 text-xs border-b last:border-0 pb-1 last:pb-0">
+                    <span className="text-muted-foreground">{k}</span>
+                    <span className={`font-mono font-semibold ${k==="Bias Significant?"&&r?.significant?"text-red-600":""}`}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Result Badge */}
+            {r && (
+              <div className={`border rounded-lg p-3 ${resultBg}`}>
+                <div className={`text-xs font-black uppercase tracking-wider mb-1 ${resultColor}`}>
+                  {r.result === "acceptable" ? "✓ Acceptable" : r.result === "marginal" ? "⚠ Marginal" : "✗ Unacceptable"}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  {r.significant ? "Statistically significant bias detected (t > t-crit)." : "Bias not statistically significant."}
+                  {r.pctBias != null ? ` %Bias = ${r.pctBias.toFixed(2)}%.` : ""}
+                  {" "}AIAG criterion: ≤10% acceptable, ≤30% marginal.
+                </p>
+              </div>
+            )}
+
+            {/* Notes */}
+            <div>
+              <Label className="text-xs font-semibold">Notes</Label>
+              <Textarea className="mt-1 text-xs" rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Study conditions, corrective actions..." data-testid="textarea-bias-notes" />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={handleSave} disabled={isSaving} className="bg-accent hover:bg-accent/90 text-white text-xs h-8" data-testid="button-save-bias">
+                {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
+              </Button>
+              <Button variant="outline" onClick={handlePrint} className="text-xs h-8" data-testid="button-print-bias">Print Study</Button>
+              <Button variant="outline" onClick={()=>setPhase("config")} className="text-xs h-8">← Back</Button>
+              <Button variant="outline" onClick={onCancel} className="text-xs h-8">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── LINEARITY DATA PHASE ──────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (phase === "grid" && studyType === "linearity") {
+    const r = linResult;
+    const resultColor = r?.result === "acceptable" ? "text-emerald-600" : r?.result === "marginal" ? "text-amber-600" : "text-red-600";
+    const resultBg    = r?.result === "acceptable" ? "bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30" : r?.result === "marginal" ? "bg-amber-50 border-amber-300 dark:bg-amber-950/30" : "bg-red-50 border-red-300 dark:bg-red-950/30";
+    return (
+      <div className="space-y-4">
+        {/* Study Info Banner */}
+        <div className="flex items-center justify-between border rounded-lg px-3 py-2 bg-violet-50 dark:bg-violet-950/30 border-violet-200">
+          <div className="flex items-center gap-3">
+            {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-violet-700 dark:text-violet-300">Linearity Study — AIAG MSA 4th Ed. §3.2</div>
+              <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · {meta.gaugeDesc||"—"} · TV: <span className="font-mono font-bold">{linProcessVar||"—"}</span></div>
+            </div>
+          </div>
+          <button onClick={()=>setPhase("config")} className="text-xs text-muted-foreground hover:text-foreground border rounded px-2 py-1">← Edit Config</button>
+        </div>
+
+        <div className="grid grid-cols-5 gap-4">
+          {/* Reference Level Grids */}
+          <div className="col-span-3 space-y-3">
+            {linParts.map((lp, pi) => {
+              const vals=lp.readings.filter(s=>s.trim()!=="").map(Number).filter(v=>!isNaN(v));
+              const ref=parseFloat(lp.reference);
+              const mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:NaN;
+              const bias=mean-ref;
+              return (
+                <div key={pi} className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted/30 px-3 py-1.5 border-b flex items-center justify-between">
+                    <span className="text-xs font-bold">Level {pi+1}</span>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[10px] text-muted-foreground">Reference:</Label>
+                      <Input className="h-6 w-28 text-xs font-mono p-1 text-center" value={lp.reference}
+                        onChange={e=>{const next=[...linParts];next[pi]={...next[pi],reference:e.target.value};setLinParts(next);}}
+                        placeholder="e.g. 10.000" data-testid={`input-lin-ref-${pi}`} />
+                      {!isNaN(ref)&&!isNaN(mean)&&<span className="text-[10px] font-mono font-semibold text-muted-foreground">Bias = {bias>=0?"+":""}{bias.toFixed(4)}</span>}
+                    </div>
+                  </div>
+                  <div className="p-2 flex flex-wrap gap-1">
+                    {lp.readings.slice(0, linMeasCount).map((_,i)=>(
+                      <div key={i} className="flex items-center gap-0.5">
+                        <span className="text-[10px] text-muted-foreground w-4 text-right">{i+1}.</span>
+                        <Input className="h-7 w-20 text-xs font-mono p-1 text-center"
+                          value={lp.readings[i]??""}
+                          onChange={e=>{const next=[...linParts];next[pi]={...next[pi],readings:next[pi].readings.map((v,idx)=>idx===i?e.target.value:v)};setLinParts(next);}}
+                          data-testid={`input-lin-${pi}-${i}`} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Analysis Panel */}
+          <div className="col-span-2 space-y-3">
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-muted/30 px-3 py-1.5 border-b text-xs font-bold uppercase tracking-wide">Regression Analysis</div>
+              <div className="p-3 space-y-1.5">
+                {r && r.levels.map((lv,i)=>(
+                  <div key={i} className="flex justify-between text-xs border-b pb-1">
+                    <span className="text-muted-foreground">Level {i+1} Bias</span>
+                    <span className={`font-mono font-semibold ${Math.abs(lv.bias)>0.05?"text-amber-600":""}`}>{lv.bias>=0?"+":""}{lv.bias.toFixed(4)}</span>
+                  </div>
+                ))}
+                {[
+                  ["Slope β₁",              r ? r.slope.toFixed(4) : "—"],
+                  ["Intercept β₀",          r ? r.intercept.toFixed(4) : "—"],
+                  ["R² (goodness of fit)",  r ? r.r2.toFixed(4) : "—"],
+                  ["Max |Bias|",            r ? r.maxBiasAbs.toFixed(4) : "—"],
+                  ["%Linearity",            r && r.pctLinearity!=null ? r.pctLinearity.toFixed(2)+"%" : "—"],
+                  ["%Max Bias",             r && r.pctBias!=null ? r.pctBias.toFixed(2)+"%" : "—"],
+                ].map(([k,v])=>(
+                  <div key={k} className="flex justify-between gap-2 text-xs border-b last:border-0 pb-1 last:pb-0">
+                    <span className="text-muted-foreground">{k}</span>
+                    <span className="font-mono font-semibold">{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {r && (
+              <div className={`border rounded-lg p-3 ${resultBg}`}>
+                <div className={`text-xs font-black uppercase tracking-wider mb-1 ${resultColor}`}>
+                  {r.result === "acceptable" ? "✓ Acceptable" : r.result === "marginal" ? "⚠ Marginal" : "✗ Unacceptable"}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  β₁ = {r.slope.toFixed(4)}, R² = {r.r2.toFixed(4)}.
+                  {r.pctLinearity!=null?` %Linearity = ${r.pctLinearity.toFixed(2)}%.`:""}
+                  {" "}AIAG criterion: ≤10% of TV acceptable.
+                </p>
+              </div>
+            )}
+            <div>
+              <Label className="text-xs font-semibold">Notes</Label>
+              <Textarea className="mt-1 text-xs" rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Study conditions..." data-testid="textarea-lin-notes" />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={handleSave} disabled={isSaving} className="bg-accent hover:bg-accent/90 text-white text-xs h-8" data-testid="button-save-lin">
+                {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
+              </Button>
+              <Button variant="outline" onClick={handlePrint} className="text-xs h-8" data-testid="button-print-lin">Print Study</Button>
+              <Button variant="outline" onClick={()=>setPhase("config")} className="text-xs h-8">← Back</Button>
+              <Button variant="outline" onClick={onCancel} className="text-xs h-8">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── STABILITY DATA PHASE ──────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (phase === "grid" && studyType === "stability") {
+    const r = stabResult;
+    const resultColor = r?.result === "acceptable" ? "text-emerald-600" : r?.result === "marginal" ? "text-amber-600" : "text-red-600";
+    const resultBg    = r?.result === "acceptable" ? "bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30" : r?.result === "marginal" ? "bg-amber-50 border-amber-300 dark:bg-amber-950/30" : "bg-red-50 border-red-300 dark:bg-red-950/30";
+    return (
+      <div className="space-y-4">
+        {/* Study Info Banner */}
+        <div className="flex items-center justify-between border rounded-lg px-3 py-2 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200">
+          <div className="flex items-center gap-3">
+            {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Stability Study — AIAG MSA 4th Ed. §3.3 · X̄-R Chart</div>
+              <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · Ref: <span className="font-mono font-bold">{stabRef||"—"}</span> · n={stabSubgroupSize}</div>
+            </div>
+          </div>
+          <button onClick={()=>setPhase("config")} className="text-xs text-muted-foreground hover:text-foreground border rounded px-2 py-1">← Edit Config</button>
+        </div>
+
+        {/* Control Limits Banner */}
+        {r && (
+          <div className="flex gap-4 flex-wrap border rounded-lg px-3 py-2 bg-muted/20 text-xs font-mono">
+            <span><span className="font-bold text-sky-600">X̄:</span> CL={r.xbarBar.toFixed(4)} | UCL={r.UCLX.toFixed(4)} | LCL={r.LCLX.toFixed(4)}</span>
+            <span><span className="font-bold text-orange-600">R:</span> CL={r.rBar.toFixed(4)} | UCL={r.UCLR.toFixed(4)} | LCL={r.LCLR.toFixed(4)}</span>
+            <span><span className="font-bold">σ̂</span>= {r.sigma.toFixed(4)}</span>
+            {r.bias!=null&&<span><span className="font-bold">Bias</span>= {r.bias>=0?"+":""}{r.bias.toFixed(4)}</span>}
+            <span className={r.stable?"text-emerald-600 font-bold":"text-red-600 font-bold"}>{r.stable?"● Stable":"● OOC Detected"}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-5 gap-4">
+          {/* Subgroup Table */}
+          <div className="col-span-3 border rounded-lg overflow-hidden">
+            <div className="bg-muted/30 px-3 py-1.5 border-b flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wide">Subgroup Data (25 periods × n={stabSubgroupSize})</span>
+              <span className="text-[10px] text-muted-foreground">▲ = Out of control</span>
+            </div>
+            <div className="overflow-auto max-h-[520px]">
+              <table className="text-xs w-full">
+                <thead className="sticky top-0 bg-muted/80">
+                  <tr>
+                    <th className="border px-1 py-1 text-center w-8">#</th>
+                    <th className="border px-2 py-1 text-left w-28">Date</th>
+                    {Array.from({length:stabSubgroupSize},(_,i)=><th key={i} className="border px-1 py-1 text-center w-20">x{i+1}</th>)}
+                    <th className="border px-1 py-1 text-center w-20 text-sky-700">X̄</th>
+                    <th className="border px-1 py-1 text-center w-20 text-orange-600">R</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({length:25},(_,sgIdx)=>{
+                    const sg=stabSubgroups[sgIdx]??{date:"",readings:Array(stabSubgroupSize).fill("")};
+                    const vals=sg.readings.slice(0,stabSubgroupSize).map(Number).filter(v=>!isNaN(v));
+                    const complete=vals.length===stabSubgroupSize;
+                    const xbar=complete?vals.reduce((a,b)=>a+b,0)/vals.length:NaN;
+                    const rng=complete?Math.max(...vals)-Math.min(...vals):NaN;
+                    const oocX=r&&!isNaN(xbar)&&(xbar>r.UCLX||xbar<r.LCLX);
+                    const oocR=r&&!isNaN(rng)&&rng>r.UCLR;
+                    const rowBg=oocX||oocR?"bg-red-50 dark:bg-red-950/30":"";
+                    return (
+                      <tr key={sgIdx} className={rowBg}>
+                        <td className="border px-1 py-0.5 text-center text-muted-foreground">{sgIdx+1}</td>
+                        <td className="border px-1 py-0.5">
+                          <Input className="h-6 text-[10px] font-mono p-0.5 border-0 bg-transparent w-full" value={sg.date}
+                            onChange={e=>{const next=[...stabSubgroups];next[sgIdx]={...next[sgIdx],date:e.target.value};setStabSubgroups(next);}}
+                            placeholder="Date" data-testid={`input-stab-date-${sgIdx}`} />
+                        </td>
+                        {Array.from({length:stabSubgroupSize},(_,readIdx)=>(
+                          <td key={readIdx} className="border px-0.5 py-0.5">
+                            <Input className="h-6 text-[10px] font-mono p-0.5 border-0 bg-transparent text-center w-full"
+                              value={sg.readings[readIdx]??""}
+                              onChange={e=>{const next=[...stabSubgroups];const nr=[...next[sgIdx].readings];nr[readIdx]=e.target.value;next[sgIdx]={...next[sgIdx],readings:nr};setStabSubgroups(next);}}
+                              data-testid={`input-stab-${sgIdx}-${readIdx}`} />
+                          </td>
+                        ))}
+                        <td className={`border px-1 py-0.5 text-center font-mono font-bold ${oocX?"text-red-600":""}`}>
+                          {complete?xbar.toFixed(3):""}{oocX?"▲":""}
+                        </td>
+                        <td className={`border px-1 py-0.5 text-center font-mono font-bold ${oocR?"text-red-600":""}`}>
+                          {complete?rng.toFixed(3):""}{oocR?"▲":""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Analysis Panel */}
+          <div className="col-span-2 space-y-3">
+            <div className="border rounded-lg overflow-hidden">
+              <div className="bg-muted/30 px-3 py-1.5 border-b text-xs font-bold uppercase tracking-wide">X̄-R Chart Statistics</div>
+              <div className="p-3 space-y-1.5">
+                {r && [
+                  ["Subgroups entered",   String(r.sgs.length)],
+                  ["Grand Mean (X̄̄)",     r.xbarBar.toFixed(5)],
+                  ["Mean Range (R̄)",      r.rBar.toFixed(5)],
+                  ["Process Std Dev σ̂",   r.sigma.toFixed(5)],
+                  ["Bias from Ref",       stabRef?(r.bias!=null?((r.bias>=0?"+":"")+r.bias.toFixed(5)):"—"):"no ref"],
+                  ["%Bias (|Bias|/6σ)",   r.pctBias!=null?r.pctBias.toFixed(2)+"%":"—"],
+                  ["A₂ factor",           String(r.A2)],
+                  ["D₄ factor",           String(r.D4)],
+                  ["X̄ UCL",              r.UCLX.toFixed(5)],
+                  ["X̄ LCL",              r.LCLX.toFixed(5)],
+                  ["R UCL",               r.UCLR.toFixed(5)],
+                  ["OOC X̄ subgroups",    r.oocX.length ? r.oocX.map(i=>i+1).join(", ") : "None"],
+                  ["OOC R subgroups",     r.oocR.length ? r.oocR.map(i=>i+1).join(", ") : "None"],
+                ].map(([k,v])=>(
+                  <div key={k} className="flex justify-between gap-2 text-xs border-b last:border-0 pb-1 last:pb-0">
+                    <span className="text-muted-foreground">{k}</span>
+                    <span className={`font-mono font-semibold ${k.startsWith("OOC")&&v!=="None"?"text-red-600":""}`}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {r && (
+              <div className={`border rounded-lg p-3 ${resultBg}`}>
+                <div className={`text-xs font-black uppercase tracking-wider mb-1 ${resultColor}`}>
+                  {r.result === "acceptable" ? "✓ Stable — Acceptable" : r.result === "marginal" ? "⚠ Marginal — Monitor" : "✗ Unstable — Investigate"}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  {r.stable?"No out-of-control points detected.":
+                    `${r.oocX.length} X̄ OOC point(s) at subgroup(s) ${r.oocX.map(i=>i+1).join(", ")}. ${r.oocR.length} R OOC point(s).`}
+                  {r.pctBias!=null?` %Bias from reference = ${r.pctBias.toFixed(2)}%.`:""}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label className="text-xs font-semibold">Notes</Label>
+              <Textarea className="mt-1 text-xs" rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Study conditions, corrective actions..." data-testid="textarea-stab-notes" />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={handleSave} disabled={isSaving} className="bg-accent hover:bg-accent/90 text-white text-xs h-8" data-testid="button-save-stab">
+                {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
+              </Button>
+              <Button variant="outline" onClick={handlePrint} className="text-xs h-8" data-testid="button-print-stab">Print Study</Button>
+              <Button variant="outline" onClick={()=>setPhase("config")} className="text-xs h-8">← Back</Button>
+              <Button variant="outline" onClick={onCancel} className="text-xs h-8">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ── ATTRIBUTE AGREEMENT ANALYSIS DATA PHASE ───────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (phase === "grid" && studyType === "attribute_agreement") {
+    const r = aaaResult;
+    const al = (i:number) => meta.appraiserNames[i] || String.fromCharCode(65+i);
+    const resultColor = r?.result === "acceptable" ? "text-emerald-600" : r?.result === "marginal" ? "text-amber-600" : "text-red-600";
+    const resultBg    = r?.result === "acceptable" ? "bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30" : r?.result === "marginal" ? "bg-amber-50 border-amber-300 dark:bg-amber-950/30" : "bg-red-50 border-red-300 dark:bg-red-950/30";
+    return (
+      <div className="space-y-4">
+        {/* Study Info Banner */}
+        <div className="flex items-center justify-between border rounded-lg px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border-amber-200">
+          <div className="flex items-center gap-3">
+            {companyLogo && <img src={companyLogo} alt="" className="h-8 object-contain" />}
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">Attribute Agreement Analysis — AIAG MSA 4th Ed. §4 · Cohen's Kappa</div>
+              <div className="text-[11px] text-muted-foreground">{meta.partName||"—"} · {meta.characteristic||"—"} · {aaaAppraisers} appraisers · {aaaParts} parts · {aaaTrials} trials</div>
+            </div>
+          </div>
+          <button onClick={()=>setPhase("config")} className="text-xs text-muted-foreground hover:text-foreground border rounded px-2 py-1">← Edit Config</button>
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-xs">
+          <span className="flex items-center gap-1"><span className="inline-block w-8 h-6 bg-emerald-100 border border-emerald-400 rounded text-center text-emerald-700 font-bold leading-6">A</span> = Accept</span>
+          <span className="flex items-center gap-1"><span className="inline-block w-8 h-6 bg-red-100 border border-red-400 rounded text-center text-red-700 font-bold leading-6">R</span> = Reject</span>
+          <span className="text-muted-foreground">Click toggles · Ref = known standard · ✓ = all trials agree</span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          {/* AAA Matrix — each appraiser in its own column block */}
+          {Array.from({length:aaaAppraisers},(_,a)=>(
+            <div key={a} className="border rounded-lg overflow-hidden">
+              <div className="bg-muted/30 px-3 py-1.5 border-b flex items-center justify-between">
+                <span className="text-xs font-bold">Appraiser {al(a)}</span>
+                {r && <span className="text-[10px] font-mono text-muted-foreground">Within: {r.withinPct[a].toFixed(1)}% | vs Ref: {r.vsRefPct[a].toFixed(1)}% | κ={r.kappaVals[a].toFixed(3)}</span>}
+              </div>
+              <div className="overflow-auto max-h-[420px]">
+                <table className="text-xs w-full">
+                  <thead className="sticky top-0 bg-muted/70">
+                    <tr>
+                      <th className="border px-1 py-1 text-center">#</th>
+                      {Array.from({length:aaaTrials},(_,t)=><th key={t} className="border px-1 py-1 text-center">T{t+1}</th>)}
+                      <th className="border px-1 py-1 text-center text-violet-700">Ref</th>
+                      <th className="border px-1 py-1 text-center">✓</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({length:aaaParts},(_,p)=>{
+                      const ref=aaaReference[p];
+                      const decisions=Array.from({length:aaaTrials},(_,t)=>aaaData[a]?.[p]?.[t]??true);
+                      const allSame=decisions.every(d=>d===decisions[0]);
+                      const vsRef=decisions.every(d=>d===ref);
+                      return (
+                        <tr key={p} className={!allSame||!vsRef?"bg-red-50/50 dark:bg-red-950/20":""}>
+                          <td className="border px-1 py-0.5 text-center text-muted-foreground">{p+1}</td>
+                          {Array.from({length:aaaTrials},(_,t)=>(
+                            <td key={t} className="border p-0.5 text-center">
+                              <button type="button"
+                                onClick={()=>{
+                                  const next=aaaData.map(ap=>ap.map(pp=>[...pp]));
+                                  next[a][p][t]=!next[a][p][t];
+                                  setAaaData(next);
+                                }}
+                                className={`w-8 h-6 rounded text-[11px] font-bold border transition-colors ${decisions[t]?"bg-emerald-100 border-emerald-400 text-emerald-700 hover:bg-emerald-200":"bg-red-100 border-red-400 text-red-700 hover:bg-red-200"}`}
+                                data-testid={`btn-aaa-${a}-${p}-${t}`}>
+                                {decisions[t]?"A":"R"}
+                              </button>
+                            </td>
+                          ))}
+                          <td className="border p-0.5 text-center">
+                            {a===0&&(
+                              <button type="button"
+                                onClick={()=>{const next=[...aaaReference];next[p]=!next[p];setAaaReference(next);}}
+                                className={`w-8 h-6 rounded text-[11px] font-bold border transition-colors ${ref?"bg-violet-100 border-violet-400 text-violet-700 hover:bg-violet-200":"bg-slate-100 border-slate-400 text-slate-700 hover:bg-slate-200"}`}
+                                data-testid={`btn-aaa-ref-${p}`}>
+                                {ref?"A":"R"}
+                              </button>
+                            )}
+                            {a!==0&&<span className={`text-[11px] font-bold ${ref?"text-violet-600":"text-slate-500"}`}>{ref?"A":"R"}</span>}
+                          </td>
+                          <td className={`border px-1 py-0.5 text-center text-sm ${allSame&&vsRef?"text-emerald-600":"text-red-500"}`}>{allSame&&vsRef?"✓":"✗"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Analysis Summary */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-muted/30 px-3 py-1.5 border-b text-xs font-bold uppercase tracking-wide">Kappa Analysis Summary</div>
+            <div className="p-3 space-y-1.5">
+              {r && [
+                ...r.withinPct.map((pct,a)=>[`Within-Appraiser ${al(a)}`, pct.toFixed(1)+"%"] as [string,string]),
+                ["Between-Appraisers (all agree)", r.betweenPct.toFixed(1)+"%"],
+                ...r.vsRefPct.map((pct,a)=>[`vs Reference — Appraiser ${al(a)}`, pct.toFixed(1)+"%"] as [string,string]),
+                ...r.kappaVals.map((k,a)=>[`Cohen's Kappa κ — Appraiser ${al(a)}`, k.toFixed(4)] as [string,string]),
+                ["Overall Kappa κ̄", r.overallKappa.toFixed(4)],
+                ["AIAG Criterion (κ≥0.75)", r.result.toUpperCase()],
+              ].map(([k,v])=>(
+                <div key={k} className="flex justify-between gap-2 text-xs border-b last:border-0 pb-1 last:pb-0">
+                  <span className="text-muted-foreground">{k}</span>
+                  <span className={`font-mono font-semibold ${k.startsWith("Overall")&&r.result!=="acceptable"?resultColor:""}`}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {r && (
+              <div className={`border rounded-lg p-3 ${resultBg}`}>
+                <div className={`text-xs font-black uppercase tracking-wider mb-1 ${resultColor}`}>
+                  {r.result === "acceptable" ? "✓ Acceptable — System Effective" : r.result === "marginal" ? "⚠ Marginal — Review Decision Rules" : "✗ Unacceptable — Improve System"}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Overall κ̄ = {r.overallKappa.toFixed(4)}. {r.result==="acceptable"?"Appraisers demonstrate effective attribute discrimination (κ ≥ 0.75).":r.result==="marginal"?"Marginal agreement (0.50 ≤ κ &lt; 0.75). Acceptable with qualifications.":"Poor agreement (κ &lt; 0.50). System not suitable for production attribute inspection."}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label className="text-xs font-semibold">Notes</Label>
+              <Textarea className="mt-1 text-xs" rows={3} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Study conditions, corrective actions..." data-testid="textarea-aaa-notes" />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={handleSave} disabled={isSaving} className="bg-accent hover:bg-accent/90 text-white text-xs h-8" data-testid="button-save-aaa">
+                {isSaving ? "Saving…" : initial ? "Update Study" : "Save Study"}
+              </Button>
+              <Button variant="outline" onClick={handlePrint} className="text-xs h-8" data-testid="button-print-aaa">Print Study</Button>
+              <Button variant="outline" onClick={()=>setPhase("config")} className="text-xs h-8">← Back</Button>
+              <Button variant="outline" onClick={onCancel} className="text-xs h-8">Cancel</Button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
