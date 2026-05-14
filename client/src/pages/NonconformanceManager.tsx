@@ -232,17 +232,23 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
           {activeLogTab === 'nc' && (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-[110px]">NC #</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>CAPA #</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Severity</TableHead>
-                <TableHead>ISO Clause</TableHead>
-                <TableHead>Responsible</TableHead>
-                <TableHead>Target Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+              <TableRow className="bg-slate-700 dark:bg-slate-800 hover:bg-slate-700 dark:hover:bg-slate-800">
+                <TableHead colSpan={3} className="text-slate-300 text-[10px] font-bold uppercase tracking-widest py-1.5 border-r border-slate-500/50">Nonconformance</TableHead>
+                <TableHead colSpan={3} className="text-slate-300 text-[10px] font-bold uppercase tracking-widest py-1.5 border-r border-slate-500/50">Classification</TableHead>
+                <TableHead colSpan={3} className="text-slate-300 text-[10px] font-bold uppercase tracking-widest py-1.5">Assignment & Status</TableHead>
+                <TableHead className="py-1.5"></TableHead>
+              </TableRow>
+              <TableRow className="bg-slate-700 dark:bg-slate-800 border-b-2 border-slate-500 hover:bg-slate-700 dark:hover:bg-slate-800">
+                <TableHead className="w-[110px] text-white text-xs font-semibold uppercase tracking-wide py-2.5">NC #</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Title</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5 border-r border-slate-500/50">CAPA #</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Source</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Severity</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5 border-r border-slate-500/50">ISO Clause</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Responsible</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Target Date</TableHead>
+                <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Status</TableHead>
+                <TableHead className="w-[50px] py-2.5"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -251,10 +257,10 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
               ) : nonconformances?.length === 0 ? (
                 <TableRow><TableCell colSpan={10} className="text-center py-10">No nonconformances found.</TableCell></TableRow>
               ) : (
-                nonconformances?.map((nc) => {
+                nonconformances?.map((nc, idx) => {
                   const ncAny = nc as any;
                   return (
-                  <TableRow key={nc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedNC(nc)}>
+                  <TableRow key={nc.id} className={`cursor-pointer hover:bg-blue-50/60 dark:hover:bg-blue-900/10 transition-colors ${idx % 2 === 0 ? "bg-white dark:bg-background" : "bg-slate-50 dark:bg-slate-900/30"}`} onClick={() => setSelectedNC(nc)}>
                     <TableCell>
                       {ncAny.ncNumber ? (
                         <Badge variant="outline" className="text-xs font-mono border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-400">{ncAny.ncNumber}</Badge>
@@ -299,16 +305,22 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
             return (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[120px]">CAR #</TableHead>
-                  <TableHead className="w-[100px]">NC #</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Severity</TableHead>
-                  <TableHead>Responsible</TableHead>
-                  <TableHead>Target Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                <TableRow className="bg-slate-700 dark:bg-slate-800 hover:bg-slate-700 dark:hover:bg-slate-800">
+                  <TableHead colSpan={3} className="text-slate-300 text-[10px] font-bold uppercase tracking-widest py-1.5 border-r border-slate-500/50">Corrective Action Request</TableHead>
+                  <TableHead colSpan={2} className="text-slate-300 text-[10px] font-bold uppercase tracking-widest py-1.5 border-r border-slate-500/50">Classification</TableHead>
+                  <TableHead colSpan={3} className="text-slate-300 text-[10px] font-bold uppercase tracking-widest py-1.5">Assignment & Status</TableHead>
+                  <TableHead className="py-1.5"></TableHead>
+                </TableRow>
+                <TableRow className="bg-slate-700 dark:bg-slate-800 border-b-2 border-slate-500 hover:bg-slate-700 dark:hover:bg-slate-800">
+                  <TableHead className="w-[120px] text-white text-xs font-semibold uppercase tracking-wide py-2.5">CAR #</TableHead>
+                  <TableHead className="w-[100px] text-white text-xs font-semibold uppercase tracking-wide py-2.5">NC #</TableHead>
+                  <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5 border-r border-slate-500/50">Title</TableHead>
+                  <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Source</TableHead>
+                  <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5 border-r border-slate-500/50">Severity</TableHead>
+                  <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Responsible</TableHead>
+                  <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Target Date</TableHead>
+                  <TableHead className="text-white text-xs font-semibold uppercase tracking-wide py-2.5">Status</TableHead>
+                  <TableHead className="w-[50px] py-2.5"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -322,10 +334,10 @@ export function NonconformanceManager({ onAskIsa }: NonconformanceManagerProps) 
                     </TableCell>
                   </TableRow>
                 ) : (
-                  capaRows.map((nc) => {
+                  capaRows.map((nc, idx) => {
                     const ncAny = nc as any;
                     return (
-                    <TableRow key={nc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedNC(nc)}>
+                    <TableRow key={nc.id} className={`cursor-pointer hover:bg-blue-50/60 dark:hover:bg-blue-900/10 transition-colors ${idx % 2 === 0 ? "bg-white dark:bg-background" : "bg-slate-50 dark:bg-slate-900/30"}`} onClick={() => setSelectedNC(nc)}>
                       <TableCell>
                         {ncAny.capaNumber ? (
                           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-mono">{ncAny.capaNumber}</Badge>

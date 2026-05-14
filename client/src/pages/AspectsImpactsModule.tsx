@@ -1021,26 +1021,38 @@ Assess the following:
             <div className="overflow-x-auto rounded-xl border">
               <table className="w-full text-sm min-w-[1200px]">
                 <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[150px]">Process / Activity</th>
-                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[200px]">Environmental Aspect</th>
-                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[220px]">Potential Impact</th>
-                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[180px]">Compliance Regulation</th>
-                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[100px]">Condition</th>
-                    <th className="text-left px-3 py-3 font-bold text-muted-foreground w-[120px]">Impact Types</th>
-                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Severity">S</th>
-                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Probability">P</th>
-                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Regulatory">R</th>
-                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[64px]">Score</th>
-                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[110px]">Significance</th>
-                    <th className="text-center px-2 py-3 font-bold text-muted-foreground w-[32px]" title="Life Cycle">LC</th>
-                    <th className="text-left px-3 py-3 font-bold text-muted-foreground">Operational Control</th>
-                    <th className="px-2 py-3 w-[64px]"></th>
+                  {/* Group label row */}
+                  <tr className="bg-slate-700 dark:bg-slate-800 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                    <th className="px-3 py-1.5 w-6"></th>
+                    <th colSpan={5} className="px-3 py-1.5 text-left border-r border-slate-500/50">Aspect Identification</th>
+                    <th colSpan={6} className="px-3 py-1.5 text-center border-r border-slate-500/50">Scoring (S × P × R)</th>
+                    <th colSpan={2} className="px-3 py-1.5 text-left">Management</th>
+                  </tr>
+                  {/* Column header row */}
+                  <tr className="bg-slate-700 dark:bg-slate-800 border-b-2 border-slate-500 text-xs font-semibold text-white uppercase tracking-wide">
+                    <th className="text-left px-3 py-2.5 w-[150px]">Process / Activity</th>
+                    <th className="text-left px-3 py-2.5 w-[200px]">Environmental Aspect</th>
+                    <th className="text-left px-3 py-2.5 w-[220px]">Potential Impact</th>
+                    <th className="text-left px-3 py-2.5 w-[180px]">Compliance Regulation</th>
+                    <th className="text-left px-3 py-2.5 w-[100px]">Condition</th>
+                    <th className="text-left px-3 py-2.5 w-[120px] border-r border-slate-500/50">Impact Types</th>
+                    <th className="text-center px-2 py-2.5 w-[32px]" title="Severity">S</th>
+                    <th className="text-center px-2 py-2.5 w-[32px]" title="Probability">P</th>
+                    <th className="text-center px-2 py-2.5 w-[32px]" title="Regulatory">R</th>
+                    <th className="text-center px-2 py-2.5 w-[64px]">Score</th>
+                    <th className="text-center px-2 py-2.5 w-[110px]">Significance</th>
+                    <th className="text-center px-2 py-2.5 w-[32px] border-r border-slate-500/50" title="Life Cycle">LC</th>
+                    <th className="text-left px-3 py-2.5">Operational Control</th>
+                    <th className="px-2 py-2.5 w-[64px]"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(a => (
-                    <tr key={a.id} className={`border-b transition-colors hover:bg-muted/30 ${a.isSignificant ? "bg-red-50/50 dark:bg-red-950/10" : ""}`} data-testid={`row-aspect-${a.id}`}>
+                  {filtered.map((a, idx) => {
+                    const zebraBase = a.isSignificant
+                      ? "bg-red-50/60 dark:bg-red-950/15"
+                      : idx % 2 === 0 ? "bg-white dark:bg-background" : "bg-slate-50 dark:bg-slate-900/40";
+                    return (
+                  <tr key={a.id} className={`border-b transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-900/10 ${zebraBase}`} data-testid={`row-aspect-${a.id}`}>
                       <td className="px-3 py-3 text-sm text-muted-foreground">{a.processActivity || "—"}</td>
                       <td className="px-3 py-3">
                         <p className="font-semibold text-sm text-foreground leading-snug">{a.environmentalAspect}</p>
@@ -1081,7 +1093,8 @@ Assess the following:
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
