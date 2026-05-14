@@ -1651,11 +1651,14 @@ const MSA_STUDY_TYPES = [
 ];
 
 // ─── AIAG MSA 4th Edition — Constants & X̄-R Calculator ──────────────────────
-const AIAG_K1: Record<number, number> = { 2: 4.56, 3: 3.05, 4: 2.50, 5: 2.21 };
-const AIAG_K2: Record<number, number> = { 2: 3.65, 3: 2.70, 4: 2.30, 5: 2.08 };
+// K1 = 1/d2(r)  — from control chart d2 factors (indexed by number of trials r)
+const AIAG_K1: Record<number, number> = { 2: 0.8865, 3: 0.5907, 4: 0.4865, 5: 0.4299 };
+// K2 = 1/d2*(a) — bias-corrected, indexed by number of appraisers a
+const AIAG_K2: Record<number, number> = { 2: 0.7087, 3: 0.5236, 4: 0.4464, 5: 0.4032 };
+// K3 = 1/d2*(p) — bias-corrected, indexed by number of parts p
 const AIAG_K3: Record<number, number> = {
-  2: 3.65, 3: 2.70, 4: 2.30, 5: 2.08,
-  6: 1.93, 7: 1.82, 8: 1.74, 9: 1.67, 10: 1.62,
+  2: 0.7087, 3: 0.5236, 4: 0.4464, 5: 0.4032,
+  6: 0.3745, 7: 0.3534, 8: 0.3378, 9: 0.3247, 10: 0.3145,
 };
 const AIAG_D4: Record<number, number> = { 2: 3.267, 3: 2.575, 4: 2.282, 5: 2.114 };
 
@@ -2187,7 +2190,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
                 rows.push(
                   <tr key={`t-${i}-${k}`}>
                     <td className="border px-3 py-0 text-muted-foreground sticky left-0 bg-background z-10 text-[11px] h-7">
-                      <span className="text-muted-foreground/50 mr-1.5">{i * (trialCount + 2) + k + 2}.</span>
+                      <span className="text-muted-foreground/50 mr-1.5">{i * (trialCount + 2) + k + 1}.</span>
                       Trial {k + 1}
                     </td>
                     {Array.from({length: partCount}, (_, j) => (
@@ -2207,7 +2210,7 @@ function MsaStudyForm({ equipment, initial, isSaving, onSave, onCancel }: {
               }
 
               // ── Average row (X̄ per part, x̄a= grand appraiser mean) ──
-              const aveRowNum = i * (trialCount + 2) + trialCount + 2;
+              const aveRowNum = i * (trialCount + 2) + trialCount + 1;
               rows.push(
                 <tr key={`avg-${i}`} className="bg-muted/10">
                   <td className="border px-3 py-0.5 text-[11px] font-semibold sticky left-0 bg-muted/10 z-10 h-6">
