@@ -694,56 +694,94 @@ export default function HazardAnalysisModule() {
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr key={`exp-${r.id}`} className="bg-muted/20 border-b">
-                        <td colSpan={11} className="px-5 py-5">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Potential Consequence</p>
-                              <p className="text-sm text-foreground leading-relaxed">{r.consequenceDescription || "—"}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Existing Controls</p>
-                              <BulletList text={r.existingControls} />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Who is Affected</p>
-                              <p className="text-sm text-foreground capitalize">{(r.whoAffected || []).join(", ") || "—"}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Control Hierarchy Applied</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {(r.controlHierarchy || []).map(c => (
-                                  <span key={c} className="bg-accent/10 text-accent border border-accent/20 rounded px-2 py-0.5 text-sm capitalize">{c}</span>
-                                ))}
-                                {!(r.controlHierarchy?.length) && <span className="text-sm text-muted-foreground">—</span>}
+                      <tr key={`exp-${r.id}`} className="border-b">
+                        <td colSpan={11} className="px-4 py-4 bg-slate-50 dark:bg-slate-900/50">
+                          <div className="flex flex-col gap-3">
+
+                            {/* ── Section 1: Hazard Impact ── */}
+                            <div className="rounded-lg border border-orange-200 dark:border-orange-800 overflow-hidden">
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/30 border-b border-orange-200 dark:border-orange-800">
+                                <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-orange-700 dark:text-orange-400">Hazard Impact</span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 py-3 bg-white dark:bg-slate-900/20">
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Potential Consequence</p>
+                                  <p className="text-sm text-foreground leading-relaxed">{r.consequenceDescription || "—"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Who is Affected</p>
+                                  <p className="text-sm text-foreground capitalize">{(r.whoAffected || []).join(", ") || "—"}</p>
+                                </div>
                               </div>
                             </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Planned / Additional Controls</p>
-                              <BulletList text={r.plannedControls} />
+
+                            {/* ── Section 2: Controls ── */}
+                            <div className="rounded-lg border border-blue-200 dark:border-blue-800 overflow-hidden">
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800">
+                                <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-700 dark:text-blue-400">Controls</span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 py-3 bg-white dark:bg-slate-900/20">
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Hierarchy Applied</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {(r.controlHierarchy || []).map(c => (
+                                      <span key={c} className="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded px-2 py-0.5 text-xs font-medium capitalize">{c}</span>
+                                    ))}
+                                    {!(r.controlHierarchy?.length) && <span className="text-sm text-muted-foreground">—</span>}
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Existing Controls</p>
+                                  <BulletList text={r.existingControls} />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Planned / Additional Controls</p>
+                                  <BulletList text={r.plannedControls} />
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Action Required</p>
-                              <BulletList text={r.actionRequired} />
+
+                            {/* ── Section 3: Action & Compliance ── */}
+                            <div className="rounded-lg border border-purple-200 dark:border-purple-800 overflow-hidden">
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 border-b border-purple-200 dark:border-purple-800">
+                                <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-purple-700 dark:text-purple-400">Action &amp; Compliance</span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 px-4 py-3 bg-white dark:bg-slate-900/20">
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Action Required</p>
+                                  <BulletList text={r.actionRequired} />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Legal / Regulatory Req.</p>
+                                  <BulletList text={r.legalRequirement} />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">ISO 45001 Clause</p>
+                                  <p className="text-sm text-foreground">{r.iso45001Clause || "6.1.2"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-wide">Target Date</p>
+                                  <p className="text-sm text-foreground">{r.targetDate || "—"}</p>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Legal / Regulatory Requirement</p>
-                              <BulletList text={r.legalRequirement} />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">ISO 45001 Clause</p>
-                              <p className="text-sm text-foreground">{r.iso45001Clause || "6.1.2"}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Target Date</p>
-                              <p className="text-sm text-foreground">{r.targetDate || "—"}</p>
-                            </div>
+
+                            {/* ── Notes (conditional) ── */}
                             {r.notes && (
-                              <div className="sm:col-span-3">
-                                <p className="text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">Notes</p>
-                                <p className="text-sm text-foreground leading-relaxed">{r.notes}</p>
+                              <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                                  <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">Notes</span>
+                                </div>
+                                <div className="px-4 py-3 bg-white dark:bg-slate-900/20">
+                                  <p className="text-sm text-foreground leading-relaxed">{r.notes}</p>
+                                </div>
                               </div>
                             )}
+
                           </div>
                         </td>
                       </tr>
