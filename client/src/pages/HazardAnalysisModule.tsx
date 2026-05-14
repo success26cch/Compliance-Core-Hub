@@ -15,6 +15,7 @@ import {
   Pencil, Filter, Printer, ClipboardList, HardHat,
   ChevronDown, ChevronRight, CheckCircle2, X, RefreshCw,
   Users, Zap, FlaskConical, Activity, Brain, Flame, Settings, Leaf,
+  BookOpen, Info,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -79,27 +80,166 @@ const CONTROL_HIERARCHY_OPTIONS = [
   { value: "ppe",             label: "PPE",                   desc: "Personal Protective Equipment" },
 ];
 
-// AIAG / ISO 45001 P × G × M scoring — from reference criteria document
+// ─── P × G × M Scoring Criteria (AIAG / ISO 45001 §6.1.2) ────────────────────
+
 const PROBABILITY_OPTS = [
-  { value: 1,  label: "1 – Not-Probable",  desc: "Never occurred in the past. Only a theoretical risk. Would occur only if many unpredictable and independent events occur together." },
-  { value: 3,  label: "3 – Low",           desc: "Few cases registered (one or two) due to very special reasons. Possible but not probable. Would be surprising if it occurred." },
-  { value: 7,  label: "7 – High",          desc: "Probable event. If it occurred it would be modestly surprising. Some events have occurred even if no consequences were recorded." },
-  { value: 10, label: "10 – Very High",    desc: "Relevant risk for occurrence. The event will occur if appropriate preventive actions are not taken. No surprise if the event would occur." },
+  {
+    value: 1, label: "1 – Not-Probable",
+    desc: "No historical incidents. Theoretical risk only — would require multiple simultaneous independent failures. <0.1 incidents / 1,000 worker-years.",
+  },
+  {
+    value: 3, label: "3 – Low",
+    desc: "1–2 near-misses or minor incidents on record (past 5 yrs). Unusual conditions required. Rarely observed unsafe behavior. ~1–5 incidents / 1,000 worker-years.",
+  },
+  {
+    value: 7, label: "7 – High",
+    desc: "Multiple near-misses or incidents documented in past 3 yrs. Unsafe behaviors regularly observed under normal operations. ~5–20 incidents / 1,000 worker-years. OSHA DART rate elevated.",
+  },
+  {
+    value: 10, label: "10 – Very High",
+    desc: "Recurring injuries or incidents without effective intervention. Daily/constant exposure. >20 incidents / 1,000 worker-years. OSHA NAICS benchmark exceeded. Certain to occur if not addressed.",
+  },
 ];
 
 const GRAVITY_OPTS = [
-  { value: 1,  label: "1 – Negligible",  desc: "Small damage, no consequence for the body. Damage within 500 USD." },
-  { value: 3,  label: "3 – Low",         desc: "Damage with economic values between 500 and 5,000 USD. First aid as possible consequence." },
-  { value: 7,  label: "7 – High",        desc: "Damage with economic values between 5,000 and 50,000 USD. Possible injuries as consequence of the accident." },
-  { value: 10, label: "10 – Very High",  desc: "Very high loss of money. Company reputation can be damaged. Risk to stop operations. Fatal injuries possible." },
+  {
+    value: 1, label: "1 – Negligible",
+    desc: "First-aid only (bandage, rest, OTC medication). NOT OSHA Recordable. Employee returns to work same day. No regulatory exposure. Property damage <$500.",
+  },
+  {
+    value: 3, label: "3 – Low",
+    desc: "OSHA Recordable — medical treatment beyond first aid, restricted duty, or job transfer. Work restriction <7 days. Possible Other-Than-Serious citation ($0–$15,625). Workers' comp medical-only claim. Property damage $500–$5,000.",
+  },
+  {
+    value: 7, label: "7 – High",
+    desc: "OSHA Recordable with Days Away From Work (DAFW) or permanent partial disability. OSHA Serious citation ($1,036–$15,625/violation). Significant lost-time workers' comp claim. Possible OSHA inspection trigger. Property damage $5,000–$50,000.",
+  },
+  {
+    value: 10, label: "10 – Very High",
+    desc: "Fatality, amputation, or permanent total disability. OSHA Willful/Repeat citation ($10,360–$156,259/violation). Potential criminal referral (Section 17(e)). Regulatory shutdown / stop-work order. Property damage >$50,000. Severe reputational & litigation risk.",
+  },
 ];
 
 const MAGNITUDE_OPTS = [
-  { value: 1, label: "1 – Very High Prevention", desc: "Equipment/Technology: top-level preventive actions automatically applied. People own the process. No injuries recorded." },
-  { value: 2, label: "2 – High Prevention",      desc: "Technology does not allow automatic prevention. Prevention done through procedures. PPE correctly used. No injuries recorded." },
-  { value: 3, label: "3 – Low Prevention",       desc: "Not easy to upgrade equipment. Prevention done by people with no procedures applied. Injuries recorded. Adequate skilled people." },
-  { value: 4, label: "4 – No Prevention",        desc: "No automatic prevention possible. No prevention in place. PPE not correctly used. Injuries recorded. Low level of awareness." },
+  {
+    value: 1, label: "1 – Very High Prevention",
+    desc: "Engineering controls eliminate/reduce exposure to <1% of PEL/TLV. Interlocks, guarding, LOTO, LEV, or elimination fully applied (ISO 45001 §8.1.2 Tier 1). 100% compliance verified. Zero recordable injuries in 3+ yrs.",
+  },
+  {
+    value: 2, label: "2 – High Prevention",
+    desc: "Admin controls + PPE program documented, trained, and signed off. Written JSA/SWP per 29 CFR 1910.132. >90% compliance on last 3 audits. Minor first-aid incidents only. ISO 45001 §8.1.2 Tier 3–4 applied.",
+  },
+  {
+    value: 3, label: "3 – Low Prevention",
+    desc: "Some controls exist but inconsistently applied. <80% compliance rate. PPE worn irregularly or wrong type. One or more OSHA-recordable injuries in past 3 yrs. No formal JSA. Training records incomplete.",
+  },
+  {
+    value: 4, label: "4 – No Prevention",
+    desc: "No engineering or admin controls in place. PPE absent or consistently misused. Repeat OSHA violations on record. Multiple recordables per year. Workers unaware of hazards (no HazCom/GHS training). §8.1.2 hierarchy not applied.",
+  },
 ];
+
+// ─── Full scoring criteria for the Reference Guide panel ──────────────────────
+const SCORING_CRITERIA = {
+  probability: [
+    {
+      value: 1, rating: "Not-Probable", badge: "bg-green-100 text-green-800 border-green-300",
+      frequency: "< 0.1 incidents / 1,000 worker-years",
+      criteria: "No historical incidents in this task or process. Only a theoretical risk requiring multiple simultaneous independent failures. Would be extraordinary if it occurred.",
+      examples: "Catastrophic simultaneous failure of all engineered safeguards; double-fault requiring two unrelated control failures at the same moment.",
+      oshaRef: "No OSHA process safety trigger. OSHA PSM threshold not approached.",
+    },
+    {
+      value: 3, rating: "Low", badge: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      frequency: "1–5 incidents / 1,000 worker-years",
+      criteria: "1–2 near-misses or minor incidents on record in the past 5 years. Atypical or unusual conditions required. Rarely observed unsafe behavior during routine observation.",
+      examples: "Unexpected task deviation by an experienced worker; single-point control failure that has occurred once; slip in an area that is normally dry.",
+      oshaRef: "Below industry OSHA DART rate benchmark. No PSM/IATF-level frequency trigger.",
+    },
+    {
+      value: 7, rating: "High", badge: "bg-orange-100 text-orange-800 border-orange-300",
+      frequency: "5–20 incidents / 1,000 worker-years",
+      criteria: "Multiple near-misses or incidents documented in the past 3 years. Common under routine operations. Unsafe behaviors regularly observed. OSHA DART rate elevated above NAICS average.",
+      examples: "Repetitive manual handling sprains; slip/trip in a chronically wet area; chemical splashes during routine transfer; struck-by incidents at a busy dock.",
+      oshaRef: "Likely to trigger OSHA programmed or unprogrammed inspection. 29 CFR 1904 recordable trend. NAICS benchmarking exceeds average.",
+    },
+    {
+      value: 10, rating: "Very High", badge: "bg-red-100 text-red-800 border-red-300",
+      frequency: "> 20 incidents / 1,000 worker-years",
+      criteria: "Recurring injuries or incidents without effective intervention. Daily or constant exposure to the hazard. OSHA NAICS benchmark significantly exceeded. No surprise if the event occurs.",
+      examples: "Unguarded rotating machinery in daily use; chemical handling without SDS/PPE on high-frequency task; uncontrolled energized work without LOTO; forklift pedestrian interaction in shared aisle.",
+      oshaRef: "High probability of OSHA citation upon inspection. PSM/RMP regulatory trigger if chemical. OSHA National Emphasis Program (NEP) scope likely.",
+    },
+  ],
+  gravity: [
+    {
+      value: 1, rating: "Negligible", badge: "bg-green-100 text-green-800 border-green-300",
+      oshaRecordable: "NOT Recordable",
+      injuryType: "First-aid only — bandage, OTC medication, rest. Employee returns same day.",
+      examples: "Minor abrasion, brief eye irritation, paper cut, small bruise, muscle stiffness relieved by rest.",
+      regulatory: "No OSHA citation exposure. No workers' comp indemnity. Property damage < $500.",
+      penalty: "N/A",
+    },
+    {
+      value: 3, rating: "Low", badge: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      oshaRecordable: "OSHA Recordable",
+      injuryType: "Medical treatment beyond first aid; restricted work duty or job transfer; work restriction < 7 days.",
+      examples: "Sprain/strain requiring physical therapy, laceration needing sutures, minor chemical burn with medical treatment, hearing threshold shift, eye injury needing prescription treatment.",
+      regulatory: "Possible OSHA Other-Than-Serious citation. Workers' comp medical-only or minor indemnity claim.",
+      penalty: "$0 – $15,625 per violation (Other-Than-Serious)",
+    },
+    {
+      value: 7, rating: "High", badge: "bg-orange-100 text-orange-800 border-orange-300",
+      oshaRecordable: "OSHA Recordable — Days Away From Work (DAFW)",
+      injuryType: "Days Away From Work > 7 days; permanent partial disability; significant hospitalization.",
+      examples: "Fracture, crush injury, chemical exposure requiring hospitalization, repetitive motion injury with permanent restriction, noise-induced hearing loss (permanent), back injury with surgery.",
+      regulatory: "OSHA Serious citation. Possible OSHA inspection trigger. Significant lost-time workers' comp claim (WC indemnity + medical). Potential civil liability.",
+      penalty: "$1,036 – $15,625 per violation (Serious) | Up to $15,625/day for continuing violations",
+    },
+    {
+      value: 10, rating: "Very High", badge: "bg-red-100 text-red-800 border-red-300",
+      oshaRecordable: "OSHA Recordable — Fatality / Amputation / Permanent Total Disability",
+      injuryType: "Fatality, amputation, permanent total disability, or catastrophic multi-victim event.",
+      examples: "Worker fatality, traumatic amputation, permanent blindness, catastrophic chemical release (IDLH), explosion, confined space fatality, electrocution.",
+      regulatory: "OSHA Willful or Repeat citation. Potential criminal referral under OSH Act §17(e). Regulatory stop-work order or shutdown. Catastrophic workers' comp claim. Reputational damage, OSHA press release, civil & criminal litigation.",
+      penalty: "$10,360 – $156,259 per violation (Willful/Repeat) | Criminal penalties up to $10,000 + imprisonment for willful violation resulting in death",
+    },
+  ],
+  magnitude: [
+    {
+      value: 1, rating: "Very High Prevention", badge: "bg-green-100 text-green-800 border-green-300",
+      controlTier: "ISO 45001 §8.1.2 — Tier 1: Elimination / Substitution + Engineering Controls",
+      description: "Engineering controls fully eliminate or reduce exposure to < 1% of PEL/TLV. Controls are automatic, passive, and do not depend on human behavior.",
+      examples: "Fully interlocked machine guarding; automated LOTO system; local exhaust ventilation (LEV) at emission source; process redesign eliminating chemical use; pressurized enclosure for noise.",
+      compliance: "100% compliance verified in last internal audit. Zero OSHA-recordable injuries in 3+ years. Zero near-miss reports. PPE used only as secondary backup.",
+      oshaRef: "Satisfies 29 CFR 1910.212 (guarding), 1910.147 (LOTO), 1910.94 (ventilation). OSHA compliant — lowest citation risk.",
+    },
+    {
+      value: 2, rating: "High Prevention", badge: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      controlTier: "ISO 45001 §8.1.2 — Tier 3–4: Administrative Controls + PPE",
+      description: "Formal administrative controls and a documented PPE program in place. Written JSA/SWP documented, trained, and signed off. Controls effective but dependent on human behavior.",
+      examples: "Formal permit-to-work system; signed JSA/SWP with training records; PPE hazard assessment per 29 CFR 1910.132; regular safety inspections; SDS accessible at point of use; HazCom training documented.",
+      compliance: "> 90% compliance rate on last 3 safety audits. First-aid incidents only (no recordables) in past 3 years. PPE fit-testing and inspection records current.",
+      oshaRef: "Meets 29 CFR 1910.132 (PPE), 1910.1200 (HazCom), 1910.119 (PSM if applicable). Reduced citation risk — documentation must be current.",
+    },
+    {
+      value: 3, rating: "Low Prevention", badge: "bg-orange-100 text-orange-800 border-orange-300",
+      controlTier: "ISO 45001 §8.1.2 — Partial / Inconsistent Controls",
+      description: "Some controls exist but are inconsistently applied. No formal control plan or JSA. Training records incomplete. Controls depend on individual awareness rather than system enforcement.",
+      examples: "Informal verbal safety rules; aging machine guards occasionally bypassed; generic SDS not task-specific; PPE available but not enforced; inspection intervals not documented; near-misses under-reported.",
+      compliance: "< 80% compliance rate. One or more OSHA-recordable injuries in past 3 years. Training records incomplete or expired. Near-miss culture weak.",
+      oshaRef: "Significant OSHA citation risk on inspection. Likely Other-Than-Serious to Serious citations for documentation gaps. 29 CFR 1904 recordable trend present.",
+    },
+    {
+      value: 4, rating: "No Prevention", badge: "bg-red-100 text-red-800 border-red-300",
+      controlTier: "ISO 45001 §8.1.2 — No Controls Applied",
+      description: "No engineering or administrative controls in place. PPE absent or consistently misused. Workers unaware of hazards. No HazCom/GHS compliance. ISO 45001 §8.1.2 hierarchy completely unapplied.",
+      examples: "Unguarded rotating parts in active use; no LOTO procedures; chemicals with no labeling or SDS; PPE required but never worn; no inspection or maintenance schedule; employees unable to identify job hazards.",
+      compliance: "Multiple OSHA-recordable injuries per year. Repeat OSHA violations on record. High near-miss frequency unreported. Workers demonstrate low hazard awareness.",
+      oshaRef: "Very high OSHA Serious/Willful citation risk. Possible OSHA 11(c) retaliation if injuries under-reported. High probability of stop-work order for imminent danger conditions (OSH Act §13).",
+    },
+  ],
+};
 
 const CLAUSES = [
   "4.1 – Context of the organization",
@@ -653,6 +793,9 @@ function HazardDialog({ record, onClose, onSave, isSaving }: DialogProps) {
         </DialogHeader>
 
         <div className="space-y-6 py-1">
+          {/* ── Scoring Reference Guide (collapsible) ── */}
+          <ScoringGuidePanel />
+
           {/* ── Section 1: Hazard Identification ── */}
           <SectionHeading icon={<ClipboardList className="w-4 h-4" />} title="Hazard Identification" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -932,6 +1075,231 @@ function SectionHeading({ icon, title }: { icon: React.ReactNode; title: string 
       <div className="p-1 bg-muted rounded">{icon}</div>
       <h3 className="text-sm font-bold text-foreground">{title}</h3>
       <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+}
+
+// ─── P × G × M Scoring Reference Guide panel (collapsible) ───────────────────
+function ScoringGuidePanel() {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"P" | "G" | "M" | "zones">("G");
+
+  const zoneColors: Record<string, string> = {
+    low: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
+    medium: "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800",
+    high: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800",
+    critical: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800",
+  };
+  const zoneText: Record<string, string> = {
+    low: "text-green-700 dark:text-green-400",
+    medium: "text-yellow-700 dark:text-yellow-400",
+    high: "text-orange-700 dark:text-orange-400",
+    critical: "text-red-700 dark:text-red-400",
+  };
+
+  return (
+    <div className="border rounded-lg overflow-hidden" data-testid="scoring-guide-panel">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-left"
+        onClick={() => setOpen(o => !o)}
+        data-testid="btn-toggle-scoring-guide"
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+          <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">P × G × M Scoring Reference Guide</span>
+          <span className="hidden sm:inline text-xs text-blue-500/80 dark:text-blue-400/60 font-normal">ISO 45001 §6.1.2 · AIAG · OSHA Regulatory Context</span>
+        </div>
+        {open
+          ? <ChevronDown className="w-4 h-4 text-blue-500 shrink-0" />
+          : <ChevronRight className="w-4 h-4 text-blue-500 shrink-0" />}
+      </button>
+
+      {open && (
+        <div className="p-4 space-y-4 bg-muted/10 border-t">
+          {/* Tab row */}
+          <div className="flex gap-1 flex-wrap">
+            {(["P", "G", "M", "zones"] as const).map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={`px-3 py-1 rounded text-xs font-semibold border transition-colors ${
+                  tab === t
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted"
+                }`}
+                data-testid={`tab-guide-${t}`}
+              >
+                {t === "P" ? "P — Probability" : t === "G" ? "G — Gravity of Harm" : t === "M" ? "M — Magnitude of Prevention" : "Risk Zones"}
+              </button>
+            ))}
+          </div>
+
+          {/* ── P Table ── */}
+          {tab === "P" && (
+            <div className="space-y-2">
+              <p className="text-[11px] text-muted-foreground italic">
+                Probability of occurrence — likelihood the hazardous event will happen based on historical data and exposure frequency.
+              </p>
+              {SCORING_CRITERIA.probability.map(row => (
+                <div key={row.value} className={`rounded-lg border p-3 space-y-2 ${row.value === 1 ? "border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-900/10" : row.value === 3 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/40 dark:bg-yellow-900/10" : row.value === 7 ? "border-orange-200 dark:border-orange-800 bg-orange-50/40 dark:bg-orange-900/10" : "border-red-200 dark:border-red-800 bg-red-50/40 dark:bg-red-900/10"}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-base font-black ${row.value === 1 ? "text-green-700 dark:text-green-400" : row.value === 3 ? "text-yellow-700 dark:text-yellow-400" : row.value === 7 ? "text-orange-700 dark:text-orange-400" : "text-red-700 dark:text-red-400"}`}>
+                      P = {row.value}
+                    </span>
+                    <span className="text-sm font-bold text-foreground">— {row.rating}</span>
+                    <span className="text-[10px] bg-muted border rounded px-2 py-0.5 text-muted-foreground font-mono">{row.frequency}</span>
+                  </div>
+                  <p className="text-xs text-foreground leading-relaxed">{row.criteria}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Examples</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{row.examples}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">OSHA / Regulatory Context</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{row.oshaRef}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── G Table ── */}
+          {tab === "G" && (
+            <div className="space-y-2">
+              <p className="text-[11px] text-muted-foreground italic">
+                Gravity of harm — severity of the injury or damage if the hazardous event occurs, including OSHA recordability and regulatory penalty exposure.
+              </p>
+              {SCORING_CRITERIA.gravity.map(row => (
+                <div key={row.value} className={`rounded-lg border p-3 space-y-2 ${row.value === 1 ? "border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-900/10" : row.value === 3 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/40 dark:bg-yellow-900/10" : row.value === 7 ? "border-orange-200 dark:border-orange-800 bg-orange-50/40 dark:bg-orange-900/10" : "border-red-200 dark:border-red-800 bg-red-50/40 dark:bg-red-900/10"}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-base font-black ${row.value === 1 ? "text-green-700 dark:text-green-400" : row.value === 3 ? "text-yellow-700 dark:text-yellow-400" : row.value === 7 ? "text-orange-700 dark:text-orange-400" : "text-red-700 dark:text-red-400"}`}>
+                      G = {row.value}
+                    </span>
+                    <span className="text-sm font-bold text-foreground">— {row.rating}</span>
+                    <span className={`text-[10px] border rounded px-2 py-0.5 font-semibold ${row.value === 1 ? "bg-green-100 text-green-700 border-green-300" : row.value === 3 ? "bg-yellow-100 text-yellow-700 border-yellow-300" : row.value === 7 ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-red-100 text-red-700 border-red-300"}`}>
+                      {row.oshaRecordable}
+                    </span>
+                  </div>
+                  <p className="text-xs text-foreground font-medium">{row.injuryType}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Injury Examples</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{row.examples}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Regulatory Exposure</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{row.regulatory}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">OSHA Penalty Range</span>
+                      <p className={`text-[11px] font-bold mt-0.5 ${row.value === 1 ? "text-green-600 dark:text-green-400" : row.value === 3 ? "text-yellow-600 dark:text-yellow-400" : row.value === 7 ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400"}`}>{row.penalty}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── M Table ── */}
+          {tab === "M" && (
+            <div className="space-y-2">
+              <p className="text-[11px] text-muted-foreground italic">
+                Magnitude of prevention — effectiveness of existing controls per ISO 45001 §8.1.2 hierarchy. Lower scores mean better control; higher scores mean greater residual risk.
+              </p>
+              {SCORING_CRITERIA.magnitude.map(row => (
+                <div key={row.value} className={`rounded-lg border p-3 space-y-2 ${row.value === 1 ? "border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-900/10" : row.value === 2 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/40 dark:bg-yellow-900/10" : row.value === 3 ? "border-orange-200 dark:border-orange-800 bg-orange-50/40 dark:bg-orange-900/10" : "border-red-200 dark:border-red-800 bg-red-50/40 dark:bg-red-900/10"}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-base font-black ${row.value === 1 ? "text-green-700 dark:text-green-400" : row.value === 2 ? "text-yellow-700 dark:text-yellow-400" : row.value === 3 ? "text-orange-700 dark:text-orange-400" : "text-red-700 dark:text-red-400"}`}>
+                      M = {row.value}
+                    </span>
+                    <span className="text-sm font-bold text-foreground">— {row.rating}</span>
+                  </div>
+                  <span className="inline-block text-[10px] bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded px-2 py-0.5 font-medium">{row.controlTier}</span>
+                  <p className="text-xs text-foreground leading-relaxed">{row.description}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Control Examples</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{row.examples}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Compliance Indicators</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{row.compliance}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">OSHA / Citation Risk</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{row.oshaRef}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Risk Zones ── */}
+          {tab === "zones" && (
+            <div className="space-y-3">
+              <p className="text-[11px] text-muted-foreground italic">
+                Risk score = P × G × M (max 400). Use these zones to prioritize corrective actions and assign ownership.
+              </p>
+              {[
+                {
+                  zone: "low", score: "1–30", label: "Low Risk",
+                  action: "Acceptable risk. Maintain existing controls. Review annually or when conditions change.",
+                  priority: "Routine monitoring. Document current controls. No immediate action required.",
+                  oshaNote: "Generally compliant. Verify controls remain in place during periodic audits.",
+                },
+                {
+                  zone: "medium", score: "31–100", label: "Medium Risk",
+                  action: "Tolerable risk but improvement needed. Implement additional controls within 90 days. Assign responsible person.",
+                  priority: "Schedule improvement actions. Consider engineering upgrade if feasible. Increase inspection frequency.",
+                  oshaNote: "OSHA Other-Than-Serious citation range. Address documentation and training gaps proactively.",
+                },
+                {
+                  zone: "high", score: "101–280", label: "High Risk",
+                  action: "Significant risk requiring prompt action. Implement interim controls immediately. Complete corrective action within 30 days.",
+                  priority: "Senior management notification required. Interim containment required before task continues. CAPA initiated.",
+                  oshaNote: "OSHA Serious citation range ($1,036–$15,625/violation). High probability of inspection trigger. Days Away From Work likely if event occurs.",
+                },
+                {
+                  zone: "critical", score: "281–400", label: "Critical Risk",
+                  action: "Intolerable risk. STOP work or restrict task until immediate controls are implemented. Escalate to plant/site management.",
+                  priority: "Immediate stop-work authority invoked if imminent danger. Emergency CAPA required. Executive review within 24 hours.",
+                  oshaNote: "OSHA Willful/Repeat citation range ($10,360–$156,259/violation). Potential criminal referral. Imminent danger stop-work authority applies (OSH Act §13).",
+                },
+              ].map(z => (
+                <div key={z.zone} className={`rounded-lg border p-3 space-y-2 ${zoneColors[z.zone]}`}>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className={`text-sm font-black ${zoneText[z.zone]}`}>{z.label}</span>
+                    <span className={`text-xs font-mono font-bold border rounded px-2 py-0.5 ${zoneText[z.zone]}`}>Score {z.score}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Required Action</span>
+                      <p className="text-[11px] text-foreground mt-0.5 leading-relaxed">{z.action}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Priority / Escalation</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{z.priority}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">OSHA Regulatory Note</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{z.oshaNote}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="text-[10px] text-muted-foreground border rounded p-2 bg-muted/30 flex items-start gap-1.5">
+                <Info className="w-3 h-3 shrink-0 mt-0.5 text-blue-500" />
+                <span>OSHA penalty figures reflect 2024 adjusted civil penalty maximums per 29 CFR Part 1903. Actual penalties may vary based on size, good faith, history, and gravity. Consult your legal/compliance team for jurisdiction-specific guidance.</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
