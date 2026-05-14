@@ -515,12 +515,6 @@ export default function DotComplianceHub() {
           heading="Request a Walkthrough"
           subtext="Tell us about your fleet and we'll schedule a personalized walkthrough focused on your FMCSA and Clearinghouse compliance needs."
         />
-        <SubscribeForm
-          source="dot_hub"
-          heading="Stay ahead of FMCSA changes"
-          subtext="Get DOT compliance tips and regulatory updates — no spam, unsubscribe anytime."
-          bgClass="bg-primary/80"
-        />
       </div>
 
       <footer className="border-t border-border/50 bg-white py-8 text-center text-muted-foreground text-sm">
