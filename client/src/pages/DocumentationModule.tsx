@@ -368,8 +368,8 @@ function printIsoDocument(doc: IsoDocument, project: IsoProject | null, wmOpts?:
       display:none;
       position:fixed; top:50%; left:50%;
       transform:translate(-50%,-50%) rotate(-45deg);
-      font-size:42pt; font-weight:900; color:rgba(0,0,0,0.12);
-      letter-spacing:0.06em; text-align:center; line-height:1.2;
+      font-size:28pt; font-weight:900; color:rgba(0,0,0,0.12);
+      letter-spacing:0.06em; white-space:nowrap;
       pointer-events:none; z-index:9999; user-select:none;
     }
     .wm-hf-top {
@@ -403,7 +403,7 @@ function printIsoDocument(doc: IsoDocument, project: IsoProject | null, wmOpts?:
   </style>
 </head>
 <body>
-${showCenterWatermark ? `<div class="wm-center">UNCONTROLLED<br/>IF PRINTED</div>` : ""}
+${showCenterWatermark ? `<div class="wm-center">UNCONTROLLED IF PRINTED</div>` : ""}
 ${showPrintMark && !showCenterWatermark ? `<div class="wm-hf-top">UNCONTROLLED IF PRINTED</div>` : ""}
 ${showApprovedHF ? `<div class="wm-hf-top">Version: ${doc.version ?? 1} · Status: APPROVED · ${standard}</div><div class="wm-hf-bottom">Version: ${doc.version ?? 1} · Status: APPROVED · ${orgName}</div>` : ""}
 <div class="page">
