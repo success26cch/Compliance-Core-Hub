@@ -67,6 +67,12 @@ import { leads, subscriptions, questionUsage, trialLeads, siteVisits, visitorLog
   type RecordRetentionEntry, type InsertRecordRetentionEntry,
   type RecordInstance, type InsertRecordInstance,
   type RecordAuditEntry, type InsertRecordAuditEntry,
+  apqpProcessSteps, apqpPfmeaRows, apqpControlPlanRows, apqpInspectionSheets, apqpInspectionRows,
+  type ApqpProcessStep, type InsertApqpProcessStep,
+  type ApqpPfmeaRow, type InsertApqpPfmeaRow,
+  type ApqpControlPlanRow, type InsertApqpControlPlanRow,
+  type ApqpInspectionSheet, type InsertApqpInspectionSheet,
+  type ApqpInspectionRow, type InsertApqpInspectionRow,
   complianceCalendarEvents,
   type ComplianceCalendarEvent, type InsertComplianceCalendarEvent,
 } from "@shared/schema";
@@ -566,6 +572,30 @@ export interface IStorage {
   // ── Document Control Settings (Watermarking) ─────────────────────────────
   getDocControlSettings(userId: string): Promise<DocControlSettings | null>;
   upsertDocControlSettings(userId: string, data: Partial<InsertDocControlSettings>): Promise<DocControlSettings>;
+
+  // APQP Documentation Suite
+  getApqpProcessSteps(apqpProjectId: number, userId: string): Promise<ApqpProcessStep[]>;
+  createApqpProcessStep(data: InsertApqpProcessStep): Promise<ApqpProcessStep>;
+  updateApqpProcessStep(id: number, userId: string, data: Partial<InsertApqpProcessStep>): Promise<ApqpProcessStep | null>;
+  deleteApqpProcessStep(id: number, userId: string): Promise<void>;
+  getApqpPfmeaRows(apqpProjectId: number, userId: string): Promise<ApqpPfmeaRow[]>;
+  createApqpPfmeaRow(data: InsertApqpPfmeaRow): Promise<ApqpPfmeaRow>;
+  updateApqpPfmeaRow(id: number, userId: string, data: Partial<InsertApqpPfmeaRow>): Promise<ApqpPfmeaRow | null>;
+  deleteApqpPfmeaRow(id: number, userId: string): Promise<void>;
+  getApqpControlPlanRows(apqpProjectId: number, userId: string): Promise<ApqpControlPlanRow[]>;
+  createApqpControlPlanRow(data: InsertApqpControlPlanRow): Promise<ApqpControlPlanRow>;
+  updateApqpControlPlanRow(id: number, userId: string, data: Partial<InsertApqpControlPlanRow>): Promise<ApqpControlPlanRow | null>;
+  deleteApqpControlPlanRow(id: number, userId: string): Promise<void>;
+  getApqpInspectionSheets(apqpProjectId: number, userId: string): Promise<ApqpInspectionSheet[]>;
+  createApqpInspectionSheet(data: InsertApqpInspectionSheet): Promise<ApqpInspectionSheet>;
+  updateApqpInspectionSheet(id: number, userId: string, data: Partial<InsertApqpInspectionSheet>): Promise<ApqpInspectionSheet | null>;
+  deleteApqpInspectionSheet(id: number, userId: string): Promise<void>;
+  getApqpInspectionRows(inspectionSheetId: number, userId: string): Promise<ApqpInspectionRow[]>;
+  createApqpInspectionRow(data: InsertApqpInspectionRow): Promise<ApqpInspectionRow>;
+  updateApqpInspectionRow(id: number, userId: string, data: Partial<InsertApqpInspectionRow>): Promise<ApqpInspectionRow | null>;
+  deleteApqpInspectionRow(id: number, userId: string): Promise<void>;
+  flagPfmeaRowsForReview(processStepId: number, userId: string): Promise<void>;
+  flagControlPlanRowsForReview(pfmeaRowId: number, userId: string): Promise<void>;
 
   // Record Retention Register
   getRecordRetentionRegister(userId: string): Promise<RecordRetentionEntry[]>;
@@ -3009,6 +3039,95 @@ export class DatabaseStorage implements IStorage {
   async getDocControlSettings(userId: string): Promise<DocControlSettings | null> {
     const [row] = await db.select().from(docControlSettings).where(eq(docControlSettings.userId, userId)).limit(1);
     return row ?? null;
+  }
+
+  // ── APQP Documentation Suite ───────────────────────────────────────────────
+  async getApqpProcessSteps(apqpProjectId: number, userId: string): Promise<ApqpProcessStep[]> {
+    return db.select().from(apqpProcessSteps).where(and(eq(apqpProcessSteps.apqpProjectId, apqpProjectId), eq(apqpProcessSteps.userId, userId))).orderBy(asc(apqpProcessSteps.stepOrder));
+  }
+  async createApqpProcessStep(data: InsertApqpProcessStep): Promise<ApqpProcessStep> {
+    const [row] = await db.insert(apqpProcessSteps).values(data).returning();
+    return row;
+  }
+  async updateApqpProcessStep(id: number, userId: string, data: Partial<InsertApqpProcessStep>): Promise<ApqpProcessStep | null> {
+    const [row] = await db.update(apqpProcessSteps).set({ ...data, updatedAt: new Date() }).where(and(eq(apqpProcessSteps.id, id), eq(apqpProcessSteps.userId, userId))).returning();
+    return row ?? null;
+  }
+  async deleteApqpProcessStep(id: number, userId: string): Promise<void> {
+    await db.delete(apqpProcessSteps).where(and(eq(apqpProcessSteps.id, id), eq(apqpProcessSteps.userId, userId)));
+  }
+  async getApqpPfmeaRows(apqpProjectId: number, userId: string): Promise<ApqpPfmeaRow[]> {
+    return db.select().from(apqpPfmeaRows).where(and(eq(apqpPfmeaRows.apqpProjectId, apqpProjectId), eq(apqpPfmeaRows.userId, userId))).orderBy(asc(apqpPfmeaRows.rowOrder));
+  }
+  async createApqpPfmeaRow(data: InsertApqpPfmeaRow): Promise<ApqpPfmeaRow> {
+    const rpn = (data.severity ?? 5) * (data.occurrence ?? 5) * (data.detection ?? 5);
+    const [row] = await db.insert(apqpPfmeaRows).values({ ...data, rpn }).returning();
+    return row;
+  }
+  async updateApqpPfmeaRow(id: number, userId: string, data: Partial<InsertApqpPfmeaRow>): Promise<ApqpPfmeaRow | null> {
+    const existing = await db.select().from(apqpPfmeaRows).where(and(eq(apqpPfmeaRows.id, id), eq(apqpPfmeaRows.userId, userId))).limit(1);
+    if (!existing[0]) return null;
+    const s = data.severity ?? existing[0].severity;
+    const o = data.occurrence ?? existing[0].occurrence;
+    const d = data.detection ?? existing[0].detection;
+    const rpn = s * o * d;
+    const rs = data.resultingSeverity ?? existing[0].resultingSeverity;
+    const ro = data.resultingOccurrence ?? existing[0].resultingOccurrence;
+    const rd = data.resultingDetection ?? existing[0].resultingDetection;
+    const resultingRpn = rs && ro && rd ? rs * ro * rd : null;
+    const [row] = await db.update(apqpPfmeaRows).set({ ...data, rpn, resultingRpn: resultingRpn ?? undefined, updatedAt: new Date() }).where(and(eq(apqpPfmeaRows.id, id), eq(apqpPfmeaRows.userId, userId))).returning();
+    return row ?? null;
+  }
+  async deleteApqpPfmeaRow(id: number, userId: string): Promise<void> {
+    await db.delete(apqpPfmeaRows).where(and(eq(apqpPfmeaRows.id, id), eq(apqpPfmeaRows.userId, userId)));
+  }
+  async getApqpControlPlanRows(apqpProjectId: number, userId: string): Promise<ApqpControlPlanRow[]> {
+    return db.select().from(apqpControlPlanRows).where(and(eq(apqpControlPlanRows.apqpProjectId, apqpProjectId), eq(apqpControlPlanRows.userId, userId))).orderBy(asc(apqpControlPlanRows.rowOrder));
+  }
+  async createApqpControlPlanRow(data: InsertApqpControlPlanRow): Promise<ApqpControlPlanRow> {
+    const [row] = await db.insert(apqpControlPlanRows).values(data).returning();
+    return row;
+  }
+  async updateApqpControlPlanRow(id: number, userId: string, data: Partial<InsertApqpControlPlanRow>): Promise<ApqpControlPlanRow | null> {
+    const [row] = await db.update(apqpControlPlanRows).set({ ...data, updatedAt: new Date() }).where(and(eq(apqpControlPlanRows.id, id), eq(apqpControlPlanRows.userId, userId))).returning();
+    return row ?? null;
+  }
+  async deleteApqpControlPlanRow(id: number, userId: string): Promise<void> {
+    await db.delete(apqpControlPlanRows).where(and(eq(apqpControlPlanRows.id, id), eq(apqpControlPlanRows.userId, userId)));
+  }
+  async getApqpInspectionSheets(apqpProjectId: number, userId: string): Promise<ApqpInspectionSheet[]> {
+    return db.select().from(apqpInspectionSheets).where(and(eq(apqpInspectionSheets.apqpProjectId, apqpProjectId), eq(apqpInspectionSheets.userId, userId))).orderBy(desc(apqpInspectionSheets.createdAt));
+  }
+  async createApqpInspectionSheet(data: InsertApqpInspectionSheet): Promise<ApqpInspectionSheet> {
+    const [row] = await db.insert(apqpInspectionSheets).values(data).returning();
+    return row;
+  }
+  async updateApqpInspectionSheet(id: number, userId: string, data: Partial<InsertApqpInspectionSheet>): Promise<ApqpInspectionSheet | null> {
+    const [row] = await db.update(apqpInspectionSheets).set({ ...data, updatedAt: new Date() }).where(and(eq(apqpInspectionSheets.id, id), eq(apqpInspectionSheets.userId, userId))).returning();
+    return row ?? null;
+  }
+  async deleteApqpInspectionSheet(id: number, userId: string): Promise<void> {
+    await db.delete(apqpInspectionSheets).where(and(eq(apqpInspectionSheets.id, id), eq(apqpInspectionSheets.userId, userId)));
+  }
+  async getApqpInspectionRows(inspectionSheetId: number, userId: string): Promise<ApqpInspectionRow[]> {
+    return db.select().from(apqpInspectionRows).where(and(eq(apqpInspectionRows.inspectionSheetId, inspectionSheetId), eq(apqpInspectionRows.userId, userId))).orderBy(asc(apqpInspectionRows.rowOrder));
+  }
+  async createApqpInspectionRow(data: InsertApqpInspectionRow): Promise<ApqpInspectionRow> {
+    const [row] = await db.insert(apqpInspectionRows).values(data).returning();
+    return row;
+  }
+  async updateApqpInspectionRow(id: number, userId: string, data: Partial<InsertApqpInspectionRow>): Promise<ApqpInspectionRow | null> {
+    const [row] = await db.update(apqpInspectionRows).set(data).where(and(eq(apqpInspectionRows.id, id), eq(apqpInspectionRows.userId, userId))).returning();
+    return row ?? null;
+  }
+  async deleteApqpInspectionRow(id: number, userId: string): Promise<void> {
+    await db.delete(apqpInspectionRows).where(and(eq(apqpInspectionRows.id, id), eq(apqpInspectionRows.userId, userId)));
+  }
+  async flagPfmeaRowsForReview(processStepId: number, userId: string): Promise<void> {
+    await db.update(apqpPfmeaRows).set({ reviewFlag: true, updatedAt: new Date() }).where(and(eq(apqpPfmeaRows.processStepId, processStepId), eq(apqpPfmeaRows.userId, userId)));
+  }
+  async flagControlPlanRowsForReview(pfmeaRowId: number, userId: string): Promise<void> {
+    await db.update(apqpControlPlanRows).set({ reviewFlag: true, updatedAt: new Date() }).where(and(eq(apqpControlPlanRows.pfmeaRowId, pfmeaRowId), eq(apqpControlPlanRows.userId, userId)));
   }
 
   // ── Record Retention Register ──────────────────────────────────────────────

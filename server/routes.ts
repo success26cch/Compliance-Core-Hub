@@ -11317,6 +11317,184 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ── APQP Documentation Suite ──────────────────────────────────────────────
+  app.get("/api/apqp/:projectId/process-steps", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.getApqpProcessSteps(Number(req.params.projectId), req.session.userId)); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/apqp/:projectId/process-steps", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.createApqpProcessStep({ ...req.body, apqpProjectId: Number(req.params.projectId), userId: req.session.userId });
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/apqp/process-steps/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.updateApqpProcessStep(Number(req.params.id), req.session.userId, req.body);
+      if (!row) return res.status(404).json({ message: "Not found" });
+      await storage.flagPfmeaRowsForReview(row.id, req.session.userId);
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.delete("/api/apqp/process-steps/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { await storage.deleteApqpProcessStep(Number(req.params.id), req.session.userId); res.json({ success: true }); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get("/api/apqp/:projectId/pfmea-rows", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.getApqpPfmeaRows(Number(req.params.projectId), req.session.userId)); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/apqp/:projectId/pfmea-rows", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.createApqpPfmeaRow({ ...req.body, apqpProjectId: Number(req.params.projectId), userId: req.session.userId });
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/apqp/pfmea-rows/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.updateApqpPfmeaRow(Number(req.params.id), req.session.userId, req.body);
+      if (!row) return res.status(404).json({ message: "Not found" });
+      await storage.flagControlPlanRowsForReview(row.id, req.session.userId);
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/apqp/pfmea-rows/:id/clear-flag", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.updateApqpPfmeaRow(Number(req.params.id), req.session.userId, { reviewFlag: false });
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.delete("/api/apqp/pfmea-rows/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { await storage.deleteApqpPfmeaRow(Number(req.params.id), req.session.userId); res.json({ success: true }); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get("/api/apqp/:projectId/control-plan-rows", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.getApqpControlPlanRows(Number(req.params.projectId), req.session.userId)); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/apqp/:projectId/control-plan-rows", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.createApqpControlPlanRow({ ...req.body, apqpProjectId: Number(req.params.projectId), userId: req.session.userId });
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/apqp/:projectId/control-plan-rows/import-pfmea", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const pfmeaRows = await storage.getApqpPfmeaRows(Number(req.params.projectId), req.session.userId);
+      const existing = await storage.getApqpControlPlanRows(Number(req.params.projectId), req.session.userId);
+      const existingPfmeaIds = new Set(existing.map(r => r.pfmeaRowId));
+      let created = 0;
+      for (const pfRow of pfmeaRows) {
+        if (!existingPfmeaIds.has(pfRow.id)) {
+          await storage.createApqpControlPlanRow({
+            apqpProjectId: Number(req.params.projectId), userId: req.session.userId,
+            pfmeaRowId: pfRow.id, processStepId: pfRow.processStepId ?? undefined,
+            processName: pfRow.processStep ?? "", charName: pfRow.classification || pfRow.processFunction || "",
+            charType: "process", specialCharClass: pfRow.classification ?? "",
+            rowOrder: pfRow.rowOrder,
+          });
+          created++;
+        }
+      }
+      res.json({ created });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/apqp/control-plan-rows/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.updateApqpControlPlanRow(Number(req.params.id), req.session.userId, req.body);
+      if (!row) return res.status(404).json({ message: "Not found" });
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/apqp/control-plan-rows/:id/clear-flag", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.updateApqpControlPlanRow(Number(req.params.id), req.session.userId, { reviewFlag: false })); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.delete("/api/apqp/control-plan-rows/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { await storage.deleteApqpControlPlanRow(Number(req.params.id), req.session.userId); res.json({ success: true }); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get("/api/apqp/:projectId/inspection-sheets", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.getApqpInspectionSheets(Number(req.params.projectId), req.session.userId)); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/apqp/:projectId/inspection-sheets", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const sheet = await storage.createApqpInspectionSheet({ ...req.body, apqpProjectId: Number(req.params.projectId), userId: req.session.userId });
+      res.json(sheet);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/apqp/:projectId/inspection-sheets/generate", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const cpRows = await storage.getApqpControlPlanRows(Number(req.params.projectId), req.session.userId);
+      const sheet = await storage.createApqpInspectionSheet({ apqpProjectId: Number(req.params.projectId), userId: req.session.userId, sheetTitle: req.body.sheetTitle || "Inspection Sheet", partNumber: req.body.partNumber, partName: req.body.partName, inspector: req.body.inspector, inspectionDate: req.body.inspectionDate, status: "in_progress" });
+      for (let i = 0; i < cpRows.length; i++) {
+        const cp = cpRows[i];
+        await storage.createApqpInspectionRow({ inspectionSheetId: sheet.id, controlPlanRowId: cp.id, userId: req.session.userId, charName: cp.charName || cp.processName || `Char ${i + 1}`, specification: cp.productSpec || "", measureTech: cp.evalMeasureTech || "", sampleSize: cp.sampleSize || "", status: "pending", rowOrder: i });
+      }
+      res.json(sheet);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/apqp/inspection-sheets/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const sheet = await storage.updateApqpInspectionSheet(Number(req.params.id), req.session.userId, req.body);
+      if (!sheet) return res.status(404).json({ message: "Not found" });
+      res.json(sheet);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.delete("/api/apqp/inspection-sheets/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { await storage.deleteApqpInspectionSheet(Number(req.params.id), req.session.userId); res.json({ success: true }); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.get("/api/apqp/inspection-sheets/:id/rows", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { res.json(await storage.getApqpInspectionRows(Number(req.params.id), req.session.userId)); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.post("/api/apqp/inspection-sheets/:id/rows", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.createApqpInspectionRow({ ...req.body, inspectionSheetId: Number(req.params.id), userId: req.session.userId });
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.patch("/api/apqp/inspection-rows/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const row = await storage.updateApqpInspectionRow(Number(req.params.id), req.session.userId, req.body);
+      if (!row) return res.status(404).json({ message: "Not found" });
+      res.json(row);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  app.delete("/api/apqp/inspection-rows/:id", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try { await storage.deleteApqpInspectionRow(Number(req.params.id), req.session.userId); res.json({ success: true }); }
+    catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
   // ── Record Retention Register ──────────────────────────────────────────────
   app.get("/api/record-retention", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });

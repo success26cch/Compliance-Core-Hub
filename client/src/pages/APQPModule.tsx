@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { APQPDocSuite } from "./APQPDocSuite";
 import {
   Plus, ChevronRight, ChevronLeft, ClipboardCheck, CheckCircle2,
   Clock, AlertCircle, Minus, Users, Calendar, Flag, Settings,
@@ -1107,7 +1108,7 @@ function DesignDevTab({ projectId }: { projectId: number }) {
 
 // ─── Project Detail View ──────────────────────────────────────────────────────
 function ProjectDetail({ project, onBack }: { project: ApqpProject; onBack: () => void }) {
-  const [activeTab, setActiveTab] = useState<number | "gates" | "design_dev">(project.currentPhase);
+  const [activeTab, setActiveTab] = useState<number | "gates" | "design_dev" | "doc_suite">(project.currentPhase);
   const [editingGate, setEditingGate] = useState<ApqpGateReview | null>(null);
   const [showEditProject, setShowEditProject] = useState(false);
   const qc = useQueryClient();
@@ -1238,12 +1239,25 @@ function ProjectDetail({ project, onBack }: { project: ApqpProject; onBack: () =
             <Beaker className="w-5 h-5 mb-0.5 text-accent" />
             <span className="text-xs font-medium text-center leading-tight">Design &amp; Dev 8.3</span>
           </button>
+          {/* Doc Suite tab */}
+          <button
+            onClick={() => setActiveTab("doc_suite")}
+            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all min-w-[90px] ml-1 ${
+              activeTab === "doc_suite" ? "bg-accent/10 border border-accent/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
+            }`}
+            data-testid="tab-doc-suite"
+          >
+            <FileText className="w-5 h-5 mb-0.5 text-accent" />
+            <span className="text-xs font-medium text-center leading-tight">Doc Suite</span>
+          </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "design_dev" ? (
+        {activeTab === "doc_suite" ? (
+          <APQPDocSuite projectId={project.id} project={project} />
+        ) : activeTab === "design_dev" ? (
           <DesignDevTab projectId={project.id} />
         ) : activeTab !== "gates" ? (
           <div className="p-6">

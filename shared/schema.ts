@@ -1851,6 +1851,135 @@ export const insertApqpGateReviewSchema = createInsertSchema(apqpGateReviews, {
 export type ApqpGateReview = typeof apqpGateReviews.$inferSelect;
 export type InsertApqpGateReview = z.infer<typeof insertApqpGateReviewSchema>;
 
+// ─── APQP Documentation Suite ─────────────────────────────────────────────────
+
+// Process Flow Diagram Steps
+export const apqpProcessSteps = pgTable("apqp_process_steps", {
+  id: serial("id").primaryKey(),
+  apqpProjectId: integer("apqp_project_id").notNull(),
+  userId: text("user_id").notNull(),
+  stepNumber: text("step_number").notNull(),
+  operationName: text("operation_name").notNull(),
+  operationType: text("operation_type").notNull().default("operation"),
+  machine: text("machine"),
+  description: text("description"),
+  specialChars: text("special_chars").array().default([]),
+  inputs: text("inputs").array().default([]),
+  outputs: text("outputs").array().default([]),
+  reviewFlag: boolean("review_flag").notNull().default(false),
+  stepOrder: integer("step_order").notNull().default(0),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertApqpProcessStepSchema = createInsertSchema(apqpProcessSteps).omit({ id: true, createdAt: true, updatedAt: true });
+export type ApqpProcessStep = typeof apqpProcessSteps.$inferSelect;
+export type InsertApqpProcessStep = z.infer<typeof insertApqpProcessStepSchema>;
+
+// PFMEA Rows (AIAG 4th Edition)
+export const apqpPfmeaRows = pgTable("apqp_pfmea_rows", {
+  id: serial("id").primaryKey(),
+  apqpProjectId: integer("apqp_project_id").notNull(),
+  userId: text("user_id").notNull(),
+  processStepId: integer("process_step_id"),
+  processStep: text("process_step"),
+  processFunction: text("process_function"),
+  failureMode: text("failure_mode"),
+  failureEffect: text("failure_effect"),
+  severity: integer("severity").notNull().default(5),
+  classification: text("classification").default(""),
+  failureCause: text("failure_cause"),
+  preventionControl: text("prevention_control"),
+  occurrence: integer("occurrence").notNull().default(5),
+  detectionControl: text("detection_control"),
+  detection: integer("detection").notNull().default(5),
+  rpn: integer("rpn").notNull().default(125),
+  recommendedAction: text("recommended_action"),
+  responsibility: text("responsibility"),
+  targetDate: text("target_date"),
+  actionTaken: text("action_taken"),
+  resultingSeverity: integer("resulting_severity"),
+  resultingOccurrence: integer("resulting_occurrence"),
+  resultingDetection: integer("resulting_detection"),
+  resultingRpn: integer("resulting_rpn"),
+  reviewFlag: boolean("review_flag").notNull().default(false),
+  rowOrder: integer("row_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertApqpPfmeaRowSchema = createInsertSchema(apqpPfmeaRows).omit({ id: true, createdAt: true, updatedAt: true });
+export type ApqpPfmeaRow = typeof apqpPfmeaRows.$inferSelect;
+export type InsertApqpPfmeaRow = z.infer<typeof insertApqpPfmeaRowSchema>;
+
+// Control Plan Rows (AIAG Control Plan Manual)
+export const apqpControlPlanRows = pgTable("apqp_control_plan_rows", {
+  id: serial("id").primaryKey(),
+  apqpProjectId: integer("apqp_project_id").notNull(),
+  userId: text("user_id").notNull(),
+  pfmeaRowId: integer("pfmea_row_id"),
+  processStepId: integer("process_step_id"),
+  partProcessNumber: text("part_process_number"),
+  processName: text("process_name"),
+  machineDeviceJig: text("machine_device_jig"),
+  charNumber: text("char_number"),
+  charType: text("char_type").notNull().default("product"),
+  charName: text("char_name"),
+  specialCharClass: text("special_char_class").default(""),
+  productSpec: text("product_spec"),
+  evalMeasureTech: text("eval_measure_tech"),
+  sampleSize: text("sample_size"),
+  sampleFrequency: text("sample_frequency"),
+  controlMethod: text("control_method"),
+  reactionPlan: text("reaction_plan"),
+  reviewFlag: boolean("review_flag").notNull().default(false),
+  rowOrder: integer("row_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertApqpControlPlanRowSchema = createInsertSchema(apqpControlPlanRows).omit({ id: true, createdAt: true, updatedAt: true });
+export type ApqpControlPlanRow = typeof apqpControlPlanRows.$inferSelect;
+export type InsertApqpControlPlanRow = z.infer<typeof insertApqpControlPlanRowSchema>;
+
+// Inspection Sheets
+export const apqpInspectionSheets = pgTable("apqp_inspection_sheets", {
+  id: serial("id").primaryKey(),
+  apqpProjectId: integer("apqp_project_id").notNull(),
+  userId: text("user_id").notNull(),
+  sheetTitle: text("sheet_title").notNull(),
+  partNumber: text("part_number"),
+  partName: text("part_name"),
+  inspector: text("inspector"),
+  inspectionDate: text("inspection_date"),
+  lotNumber: text("lot_number"),
+  quantity: text("quantity"),
+  status: text("status").notNull().default("in_progress"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const insertApqpInspectionSheetSchema = createInsertSchema(apqpInspectionSheets).omit({ id: true, createdAt: true, updatedAt: true });
+export type ApqpInspectionSheet = typeof apqpInspectionSheets.$inferSelect;
+export type InsertApqpInspectionSheet = z.infer<typeof insertApqpInspectionSheetSchema>;
+
+// Inspection Sheet Rows
+export const apqpInspectionRows = pgTable("apqp_inspection_rows", {
+  id: serial("id").primaryKey(),
+  inspectionSheetId: integer("inspection_sheet_id").notNull(),
+  controlPlanRowId: integer("control_plan_row_id"),
+  userId: text("user_id").notNull(),
+  charName: text("char_name").notNull(),
+  specification: text("specification"),
+  measureTech: text("measure_tech"),
+  sampleSize: text("sample_size"),
+  measurements: jsonb("measurements").$type<Array<{ value: string; status: "pass" | "fail" | "pending" }>>().default([]),
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
+  rowOrder: integer("row_order").notNull().default(0),
+});
+export const insertApqpInspectionRowSchema = createInsertSchema(apqpInspectionRows).omit({ id: true });
+export type ApqpInspectionRow = typeof apqpInspectionRows.$inferSelect;
+export type InsertApqpInspectionRow = z.infer<typeof insertApqpInspectionRowSchema>;
+
 // ─── Design & Development Plans (IATF 16949 8.3) ────────────────────────────
 export const designDevPlans = pgTable("design_dev_plans", {
   id: serial("id").primaryKey(),
