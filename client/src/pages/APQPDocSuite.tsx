@@ -253,11 +253,18 @@ function PfmeaTab({ projectId }: { projectId: number }) {
   const [edits, setEdits] = useState<Record<number, Partial<ApqpPfmeaRow>>>({});
   const [hdrOpen, setHdrOpen] = useState(false);
   const [hdr, setHdr] = useState({
-    fmeaNumber: "", item: "", processResp: "", preparedBy: "",
-    modelYear: "", keyDate: "", dateOrig: "", dateRev: "",
-    coreTeam: "", custEngApproval: "", custEngApprovalDate: "",
-    custQualApproval: "", custQualApprovalDate: "",
-    supplierApproval: "", supplierApprovalDate: "",
+    // Identification
+    fmeaNumber: "", fmeaRevLevel: "", companyName: "", plantLocation: "",
+    customer: "", modelYear: "", subject: "",
+    // Dates
+    dateOrig: "", dateRev: "", fmeaStartDate: "", keyDate: "",
+    // Confidentiality & Responsibility
+    confidentialityLevel: "low",
+    mfgResponsible: "", preparedBy: "", coreTeam: "",
+    // Approvals — Customer Dept, Customer Quality, Supplier
+    custDeptName: "", custDeptApprovalDate: "",
+    custQualName: "", custQualApprovalDate: "",
+    supplierName: "", supplierApprovalDate: "",
   });
 
   const { data: steps = [] } = useQuery<ApqpProcessStep[]>({
@@ -315,42 +322,51 @@ function PfmeaTab({ projectId }: { projectId: number }) {
     if (!w) return;
     const esc = (s: any) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     const rpnBg = (n: number) => n >= 200 ? "#ffcccc" : n >= 120 ? "#ffe0a0" : n >= 60 ? "#fffacd" : "transparent";
+    const confLabel = hdr.confidentialityLevel === "high" ? "■ High  □ Medium  □ Low" : hdr.confidentialityLevel === "medium" ? "□ High  ■ Medium  □ Low" : "□ High  □ Medium  ■ Low";
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Process FMEA</title>
+<title>Process FMEA — ${esc(hdr.fmeaNumber||hdr.subject)}</title>
 <style>
 @page{size:A3 landscape;margin:1cm}
 body{font-family:Arial,Helvetica,sans-serif;font-size:7pt;color:#000}
-.hdr{width:100%;border-collapse:collapse;margin-bottom:6px}
-.hdr td{border:1px solid #000;padding:3px 5px;vertical-align:top}
-.lbl{font-weight:700;font-size:6.5pt;color:#333;display:block;margin-bottom:1px}
+.hdr{width:100%;border-collapse:collapse;margin-bottom:5px}
+.hdr td{border:1px solid #000;padding:3px 5px;vertical-align:top;font-size:7pt}
+.lbl{font-weight:700;font-size:6pt;color:#444;display:block;margin-bottom:1px;text-transform:uppercase;letter-spacing:.3px}
+.conf{font-size:6.5pt;font-family:monospace}
 table{width:100%;border-collapse:collapse}
 th{background:#d0d8e8;border:1px solid #000;padding:2px 3px;text-align:center;font-size:6.5pt;vertical-align:middle}
 td{border:1px solid #888;padding:2px 3px;font-size:7pt;vertical-align:top;word-break:break-word}
 .c{text-align:center;vertical-align:middle}
 .cc{color:#c00;font-weight:700}.kpc{color:#00c;font-weight:700}
 tr:nth-child(even) td{background:#f9fafc}
-h2{font-size:10pt;text-align:center;margin:0 0 4px 0;font-weight:700;letter-spacing:.5px}
+h2{font-size:9pt;text-align:center;margin:0 0 4px;font-weight:700;letter-spacing:.5px}
 </style></head><body>
 <h2>PROCESS FAILURE MODE AND EFFECTS ANALYSIS (PROCESS FMEA)</h2>
 <table class="hdr">
 <tr>
-  <td style="width:33%"><span class="lbl">FMEA NUMBER:</span>${esc(hdr.fmeaNumber)}</td>
-  <td style="width:34%"><span class="lbl">ITEM (Part Name / Function):</span>${esc(hdr.item)}</td>
-  <td style="width:33%"><span class="lbl">KEY DATE:</span>${esc(hdr.keyDate)}</td>
+  <td style="width:22%"><span class="lbl">Company Name:</span>${esc(hdr.companyName)}</td>
+  <td style="width:18%"><span class="lbl">Plant / Engineering Location:</span>${esc(hdr.plantLocation)}</td>
+  <td style="width:20%"><span class="lbl">Customer:</span>${esc(hdr.customer)}</td>
+  <td style="width:20%"><span class="lbl">Model Year / Vehicle(s) / Program:</span>${esc(hdr.modelYear)}</td>
+  <td style="width:10%"><span class="lbl">FMEA ID Number:</span>${esc(hdr.fmeaNumber)}</td>
+  <td style="width:5%"><span class="lbl">Rev. Level:</span>${esc(hdr.fmeaRevLevel)}</td>
+  <td style="width:5%"><span class="lbl">Confid. Level:</span><span class="conf">${confLabel}</span></td>
 </tr>
 <tr>
-  <td><span class="lbl">PROCESS RESPONSIBILITY:</span>${esc(hdr.processResp)}</td>
-  <td><span class="lbl">MODEL YEAR(S) / VEHICLE(S) / PROGRAM(S):</span>${esc(hdr.modelYear)}</td>
-  <td><span class="lbl">FMEA DATE &nbsp;<em>(Orig.)</em>:</span>${esc(hdr.dateOrig)}&emsp;<span class="lbl" style="display:inline"><em>(Rev.)</em>:</span> ${esc(hdr.dateRev)}</td>
+  <td colspan="3"><span class="lbl">Subject (Part Number / Part Name / Process Step Range):</span>${esc(hdr.subject)}</td>
+  <td><span class="lbl">FMEA Date <em>(Orig.)</em>:</span>${esc(hdr.dateOrig)}</td>
+  <td><span class="lbl">FMEA Revision Date <em>(Rev.)</em>:</span>${esc(hdr.dateRev)}</td>
+  <td><span class="lbl">FMEA Start Date:</span>${esc(hdr.fmeaStartDate)}</td>
+  <td><span class="lbl">Key Date:</span>${esc(hdr.keyDate)}</td>
 </tr>
 <tr>
-  <td><span class="lbl">PREPARED BY (Name / Phone / Dept.):</span>${esc(hdr.preparedBy)}</td>
-  <td colspan="2"><span class="lbl">CORE TEAM:</span>${esc(hdr.coreTeam)}</td>
+  <td colspan="2"><span class="lbl">Manufacturing Responsible (Dept. / Supplier / Plant):</span>${esc(hdr.mfgResponsible)}</td>
+  <td colspan="2"><span class="lbl">Prepared By (FMEA Creator — Name / Dept. / Phone):</span>${esc(hdr.preparedBy)}</td>
+  <td colspan="3"><span class="lbl">Cross-Functional Team (CFT) Members:</span>${esc(hdr.coreTeam)}</td>
 </tr>
 <tr>
-  <td><span class="lbl">CUST. ENG. APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(hdr.custEngApproval)} &nbsp;/ ${esc(hdr.custEngApprovalDate)}</td>
-  <td><span class="lbl">CUST. QUALITY APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(hdr.custQualApproval)} &nbsp;/ ${esc(hdr.custQualApprovalDate)}</td>
-  <td><span class="lbl">SUPPLIER / PLANT APPROVAL / DATE:</span>${esc(hdr.supplierApproval)} &nbsp;/ ${esc(hdr.supplierApprovalDate)}</td>
+  <td colspan="2" style="border-top:2px solid #000"><span class="lbl">Customer Department / Signature / Date <em>(if req'd)</em>:</span>${esc(hdr.custDeptName)} &nbsp;/ ${esc(hdr.custDeptApprovalDate)}</td>
+  <td colspan="2" style="border-top:2px solid #000"><span class="lbl">Customer Quality / Signature / Date <em>(if req'd)</em>:</span>${esc(hdr.custQualName)} &nbsp;/ ${esc(hdr.custQualApprovalDate)}</td>
+  <td colspan="3" style="border-top:2px solid #000"><span class="lbl">Supplier / Plant Signature / Date:</span>${esc(hdr.supplierName)} &nbsp;/ ${esc(hdr.supplierApprovalDate)}</td>
 </tr>
 </table>
 <table>
@@ -418,48 +434,87 @@ ${rows.map(row => {
   return (
     <div className="p-4 space-y-4">
 
-      {/* ── AIAG PFMEA Header Block ── */}
+      {/* ── AIAG & VDA PFMEA Header Block ── */}
       <div className="rounded-xl border border-border/50 overflow-hidden">
         <button className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors" onClick={() => setHdrOpen(h => !h)} data-testid="btn-pfmea-header-toggle">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-accent" />
             <span className="font-semibold text-sm">PFMEA Header</span>
-            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">AIAG 4th Ed.</Badge>
+            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">AIAG &amp; VDA Handbook</Badge>
             {hdr.fmeaNumber && <span className="text-xs text-muted-foreground">#{hdr.fmeaNumber}</span>}
+            {hdr.fmeaRevLevel && <Badge variant="outline" className="text-xs border-slate-300">Rev. {hdr.fmeaRevLevel}</Badge>}
+            {hdr.confidentialityLevel === "high" && <Badge className="text-xs bg-red-100 text-red-700 border-red-300">Confidential</Badge>}
           </div>
           {hdrOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
         </button>
         {hdrOpen && (
           <div className="p-4 border-t border-border/30 space-y-3">
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA Number</Label><Input value={hdr.fmeaNumber} onChange={e => setHdr(h=>({...h,fmeaNumber:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="FMEA-XXX-001" data-testid="pfmea-hdr-number" /></div>
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Item (Part Name / Function)</Label><Input value={hdr.item} onChange={e => setHdr(h=>({...h,item:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Part name / function" data-testid="pfmea-hdr-item" /></div>
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Key Date</Label><Input type="date" value={hdr.keyDate} onChange={e => setHdr(h=>({...h,keyDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-keydate" /></div>
+
+            {/* ── Row 1: Company / Location / Customer / Program ── */}
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Identification</p>
+              <div className="grid grid-cols-4 gap-3">
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Company Name</Label><Input value={hdr.companyName} onChange={e => setHdr(h=>({...h,companyName:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Acme Corp." data-testid="pfmea-hdr-company" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Plant / Engineering Location</Label><Input value={hdr.plantLocation} onChange={e => setHdr(h=>({...h,plantLocation:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Detroit, MI Plant 2" data-testid="pfmea-hdr-plant" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Customer</Label><Input value={hdr.customer} onChange={e => setHdr(h=>({...h,customer:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Ford / GM / Stellantis" data-testid="pfmea-hdr-customer" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Model Year / Vehicle(s) / Program</Label><Input value={hdr.modelYear} onChange={e => setHdr(h=>({...h,modelYear:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="MY2027 / F-150" data-testid="pfmea-hdr-model" /></div>
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Process Responsibility</Label><Input value={hdr.processResp} onChange={e => setHdr(h=>({...h,processResp:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Dept. / Team" data-testid="pfmea-hdr-resp" /></div>
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Model Year(s) / Vehicle(s)</Label><Input value={hdr.modelYear} onChange={e => setHdr(h=>({...h,modelYear:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="MY2027 / F-150" data-testid="pfmea-hdr-model" /></div>
+
+            {/* ── Row 2: Subject / FMEA ID / Rev / Confidentiality ── */}
+            <div className="grid grid-cols-4 gap-3">
+              <div className="col-span-2"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Subject (Part Number / Part Name / Process Step Range)</Label><Input value={hdr.subject} onChange={e => setHdr(h=>({...h,subject:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="12345-A — Brake Caliper Bracket, Steps 10–80" data-testid="pfmea-hdr-subject" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA ID Number</Label><Input value={hdr.fmeaNumber} onChange={e => setHdr(h=>({...h,fmeaNumber:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="PFMEA-001" data-testid="pfmea-hdr-number" /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA Date (Orig.)</Label><Input type="date" value={hdr.dateOrig} onChange={e => setHdr(h=>({...h,dateOrig:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-dateorig" /></div>
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">(Rev.)</Label><Input type="date" value={hdr.dateRev} onChange={e => setHdr(h=>({...h,dateRev:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-daterev" /></div>
+                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rev. Level</Label><Input value={hdr.fmeaRevLevel} onChange={e => setHdr(h=>({...h,fmeaRevLevel:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="A" data-testid="pfmea-hdr-revlevel" /></div>
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Confidentiality</Label>
+                  <Select value={hdr.confidentialityLevel} onValueChange={v => setHdr(h=>({...h,confidentialityLevel:v}))}>
+                    <SelectTrigger className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-confid"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Prepared By (Name / Phone / Dept.)</Label><Input value={hdr.preparedBy} onChange={e => setHdr(h=>({...h,preparedBy:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Engineer name, ext. 1234" data-testid="pfmea-hdr-prepby" /></div>
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Team</Label><Input value={hdr.coreTeam} onChange={e => setHdr(h=>({...h,coreTeam:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="E. Vasquez, M. Webb, R&D, Mfg, QE" data-testid="pfmea-hdr-team" /></div>
+
+            {/* ── Row 3: Dates ── */}
+            <div className="grid grid-cols-4 gap-3">
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA Date (Orig.)</Label><Input type="date" value={hdr.dateOrig} onChange={e => setHdr(h=>({...h,dateOrig:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-dateorig" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA Revision Date (Rev.)</Label><Input type="date" value={hdr.dateRev} onChange={e => setHdr(h=>({...h,dateRev:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-daterev" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FMEA Start Date</Label><Input type="date" value={hdr.fmeaStartDate} onChange={e => setHdr(h=>({...h,fmeaStartDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-startdate" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Key Date (Milestone)</Label><Input type="date" value={hdr.keyDate} onChange={e => setHdr(h=>({...h,keyDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-keydate" /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border/20">
-              <div className="flex gap-2">
-                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Eng. Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={hdr.custEngApproval} onChange={e => setHdr(h=>({...h,custEngApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-custeng" /></div>
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={hdr.custEngApprovalDate} onChange={e => setHdr(h=>({...h,custEngApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="pfmea-hdr-custeng-date" /></div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Quality Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={hdr.custQualApproval} onChange={e => setHdr(h=>({...h,custQualApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-custqual" /></div>
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={hdr.custQualApprovalDate} onChange={e => setHdr(h=>({...h,custQualApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="pfmea-hdr-custqual-date" /></div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant Approval</Label><Input value={hdr.supplierApproval} onChange={e => setHdr(h=>({...h,supplierApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-supplier" /></div>
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={hdr.supplierApprovalDate} onChange={e => setHdr(h=>({...h,supplierApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="pfmea-hdr-supplier-date" /></div>
+
+            {/* ── Row 4: Responsibility / Prepared By / CFT ── */}
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Manufacturing Responsible (Dept. / Supplier / Plant)</Label><Input value={hdr.mfgResponsible} onChange={e => setHdr(h=>({...h,mfgResponsible:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Mfg. Eng. Dept. — Plant 2" data-testid="pfmea-hdr-mfgresp" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Prepared By — FMEA Creator (Name / Dept. / Phone)</Label><Input value={hdr.preparedBy} onChange={e => setHdr(h=>({...h,preparedBy:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="J. Smith, Mfg. Eng., x1234" data-testid="pfmea-hdr-prepby" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cross-Functional Team (CFT) Members</Label><Input value={hdr.coreTeam} onChange={e => setHdr(h=>({...h,coreTeam:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="E. Vasquez (QE), M. Webb (Mfg.), R. Kim (Design)..." data-testid="pfmea-hdr-team" /></div>
+            </div>
+
+            {/* ── Row 5: Approvals ── */}
+            <div className="pt-2 border-t border-border/20">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Approvals</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Customer Department <span className="font-normal">(if req'd)</span></p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Dept. / Signature</Label><Input value={hdr.custDeptName} onChange={e => setHdr(h=>({...h,custDeptName:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="J. Doe — Customer Quality" data-testid="pfmea-hdr-custdept" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={hdr.custDeptApprovalDate} onChange={e => setHdr(h=>({...h,custDeptApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-custdept-date" /></div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Customer Quality <span className="font-normal">(if req'd)</span></p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Dept. / Signature</Label><Input value={hdr.custQualName} onChange={e => setHdr(h=>({...h,custQualName:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="A. Chen — SQE" data-testid="pfmea-hdr-custqual" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={hdr.custQualApprovalDate} onChange={e => setHdr(h=>({...h,custQualApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-custqual-date" /></div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Supplier / Plant</p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Dept. / Signature</Label><Input value={hdr.supplierName} onChange={e => setHdr(h=>({...h,supplierName:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="E. Villarreal — Mfg. Mgr." data-testid="pfmea-hdr-supplier" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={hdr.supplierApprovalDate} onChange={e => setHdr(h=>({...h,supplierApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfmea-hdr-supplier-date" /></div>
+                </div>
               </div>
             </div>
           </div>
@@ -469,7 +524,7 @@ ${rows.map(row => {
       {/* ── Toolbar ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h3 className="font-semibold text-sm">Process FMEA <span className="text-muted-foreground font-normal">(AIAG 4th Edition)</span></h3>
+          <h3 className="font-semibold text-sm">Process FMEA <span className="text-muted-foreground font-normal">(AIAG &amp; VDA Handbook)</span></h3>
           <p className="text-xs text-muted-foreground mt-0.5">S×O×D = RPN · Severity / Occurrence / Detection 1–10 · Rows linked to process steps</p>
         </div>
         <div className="flex items-center gap-2">
@@ -671,18 +726,21 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
     partNumberRev: "",
     supplierPlant: "",
     supplierCode: "",
-    keyContact: "",
+    supplierContact: "",    // "Supplier / Plant Contact / Phone" per AIAG CP Manual
     phone: "",
     dateOrig: "",
     dateRev: "",
+    coreTeam: "",
+    partName: project.projectName,
+    // Approvals (AIAG CP Manual: Cust. Eng. / Cust. Quality / Other / Supplier)
     custEngApproval: "",
     custEngApprovalDate: "",
     custQualApproval: "",
     custQualApprovalDate: "",
+    otherApproval: "",           // "Other Approval / Date (if req'd)"
+    otherApprovalDate: "",
     supplierApproval: "",
     supplierApprovalDate: "",
-    coreTeam: "",
-    partName: project.projectName,
   });
 
   const { data: pfmeaRows = [] } = useQuery<ApqpPfmeaRow[]>({
@@ -825,31 +883,36 @@ h2{font-size:10pt;text-align:center;margin:0 0 4px 0;font-weight:700;letter-spac
 <h2>CONTROL PLAN${isVda?" (VDA FORMAT)":""}</h2>
 <table class="hdr">
 <tr>
-  <td style="width:18%;vertical-align:middle">
+  <td style="width:14%;vertical-align:middle">
     <div><span class="ptbox">${cpHeader.planType==="prototype"?"✓":""}</span><b>Prototype</b></div>
     <div><span class="ptbox">${cpHeader.planType==="pre_launch"?"✓":""}</span><b>Pre-Launch</b></div>
     <div><span class="ptbox">${cpHeader.planType==="production"?"✓":""}</span><b>Production</b></div>
   </td>
-  <td style="width:28%">
-    <span class="lbl">CONTROL PLAN NUMBER:</span>${esc(cpHeader.controlPlanNumber)}<br/>
-    <span class="lbl">PART NUMBER / LATEST CHANGE LEVEL:</span>${esc(cpHeader.partNumberRev)}
+  <td style="width:18%">
+    <span class="lbl">Control Plan Number:</span>${esc(cpHeader.controlPlanNumber)}<br/>
+    <span class="lbl">Part Number / Latest Change Level:</span>${esc(cpHeader.partNumberRev)}
   </td>
-  <td style="width:27%">
-    <span class="lbl">PART NAME / DESCRIPTION:</span>${esc(cpHeader.partName)}<br/>
-    <span class="lbl">SUPPLIER / PLANT AND CODE:</span>${esc(cpHeader.supplierPlant)} / ${esc(cpHeader.supplierCode)}
+  <td style="width:22%">
+    <span class="lbl">Part Name / Description:</span>${esc(cpHeader.partName)}<br/>
+    <span class="lbl">Supplier / Plant:</span>${esc(cpHeader.supplierPlant)}
   </td>
-  <td style="width:27%">
-    <span class="lbl">KEY CONTACT / PHONE:</span>${esc(cpHeader.keyContact)} / ${esc(cpHeader.phone)}<br/>
-    <span class="lbl">DATE (ORIG.):</span> ${esc(cpHeader.dateOrig)} &emsp; <span class="lbl" style="display:inline">(REV.):</span> ${esc(cpHeader.dateRev)}
+  <td style="width:12%">
+    <span class="lbl">Supplier Code:</span>${esc(cpHeader.supplierCode)}<br/>
+    <span class="lbl">Date (Orig.):</span>${esc(cpHeader.dateOrig)}<br/>
+    <span class="lbl">Date (Rev.):</span>${esc(cpHeader.dateRev)}
+  </td>
+  <td style="width:17%">
+    <span class="lbl">Customer Engineering Approval / Date <em>(if req'd)</em>:</span>${esc(cpHeader.custEngApproval)} / ${esc(cpHeader.custEngApprovalDate)}<br/>
+    <span class="lbl">Customer Quality Approval / Date <em>(if req'd)</em>:</span>${esc(cpHeader.custQualApproval)} / ${esc(cpHeader.custQualApprovalDate)}
+  </td>
+  <td style="width:17%">
+    <span class="lbl">Other Approval / Date <em>(if req'd)</em>:</span>${esc(cpHeader.otherApproval)} / ${esc(cpHeader.otherApprovalDate)}<br/>
+    <span class="lbl">Supplier / Plant Approval / Date:</span>${esc(cpHeader.supplierApproval)} / ${esc(cpHeader.supplierApprovalDate)}
   </td>
 </tr>
 <tr>
-  <td colspan="2"><span class="lbl">CORE TEAM:</span>${esc(cpHeader.coreTeam)}</td>
-  <td><span class="lbl">CUST. ENG. APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(cpHeader.custEngApproval)} / ${esc(cpHeader.custEngApprovalDate)}</td>
-  <td>
-    <span class="lbl">CUST. QUALITY APPROVAL / DATE <em>(if req'd)</em>:</span>${esc(cpHeader.custQualApproval)} / ${esc(cpHeader.custQualApprovalDate)}<br/>
-    <span class="lbl">SUPPLIER / PLANT APPROVAL / DATE:</span>${esc(cpHeader.supplierApproval)} / ${esc(cpHeader.supplierApprovalDate)}
-  </td>
+  <td colspan="2"><span class="lbl">Core Team:</span>${esc(cpHeader.coreTeam)}</td>
+  <td colspan="4"><span class="lbl">Supplier / Plant Contact / Phone:</span>${esc(cpHeader.supplierContact)} / ${esc(cpHeader.phone)}</td>
 </tr>
 </table>
 <table>
@@ -898,32 +961,43 @@ h2{font-size:10pt;text-align:center;margin:0 0 4px 0;font-weight:700;letter-spac
                 <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Part # / Rev Level</Label><Input value={cpHeader.partNumberRev} onChange={e => setCpHeader(h=>({...h,partNumberRev:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="12345-A" data-testid="cp-header-partNumberRev" /></div>
               </div>
             </div>
-            {/* Supplier + Contact row */}
+            {/* Supplier + Contact + Dates */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant</Label><Input value={cpHeader.supplierPlant} onChange={e => setCpHeader(h=>({...h,supplierPlant:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierPlant" /></div>
               <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier Code</Label><Input value={cpHeader.supplierCode} onChange={e => setCpHeader(h=>({...h,supplierCode:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierCode" /></div>
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Key Contact</Label><Input value={cpHeader.keyContact} onChange={e => setCpHeader(h=>({...h,keyContact:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-keyContact" /></div>
-              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</Label><Input value={cpHeader.phone} onChange={e => setCpHeader(h=>({...h,phone:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-phone" /></div>
-            </div>
-            {/* Core Team + Dates */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="col-span-2"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Team</Label><Input value={cpHeader.coreTeam} onChange={e => setCpHeader(h=>({...h,coreTeam:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Members..." data-testid="cp-header-coreTeam" /></div>
               <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date (Orig.)</Label><Input type="date" value={cpHeader.dateOrig} onChange={e => setCpHeader(h=>({...h,dateOrig:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-dateOrig" /></div>
               <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date (Rev.)</Label><Input type="date" value={cpHeader.dateRev} onChange={e => setCpHeader(h=>({...h,dateRev:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-dateRev" /></div>
             </div>
-            {/* Approvals */}
-            <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border/20">
-              <div className="flex gap-2">
-                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Eng. Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={cpHeader.custEngApproval} onChange={e => setCpHeader(h=>({...h,custEngApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custEngApproval" /></div>
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={cpHeader.custEngApprovalDate} onChange={e => setCpHeader(h=>({...h,custEngApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="cp-header-custEngApprovalDate" /></div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cust. Quality Approval <em className="font-normal not-italic">(if req'd)</em></Label><Input value={cpHeader.custQualApproval} onChange={e => setCpHeader(h=>({...h,custQualApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custQualApproval" /></div>
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={cpHeader.custQualApprovalDate} onChange={e => setCpHeader(h=>({...h,custQualApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="cp-header-custQualApprovalDate" /></div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant Approval</Label><Input value={cpHeader.supplierApproval} onChange={e => setCpHeader(h=>({...h,supplierApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierApproval" /></div>
-                <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</Label><Input type="date" value={cpHeader.supplierApprovalDate} onChange={e => setCpHeader(h=>({...h,supplierApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5 w-28" data-testid="cp-header-supplierApprovalDate" /></div>
+            {/* Core Team + Supplier Contact */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="col-span-2"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Team</Label><Input value={cpHeader.coreTeam} onChange={e => setCpHeader(h=>({...h,coreTeam:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Members..." data-testid="cp-header-coreTeam" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant Contact</Label><Input value={cpHeader.supplierContact} onChange={e => setCpHeader(h=>({...h,supplierContact:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="Name" data-testid="cp-header-supplierContact" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</Label><Input value={cpHeader.phone} onChange={e => setCpHeader(h=>({...h,phone:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-phone" /></div>
+            </div>
+            {/* Approvals — AIAG CP Manual: Cust. Eng. / Cust. Quality / Other / Supplier */}
+            <div className="pt-2 border-t border-border/20">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Approvals</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Cust. Engineering <span className="font-normal">(if req'd)</span></p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Signature</Label><Input value={cpHeader.custEngApproval} onChange={e => setCpHeader(h=>({...h,custEngApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custEngApproval" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={cpHeader.custEngApprovalDate} onChange={e => setCpHeader(h=>({...h,custEngApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custEngApprovalDate" /></div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Cust. Quality <span className="font-normal">(if req'd)</span></p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Signature</Label><Input value={cpHeader.custQualApproval} onChange={e => setCpHeader(h=>({...h,custQualApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custQualApproval" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={cpHeader.custQualApprovalDate} onChange={e => setCpHeader(h=>({...h,custQualApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-custQualApprovalDate" /></div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Other Approval <span className="font-normal">(if req'd)</span></p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Signature</Label><Input value={cpHeader.otherApproval} onChange={e => setCpHeader(h=>({...h,otherApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-otherApproval" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={cpHeader.otherApprovalDate} onChange={e => setCpHeader(h=>({...h,otherApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-otherApprovalDate" /></div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Supplier / Plant</p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Signature</Label><Input value={cpHeader.supplierApproval} onChange={e => setCpHeader(h=>({...h,supplierApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierApproval" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={cpHeader.supplierApprovalDate} onChange={e => setCpHeader(h=>({...h,supplierApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="cp-header-supplierApprovalDate" /></div>
+                </div>
               </div>
             </div>
           </div>
