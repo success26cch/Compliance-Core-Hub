@@ -3799,7 +3799,7 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
     if (win) { win.document.write(html); win.document.close(); }
   };
 
-  const thCls = "px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide cursor-pointer hover:text-primary select-none whitespace-nowrap";
+  const thCls = "px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest cursor-pointer hover:text-white select-none whitespace-nowrap";
 
   return (
     <div className="space-y-4">
@@ -3890,7 +3890,7 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
         <div className="border rounded-xl overflow-hidden bg-white dark:bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/40 border-b">
+              <thead className="bg-slate-700 dark:bg-slate-800">
                 <tr>
                   <th className={thCls + " w-16"}>
                     <span className="flex items-center gap-1">Doc ID</span>
@@ -3924,9 +3924,9 @@ function MasterDocumentList({ documents, project, isLoading, complianceResults }
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
-                {filtered.map(doc => (
-                  <tr key={doc.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => setViewDoc(doc)} data-testid={`row-master-${doc.id}`}>
+              <tbody>
+                {filtered.map((doc, idx) => (
+                  <tr key={doc.id} className={`border-t border-border/40 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 transition-colors cursor-pointer ${idx % 2 === 0 ? "bg-white dark:bg-card" : "bg-slate-50 dark:bg-slate-900/30"}`} onClick={() => setViewDoc(doc)} data-testid={`row-master-${doc.id}`}>
                     <td className="px-3 py-2.5 text-xs font-mono text-muted-foreground whitespace-nowrap">
                       {doc.id}
                     </td>
