@@ -1078,16 +1078,16 @@ ${rows.map(row => {
 
       {/* ── AI Failure Mode Wizard Dialog ─────────────────────────────────────── */}
       <Dialog open={wizardOpen} onOpenChange={(o) => { if (!o) setWizardOpen(false); }}>
-        <DialogContent className="max-w-2xl w-full p-0 gap-0 overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 text-white">
+        <DialogContent className="max-w-2xl w-full p-0 gap-0 flex flex-col max-h-[90vh]">
+          {/* Header — always visible */}
+          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 text-white shrink-0">
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-4 h-4" />
               <span className="text-xs font-semibold tracking-wide uppercase opacity-80">AIAG &amp; VDA 2019 · AI-Guided</span>
             </div>
             <DialogTitle className="text-base font-bold text-white m-0">PFMEA Failure Mode Wizard</DialogTitle>
             <DialogDescription className="text-violet-100 text-xs mt-0.5 m-0">
-              Corey (Senior PFMEA Engineer) identifies failure modes, effects, causes &amp; controls for your process step.
+              Isa (Lead ISO Auditor &amp; Senior PFMEA Engineer) identifies failure modes, effects, causes &amp; controls for your process step.
             </DialogDescription>
             {/* Step indicator */}
             <div className="flex items-center gap-1.5 mt-3">
@@ -1103,7 +1103,7 @@ ${rows.map(row => {
 
           {/* Step 1 — Configure */}
           {wizardStep === 1 && (
-            <div className="p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Label className="text-xs font-semibold mb-1 block">Industry / Sector</Label>
@@ -1122,7 +1122,7 @@ ${rows.map(row => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-muted-foreground mt-1">Corey tailors failure modes, controls, and AIAG ratings to your sector's specific equipment, materials, and standards.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Isa tailors failure modes, controls, and AIAG ratings to your sector's specific equipment, materials, and standards.</p>
                 </div>
                 <div className="col-span-2">
                   <Label className="text-xs font-semibold mb-1 block">Process Step</Label>
@@ -1162,7 +1162,7 @@ ${rows.map(row => {
 
           {/* Step 2 — Review Suggestions */}
           {wizardStep === 2 && (
-            <div className="flex flex-col" style={{ maxHeight: "70vh" }}>
+            <div className="flex flex-col flex-1 overflow-hidden">
               <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border shrink-0">
                 <div>
                   <p className="text-sm font-semibold">{wizardSuggestions.length} failure modes identified</p>
