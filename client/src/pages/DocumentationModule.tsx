@@ -365,21 +365,18 @@ function printIsoDocument(doc: IsoDocument, project: IsoProject | null, wmOpts?:
 
     /* ── Watermark ── */
     .wm-center {
-      display:none;
       position:fixed; top:50%; left:50%;
       transform:translate(-50%,-50%) rotate(-45deg);
-      font-size:28pt; font-weight:900; color:rgba(0,0,0,0.12);
+      font-size:28pt; font-weight:900; color:rgba(0,0,0,0.15);
       letter-spacing:0.06em; white-space:nowrap;
       pointer-events:none; z-index:9999; user-select:none;
     }
     .wm-hf-top {
-      display:none;
       position:fixed; top:6px; left:0; right:0;
       text-align:center; font-size:7.5pt; color:#999;
       letter-spacing:0.04em; pointer-events:none; z-index:9999;
     }
     .wm-hf-bottom {
-      display:none;
       position:fixed; bottom:6px; left:0; right:0;
       text-align:center; font-size:7.5pt; color:#999;
       letter-spacing:0.04em; pointer-events:none; z-index:9999;
@@ -396,9 +393,6 @@ function printIsoDocument(doc: IsoDocument, project: IsoProject | null, wmOpts?:
       .page { padding:0.4in 0.7in; }
       @page { margin:0.5in; size:letter portrait; }
       .section-h1, .toc-title { break-after:avoid; }
-      ${showCenterWatermark ? `.wm-center { display:block; }` : ""}
-      ${showPrintMark && !showCenterWatermark ? `.wm-hf-top { display:block; }` : ""}
-      ${showApprovedHF ? `.wm-hf-top { display:block; } .wm-hf-bottom { display:block; }` : ""}
     }
   </style>
 </head>
