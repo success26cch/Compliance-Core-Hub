@@ -4168,20 +4168,20 @@ function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[
         <div className="border rounded-xl overflow-hidden bg-white dark:bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/40 border-b">
+              <thead className="bg-slate-700 dark:bg-slate-800">
                 <tr>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Date</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">Document</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Rev Change</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">Change Reason</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Changed By</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Approved By</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">Type</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest whitespace-nowrap">Date</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest">Document</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest whitespace-nowrap">Rev Change</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest">Change Reason</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest whitespace-nowrap">Changed By</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest whitespace-nowrap">Approved By</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-200 uppercase tracking-widest whitespace-nowrap">Type</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody>
                 {filtered.map((entry, i) => (
-                  <tr key={String(entry.id)} className="hover:bg-muted/20 transition-colors" data-testid={`row-changelog-${i}`}>
+                  <tr key={String(entry.id)} className={`border-t border-border/40 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 transition-colors ${i % 2 === 0 ? "bg-white dark:bg-card" : "bg-slate-50 dark:bg-slate-900/30"}`} data-testid={`row-changelog-${i}`}>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                       {entry.date ? format(new Date(entry.date), "MMM d, yyyy") : "—"}
                     </td>
