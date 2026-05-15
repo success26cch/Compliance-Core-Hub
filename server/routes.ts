@@ -11379,6 +11379,87 @@ Be specific, practical, and cite regulation numbers where applicable. Write as a
     catch (e: any) { res.status(500).json({ message: e.message }); }
   });
 
+  // ─── PFMEA Failure Mode Wizard (AI) ─────────────────────────────────────────
+  app.post("/api/apqp/:projectId/pfmea-wizard", async (req: Request, res: Response) => {
+    if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { processStep, processFunction, operationType, industry } = req.body;
+      const anthropic = createAnthropicClient();
+
+      const industryLabels: Record<string, string> = {
+        chemical_processing: "Chemical Processing & Blending",
+        automotive_assembly: "Automotive Assembly & Sequencing",
+        medical_device: "Medical Device Manufacturing (ISO 13485)",
+        food_beverage: "Food & Beverage Processing (HACCP)",
+        electronics_pcb: "Electronics / PCB Assembly",
+        pharmaceutical: "Pharmaceutical Manufacturing (cGMP)",
+        aerospace: "Aerospace & Defense (AS9100)",
+        metal_stamping: "Metal Stamping & Forming",
+        casting_foundry: "Casting & Foundry Operations",
+        plastics_molding: "Plastics Injection / Blow Molding",
+        oil_gas: "Oil & Gas Processing",
+        rubber_composites: "Rubber & Composites Manufacturing",
+        general_manufacturing: "General Manufacturing",
+      };
+
+      const industryLabel = industryLabels[industry as string] ?? String(industry ?? "General Manufacturing");
+
+      const prompt = `You are a Senior Process FMEA Engineer with deep expertise in ${industryLabel}, fully trained in the AIAG & VDA FMEA Handbook (2019). Your task is to identify potential failure modes for a specific process step.
+
+PROCESS STEP: ${processStep}
+PROCESS FUNCTION / DESCRIPTION: ${processFunction || "(not provided)"}
+STEP TYPE: ${operationType}
+INDUSTRY: ${industryLabel}
+
+Generate 6–8 realistic, industry-specific potential failure modes for this process step. Every failure mode must reflect genuine failure scenarios encountered in ${industryLabel} operations — use correct technical terminology, equipment names, material names, and failure mechanisms for this industry.
+
+Return ONLY a valid JSON object — no markdown fences, no explanation text, just the JSON:
+{
+  "suggestions": [
+    {
+      "failureMode": "Concise failure mode (what specifically goes wrong at this step)",
+      "failureEffect": "Effect on customer, next operation, or end product",
+      "severity": 7,
+      "classification": "CC or KPC or SC or empty string",
+      "failureCause": "Root mechanism — specify material, method, machine, measurement, environment or people cause",
+      "occurrence": 4,
+      "preventionControl": "Existing or recommended prevention control for this industry",
+      "detectionControl": "Existing or recommended detection control for this industry",
+      "detection": 5,
+      "recommendedAction": "Specific, actionable AIAG-style recommended action"
+    }
+  ]
+}
+
+AIAG & VDA 2019 SCORING RULES:
+- Severity 9–10: safety hazard or regulatory non-compliance without warning; 7–8: product unusable / major function loss; 5–6: reduced performance, customer dissatisfied; 3–4: minor annoyance, workaround possible; 1–2: no noticeable customer effect
+- Occurrence 8–10: common failure (>1 per 100 parts); 5–7: occasional (1 per 100–1,000); 2–4: rare (1 per 1,000–10,000); 1: very unlikely (<1 per 10,000)
+- Detection 9–10: no known detection method / defect not detectable; 6–8: unlikely to detect before reaching customer; 3–5: moderate chance of detection; 1–2: near-certain detection before shipment
+- Classification: CC = Critical Characteristic (safety/regulatory, severity ≥ 9); KPC = Key Product Characteristic (key functional, severity 7–8 or customer-designated); SC = Significant Characteristic; blank = standard
+
+Use ${industryLabel}-specific language throughout. Industry-specific examples:
+- Chemical processing: concentration out-of-spec, contamination, inhibitor depletion, pH drift, batch cross-contamination, seal failure, wrong reagent addition
+- Automotive: dimensional non-conformance, fastener torque error, missing component, incorrect station sequence, weld spatter contamination
+- Medical device: sterility breach, labeling error, incorrect assembly, biocompatibility failure, traceability gap`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 3500,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const raw = (response.content[0] as any).text ?? "";
+      const clean = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      let parsed: any;
+      try { parsed = JSON.parse(clean); }
+      catch { return res.status(500).json({ message: "AI returned invalid JSON — please retry", raw }); }
+      res.json(parsed);
+    } catch (error: any) {
+      console.error("PFMEA wizard error:", error);
+      res.status(500).json({ message: "Failed to generate PFMEA suggestions" });
+    }
+  });
+
   app.get("/api/apqp/:projectId/control-plan-rows", async (req: Request, res: Response) => {
     if (!req.session?.userId) return res.status(401).json({ message: "Unauthorized" });
     try { res.json(await storage.getApqpControlPlanRows(Number(req.params.projectId), req.session.userId)); }

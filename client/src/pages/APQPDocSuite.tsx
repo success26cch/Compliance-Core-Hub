@@ -11,8 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, Loader2, AlertTriangle, CheckCircle, ChevronDown, ChevronRight,
   ArrowDown, Cog, Eye, Truck, Clock, Archive, ClipboardList, Layers, FileText,
-  Download, RefreshCw, X, Check, GitFork, Printer,
+  Download, RefreshCw, X, Check, GitFork, Printer, Sparkles, Wand2,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type {
   ApqpProcessStep, ApqpPfmeaRow, ApqpControlPlanRow,
   ApqpInspectionSheet, ApqpInspectionRow,
@@ -551,6 +555,104 @@ function PfmeaTab({ projectId }: { projectId: number }) {
     onSuccess: () => { inv(); toast({ title: "Row deleted" }); },
   });
 
+  // ── PFMEA Wizard (AI) ────────────────────────────────────────────────────────
+  type WizardSuggestion = {
+    failureMode: string; failureEffect: string; severity: number; classification: string;
+    failureCause: string; occurrence: number; preventionControl: string;
+    detectionControl: string; detection: number; recommendedAction: string;
+  };
+  const WIZARD_INDUSTRIES = [
+    { value: "chemical_processing", label: "Chemical Processing & Blending" },
+    { value: "automotive_assembly", label: "Automotive Assembly" },
+    { value: "medical_device", label: "Medical Device (ISO 13485)" },
+    { value: "food_beverage", label: "Food & Beverage (HACCP)" },
+    { value: "electronics_pcb", label: "Electronics / PCB Assembly" },
+    { value: "pharmaceutical", label: "Pharmaceutical (cGMP)" },
+    { value: "aerospace", label: "Aerospace & Defense (AS9100)" },
+    { value: "metal_stamping", label: "Metal Stamping & Forming" },
+    { value: "casting_foundry", label: "Casting & Foundry" },
+    { value: "plastics_molding", label: "Plastics Injection Molding" },
+    { value: "oil_gas", label: "Oil & Gas Processing" },
+    { value: "rubber_composites", label: "Rubber & Composites" },
+    { value: "general_manufacturing", label: "General Manufacturing" },
+  ];
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState<1|2|3>(1);
+  const [wizardIndustry, setWizardIndustry] = useState("chemical_processing");
+  const [wizardStepSel, setWizardStepSel] = useState("__manual__");
+  const [wizardManualStep, setWizardManualStep] = useState("");
+  const [wizardFunction, setWizardFunction] = useState("");
+  const [wizardSuggestions, setWizardSuggestions] = useState<WizardSuggestion[]>([]);
+  const [wizardSelected, setWizardSelected] = useState<Set<number>>(new Set());
+  const [wizardLoading, setWizardLoading] = useState(false);
+  const [wizardAdding, setWizardAdding] = useState(false);
+  const [wizardAdded, setWizardAdded] = useState(0);
+
+  const resetWizard = () => {
+    setWizardStep(1); setWizardSuggestions([]); setWizardSelected(new Set());
+    setWizardAdded(0); setWizardLoading(false); setWizardAdding(false);
+  };
+  const openWizard = () => { resetWizard(); setWizardOpen(true); };
+
+  const generateWizardSuggestions = async () => {
+    setWizardLoading(true);
+    try {
+      const selStep = steps.find(s => s.id === Number(wizardStepSel));
+      const resp = await apiRequest("POST", `/api/apqp/${projectId}/pfmea-wizard`, {
+        processStep: selStep?.operationName ?? wizardManualStep,
+        processFunction: wizardFunction || selStep?.description || "",
+        operationType: selStep?.operationType ?? "operation",
+        industry: wizardIndustry,
+      });
+      const data = await resp.json();
+      const suggs: WizardSuggestion[] = data.suggestions ?? [];
+      setWizardSuggestions(suggs);
+      setWizardSelected(new Set(suggs.map((_, i) => i)));
+      setWizardStep(2);
+    } catch {
+      toast({ title: "Failed to generate suggestions", variant: "destructive" });
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
+  const addWizardRows = async () => {
+    setWizardAdding(true);
+    const selStep = steps.find(s => s.id === Number(wizardStepSel));
+    let count = 0;
+    for (const idx of Array.from(wizardSelected).sort()) {
+      const s = wizardSuggestions[idx];
+      await apiRequest("POST", `/api/apqp/${projectId}/pfmea-rows`, {
+        processStepId: selStep?.id,
+        processStep: selStep?.operationName ?? wizardManualStep,
+        processFunction: wizardFunction || selStep?.description || "",
+        failureMode: s.failureMode, failureEffect: s.failureEffect,
+        severity: s.severity, classification: s.classification || "",
+        failureCause: s.failureCause, occurrence: s.occurrence,
+        preventionControl: s.preventionControl, detectionControl: s.detectionControl,
+        detection: s.detection, rpn: s.severity * s.occurrence * s.detection,
+        recommendedAction: s.recommendedAction, rowOrder: rows.length + count,
+      });
+      count++;
+    }
+    inv(); setWizardAdded(count); setWizardStep(3); setWizardAdding(false);
+  };
+
+  const wizardRpnBadge = (rpn: number) =>
+    rpn >= 200 ? "bg-red-100 text-red-700 border-red-300" :
+    rpn >= 120 ? "bg-orange-100 text-orange-700 border-orange-300" :
+    rpn >= 60  ? "bg-yellow-100 text-yellow-700 border-yellow-300" :
+                 "bg-green-100 text-green-700 border-green-300";
+  const sevBadge = (n: number) =>
+    n >= 9 ? "bg-red-100 text-red-700" : n >= 7 ? "bg-orange-100 text-orange-700" :
+    n >= 5 ? "bg-yellow-100 text-yellow-700" : "bg-slate-100 text-slate-600";
+  const occBadge = (n: number) =>
+    n >= 7 ? "bg-red-100 text-red-700" : n >= 5 ? "bg-orange-100 text-orange-700" :
+    n >= 3 ? "bg-yellow-100 text-yellow-700" : "bg-slate-100 text-slate-600";
+  const detBadge = (n: number) =>
+    n >= 8 ? "bg-red-100 text-red-700" : n >= 6 ? "bg-orange-100 text-orange-700" :
+    n >= 4 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700";
+
   const update = (id: number, field: keyof ApqpPfmeaRow, value: any) => {
     setEdits(e => ({ ...e, [id]: { ...e[id], [field]: value } }));
   };
@@ -783,6 +885,9 @@ ${rows.map(row => {
               <Printer className="w-3 h-3" />Print AIAG Format
             </Button>
           )}
+          <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950" onClick={openWizard} data-testid="btn-pfmea-wizard">
+            <Sparkles className="w-3 h-3" />AI Failure Mode Wizard
+          </Button>
           <Button size="sm" className="gap-1.5 h-8 text-xs bg-accent hover:bg-accent/90 text-white" onClick={() => createMut.mutate()} disabled={createMut.isPending} data-testid="btn-add-pfmea-row">
             {createMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}Add Row
           </Button>
@@ -953,6 +1058,177 @@ ${rows.map(row => {
           </table>
         </div>
       )}
+
+      {/* ── AI Failure Mode Wizard Dialog ─────────────────────────────────────── */}
+      <Dialog open={wizardOpen} onOpenChange={(o) => { if (!o) setWizardOpen(false); }}>
+        <DialogContent className="max-w-2xl w-full p-0 gap-0 overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 text-white">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-4 h-4" />
+              <span className="text-xs font-semibold tracking-wide uppercase opacity-80">AIAG &amp; VDA 2019 · AI-Guided</span>
+            </div>
+            <DialogTitle className="text-base font-bold text-white m-0">PFMEA Failure Mode Wizard</DialogTitle>
+            <DialogDescription className="text-violet-100 text-xs mt-0.5 m-0">
+              Corey (Senior PFMEA Engineer) identifies failure modes, effects, causes &amp; controls for your process step.
+            </DialogDescription>
+            {/* Step indicator */}
+            <div className="flex items-center gap-1.5 mt-3">
+              {[1,2,3].map(n => (
+                <div key={n} className="flex items-center gap-1.5">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all ${wizardStep === n ? "bg-white text-violet-700 border-white" : wizardStep > n ? "bg-violet-400 border-violet-400 text-white" : "border-violet-400 text-violet-300"}`}>{wizardStep > n ? <Check className="w-3 h-3" /> : n}</div>
+                  <span className={`text-[10px] ${wizardStep === n ? "text-white font-semibold" : "text-violet-300"}`}>{n === 1 ? "Configure" : n === 2 ? "Review Suggestions" : "Done"}</span>
+                  {n < 3 && <div className="w-6 h-px bg-violet-400 mx-0.5" />}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 1 — Configure */}
+          {wizardStep === 1 && (
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label className="text-xs font-semibold mb-1 block">Industry / Sector</Label>
+                  <Select value={wizardIndustry} onValueChange={setWizardIndustry}>
+                    <SelectTrigger className="h-9 text-sm" data-testid="wizard-industry-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WIZARD_INDUSTRIES.map(i => (
+                        <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground mt-1">Corey tailors failure modes and controls to your industry's equipment, materials, and regulations.</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs font-semibold mb-1 block">Process Step</Label>
+                  <Select value={wizardStepSel} onValueChange={v => { setWizardStepSel(v); if (v !== "__manual__") { const s = steps.find(st => st.id === Number(v)); setWizardFunction(s?.description ?? ""); } }}>
+                    <SelectTrigger className="h-9 text-sm" data-testid="wizard-step-select">
+                      <SelectValue placeholder="Select a process step or enter manually…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__manual__">— Enter step name manually —</SelectItem>
+                      {steps.map(s => (
+                        <SelectItem key={s.id} value={String(s.id)}>{s.operationNumber ? `${s.operationNumber} · ` : ""}{s.operationName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {wizardStepSel === "__manual__" && (
+                  <div className="col-span-2">
+                    <Label className="text-xs font-semibold mb-1 block">Step Name <span className="text-red-500">*</span></Label>
+                    <Input value={wizardManualStep} onChange={e => setWizardManualStep(e.target.value)} placeholder="e.g. Mixing / Blending, Heat Treatment, Final Inspection…" className="h-9 text-sm" data-testid="wizard-manual-step" />
+                  </div>
+                )}
+                <div className="col-span-2">
+                  <Label className="text-xs font-semibold mb-1 block">Process Function / Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Textarea value={wizardFunction} onChange={e => setWizardFunction(e.target.value)} placeholder="Describe what this step does — inputs, outputs, equipment, key parameters, product characteristics…" rows={3} className="text-sm resize-none" data-testid="wizard-function-textarea" />
+                  <p className="text-[11px] text-muted-foreground mt-1">More detail → more accurate and specific failure mode suggestions.</p>
+                </div>
+              </div>
+              <DialogFooter className="pt-2 border-t border-border">
+                <Button variant="outline" size="sm" className="h-9" onClick={() => setWizardOpen(false)} data-testid="wizard-cancel-btn">Cancel</Button>
+                <Button size="sm" className="h-9 gap-2 bg-violet-600 hover:bg-violet-700 text-white" onClick={generateWizardSuggestions}
+                  disabled={wizardLoading || (wizardStepSel === "__manual__" && !wizardManualStep.trim())} data-testid="wizard-generate-btn">
+                  {wizardLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analyzing process step…</> : <><Sparkles className="w-3.5 h-3.5" />Generate Failure Modes</>}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {/* Step 2 — Review Suggestions */}
+          {wizardStep === 2 && (
+            <div className="flex flex-col" style={{ maxHeight: "70vh" }}>
+              <div className="flex items-center justify-between px-6 pt-4 pb-3 border-b border-border shrink-0">
+                <div>
+                  <p className="text-sm font-semibold">{wizardSuggestions.length} failure modes identified</p>
+                  <p className="text-xs text-muted-foreground">Select the rows you want to add to your PFMEA. All are pre-selected.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setWizardSelected(new Set(wizardSuggestions.map((_, i) => i)))} data-testid="wizard-select-all">Select All</Button>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setWizardSelected(new Set())} data-testid="wizard-deselect-all">Deselect All</Button>
+                </div>
+              </div>
+              <ScrollArea className="flex-1 px-6 py-3">
+                <div className="space-y-3">
+                  {wizardSuggestions.map((s, idx) => {
+                    const rpn = s.severity * s.occurrence * s.detection;
+                    const sel = wizardSelected.has(idx);
+                    return (
+                      <div key={idx} onClick={() => setWizardSelected(prev => { const n = new Set(prev); if (n.has(idx)) n.delete(idx); else n.add(idx); return n; })}
+                        className={`rounded-xl border-2 p-4 cursor-pointer transition-all select-none ${sel ? "border-violet-400 bg-violet-50 dark:bg-violet-950/30" : "border-border bg-card opacity-60 hover:opacity-80"}`}
+                        data-testid={`wizard-suggestion-${idx}`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-all ${sel ? "bg-violet-600 border-violet-600" : "border-muted-foreground/40"}`}>
+                            {sel && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-start justify-between gap-2 flex-wrap">
+                              <p className="text-sm font-semibold text-foreground leading-snug">{s.failureMode}</p>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {s.classification && (
+                                  <Badge className="text-[10px] px-1.5 py-0 h-5 bg-purple-100 text-purple-700 border-purple-300">{s.classification}</Badge>
+                                )}
+                                <Badge className={`text-[10px] px-1.5 py-0 h-5 border ${wizardRpnBadge(rpn)}`}>RPN {rpn}</Badge>
+                              </div>
+                            </div>
+                            <div className="flex gap-3 flex-wrap text-[11px]">
+                              <span className={`px-1.5 py-0.5 rounded font-medium ${sevBadge(s.severity)}`}>S:{s.severity}</span>
+                              <span className={`px-1.5 py-0.5 rounded font-medium ${occBadge(s.occurrence)}`}>O:{s.occurrence}</span>
+                              <span className={`px-1.5 py-0.5 rounded font-medium ${detBadge(s.detection)}`}>D:{s.detection}</span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-1 text-xs">
+                              <div><span className="font-medium text-muted-foreground">Effect: </span><span>{s.failureEffect}</span></div>
+                              <div><span className="font-medium text-muted-foreground">Cause: </span><span>{s.failureCause}</span></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
+                              <div><span className="font-medium text-muted-foreground block text-[10px] uppercase tracking-wide mb-0.5">Prevention Control</span>{s.preventionControl}</div>
+                              <div><span className="font-medium text-muted-foreground block text-[10px] uppercase tracking-wide mb-0.5">Detection Control</span>{s.detectionControl}</div>
+                            </div>
+                            <div className="text-xs pt-1 border-t border-border/50">
+                              <span className="font-medium text-muted-foreground block text-[10px] uppercase tracking-wide mb-0.5">Recommended Action</span>{s.recommendedAction}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              <DialogFooter className="px-6 py-3 border-t border-border shrink-0">
+                <Button variant="outline" size="sm" className="h-9" onClick={() => setWizardStep(1)} data-testid="wizard-back-btn">Back</Button>
+                <Button size="sm" className="h-9 gap-2 bg-violet-600 hover:bg-violet-700 text-white" onClick={addWizardRows}
+                  disabled={wizardAdding || wizardSelected.size === 0} data-testid="wizard-add-rows-btn">
+                  {wizardAdding ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Adding rows…</> : <><Plus className="w-3.5 h-3.5" />Add {wizardSelected.size} Row{wizardSelected.size !== 1 ? "s" : ""} to PFMEA</>}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {/* Step 3 — Done */}
+          {wizardStep === 3 && (
+            <div className="p-8 text-center space-y-4">
+              <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                <CheckCircle className="w-7 h-7 text-green-600" />
+              </div>
+              <div>
+                <p className="text-base font-bold">{wizardAdded} PFMEA row{wizardAdded !== 1 ? "s" : ""} added</p>
+                <p className="text-sm text-muted-foreground mt-1">The selected failure modes have been added to your PFMEA. Review S/O/D ratings and update controls as needed.</p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <Button variant="outline" size="sm" className="h-9 gap-2" onClick={() => { resetWizard(); }} data-testid="wizard-generate-more-btn">
+                  <Sparkles className="w-3.5 h-3.5" />Generate More
+                </Button>
+                <Button size="sm" className="h-9 gap-2 bg-violet-600 hover:bg-violet-700 text-white" onClick={() => setWizardOpen(false)} data-testid="wizard-close-btn">
+                  <Check className="w-3.5 h-3.5" />Done
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
