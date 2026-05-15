@@ -585,20 +585,10 @@ function PfmeaTab({ projectId }: { projectId: number }) {
       ],
     },
     {
-      group: "Other Industries",
+      group: "Other",
       industries: [
-        { value: "casting_foundry",      label: "Casting & Foundry (Die Cast, Sand Cast)" },
-        { value: "plastics_molding",     label: "Plastics Injection / Blow Molding" },
-        { value: "rubber_composites",    label: "Rubber & Composites" },
-        { value: "chemical_processing",  label: "Chemical Processing & Blending" },
-        { value: "medical_device",       label: "Medical Device (ISO 13485)" },
-        { value: "food_beverage",        label: "Food & Beverage (HACCP / SQF)" },
-        { value: "electronics_pcb",      label: "Electronics / PCB Assembly (SMT, Wave Solder)" },
-        { value: "pharmaceutical",       label: "Pharmaceutical (cGMP / 21 CFR 211)" },
-        { value: "aerospace",            label: "Aerospace & Defense (AS9100 / NADCAP)" },
-        { value: "oil_gas",              label: "Oil & Gas Processing" },
-        { value: "metal_stamping",       label: "Metal Stamping & Forming (General)" },
-        { value: "general_manufacturing",label: "General Manufacturing" },
+        { value: "casting_foundry", label: "Casting (Die Cast, Sand Cast, Investment Cast)" },
+        { value: "plastics_molding", label: "Plastics (Injection / Blow Molding)" },
       ],
     },
   ];
