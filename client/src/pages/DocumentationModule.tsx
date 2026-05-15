@@ -4070,6 +4070,8 @@ function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[
   const [filterDoc, setFilterDoc] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [viewingEntry, setViewingEntry] = useState<ChangeLogEntry | null>(null);
+  const [dcrTab, setDcrTab] = useState<"dcr" | "document">("dcr");
 
   const queryUrl = isoProjectId
     ? `/api/change-control-log?isoProjectId=${isoProjectId}`
@@ -4079,6 +4081,101 @@ function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[
     queryKey: ["/api/change-control-log", isoProjectId],
     queryFn: () => fetch(queryUrl, { credentials: "include" }).then(r => r.json()),
   });
+
+  const { data: changeRequests } = useQuery<any[]>({
+    queryKey: ["/api/doc-change-requests"],
+  });
+
+  const viewingDcr = viewingEntry?.change_type === "formal_dcr"
+    ? (changeRequests ?? []).find(r => r.id === viewingEntry.id) ?? null
+    : null;
+
+  const viewingDoc = viewingEntry
+    ? documents.find(d => d.id === viewingEntry.doc_id) ?? null
+    : null;
+
+  const printDcr = () => {
+    if (!viewingEntry) return;
+    const dcr = viewingDcr;
+    const doc = viewingDoc;
+    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const changeDate = viewingEntry.date ? format(new Date(viewingEntry.date), "MMMM d, yyyy") : "—";
+    const deptList = Array.isArray(dcr?.affectedDepartments) && dcr.affectedDepartments.length
+      ? dcr.affectedDepartments.join(", ")
+      : "—";
+    const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><title>Document Change Request — ${viewingEntry.doc_title}</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:10pt;color:#1a1a1a;background:#fff}
+  .page{max-width:8.5in;margin:0 auto;padding:0.6in 0.75in}
+  .header{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:12px;border-bottom:3px solid #ea580c;margin-bottom:20px}
+  .header-title{font-size:18pt;font-weight:800;color:#ea580c}
+  .header-sub{font-size:9pt;color:#666;margin-top:3px}
+  .header-right{text-align:right;font-size:8pt;color:#666}
+  .section{margin-bottom:20px}
+  .section-label{font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:6px;border-bottom:1px solid #e5e7eb;padding-bottom:4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-bottom:14px}
+  .field label{font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af}
+  .field p{font-size:9.5pt;color:#111;margin-top:2px;font-weight:500}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:8pt;font-weight:700;background:#fff3e0;color:#c2410c;border:1px solid #fed7aa}
+  .badge.approved{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
+  .content-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:8.5pt;line-height:1.55;white-space:pre-wrap;word-break:break-word;max-height:4in;overflow:hidden}
+  .rev-row{display:flex;align-items:center;gap:8px;font-size:10pt;font-weight:700}
+  .rev-old{color:#6b7280;font-family:monospace}
+  .rev-arrow{color:#9ca3af}
+  .rev-new{color:#059669;font-family:monospace}
+  .footer{margin-top:24px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:7pt;color:#9ca3af;display:flex;justify-content:space-between}
+  @media print{body{font-size:9pt}.page{padding:0.4in 0.5in}@page{margin:0.4in;size:letter}}
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="header-title">Document Change Request</div>
+      <div class="header-sub">${viewingEntry.doc_title}</div>
+    </div>
+    <div class="header-right">
+      <div style="font-weight:700">DCR #${viewingEntry.id ?? "—"}</div>
+      <div>${changeDate}</div>
+      <div>Generated ${dateStr}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Change Summary</div>
+    <div class="grid">
+      <div class="field"><label>Requested By</label><p>${viewingEntry.changed_by ?? dcr?.requestedBy ?? "—"}</p></div>
+      <div class="field"><label>Approved By</label><p>${viewingEntry.approved_by ?? dcr?.reviewedBy ?? "—"}</p></div>
+      <div class="field"><label>Designated Reviewer</label><p>${dcr?.designatedReviewer ?? "—"}</p></div>
+      <div class="field"><label>Reviewer Email</label><p>${dcr?.designatedReviewerEmail ?? "—"}</p></div>
+      <div class="field"><label>Proposed Effective Date</label><p>${dcr?.proposedEffectiveDate ? format(new Date(dcr.proposedEffectiveDate), "MMMM d, yyyy") : "—"}</p></div>
+      <div class="field"><label>Status</label><p><span class="badge ${dcr?.status === "approved" ? "approved" : ""}">${(dcr?.status ?? "Approved").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span></p></div>
+    </div>
+    <div class="field" style="margin-bottom:8px"><label>Affected Departments</label><p>${deptList}</p></div>
+    <div class="field" style="margin-bottom:8px"><label>Revision Change</label>
+      <div class="rev-row" style="margin-top:4px">
+        <span class="rev-old">Rev. ${viewingEntry.rev_from ?? "—"}</span>
+        <span class="rev-arrow">→</span>
+        <span class="rev-new">Rev. ${viewingEntry.rev_to ?? "—"}</span>
+      </div>
+    </div>
+  </div>
+
+  ${dcr?.changeDescription ? `<div class="section"><div class="section-label">Change Description</div><div class="content-box">${dcr.changeDescription}</div></div>` : ""}
+  ${(viewingEntry.change_reason ?? dcr?.reason) ? `<div class="section"><div class="section-label">Reason for Change</div><div class="content-box">${viewingEntry.change_reason ?? dcr?.reason ?? ""}</div></div>` : ""}
+  ${dcr?.reviewerComments ? `<div class="section"><div class="section-label">Reviewer Comments</div><div class="content-box">${dcr.reviewerComments}</div></div>` : ""}
+  ${doc?.content ? `<div class="section"><div class="section-label">Current Document Content (Rev. ${doc.version})</div><div class="content-box">${doc.content.slice(0, 3000)}${doc.content.length > 3000 ? "\n\n[Content truncated — see full document in the system]" : ""}</div></div>` : ""}
+
+  <div class="footer">
+    <span>Document Change Request — ${viewingEntry.doc_title}</span>
+    <span>ISO 7.5.3 Change Control · Generated ${dateStr}</span>
+  </div>
+</div>
+<script>window.onload=()=>window.print()</script>
+</body></html>`;
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (win) { win.document.write(html); win.document.close(); }
+  };
 
   const filtered = (logEntries ?? []).filter(entry => {
     const matchSearch = !search ||
@@ -4181,7 +4278,7 @@ function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[
               </thead>
               <tbody>
                 {filtered.map((entry, i) => (
-                  <tr key={String(entry.id)} className={`border-t border-border/40 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 transition-colors ${i % 2 === 0 ? "bg-white dark:bg-card" : "bg-slate-50 dark:bg-slate-900/30"}`} data-testid={`row-changelog-${i}`}>
+                  <tr key={String(entry.id)} className={`border-t border-border/40 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 transition-colors cursor-pointer ${i % 2 === 0 ? "bg-white dark:bg-card" : "bg-slate-50 dark:bg-slate-900/30"}`} onClick={() => { setViewingEntry(entry); setDcrTab("dcr"); }} data-testid={`row-changelog-${i}`}>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                       {entry.date ? format(new Date(entry.date), "MMM d, yyyy") : "—"}
                     </td>
@@ -4210,7 +4307,13 @@ function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[
                     </td>
                     <td className="px-3 py-2.5">
                       {entry.change_type === "formal_dcr" ? (
-                        <Badge className="bg-orange-100 text-orange-800 border border-orange-200 text-[10px] whitespace-nowrap">Formal DCR</Badge>
+                        <button
+                          onClick={e => { e.stopPropagation(); setViewingEntry(entry); setDcrTab("dcr"); }}
+                          className="inline-flex items-center gap-1 bg-orange-100 text-orange-800 border border-orange-200 text-[10px] font-bold rounded-full px-2 py-0.5 whitespace-nowrap hover:bg-orange-200 transition-colors"
+                          data-testid={`badge-dcr-${entry.id}`}
+                        >
+                          <FileText className="w-2.5 h-2.5" /> Formal DCR
+                        </button>
                       ) : (
                         <Badge className="bg-violet-100 text-violet-800 border border-violet-200 text-[10px] whitespace-nowrap">AI-Assisted</Badge>
                       )}
@@ -4225,6 +4328,169 @@ function ChangeControlLog({ documents, isoProjectId }: { documents: IsoDocument[
             <p className="text-[11px] text-muted-foreground">ISO 7.5.3 Change Control Log</p>
           </div>
         </div>
+      )}
+
+      {/* ── DCR / Entry Viewer Modal ─────────────────────────────────────── */}
+      {viewingEntry && (
+        <Dialog open onOpenChange={() => setViewingEntry(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b bg-orange-50 dark:bg-orange-950/20 shrink-0">
+              <div className="flex-1 min-w-0 pr-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <GitMerge className="w-4 h-4 text-orange-600 shrink-0" />
+                  <h2 className="text-base font-black text-primary leading-tight truncate">{viewingEntry.doc_title}</h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                  {viewingEntry.change_type === "formal_dcr" ? (
+                    <span className="font-bold text-orange-700 bg-orange-100 border border-orange-200 px-2 py-0.5 rounded-full">DCR #{viewingEntry.id}</span>
+                  ) : (
+                    <span className="font-bold text-violet-700 bg-violet-100 border border-violet-200 px-2 py-0.5 rounded-full">AI-Assisted Change</span>
+                  )}
+                  {viewingEntry.rev_from && viewingEntry.rev_to && (
+                    <span className="flex items-center gap-1 font-mono text-muted-foreground">
+                      <span>Rev. {viewingEntry.rev_from}</span>
+                      <ChevronRight className="w-3 h-3" />
+                      <span className="font-bold text-emerald-700">Rev. {viewingEntry.rev_to}</span>
+                    </span>
+                  )}
+                  {viewingEntry.date && (
+                    <span className="text-muted-foreground">{format(new Date(viewingEntry.date), "MMMM d, yyyy")}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {viewingEntry.change_type === "formal_dcr" && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50" onClick={printDcr} data-testid="button-print-dcr">
+                    <Printer className="w-3 h-3" /> Print DCR
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Tab switcher */}
+            <div className="flex border-b bg-white dark:bg-card shrink-0">
+              <button
+                className={`px-5 py-2.5 text-xs font-semibold border-b-2 transition-colors ${dcrTab === "dcr" ? "border-orange-500 text-orange-700" : "border-transparent text-muted-foreground hover:text-primary"}`}
+                onClick={() => setDcrTab("dcr")}
+                data-testid="tab-dcr-details"
+              >
+                Change Request Details
+              </button>
+              <button
+                className={`px-5 py-2.5 text-xs font-semibold border-b-2 transition-colors ${dcrTab === "document" ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-primary"}`}
+                onClick={() => setDcrTab("document")}
+                data-testid="tab-dcr-document"
+              >
+                Current Document
+                {viewingDoc?.version && <span className="ml-1.5 text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">Rev. {viewingDoc.version}</span>}
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto">
+              {dcrTab === "dcr" && (
+                <div className="p-5 space-y-5">
+                  {/* Metadata grid */}
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Requested By</p>
+                      <p className="text-sm font-semibold text-primary">{viewingEntry.changed_by ?? viewingDcr?.requestedBy ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Approved By</p>
+                      <p className="text-sm font-semibold text-primary">{viewingEntry.approved_by ?? viewingDcr?.reviewedBy ?? "—"}</p>
+                    </div>
+                    {viewingDcr?.designatedReviewer && (
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Designated Reviewer</p>
+                        <p className="text-sm font-semibold text-primary">{viewingDcr.designatedReviewer}</p>
+                      </div>
+                    )}
+                    {viewingDcr?.proposedEffectiveDate && (
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Proposed Effective Date</p>
+                        <p className="text-sm font-semibold text-primary">{format(new Date(viewingDcr.proposedEffectiveDate), "MMMM d, yyyy")}</p>
+                      </div>
+                    )}
+                    {viewingDcr?.affectedDepartments?.length > 0 && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Affected Departments</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {viewingDcr.affectedDepartments.map((d: string) => (
+                            <span key={d} className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">{d}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Change description */}
+                  {viewingDcr?.changeDescription && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 pb-1 border-b border-border/50">Change Description</p>
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{viewingDcr.changeDescription}</p>
+                    </div>
+                  )}
+
+                  {/* Reason */}
+                  {(viewingEntry.change_reason ?? viewingDcr?.reason) && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 pb-1 border-b border-border/50">Reason for Change</p>
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{viewingEntry.change_reason ?? viewingDcr?.reason}</p>
+                    </div>
+                  )}
+
+                  {/* Reviewer comments */}
+                  {viewingDcr?.reviewerComments && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-1.5">Reviewer Comments</p>
+                      <p className="text-sm text-emerald-900 dark:text-emerald-200 leading-relaxed whitespace-pre-wrap">{viewingDcr.reviewerComments}</p>
+                    </div>
+                  )}
+
+                  {/* Fallback if no DCR found */}
+                  {viewingEntry.change_type === "formal_dcr" && !viewingDcr && (
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
+                      <GitMerge className="w-8 h-8 mb-2 opacity-30" />
+                      <p>Full DCR details not available for this archived entry.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {dcrTab === "document" && (
+                <div className="p-5">
+                  {viewingDoc ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText className="w-4 h-4 text-accent" />
+                        <span className="text-sm font-bold text-primary">{viewingDoc.title}</span>
+                        <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">Rev. {viewingDoc.version}</span>
+                        {viewingDoc.status === "approved" && <Badge className="bg-green-100 text-green-800 border border-green-200 text-[10px]">Approved</Badge>}
+                      </div>
+                      {viewingDoc.content?.trim() ? (
+                        <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed bg-muted/30 rounded-xl p-4 border border-border/50 max-h-[50vh] overflow-y-auto">
+                          {viewingDoc.content}
+                        </pre>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-muted-foreground text-sm">
+                          <FileText className="w-8 h-8 mb-2 opacity-30" />
+                          <p>This document has no content yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-muted-foreground text-sm">
+                      <FileText className="w-8 h-8 mb-2 opacity-30" />
+                      <p>Document not found.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
