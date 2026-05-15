@@ -77,11 +77,71 @@ function StepTypeIcon({ type }: { type: string }) {
   return <Icon className={`w-4 h-4 ${t.color}`} />;
 }
 
+// AIAG Process Flow symbol rendered as inline SVG (screen version, 40×40 viewBox)
+function AiagFlowSymbol({ type, size = 44 }: { type: string; size?: number }) {
+  const v = 60; // viewBox side
+  const h = v / 2; // midpoint
+  switch (type) {
+    case "operation":
+      // Rectangle — manufacturing operation
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${v} ${v}`} fill="none">
+          <rect x="6" y="10" width="48" height="40" rx="3" stroke="#2563eb" strokeWidth="2.5" fill="#eff6ff" />
+        </svg>
+      );
+    case "inspection":
+      // Diamond — quality inspection
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${v} ${v}`} fill="none">
+          <polygon points={`${h},6 ${v-4},${h} ${h},${v-6} 4,${h}`} stroke="#d97706" strokeWidth="2.5" fill="#fffbeb" />
+        </svg>
+      );
+    case "transport":
+      // Arrow / circle with directional arrow — transport/move
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${v} ${v}`} fill="none">
+          <circle cx={h} cy={h} r="22" stroke="#64748b" strokeWidth="2.5" fill="#f8fafc" />
+          <line x1={h} y1="14" x2={h} y2="46" stroke="#64748b" strokeWidth="2.5" />
+          <polyline points={`${h-8},37 ${h},47 ${h+8},37`} stroke="#64748b" strokeWidth="2.5" fill="none" />
+        </svg>
+      );
+    case "delay":
+      // D-shape — delay/queue (open on left side)
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${v} ${v}`} fill="none">
+          <path d={`M 14,10 L 34,10 A 22,22 0 0,1 34,50 L 14,50 Z`} stroke="#ea580c" strokeWidth="2.5" fill="#fff7ed" />
+        </svg>
+      );
+    case "storage":
+      // Inverted triangle — storage
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${v} ${v}`} fill="none">
+          <polygon points={`4,8 ${v-4},8 ${h},${v-6}`} stroke="#7c3aed" strokeWidth="2.5" fill="#f5f3ff" />
+        </svg>
+      );
+    default:
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${v} ${v}`} fill="none">
+          <rect x="6" y="10" width="48" height="40" rx="3" stroke="#2563eb" strokeWidth="2.5" fill="#eff6ff" />
+        </svg>
+      );
+  }
+}
+
 function ProcessFlowTab({ projectId }: { projectId: number }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Partial<ApqpProcessStep>>({});
+  const [pfdHdrOpen, setPfdHdrOpen] = useState(false);
+  const [pfdHdr, setPfdHdr] = useState({
+    partName: "", partNumber: "", partRev: "", supplierPlant: "",
+    preparedBy: "", coreTeam: "",
+    dateOrig: "", dateRev: "",
+    custEngApproval: "", custEngApprovalDate: "",
+    custQualApproval: "", custQualApprovalDate: "",
+    supplierApproval: "", supplierApprovalDate: "",
+  });
 
   const { data: steps = [], isLoading } = useQuery<ApqpProcessStep[]>({
     queryKey: ["/api/apqp", projectId, "process-steps"],
@@ -125,18 +185,203 @@ function ProcessFlowTab({ projectId }: { projectId: number }) {
 
   const startEdit = (s: ApqpProcessStep) => { setEditingId(s.id); setDraft({ ...s }); };
 
+  // ── AIAG PFD Print ──────────────────────────────────────────────────────────
+  // Returns SVG markup string for each AIAG symbol type (print version)
+  const pfdSymbolSvg = (type: string, w = 70, h = 52): string => {
+    const mx = w / 2;
+    switch (type) {
+      case "operation":
+        return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="${w-8}" height="${h-8}" rx="3" stroke="#000" stroke-width="1.8" fill="#fff"/></svg>`;
+      case "inspection":
+        return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><polygon points="${mx},4 ${w-4},${h/2} ${mx},${h-4} 4,${h/2}" stroke="#000" stroke-width="1.8" fill="#fff"/></svg>`;
+      case "transport":
+        // Circle with downward arrow inside
+        return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><circle cx="${mx}" cy="${h/2}" r="${Math.min(mx,h/2)-4}" stroke="#000" stroke-width="1.8" fill="#fff"/><line x1="${mx}" y1="${h/2-10}" x2="${mx}" y2="${h/2+8}" stroke="#000" stroke-width="1.8"/><polyline points="${mx-7},${h/2+2} ${mx},${h/2+10} ${mx+7},${h/2+2}" stroke="#000" stroke-width="1.8" fill="none"/></svg>`;
+      case "delay":
+        // D-shape (flat left, semicircle right)
+        return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><path d="M 10,4 L ${mx+4},4 A ${h/2-4},${h/2-4} 0 0,1 ${mx+4},${h-4} L 10,${h-4} Z" stroke="#000" stroke-width="1.8" fill="#fff"/></svg>`;
+      case "storage":
+        // Inverted triangle
+        return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><polygon points="4,4 ${w-4},4 ${mx},${h-4}" stroke="#000" stroke-width="1.8" fill="#fff"/></svg>`;
+      default:
+        return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="${w-8}" height="${h-8}" rx="3" stroke="#000" stroke-width="1.8" fill="#fff"/></svg>`;
+    }
+  };
+
+  const printPfd = () => {
+    const w = window.open("", "_blank", "width=1000,height=1100");
+    if (!w) return;
+    const esc = (s: any) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const typeLabel = (t: string) => STEP_TYPES.find(s => s.value === t)?.label ?? t;
+    const arrowSvg = `<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><line x1="10" y1="0" x2="10" y2="14" stroke="#000" stroke-width="1.5"/><polyline points="5,8 10,16 15,8" stroke="#000" stroke-width="1.5" fill="none"/></svg>`;
+
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Process Flow Diagram — ${esc(pfdHdr.partName || pfdHdr.partNumber)}</title>
+<style>
+@page{size:A4 portrait;margin:1.2cm}
+body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#000;margin:0}
+h2{font-size:10pt;text-align:center;font-weight:700;letter-spacing:.5px;margin:0 0 5px}
+/* ── Header table ── */
+.hdr{width:100%;border-collapse:collapse;margin-bottom:8px}
+.hdr td{border:1px solid #000;padding:3px 5px;vertical-align:top;font-size:7.5pt}
+.lbl{font-weight:700;font-size:6.5pt;color:#444;display:block;margin-bottom:1px;text-transform:uppercase;letter-spacing:.2px}
+/* ── Legend ── */
+.legend{display:flex;gap:14px;justify-content:center;margin-bottom:10px;font-size:6.5pt}
+.legend-item{display:flex;align-items:center;gap:4px}
+/* ── Flow container ── */
+.flow{display:flex;flex-direction:column;align-items:center;gap:0}
+.step-row{display:flex;align-items:center;justify-content:center;width:100%;margin:0}
+.step-box{display:flex;align-items:center;gap:8px;width:460px;border:1.5px solid #ccc;border-radius:4px;padding:5px 8px;background:#fff;page-break-inside:avoid}
+.step-box.review{border-color:#d97706;background:#fffbeb}
+.sym-cell{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:70px}
+.step-num{font-size:6pt;font-weight:700;color:#555;text-align:center;font-family:monospace}
+.step-info{flex:1}
+.step-name{font-weight:700;font-size:8.5pt}
+.step-type{font-size:6pt;text-transform:uppercase;letter-spacing:.4px;color:#666;margin-bottom:2px}
+.step-machine{font-size:7pt;color:#444}
+.step-desc{font-size:6.5pt;color:#555;margin-top:2px}
+.sc-badge{display:inline-block;border:1px solid #b45309;background:#fffbeb;color:#92400e;font-size:6pt;font-weight:700;padding:0 3px;border-radius:2px;margin-right:2px}
+.arrow{display:flex;justify-content:center;align-items:center;height:24px}
+</style></head><body>
+<h2>PROCESS FLOW DIAGRAM (PFD)</h2>
+<table class="hdr">
+<tr>
+  <td style="width:30%"><span class="lbl">Part Name / Description:</span>${esc(pfdHdr.partName)}</td>
+  <td style="width:22%"><span class="lbl">Part Number:</span>${esc(pfdHdr.partNumber)}</td>
+  <td style="width:10%"><span class="lbl">Rev.:</span>${esc(pfdHdr.partRev)}</td>
+  <td style="width:38%"><span class="lbl">Supplier / Plant:</span>${esc(pfdHdr.supplierPlant)}</td>
+</tr>
+<tr>
+  <td colspan="2"><span class="lbl">Prepared By:</span>${esc(pfdHdr.preparedBy)}</td>
+  <td><span class="lbl">Date (Orig.):</span>${esc(pfdHdr.dateOrig)}</td>
+  <td><span class="lbl">Date (Rev.):</span>${esc(pfdHdr.dateRev)}</td>
+</tr>
+<tr>
+  <td colspan="4"><span class="lbl">Core Team:</span>${esc(pfdHdr.coreTeam)}</td>
+</tr>
+<tr>
+  <td><span class="lbl">Cust. Eng. Approval / Date <em>(if req'd)</em>:</span>${esc(pfdHdr.custEngApproval)} / ${esc(pfdHdr.custEngApprovalDate)}</td>
+  <td><span class="lbl">Cust. Quality Approval / Date <em>(if req'd)</em>:</span>${esc(pfdHdr.custQualApproval)} / ${esc(pfdHdr.custQualApprovalDate)}</td>
+  <td colspan="2"><span class="lbl">Supplier / Plant Approval / Date:</span>${esc(pfdHdr.supplierApproval)} / ${esc(pfdHdr.supplierApprovalDate)}</td>
+</tr>
+</table>
+<!-- Symbol Legend -->
+<div class="legend">
+  <span style="font-weight:700;margin-right:4px">Symbol Legend:</span>
+  <span class="legend-item">${pfdSymbolSvg("operation",40,30)}&nbsp;Operation</span>
+  <span class="legend-item">${pfdSymbolSvg("inspection",40,30)}&nbsp;Inspection</span>
+  <span class="legend-item">${pfdSymbolSvg("transport",40,30)}&nbsp;Transport</span>
+  <span class="legend-item">${pfdSymbolSvg("delay",40,30)}&nbsp;Delay</span>
+  <span class="legend-item">${pfdSymbolSvg("storage",40,30)}&nbsp;Storage</span>
+</div>
+<!-- Flow Steps -->
+<div class="flow">
+${steps.map((step, idx) => `
+  <div class="step-row">
+    <div class="step-box${step.reviewFlag ? " review" : ""}">
+      <div class="sym-cell">
+        ${pfdSymbolSvg(step.operationType ?? "operation")}
+        <span class="step-num">${esc(step.stepNumber)}</span>
+      </div>
+      <div class="step-info">
+        <div class="step-type">${esc(typeLabel(step.operationType ?? "operation"))}</div>
+        <div class="step-name">${esc(step.operationName)}</div>
+        ${step.machine ? `<div class="step-machine">Machine: ${esc(step.machine)}</div>` : ""}
+        ${step.description ? `<div class="step-desc">${esc(step.description)}</div>` : ""}
+        ${step.specialChars && step.specialChars.length > 0 ? `<div style="margin-top:3px">${step.specialChars.map(sc => `<span class="sc-badge">${esc(sc)}</span>`).join("")}</div>` : ""}
+      </div>
+    </div>
+  </div>
+  ${idx < steps.length - 1 ? `<div class="arrow">${arrowSvg}</div>` : ""}
+`).join("")}
+</div>
+</body></html>`);
+    w.document.close(); w.focus(); setTimeout(() => w.print(), 600);
+  };
+
   if (isLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>;
 
   return (
     <div className="p-4 space-y-4">
+
+      {/* ── PFD Header Block ── */}
+      <div className="rounded-xl border border-border/50 overflow-hidden">
+        <button className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors" onClick={() => setPfdHdrOpen(h => !h)} data-testid="btn-pfd-header-toggle">
+          <div className="flex items-center gap-2">
+            <GitFork className="w-4 h-4 text-accent" />
+            <span className="font-semibold text-sm">PFD Header</span>
+            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">AIAG APQP</Badge>
+            {pfdHdr.partNumber && <span className="text-xs text-muted-foreground">{pfdHdr.partNumber}{pfdHdr.partRev ? ` Rev. ${pfdHdr.partRev}` : ""}</span>}
+          </div>
+          {pfdHdrOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {pfdHdrOpen && (
+          <div className="p-4 border-t border-border/30 space-y-3">
+            <div className="grid grid-cols-4 gap-3">
+              <div className="col-span-2"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Part Name / Description</Label><Input value={pfdHdr.partName} onChange={e => setPfdHdr(h=>({...h,partName:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-partname" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Part Number</Label><Input value={pfdHdr.partNumber} onChange={e => setPfdHdr(h=>({...h,partNumber:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-partnum" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rev.</Label><Input value={pfdHdr.partRev} onChange={e => setPfdHdr(h=>({...h,partRev:e.target.value}))} className="h-7 text-xs mt-0.5" placeholder="A" data-testid="pfd-hdr-partrev" /></div>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <div className="col-span-2"><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier / Plant</Label><Input value={pfdHdr.supplierPlant} onChange={e => setPfdHdr(h=>({...h,supplierPlant:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-supplier" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date (Orig.)</Label><Input type="date" value={pfdHdr.dateOrig} onChange={e => setPfdHdr(h=>({...h,dateOrig:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-dateorig" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date (Rev.)</Label><Input type="date" value={pfdHdr.dateRev} onChange={e => setPfdHdr(h=>({...h,dateRev:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-daterev" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Prepared By</Label><Input value={pfdHdr.preparedBy} onChange={e => setPfdHdr(h=>({...h,preparedBy:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-prepby" /></div>
+              <div><Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Team</Label><Input value={pfdHdr.coreTeam} onChange={e => setPfdHdr(h=>({...h,coreTeam:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-team" /></div>
+            </div>
+            <div className="pt-2 border-t border-border/20">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Approvals</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Cust. Engineering <span className="font-normal">(if req'd)</span></p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Signature</Label><Input value={pfdHdr.custEngApproval} onChange={e => setPfdHdr(h=>({...h,custEngApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-custeng" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={pfdHdr.custEngApprovalDate} onChange={e => setPfdHdr(h=>({...h,custEngApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-custeng-date" /></div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Cust. Quality <span className="font-normal">(if req'd)</span></p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Signature</Label><Input value={pfdHdr.custQualApproval} onChange={e => setPfdHdr(h=>({...h,custQualApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-custqual" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={pfdHdr.custQualApprovalDate} onChange={e => setPfdHdr(h=>({...h,custQualApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-custqual-date" /></div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Supplier / Plant</p>
+                  <div><Label className="text-xs text-muted-foreground">Name / Signature</Label><Input value={pfdHdr.supplierApproval} onChange={e => setPfdHdr(h=>({...h,supplierApproval:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-supplier-appr" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Date</Label><Input type="date" value={pfdHdr.supplierApprovalDate} onChange={e => setPfdHdr(h=>({...h,supplierApprovalDate:e.target.value}))} className="h-7 text-xs mt-0.5" data-testid="pfd-hdr-supplier-date" /></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Toolbar ── */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-sm">Process Flow Diagram</h3>
           <p className="text-xs text-muted-foreground mt-0.5">AIAG APQP — Operation, Inspection, Transport, Delay, Storage. Changes automatically flag linked PFMEA rows for review.</p>
         </div>
-        <Button size="sm" className="gap-1.5 h-8 text-xs bg-accent hover:bg-accent/90 text-white" onClick={() => createMut.mutate()} disabled={createMut.isPending} data-testid="btn-add-pfd-step">
-          {createMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}Add Step
-        </Button>
+        <div className="flex items-center gap-2">
+          {steps.length > 0 && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={printPfd} data-testid="btn-print-pfd">
+              <Printer className="w-3 h-3" />Print AIAG Format
+            </Button>
+          )}
+          <Button size="sm" className="gap-1.5 h-8 text-xs bg-accent hover:bg-accent/90 text-white" onClick={() => createMut.mutate()} disabled={createMut.isPending} data-testid="btn-add-pfd-step">
+            {createMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}Add Step
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Symbol Legend (on-screen) ── */}
+      <div className="flex items-center gap-4 px-3 py-2 bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-border/30 flex-wrap">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">AIAG Symbols:</span>
+        {STEP_TYPES.map(t => (
+          <div key={t.value} className="flex items-center gap-1.5">
+            <AiagFlowSymbol type={t.value} size={28} />
+            <span className="text-xs text-muted-foreground">{t.label}</span>
+          </div>
+        ))}
       </div>
 
       {steps.length === 0 ? (
@@ -193,26 +438,26 @@ function ProcessFlowTab({ projectId }: { projectId: number }) {
                 </div>
               ) : (
                 <div
-                  className={`w-full rounded-xl border p-3 bg-white dark:bg-slate-900/60 hover:border-accent/40 transition-colors cursor-pointer group ${step.reviewFlag ? "border-amber-300" : "border-border/50"}`}
+                  className={`w-full rounded-xl border p-3 bg-white dark:bg-slate-900/60 hover:border-accent/40 transition-colors cursor-pointer group ${step.reviewFlag ? "border-amber-300 bg-amber-50/30" : "border-border/50"}`}
                   onClick={() => startEdit(step)}
                   data-testid={`pfd-step-${step.id}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="flex flex-col items-center gap-1 shrink-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        step.operationType === "operation" ? "bg-blue-50" :
-                        step.operationType === "inspection" ? "bg-amber-50" :
-                        step.operationType === "transport" ? "bg-slate-50" :
-                        step.operationType === "delay" ? "bg-orange-50" : "bg-purple-50"
-                      }`}>
-                        <StepTypeIcon type={step.operationType} />
-                      </div>
-                      <span className="text-xs font-mono text-muted-foreground">{step.stepNumber}</span>
+                  <div className="flex items-center gap-3">
+                    {/* AIAG symbol */}
+                    <div className="flex flex-col items-center gap-0.5 shrink-0 w-14">
+                      <AiagFlowSymbol type={step.operationType ?? "operation"} size={44} />
+                      <span className="text-[10px] font-mono font-bold text-muted-foreground leading-none">{step.stepNumber}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-sm">{step.operationName}</span>
-                        <Badge variant="outline" className="text-xs h-5">{STEP_TYPES.find(t => t.value === step.operationType)?.label}</Badge>
+                        <Badge variant="outline" className={`text-xs h-5 ${
+                          step.operationType === "operation" ? "border-blue-200 text-blue-700" :
+                          step.operationType === "inspection" ? "border-amber-200 text-amber-700" :
+                          step.operationType === "transport" ? "border-slate-200 text-slate-600" :
+                          step.operationType === "delay" ? "border-orange-200 text-orange-600" :
+                          "border-purple-200 text-purple-600"
+                        }`}>{STEP_TYPES.find(t => t.value === step.operationType)?.label}</Badge>
                         {step.specialChars && step.specialChars.length > 0 && step.specialChars.map(sc => (
                           <Badge key={sc} className="text-xs h-5 bg-amber-100 text-amber-700 border-amber-300">{sc}</Badge>
                         ))}
@@ -221,7 +466,7 @@ function ProcessFlowTab({ projectId }: { projectId: number }) {
                         )}
                       </div>
                       {step.machine && <p className="text-xs text-muted-foreground mt-0.5">Machine: {step.machine}</p>}
-                      {step.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{step.description}</p>}
+                      {step.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{step.description}</p>}
                     </div>
                     <button onClick={e => { e.stopPropagation(); if (confirm("Delete this step?")) deleteMut.mutate(step.id); }} className="p-1.5 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" data-testid={`btn-delete-pfd-${step.id}`}>
                       <Trash2 className="w-3.5 h-3.5" />
