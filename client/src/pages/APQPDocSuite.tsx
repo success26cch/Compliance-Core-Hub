@@ -1,4 +1,4 @@
-import { useState, useCallback, type ComponentType } from "react";
+import { useState, useCallback, Fragment, type ComponentType } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -360,8 +360,9 @@ function PfmeaTab({ projectId }: { projectId: number }) {
                 const rpn = s * o * d;
                 const isDirty = !!edits[row.id];
                 const expanded = expandedRow === row.id;
-                return [
-                  <tr key={row.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors ${row.reviewFlag ? "bg-amber-50/40 dark:bg-amber-900/10" : ""}`}>
+                return (
+                  <Fragment key={row.id}>
+                  <tr className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors ${row.reviewFlag ? "bg-amber-50/40 dark:bg-amber-900/10" : ""}`}>
                     <td className="px-1 py-1.5 text-center">
                       <button onClick={() => setExpandedRow(expanded ? null : row.id)} className="text-muted-foreground hover:text-accent" data-testid={`btn-expand-pfmea-${row.id}`}>
                         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -387,9 +388,9 @@ function PfmeaTab({ projectId }: { projectId: number }) {
                     <td className="px-1 py-1"><Input value={val(row, "failureEffect") ?? ""} onChange={e => update(row.id, "failureEffect", e.target.value)} className="h-6 text-xs" placeholder="Effect..." data-testid={`input-fe-${row.id}`} /></td>
                     <td className="px-1 py-1 text-center"><RatingCell value={s} onChange={v => update(row.id, "severity", v)} /></td>
                     <td className="px-1 py-1">
-                      <Select value={val(row, "classification") ?? ""} onValueChange={v => update(row.id, "classification", v)}>
+                      <Select value={val(row, "classification") || "__none__"} onValueChange={v => update(row.id, "classification", v === "__none__" ? "" : v)}>
                         <SelectTrigger className="h-6 text-xs w-14" data-testid={`select-class-${row.id}`}><SelectValue /></SelectTrigger>
-                        <SelectContent>{SPECIAL_CHARS.map(c => <SelectItem key={c || "none"} value={c}>{c || "—"}</SelectItem>)}</SelectContent>
+                        <SelectContent>{SPECIAL_CHARS.map(c => <SelectItem key={c || "__none__"} value={c || "__none__"}>{c || "—"}</SelectItem>)}</SelectContent>
                       </Select>
                     </td>
                     <td className="px-1 py-1"><Input value={val(row, "failureCause") ?? ""} onChange={e => update(row.id, "failureCause", e.target.value)} className="h-6 text-xs" placeholder="Cause..." data-testid={`input-cause-${row.id}`} /></td>
@@ -412,9 +413,9 @@ function PfmeaTab({ projectId }: { projectId: number }) {
                         </button>
                       </div>
                     </td>
-                  </tr>,
-                  expanded && (
-                    <tr key={`${row.id}-exp`} className="bg-slate-50/70 dark:bg-slate-800/20">
+                  </tr>
+                  {expanded && (
+                    <tr className="bg-slate-50/70 dark:bg-slate-800/20">
                       <td colSpan={14} className="px-4 py-3">
                         <div className="space-y-3">
                           {row.reviewFlag && (
@@ -443,10 +444,10 @@ function PfmeaTab({ projectId }: { projectId: number }) {
                                 return (
                                   <div key={field} className="flex items-center gap-1">
                                     <span className="text-xs text-muted-foreground">{["S","O","D"][i]}:</span>
-                                    <Select value={v ? String(v) : ""} onValueChange={vv => update(row.id, field, Number(vv))}>
+                                    <Select value={v ? String(v) : "__none__"} onValueChange={vv => update(row.id, field, vv === "__none__" ? null : Number(vv))}>
                                       <SelectTrigger className="h-6 text-xs w-14"><SelectValue placeholder="—" /></SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="">—</SelectItem>
+                                        <SelectItem value="__none__">—</SelectItem>
                                         {[1,2,3,4,5,6,7,8,9,10].map(n => <SelectItem key={n} value={String(n)} className={`text-xs ${RATING_COLORS[n]}`}>{n}</SelectItem>)}
                                       </SelectContent>
                                     </Select>
@@ -468,8 +469,9 @@ function PfmeaTab({ projectId }: { projectId: number }) {
                         </div>
                       </td>
                     </tr>
-                  ),
-                ].filter(Boolean);
+                  )}
+                  </Fragment>
+                );
               })}
             </tbody>
           </table>
@@ -660,8 +662,9 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
               {rows.map(row => {
                 const expanded = expandedRow === row.id;
                 const isDirty = !!edits[row.id];
-                return [
-                  <tr key={row.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors ${row.reviewFlag ? "bg-amber-50/40 dark:bg-amber-900/10" : ""}`}>
+                return (
+                  <Fragment key={row.id}>
+                  <tr className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors ${row.reviewFlag ? "bg-amber-50/40 dark:bg-amber-900/10" : ""}`}>
                     <td className="px-1 py-1 text-center">
                       <button onClick={() => setExpandedRow(expanded ? null : row.id)} className="text-muted-foreground hover:text-accent" data-testid={`btn-expand-cp-${row.id}`}>
                         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -682,9 +685,9 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
                     </td>
                     <td className="px-1 py-1"><Input value={val(row, "charName") ?? ""} onChange={e => update(row.id, "charName", e.target.value)} className="h-6 text-xs" placeholder="Characteristic..." data-testid={`cp-charname-${row.id}`} /></td>
                     <td className="px-1 py-1">
-                      <Select value={val(row, "specialCharClass") ?? ""} onValueChange={v => update(row.id, "specialCharClass", v)}>
+                      <Select value={val(row, "specialCharClass") || "__none__"} onValueChange={v => update(row.id, "specialCharClass", v === "__none__" ? "" : v)}>
                         <SelectTrigger className="h-6 text-xs w-14" data-testid={`cp-specclass-${row.id}`}><SelectValue /></SelectTrigger>
-                        <SelectContent>{SPECIAL_CHARS.map(c => <SelectItem key={c || "none"} value={c}>{c || "—"}</SelectItem>)}</SelectContent>
+                        <SelectContent>{SPECIAL_CHARS.map(c => <SelectItem key={c || "__none__"} value={c || "__none__"}>{c || "—"}</SelectItem>)}</SelectContent>
                       </Select>
                     </td>
                     <td className="px-1 py-1"><Input value={val(row, "productSpec") ?? ""} onChange={e => update(row.id, "productSpec", e.target.value)} className="h-6 text-xs" placeholder="Spec..." data-testid={`cp-spec-${row.id}`} /></td>
@@ -705,9 +708,9 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
                         </button>
                       </div>
                     </td>
-                  </tr>,
-                  expanded && (
-                    <tr key={`${row.id}-exp`} className="bg-slate-50/70 dark:bg-slate-800/20">
+                  </tr>
+                  {expanded && (
+                    <tr className="bg-slate-50/70 dark:bg-slate-800/20">
                       <td colSpan={15} className="px-4 py-3">
                         {row.reviewFlag && (
                           <ReviewBadge label="Linked PFMEA row was updated — verify control is still appropriate" onClear={() => clearFlagMut.mutate(row.id)} />
@@ -722,8 +725,9 @@ function ControlPlanTab({ projectId, project }: { projectId: number; project: { 
                         )}
                       </td>
                     </tr>
-                  ),
-                ].filter(Boolean);
+                  )}
+                  </Fragment>
+                );
               })}
             </tbody>
           </table>
